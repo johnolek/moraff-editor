@@ -7,7 +7,7 @@
   import { downloadFloorPng } from './export-png';
   import { compactSides, describeNote, describeSquare } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
-  import { jumpTarget, squareFeature } from './floor-info';
+  import { jumpTarget, squareFeature, teleporterTargets } from './floor-info';
   import FloorStats from './FloorStats.svelte';
   import { HistoryCursor, isMapHistoryState, type MapHistoryState, type MapPlace } from './history';
   import { keyAction } from './keyboard';
@@ -15,7 +15,8 @@
   import Legend from './Legend.svelte';
   import Notable from './Notable.svelte';
   import { dungeonLookup, notableSquares, squareNotes } from './notes';
-  import { pathToNearestTeleporter, type Route } from './path';
+  import { hasTeleporterSide, pathToNearestTeleporter, type Route } from './path';
+  import { randomOpenSquare } from './relocate';
   import Selection from './Selection.svelte';
   import { squaresOfKind, type LegendKind } from './marks';
   import SquareInfo from './SquareInfo.svelte';
@@ -49,6 +50,7 @@
       ? { title: `${cursor!.x}, ${cursor!.y}`, feature: cursorDescription.rock ? 'Rock' : cursorDescription.feature, notes: cursorNotes, sides: compactSides(cursorDescription) }
       : null,
   );
+  const teleporterModules = $derived(selected && hasTeleporterSide(rows[selected.y][selected.x]) ? teleporterTargets(moduleIndex) : []);
   const markedKind = $derived(legendHover ?? legendPinned?.kind ?? null);
   const marks = $derived(markedKind ? squaresOfKind(rows, floor, markedKind) : []);
 
@@ -115,6 +117,11 @@
   function clearSelection() {
     selected = null;
     route = undefined;
+  }
+
+  /** Taking a teleporter lands the party somewhere random in the destination town. */
+  function takeTeleporter(module: number) {
+    travel({ module, floor: 0, square: randomOpenSquare(bundledDungeon.floor(0, module), Math.random) }, selected);
   }
 
   function routeToTeleporter() {
@@ -218,7 +225,7 @@
       chute or trap door.
     </p>
     <SquareInfo description={cursorDescription} notes={cursorNotes} />
-    <Selection {selected} {route} onroute={routeToTeleporter} onclear={clearSelection} />
+    <Selection {selected} {route} {teleporterModules} onroute={routeToTeleporter} onclear={clearSelection} ontake={takeTeleporter} />
     <Legend
       pinned={legendPinned?.label ?? null}
       onhover={(kind) => (legendHover = kind)}

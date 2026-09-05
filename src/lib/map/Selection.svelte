@@ -1,16 +1,20 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
+  import { MODULE_NUMERALS } from './labels';
   import type { Route } from './path';
   import type { Point } from './viewport';
 
   interface Props {
     selected: Point | null;
     route: Route | null | undefined;
+    /** Modules the teleporter on the selected square leads to; empty when there is no teleporter. */
+    teleporterModules: number[];
     onroute: () => void;
     onclear: () => void;
+    ontake: (module: number) => void;
   }
 
-  let { selected, route, onroute, onclear }: Props = $props();
+  let { selected, route, teleporterModules, onroute, onclear, ontake }: Props = $props();
 
   function describeRoute(route: Route): string {
     const parts = [`${route.steps} steps`];
@@ -26,6 +30,9 @@
     <div class="buttons">
       <button class="ghost" onclick={onroute}>Path to nearest teleporter</button>
       <button class="ghost" onclick={onclear}>Clear</button>
+      {#each teleporterModules as module}
+        <button class="ghost" onclick={() => ontake(module)}>Take teleporter to Module {MODULE_NUMERALS[module]}</button>
+      {/each}
     </div>
     {#if route}
       <p>{describeRoute(route)}</p>
