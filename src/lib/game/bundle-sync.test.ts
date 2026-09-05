@@ -7,6 +7,7 @@ const copies: [string, string][] = [
   ['src/lib/game/unfmap.js', 'dotu-tools/reference/unfmap.js'],
   ['src/lib/game/dotu-files.js', 'dotu-tools/reference/dotu-files.js'],
   ['src/lib/game/unfdung.b64.js', 'dotu-tools/data/unfdung.b64.js'],
+  ['src/lib/game/dotu-data.json', 'dotu-tools/data/dotu-data.json'],
 ];
 
 describe('game modules copied from dotu-tools', () => {
