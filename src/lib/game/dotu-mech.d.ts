@@ -92,3 +92,78 @@ export const TEMPLE: [string, number][];
 export function expectedMoney(depth: number, cls: number, hard: boolean): number;
 /** One money roll for one kill, exactly as the game rolls it. */
 export function rollMoney(depth: number, cls: number, hard: boolean, rnd?: () => number): number;
+
+export interface Striker {
+  lev: number;
+  str: number;
+  luck: number;
+  luckyCharms: number;
+  /** The held weapon's to-hit bonus. */
+  weaponHit: number;
+  gauntlet: number;
+  weaponPlus: number;
+  tempWeaponPlus: number;
+  hard: boolean;
+  depth: number;
+  /** The power weapon's die while one is up, otherwise the held weapon's. */
+  damageDie: number;
+}
+export interface StrikeTarget {
+  level: number;
+  defense: number;
+  speed: number;
+}
+/** One swing at a monster; the damage it does, or 0 for a miss. */
+export function strike(p: Striker, m: StrikeTarget, rnd?: () => number): number;
+
+export interface Defender {
+  lev: number;
+  cls: number;
+  iq: number;
+  dex: number;
+  luck: number;
+  luckyCharms: number;
+  /** The worn armor's rating together with its permanent plus. */
+  armor: number;
+  tempArmorPlus: number;
+  bodyArmor: number;
+  protRing: number;
+  /** 0..4; the spell takes 2 * level^2 off the monster's attack roll. */
+  protection: number;
+  con: number;
+  depth: number;
+}
+export interface DefendingAgainst {
+  level: number;
+  damageDie: number;
+}
+/** One monster attack on the character, breath aside; the damage it does, or 0 for a miss. */
+export function defend(p: Defender, m: DefendingAgainst, rnd?: () => number): number;
+
+export interface Simulation {
+  hitChance: number;
+  meanDamage: number;
+  meanDamageOnHit: number;
+}
+/** Runs a strike or defend roll n times and averages it. */
+export function simulate(fn: () => number, n?: number): Simulation;
+
+/** Seconds of game time one of your swings takes. */
+export function attackSeconds(weaponSpeed: number, agi: number): number;
+/** Chance Sleep takes hold on a monster of this level. */
+export function sleepChance(ml: number): number;
+/** Whether Drain Monster kills a monster of this level outright. */
+export function drainMonsterKills(ml: number, wis: number): boolean;
+/** Chance Autokill works, by Monte Carlo over n trials. */
+export function autokillChance(
+  ml: number,
+  speed: number,
+  lev: number,
+  iq: number,
+  wis: number,
+  depth: number,
+  n?: number,
+  rnd?: () => number,
+): number;
+/** The die a Power Weapon I, II or III swaps in for the held weapon's own. */
+export const POWER_WEAPON_DIE: [null, number, number, number];
