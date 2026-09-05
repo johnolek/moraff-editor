@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SectionHeading from '../ui/SectionHeading.svelte';
   import type { Route } from './path';
   import type { Point } from './viewport';
 
@@ -21,7 +22,7 @@
 
 {#if selected}
   <section>
-    <h2>Selected {selected.x}, {selected.y}</h2>
+    <SectionHeading title="Selected {selected.x}, {selected.y}" />
     <div class="buttons">
       <button class="ghost" onclick={onroute}>Path to nearest teleporter</button>
       <button class="ghost" onclick={onclear}>Clear</button>
@@ -35,13 +36,6 @@
 {/if}
 
 <style>
-  h2 {
-    margin: 0 0 8px;
-    font-size: 13px;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-  }
   .buttons {
     display: flex;
     gap: 6px;

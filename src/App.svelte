@@ -1,10 +1,11 @@
 <script lang="ts">
   import MapExplorer from './lib/map/MapExplorer.svelte';
+  import PixelText from './lib/ui/PixelText.svelte';
 </script>
 
 <div class="app">
   <header>
-    <h1>Moraff Tools</h1>
+    <h1><PixelText text="Moraff Tools" scale={2} /></h1>
     <nav>
       <span class="tab active">DotU Map</span>
       <a class="tab" href="editor.html">Save Editor</a>
@@ -30,9 +31,8 @@
   }
   h1 {
     margin: 0;
-    font-size: 20px;
+    line-height: 0;
     color: var(--accent);
-    letter-spacing: 0.5px;
   }
   nav {
     display: flex;

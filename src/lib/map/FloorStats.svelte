@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { FloorSummary } from '../game/floor-summary';
+  import SectionHeading from '../ui/SectionHeading.svelte';
   import { TOWN_BUILDINGS } from './labels';
 
   let { summary }: { summary: FloorSummary } = $props();
@@ -24,7 +25,7 @@
 </script>
 
 <section>
-  <h2>This floor</h2>
+  <SectionHeading title="This floor" />
   <dl>
     {#each rows as [label, value]}
       <dt>{label}</dt>
@@ -45,13 +46,6 @@
 </section>
 
 <style>
-  h2 {
-    margin: 0 0 8px;
-    font-size: 13px;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-  }
   dl {
     display: grid;
     grid-template-columns: auto 1fr;

@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Square } from '../game/unfmap.js';
+  import SectionHeading from '../ui/SectionHeading.svelte';
   import { GLYPH_LABELS, TOWN_BUILDINGS } from './labels';
   import LegendSample from './LegendSample.svelte';
   import type { LegendKind } from './marks';
@@ -40,12 +41,11 @@
 </script>
 
 <section>
-  <h2>
-    Legend
+  <SectionHeading title="Legend">
     {#if pinned}
       <button class="clear" onclick={() => onpin(null, null)}>Clear</button>
     {/if}
-  </h2>
+  </SectionHeading>
   <ul>
     {#each entries as { label, square, kind }}
       <li>
@@ -66,16 +66,6 @@
 </section>
 
 <style>
-  h2 {
-    margin: 0 0 8px;
-    font-size: 13px;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-  }
   .clear {
     background: none;
     border: none;

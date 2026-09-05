@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SectionHeading from '../ui/SectionHeading.svelte';
   import { describeNote } from './describe';
   import { GLYPH_LABELS } from './labels';
   import type { NotableSquare } from './notes';
@@ -8,7 +9,7 @@
 </script>
 
 <section>
-  <h2>Notable</h2>
+  <SectionHeading title="Notable" />
   {#if entries.length === 0}
     <p class="hint">Nothing odd on this floor.</p>
   {:else}
@@ -28,13 +29,6 @@
 </section>
 
 <style>
-  h2 {
-    margin: 0 0 8px;
-    font-size: 13px;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-  }
   ul {
     list-style: none;
     margin: 0;

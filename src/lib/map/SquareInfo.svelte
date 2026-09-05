@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SectionHeading from '../ui/SectionHeading.svelte';
   import type { SquareDescription } from './describe';
 
   let { description, notes = [] }: { description: SquareDescription | null; notes?: string[] } = $props();
@@ -6,7 +7,7 @@
 
 <section>
   {#if description}
-    <h2>{description.title}</h2>
+    <SectionHeading title={description.title} />
     {#if description.rock}
       <p class="feature">Rock</p>
     {:else}
@@ -31,13 +32,6 @@
 <style>
   section {
     min-height: 150px;
-  }
-  h2 {
-    margin: 0 0 8px;
-    font-size: 13px;
-    color: var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
   }
   dl {
     display: grid;
