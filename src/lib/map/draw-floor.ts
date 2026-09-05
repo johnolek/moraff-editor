@@ -142,3 +142,20 @@ function diagonal(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: num
   ctx.lineTo(x1, y1);
   ctx.stroke();
 }
+
+/** Outline of one square, for the cursor and the landing highlight. */
+export function drawOutline(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  view: { cell: number; originX: number; originY: number },
+  lineWidth: number,
+  colour: string,
+): void {
+  const inset = lineWidth / 2;
+  ctx.lineWidth = lineWidth;
+  ctx.strokeStyle = colour;
+  ctx.setLineDash([]);
+  ctx.strokeRect(view.originX + x * view.cell + inset, view.originY + y * view.cell + inset, view.cell + 1 - lineWidth, view.cell + 1 - lineWidth);
+  ctx.lineWidth = 1;
+}
