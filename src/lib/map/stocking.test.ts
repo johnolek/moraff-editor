@@ -1,0 +1,92 @@
+import { describe, expect, it } from 'vitest';
+import { isPuffball } from '../bestiary/monsters';
+import { MONSTER_TYPE_ODDS, monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
+import { bundledDungeon } from '../game/dungeon';
+import { sectionInfo } from '../game/sections';
+import { MONSTER_SLOTS, monsterAt, monsterById, stockFloor, type StockedMonster } from './stocking';
+
+/** A repeatable stand-in for Math.random, so a failing floor can be reproduced. Math.imul
+ *  keeps the multiplication exact, which the full period of the generator depends on. */
+function seeded(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+}
+
+const floorOf = (module: number, level: number) => bundledDungeon.floor(level, module);
+
+describe('stockFloor', () => {
+  it('puts one monster on each of 145 distinct open squares', () => {
+    const rows = floorOf(2, 31);
+    const monsters = stockFloor(rows, 2, 31, seeded(5));
+    expect(monsters).toHaveLength(MONSTER_SLOTS);
+    for (const monster of monsters) expect(rows[monster.y][monster.x].solid).toBe(false);
+    const squares = new Set(monsters.map((monster) => `${monster.x},${monster.y}`));
+    expect(squares.size).toBe(MONSTER_SLOTS);
+  });
+
+  it('numbers the slots in order', () => {
+    const monsters = stockFloor(floorOf(0, 3), 0, 3, seeded(9));
+    expect(monsters.map((monster) => monster.slot)).toEqual(monsters.map((_, i) => i));
+  });
+
+  it('gives slot 0 to the Shadow boss on a boss floor and to nothing else elsewhere', () => {
+    const boss = stockFloor(floorOf(0, 5), 0, 5, seeded(13));
+    expect(monsterById(boss[0].monsterId).name).toBe(sectionInfo(0, 5).bossName);
+    expect(boss.slice(1).some((monster) => monsterById(monster.monsterId).isBoss)).toBe(false);
+
+    const plain = stockFloor(floorOf(0, 4), 0, 4, seeded(13));
+    expect(plain.some((monster) => monsterById(monster.monsterId).isBoss)).toBe(false);
+  });
+
+  it('places the Shadow boss in the middle 50 squares of both axes', () => {
+    for (let seed = 1; seed <= 20; seed++) {
+      const [boss] = stockFloor(floorOf(1, 20), 1, 20, seeded(seed));
+      expect(boss.x).toBeGreaterThanOrEqual(25);
+      expect(boss.x).toBeLessThanOrEqual(74);
+      expect(boss.y).toBeGreaterThanOrEqual(25);
+      expect(boss.y).toBeLessThanOrEqual(74);
+    }
+  });
+
+  it('rolls a level near the floor base and hit points that fit the monster', () => {
+    const base = monsterLevelBase(41, 4);
+    for (const monster of stockFloor(floorOf(4, 41), 4, 41, seeded(17))) {
+      expect(Math.abs(monster.level - base)).toBeLessThanOrEqual(15);
+      const entry = monsterById(monster.monsterId);
+      const section = entry.origin.kind === 'section' ? entry.origin.section : 1;
+      const [lo, hi] = monsterHpRange(entry.type.hpPerLevel, monster.level, entry.isBoss, section);
+      expect(monster.hp).toBeGreaterThanOrEqual(lo);
+      expect(monster.hp).toBeLessThanOrEqual(hi);
+    }
+  });
+
+  it('picks the monster kinds about as often as the game does', () => {
+    const rnd = seeded(23);
+    const monsters: StockedMonster[] = [];
+    for (let i = 0; i < 50; i++) monsters.push(...stockFloor(floorOf(0, 12), 0, 12, rnd));
+    for (const [kind, odds] of Object.entries(MONSTER_TYPE_ODDS)) {
+      const share = monsters.filter((monster) => kindOf(monster.monsterId) === kind).length / monsters.length;
+      expect(Math.abs(share - odds)).toBeLessThan(0.02);
+    }
+  });
+});
+
+function kindOf(id: string): keyof typeof MONSTER_TYPE_ODDS {
+  const entry = monsterById(id);
+  if (entry.origin.kind === 'section') return entry.origin.slot === 26 ? 'levelDrainer' : 'sectionMonster';
+  if (isPuffball(entry)) return 'puffball';
+  return entry.special === 0 ? 'blocker' : 'poisonDisease';
+}
+
+describe('monsterAt', () => {
+  it('finds the monster standing on a square, if any', () => {
+    const monsters = stockFloor(floorOf(0, 7), 0, 7, seeded(29));
+    const [first] = monsters;
+    expect(monsterAt(monsters, first.x, first.y)).toBe(first);
+    const free = monsters.reduce((x, monster) => Math.max(x, monster.x), 0) + 1;
+    expect(monsterAt(monsters, free, first.y)).toBeNull();
+  });
+});
