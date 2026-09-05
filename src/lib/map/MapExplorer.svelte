@@ -5,8 +5,9 @@
   import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
   import { downloadFloorPng } from './export-png';
-  import { compactSides, describeNote, describeSquare } from './describe';
+  import { compactSides, describeMonster, describeNote, describeSquare } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
+  import FloorMonsters from './FloorMonsters.svelte';
   import { jumpTarget, squareFeature, teleporterTargets } from './floor-info';
   import FloorStats from './FloorStats.svelte';
   import { HistoryCursor, isMapHistoryState, type MapHistoryState, type MapPlace } from './history';
@@ -20,6 +21,7 @@
   import Selection from './Selection.svelte';
   import { squaresOfKind, type LegendKind } from './marks';
   import SquareInfo from './SquareInfo.svelte';
+  import { monsterAt, stockFloor, type StockedMonster } from './stocking';
   import type { Point } from './viewport';
 
   let moduleIndex = $state(0);
@@ -32,6 +34,8 @@
   /** undefined: not asked yet; null: asked, nothing reachable. */
   let route = $state<Route | null | undefined>(undefined);
   let historyCursor = $state(new HistoryCursor());
+  /** Stocked floors by "module:floor", kept while other floors are browsed. */
+  let stocked = $state(new Map<string, StockedMonster[]>());
   let floorCanvas: FloorCanvas;
 
   const floors = $derived(floorsOfModule(moduleIndex));
@@ -41,13 +45,22 @@
   const lookup = $derived(dungeonLookup(bundledDungeon, moduleIndex));
   const notable = $derived(notableSquares(lookup, floor, rows));
   const section = $derived(sectionInfo(moduleIndex, floor));
+  const stockKey = $derived(`${moduleIndex}:${floor}`);
+  const monsters = $derived(stocked.get(stockKey) ?? []);
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(bundledDungeon, moduleIndex, floor, cursorSquare, cursor.x, cursor.y) : null);
   const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, moduleIndex) : null);
   const cursorNotes = $derived(cursor && cursorSquare ? squareNotes(lookup, floor, cursorSquare, cursor.x, cursor.y).map(describeNote) : []);
+  const cursorMonster = $derived(cursor ? monsterAt(monsters, cursor.x, cursor.y) : null);
   const tooltip = $derived<Tooltip | null>(
     cursorDescription
-      ? { title: `${cursor!.x}, ${cursor!.y}`, feature: cursorDescription.rock ? 'Rock' : cursorDescription.feature, notes: cursorNotes, sides: compactSides(cursorDescription) }
+      ? {
+          title: `${cursor!.x}, ${cursor!.y}`,
+          feature: cursorDescription.rock ? 'Rock' : cursorDescription.feature,
+          monster: cursorMonster && describeMonster(cursorMonster),
+          notes: cursorNotes,
+          sides: compactSides(cursorDescription),
+        }
       : null,
   );
   const teleporterModules = $derived(selected && hasTeleporterSide(rows[selected.y][selected.x]) ? teleporterTargets(moduleIndex) : []);
@@ -112,6 +125,16 @@
   function pick(square: Point) {
     cursor = square;
     floorCanvas.reveal(square);
+  }
+
+  function stockThisFloor() {
+    stocked = new Map(stocked).set(stockKey, stockFloor(rows, moduleIndex, floor, Math.random));
+  }
+
+  function clearMonsters() {
+    const rest = new Map(stocked);
+    rest.delete(stockKey);
+    stocked = rest;
   }
 
   function clearSelection() {
@@ -188,7 +211,7 @@
       <span class="section">Section {section.section} · {section.bossName} on floor {section.bossFloor}</span>
     </div>
     <div class="viewport">
-      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {bounds} bind:cursor {highlight} {marks} {selected} route={route?.squares ?? null} {tooltip} onselect={follow} />
+      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {monsters} {bounds} bind:cursor {highlight} {marks} {selected} route={route?.squares ?? null} {tooltip} onselect={follow} />
     </div>
   </div>
   <aside class="panel">
@@ -224,8 +247,9 @@
       Drag to pan, scroll to zoom. Arrow keys move the cursor, PgUp/PgDn change floor, Enter follows a ladder,
       chute or trap door.
     </p>
-    <SquareInfo description={cursorDescription} notes={cursorNotes} />
+    <SquareInfo description={cursorDescription} notes={cursorNotes} monster={cursorMonster} />
     <Selection {selected} {route} {teleporterModules} onroute={routeToTeleporter} onclear={clearSelection} ontake={takeTeleporter} />
+    <FloorMonsters count={monsters.length} town={floor === 0} onstock={stockThisFloor} onclear={clearMonsters} />
     <Legend
       pinned={legendPinned?.label ?? null}
       onhover={(kind) => (legendHover = kind)}
