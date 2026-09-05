@@ -1,36 +1,62 @@
 <script lang="ts">
   import { bundledDungeon } from '../game/dungeon';
-  import { floorsOfModule } from '../game/floor-summary';
+  import { floorsOfModule, summarizeFloor } from '../game/floor-summary';
+  import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import FloorCanvas from './FloorCanvas.svelte';
-  import { squareFeature } from './floor-info';
+  import { jumpTarget, squareFeature } from './floor-info';
+  import FloorStats from './FloorStats.svelte';
   import { MODULE_NUMERALS } from './labels';
+  import Legend from './Legend.svelte';
   import SquareInfo from './SquareInfo.svelte';
   import type { Point } from './viewport';
 
   let moduleIndex = $state(0);
   let floor = $state(0);
   let cursor = $state<Point | null>(null);
+  let highlight = $state<Point | null>(null);
   let floorCanvas: FloorCanvas;
 
   const floors = $derived(floorsOfModule(moduleIndex));
   const rows = $derived(bundledDungeon.floor(floor, moduleIndex));
+  const summary = $derived(summarizeFloor(bundledDungeon, floor, moduleIndex));
+  const section = $derived(sectionInfo(moduleIndex, floor));
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(bundledDungeon, moduleIndex, floor, cursorSquare, cursor.x, cursor.y) : null);
 
   function changeModule(event: Event) {
     moduleIndex = Number((event.currentTarget as HTMLSelectElement).value);
-    floor = Math.min(floor, BOTTOM_LEVEL[moduleIndex]);
+    showFloor(Math.min(floor, BOTTOM_LEVEL[moduleIndex]));
   }
 
   function changeFloor(event: Event) {
-    floor = Number((event.currentTarget as HTMLSelectElement).value);
+    showFloor(Number((event.currentTarget as HTMLSelectElement).value));
+  }
+
+  function showFloor(level: number) {
+    floor = level;
+    highlight = null;
+  }
+
+  /** Clicking a ladder, chute or trap door goes to the floor it leads to and marks the landing square. */
+  function follow(square: Point) {
+    const target = jumpTarget(bundledDungeon, moduleIndex, floor, rows[square.y][square.x], square.x, square.y);
+    if (!target) return;
+    floor = target.floor;
+    highlight = { x: target.x, y: target.y };
+    cursor = { x: target.x, y: target.y };
   }
 </script>
 
 <div class="explorer">
-  <div class="viewport">
-    <FloorCanvas bind:this={floorCanvas} {rows} {floor} bind:cursor />
+  <div class="map">
+    <div class="floor-header">
+      <span class="where">Module {MODULE_NUMERALS[moduleIndex]} · {floor === 0 ? 'Town' : `Floor ${floor}`}</span>
+      <span class="section">Section {section.section} · {section.bossName} on floor {section.bossFloor}</span>
+    </div>
+    <div class="viewport">
+      <FloorCanvas bind:this={floorCanvas} {rows} {floor} bind:cursor {highlight} onselect={follow} />
+    </div>
   </div>
   <aside class="panel">
     <div class="pickers">
@@ -57,6 +83,8 @@
       <button class="ghost" onclick={() => floorCanvas.fit()}>Fit</button>
     </div>
     <SquareInfo {cursor} square={cursorSquare} feature={cursorFeature} {moduleIndex} />
+    <Legend />
+    <FloorStats {summary} />
   </aside>
 </div>
 
@@ -67,9 +95,31 @@
     min-height: 0;
     min-width: 0;
   }
-  .viewport {
+  .map {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .floor-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .where {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .section {
+    color: var(--muted);
+  }
+  .viewport {
+    flex: 1;
+    min-height: 0;
   }
   .panel {
     width: 280px;
@@ -79,7 +129,7 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
     overflow-y: auto;
   }
   .pickers {
