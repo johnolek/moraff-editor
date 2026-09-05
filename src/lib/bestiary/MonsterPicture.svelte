@@ -1,9 +1,9 @@
 <script lang="ts">
-  import type { MonsterEntry } from './monsters';
+  import type { Monster } from './monsters';
   import { PICTURE_HEIGHT, PICTURE_WIDTH, renderMonster, type Look } from './pictures';
 
   interface Props {
-    entry: MonsterEntry;
+    entry: Monster;
     /** 1-based, the way the palette table is keyed. */
     module: number;
     /** Section within the module, 1..4. */

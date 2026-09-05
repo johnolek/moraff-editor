@@ -2,11 +2,11 @@
   import { monsterLevelBase } from '../game/dotu-mech.js';
   import { blockWheel } from '../editor/block-wheel';
   import { MODULE_NUMERALS } from '../map/labels';
-  import { allowedFloors, allowedModules, type MonsterEntry } from './monsters';
+  import { allowedFloors, allowedModules, type Monster } from './monsters';
   import { MAX_LEVEL } from './roll';
 
   interface Props {
-    entry: MonsterEntry;
+    entry: Monster;
     /** 0-based. */
     module: number;
     floor: number;

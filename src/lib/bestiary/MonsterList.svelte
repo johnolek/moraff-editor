@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { MonsterEntry, MonsterGroup } from './monsters';
+  import type { Monster, MonsterGroup } from './monsters';
 
   interface Props {
     groups: MonsterGroup[];
     selectedId: string;
-    onselect: (entry: MonsterEntry) => void;
+    onselect: (entry: Monster) => void;
   }
 
   let { groups, selectedId, onselect }: Props = $props();

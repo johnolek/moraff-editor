@@ -13,12 +13,12 @@
   import SectionHeading from '../ui/SectionHeading.svelte';
   import LevelControl from './LevelControl.svelte';
   import MonsterPicture from './MonsterPicture.svelte';
-  import { describeEffects, homeFloor, isPuffball, stockingOdds, whereItAppears, type MonsterEntry } from './monsters';
+  import { describeEffects, homeFloor, isPuffball, stockingOdds, whereItAppears, type Monster } from './monsters';
   import type { Look } from './pictures';
   import { rollMonster, type Roll } from './roll';
 
   interface Props {
-    entry: MonsterEntry;
+    entry: Monster;
     groupLabel: string;
   }
 

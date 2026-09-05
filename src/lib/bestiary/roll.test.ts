@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
-import { allMonsters, type MonsterEntry } from './monsters';
+import { allMonsters, type Monster } from './monsters';
 import { nudgeLevel, rollHp, rollMonster } from './roll';
 
 /** A repeatable stand-in for Math.random, so a failing roll can be reproduced. */
@@ -18,7 +18,7 @@ function scripted(values: number[]): () => number {
   return () => values[i++] ?? 0;
 }
 
-const named = (name: string): MonsterEntry => allMonsters().find((m) => m.name === name)!;
+const named = (name: string): Monster => allMonsters().find((m) => m.name === name)!;
 
 describe('nudgeLevel', () => {
   it('leaves the level alone while the 1 in 3 roll fails', () => {

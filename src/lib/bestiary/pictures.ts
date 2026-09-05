@@ -12,7 +12,7 @@ import {
   type Rgb,
 } from '../game/dotu-pic.js';
 import palettes from '../game/palettes.json';
-import type { MonsterEntry } from './monsters';
+import type { Monster } from './monsters';
 
 /**
  * Palette entries 64..79 are the only ones the dungeon palette never writes. They are black
@@ -38,7 +38,7 @@ const picUrls = import.meta.glob('../game/pics/*.pic', {
 
 const parsed = new Map<string, PicImage[]>();
 
-export function monsterPictureFile(entry: MonsterEntry): string {
+export function monsterPictureFile(entry: Monster): string {
   return entry.origin.kind === 'builtin' ? 'ufmon.pic' : `ufmon${entry.origin.section}.pic`;
 }
 
@@ -59,7 +59,7 @@ export function sectionPalette(module: number, part: number, look: Look): Rgb[] 
 }
 
 /** The monster drawn with the palette of the given section; module is 1-based. */
-export function renderMonster(entry: MonsterEntry, module: number, part: number, look: Look): RenderedImage {
+export function renderMonster(entry: Monster, module: number, part: number, look: Look): RenderedImage {
   const images = pictureImages(monsterPictureFile(entry));
   const index =
     entry.origin.kind === 'builtin' ? builtinPictureIndex(entry.picnum) : sectionPictureIndex(entry.picnum);

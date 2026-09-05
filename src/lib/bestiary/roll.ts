@@ -1,4 +1,4 @@
-import type { MonsterEntry } from './monsters';
+import type { Monster } from './monsters';
 
 export interface Roll {
   level: number;
@@ -19,7 +19,7 @@ export function nudgeLevel(base: number, rnd: () => number): number {
 }
 
 /** Hit points of one stocked monster: the average of two rolls, plus the Shadow boss bonus. */
-export function rollHp(entry: MonsterEntry, level: number, rnd: () => number): number {
+export function rollHp(entry: Monster, level: number, rnd: () => number): number {
   const span = entry.type.hpPerLevel * level + 1;
   let hp = Math.trunc((random(rnd, span) + random(rnd, span) + 2) / 2);
   if (entry.isBoss) {
@@ -31,7 +31,7 @@ export function rollHp(entry: MonsterEntry, level: number, rnd: () => number): n
 }
 
 /** One monster as stocking would create it, from the base level of its floor. */
-export function rollMonster(entry: MonsterEntry, baseLevel: number, rnd: () => number): Roll {
+export function rollMonster(entry: Monster, baseLevel: number, rnd: () => number): Roll {
   const level = nudgeLevel(baseLevel, rnd);
   return { level, hp: rollHp(entry, level, rnd) };
 }
