@@ -162,6 +162,12 @@ export interface Appearance {
   ranges: FloorRange[];
 }
 
+/** One floor of one module, as the level control has it. */
+export interface FloorChoice {
+  module: number;
+  floor: number;
+}
+
 /**
  * The floors of part 1..4 of a module. Each part is five floors per module number, except
  * the last, which runs on to the bottom of the module -- the same split as sectionOf().
@@ -183,7 +189,7 @@ export function allowedFloors(entry: MonsterEntry, module: number): number[] {
 }
 
 /** Where the level control starts: the first floor the monster can appear on. */
-export function homeFloor(entry: MonsterEntry): { module: number; floor: number } {
+export function homeFloor(entry: MonsterEntry): FloorChoice {
   const [first] = whereItAppears(entry).ranges;
   return { module: first.module, floor: first.from };
 }
