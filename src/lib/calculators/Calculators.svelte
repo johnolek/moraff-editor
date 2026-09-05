@@ -3,13 +3,15 @@
   import DropCalculator from './DropCalculator.svelte';
   import EconomyCalculator from './EconomyCalculator.svelte';
   import ExperiencePlanner from './ExperiencePlanner.svelte';
+  import LevelUpCalculator from './LevelUpCalculator.svelte';
 
-  type Chosen = 'experience' | 'drops' | 'economy';
+  type Chosen = 'experience' | 'drops' | 'economy' | 'levelup';
 
   const entries: { id: Chosen; label: string }[] = [
     { id: 'experience', label: 'Experience' },
     { id: 'drops', label: 'Drops' },
     { id: 'economy', label: 'Economy' },
+    { id: 'levelup', label: 'Level-up' },
   ];
 
   let chosen = $state<Chosen>('experience');
@@ -30,6 +32,9 @@
   </div>
   <div class="body" class:hidden={chosen !== 'economy'}>
     <EconomyCalculator />
+  </div>
+  <div class="body" class:hidden={chosen !== 'levelup'}>
+    <LevelUpCalculator />
   </div>
 </div>
 
