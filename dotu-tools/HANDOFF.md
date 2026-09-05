@@ -362,8 +362,8 @@ on each.
 * The title-screen demo writes `010.dun`/`011.dun` with parameters that do not match the
   generator; ignore those files.
 * `.PIC` is decoded and every monster/building/wall picture is rendered with the real
-  palettes (`docs/PICTURES.md`, `reference/dotu-pic.js`, `pics/`).  `.FNT` is still
-  unknown — use any pixel font.
+  palettes (`docs/PICTURES.md`, `reference/dotu-pic.js`, `pics/`).  `.FNT` is decoded
+  too: `docs/FONTS.md`, `reference/extract_fnt.py`, `data/dotu-fonts.json`.
 
 ## 11. Bundle inventory
 
@@ -399,6 +399,9 @@ dotu-tools/
   data/palettes.json             40 emulated 256-colour palettes: m<module>_s<part>_{dungeon,town}
   data/building-palette-banks.json  the two shop palette tables (entries 32..63 / 64..95)
   data/unfdung.bin               the raw wall tile set (same bytes as unfdung.b64.js)
+  docs/FONTS.md                  the .FNT bitmap font format
+  reference/extract_fnt.py       decodes the three .FNT files into data/dotu-fonts.json
+  data/dotu-fonts.json           the small, tall and bold game fonts as row bitmaps
   pics/monsters/                 122 monsters as PNG + per-section sheets + Shadow-boss variants
   pics/buildings/                the six town buildings composited (320x200) + sheet
   pics/walls/                    ufwall1-4 textures (10 each) + sheets
