@@ -1,0 +1,107 @@
+import { describe, expect, it } from 'vitest';
+import { dropOdds, monsterLevelDistribution } from '../game/dotu-mech.js';
+import { dropTables, expectedKills, floorOdds, perHour, type DropRow } from './drops';
+
+const FIGHTER = 0;
+const MONK = 2;
+const MAGE = 6;
+const SAGE = 5;
+
+const hunt = (over: Partial<Parameters<typeof dropTables>[0]> = {}) => ({
+  module: 0,
+  floor: 20,
+  cls: MAGE,
+  ownedWeapons: [],
+  ...over,
+});
+
+const chanceOf = (rows: DropRow[], name: string) => rows.find((row) => row.name.startsWith(name))!.chance;
+
+describe('floorOdds', () => {
+  it('averages the weapon chances over the levels the floor stocks', () => {
+    const levels = monsterLevelDistribution(20, 0);
+    const expected = levels.reduce((sum, [ml, p]) => sum + p * dropOdds(20, ml, MAGE).weapons['Great Sword'], 0);
+    expect(floorOdds(0, 20, MAGE).weapons['Great Sword']).toBeCloseTo(expected, 12);
+  });
+
+  it('leaves the rolls that only read the floor alone', () => {
+    const plain = dropOdds(20, 35, MAGE);
+    const averaged = floorOdds(0, 20, MAGE);
+    expect(averaged.items).toEqual(plain.items);
+    expect(averaged.drainerPotion).toBe(plain.drainerPotion);
+    expect(averaged.maxBookLevel).toBe(plain.maxBookLevel);
+  });
+});
+
+describe('dropTables', () => {
+  it('leaves out the weapons the character already owns', () => {
+    const tables = dropTables(hunt({ ownedWeapons: [1, 7] }));
+    expect(tables.weapons.map((row) => row.name)).toEqual(['Club', 'Mace', 'Knife', 'Short Sword', 'Long Sword']);
+  });
+
+  it('gives a monk no gear and no items at all', () => {
+    const tables = dropTables(hunt({ cls: MONK }));
+    expect(tables.weapons.every((row) => row.chance === 0)).toBe(true);
+    expect(tables.armors.every((row) => row.chance === 0)).toBe(true);
+    expect(tables.items.every((row) => row.chance === 0)).toBe(true);
+    expect(tables.findGate).toBe(0);
+  });
+
+  it('leaves a fighter papers as the only spell source', () => {
+    const spells = dropTables(hunt({ cls: FIGHTER })).spells;
+    expect(chanceOf(spells, 'Spell book roll')).toBe(0);
+    expect(chanceOf(spells, 'Scroll')).toBe(0);
+    expect(chanceOf(spells, 'Wand')).toBe(0);
+    expect(chanceOf(spells, 'Spell paper')).toBeGreaterThan(0);
+  });
+
+  it('gates a sage’s spell books and pays it better scrolls', () => {
+    const sage = dropTables(hunt({ cls: SAGE })).spells;
+    const mage = dropTables(hunt()).spells;
+    expect(chanceOf(sage, 'Spell book roll')).toBeLessThan(chanceOf(mage, 'Spell book roll'));
+    expect(chanceOf(sage, 'Scroll')).toBeGreaterThan(chanceOf(mage, 'Scroll'));
+  });
+
+  it('names the highest spell level each source reaches', () => {
+    const spells = dropTables(hunt({ floor: 20 })).spells;
+    expect(spells.map((row) => row.name)).toEqual([
+      'Spell book roll (up to level 10)',
+      'Scroll (up to level 10)',
+      'Wand (up to level 5)',
+      'Spell paper (up to level 3)',
+      'Cup of health (heals you)',
+      'Ball of thought (+1 spell point)',
+    ]);
+  });
+
+  it('is the "YOU FIND" gate that the twelve items are shared out from', () => {
+    const tables = dropTables(hunt());
+    expect(tables.items).toHaveLength(12);
+    expect(tables.items[0].chance).toBeCloseTo((tables.findGate * 2) / 3 / 12, 12);
+  });
+
+  it('only offers a trap door key on the floors that have one', () => {
+    expect(chanceOf(dropTables(hunt({ floor: 20 })).drainer, 'Trap door key')).toBeGreaterThan(0);
+    expect(chanceOf(dropTables(hunt({ floor: 3 })).drainer, 'Trap door key')).toBe(0);
+  });
+
+  it('reports the levels the floor stocks', () => {
+    expect(dropTables(hunt({ module: 1, floor: 20 })).levels).toEqual(monsterLevelDistribution(20, 1));
+  });
+});
+
+describe('expectedKills', () => {
+  it('is one over the chance', () => {
+    expect(expectedKills(0.25)).toBe(4);
+  });
+
+  it('is unreachable when the item cannot drop', () => {
+    expect(expectedKills(0)).toBeNull();
+  });
+});
+
+describe('perHour', () => {
+  it('is the chance times the kills an hour holds', () => {
+    expect(perHour(0.25, 2)).toBe(30);
+  });
+});

@@ -1,0 +1,84 @@
+import { dropOdds, monsterLevelDistribution, type DropOdds } from '../game/dotu-mech.js';
+
+export interface DropRow {
+  name: string;
+  /** Chance per kill, 0 to 1. */
+  chance: number;
+}
+
+export interface Hunt {
+  module: number;
+  floor: number;
+  cls: number;
+  /** Weapon ids 1 to 7, Stick to Great Sword; a weapon you own never drops again. */
+  ownedWeapons: number[];
+}
+
+export interface DropTables {
+  /** The levels this floor stocks its monsters at, as [level, chance] pairs. */
+  levels: [number, number][];
+  /** How often the "YOU FIND" check passes; one pass in three still finds nothing. */
+  findGate: number;
+  weapons: DropRow[];
+  armors: DropRow[];
+  items: DropRow[];
+  drainer: DropRow[];
+  spells: DropRow[];
+}
+
+/** Keys start dropping on floor 4. The game also stops them below floor 179, which is deeper
+ *  than the deepest floor in the game. */
+const FIRST_KEY_FLOOR = 4;
+
+/**
+ * The floor's drop odds. Only the weapon and armor rolls read the monster's level, so those
+ * are averaged over the levels the floor stocks; every other roll reads the floor itself.
+ */
+export function floorOdds(module: number, floor: number, cls: number): DropOdds {
+  const levels = monsterLevelDistribution(floor, module);
+  const rolls = levels.map(([ml, p]) => ({ odds: dropOdds(floor, ml, cls), p }));
+  const average = (which: 'weapons' | 'armors') => {
+    const out: Record<string, number> = {};
+    for (const { odds, p } of rolls) {
+      for (const [name, chance] of Object.entries(odds[which])) out[name] = (out[name] ?? 0) + p * chance;
+    }
+    return out;
+  };
+  return { ...rolls[0].odds, weapons: average('weapons'), armors: average('armors') };
+}
+
+export function dropTables(hunt: Hunt): DropTables {
+  const odds = floorOdds(hunt.module, hunt.floor, hunt.cls);
+  const keyDrops = hunt.floor >= FIRST_KEY_FLOOR;
+  return {
+    levels: monsterLevelDistribution(hunt.floor, hunt.module),
+    // dropOdds reports the chance of ending up with an item, which is two passes in three.
+    findGate: (odds.anyItem * 3) / 2,
+    weapons: Object.entries(odds.weapons)
+      .filter((_, index) => !hunt.ownedWeapons.includes(index + 1))
+      .map(([name, chance]) => ({ name, chance })),
+    armors: Object.entries(odds.armors).map(([name, chance]) => ({ name, chance })),
+    items: Object.entries(odds.items).map(([name, chance]) => ({ name, chance })),
+    drainer: [
+      { name: 'Stat potion', chance: odds.drainerPotion },
+      { name: 'Trap door key', chance: keyDrops ? odds.drainerKey : 0 },
+    ],
+    spells: [
+      { name: `Spell book roll (up to level ${odds.maxBookLevel})`, chance: odds.spellbookRoll },
+      { name: `Scroll (up to level ${odds.maxScrollLevel})`, chance: odds.scroll },
+      { name: `Wand (up to level ${odds.maxWandLevel})`, chance: odds.wand },
+      { name: `Spell paper (up to level ${odds.maxPaperLevel})`, chance: odds.paper },
+      { name: 'Cup of health (heals you)', chance: odds.healChance },
+      { name: 'Ball of thought (+1 spell point)', chance: odds.spChance },
+    ],
+  };
+}
+
+/** Kills it takes on average to see one; null when it cannot drop here at all. */
+export function expectedKills(chance: number): number | null {
+  return chance > 0 ? 1 / chance : null;
+}
+
+export function perHour(chance: number, killsPerMinute: number): number {
+  return chance * killsPerMinute * 60;
+}
