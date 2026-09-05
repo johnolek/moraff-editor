@@ -7,6 +7,10 @@
   --accent: #ffd040;
   --accent-dim: #c89820;
   --line: #353560;
+  --mw-green: #5cff7a;
+  --mw-cyan: #6cd8ff;
+  --good: #5cff7a;
+  --warn: #ffd040;
 }
 
 * {

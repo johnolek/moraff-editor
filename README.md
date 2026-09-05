@@ -26,10 +26,9 @@ magenta, which the game never shows.
 
 ## Save editor
 
-Currently the original single-file editor, served at `editor.html`, until it is
-ported into the app.
+The Save Editor tab edits character files of both games.
 
-1. Open it in a browser.
+1. Open the Save Editor tab.
 2. Upload your save file (named `1`, `2`, `3`… in Moraff's World, or `21`, `22`,
    `23`… in DotU — one file per character).
 3. Edit stats, items, spells, and flags.
@@ -108,7 +107,8 @@ Layout:
 - `dotu-tools/` — the reverse-engineering bundle: `HANDOFF.md` is the spec for the
   fan tools, with docs, static game data, regression fixtures, the Python
   reference implementation and the rendered game pictures.
-- `public/editor.html` — the legacy editor.
+- `src/lib/editor/` — the save editor: a typed field schema per game and a Svelte
+  component per field kind.
 
 Pushing `main` builds, tests and deploys to GitHub Pages.
 
