@@ -70,6 +70,16 @@
     chart.update();
   });
 
+  // A chart built while its tab is hidden ends up with a zero-sized canvas, and Chart.js
+  // does not measure the container again by itself once the tab is shown.
+  $effect(() => {
+    const watcher = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) chart?.resize();
+    });
+    watcher.observe(canvas);
+    return () => watcher.disconnect();
+  });
+
   $effect(() => () => {
     chart?.destroy();
     chart = undefined;
