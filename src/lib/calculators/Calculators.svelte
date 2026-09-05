@@ -1,17 +1,19 @@
 <script lang="ts">
   import './calculators.css';
+  import CombatCalculator from './CombatCalculator.svelte';
   import DropCalculator from './DropCalculator.svelte';
   import EconomyCalculator from './EconomyCalculator.svelte';
   import ExperiencePlanner from './ExperiencePlanner.svelte';
   import LevelUpCalculator from './LevelUpCalculator.svelte';
 
-  type Chosen = 'experience' | 'drops' | 'economy' | 'levelup';
+  type Chosen = 'experience' | 'drops' | 'economy' | 'levelup' | 'combat';
 
   const entries: { id: Chosen; label: string }[] = [
     { id: 'experience', label: 'Experience' },
     { id: 'drops', label: 'Drops' },
     { id: 'economy', label: 'Economy' },
     { id: 'levelup', label: 'Level-up' },
+    { id: 'combat', label: 'Combat' },
   ];
 
   let chosen = $state<Chosen>('experience');
@@ -35,6 +37,9 @@
   </div>
   <div class="body" class:hidden={chosen !== 'levelup'}>
     <LevelUpCalculator />
+  </div>
+  <div class="body" class:hidden={chosen !== 'combat'}>
+    <CombatCalculator />
   </div>
 </div>
 

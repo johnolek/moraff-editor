@@ -12,14 +12,17 @@
     floor: number;
     /** What the floor is worth before the random nudge; typed directly for a built-in. */
     baseLevel: number;
+    /** Lets the level be typed for any monster, not just a built-in. */
+    freeLevel?: boolean;
   }
 
-  let { entry, module = $bindable(), floor = $bindable(), baseLevel = $bindable() }: Props = $props();
+  let { entry, module = $bindable(), floor = $bindable(), baseLevel = $bindable(), freeLevel = false }: Props = $props();
 
   const modules = $derived(allowedModules(entry));
   const floors = $derived(allowedFloors(entry, module));
-  // Only built-ins are stocked deep enough for a level the module and floor cannot reach.
-  const levelIsFree = $derived(entry.origin.kind === 'builtin');
+  // Only built-ins are stocked deep enough for a level the module and floor cannot reach,
+  // unless the caller wants the level typed whatever the monster is.
+  const levelIsFree = $derived(freeLevel || entry.origin.kind === 'builtin');
 
   function pickModule(event: Event) {
     module = Number((event.currentTarget as HTMLSelectElement).value);
