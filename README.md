@@ -1,11 +1,18 @@
-# Moraff Save Editor
+# Moraff Tools
 
-A single-file, browser-based character editor for **Moraff's World** and
-**Dungeons of the Unforgiven**. Everything runs locally — no data is uploaded.
+Browser tools for **Moraff's World** and **Moraff's Dungeons of the Unforgiven**
+(DotU). Everything runs locally in the page; no data is uploaded.
 
-## Usage
+Live at <https://johnolek.github.io/moraffs-world-and-dungeons-of-the-unforgiven-save-editor/>.
+The build is a single self-contained HTML file, so it also works opened straight
+from disk.
 
-1. Open `index.html` in a browser.
+## Save editor
+
+Currently the original single-file editor, served at `editor.html`, until it is
+ported into the app.
+
+1. Open it in a browser.
 2. Upload your save file (named `1`, `2`, `3`… in Moraff's World, or `21`, `22`,
    `23`… in DotU — one file per character).
 3. Edit stats, items, spells, and flags.
@@ -14,9 +21,9 @@ A single-file, browser-based character editor for **Moraff's World** and
 **Back up your saves first.** Provided as-is, with no guarantee it works for
 everything.
 
-## What you can edit
+### What you can edit
 
-### Moraff's World
+#### Moraff's World
 
 - **Identity** — character name, race, gender, class
 - **Level & Experience** — player level, experience points
@@ -37,7 +44,7 @@ everything.
 - **Spellbook / Scrolls / Wands / Papers** — permanent, preparation, wizard,
   and priest spell lists
 
-### Dungeons of the Unforgiven
+#### Dungeons of the Unforgiven
 
 - **Identity** — character name, race, gender, class
 - **Level & Experience** — player level, experience points
@@ -64,8 +71,36 @@ everything.
   and priest spell lists
 - **Misc** — difficulty, fill HP/SP on load
 
+## Development
+
+Svelte 5, TypeScript, Vite and Vitest, managed with pnpm.
+
+```bash
+pnpm install
+pnpm dev          # dev server
+pnpm test         # unit tests
+pnpm check        # svelte-check / TypeScript
+pnpm build        # dist/index.html, one self-contained file
+```
+
+Layout:
+
+- `src/lib/game/` — the DotU dungeon generator and file parsers, verbatim copies
+  of `dotu-tools/reference/`. A test keeps them byte-identical; change the bundle
+  first, then copy.
+- `dotu-tools/` — the reverse-engineering bundle: `HANDOFF.md` is the spec for the
+  fan tools, with docs, static game data, regression fixtures, the Python
+  reference implementation and the rendered game pictures.
+- `public/editor.html` — the legacy editor.
+
+Pushing `main` builds, tests and deploys to GitHub Pages.
+
 ## Credits
 
 The Dungeons of the Unforgiven character file format was reverse engineered and
 documented by **Spectere** and **Bag of Magic Food** — see the
 [DOS Game Modding Wiki](https://moddingwiki.shikadi.net/wiki/Dungeons_of_the_Unforgiven_Player_Character).
+
+The dungeon generator, monster and drop mechanics, and file formats in
+`dotu-tools/` were recovered from `unf.exe` and verified against real explored-map
+files; see `dotu-tools/docs/METHOD.md`.
