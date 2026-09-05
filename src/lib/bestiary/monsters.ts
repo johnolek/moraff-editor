@@ -221,6 +221,11 @@ const BREATH_ELEMENTS = ['fire', 'ice', 'acid', 'disease', 'poison'];
 
 const PUFFBALL_SPECIAL = 6;
 
+/** Puffballs change one of your stats when they hit you and are worth no experience. */
+export function isPuffball(entry: MonsterEntry): boolean {
+  return entry.special === PUFFBALL_SPECIAL;
+}
+
 /** What the monster does to you beyond its ordinary attack. */
 export function describeEffects(entry: MonsterEntry): string[] {
   const lines: string[] = [];
