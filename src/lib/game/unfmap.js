@@ -151,10 +151,12 @@ export class Dungeon {
         sq.ladder = 0; sq.chute = 0; sq.trapdoor = -1; sq.town = 0;
         if (!sq.solid) {
           sq.ladder = this.ladder(x, y, level, dungeon);
-          if (level === 0) {
-            sq.town = this.townFeature(x, y, dungeon);
-          } else {
-            if (sq.ladder === 0) {
+          // The game checks the ladder first and only asks about buildings, trap doors and
+          // chutes on squares without one (drawsquare 3000:87de, movecontrol 2000:c308).
+          if (sq.ladder === 0) {
+            if (level === 0) {
+              sq.town = this.townFeature(x, y, dungeon);
+            } else {
               sq.trapdoor = this.trapdoor(x, y, level, dungeon);
               const c = this.chute(x, y, level, dungeon);
               sq.chute = c !== level ? c : 0;

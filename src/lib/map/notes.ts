@@ -16,9 +16,10 @@ export function dungeonLookup(dungeon: Dungeon, moduleIndex: number): FloorLooku
       const square: Square = { ...dungeon.sides(x, y, level, moduleIndex), solid: dungeon.solid(x, y, level, moduleIndex), ladder: 0, chute: 0, trapdoor: -1, town: 0 };
       if (square.solid) return square;
       square.ladder = dungeon.ladder(x, y, level, moduleIndex);
+      if (square.ladder !== 0) return square;
       if (level === 0) {
         square.town = dungeon.townFeature(x, y, moduleIndex);
-      } else if (square.ladder === 0) {
+      } else {
         square.trapdoor = dungeon.trapdoor(x, y, level, moduleIndex);
         const chute = dungeon.chute(x, y, level, moduleIndex);
         square.chute = chute !== level ? chute : 0;
