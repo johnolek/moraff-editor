@@ -19,7 +19,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = palette.background;
     ctx.fillRect(0, 0, edge, edge);
-    drawSquare(ctx, sample, 2, 2, SIZE, 0);
+    drawSquare(ctx, sample, 2, 2, SIZE, SIZE, 0);
   });
 </script>
 

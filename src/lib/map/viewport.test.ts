@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { CELL_SIZES, centerOn, ensureVisible, fitFloor, isVisible, pan, squareAt, zoomStep, type Viewport } from './viewport';
+import {
+  MAX_CELL,
+  MIN_CELL,
+  centerOn,
+  ensureVisible,
+  fitFloor,
+  isVisible,
+  pan,
+  squareAt,
+  wheelZoomFactor,
+  zoomBy,
+  zoomStep,
+  type Viewport,
+} from './viewport';
 
 const view: Viewport = { cell: 10, originX: 100, originY: 50 };
 
@@ -20,39 +33,73 @@ describe('squareAt', () => {
 });
 
 describe('pan', () => {
-  it('moves the origin by whole pixels', () => {
-    expect(pan(view, 5.4, -3.6)).toEqual({ cell: 10, originX: 105, originY: 46 });
+  it('moves the origin', () => {
+    expect(pan(view, 5.5, -3)).toEqual({ cell: 10, originX: 105.5, originY: 47 });
   });
 });
 
-describe('zoomStep', () => {
-  it('keeps the square under the pointer in place', () => {
+describe('zoomBy and zoomStep', () => {
+  it('keeps the map point under the pointer in place', () => {
     const px = 355;
     const py = 275;
-    const zoomed = zoomStep(view, 1, px, py);
-    expect(zoomed.cell).toBe(12);
-    expect(squareAt(zoomed, px, py)).toEqual(squareAt(view, px, py));
-    const back = zoomStep(zoomed, -1, px, py);
-    expect(back.cell).toBe(10);
-    expect(squareAt(back, px, py)).toEqual(squareAt(view, px, py));
+    const zoomed = zoomBy(view, 1.37, px, py);
+    expect(zoomed.cell).toBeCloseTo(13.7);
+    const mapXBefore = (px - view.originX) / view.cell;
+    const mapXAfter = (px - zoomed.originX) / zoomed.cell;
+    expect(mapXAfter).toBeCloseTo(mapXBefore);
+    const mapYBefore = (py - view.originY) / view.cell;
+    const mapYAfter = (py - zoomed.originY) / zoomed.cell;
+    expect(mapYAfter).toBeCloseTo(mapYBefore);
   });
 
-  it('stops at the smallest and largest cell sizes', () => {
-    const smallest = { cell: CELL_SIZES[0], originX: 0, originY: 0 };
-    expect(zoomStep(smallest, -1, 0, 0).cell).toBe(CELL_SIZES[0]);
-    const largest = { cell: CELL_SIZES[CELL_SIZES.length - 1], originX: 0, originY: 0 };
-    expect(zoomStep(largest, 1, 0, 0).cell).toBe(largest.cell);
+  it('steps by a fixed factor', () => {
+    expect(zoomStep(view, 1, 0, 0).cell).toBeCloseTo(12.5);
+    expect(zoomStep(view, -1, 0, 0).cell).toBeCloseTo(8);
+  });
+
+  it('clamps to the cell size range and returns the same view at the limits', () => {
+    const smallest = { cell: MIN_CELL, originX: 0, originY: 0 };
+    expect(zoomBy(smallest, 0.5, 0, 0)).toBe(smallest);
+    const largest = { cell: MAX_CELL, originX: 0, originY: 0 };
+    expect(zoomBy(largest, 2, 0, 0)).toBe(largest);
+    expect(zoomBy(view, 100, 0, 0).cell).toBe(MAX_CELL);
+  });
+});
+
+describe('wheelZoomFactor', () => {
+  it('zooms out on positive deltas and in on negative ones', () => {
+    expect(wheelZoomFactor(100, 0)).toBeCloseTo(0.8187);
+    expect(wheelZoomFactor(-100, 0)).toBeCloseTo(1.2214);
+  });
+
+  it('treats a trackpad tick as a small step', () => {
+    expect(wheelZoomFactor(3, 0)).toBeCloseTo(0.994);
+  });
+
+  it('scales line and page delta modes to pixels', () => {
+    expect(wheelZoomFactor(3, 1)).toBeCloseTo(wheelZoomFactor(48, 0));
+    expect(wheelZoomFactor(1, 2)).toBeCloseTo(wheelZoomFactor(400, 0));
   });
 });
 
 describe('fitFloor', () => {
-  it('picks the largest cell size that fits and centres the floor', () => {
-    expect(fitFloor(1000, 1400)).toEqual({ cell: 12, originX: 20, originY: 40 });
-    expect(fitFloor(2000, 700)).toEqual({ cell: 6, originX: 760, originY: 20 });
+  it('fits the whole floor by default, centred', () => {
+    const fitted = fitFloor(1000, 1400);
+    expect(fitted.cell).toBeCloseTo(998 / 80);
+    expect(fitted.originX).toBeCloseTo(1);
+    expect(fitted.originY).toBeCloseTo((1400 - 110 * fitted.cell) / 2);
+  });
+
+  it('fits and centres the given bounds', () => {
+    const fitted = fitFloor(800, 600, { minX: 10, minY: 20, maxX: 49, maxY: 39 });
+    expect(fitted.cell).toBeCloseTo(798 / 40);
+    // The bounds' centre (square 30, 30) sits at the canvas centre.
+    expect(fitted.originX + 30 * fitted.cell).toBeCloseTo(400);
+    expect(fitted.originY + 30 * fitted.cell).toBeCloseTo(300);
   });
 
   it('never goes below the smallest cell size', () => {
-    expect(fitFloor(100, 100).cell).toBe(CELL_SIZES[0]);
+    expect(fitFloor(100, 100).cell).toBe(MIN_CELL);
   });
 });
 

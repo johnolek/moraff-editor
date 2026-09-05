@@ -1,12 +1,8 @@
 import { HEIGHT, WIDTH, type Side, type Square } from '../game/unfmap.js';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
+import type { Viewport } from './viewport';
 
-export interface DrawOptions {
-  /** Pixel size of one square. */
-  cell: number;
-  /** Canvas position of the top-left corner of square (0, 0). */
-  originX: number;
-  originY: number;
+export interface DrawOptions extends Viewport {
   /** Canvas size in CSS pixels, used to skip squares outside the view. */
   width: number;
   height: number;
@@ -19,7 +15,8 @@ export const LABEL_MIN_CELL = 20;
 
 /** Draws a whole floor the way the game's expanded map does: open squares filled black
  *  with white sides, doors barred, ladders and trap doors as yellow diagonals, chutes as
- *  a blue star, town buildings as coloured squares. Rock is left as background. */
+ *  a blue star, town buildings as coloured squares. Rock is left as background.
+ *  Square edges are snapped to whole pixels so lines stay crisp at any zoom. */
 export function drawFloor(ctx: CanvasRenderingContext2D, rows: Square[][], options: DrawOptions): void {
   const { cell, originX, originY, width, height } = options;
   ctx.fillStyle = palette.background;
@@ -32,75 +29,78 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: Square[][], optio
 
   ctx.lineWidth = 1;
   for (let y = firstY; y <= lastY; y++) {
+    const y0 = Math.round(originY + y * cell);
+    const h = Math.round(originY + (y + 1) * cell) - y0;
     for (let x = firstX; x <= lastX; x++) {
       const square = rows[y][x];
       if (square.solid) continue;
-      const x0 = originX + x * cell;
-      const y0 = originY + y * cell;
-      drawSquare(ctx, square, x0, y0, cell, options.floor);
+      const x0 = Math.round(originX + x * cell);
+      const w = Math.round(originX + (x + 1) * cell) - x0;
+      drawSquare(ctx, square, x0, y0, w, h, options.floor);
     }
   }
 }
 
-export function drawSquare(ctx: CanvasRenderingContext2D, square: Square, x0: number, y0: number, cell: number, floor: number): void {
+/** One square whose top-left corner pixel is (x0, y0) and whose sides are `w` and `h` apart. */
+export function drawSquare(ctx: CanvasRenderingContext2D, square: Square, x0: number, y0: number, w: number, h: number, floor: number): void {
   ctx.fillStyle = squareFill(square)!;
-  ctx.fillRect(x0 + 1, y0 + 1, cell, cell);
-  drawSide(ctx, square.w, x0, y0, cell, true);
-  drawSide(ctx, square.n, x0, y0, cell, false);
-  drawSide(ctx, square.e, x0 + cell, y0, cell, true);
-  drawSide(ctx, square.s, x0, y0 + cell, cell, false);
-  drawGlyph(ctx, square, x0, y0, cell, floor);
+  ctx.fillRect(x0 + 1, y0 + 1, w, h);
+  drawSide(ctx, square.w, x0, y0, h, true);
+  drawSide(ctx, square.n, x0, y0, w, false);
+  drawSide(ctx, square.e, x0 + w, y0, h, true);
+  drawSide(ctx, square.s, x0, y0 + h, w, false);
+  drawGlyph(ctx, square, x0, y0, w, h, floor);
 }
 
 /** One side, as draw_side does it: a line that stops one pixel short of both corners,
  *  and for doors a bar across the middle. `vertical` sides sit on the square's west edge,
- *  horizontal ones on its north edge. */
-function drawSide(ctx: CanvasRenderingContext2D, side: Side, x0: number, y0: number, cell: number, vertical: boolean): void {
+ *  horizontal ones on its north edge; `length` is the square's size along the side. */
+function drawSide(ctx: CanvasRenderingContext2D, side: Side, x0: number, y0: number, length: number, vertical: boolean): void {
   const stroke = sideStroke(side);
   if (!stroke) return;
   ctx.strokeStyle = stroke === 'teleporter' ? palette.teleporter : palette.line;
   ctx.setLineDash(stroke === 'secretDoor' ? [2, 2] : []);
-  if (vertical) line(ctx, x0, y0 + 1, x0, y0 + cell);
-  else line(ctx, x0 + 1, y0, x0 + cell, y0);
+  if (vertical) line(ctx, x0, y0 + 1, x0, y0 + length);
+  else line(ctx, x0 + 1, y0, x0 + length, y0);
   ctx.setLineDash([]);
-  if (stroke === 'door') drawDoorBar(ctx, x0, y0, cell, vertical);
+  if (stroke === 'door') drawDoorBar(ctx, x0, y0, length, vertical);
 }
 
-function drawDoorBar(ctx: CanvasRenderingContext2D, x0: number, y0: number, cell: number, vertical: boolean): void {
-  const mid = cell >> 1;
-  const reach = Math.trunc(cell / 3);
+function drawDoorBar(ctx: CanvasRenderingContext2D, x0: number, y0: number, length: number, vertical: boolean): void {
+  const mid = length >> 1;
+  const reach = Math.trunc(length / 3);
   ctx.strokeStyle = palette.line;
   if (vertical) {
     line(ctx, x0 - 1, y0 + mid, x0 + 2, y0 + mid);
-    if (cell > 7) {
+    if (length > 7) {
       line(ctx, x0 - reach, y0 + mid + 1, x0 + reach + 1, y0 + mid + 1);
       line(ctx, x0 - reach, y0 + mid - 1, x0 + reach + 1, y0 + mid - 1);
     }
   } else {
     line(ctx, x0 + mid, y0 - 1, x0 + mid, y0 + 2);
-    if (cell > 7) {
+    if (length > 7) {
       line(ctx, x0 + mid - 1, y0 - reach, x0 + mid - 1, y0 + reach + 1);
       line(ctx, x0 + mid + 1, y0 - reach, x0 + mid + 1, y0 + reach + 1);
     }
   }
 }
 
-function drawGlyph(ctx: CanvasRenderingContext2D, square: Square, x0: number, y0: number, cell: number, floor: number): void {
+function drawGlyph(ctx: CanvasRenderingContext2D, square: Square, x0: number, y0: number, w: number, h: number, floor: number): void {
   const glyph = squareGlyph(square);
   if (!glyph) return;
-  const x1 = x0 + cell + 1;
-  const y1 = y0 + cell + 1;
-  ctx.lineWidth = cell >= 16 ? 2 : 1;
+  const x1 = x0 + w + 1;
+  const y1 = y0 + h + 1;
+  const size = Math.min(w, h);
+  ctx.lineWidth = size >= 16 ? 2 : 1;
   ctx.strokeStyle = glyph === 'chute' ? palette.chute : palette.ladder;
   if (glyph === 'chute') {
-    const mid = (cell >> 1) + 1;
-    line(ctx, x0 + mid, y0 + 1, x0 + mid, y1);
-    line(ctx, x0 + 1, y0 + mid, x1, y0 + mid);
+    line(ctx, x0 + (w >> 1) + 1, y0 + 1, x0 + (w >> 1) + 1, y1);
+    line(ctx, x0 + 1, y0 + (h >> 1) + 1, x1, y0 + (h >> 1) + 1);
   }
   if (glyph !== 'up') diagonal(ctx, x0 + 1, y0 + 1, x1, y1);
   if (glyph !== 'down') diagonal(ctx, x0 + 1, y1, x1, y0 + 1);
   ctx.lineWidth = 1;
-  if (cell >= LABEL_MIN_CELL) drawLabel(ctx, String(glyphDestination(square, floor)), x0 + 1 + cell / 2, y0 + 1 + cell / 2, cell);
+  if (size >= LABEL_MIN_CELL) drawLabel(ctx, String(glyphDestination(square, floor)), x0 + 1 + w / 2, y0 + 1 + h / 2, size);
 }
 
 /** Floor a ladder, chute or trap door square leads to. */
@@ -110,8 +110,8 @@ export function glyphDestination(square: Square, floor: number): number {
   return square.chute;
 }
 
-function drawLabel(ctx: CanvasRenderingContext2D, text: string, cx: number, cy: number, cell: number): void {
-  ctx.font = `bold ${Math.round(cell * 0.42)}px ui-monospace, Menlo, monospace`;
+function drawLabel(ctx: CanvasRenderingContext2D, text: string, cx: number, cy: number, size: number): void {
+  ctx.font = `bold ${Math.round(size * 0.42)}px ui-monospace, Menlo, monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.lineJoin = 'round';
@@ -143,19 +143,20 @@ function diagonal(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: num
   ctx.stroke();
 }
 
+/** Pixel rectangle of a square: its top-left corner and the distance to the next square's corner. */
+export function squareRect(view: Viewport, x: number, y: number): { x0: number; y0: number; w: number; h: number } {
+  const x0 = Math.round(view.originX + x * view.cell);
+  const y0 = Math.round(view.originY + y * view.cell);
+  return { x0, y0, w: Math.round(view.originX + (x + 1) * view.cell) - x0, h: Math.round(view.originY + (y + 1) * view.cell) - y0 };
+}
+
 /** Outline of one square, for the cursor and the landing highlight. */
-export function drawOutline(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  view: { cell: number; originX: number; originY: number },
-  lineWidth: number,
-  colour: string,
-): void {
+export function drawOutline(ctx: CanvasRenderingContext2D, x: number, y: number, view: Viewport, lineWidth: number, colour: string): void {
+  const { x0, y0, w, h } = squareRect(view, x, y);
   const inset = lineWidth / 2;
   ctx.lineWidth = lineWidth;
   ctx.strokeStyle = colour;
   ctx.setLineDash([]);
-  ctx.strokeRect(view.originX + x * view.cell + inset, view.originY + y * view.cell + inset, view.cell + 1 - lineWidth, view.cell + 1 - lineWidth);
+  ctx.strokeRect(x0 + inset, y0 + inset, w + 1 - lineWidth, h + 1 - lineWidth);
   ctx.lineWidth = 1;
 }

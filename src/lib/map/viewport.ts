@@ -1,9 +1,12 @@
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
 
-/** Zoom levels are whole pixel sizes per square so every line lands on a pixel. */
-export const CELL_SIZES = [4, 6, 8, 10, 12, 16, 20, 24, 32, 48, 64];
+export const MIN_CELL = 4;
+export const MAX_CELL = 64;
+/** Factor per zoom button press or keyboard step. */
+export const ZOOM_STEP = 1.25;
 
 export interface Viewport {
+  /** Pixels per square; fractional while zooming, the renderer snaps each edge to a pixel. */
   cell: number;
   /** Canvas position of the top-left corner of square (0, 0). */
   originX: number;
@@ -15,6 +18,16 @@ export interface Point {
   y: number;
 }
 
+/** Inclusive square coordinates of the area worth showing. */
+export interface Bounds {
+  minX: number;
+  minY: number;
+  maxX: number;
+  maxY: number;
+}
+
+export const FULL_FLOOR: Bounds = { minX: 0, minY: 0, maxX: WIDTH - 1, maxY: HEIGHT - 1 };
+
 export function squareAt(view: Viewport, px: number, py: number): Point | null {
   const x = Math.floor((px - view.originX) / view.cell);
   const y = Math.floor((py - view.originY) / view.cell);
@@ -23,41 +36,49 @@ export function squareAt(view: Viewport, px: number, py: number): Point | null {
 }
 
 export function pan(view: Viewport, dx: number, dy: number): Viewport {
-  return { cell: view.cell, originX: Math.round(view.originX + dx), originY: Math.round(view.originY + dy) };
+  return { cell: view.cell, originX: view.originX + dx, originY: view.originY + dy };
 }
 
-/** Next larger (+1) or smaller (-1) cell size, keeping the map point under (px, py) in place. */
-export function zoomStep(view: Viewport, direction: 1 | -1, px: number, py: number): Viewport {
-  const index = CELL_SIZES.indexOf(view.cell);
-  const next = CELL_SIZES[Math.min(CELL_SIZES.length - 1, Math.max(0, index + direction))];
-  return zoomTo(view, next, px, py);
-}
-
-export function zoomTo(view: Viewport, cell: number, px: number, py: number): Viewport {
+/** Scales the cell size by `factor`, keeping the map point under (px, py) in place. */
+export function zoomBy(view: Viewport, factor: number, px: number, py: number): Viewport {
+  const cell = Math.min(MAX_CELL, Math.max(MIN_CELL, view.cell * factor));
+  if (cell === view.cell) return view;
   const ratio = cell / view.cell;
   return {
     cell,
-    originX: Math.round(px - (px - view.originX) * ratio),
-    originY: Math.round(py - (py - view.originY) * ratio),
+    originX: px - (px - view.originX) * ratio,
+    originY: py - (py - view.originY) * ratio,
   };
 }
 
-/** Largest cell size at which the whole floor fits the canvas, centred. */
-export function fitFloor(width: number, height: number): Viewport {
-  const fitting = CELL_SIZES.filter((cell) => WIDTH * cell + 2 <= width && HEIGHT * cell + 2 <= height);
-  const cell = fitting.length ? fitting[fitting.length - 1] : CELL_SIZES[0];
+export function zoomStep(view: Viewport, direction: 1 | -1, px: number, py: number): Viewport {
+  return zoomBy(view, ZOOM_STEP ** direction, px, py);
+}
+
+/** Zoom factor for one wheel event. A mouse notch (100px) is about 18%; trackpads send
+ *  many small deltas, so the zoom follows the fingers. */
+export function wheelZoomFactor(deltaY: number, deltaMode: number): number {
+  const pixels = deltaMode === 1 ? deltaY * 16 : deltaMode === 2 ? deltaY * 400 : deltaY;
+  return Math.exp(-pixels * 0.002);
+}
+
+/** Largest cell size at which `bounds` fits the canvas, centred. */
+export function fitFloor(width: number, height: number, bounds: Bounds = FULL_FLOOR): Viewport {
+  const spanX = bounds.maxX - bounds.minX + 1;
+  const spanY = bounds.maxY - bounds.minY + 1;
+  const cell = Math.min(MAX_CELL, Math.max(MIN_CELL, Math.min((width - 2) / spanX, (height - 2) / spanY)));
   return {
     cell,
-    originX: Math.round((width - WIDTH * cell) / 2),
-    originY: Math.round((height - HEIGHT * cell) / 2),
+    originX: (width - spanX * cell) / 2 - bounds.minX * cell,
+    originY: (height - spanY * cell) / 2 - bounds.minY * cell,
   };
 }
 
 export function centerOn(view: Viewport, square: Point, width: number, height: number): Viewport {
   return {
     cell: view.cell,
-    originX: Math.round(width / 2 - (square.x + 0.5) * view.cell),
-    originY: Math.round(height / 2 - (square.y + 0.5) * view.cell),
+    originX: width / 2 - (square.x + 0.5) * view.cell,
+    originY: height / 2 - (square.y + 0.5) * view.cell,
   };
 }
 
