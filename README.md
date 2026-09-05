@@ -7,6 +7,23 @@ Live at <https://johnolek.github.io/moraffs-world-and-dungeons-of-the-unforgiven
 The build is a single self-contained HTML file, so it also works opened straight
 from disk.
 
+## DotU map explorer
+
+Every floor of every module, computed on the fly from the dungeon generator
+recovered from `unf.exe`, drawn the way the game's own expanded map draws it:
+open squares black on dark red, white sides with door bars, yellow diagonals for
+ladders and trap doors, a blue star for chutes, coloured squares for the town's
+store, temple, bank and inn. Secret doors are dashed and module teleporters
+magenta, which the game never shows.
+
+- Pick a module and floor; the header names the section and its boss floor.
+- Drag to pan, scroll to zoom, point at a square to see its sides, its feature
+  and where it leads.
+- Click a ladder, chute or trap door to go to the floor it leads to; the landing
+  square is marked.
+- Arrow keys move the cursor, PgUp/PgDn change floor, Enter follows.
+- Export the floor as a PNG.
+
 ## Save editor
 
 Currently the original single-file editor, served at `editor.html`, until it is
