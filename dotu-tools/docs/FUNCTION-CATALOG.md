@@ -369,7 +369,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:9417 | view_battle_spells | 1184 | lists active battle spells | WORLD (UNF.CPP) | movecontrol, cast_a_spell, FUN_3000_caac |
 | 2000:98b7 | lose_item | 860 | an item is destroyed/lost message | WORLD (UNF.CPP) | movecontrol |
 | 2000:9c13 | quit_game | 167 | Q: save monster map, maps, player; prints the decoded 'PLEASE DO NOT DISTRIBUTE' line; exit | WORLD (UNF.CPP) | movecontrol |
-| 2000:9cba | trapdoor | 87 | trap door destination for a square | WORLD (UNF.CPP) | movecontrol, draw_map_square, drawsquare |
+| 2000:9cba | town_features | 87 | store/temple/bank/inn at (x, y) | WORLD (UNF.CPP) | movecontrol, draw_map_square, drawsquare |
 | 2000:9d17 | FUN_2000_9d17 | 843 |  | WORLD (UNF.CPP) | movecontrol |
 | 2000:a068 | FUN_2000_a068 | 92 |  | WORLD (UNF.CPP) | movecontrol |
 | 2000:a0c8 | check_engagement | 233 | monster in front of the player? | WORLD (UNF.CPP) | engagement_timing, attack_timing |
@@ -390,7 +390,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:ba3f | dig_hole | 624 | 'DIGGING... DIGGING...': dig through a wall/floor | WORLD (UNF.CPP) | movecontrol |
 | 2000:bcb6 | FUN_2000_bcb6 | 47 |  | WORLD (UNF.CPP) | movecontrol |
 | 2000:bce5 | FUN_2000_bce5 | 77 |  | WORLD (UNF.CPP) | movecontrol |
-| 2000:bd32 | town_features | 112 | store/temple/bank/inn at (x, y) | WORLD (UNF.CPP) | movecontrol, drawsquare |
+| 2000:bd32 | trapdoor | 112 | trap door destination for a square | WORLD (UNF.CPP) | movecontrol, drawsquare |
 | 2000:bda6 | trapdoor_dest | 145 | landing square of a trap door | WORLD (UNF.CPP) | movecontrol |
 | 2000:be3d | explain_trapdoor | 334 | the trap door explanation box | WORLD (UNF.CPP) | movecontrol |
 | 2000:bf91 | FUN_2000_bf91 | 216 |  | WORLD (UNF.CPP) | movecontrol |
