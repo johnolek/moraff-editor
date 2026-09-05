@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
-import type { Square } from '../game/unfmap.js';
-import { randomOpenSquare } from './relocate';
+import { HEIGHT, WIDTH, type Square } from '../game/unfmap.js';
+import { randomOpenSquare, RELOCATE_COLUMNS, RELOCATE_ROWS } from './relocate';
 
+/** A full-size floor that is rock everywhere except the given squares. */
 function grid(openSquares: [number, number][]): Square[][] {
   const rows: Square[][] = [];
-  for (let y = 0; y < 4; y++) {
+  for (let y = 0; y < HEIGHT; y++) {
     rows.push([]);
-    for (let x = 0; x < 4; x++) {
+    for (let x = 0; x < WIDTH; x++) {
       const open = openSquares.some(([ox, oy]) => ox === x && oy === y);
       rows[y].push({ n: 3, s: 3, w: 3, e: 3, solid: !open, ladder: 0, chute: 0, trapdoor: -1, town: 0 });
     }
@@ -20,13 +21,26 @@ function sequence(values: number[]): () => number {
   return () => values[next++];
 }
 
+/** A random value that makes floor(value * range) come out as `wanted`. */
+const draw = (wanted: number, range: number) => (wanted + 0.5) / range;
+
 describe('randomOpenSquare', () => {
   it('takes x from the first draw and y from the second', () => {
-    expect(randomOpenSquare(grid([[2, 1]]), sequence([0.5, 0.25]))).toEqual({ x: 2, y: 1 });
+    expect(randomOpenSquare(grid([[2, 1]]), sequence([draw(2, RELOCATE_COLUMNS), draw(1, RELOCATE_ROWS)]))).toEqual({ x: 2, y: 1 });
   });
 
   it('draws again while the square is rock', () => {
-    expect(randomOpenSquare(grid([[3, 3]]), sequence([0, 0, 0.5, 0.5, 0.99, 0.99]))).toEqual({ x: 3, y: 3 });
+    const rnd = sequence([draw(0, RELOCATE_COLUMNS), draw(0, RELOCATE_ROWS), draw(40, RELOCATE_COLUMNS), draw(50, RELOCATE_ROWS)]);
+    expect(randomOpenSquare(grid([[40, 50]]), rnd)).toEqual({ x: 40, y: 50 });
+  });
+
+  it('never lands on column 79 or the rows the game cannot walk into', () => {
+    const everywhere = grid([]).map((row) => row.map((square) => ({ ...square, solid: false })));
+    for (let i = 0; i < 500; i++) {
+      const { x, y } = randomOpenSquare(everywhere, Math.random);
+      expect(x).toBeLessThan(RELOCATE_COLUMNS);
+      expect(y).toBeLessThan(RELOCATE_ROWS);
+    }
   });
 
   it('only ever lands on an open square of a town', () => {
