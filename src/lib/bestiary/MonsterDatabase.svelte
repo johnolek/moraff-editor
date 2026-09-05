@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from 'svelte';
+  import { app } from '../app-state.svelte';
   import MonsterDetail from './MonsterDetail.svelte';
   import MonsterList from './MonsterList.svelte';
   import { monsterGroups } from './monsters';
@@ -20,12 +22,25 @@
 
   const selectedGroup = $derived(groups.find((group) => group.monsters.some((m) => m.id === selectedId))!);
   const selected = $derived(selectedGroup.monsters.find((m) => m.id === selectedId)!);
+
+  let scroll: HTMLDivElement;
+
+  // Another tab can ask for a monster by id; the search box is cleared so the list is sure to
+  // show it.
+  $effect(() => {
+    const id = app.requestedMonsterId;
+    if (!id) return;
+    app.requestedMonsterId = null;
+    search = '';
+    selectedId = id;
+    tick().then(() => scroll.querySelector('button.selected')?.scrollIntoView({ block: 'center' }));
+  });
 </script>
 
 <div class="database">
   <div class="list">
     <input type="search" placeholder="Search monsters" bind:value={search} />
-    <div class="scroll">
+    <div class="scroll" bind:this={scroll}>
       <MonsterList groups={matches} {selectedId} onselect={(entry) => (selectedId = entry.id)} />
     </div>
   </div>

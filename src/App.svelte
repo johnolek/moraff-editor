@@ -1,11 +1,9 @@
 <script lang="ts">
+  import { app, type Tab } from './lib/app-state.svelte';
   import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
-
-  type Tab = 'map' | 'editor' | 'monsters';
-  let tab = $state<Tab>('map');
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'map', label: 'DotU Map' },
@@ -19,18 +17,18 @@
     <h1><PixelText text="Moraff Tools" scale={2} /></h1>
     <nav>
       {#each tabs as entry}
-        <button type="button" class="tab" class:active={tab === entry.id} onclick={() => (tab = entry.id)}>{entry.label}</button>
+        <button type="button" class="tab" class:active={app.tab === entry.id} onclick={() => (app.tab = entry.id)}>{entry.label}</button>
       {/each}
     </nav>
   </header>
   <!-- Both tabs stay mounted so the map view and the loaded save survive switching. -->
-  <main class:hidden={tab !== 'map'}>
+  <main class:hidden={app.tab !== 'map'}>
     <MapExplorer />
   </main>
-  <main class:hidden={tab !== 'editor'}>
+  <main class:hidden={app.tab !== 'editor'}>
     <SaveEditor />
   </main>
-  <main class:hidden={tab !== 'monsters'}>
+  <main class:hidden={app.tab !== 'monsters'}>
     <MonsterDatabase />
   </main>
 </div>
