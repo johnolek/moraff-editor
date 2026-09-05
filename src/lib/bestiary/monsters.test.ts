@@ -6,11 +6,13 @@ import {
   allMonsters,
   allowedFloors,
   allowedModules,
+  describeEffects,
   floorsOf,
   homeFloor,
   monsterDescriptions,
   monsterGroups,
   sectionFloors,
+  stockingOdds,
   whereItAppears,
 } from './monsters';
 
@@ -137,5 +139,78 @@ describe('whereItAppears', () => {
     expect(whereItAppears(ogeroth)).toEqual({ kind: 'boss', ranges: [{ module: 4, from: 100, to: 100 }] });
     expect(allowedFloors(ogeroth, 4)).toEqual([100]);
     expect(homeFloor(ogeroth)).toEqual({ module: 4, floor: 100 });
+  });
+});
+
+describe('describeEffects', () => {
+  const effectsOf = (name: string) => describeEffects(allMonsters().find((m) => m.name === name)!);
+
+  it('says nothing about a plain monster', () => {
+    expect(effectsOf('Giant Garbage Can')).toEqual([]);
+  });
+
+  it('reports the stat a puffball gives or takes, and that it is worth nothing', () => {
+    expect(effectsOf('Lt. Blue Puffball')).toEqual([
+      '+1 Strength when it hits you',
+      'Vanishes when it hits you, and is worth no experience',
+    ]);
+    expect(effectsOf('Dk. Grey Puffball')[0]).toBe('-1 Luck when it hits you');
+  });
+
+  it('reports poison and disease', () => {
+    expect(effectsOf('Poison Flask')).toEqual(['Poisons you when it hits you']);
+    expect(effectsOf('Flask Of Disease')).toEqual(['Gives you a disease when it hits you']);
+  });
+
+  it('reports level drain, experience drain and breath', () => {
+    expect(effectsOf('Were Rat-Bat')).toEqual(['Drains 1 level when it hits you']);
+    expect(effectsOf('Sustrontima')).toEqual(['Drains 30 experience when it hits you']);
+    expect(effectsOf('Hydra')).toEqual(['Breathes fire instead of striking half the time']);
+    expect(effectsOf('Rotten Swamp Plant')).toEqual([
+      'Drains 2 levels when it hits you',
+      '-1 Intelligence when it hits you',
+    ]);
+  });
+
+  it('reports what a Shadow boss is immune to', () => {
+    expect(effectsOf('Shadow Evil God')).toEqual([
+      '-1 Strength when it hits you',
+      'Breathes ice instead of striking half the time',
+      'Immune to Sleep, Go Away, Autokill, Drain Monster and grenades',
+    ]);
+  });
+});
+
+describe('stockingOdds', () => {
+  const oddsOf = (name: string) => stockingOdds(allMonsters().find((m) => m.name === name)!);
+
+  it('splits 1 in 20 over the twelve puffballs', () => {
+    expect(oddsOf('White Puffball')).toBeCloseTo(1 / 240, 10);
+  });
+
+  it('splits the blocker roll between the garbage can and the ball', () => {
+    expect(oddsOf('Giant Garbage Can')).toBeCloseTo((19 / 20) * (1 / 7) / 2, 10);
+    expect(oddsOf('Giant Ball')).toBe(oddsOf('Giant Garbage Can'));
+  });
+
+  it('splits the poison and disease roll over the eight built-ins', () => {
+    expect(oddsOf('Chemical Bomb')).toBeCloseTo((19 / 20) * (6 / 7) * (14 / 15) * (1 / 12) / 8, 10);
+  });
+
+  it('gives the section its level drainer and three regulars', () => {
+    expect(oddsOf('Were Rat-Bat')).toBeCloseTo((19 / 20) * (6 / 7) * (1 / 15), 10);
+    expect(oddsOf('Flying Spectra')).toBeCloseTo((19 / 20) * (6 / 7) * (14 / 15) * (11 / 12) / 3, 10);
+  });
+
+  it('does not roll for a Shadow boss', () => {
+    expect(oddsOf('Shadow Vulture')).toBe(null);
+  });
+
+  it('adds up to 1 over every monster of a section', () => {
+    const section = allMonsters().filter(
+      (m) => m.origin.kind === 'builtin' || (m.origin.section === 3 && !m.isBoss),
+    );
+    const total = section.reduce((sum, m) => sum + (stockingOdds(m) ?? 0), 0);
+    expect(total).toBeCloseTo(1, 10);
   });
 });

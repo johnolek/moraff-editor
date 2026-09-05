@@ -1,4 +1,5 @@
 import data from '../game/dotu-data.json';
+import { MONSTER_TYPE_ODDS } from '../game/dotu-mech.js';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { MODULE_NUMERALS } from '../map/labels';
 
@@ -204,4 +205,52 @@ export function whereItAppears(entry: MonsterEntry): Appearance {
 
 export function floorsOf(range: FloorRange): number[] {
   return Array.from({ length: range.to - range.from + 1 }, (_, i) => range.from + i);
+}
+
+/** statDrain 1..6 and -1..-6 name the stat the monster gives or takes (RE notes 4.3, 6.4). */
+const DRAINED_STATS = ['Strength', 'Intelligence', 'Wisdom', 'Constitution', 'Agility', 'Luck'];
+
+/** breath 1..5 (RE notes 6.4); only fire and ice are used by any monster. */
+const BREATH_ELEMENTS = ['fire', 'ice', 'acid', 'disease', 'poison'];
+
+const PUFFBALL_SPECIAL = 6;
+
+/** What the monster does to you beyond its ordinary attack. */
+export function describeEffects(entry: MonsterEntry): string[] {
+  const lines: string[] = [];
+  if (entry.levelDrain > 0) {
+    lines.push(`Drains ${entry.levelDrain} level${entry.levelDrain === 1 ? '' : 's'} when it hits you`);
+  }
+  if (entry.levelDrain < 0) lines.push(`Drains ${-entry.levelDrain} experience when it hits you`);
+  if (entry.statDrain !== 0) {
+    const stat = DRAINED_STATS[Math.abs(entry.statDrain) - 1];
+    lines.push(`${entry.statDrain > 0 ? '+1' : '-1'} ${stat} when it hits you`);
+  }
+  if (entry.breath > 0) {
+    const element = BREATH_ELEMENTS[entry.breath - 1];
+    const extra = entry.breath === 3 ? ', which destroys your armor' : '';
+    lines.push(`Breathes ${element} instead of striking half the time${extra}`);
+  }
+  if (entry.special === 1) lines.push('Poisons you when it hits you');
+  if (entry.special === 2) lines.push('Gives you a disease when it hits you');
+  if (entry.special === PUFFBALL_SPECIAL) lines.push('Vanishes when it hits you, and is worth no experience');
+  if (entry.isBoss) lines.push('Immune to Sleep, Go Away, Autokill, Drain Monster and grenades');
+  return lines;
+}
+
+/**
+ * The chance a monster slot on one of the monster's floors is stocked with it; null for a
+ * Shadow boss, which takes the floor's first slot rather than being rolled for. The roll is
+ * 1/20 a puffball (12 equally likely), else 1/7 a blocker (garbage can or ball), else 1/15
+ * the section's level drainer, else 1/12 a poison or disease monster (8 equally likely),
+ * else one of the section's three regulars (FAQ v2.2 [GTPS], RE notes 4.1).
+ */
+export function stockingOdds(entry: MonsterEntry): number | null {
+  if (entry.origin.kind === 'builtin') {
+    if (entry.special === PUFFBALL_SPECIAL) return MONSTER_TYPE_ODDS.puffball / 12;
+    if (entry.special === 0) return MONSTER_TYPE_ODDS.blocker / 2;
+    return MONSTER_TYPE_ODDS.poisonDisease / 8;
+  }
+  if (entry.isBoss) return null;
+  return entry.origin.slot === 26 ? MONSTER_TYPE_ODDS.levelDrainer : MONSTER_TYPE_ODDS.sectionMonster / 3;
 }
