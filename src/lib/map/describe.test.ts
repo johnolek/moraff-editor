@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Square } from '../game/unfmap.js';
-import { compactSides, describeFeature, describeSide, describeSquare } from './describe';
+import { compactSides, describeFeature, describeNote, describeSide, describeSquare } from './describe';
 
 function square(overrides: Partial<Square> = {}): Square {
   return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
@@ -37,5 +37,13 @@ describe('describeSquare and compactSides', () => {
   it('lists the four sides in one line', () => {
     const description = describeSquare(square({ n: 0, e: 1 }), null, 5, 6, 0);
     expect(compactSides(description)).toBe('N wall · S open · W open · E door');
+  });
+});
+
+describe('describeNote', () => {
+  it('spells out the two note kinds', () => {
+    expect(describeNote({ kind: 'oneWayUp', topFloor: 2 })).toBe('One way: no ladder back down from floor 2.');
+    expect(describeNote({ kind: 'landsOn', glyph: 'chute', destination: 4 })).toBe('Lands on a chute to floor 4.');
+    expect(describeNote({ kind: 'landsOn', glyph: 'up', destination: 1 })).toBe('Lands on an up ladder to floor 1.');
   });
 });

@@ -1,7 +1,8 @@
 import type { Side, Square } from '../game/unfmap.js';
 import { teleporterTargets, type Feature } from './floor-info';
 import { GLYPH_LABELS, MODULE_NUMERALS, SIDE_LABELS, TOWN_BUILDINGS } from './labels';
-import { sideStroke } from './palette';
+import type { Note } from './notes';
+import { sideStroke, type Glyph } from './palette';
 
 export function describeSide(side: Side, moduleIndex: number): string {
   const stroke = sideStroke(side);
@@ -48,3 +49,16 @@ export function describeSquare(square: Square, feature: Feature, x: number, y: n
 export function compactSides(description: SquareDescription): string {
   return description.sides.map(([direction, text]) => `${direction[0]} ${text}`).join(' · ');
 }
+
+export function describeNote(note: Note): string {
+  if (note.kind === 'oneWayUp') return `One way: no ladder back down from floor ${note.topFloor}.`;
+  const landing = NOTE_LANDING_LABELS[note.glyph];
+  return `Lands on ${landing} to floor ${note.destination}.`;
+}
+
+const NOTE_LANDING_LABELS: Record<Glyph, string> = {
+  down: 'a down ladder',
+  up: 'an up ladder',
+  trapdoor: 'a trap door',
+  chute: 'a chute',
+};
