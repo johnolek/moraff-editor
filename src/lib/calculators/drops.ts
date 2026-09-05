@@ -1,3 +1,4 @@
+import { allMonsters, appearsOn, stockingOdds } from '../bestiary/monsters';
 import { dropOdds, monsterLevelDistribution, type DropOdds } from '../game/dotu-mech.js';
 
 export interface DropRow {
@@ -19,6 +20,8 @@ export interface DropTables {
   levels: [number, number][];
   /** How often the "YOU FIND" check passes; one pass in three still finds nothing. */
   findGate: number;
+  /** How much of a floor's monsters are the level drainer whose kill pays a reward. */
+  drainerShare: number;
   weapons: DropRow[];
   armors: DropRow[];
   items: DropRow[];
@@ -26,9 +29,29 @@ export interface DropTables {
   spells: DropRow[];
 }
 
+/** Monster type index of the section's level drainer. */
+const DRAINER_SLOT = 26;
+
+/** The seven weapons a kill can drop, in the order the game rolls them; the index plus one is
+ *  the weapon id the save file stores. Read out of dropOdds so the names cannot drift apart. */
+export const WEAPON_NAMES = Object.keys(dropOdds(1, 1, 0).weapons);
+
 /** Keys start dropping on floor 4. The game also stops them below floor 179, which is deeper
  *  than the deepest floor in the game. */
 const FIRST_KEY_FLOOR = 4;
+
+/**
+ * How often a floor's monsters are a drainer that takes a whole level. Only those pay the
+ * potion or key; section 1's Sustrontima drains experience instead and pays nothing.
+ */
+export function drainerShare(module: number, floor: number): number {
+  const drainer = allMonsters().find(
+    (monster) =>
+      monster.origin.kind === 'section' && monster.origin.slot === DRAINER_SLOT && appearsOn(monster, module, floor),
+  );
+  if (!drainer || drainer.levelDrain <= 0) return 0;
+  return stockingOdds(drainer) ?? 0;
+}
 
 /**
  * The floor's drop odds. Only the weapon and armor rolls read the monster's level, so those
@@ -50,18 +73,20 @@ export function floorOdds(module: number, floor: number, cls: number): DropOdds 
 export function dropTables(hunt: Hunt): DropTables {
   const odds = floorOdds(hunt.module, hunt.floor, hunt.cls);
   const keyDrops = hunt.floor >= FIRST_KEY_FLOOR;
+  const drainers = drainerShare(hunt.module, hunt.floor);
   return {
     levels: monsterLevelDistribution(hunt.floor, hunt.module),
     // dropOdds reports the chance of ending up with an item, which is two passes in three.
     findGate: (odds.anyItem * 3) / 2,
+    drainerShare: drainers,
     weapons: Object.entries(odds.weapons)
       .filter((_, index) => !hunt.ownedWeapons.includes(index + 1))
       .map(([name, chance]) => ({ name, chance })),
     armors: Object.entries(odds.armors).map(([name, chance]) => ({ name, chance })),
     items: Object.entries(odds.items).map(([name, chance]) => ({ name, chance })),
     drainer: [
-      { name: 'Stat potion', chance: odds.drainerPotion },
-      { name: 'Trap door key', chance: keyDrops ? odds.drainerKey : 0 },
+      { name: 'Stat potion', chance: drainers * odds.drainerPotion },
+      { name: 'Trap door key', chance: keyDrops ? drainers * odds.drainerKey : 0 },
     ],
     spells: [
       { name: `Spell book roll (up to level ${odds.maxBookLevel})`, chance: odds.spellbookRoll },

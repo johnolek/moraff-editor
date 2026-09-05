@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dropOdds, monsterLevelDistribution } from '../game/dotu-mech.js';
-import { dropTables, expectedKills, floorOdds, perHour, type DropRow } from './drops';
+import { drainerShare, dropTables, expectedKills, floorOdds, perHour, type DropRow } from './drops';
 
 const FIGHTER = 0;
 const MONK = 2;
@@ -85,8 +85,30 @@ describe('dropTables', () => {
     expect(chanceOf(dropTables(hunt({ floor: 3 })).drainer, 'Trap door key')).toBe(0);
   });
 
+  it('counts the drainer rewards against every kill, not just the drainer ones', () => {
+    const tables = dropTables(hunt({ floor: 20 }));
+    expect(chanceOf(tables.drainer, 'Stat potion')).toBeCloseTo(tables.drainerShare * dropOdds(20, 20, MAGE).drainerPotion, 12);
+  });
+
+  it('pays nothing for a section whose drainer only takes experience', () => {
+    // Sustrontima, on floors 1-5 of module I, drains 30 experience rather than a level.
+    const tables = dropTables(hunt({ floor: 4 }));
+    expect(tables.drainerShare).toBe(0);
+    expect(tables.drainer.every((row) => row.chance === 0)).toBe(true);
+  });
+
   it('reports the levels the floor stocks', () => {
     expect(dropTables(hunt({ module: 1, floor: 20 })).levels).toEqual(monsterLevelDistribution(20, 1));
+  });
+});
+
+describe('drainerShare', () => {
+  it('is how often a floor is stocked with a whole-level drainer', () => {
+    expect(drainerShare(0, 20)).toBeCloseTo(0.0543, 4);
+  });
+
+  it('is nothing where the section drainer only takes experience', () => {
+    expect(drainerShare(0, 5)).toBe(0);
   });
 });
 

@@ -1,10 +1,14 @@
 <script lang="ts">
   import './calculators.css';
+  import DropCalculator from './DropCalculator.svelte';
   import ExperiencePlanner from './ExperiencePlanner.svelte';
 
-  type Chosen = 'experience';
+  type Chosen = 'experience' | 'drops';
 
-  const entries: { id: Chosen; label: string }[] = [{ id: 'experience', label: 'Experience' }];
+  const entries: { id: Chosen; label: string }[] = [
+    { id: 'experience', label: 'Experience' },
+    { id: 'drops', label: 'Drops' },
+  ];
 
   let chosen = $state<Chosen>('experience');
 </script>
@@ -18,6 +22,9 @@
   <!-- Every calculator stays mounted so its inputs survive switching between them. -->
   <div class="body" class:hidden={chosen !== 'experience'}>
     <ExperiencePlanner />
+  </div>
+  <div class="body" class:hidden={chosen !== 'drops'}>
+    <DropCalculator />
   </div>
 </div>
 
