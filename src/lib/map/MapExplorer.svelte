@@ -2,10 +2,12 @@
   import { bundledDungeon } from '../game/dungeon';
   import { floorsOfModule, summarizeFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
-  import { BOTTOM_LEVEL } from '../game/unfmap.js';
+  import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
+  import { downloadFloorPng } from './export-png';
   import FloorCanvas from './FloorCanvas.svelte';
   import { jumpTarget, squareFeature } from './floor-info';
   import FloorStats from './FloorStats.svelte';
+  import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
   import Legend from './Legend.svelte';
   import SquareInfo from './SquareInfo.svelte';
@@ -38,6 +40,41 @@
     highlight = null;
   }
 
+  function stepFloor(delta: number) {
+    showFloor(Math.max(0, Math.min(BOTTOM_LEVEL[moduleIndex], floor + delta)));
+  }
+
+  function moveCursor(dx: number, dy: number) {
+    const from = cursor ?? { x: WIDTH >> 1, y: HEIGHT >> 1 };
+    cursor = {
+      x: Math.max(0, Math.min(WIDTH - 1, from.x + dx)),
+      y: Math.max(0, Math.min(HEIGHT - 1, from.y + dy)),
+    };
+    floorCanvas.reveal(cursor);
+  }
+
+  function onKeydown(event: KeyboardEvent) {
+    const target = event.target as HTMLElement | null;
+    if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
+    const action = keyAction(event.key);
+    if (!action) return;
+    event.preventDefault();
+    switch (action.kind) {
+      case 'move':
+        moveCursor(action.dx, action.dy);
+        break;
+      case 'floor':
+        stepFloor(action.delta);
+        break;
+      case 'follow':
+        if (cursor) follow(cursor);
+        break;
+      case 'zoom':
+        action.direction > 0 ? floorCanvas.zoomIn() : floorCanvas.zoomOut();
+        break;
+    }
+  }
+
   /** Clicking a ladder, chute or trap door goes to the floor it leads to and marks the landing square. */
   function follow(square: Point) {
     const target = jumpTarget(bundledDungeon, moduleIndex, floor, rows[square.y][square.x], square.x, square.y);
@@ -47,6 +84,8 @@
     cursor = { x: target.x, y: target.y };
   }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="explorer">
   <div class="map">
@@ -81,7 +120,12 @@
       <button class="ghost" onclick={() => floorCanvas.zoomOut()} title="Zoom out">−</button>
       <button class="ghost" onclick={() => floorCanvas.zoomIn()} title="Zoom in">+</button>
       <button class="ghost" onclick={() => floorCanvas.fit()}>Fit</button>
+      <button class="ghost" onclick={() => downloadFloorPng(rows, floor, moduleIndex)}>Export PNG</button>
     </div>
+    <p class="hint">
+      Drag to pan, scroll to zoom. Arrow keys move the cursor, PgUp/PgDn change floor, Enter follows a ladder,
+      chute or trap door.
+    </p>
     <SquareInfo {cursor} square={cursorSquare} feature={cursorFeature} {moduleIndex} />
     <Legend />
     <FloorStats {summary} />
@@ -155,6 +199,12 @@
   .zoom {
     display: flex;
     gap: 6px;
+  }
+  .hint {
+    margin: -8px 0 0;
+    font-size: 11px;
+    line-height: 1.4;
+    color: var(--muted);
   }
   button.ghost {
     background: transparent;
