@@ -15,8 +15,19 @@ const copies: [string, string][] = [
   ['src/lib/game/building-palette-banks.json', 'dotu-tools/data/building-palette-banks.json'],
 ];
 
+const pictureNames = ['ufmon.pic', ...Array.from({ length: 20 }, (_, i) => `ufmon${i + 1}.pic`)];
+
+const pictureCopies: [string, string][] = pictureNames.map((name) => [
+  `src/lib/game/pics/${name}`,
+  `dotu-tools/data/pics/${name}`,
+]);
+
 describe('game modules copied from dotu-tools', () => {
   it.each(copies)('%s is identical to %s', (copy, original) => {
     expect(readFileSync(copy, 'utf8')).toBe(readFileSync(original, 'utf8'));
+  });
+
+  it.each(pictureCopies)('%s is byte-identical to %s', (copy, original) => {
+    expect(readFileSync(copy).equals(readFileSync(original))).toBe(true);
   });
 });

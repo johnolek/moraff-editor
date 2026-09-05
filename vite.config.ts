@@ -4,6 +4,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 
 export default defineConfig({
   base: './',
+  assetsInclude: ['**/*.pic'],
   plugins: [svelte(), viteSingleFile()],
   test: {
     include: ['src/**/*.test.ts'],
