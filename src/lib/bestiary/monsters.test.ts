@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import data from '../game/dotu-data.json';
-import { allMonsters, monsterDescriptions, monsterGroups } from './monsters';
+import { sectionOf } from '../game/dotu-files.js';
+import { BOTTOM_LEVEL } from '../game/unfmap.js';
+import {
+  allMonsters,
+  allowedFloors,
+  allowedModules,
+  floorsOf,
+  homeFloor,
+  monsterDescriptions,
+  monsterGroups,
+  sectionFloors,
+  whereItAppears,
+} from './monsters';
 
 describe('monsterDescriptions', () => {
   it('gives every one of the 100 section monsters a description', () => {
@@ -67,5 +79,63 @@ describe('monsterGroups', () => {
     expect(groups[0].label).toBe('Built-in');
     expect(groups[3].label).toBe('Section 3 · Module I · Shadow Vulture');
     expect(groups[20].label).toBe('Section 20 · Module V · Shadow Ogeroth');
+  });
+});
+
+describe('sectionFloors', () => {
+  it('splits every module the same way the game does', () => {
+    for (let module = 0; module < 5; module++) {
+      for (let part = 1; part <= 4; part++) {
+        const range = sectionFloors(module, part);
+        for (const floor of floorsOf(range)) {
+          expect(sectionOf(module, floor)).toBe(module * 4 + part);
+        }
+      }
+    }
+  });
+
+  it('covers every floor of every module exactly once', () => {
+    for (let module = 0; module < 5; module++) {
+      const floors = [1, 2, 3, 4].flatMap((part) => floorsOf(sectionFloors(module, part)));
+      expect(floors).toEqual(floorsOf({ module, from: 1, to: BOTTOM_LEVEL[module] }));
+    }
+  });
+});
+
+describe('whereItAppears', () => {
+  it('puts a built-in on every dungeon floor of every module', () => {
+    const can = allMonsters()[0];
+    expect(whereItAppears(can)).toEqual({
+      kind: 'builtin',
+      ranges: [
+        { module: 0, from: 1, to: 25 },
+        { module: 1, from: 1, to: 45 },
+        { module: 2, from: 1, to: 65 },
+        { module: 3, from: 1, to: 85 },
+        { module: 4, from: 1, to: 105 },
+      ],
+    });
+    expect(allowedModules(can)).toEqual([0, 1, 2, 3, 4]);
+    expect(homeFloor(can)).toEqual({ module: 0, floor: 1 });
+  });
+
+  it('keeps a section monster on its own section', () => {
+    const vulture = allMonsters().find((m) => m.name === 'Vulture Of Death')!;
+    expect(whereItAppears(vulture)).toEqual({ kind: 'section', ranges: [{ module: 0, from: 11, to: 15 }] });
+    expect(allowedModules(vulture)).toEqual([0]);
+    expect(allowedFloors(vulture, 0)).toEqual([11, 12, 13, 14, 15]);
+    expect(homeFloor(vulture)).toEqual({ module: 0, floor: 11 });
+  });
+
+  it('runs the fourth section of a module down to the module bottom', () => {
+    const rat = allMonsters().find((m) => m.name === 'Water Rat')!;
+    expect(whereItAppears(rat)).toEqual({ kind: 'section', ranges: [{ module: 4, from: 76, to: 105 }] });
+  });
+
+  it('puts a Shadow boss on its boss floor alone', () => {
+    const ogeroth = allMonsters().find((m) => m.name === 'Shadow Ogeroth')!;
+    expect(whereItAppears(ogeroth)).toEqual({ kind: 'boss', ranges: [{ module: 4, from: 100, to: 100 }] });
+    expect(allowedFloors(ogeroth, 4)).toEqual([100]);
+    expect(homeFloor(ogeroth)).toEqual({ module: 4, floor: 100 });
   });
 });

@@ -1,4 +1,5 @@
 import data from '../game/dotu-data.json';
+import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { MODULE_NUMERALS } from '../map/labels';
 
 type SectionData = (typeof data.sections)[number];
@@ -146,4 +147,61 @@ export function allMonsters(): MonsterEntry[] {
 /** The monster list as the database shows it: the built-ins, then one group per section. */
 export function monsterGroups(): MonsterGroup[] {
   return groups;
+}
+
+/** An inclusive run of floors within one module; module is 0-based. */
+export interface FloorRange {
+  module: number;
+  from: number;
+  to: number;
+}
+
+export interface Appearance {
+  kind: 'builtin' | 'section' | 'boss';
+  ranges: FloorRange[];
+}
+
+/**
+ * The floors of part 1..4 of a module. Each part is five floors per module number, except
+ * the last, which runs on to the bottom of the module -- the same split as sectionOf().
+ */
+export function sectionFloors(module: number, part: number): FloorRange {
+  const size = 5 * (module + 1);
+  return { module, from: (part - 1) * size + 1, to: part === 4 ? BOTTOM_LEVEL[module] : part * size };
+}
+
+/** The modules the level control offers: any for a built-in, its own for a section monster. */
+export function allowedModules(entry: MonsterEntry): number[] {
+  return entry.origin.kind === 'builtin' ? [0, 1, 2, 3, 4] : [entry.origin.module];
+}
+
+/** The floors of the given module the monster can be stocked on. */
+export function allowedFloors(entry: MonsterEntry, module: number): number[] {
+  const ranges = whereItAppears(entry).ranges.filter((range) => range.module === module);
+  return ranges.flatMap((range) => floorsOf(range));
+}
+
+/** Where the level control starts: the first floor the monster can appear on. */
+export function homeFloor(entry: MonsterEntry): { module: number; floor: number } {
+  const [first] = whereItAppears(entry).ranges;
+  return { module: first.module, floor: first.from };
+}
+
+export function whereItAppears(entry: MonsterEntry): Appearance {
+  if (entry.origin.kind === 'builtin') {
+    return {
+      kind: 'builtin',
+      ranges: BOTTOM_LEVEL.map((bottom, module) => ({ module, from: 1, to: bottom })),
+    };
+  }
+  const { module, part, section } = entry.origin;
+  if (entry.isBoss) {
+    const bossFloor = data.sections[section - 1].bossFloor;
+    return { kind: 'boss', ranges: [{ module, from: bossFloor, to: bossFloor }] };
+  }
+  return { kind: 'section', ranges: [sectionFloors(module, part)] };
+}
+
+export function floorsOf(range: FloorRange): number[] {
+  return Array.from({ length: range.to - range.from + 1 }, (_, i) => range.from + i);
 }
