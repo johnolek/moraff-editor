@@ -60,6 +60,30 @@ function countSquare(summary: FloorSummary, square: Square): void {
   if (square.town) summary.town[square.town - 1]++;
 }
 
+/** Rows past this one have walls on both their north and south sides, so the game can never
+ *  walk into them; the generator still leaves open squares there. */
+export const LAST_WALKABLE_ROW = 103;
+
+/** Inclusive bounding box of the open squares the game can walk on, or the whole floor when
+ *  there are none. */
+export function floorBounds(rows: Square[][]): { minX: number; minY: number; maxX: number; maxY: number } {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  rows.forEach((row, y) =>
+    row.forEach((square, x) => {
+      if (square.solid || y > LAST_WALKABLE_ROW) return;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    }),
+  );
+  if (minX === Infinity) return { minX: 0, minY: 0, maxX: rows[0].length - 1, maxY: rows.length - 1 };
+  return { minX, minY, maxX, maxY };
+}
+
 export function floorsOfModule(moduleIndex: number): number[] {
   return Array.from({ length: BOTTOM_LEVEL[moduleIndex] + 1 }, (_, floor) => floor);
 }

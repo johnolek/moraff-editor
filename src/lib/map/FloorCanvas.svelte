@@ -2,11 +2,13 @@
   import { untrack } from 'svelte';
   import type { Square } from '../game/unfmap.js';
   import { drawFloor, drawOutline } from './draw-floor';
-  import { ensureVisible, fitFloor, pan, squareAt, zoomStep, type Point, type Viewport } from './viewport';
+  import { ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
 
   interface Props {
     rows: Square[][];
     floor: number;
+    /** Area "Fit" frames: the open squares of the floor. */
+    bounds: Bounds;
     /** The square the info panel describes: follows the pointer, moved by the keyboard. */
     cursor?: Point | null;
     /** Landing square after a jump. */
@@ -14,7 +16,7 @@
     onselect?: (square: Point) => void;
   }
 
-  let { rows, floor, cursor = $bindable(null), highlight = null, onselect }: Props = $props();
+  let { rows, floor, bounds, cursor = $bindable(null), highlight = null, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -29,7 +31,7 @@
     const observer = new ResizeObserver(([entry]) => {
       size = { width: entry.contentRect.width, height: entry.contentRect.height };
       if (!fitted && size.width > 0) {
-        view = fitFloor(size.width, size.height);
+        view = fitFloor(size.width, size.height, bounds);
         fitted = true;
       }
     });
@@ -41,7 +43,7 @@
     const listener = (event: WheelEvent) => {
       event.preventDefault();
       const point = canvasPoint(event);
-      view = zoomStep(view, event.deltaY < 0 ? 1 : -1, point.x, point.y);
+      view = zoomBy(view, wheelZoomFactor(event.deltaY, event.deltaMode), point.x, point.y);
     };
     canvas.addEventListener('wheel', listener, { passive: false });
     return () => canvas.removeEventListener('wheel', listener);
@@ -127,7 +129,7 @@
   }
 
   export function fit() {
-    view = fitFloor(size.width, size.height);
+    view = fitFloor(size.width, size.height, bounds);
   }
 
   export function reveal(square: Point) {

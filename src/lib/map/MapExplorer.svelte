@@ -1,6 +1,6 @@
 <script lang="ts">
   import { bundledDungeon } from '../game/dungeon';
-  import { floorsOfModule, summarizeFloor } from '../game/floor-summary';
+  import { floorBounds, floorsOfModule, summarizeFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
   import { downloadFloorPng } from './export-png';
@@ -22,6 +22,7 @@
   const floors = $derived(floorsOfModule(moduleIndex));
   const rows = $derived(bundledDungeon.floor(floor, moduleIndex));
   const summary = $derived(summarizeFloor(bundledDungeon, floor, moduleIndex));
+  const bounds = $derived(floorBounds(rows));
   const section = $derived(sectionInfo(moduleIndex, floor));
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(bundledDungeon, moduleIndex, floor, cursorSquare, cursor.x, cursor.y) : null);
@@ -94,7 +95,7 @@
       <span class="section">Section {section.section} · {section.bossName} on floor {section.bossFloor}</span>
     </div>
     <div class="viewport">
-      <FloorCanvas bind:this={floorCanvas} {rows} {floor} bind:cursor {highlight} onselect={follow} />
+      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {bounds} bind:cursor {highlight} onselect={follow} />
     </div>
   </div>
   <aside class="panel">
