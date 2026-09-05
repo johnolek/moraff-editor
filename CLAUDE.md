@@ -2,9 +2,10 @@
 
 Workflow: work-on-main
 
-No tracker project: this repo is untracked "pure vibes" work, so commits carry no
-item ID. The chunked feature loop still applies: one approved chunk per commit
-series, then present the next chunk's plan and wait.
+Tracker project: MORF (https://projects.johnoleksowicz.com/projects/MORF). Item
+work is prefixed `MORF-n:` with the item URL at the bottom of the commit message;
+the chunked feature loop applies: one approved chunk per commit series, then
+present the next chunk's plan and wait.
 
 ## Deploy map
 
