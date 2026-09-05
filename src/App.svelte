@@ -1,14 +1,16 @@
 <script lang="ts">
+  import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
 
-  type Tab = 'map' | 'editor';
+  type Tab = 'map' | 'editor' | 'monsters';
   let tab = $state<Tab>('map');
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'map', label: 'DotU Map' },
     { id: 'editor', label: 'Save Editor' },
+    { id: 'monsters', label: 'Monsters' },
   ];
 </script>
 
@@ -27,6 +29,9 @@
   </main>
   <main class:hidden={tab !== 'editor'}>
     <SaveEditor />
+  </main>
+  <main class:hidden={tab !== 'monsters'}>
+    <MonsterDatabase />
   </main>
 </div>
 
