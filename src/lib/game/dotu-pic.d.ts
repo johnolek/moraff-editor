@@ -20,7 +20,7 @@ export function renderImage(
   img: PicImage,
   pal8: Rgb[],
   indexFn: (v: number) => number,
-): { width: number; height: number; data: Uint8ClampedArray };
+): { width: number; height: number; data: Uint8ClampedArray<ArrayBuffer> };
 
 /** Built-in monster picnum p -> ufmon.pic image p + 2. */
 export function builtinPictureIndex(picnum: number): number;

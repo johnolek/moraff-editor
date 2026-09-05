@@ -1,5 +1,7 @@
 import banks from '../game/building-palette-banks.json';
 import {
+  PIC_H,
+  PIC_W,
   builtinPictureIndex,
   dungeonPalette,
   monsterPixelIndex,
@@ -19,10 +21,13 @@ import type { MonsterEntry } from './monsters';
  */
 export type Look = 'fresh' | 'shop';
 
+export const PICTURE_WIDTH = PIC_W;
+export const PICTURE_HEIGHT = PIC_H;
+
 export interface RenderedImage {
   width: number;
   height: number;
-  data: Uint8ClampedArray;
+  data: Uint8ClampedArray<ArrayBuffer>;
 }
 
 const picUrls = import.meta.glob('../game/pics/*.pic', {
