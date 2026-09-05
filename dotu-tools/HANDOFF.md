@@ -148,7 +148,9 @@ open floor, explored floor, ladder down/up, chute, trap door, teleporter, town b
   the key `keys[dest/5]` from the save and land on one fixed square per destination floor
   (`trapdoorDest`). The game only checks a square for a trap door when it has no ladder.
 * **Town buildings** (floor 0 only): `townFeature()` → 1 store, 2 temple, 3 bank, 4 inn.
-  Typically ~200 building squares per town.
+  Typically ~200 building squares per town. A square with a ladder is never a building:
+  the game checks the ladder first and only asks about buildings (and trap doors and
+  chutes) when there is none.
 * **Module teleporters**: a wall side with `(x·y + floor·module) % 128 == 1`, only on
   floors below 15 (all floors in Module I). Walking into one goes to the next module
   (from Module I always up, from V always down, otherwise the game asks). You arrive in

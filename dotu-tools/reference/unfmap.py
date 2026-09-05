@@ -178,7 +178,8 @@ class Dungeon:
                 if not sq['solid']:
                     sq['ladder'] = self.ladder(x, y, level, dungeon)
                     if level == 0:
-                        sq['town'] = self.town_feature(x, y, dungeon)
+                        # the game checks the ladder first; a ladder square is never a building
+                        sq['town'] = 0 if sq['ladder'] else self.town_feature(x, y, dungeon)
                         sq['trapdoor'] = -1
                         sq['chute'] = 0
                     else:

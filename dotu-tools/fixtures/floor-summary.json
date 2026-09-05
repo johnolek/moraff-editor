@@ -11,10 +11,10 @@
   "doors": 244,
   "secretDoors": 122,
   "town": [
-   68,
+   60,
    50,
    42,
-   52
+   51
   ],
   "trapdoorDests": {}
  },
@@ -674,10 +674,10 @@
   "doors": 244,
   "secretDoors": 122,
   "town": [
-   58,
+   51,
    54,
    55,
-   43
+   39
   ],
   "trapdoorDests": {}
  },
@@ -1984,10 +1984,10 @@
   "doors": 302,
   "secretDoors": 108,
   "town": [
-   62,
+   56,
    52,
    69,
-   55
+   50
   ],
   "trapdoorDests": {}
  },
@@ -3994,10 +3994,10 @@
   "doors": 144,
   "secretDoors": 62,
   "town": [
-   39,
+   35,
    53,
    45,
-   49
+   47
   ],
   "trapdoorDests": {}
  },
@@ -6802,10 +6802,10 @@
   "doors": 260,
   "secretDoors": 110,
   "town": [
-   58,
+   53,
    54,
    59,
-   67
+   61
   ],
   "trapdoorDests": {}
  },
