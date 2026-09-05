@@ -13,6 +13,8 @@ export const palette = {
   secretDoor: '#ffffff',
   teleporter: '#ff40ff',
   label: '#ffffff',
+  /** Outline and label of squares emphasised from the legend. */
+  mark: '#ff40ff',
   /** Store, temple, bank, inn: the fill of a building square on floor 0. */
   town: ['#51caff', '#ffff51', '#d75100', '#00ff00'],
 } as const;

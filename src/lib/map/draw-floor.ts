@@ -1,4 +1,5 @@
 import { HEIGHT, WIDTH, type Side, type Square } from '../game/unfmap.js';
+import type { Mark } from './marks';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
 import type { Viewport } from './viewport';
 
@@ -159,4 +160,24 @@ export function drawOutline(ctx: CanvasRenderingContext2D, x: number, y: number,
   ctx.setLineDash([]);
   ctx.strokeRect(x0 + inset, y0 + inset, w + 1 - lineWidth, h + 1 - lineWidth);
   ctx.lineWidth = 1;
+}
+
+/** Emphasised squares: a bright outline each, plus the label beside those that have one. */
+export function drawMarks(ctx: CanvasRenderingContext2D, marks: Mark[], view: Viewport): void {
+  if (!marks.length) return;
+  for (const mark of marks) drawOutline(ctx, mark.x, mark.y, view, 2, palette.mark);
+  ctx.font = 'bold 11px ui-monospace, Menlo, monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  for (const mark of marks) {
+    if (!mark.label) continue;
+    const { x0, y0, w } = squareRect(view, mark.x, mark.y);
+    const width = ctx.measureText(mark.label).width + 6;
+    const left = x0 + w + 3;
+    const top = y0 - 2;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+    ctx.fillRect(left, top, width, 15);
+    ctx.fillStyle = palette.mark;
+    ctx.fillText(mark.label, left + 3, top + 8);
+  }
 }
