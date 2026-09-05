@@ -1,0 +1,22 @@
+:root {
+  --bg: #0c0c18;
+  --panel: #161628;
+  --panel-2: #1f1f36;
+  --ink: #f4f4fa;
+  --muted: #8c92b4;
+  --accent: #ffd040;
+  --accent-dim: #c89820;
+  --line: #353560;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font: 15px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
