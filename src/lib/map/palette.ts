@@ -17,6 +17,10 @@ export const palette = {
   /** The selected square and the route drawn from it. */
   selection: '#ffd040',
   route: '#ffd040',
+  /** Dots standing in for a stocked monster and a Shadow boss where the squares are too
+   *  small for their pictures: entries 7 and 6 of every DotU palette. */
+  monster: '#ffb600',
+  boss: '#ff0028',
   /** Store, temple, bank, inn: the fill of a building square on floor 0. */
   town: ['#51caff', '#ffff51', '#d75100', '#00ff00'],
 } as const;

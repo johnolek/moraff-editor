@@ -188,7 +188,7 @@
       <span class="section">Section {section.section} · {section.bossName} on floor {section.bossFloor}</span>
     </div>
     <div class="viewport">
-      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {bounds} bind:cursor {highlight} {marks} {selected} route={route?.squares ?? null} {tooltip} onselect={follow} />
+      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {bounds} bind:cursor {highlight} {marks} {selected} route={route?.squares ?? null} {tooltip} onselect={follow} />
     </div>
   </div>
   <aside class="panel">

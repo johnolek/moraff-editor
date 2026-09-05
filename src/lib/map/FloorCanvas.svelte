@@ -1,15 +1,21 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { renderMonster } from '../bestiary/pictures';
+  import { sectionInfo } from '../game/sections';
   import type { Square } from '../game/unfmap.js';
   import { drawFloor, drawMarks, drawOutline, drawRoute, squareRect } from './draw-floor';
+  import { drawMonsters, type MonsterSprites } from './draw-monsters';
   import type { Mark } from './marks';
   import { palette } from './palette';
+  import { monsterById, type StockedMonster } from './stocking';
   import { drawTeleporters, teleporterHue, teleporterSegments } from './teleporters';
   import { ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
 
   export interface Tooltip {
     title: string;
     feature: string | null;
+    /** The monster standing on the square, if the floor has been stocked. */
+    monster?: string | null;
     notes: string[];
     sides: string;
   }
@@ -17,6 +23,9 @@
   interface Props {
     rows: Square[][];
     floor: number;
+    moduleIndex: number;
+    /** Monsters stocked on this floor, drawn over the squares they stand on. */
+    monsters?: StockedMonster[];
     /** Area "Fit" frames: the open squares of the floor. */
     bounds: Bounds;
     /** The square the info panel describes: follows the pointer, moved by the keyboard. */
@@ -33,7 +42,7 @@
     onselect?: (square: Point) => void;
   }
 
-  let { rows, floor, bounds, cursor = $bindable(null), highlight = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
+  let { rows, floor, moduleIndex, monsters = [], bounds, cursor = $bindable(null), highlight = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -87,6 +96,28 @@
   });
 
   const teleporters = $derived(teleporterSegments(rows));
+  const part = $derived(sectionInfo(moduleIndex, floor).part);
+
+  // Monster pictures are drawn once each into an offscreen canvas and kept, since the same
+  // few monsters stand all over a floor. A monster looks different in each section, so the
+  // section's palette is part of the key.
+  const pictures = new Map<string, HTMLCanvasElement>();
+
+  const sprites: MonsterSprites = {
+    isBoss: (id) => monsterById(id).isBoss,
+    picture: (id) => {
+      const key = `${id}:${moduleIndex}:${part}`;
+      const cached = pictures.get(key);
+      if (cached) return cached;
+      const image = renderMonster(monsterById(id), moduleIndex + 1, part, 'shop');
+      const sprite = document.createElement('canvas');
+      sprite.width = image.width;
+      sprite.height = image.height;
+      sprite.getContext('2d')!.putImageData(new ImageData(image.data, image.width, image.height), 0, 0);
+      pictures.set(key, sprite);
+      return sprite;
+    },
+  };
 
   // The floor itself is drawn once into a static layer whenever rows, view or size change;
   // every frame then blits it and draws the overlays (teleporters, marks, route, cursor) on
@@ -97,7 +128,7 @@
   let pendingFrame = 0;
 
   function overlays() {
-    return { cursor, highlight, marks, selected, route, teleporters };
+    return { cursor, highlight, marks, monsters, selected, route, teleporters };
   }
 
   $effect(() => {
@@ -132,6 +163,7 @@
     cursor?: Point | null;
     highlight?: Point | null;
     marks?: Mark[];
+    monsters?: StockedMonster[];
     selected?: Point | null;
     route?: Point[] | null;
     teleporters?: ReturnType<typeof teleporterSegments>;
@@ -147,7 +179,7 @@
 
   function render() {
     if (!scene || !scene.width || !scene.height) return;
-    const { rows, floor, view, width, height, cursor, highlight, marks, selected, route, teleporters } = scene;
+    const { rows, floor, view, width, height, cursor, highlight, marks, monsters, selected, route, teleporters } = scene;
     const dpr = window.devicePixelRatio || 1;
     const pixelWidth = Math.round(width * dpr);
     const pixelHeight = Math.round(height * dpr);
@@ -168,6 +200,7 @@
     ctx.drawImage(staticLayer, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawTeleporters(ctx, teleporters ?? [], view, teleporterHue(performance.now()));
+    if (monsters?.length) drawMonsters(ctx, monsters, view, sprites);
     drawMarks(ctx, marks ?? [], view);
     if (route) drawRoute(ctx, route, view);
     if (selected) drawOutline(ctx, selected.x, selected.y, view, 2, palette.selection);
@@ -236,6 +269,9 @@
       {#if tooltip.feature}
         <div class="feature">{tooltip.feature}</div>
       {/if}
+      {#if tooltip.monster}
+        <div class="monster">{tooltip.monster}</div>
+      {/if}
       {#each tooltip.notes as note}
         <div class="note">{note}</div>
       {/each}
@@ -276,6 +312,9 @@
   }
   .feature {
     color: var(--accent);
+  }
+  .monster {
+    color: var(--ink);
   }
   .note {
     color: var(--ink);
