@@ -65,3 +65,30 @@ export interface DropOdds {
 }
 /** Per-kill drop probabilities. Only the weapons and armors depend on the monster's level. */
 export function dropOdds(depth: number, ml: number, cls: number): DropOdds;
+
+/** Rubles one unit of culture stock costs at this character level. */
+export function stockPrice(lev: number): number;
+/** Rubles one magic crystal costs; "I can handle anything!" charges half again as much. */
+export function crystalPrice(lev: number, hard: boolean): number;
+/** Rubles the store hands back: one percent per child helped, never more than half. */
+export function storeRefund(spent: number, children: number): number;
+/** The inn's room price. Children knock it down, but never below half the full price. */
+export function innCost(lev: number, children: number): number;
+/** Units of culture stock one stay at the inn uses up. */
+export function innStockNeeded(lev: number): number;
+
+export interface Upkeep {
+  room: number;
+  /** The stay's culture stock, with the children refund already taken off. */
+  stock: number;
+  /** One crystal per missing spell point, with the children refund already taken off. */
+  crystals: number;
+}
+/** What one stay at the inn costs in rubles, split into its three purchases. */
+export function upkeepPerRest(lev: number, children: number, spMissing: number, hard: boolean): Upkeep;
+/** The temple's services, as [name, price in rubles]. */
+export const TEMPLE: [string, number][];
+/** Expected Greater American Dollars from one kill on this floor. */
+export function expectedMoney(depth: number, cls: number, hard: boolean): number;
+/** One money roll for one kill, exactly as the game rolls it. */
+export function rollMoney(depth: number, cls: number, hard: boolean, rnd?: () => number): number;
