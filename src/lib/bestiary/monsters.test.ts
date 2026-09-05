@@ -24,10 +24,10 @@ describe('monsterDescriptions', () => {
     expect(missing).toEqual([]);
   });
 
-  it('joins the lines of a paragraph, keeping the hyphen of a word broken over two lines', () => {
+  it('joins the lines of a paragraph, mending a word broken over two lines', () => {
     const [boss] = monsterDescriptions(data.sections[19]);
     expect(boss).toBe(
-      'This is the commander of all of the Dungeons of the Unfor-givin! It drains lots of things, so be extremely careful!',
+      'This is the commander of all of the Dungeons of the Unforgivin! It drains lots of things, so be extremely careful!',
     );
   });
 
@@ -212,5 +212,19 @@ describe('stockingOdds', () => {
     );
     const total = section.reduce((sum, m) => sum + (stockingOdds(m) ?? 0), 0);
     expect(total).toBeCloseTo(1, 10);
+  });
+});
+
+describe('line-break hyphens', () => {
+  it('mends the words the forty-column layout split and keeps real compounds', () => {
+    const text = allMonsters()
+      .map((monster) => monster.description ?? '')
+      .join('\n');
+    expect(text).toContain('temperature');
+    expect(text).toContain('Unforgivin');
+    expect(text).toContain('surfboards');
+    expect(text).toContain('Crab-Horse-Spider');
+    expect(text).toContain('shish-kabob');
+    expect(text).not.toContain('temp-erature');
   });
 });

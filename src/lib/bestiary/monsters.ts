@@ -31,7 +31,7 @@ export type MonsterOrigin =
       slot: number;
     };
 
-export interface MonsterEntry {
+export interface Monster {
   id: string;
   name: string;
   origin: MonsterOrigin;
@@ -51,7 +51,7 @@ export interface MonsterEntry {
 
 export interface MonsterGroup {
   label: string;
-  monsters: MonsterEntry[];
+  monsters: Monster[];
 }
 
 /** A paragraph in MD.BIN starts with the monster's name in capitals followed by a colon. */
@@ -84,15 +84,24 @@ function splitParagraphs(lines: string[]): { name: string; text: string }[] {
   });
 }
 
+/** Words the forty-column layout broke with a hyphen; every other line-ending hyphen in
+ *  the game's text is a real compound such as Crab-Horse-Spider or shish-kabob. */
+const LINE_BREAK_HYPHENS: Record<string, string> = {
+  'temp-erature': 'temperature',
+  'Unfor-givin': 'Unforgivin',
+  'surf-boards': 'surfboards',
+};
+
 /** A line broken mid-word ends in a hyphen; the rest of the word follows with no space. */
 function joinLines(block: string[]): string {
-  return block.reduce((text, line) => (text.endsWith('-') ? text + line : `${text} ${line}`)).trim();
+  const joined = block.reduce((text, line) => (text.endsWith('-') ? text + line : `${text} ${line}`)).trim();
+  return Object.entries(LINE_BREAK_HYPHENS).reduce((text, [broken, whole]) => text.replace(broken, whole), joined);
 }
 
 /** special = 100 marks the Shadow boss of a section. */
 const BOSS_SPECIAL = 100;
 
-const builtins: MonsterEntry[] = data.builtinMonsters.map((monster) => ({
+const builtins: Monster[] = data.builtinMonsters.map((monster) => ({
   id: `builtin-${monster.id}`,
   name: monster.name,
   origin: { kind: 'builtin' },
@@ -141,7 +150,7 @@ const sectionGroups: MonsterGroup[] = data.sections.map((section) => {
 const groups: MonsterGroup[] = [{ label: 'Built-in', monsters: builtins }, ...sectionGroups];
 
 /** The 22 built-in monsters followed by the five monsters of each section, in slot order. */
-export function allMonsters(): MonsterEntry[] {
+export function allMonsters(): Monster[] {
   return groups.flatMap((group) => group.monsters);
 }
 
@@ -178,23 +187,23 @@ export function sectionFloors(module: number, part: number): FloorRange {
 }
 
 /** The modules the level control offers: any for a built-in, its own for a section monster. */
-export function allowedModules(entry: MonsterEntry): number[] {
+export function allowedModules(entry: Monster): number[] {
   return entry.origin.kind === 'builtin' ? [0, 1, 2, 3, 4] : [entry.origin.module];
 }
 
 /** The floors of the given module the monster can be stocked on. */
-export function allowedFloors(entry: MonsterEntry, module: number): number[] {
+export function allowedFloors(entry: Monster, module: number): number[] {
   const ranges = whereItAppears(entry).ranges.filter((range) => range.module === module);
   return ranges.flatMap((range) => floorsOf(range));
 }
 
 /** Where the level control starts: the first floor the monster can appear on. */
-export function homeFloor(entry: MonsterEntry): FloorChoice {
+export function homeFloor(entry: Monster): FloorChoice {
   const [first] = whereItAppears(entry).ranges;
   return { module: first.module, floor: first.from };
 }
 
-export function whereItAppears(entry: MonsterEntry): Appearance {
+export function whereItAppears(entry: Monster): Appearance {
   if (entry.origin.kind === 'builtin') {
     return {
       kind: 'builtin',
@@ -222,12 +231,12 @@ const BREATH_ELEMENTS = ['fire', 'ice', 'acid', 'disease', 'poison'];
 const PUFFBALL_SPECIAL = 6;
 
 /** Puffballs change one of your stats when they hit you and are worth no experience. */
-export function isPuffball(entry: MonsterEntry): boolean {
+export function isPuffball(entry: Monster): boolean {
   return entry.special === PUFFBALL_SPECIAL;
 }
 
 /** What the monster does to you beyond its ordinary attack. */
-export function describeEffects(entry: MonsterEntry): string[] {
+export function describeEffects(entry: Monster): string[] {
   const lines: string[] = [];
   if (entry.levelDrain > 0) {
     lines.push(`Drains ${entry.levelDrain} level${entry.levelDrain === 1 ? '' : 's'} when it hits you`);
@@ -256,7 +265,7 @@ export function describeEffects(entry: MonsterEntry): string[] {
  * the section's level drainer, else 1/12 a poison or disease monster (8 equally likely),
  * else one of the section's three regulars (FAQ v2.2 [GTPS], RE notes 4.1).
  */
-export function stockingOdds(entry: MonsterEntry): number | null {
+export function stockingOdds(entry: Monster): number | null {
   if (entry.origin.kind === 'builtin') {
     if (entry.special === PUFFBALL_SPECIAL) return MONSTER_TYPE_ODDS.puffball / 12;
     if (entry.special === 0) return MONSTER_TYPE_ODDS.blocker / 2;
