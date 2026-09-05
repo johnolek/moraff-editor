@@ -4,12 +4,14 @@
   import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
   import { downloadFloorPng } from './export-png';
-  import FloorCanvas from './FloorCanvas.svelte';
+  import { compactSides, describeSquare } from './describe';
+  import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import { jumpTarget, squareFeature } from './floor-info';
   import FloorStats from './FloorStats.svelte';
   import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
   import Legend from './Legend.svelte';
+  import { squaresOfKind, type LegendKind } from './marks';
   import SquareInfo from './SquareInfo.svelte';
   import type { Point } from './viewport';
 
@@ -17,6 +19,7 @@
   let floor = $state(0);
   let cursor = $state<Point | null>(null);
   let highlight = $state<Point | null>(null);
+  let legendHover = $state<LegendKind | null>(null);
   let floorCanvas: FloorCanvas;
 
   const floors = $derived(floorsOfModule(moduleIndex));
@@ -26,6 +29,13 @@
   const section = $derived(sectionInfo(moduleIndex, floor));
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(bundledDungeon, moduleIndex, floor, cursorSquare, cursor.x, cursor.y) : null);
+  const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, moduleIndex) : null);
+  const tooltip = $derived<Tooltip | null>(
+    cursorDescription
+      ? { title: `${cursor!.x}, ${cursor!.y}`, feature: cursorDescription.rock ? 'Rock' : cursorDescription.feature, sides: compactSides(cursorDescription) }
+      : null,
+  );
+  const marks = $derived(legendHover ? squaresOfKind(rows, floor, legendHover) : []);
 
   function changeModule(event: Event) {
     moduleIndex = Number((event.currentTarget as HTMLSelectElement).value);
@@ -95,7 +105,7 @@
       <span class="section">Section {section.section} · {section.bossName} on floor {section.bossFloor}</span>
     </div>
     <div class="viewport">
-      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {bounds} bind:cursor {highlight} onselect={follow} />
+      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {bounds} bind:cursor {highlight} {marks} {tooltip} onselect={follow} />
     </div>
   </div>
   <aside class="panel">
@@ -129,8 +139,8 @@
       Drag to pan, scroll to zoom. Arrow keys move the cursor, PgUp/PgDn change floor, Enter follows a ladder,
       chute or trap door.
     </p>
-    <SquareInfo {cursor} square={cursorSquare} feature={cursorFeature} {moduleIndex} />
-    <Legend />
+    <SquareInfo description={cursorDescription} />
+    <Legend onhover={(kind) => (legendHover = kind)} />
     <FloorStats {summary} />
   </aside>
 </div>
@@ -214,8 +224,10 @@
     color: var(--muted);
     border: 1px solid var(--line);
     border-radius: 6px;
-    padding: 5px 12px;
+    padding: 5px 10px;
     font: inherit;
+    font-size: 13px;
+    white-space: nowrap;
     cursor: pointer;
   }
   button.ghost:hover:not(:disabled) {
