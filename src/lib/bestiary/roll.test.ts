@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
-import { allMonsters, homeFloor, type MonsterEntry } from './monsters';
+import { allMonsters, type MonsterEntry } from './monsters';
 import { nudgeLevel, rollHp, rollMonster } from './roll';
 
 /** A repeatable stand-in for Math.random, so a failing roll can be reproduced. */
@@ -63,16 +63,16 @@ describe('rollHp', () => {
 });
 
 describe('rollMonster', () => {
-  it('rolls the level from the floor and the module', () => {
+  it('starts from the base level of the floor it was given', () => {
     const still = () => 0.9;
-    expect(rollMonster(named('Giant Ball'), { module: 4, floor: 1 }, still).level).toBe(monsterLevelBase(1, 4));
+    expect(rollMonster(named('Giant Ball'), monsterLevelBase(1, 4), still).level).toBe(61);
   });
 
   it('stays inside the hit point range for the monster it rolled', () => {
     const rnd = seeded(3);
     const boss = named('Shadow Ogeroth');
     for (let i = 0; i < 200; i++) {
-      const { level, hp } = rollMonster(boss, homeFloor(boss), rnd);
+      const { level, hp } = rollMonster(boss, monsterLevelBase(100, 4), rnd);
       const [lo, hi] = monsterHpRange(boss.type.hpPerLevel, level, true, 20);
       expect(hp).toBeGreaterThanOrEqual(lo);
       expect(hp).toBeLessThanOrEqual(hi);

@@ -1,5 +1,4 @@
-import { monsterLevelBase } from '../game/dotu-mech.js';
-import type { FloorChoice, MonsterEntry } from './monsters';
+import type { MonsterEntry } from './monsters';
 
 export interface Roll {
   level: number;
@@ -31,8 +30,8 @@ export function rollHp(entry: MonsterEntry, level: number, rnd: () => number): n
   return Math.max(1, Math.min(MAX_HP, hp));
 }
 
-/** One monster as stocking would create it on the given floor. */
-export function rollMonster(entry: MonsterEntry, place: FloorChoice, rnd: () => number): Roll {
-  const level = nudgeLevel(monsterLevelBase(place.floor, place.module), rnd);
+/** One monster as stocking would create it, from the base level of its floor. */
+export function rollMonster(entry: MonsterEntry, baseLevel: number, rnd: () => number): Roll {
+  const level = nudgeLevel(baseLevel, rnd);
   return { level, hp: rollHp(entry, level, rnd) };
 }
