@@ -1,12 +1,14 @@
 <script lang="ts">
   import MonsterDetail from './MonsterDetail.svelte';
   import MonsterList from './MonsterList.svelte';
-  import { monsterGroups, type MonsterEntry } from './monsters';
+  import { monsterGroups } from './monsters';
 
   const groups = monsterGroups();
 
   let search = $state('');
-  let selected = $state<MonsterEntry>(groups[0].monsters[0]);
+  // The list holds the monster's id rather than the record itself, so that the record the
+  // detail panel gets is the one in the catalogue and not a reactive copy of it.
+  let selectedId = $state(groups[0].monsters[0].id);
 
   const matches = $derived.by(() => {
     const query = search.trim().toLowerCase();
@@ -16,19 +18,20 @@
       .filter((group) => group.monsters.length > 0);
   });
 
-  const groupLabel = $derived(groups.find((group) => group.monsters.includes(selected))!.label);
+  const selectedGroup = $derived(groups.find((group) => group.monsters.some((m) => m.id === selectedId))!);
+  const selected = $derived(selectedGroup.monsters.find((m) => m.id === selectedId)!);
 </script>
 
 <div class="database">
   <div class="list">
     <input type="search" placeholder="Search monsters" bind:value={search} />
     <div class="scroll">
-      <MonsterList groups={matches} selectedId={selected.id} onselect={(entry) => (selected = entry)} />
+      <MonsterList groups={matches} {selectedId} onselect={(entry) => (selectedId = entry.id)} />
     </div>
   </div>
   <div class="detail">
-    {#key selected.id}
-      <MonsterDetail entry={selected} {groupLabel} />
+    {#key selectedId}
+      <MonsterDetail entry={selected} groupLabel={selectedGroup.label} />
     {/key}
   </div>
 </div>
