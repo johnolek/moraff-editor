@@ -18,16 +18,26 @@ export function nudgeLevel(base: number, rnd: () => number): number {
   return Math.max(1, Math.min(MAX_LEVEL, level));
 }
 
-/** Hit points of one stocked monster: the average of two rolls, plus the Shadow boss bonus. */
-export function rollHp(entry: Monster, level: number, rnd: () => number): number {
-  const span = entry.type.hpPerLevel * level + 1;
-  let hp = Math.trunc((random(rnd, span) + random(rnd, span) + 2) / 2);
+/** The number of values each of the two hit point rolls can take at this level. */
+export function hpSpan(entry: Monster, level: number): number {
+  return entry.type.hpPerLevel * level + 1;
+}
+
+/** The Shadow boss bonus and the game's cap, applied to the average of the two rolls. */
+export function stockedHp(entry: Monster, level: number, averaged: number): number {
+  let hp = averaged;
   if (entry.isBoss) {
     hp += 20 * level;
     // The last three sections give their bosses double hit points.
     if (entry.origin.kind === 'section' && entry.origin.section >= 18) hp *= 2;
   }
   return Math.max(1, Math.min(MAX_HP, hp));
+}
+
+/** Hit points of one stocked monster: the average of two rolls, plus the Shadow boss bonus. */
+export function rollHp(entry: Monster, level: number, rnd: () => number): number {
+  const span = hpSpan(entry, level);
+  return stockedHp(entry, level, Math.trunc((random(rnd, span) + random(rnd, span) + 2) / 2));
 }
 
 /** One monster as stocking would create it, from the base level of its floor. */
