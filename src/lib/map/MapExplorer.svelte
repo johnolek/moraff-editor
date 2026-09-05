@@ -204,6 +204,8 @@
       </label>
       <button class="ghost" onclick={() => stepFloor(-1)} disabled={floor === 0}>▲ Floor up</button>
       <button class="ghost" onclick={() => stepFloor(1)} disabled={floor === BOTTOM_LEVEL[moduleIndex]}>▼ Floor down</button>
+      <button class="ghost" onclick={() => history.back()} disabled={!historyCursor.canGoBack}>◀ Back</button>
+      <button class="ghost" onclick={() => history.forward()} disabled={!historyCursor.canGoForward}>Forward ▶</button>
     </div>
     <div class="zoom">
       <button class="ghost" onclick={() => floorCanvas.zoomOut()} title="Zoom out">−</button>
