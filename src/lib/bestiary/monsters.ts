@@ -218,6 +218,11 @@ export function whereItAppears(entry: Monster): Appearance {
   return { kind: 'section', ranges: [sectionFloors(module, part)] };
 }
 
+/** Can this monster be stocked on this floor? Module is 0-based; the town has no monsters. */
+export function appearsOn(entry: Monster, module: number, floor: number): boolean {
+  return whereItAppears(entry).ranges.some((range) => range.module === module && floor >= range.from && floor <= range.to);
+}
+
 export function floorsOf(range: FloorRange): number[] {
   return Array.from({ length: range.to - range.from + 1 }, (_, i) => range.from + i);
 }
