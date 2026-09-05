@@ -1,6 +1,7 @@
 <script lang="ts">
   import { app, type Tab } from './lib/app-state.svelte';
   import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
+  import Calculators from './lib/calculators/Calculators.svelte';
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
   import SpellReference from './lib/spells/SpellReference.svelte';
@@ -11,6 +12,7 @@
     { id: 'editor', label: 'Save Editor' },
     { id: 'monsters', label: 'Monsters' },
     { id: 'spells', label: 'Spells' },
+    { id: 'calculators', label: 'Calculators' },
   ];
 </script>
 
@@ -35,6 +37,9 @@
   </main>
   <main class:hidden={app.tab !== 'spells'}>
     <SpellReference />
+  </main>
+  <main class:hidden={app.tab !== 'calculators'}>
+    <Calculators />
   </main>
 </div>
 

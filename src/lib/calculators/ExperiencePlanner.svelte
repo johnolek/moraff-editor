@@ -1,0 +1,183 @@
+<script lang="ts">
+  import { app } from '../app-state.svelte';
+  import data from '../game/dotu-data.json';
+  import { BOTTOM_LEVEL } from '../game/unfmap.js';
+  import SectionHeading from '../ui/SectionHeading.svelte';
+  import { loadedCharacter } from './character';
+  import { drainCost, killRows, levelProgress, type Stats } from './experience';
+  import FloorPicker from './FloorPicker.svelte';
+
+  let level = $state(1);
+  let exp = $state(0);
+  let hard = $state(false);
+  let target = $state(2);
+  let module = $state(0);
+  let floor = $state(1);
+  let stats = $state<Stats>({ cls: 0, con: 10, luck: 10, wis: 10, iq: 10 });
+
+  const character = $derived({ level: whole(level, 1), exp: whole(exp, 0), hard });
+  const progress = $derived(levelProgress(character, whole(target, 1)));
+  const kills = $derived(killRows(module, floor, progress));
+  const drain = $derived(drainCost(character, stats));
+  const canUseLoaded = $derived(Boolean(loadedCharacter()));
+
+  // The editor bumps saveVersion when it loads or discards a file; start from that character.
+  $effect(() => {
+    void app.saveVersion;
+    useLoadedCharacter();
+  });
+
+  function useLoadedCharacter() {
+    const record = loadedCharacter();
+    if (!record) return;
+    level = record.lev;
+    exp = record.exp;
+    hard = record.hard !== 0;
+    target = record.lev + 1;
+    module = record.module;
+    floor = Math.min(Math.max(1, record.level), BOTTOM_LEVEL[record.module]);
+    stats = {
+      cls: Math.min(6, Math.max(0, record.cls)),
+      con: record.con,
+      luck: record.luck,
+      wis: record.wis,
+      iq: record.iq,
+    };
+  }
+
+  /** An empty number input reads as NaN, which would spread through every table. */
+  function whole(value: number, least: number): number {
+    return Number.isFinite(value) ? Math.max(least, Math.round(value)) : least;
+  }
+
+  const number = (value: number) => Math.round(value).toLocaleString();
+  const killCount = (count: number | null) => (count === null ? 'never' : count.toLocaleString());
+</script>
+
+<div class="page">
+  <section>
+    <SectionHeading title="Character" />
+    <div class="fields">
+      <label>
+        <span>Level</span>
+        <input type="number" min="1" bind:value={level} />
+      </label>
+      <label>
+        <span>Experience</span>
+        <input type="number" min="0" step="any" bind:value={exp} />
+      </label>
+      <label>
+        <span>Difficulty</span>
+        <select bind:value={hard}>
+          <option value={false}>Normal</option>
+          <option value={true}>I can handle anything!</option>
+        </select>
+      </label>
+      <label>
+        <span>Class</span>
+        <select bind:value={stats.cls}>
+          {#each data.classes as entry}
+            <option value={entry.id}>{entry.name}</option>
+          {/each}
+        </select>
+      </label>
+      <label>
+        <span>Constitution</span>
+        <input type="number" bind:value={stats.con} />
+      </label>
+      <label>
+        <span>Intelligence</span>
+        <input type="number" bind:value={stats.iq} />
+      </label>
+      <label>
+        <span>Wisdom</span>
+        <input type="number" bind:value={stats.wis} />
+      </label>
+      <label>
+        <span>Luck</span>
+        <input type="number" bind:value={stats.luck} />
+      </label>
+    </div>
+    <div class="load">
+      <button type="button" class="ghost" disabled={!canUseLoaded} onclick={useLoadedCharacter}>Use loaded character</button>
+      {#if !canUseLoaded}
+        <span class="note">Load a Dungeons of the Unforgiven save in the Save Editor to fill these in.</span>
+      {/if}
+    </div>
+  </section>
+
+  <section>
+    <SectionHeading title="Levels" />
+    <div class="fields">
+      <label>
+        <span>Target level</span>
+        <input type="number" min="1" bind:value={target} />
+      </label>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Level</th><th>XP to reach</th><th>Still needed</th></tr>
+      </thead>
+      <tbody>
+        {#each progress.rows as row}
+          <tr>
+            <td>{row.level}</td>
+            <td>{number(row.xpToReach)}</td>
+            <td>{row.stillNeeded === 0 ? '—' : number(row.stillNeeded)}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+    <p class="note">Levels are only awarded when you rest at the inn.</p>
+  </section>
+
+  <section>
+    <SectionHeading title="Kills on this floor" />
+    <div class="fields">
+      <FloorPicker bind:module bind:floor />
+    </div>
+    <table>
+      <thead>
+        <tr><th>Monster</th><th>XP per kill</th><th>Kills to next level</th><th>Kills to target</th></tr>
+      </thead>
+      <tbody>
+        {#each kills as row}
+          <tr>
+            <td>{row.monster.name}</td>
+            <td>{number(row.xpPerKill)}</td>
+            <td>{killCount(row.killsToNextLevel)}</td>
+            <td>{killCount(row.killsToTarget)}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <SectionHeading title="Level drain" />
+    <table>
+      <tbody>
+        <tr><td>Experience after the drain</td><td>{number(drain.newExp)}</td></tr>
+        <tr><td>Experience lost</td><td>{number(drain.expLost)}</td></tr>
+        <tr><td>Maximum HP lost</td><td>{drain.hpLost[0]}–{drain.hpLost[1]}</td></tr>
+        <tr><td>Spell points lost</td><td>{drain.spLost}</td></tr>
+      </tbody>
+    </table>
+    <p class="note">A drained level leaves you with the least experience the level below allows, and takes back the hit points and spell points that level gave you.</p>
+  </section>
+</div>
+
+<style>
+  .load {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .load .note {
+    margin: 0;
+  }
+  .fields {
+    margin-bottom: 14px;
+  }
+</style>

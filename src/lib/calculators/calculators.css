@@ -1,0 +1,94 @@
+/* Controls and tables shared by the calculators. Global on purpose: Svelte scoped styles do
+   not reach child components, and every calculator uses the same look. */
+.calculators .page {
+  max-width: 880px;
+  padding: 24px 32px 48px;
+}
+.calculators .page > section {
+  margin-bottom: 28px;
+}
+.calculators .fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+}
+.calculators .fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 180px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.calculators input,
+.calculators select {
+  background: var(--panel-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: 13px;
+}
+.calculators .owned {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 12px;
+}
+.calculators .owned label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.calculators .owned input {
+  accent-color: var(--accent);
+}
+.calculators table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.calculators th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.calculators th,
+.calculators td {
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+}
+.calculators th:not(:first-child),
+.calculators td:not(:first-child) {
+  text-align: right;
+  padding-left: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.calculators .note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+.calculators button.ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.calculators button.ghost:hover:not(:disabled) {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+.calculators button.ghost:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
