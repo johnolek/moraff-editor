@@ -5,7 +5,7 @@ export interface Roll {
   hp: number;
 }
 
-const MAX_LEVEL = 210;
+export const MAX_LEVEL = 210;
 const MAX_HP = 32000;
 
 /** The game's random(n): an integer 0..n-1. */
