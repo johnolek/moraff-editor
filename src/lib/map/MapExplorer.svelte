@@ -116,6 +116,8 @@
           {/each}
         </select>
       </label>
+      <button class="ghost" onclick={() => stepFloor(-1)} disabled={floor === 0}>▲ Floor up</button>
+      <button class="ghost" onclick={() => stepFloor(1)} disabled={floor === BOTTOM_LEVEL[moduleIndex]}>▼ Floor down</button>
     </div>
     <div class="zoom">
       <button class="ghost" onclick={() => floorCanvas.zoomOut()} title="Zoom out">−</button>
@@ -216,8 +218,12 @@
     font: inherit;
     cursor: pointer;
   }
-  button.ghost:hover {
+  button.ghost:hover:not(:disabled) {
     color: var(--ink);
     border-color: var(--accent);
+  }
+  button.ghost:disabled {
+    opacity: 0.4;
+    cursor: default;
   }
 </style>
