@@ -5,17 +5,17 @@
     monsterAttackInterval,
     monsterHpRange,
     monsterLevelBase,
-    monsterLevelDistribution,
   } from '../game/dotu-mech.js';
   import { sectionInfo } from '../game/sections';
   import { MODULE_NUMERALS } from '../map/labels';
+  import BarChart from '../ui/BarChart.svelte';
   import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
+  import { binHp, hpDistribution, levelDistribution } from './distribution';
   import LevelControl from './LevelControl.svelte';
   import MonsterPicture from './MonsterPicture.svelte';
   import { describeEffects, homeFloor, isPuffball, stockingOdds, whereItAppears, type Monster } from './monsters';
   import type { Look } from './pictures';
-  import { rollMonster, type Roll } from './roll';
 
   interface Props {
     entry: Monster;
@@ -26,9 +26,8 @@
 
   /** The resistance spell that halves each kind of breath; acid has none. */
   const BREATH_RESISTS = ['Anti-Fire', 'Anti-Cold', '', 'Resist Disease', 'Resist Poison'];
-  const ROLLS_KEPT = 10;
-  /** Levels rarer than this are left out of the table; the nudge has a very long tail. */
-  const RARE_LEVEL = 0.005;
+  /** Levels rarer than this are left out of the chart; the nudge has a very long tail. */
+  const RARE_LEVEL = 0.0005;
 
   // The parent keys this component on the monster, so the controls start fresh each time.
   const home = untrack(() => homeFloor(entry));
@@ -36,7 +35,6 @@
   let floor = $state(home.floor);
   let baseLevel = $state(monsterLevelBase(home.floor, home.module));
   let look = $state<Look>('shop');
-  let rolls = $state<Roll[]>([]);
 
   const section = $derived(sectionInfo(module, floor));
   const sectionNumber = $derived(entry.origin.kind === 'section' ? entry.origin.section : section.section);
@@ -46,8 +44,10 @@
 
   const hpRange = $derived(monsterHpRange(entry.type.hpPerLevel, baseLevel, entry.isBoss, sectionNumber));
   const experience = $derived(Math.round(expValue(baseLevel, entry.expMult)));
-  // The distribution only depends on the base level, which the level control has already worked out.
-  const levels = $derived(monsterLevelDistribution(baseLevel, 0).filter(([, chance]) => chance >= RARE_LEVEL));
+  // The distributions only depend on the base level, which the level control has already worked out.
+  const levels = $derived(levelDistribution(baseLevel).filter(({ p }) => p >= RARE_LEVEL));
+  const hpBars = $derived(binHp(hpDistribution(entry, baseLevel)));
+  const hpLabels = $derived(hpBars.map(({ from, to }) => (from === to ? String(from) : `${from}\u2013${to}`)));
 
   const stats = $derived([
     ['Defense', String(entry.type.defense)],
@@ -63,10 +63,6 @@
       return `Module ${MODULE_NUMERALS[range.module]}, ${floors}`;
     }),
   );
-
-  function roll() {
-    rolls = [rollMonster(entry, baseLevel, Math.random), ...rolls].slice(0, ROLLS_KEPT);
-  }
 
   function switchLook(event: Event) {
     look = (event.currentTarget as HTMLInputElement).checked ? 'shop' : 'fresh';
@@ -156,26 +152,20 @@
       {/if}
     </dl>
 
-    <table>
-      <caption>Level it is stocked at</caption>
-      <tbody>
-        {#each levels as [level, chance]}
-          <tr>
-            <th scope="row">{level}</th>
-            <td>{percent(chance)}</td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
-
-    <button type="button" class="ghost" onclick={roll}>Roll a monster</button>
-    {#if rolls.length > 0}
-      <ul class="rolls">
-        {#each rolls as result}
-          <li>Level {result.level} · {result.hp.toLocaleString()} HP</li>
-        {/each}
-      </ul>
-    {/if}
+    <div class="charts">
+      <BarChart
+        labels={hpLabels}
+        values={hpBars.map(({ p }) => p * 100)}
+        tooltip={(index) => `${hpLabels[index]} HP: ${percent(hpBars[index].p)}`}
+        xLabel="Hit points"
+      />
+      <BarChart
+        labels={levels.map(({ level }) => String(level))}
+        values={levels.map(({ p }) => p * 100)}
+        tooltip={(index) => `Level ${levels[index].level}: ${percent(levels[index].p)}`}
+        xLabel="Level it is stocked at"
+      />
+    </div>
   </section>
 </article>
 
@@ -256,45 +246,10 @@
   .effects li {
     color: var(--warn);
   }
-  table {
-    margin-top: 12px;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  caption {
-    padding-bottom: 4px;
-    font-size: 12px;
-    text-align: left;
-    color: var(--muted);
-  }
-  th,
-  td {
-    padding: 1px 12px 1px 0;
-    text-align: left;
-    font-weight: normal;
-  }
-  td {
-    color: var(--muted);
-  }
-  button.ghost {
-    align-self: flex-start;
-    margin-top: 16px;
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    padding: 5px 10px;
-    font: inherit;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  button.ghost:hover {
-    color: var(--ink);
-    border-color: var(--accent);
-  }
-  .rolls {
-    list-style: none;
-    padding: 0;
-    color: var(--good);
+  .charts {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-top: 20px;
   }
 </style>

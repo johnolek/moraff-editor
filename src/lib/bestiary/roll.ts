@@ -1,10 +1,5 @@
 import type { Monster } from './monsters';
 
-export interface Roll {
-  level: number;
-  hp: number;
-}
-
 export const MAX_LEVEL = 210;
 const MAX_HP = 32000;
 
@@ -38,10 +33,4 @@ export function stockedHp(entry: Monster, level: number, averaged: number): numb
 export function rollHp(entry: Monster, level: number, rnd: () => number): number {
   const span = hpSpan(entry, level);
   return stockedHp(entry, level, Math.trunc((random(rnd, span) + random(rnd, span) + 2) / 2));
-}
-
-/** One monster as stocking would create it, from the base level of its floor. */
-export function rollMonster(entry: Monster, baseLevel: number, rnd: () => number): Roll {
-  const level = nudgeLevel(baseLevel, rnd);
-  return { level, hp: rollHp(entry, level, rnd) };
 }

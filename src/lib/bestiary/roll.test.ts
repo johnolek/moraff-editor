@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
+import { monsterHpRange } from '../game/dotu-mech.js';
 import { allMonsters, type Monster } from './monsters';
-import { nudgeLevel, rollHp, rollMonster } from './roll';
+import { nudgeLevel, rollHp } from './roll';
 
 /** A repeatable stand-in for Math.random, so a failing roll can be reproduced. */
 function seeded(seed: number): () => number {
@@ -59,23 +59,5 @@ describe('rollHp', () => {
     const lowest = () => 0;
     expect(rollHp(named('Shadow Vulture'), 10, lowest)).toBe(1 + 200);
     expect(rollHp(named('Shadow Stone Giant'), 10, lowest)).toBe((1 + 200) * 2);
-  });
-});
-
-describe('rollMonster', () => {
-  it('starts from the base level of the floor it was given', () => {
-    const still = () => 0.9;
-    expect(rollMonster(named('Giant Ball'), monsterLevelBase(1, 4), still).level).toBe(61);
-  });
-
-  it('stays inside the hit point range for the monster it rolled', () => {
-    const rnd = seeded(3);
-    const boss = named('Shadow Ogeroth');
-    for (let i = 0; i < 200; i++) {
-      const { level, hp } = rollMonster(boss, monsterLevelBase(100, 4), rnd);
-      const [lo, hi] = monsterHpRange(boss.type.hpPerLevel, level, true, 20);
-      expect(hp).toBeGreaterThanOrEqual(lo);
-      expect(hp).toBeLessThanOrEqual(hi);
-    }
   });
 });
