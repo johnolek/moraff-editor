@@ -4,23 +4,22 @@
 
   let { summary }: { summary: FloorSummary } = $props();
 
-  const trapdoorDests = $derived(
-    Object.entries(summary.trapdoorDests)
+  const trapdoorLines = $derived([
+    `${summary.trapdoors} total`,
+    ...Object.entries(summary.trapdoorDests)
       .sort(([a], [b]) => Number(a) - Number(b))
-      .map(([floor, count]) => `${floor} ×${count}`)
-      .join(', '),
-  );
+      .map(([floor, count]) => `to ${floor} (${count})`),
+  ]);
 
   const rows = $derived([
-    ['Open squares', summary.open],
-    ['Down ladders', summary.down],
-    ['Up ladders', summary.up],
-    ['Chutes', summary.chutes],
-    ['Trap doors', summary.trapdoors + (trapdoorDests ? ` (to ${trapdoorDests})` : '')],
-    ['Teleporter squares', summary.teleporterSquares],
-    ['Doors', summary.doors],
-    ['Secret doors', summary.secretDoors],
-    ...(summary.floor === 0 ? TOWN_BUILDINGS.map((name, index) => [name, summary.town[index]]) : []),
+    ['Open squares', String(summary.open)],
+    ['Down ladders', String(summary.down)],
+    ['Up ladders', String(summary.up)],
+    ['Chutes', String(summary.chutes)],
+    ['Teleporter squares', String(summary.teleporterSquares)],
+    ['Doors', String(summary.doors)],
+    ['Secret doors', String(summary.secretDoors)],
+    ...(summary.floor === 0 ? TOWN_BUILDINGS.map((name, index) => [name, String(summary.town[index])]) : []),
   ]);
 </script>
 
@@ -31,6 +30,14 @@
       <dt>{label}</dt>
       <dd>{value}</dd>
     {/each}
+    {#if summary.floor > 0}
+      <dt>Trap doors</dt>
+      <dd>
+        {#each trapdoorLines as line}
+          <div>{line}</div>
+        {/each}
+      </dd>
+    {/if}
   </dl>
   {#if summary.trapdoorLanding}
     <p>Trap doors to this floor land at {summary.trapdoorLanding[0]}, {summary.trapdoorLanding[1]}.</p>
