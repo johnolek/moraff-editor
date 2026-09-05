@@ -1,0 +1,111 @@
+/* Form controls shared by the editor's field components. Global on purpose: Svelte
+   scoped styles do not reach child components, and every field uses the same look. */
+.save-editor .section {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 22px 22px;
+  margin-bottom: 18px;
+}
+.save-editor .section h2 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  color: var(--accent);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+.save-editor .section-note {
+  margin: -8px 0 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.save-editor .grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 18px;
+}
+.save-editor .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.save-editor .field label {
+  font-size: 12px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+.save-editor .field label .offset {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11px;
+  opacity: 0.6;
+}
+.save-editor .field input,
+.save-editor .field select {
+  background: var(--panel-2);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 7px 9px;
+  font: inherit;
+}
+.save-editor small.hint {
+  color: var(--mw-cyan);
+  opacity: 0.75;
+  font-size: 11px;
+}
+.save-editor button {
+  background: var(--accent);
+  color: #1a1822;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.save-editor button:hover {
+  background: var(--accent-dim);
+  color: var(--ink);
+}
+.save-editor button.ghost {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.save-editor button.ghost:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+
+/* Animated rainbow halo on focused fields, a wink at MW/DotU's selection highlights. */
+@keyframes rainbow-border {
+  0% {
+    box-shadow: 0 0 0 2px #ff5050;
+  }
+  16% {
+    box-shadow: 0 0 0 2px #ffaa00;
+  }
+  33% {
+    box-shadow: 0 0 0 2px #fff050;
+  }
+  50% {
+    box-shadow: 0 0 0 2px #5cff7a;
+  }
+  66% {
+    box-shadow: 0 0 0 2px #6cd8ff;
+  }
+  83% {
+    box-shadow: 0 0 0 2px #c060ff;
+  }
+  100% {
+    box-shadow: 0 0 0 2px #ff5050;
+  }
+}
+.save-editor input[type='text']:focus,
+.save-editor input[type='number']:focus,
+.save-editor select:focus {
+  outline: none;
+  animation: rainbow-border 2.5s linear infinite;
+}
