@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { SquareDescription } from './describe';
 
-  let { description }: { description: SquareDescription | null } = $props();
+  let { description, notes = [] }: { description: SquareDescription | null; notes?: string[] } = $props();
 </script>
 
 <section>
@@ -19,6 +19,9 @@
       {#if description.feature}
         <p class="feature">{description.feature}</p>
       {/if}
+      {#each notes as note}
+        <p class="note">{note}</p>
+      {/each}
     {/if}
   {:else}
     <p class="hint">Point at a square to inspect it.</p>
@@ -53,6 +56,11 @@
     margin: 10px 0 0;
     font-size: 13px;
     color: var(--accent);
+  }
+  .note {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--muted);
   }
   .hint {
     margin: 0;

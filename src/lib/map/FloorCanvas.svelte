@@ -10,6 +10,7 @@
   export interface Tooltip {
     title: string;
     feature: string | null;
+    notes: string[];
     sides: string;
   }
 
@@ -235,6 +236,9 @@
       {#if tooltip.feature}
         <div class="feature">{tooltip.feature}</div>
       {/if}
+      {#each tooltip.notes as note}
+        <div class="note">{note}</div>
+      {/each}
       {#if tooltip.sides}
         <div class="sides">{tooltip.sides}</div>
       {/if}
@@ -272,6 +276,9 @@
   }
   .feature {
     color: var(--accent);
+  }
+  .note {
+    color: var(--ink);
   }
   .sides {
     color: var(--muted);

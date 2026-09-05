@@ -4,13 +4,15 @@
   import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
   import { downloadFloorPng } from './export-png';
-  import { compactSides, describeSquare } from './describe';
+  import { compactSides, describeNote, describeSquare } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import { jumpTarget, squareFeature } from './floor-info';
   import FloorStats from './FloorStats.svelte';
   import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
   import Legend from './Legend.svelte';
+  import Notable from './Notable.svelte';
+  import { dungeonLookup, notableSquares, squareNotes } from './notes';
   import { pathToNearestTeleporter, type Route } from './path';
   import Selection from './Selection.svelte';
   import { squaresOfKind, type LegendKind } from './marks';
@@ -32,13 +34,16 @@
   const rows = $derived(bundledDungeon.floor(floor, moduleIndex));
   const summary = $derived(summarizeFloor(bundledDungeon, floor, moduleIndex));
   const bounds = $derived(floorBounds(rows));
+  const lookup = $derived(dungeonLookup(bundledDungeon, moduleIndex));
+  const notable = $derived(notableSquares(lookup, floor, rows));
   const section = $derived(sectionInfo(moduleIndex, floor));
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(bundledDungeon, moduleIndex, floor, cursorSquare, cursor.x, cursor.y) : null);
   const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, moduleIndex) : null);
+  const cursorNotes = $derived(cursor && cursorSquare ? squareNotes(lookup, floor, cursorSquare, cursor.x, cursor.y).map(describeNote) : []);
   const tooltip = $derived<Tooltip | null>(
     cursorDescription
-      ? { title: `${cursor!.x}, ${cursor!.y}`, feature: cursorDescription.rock ? 'Rock' : cursorDescription.feature, sides: compactSides(cursorDescription) }
+      ? { title: `${cursor!.x}, ${cursor!.y}`, feature: cursorDescription.rock ? 'Rock' : cursorDescription.feature, notes: cursorNotes, sides: compactSides(cursorDescription) }
       : null,
   );
   const markedKind = $derived(legendHover ?? legendPinned?.kind ?? null);
@@ -57,6 +62,11 @@
     floor = level;
     highlight = null;
     clearSelection();
+  }
+
+  function pick(square: Point) {
+    cursor = square;
+    floorCanvas.reveal(square);
   }
 
   function clearSelection() {
@@ -164,7 +174,7 @@
       Drag to pan, scroll to zoom. Arrow keys move the cursor, PgUp/PgDn change floor, Enter follows a ladder,
       chute or trap door.
     </p>
-    <SquareInfo description={cursorDescription} />
+    <SquareInfo description={cursorDescription} notes={cursorNotes} />
     <Selection {selected} {route} onroute={routeToTeleporter} onclear={clearSelection} />
     <Legend
       pinned={legendPinned?.label ?? null}
@@ -172,6 +182,7 @@
       onpin={(label, kind) => (legendPinned = label && kind ? { label, kind } : null)}
     />
     <FloorStats {summary} />
+    <Notable entries={notable} onpick={pick} />
   </aside>
 </div>
 
