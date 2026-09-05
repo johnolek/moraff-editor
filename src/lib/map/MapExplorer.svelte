@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { bundledDungeon } from '../game/dungeon';
   import { floorBounds, floorsOfModule, summarizeFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
@@ -8,6 +9,7 @@
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import { jumpTarget, squareFeature } from './floor-info';
   import FloorStats from './FloorStats.svelte';
+  import { HistoryCursor, isMapHistoryState, type MapHistoryState, type MapPlace } from './history';
   import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
   import Legend from './Legend.svelte';
@@ -28,6 +30,7 @@
   let selected = $state<Point | null>(null);
   /** undefined: not asked yet; null: asked, nothing reachable. */
   let route = $state<Route | null | undefined>(undefined);
+  let historyCursor = $state(new HistoryCursor());
   let floorCanvas: FloorCanvas;
 
   const floors = $derived(floorsOfModule(moduleIndex));
@@ -49,9 +52,51 @@
   const markedKind = $derived(legendHover ?? legendPinned?.kind ?? null);
   const marks = $derived(markedKind ? squaresOfKind(rows, floor, markedKind) : []);
 
+  onMount(() => {
+    const state = history.state;
+    if (isMapHistoryState(state)) {
+      historyCursor = historyCursor.movedTo(state.index);
+      applyPlace(state.place);
+      return;
+    }
+    history.replaceState(entry(0, { module: moduleIndex, floor, square: null }), '');
+  });
+
+  /** The browser structured-clones what it stores, and Svelte's state proxies cannot be cloned, so
+   *  the place is snapshotted into plain objects first. */
+  function entry(index: number, place: MapPlace): MapHistoryState {
+    return $state.snapshot({ kind: 'map-place', index, place });
+  }
+
+  /** Go to another floor and leave a history entry behind, so the browser's Back button returns to
+   *  `fromSquare` on the floor being left. */
+  function travel(place: MapPlace, fromSquare: Point | null) {
+    history.replaceState(entry(historyCursor.current, { module: moduleIndex, floor, square: fromSquare }), '');
+    history.pushState(entry(historyCursor.current + 1, place), '');
+    historyCursor = historyCursor.pushed();
+    applyPlace(place);
+  }
+
+  function applyPlace(place: MapPlace) {
+    moduleIndex = place.module;
+    floor = place.floor;
+    highlight = place.square;
+    clearSelection();
+    if (place.square) {
+      cursor = place.square;
+      floorCanvas.reveal(place.square);
+    }
+  }
+
+  function onPopState(event: PopStateEvent) {
+    if (!isMapHistoryState(event.state)) return;
+    historyCursor = historyCursor.movedTo(event.state.index);
+    applyPlace(event.state.place);
+  }
+
   function changeModule(event: Event) {
-    moduleIndex = Number((event.currentTarget as HTMLSelectElement).value);
-    showFloor(Math.min(floor, BOTTOM_LEVEL[moduleIndex]));
+    const module = Number((event.currentTarget as HTMLSelectElement).value);
+    travel({ module, floor: Math.min(floor, BOTTOM_LEVEL[module]), square: null }, cursor);
   }
 
   function changeFloor(event: Event) {
@@ -59,9 +104,7 @@
   }
 
   function showFloor(level: number) {
-    floor = level;
-    highlight = null;
-    clearSelection();
+    travel({ module: moduleIndex, floor: level, square: null }, cursor);
   }
 
   function pick(square: Point) {
@@ -79,7 +122,8 @@
   }
 
   function stepFloor(delta: number) {
-    showFloor(Math.max(0, Math.min(BOTTOM_LEVEL[moduleIndex], floor + delta)));
+    const level = Math.max(0, Math.min(BOTTOM_LEVEL[moduleIndex], floor + delta));
+    if (level !== floor) showFloor(level);
   }
 
   function moveCursor(dx: number, dy: number) {
@@ -124,14 +168,11 @@
       }
       return;
     }
-    floor = target.floor;
-    highlight = { x: target.x, y: target.y };
-    cursor = { x: target.x, y: target.y };
-    clearSelection();
+    travel({ module: moduleIndex, floor: target.floor, square: { x: target.x, y: target.y } }, square);
   }
 </script>
 
-<svelte:window onkeydown={onKeydown} />
+<svelte:window onkeydown={onKeydown} onpopstate={onPopState} />
 
 <div class="explorer">
   <div class="map">
