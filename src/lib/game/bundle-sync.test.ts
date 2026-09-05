@@ -1,0 +1,16 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+
+// The reference modules were verified against 341,000 explored squares from real
+// save files. They stay byte-identical copies so that verification still holds.
+const copies: [string, string][] = [
+  ['src/lib/game/unfmap.js', 'dotu-tools/reference/unfmap.js'],
+  ['src/lib/game/dotu-files.js', 'dotu-tools/reference/dotu-files.js'],
+  ['src/lib/game/unfdung.b64.js', 'dotu-tools/data/unfdung.b64.js'],
+];
+
+describe('game modules copied from dotu-tools', () => {
+  it.each(copies)('%s is identical to %s', (copy, original) => {
+    expect(readFileSync(copy, 'utf8')).toBe(readFileSync(original, 'utf8'));
+  });
+});
