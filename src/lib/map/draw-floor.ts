@@ -42,7 +42,7 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: Square[][], optio
   }
 }
 
-function drawSquare(ctx: CanvasRenderingContext2D, square: Square, x0: number, y0: number, cell: number, floor: number): void {
+export function drawSquare(ctx: CanvasRenderingContext2D, square: Square, x0: number, y0: number, cell: number, floor: number): void {
   ctx.fillStyle = squareFill(square)!;
   ctx.fillRect(x0 + 1, y0 + 1, cell, cell);
   drawSide(ctx, square.w, x0, y0, cell, true);
