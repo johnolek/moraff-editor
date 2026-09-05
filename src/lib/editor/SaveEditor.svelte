@@ -1,5 +1,6 @@
 <script lang="ts">
   import './editor.css';
+  import { app } from '../app-state.svelte';
   import { GAMES, pickGameByFileSize } from './games';
   import type { GameSchema } from './schema';
   import SectionView from './SectionView.svelte';
@@ -29,11 +30,19 @@
     toastTimer = setTimeout(() => (toast = null), 1800);
   }
 
+  /** Hand the loaded bytes to the other tabs. The field components write into these same
+   *  bytes, so a reader that looks again sees the edits. */
+  function share() {
+    app.save = doc && { game: doc.game.id, bytes: doc.bytes };
+    app.saveVersion++;
+  }
+
   async function load(file: File, game: GameSchema) {
     const bytes = new Uint8Array(await file.arrayBuffer());
     doc = { name: file.name, game, bytes, view: new DataView(bytes.buffer), pristine: bytes.slice() };
     unrecognised = null;
     version++;
+    share();
   }
 
   function receive(file: File) {
@@ -71,6 +80,7 @@
     const bytes = doc.pristine.slice();
     doc = { ...doc, bytes, view: new DataView(bytes.buffer) };
     version++;
+    share();
     showToast('Changes discarded');
   }
 
@@ -78,6 +88,7 @@
     doc = null;
     unrecognised = null;
     if (fileInput) fileInput.value = '';
+    share();
   }
 </script>
 
