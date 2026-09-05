@@ -1,4 +1,4 @@
-export type Tab = 'map' | 'editor' | 'monsters';
+export type Tab = 'map' | 'editor' | 'monsters' | 'spells';
 
 export interface AppState {
   tab: Tab;

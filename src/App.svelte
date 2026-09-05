@@ -3,12 +3,14 @@
   import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
+  import SpellReference from './lib/spells/SpellReference.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'map', label: 'DotU Map' },
     { id: 'editor', label: 'Save Editor' },
     { id: 'monsters', label: 'Monsters' },
+    { id: 'spells', label: 'Spells' },
   ];
 </script>
 
@@ -21,7 +23,7 @@
       {/each}
     </nav>
   </header>
-  <!-- Both tabs stay mounted so the map view and the loaded save survive switching. -->
+  <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
   <main class:hidden={app.tab !== 'map'}>
     <MapExplorer />
   </main>
@@ -30,6 +32,9 @@
   </main>
   <main class:hidden={app.tab !== 'monsters'}>
     <MonsterDatabase />
+  </main>
+  <main class:hidden={app.tab !== 'spells'}>
+    <SpellReference />
   </main>
 </div>
 
