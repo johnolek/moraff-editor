@@ -1,0 +1,10518 @@
+[
+ {
+  "module": 1,
+  "floor": 0,
+  "open": 3331,
+  "down": 97,
+  "up": 0,
+  "chutes": 0,
+  "trapdoors": 0,
+  "teleporterSquares": 26,
+  "doors": 244,
+  "secretDoors": 122,
+  "town": [
+   68,
+   50,
+   42,
+   52
+  ],
+  "trapdoorDests": {}
+ },
+ {
+  "module": 1,
+  "floor": 1,
+  "open": 3040,
+  "down": 84,
+  "up": 60,
+  "chutes": 43,
+  "trapdoors": 3,
+  "teleporterSquares": 17,
+  "doors": 238,
+  "secretDoors": 88,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 2,
+  "open": 3788,
+  "down": 118,
+  "up": 98,
+  "chutes": 58,
+  "trapdoors": 11,
+  "teleporterSquares": 23,
+  "doors": 238,
+  "secretDoors": 78,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 8
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 3,
+  "open": 3781,
+  "down": 98,
+  "up": 133,
+  "chutes": 61,
+  "trapdoors": 5,
+  "teleporterSquares": 23,
+  "doors": 262,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 4,
+  "open": 3902,
+  "down": 100,
+  "up": 129,
+  "chutes": 71,
+  "trapdoors": 8,
+  "teleporterSquares": 18,
+  "doors": 280,
+  "secretDoors": 38,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "15": 5
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 5,
+  "open": 2951,
+  "down": 71,
+  "up": 93,
+  "chutes": 34,
+  "trapdoors": 5,
+  "teleporterSquares": 16,
+  "doors": 326,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 3
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 6,
+  "open": 3336,
+  "down": 70,
+  "up": 108,
+  "chutes": 49,
+  "trapdoors": 0,
+  "teleporterSquares": 22,
+  "doors": 276,
+  "secretDoors": 122,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {},
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 7,
+  "open": 3146,
+  "down": 88,
+  "up": 84,
+  "chutes": 49,
+  "trapdoors": 1,
+  "teleporterSquares": 24,
+  "doors": 186,
+  "secretDoors": 88,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 8,
+  "open": 2956,
+  "down": 65,
+  "up": 95,
+  "chutes": 29,
+  "trapdoors": 1,
+  "teleporterSquares": 19,
+  "doors": 170,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 9,
+  "open": 3493,
+  "down": 105,
+  "up": 93,
+  "chutes": 54,
+  "trapdoors": 2,
+  "teleporterSquares": 27,
+  "doors": 238,
+  "secretDoors": 38,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 10,
+  "open": 3326,
+  "down": 92,
+  "up": 103,
+  "chutes": 59,
+  "trapdoors": 3,
+  "teleporterSquares": 18,
+  "doors": 320,
+  "secretDoors": 114,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 11,
+  "open": 3579,
+  "down": 92,
+  "up": 126,
+  "chutes": 78,
+  "trapdoors": 3,
+  "teleporterSquares": 24,
+  "doors": 184,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 12,
+  "open": 3226,
+  "down": 79,
+  "up": 104,
+  "chutes": 62,
+  "trapdoors": 5,
+  "teleporterSquares": 21,
+  "doors": 304,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 4
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 13,
+  "open": 3350,
+  "down": 87,
+  "up": 94,
+  "chutes": 66,
+  "trapdoors": 2,
+  "teleporterSquares": 22,
+  "doors": 212,
+  "secretDoors": 112,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 14,
+  "open": 3599,
+  "down": 89,
+  "up": 96,
+  "chutes": 68,
+  "trapdoors": 6,
+  "teleporterSquares": 16,
+  "doors": 178,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 4,
+   "15": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 15,
+  "open": 3553,
+  "down": 89,
+  "up": 111,
+  "chutes": 51,
+  "trapdoors": 2,
+  "teleporterSquares": 19,
+  "doors": 308,
+  "secretDoors": 48,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 16,
+  "open": 3316,
+  "down": 69,
+  "up": 102,
+  "chutes": 53,
+  "trapdoors": 4,
+  "teleporterSquares": 15,
+  "doors": 190,
+  "secretDoors": 52,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 4
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 17,
+  "open": 3039,
+  "down": 68,
+  "up": 101,
+  "chutes": 47,
+  "trapdoors": 3,
+  "teleporterSquares": 23,
+  "doors": 194,
+  "secretDoors": 78,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 18,
+  "open": 3408,
+  "down": 95,
+  "up": 89,
+  "chutes": 0,
+  "trapdoors": 0,
+  "teleporterSquares": 24,
+  "doors": 152,
+  "secretDoors": 38,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {},
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 19,
+  "open": 3174,
+  "down": 95,
+  "up": 98,
+  "chutes": 0,
+  "trapdoors": 2,
+  "teleporterSquares": 17,
+  "doors": 228,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 20,
+  "open": 3253,
+  "down": 78,
+  "up": 106,
+  "chutes": 0,
+  "trapdoors": 5,
+  "teleporterSquares": 19,
+  "doors": 190,
+  "secretDoors": 82,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 21,
+  "open": 3586,
+  "down": 108,
+  "up": 100,
+  "chutes": 0,
+  "trapdoors": 3,
+  "teleporterSquares": 20,
+  "doors": 236,
+  "secretDoors": 94,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 22,
+  "open": 3913,
+  "down": 126,
+  "up": 128,
+  "chutes": 0,
+  "trapdoors": 3,
+  "teleporterSquares": 17,
+  "doors": 228,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 23,
+  "open": 3783,
+  "down": 68,
+  "up": 131,
+  "chutes": 0,
+  "trapdoors": 5,
+  "teleporterSquares": 26,
+  "doors": 318,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 3
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 24,
+  "open": 3282,
+  "down": 0,
+  "up": 106,
+  "chutes": 0,
+  "trapdoors": 3,
+  "teleporterSquares": 23,
+  "doors": 136,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 1,
+  "floor": 25,
+  "open": 3489,
+  "down": 0,
+  "up": 89,
+  "chutes": 0,
+  "trapdoors": 4,
+  "teleporterSquares": 18,
+  "doors": 252,
+  "secretDoors": 78,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 0,
+  "open": 3331,
+  "down": 85,
+  "up": 0,
+  "chutes": 0,
+  "trapdoors": 0,
+  "teleporterSquares": 26,
+  "doors": 244,
+  "secretDoors": 122,
+  "town": [
+   58,
+   54,
+   55,
+   43
+  ],
+  "trapdoorDests": {}
+ },
+ {
+  "module": 2,
+  "floor": 1,
+  "open": 3439,
+  "down": 102,
+  "up": 60,
+  "chutes": 58,
+  "trapdoors": 4,
+  "teleporterSquares": 107,
+  "doors": 286,
+  "secretDoors": 94,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "25": 1,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 2,
+  "open": 3522,
+  "down": 102,
+  "up": 98,
+  "chutes": 50,
+  "trapdoors": 13,
+  "teleporterSquares": 25,
+  "doors": 184,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 4,
+   "15": 2,
+   "20": 1,
+   "25": 2,
+   "30": 2,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 3,
+  "open": 3781,
+  "down": 98,
+  "up": 134,
+  "chutes": 52,
+  "trapdoors": 5,
+  "teleporterSquares": 45,
+  "doors": 262,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 4,
+  "open": 3222,
+  "down": 92,
+  "up": 104,
+  "chutes": 40,
+  "trapdoors": 10,
+  "teleporterSquares": 18,
+  "doors": 228,
+  "secretDoors": 44,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 3,
+   "15": 2,
+   "30": 2,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 5,
+  "open": 2934,
+  "down": 88,
+  "up": 103,
+  "chutes": 52,
+  "trapdoors": 4,
+  "teleporterSquares": 63,
+  "doors": 370,
+  "secretDoors": 92,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "25": 2,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 6,
+  "open": 3413,
+  "down": 82,
+  "up": 114,
+  "chutes": 53,
+  "trapdoors": 10,
+  "teleporterSquares": 22,
+  "doors": 248,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 2,
+   "25": 3,
+   "30": 3,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 7,
+  "open": 2748,
+  "down": 70,
+  "up": 84,
+  "chutes": 46,
+  "trapdoors": 9,
+  "teleporterSquares": 37,
+  "doors": 202,
+  "secretDoors": 46,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "20": 2,
+   "25": 1,
+   "30": 2,
+   "35": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 8,
+  "open": 3447,
+  "down": 81,
+  "up": 91,
+  "chutes": 64,
+  "trapdoors": 10,
+  "teleporterSquares": 21,
+  "doors": 258,
+  "secretDoors": 88,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 3,
+   "20": 1,
+   "25": 1,
+   "30": 1,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 9,
+  "open": 3529,
+  "down": 74,
+  "up": 95,
+  "chutes": 65,
+  "trapdoors": 10,
+  "teleporterSquares": 82,
+  "doors": 270,
+  "secretDoors": 94,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 4,
+   "25": 3,
+   "30": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 10,
+  "open": 3579,
+  "down": 104,
+  "up": 95,
+  "chutes": 55,
+  "trapdoors": 7,
+  "teleporterSquares": 27,
+  "doors": 176,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "25": 2,
+   "30": 4
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 11,
+  "open": 3533,
+  "down": 90,
+  "up": 106,
+  "chutes": 63,
+  "trapdoors": 9,
+  "teleporterSquares": 45,
+  "doors": 296,
+  "secretDoors": 34,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 3,
+   "20": 4,
+   "25": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 12,
+  "open": 3629,
+  "down": 80,
+  "up": 107,
+  "chutes": 64,
+  "trapdoors": 4,
+  "teleporterSquares": 17,
+  "doors": 216,
+  "secretDoors": 100,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "20": 1,
+   "25": 1,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 13,
+  "open": 3609,
+  "down": 108,
+  "up": 106,
+  "chutes": 70,
+  "trapdoors": 7,
+  "teleporterSquares": 80,
+  "doors": 320,
+  "secretDoors": 122,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1,
+   "20": 1,
+   "25": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 14,
+  "open": 3389,
+  "down": 99,
+  "up": 127,
+  "chutes": 55,
+  "trapdoors": 6,
+  "teleporterSquares": 20,
+  "doors": 214,
+  "secretDoors": 78,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "30": 2
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 15,
+  "open": 3614,
+  "down": 91,
+  "up": 111,
+  "chutes": 70,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 230,
+  "secretDoors": 108,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "20": 3,
+   "25": 1,
+   "30": 2,
+   "35": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 16,
+  "open": 3507,
+  "down": 95,
+  "up": 110,
+  "chutes": 63,
+  "trapdoors": 5,
+  "teleporterSquares": 0,
+  "doors": 308,
+  "secretDoors": 74,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 3,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 17,
+  "open": 3501,
+  "down": 87,
+  "up": 111,
+  "chutes": 78,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 360,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "20": 1,
+   "25": 3,
+   "30": 1,
+   "35": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 18,
+  "open": 3451,
+  "down": 92,
+  "up": 102,
+  "chutes": 56,
+  "trapdoors": 6,
+  "teleporterSquares": 0,
+  "doors": 216,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "20": 1,
+   "25": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 19,
+  "open": 3435,
+  "down": 100,
+  "up": 112,
+  "chutes": 76,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 252,
+  "secretDoors": 110,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "20": 1,
+   "25": 3,
+   "35": 3
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 20,
+  "open": 3678,
+  "down": 100,
+  "up": 114,
+  "chutes": 78,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 210,
+  "secretDoors": 44,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 3,
+   "15": 2,
+   "25": 2,
+   "30": 2,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 21,
+  "open": 3424,
+  "down": 92,
+  "up": 108,
+  "chutes": 60,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 260,
+  "secretDoors": 128,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 2,
+   "25": 2,
+   "30": 1,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 22,
+  "open": 3262,
+  "down": 76,
+  "up": 109,
+  "chutes": 55,
+  "trapdoors": 4,
+  "teleporterSquares": 0,
+  "doors": 224,
+  "secretDoors": 46,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "25": 1,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 23,
+  "open": 3398,
+  "down": 102,
+  "up": 98,
+  "chutes": 54,
+  "trapdoors": 5,
+  "teleporterSquares": 0,
+  "doors": 232,
+  "secretDoors": 84,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 1,
+   "25": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 24,
+  "open": 3807,
+  "down": 91,
+  "up": 118,
+  "chutes": 73,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 274,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 2,
+   "25": 3,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 25,
+  "open": 2907,
+  "down": 59,
+  "up": 95,
+  "chutes": 69,
+  "trapdoors": 6,
+  "teleporterSquares": 0,
+  "doors": 152,
+  "secretDoors": 30,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1,
+   "30": 3
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 26,
+  "open": 3182,
+  "down": 83,
+  "up": 88,
+  "chutes": 65,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 188,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "15": 2,
+   "20": 1,
+   "30": 3,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 27,
+  "open": 3363,
+  "down": 99,
+  "up": 95,
+  "chutes": 52,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 246,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 2,
+   "20": 2,
+   "30": 1,
+   "35": 2
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 28,
+  "open": 3884,
+  "down": 92,
+  "up": 134,
+  "chutes": 83,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 340,
+  "secretDoors": 130,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 6,
+   "15": 3,
+   "20": 1,
+   "30": 2,
+   "35": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 29,
+  "open": 3544,
+  "down": 86,
+  "up": 102,
+  "chutes": 65,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 186,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "30": 1,
+   "35": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 30,
+  "open": 3153,
+  "down": 112,
+  "up": 83,
+  "chutes": 67,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 174,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 4,
+   "20": 1,
+   "25": 1,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 31,
+  "open": 3554,
+  "down": 101,
+  "up": 128,
+  "chutes": 46,
+  "trapdoors": 7,
+  "teleporterSquares": 0,
+  "doors": 310,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 4,
+   "35": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 32,
+  "open": 3401,
+  "down": 80,
+  "up": 124,
+  "chutes": 22,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 256,
+  "secretDoors": 78,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 3,
+   "20": 1,
+   "25": 2,
+   "35": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 33,
+  "open": 3155,
+  "down": 98,
+  "up": 89,
+  "chutes": 0,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 148,
+  "secretDoors": 82,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 4,
+   "20": 1,
+   "25": 1,
+   "35": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 34,
+  "open": 3510,
+  "down": 97,
+  "up": 118,
+  "chutes": 0,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 244,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 4,
+   "15": 4,
+   "20": 1,
+   "25": 1,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 35,
+  "open": 3107,
+  "down": 109,
+  "up": 103,
+  "chutes": 0,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 236,
+  "secretDoors": 100,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 4,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 36,
+  "open": 3768,
+  "down": 98,
+  "up": 124,
+  "chutes": 0,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 250,
+  "secretDoors": 72,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 3,
+   "15": 1,
+   "20": 2,
+   "25": 3,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 37,
+  "open": 3706,
+  "down": 131,
+  "up": 123,
+  "chutes": 0,
+  "trapdoors": 7,
+  "teleporterSquares": 0,
+  "doors": 254,
+  "secretDoors": 74,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 1,
+   "20": 2,
+   "25": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 38,
+  "open": 3871,
+  "down": 105,
+  "up": 134,
+  "chutes": 0,
+  "trapdoors": 5,
+  "teleporterSquares": 0,
+  "doors": 178,
+  "secretDoors": 34,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "20": 1,
+   "25": 2,
+   "30": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 39,
+  "open": 3506,
+  "down": 94,
+  "up": 138,
+  "chutes": 0,
+  "trapdoors": 5,
+  "teleporterSquares": 0,
+  "doors": 160,
+  "secretDoors": 36,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 2
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 40,
+  "open": 3229,
+  "down": 84,
+  "up": 102,
+  "chutes": 0,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 232,
+  "secretDoors": 86,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 1,
+   "30": 1,
+   "35": 4
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 41,
+  "open": 3438,
+  "down": 86,
+  "up": 104,
+  "chutes": 0,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 240,
+  "secretDoors": 94,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 3,
+   "20": 4,
+   "25": 1,
+   "30": 2,
+   "35": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 42,
+  "open": 3128,
+  "down": 85,
+  "up": 100,
+  "chutes": 0,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 178,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 2,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 43,
+  "open": 3374,
+  "down": 61,
+  "up": 108,
+  "chutes": 0,
+  "trapdoors": 5,
+  "teleporterSquares": 0,
+  "doors": 184,
+  "secretDoors": 40,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "35": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 44,
+  "open": 3654,
+  "down": 0,
+  "up": 102,
+  "chutes": 0,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 210,
+  "secretDoors": 98,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "20": 1,
+   "25": 3,
+   "30": 3,
+   "35": 4
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 2,
+  "floor": 45,
+  "open": 3446,
+  "down": 0,
+  "up": 119,
+  "chutes": 0,
+  "trapdoors": 7,
+  "teleporterSquares": 0,
+  "doors": 148,
+  "secretDoors": 44,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1,
+   "25": 1,
+   "30": 1,
+   "35": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 0,
+  "open": 3525,
+  "down": 86,
+  "up": 0,
+  "chutes": 0,
+  "trapdoors": 0,
+  "teleporterSquares": 25,
+  "doors": 302,
+  "secretDoors": 108,
+  "town": [
+   62,
+   52,
+   69,
+   55
+  ],
+  "trapdoorDests": {}
+ },
+ {
+  "module": 3,
+  "floor": 1,
+  "open": 3674,
+  "down": 76,
+  "up": 62,
+  "chutes": 55,
+  "trapdoors": 12,
+  "teleporterSquares": 25,
+  "doors": 220,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 1,
+   "25": 3,
+   "30": 1,
+   "40": 2,
+   "45": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 2,
+  "open": 3446,
+  "down": 83,
+  "up": 81,
+  "chutes": 43,
+  "trapdoors": 23,
+  "teleporterSquares": 21,
+  "doors": 216,
+  "secretDoors": 94,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 2,
+   "20": 1,
+   "25": 3,
+   "30": 4,
+   "35": 2,
+   "40": 1,
+   "45": 2,
+   "50": 5
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 3,
+  "open": 3090,
+  "down": 77,
+  "up": 95,
+  "chutes": 60,
+  "trapdoors": 15,
+  "teleporterSquares": 24,
+  "doors": 248,
+  "secretDoors": 114,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 3,
+   "25": 2,
+   "30": 2,
+   "40": 1,
+   "45": 3,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 4,
+  "open": 3408,
+  "down": 98,
+  "up": 93,
+  "chutes": 63,
+  "trapdoors": 14,
+  "teleporterSquares": 23,
+  "doors": 92,
+  "secretDoors": 36,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "25": 2,
+   "30": 4,
+   "35": 1,
+   "40": 1,
+   "45": 1,
+   "50": 3
+  },
+  "trapdoorLanding": [
+   50,
+   63
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 5,
+  "open": 3955,
+  "down": 99,
+  "up": 139,
+  "chutes": 45,
+  "trapdoors": 20,
+  "teleporterSquares": 21,
+  "doors": 176,
+  "secretDoors": 48,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 5,
+   "15": 2,
+   "20": 2,
+   "25": 4,
+   "35": 1,
+   "40": 3,
+   "45": 1,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 6,
+  "open": 3540,
+  "down": 89,
+  "up": 106,
+  "chutes": 49,
+  "trapdoors": 10,
+  "teleporterSquares": 21,
+  "doors": 180,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 1,
+   "30": 1,
+   "35": 3,
+   "40": 1,
+   "45": 1,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   35,
+   76
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 7,
+  "open": 3243,
+  "down": 81,
+  "up": 104,
+  "chutes": 37,
+  "trapdoors": 9,
+  "teleporterSquares": 20,
+  "doors": 264,
+  "secretDoors": 92,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "30": 1,
+   "35": 1,
+   "40": 1,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 8,
+  "open": 3188,
+  "down": 96,
+  "up": 93,
+  "chutes": 42,
+  "trapdoors": 7,
+  "teleporterSquares": 11,
+  "doors": 162,
+  "secretDoors": 72,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "25": 2,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 9,
+  "open": 3391,
+  "down": 99,
+  "up": 114,
+  "chutes": 52,
+  "trapdoors": 8,
+  "teleporterSquares": 22,
+  "doors": 278,
+  "secretDoors": 48,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 3,
+   "25": 1,
+   "35": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 10,
+  "open": 3326,
+  "down": 104,
+  "up": 108,
+  "chutes": 60,
+  "trapdoors": 8,
+  "teleporterSquares": 17,
+  "doors": 320,
+  "secretDoors": 114,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 2,
+   "25": 1,
+   "30": 1,
+   "40": 1,
+   "45": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 11,
+  "open": 3710,
+  "down": 108,
+  "up": 104,
+  "chutes": 56,
+  "trapdoors": 10,
+  "teleporterSquares": 25,
+  "doors": 224,
+  "secretDoors": 86,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "40": 3,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 12,
+  "open": 3603,
+  "down": 105,
+  "up": 128,
+  "chutes": 70,
+  "trapdoors": 13,
+  "teleporterSquares": 25,
+  "doors": 198,
+  "secretDoors": 48,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 3,
+   "25": 2,
+   "30": 2,
+   "35": 2,
+   "40": 2,
+   "45": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   34,
+   77
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 13,
+  "open": 2931,
+  "down": 66,
+  "up": 108,
+  "chutes": 53,
+  "trapdoors": 6,
+  "teleporterSquares": 22,
+  "doors": 214,
+  "secretDoors": 42,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "25": 1,
+   "30": 1,
+   "40": 1,
+   "45": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 14,
+  "open": 3295,
+  "down": 97,
+  "up": 111,
+  "chutes": 64,
+  "trapdoors": 9,
+  "teleporterSquares": 25,
+  "doors": 158,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "20": 1,
+   "25": 2,
+   "30": 2,
+   "40": 1,
+   "45": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 15,
+  "open": 3614,
+  "down": 76,
+  "up": 104,
+  "chutes": 73,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 230,
+  "secretDoors": 108,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "20": 1,
+   "25": 1,
+   "30": 4,
+   "35": 2,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 16,
+  "open": 3599,
+  "down": 99,
+  "up": 91,
+  "chutes": 75,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 322,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 3,
+   "30": 2,
+   "40": 3,
+   "45": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 17,
+  "open": 3386,
+  "down": 94,
+  "up": 100,
+  "chutes": 54,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 232,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "20": 1,
+   "25": 4,
+   "40": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 18,
+  "open": 3422,
+  "down": 86,
+  "up": 123,
+  "chutes": 69,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 220,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "20": 3,
+   "25": 3,
+   "30": 1,
+   "40": 3,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 19,
+  "open": 3030,
+  "down": 79,
+  "up": 88,
+  "chutes": 54,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 206,
+  "secretDoors": 138,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "30": 2,
+   "35": 2,
+   "40": 2,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 20,
+  "open": 3633,
+  "down": 118,
+  "up": 107,
+  "chutes": 71,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 256,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "25": 1,
+   "30": 4,
+   "40": 3,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 21,
+  "open": 3493,
+  "down": 99,
+  "up": 118,
+  "chutes": 69,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 172,
+  "secretDoors": 34,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 3,
+   "15": 2,
+   "25": 1,
+   "45": 3
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 22,
+  "open": 3913,
+  "down": 102,
+  "up": 131,
+  "chutes": 58,
+  "trapdoors": 4,
+  "teleporterSquares": 0,
+  "doors": 228,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1,
+   "30": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 23,
+  "open": 3246,
+  "down": 83,
+  "up": 109,
+  "chutes": 53,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 200,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "25": 4,
+   "30": 2,
+   "35": 1,
+   "40": 3,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   34,
+   77
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 24,
+  "open": 3265,
+  "down": 75,
+  "up": 100,
+  "chutes": 67,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 236,
+  "secretDoors": 92,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "15": 1,
+   "25": 3,
+   "35": 1,
+   "40": 1,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 25,
+  "open": 3634,
+  "down": 87,
+  "up": 98,
+  "chutes": 58,
+  "trapdoors": 7,
+  "teleporterSquares": 0,
+  "doors": 210,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 2,
+   "20": 1,
+   "40": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 26,
+  "open": 3196,
+  "down": 88,
+  "up": 88,
+  "chutes": 55,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 150,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 2,
+   "35": 3,
+   "40": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 27,
+  "open": 3703,
+  "down": 103,
+  "up": 122,
+  "chutes": 59,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 268,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 5,
+   "15": 1,
+   "20": 3,
+   "45": 2
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 28,
+  "open": 3259,
+  "down": 84,
+  "up": 109,
+  "chutes": 72,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 302,
+  "secretDoors": 78,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 2,
+   "20": 2,
+   "30": 3,
+   "35": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 29,
+  "open": 3287,
+  "down": 87,
+  "up": 97,
+  "chutes": 53,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 300,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 2,
+   "20": 1,
+   "35": 2,
+   "40": 1,
+   "45": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 30,
+  "open": 3735,
+  "down": 110,
+  "up": 117,
+  "chutes": 63,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 180,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "25": 1,
+   "35": 2,
+   "40": 1,
+   "45": 3,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 31,
+  "open": 3517,
+  "down": 104,
+  "up": 108,
+  "chutes": 64,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 206,
+  "secretDoors": 92,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 5,
+   "25": 1,
+   "40": 2,
+   "45": 3,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 32,
+  "open": 3768,
+  "down": 108,
+  "up": 130,
+  "chutes": 76,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 236,
+  "secretDoors": 84,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 2,
+   "15": 2,
+   "20": 4,
+   "25": 2,
+   "35": 2,
+   "40": 1,
+   "45": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 33,
+  "open": 3576,
+  "down": 107,
+  "up": 116,
+  "chutes": 87,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 318,
+  "secretDoors": 114,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 3,
+   "20": 2,
+   "25": 1,
+   "35": 5,
+   "40": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 34,
+  "open": 3451,
+  "down": 99,
+  "up": 131,
+  "chutes": 76,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 176,
+  "secretDoors": 52,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 3,
+   "25": 2,
+   "35": 1,
+   "40": 1,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 35,
+  "open": 3230,
+  "down": 96,
+  "up": 109,
+  "chutes": 56,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 164,
+  "secretDoors": 46,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 3,
+   "20": 1,
+   "25": 3,
+   "30": 3,
+   "40": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 36,
+  "open": 3261,
+  "down": 75,
+  "up": 108,
+  "chutes": 65,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 254,
+  "secretDoors": 74,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 2,
+   "20": 1,
+   "25": 2,
+   "40": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 37,
+  "open": 3586,
+  "down": 99,
+  "up": 107,
+  "chutes": 76,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 168,
+  "secretDoors": 42,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 3,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 1,
+   "40": 2,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 38,
+  "open": 3142,
+  "down": 89,
+  "up": 100,
+  "chutes": 65,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 196,
+  "secretDoors": 110,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "20": 1,
+   "25": 1,
+   "30": 3,
+   "40": 3,
+   "45": 4,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 39,
+  "open": 3215,
+  "down": 89,
+  "up": 95,
+  "chutes": 65,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 334,
+  "secretDoors": 74,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 1,
+   "20": 1,
+   "25": 3,
+   "30": 1,
+   "40": 1,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 40,
+  "open": 3352,
+  "down": 90,
+  "up": 128,
+  "chutes": 72,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 240,
+  "secretDoors": 50,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 1,
+   "20": 3,
+   "25": 1,
+   "30": 2,
+   "35": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 41,
+  "open": 3675,
+  "down": 107,
+  "up": 111,
+  "chutes": 66,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 268,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 2,
+   "20": 1,
+   "25": 1,
+   "35": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 42,
+  "open": 3548,
+  "down": 98,
+  "up": 111,
+  "chutes": 70,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 156,
+  "secretDoors": 50,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 2,
+   "20": 2,
+   "25": 1,
+   "30": 1,
+   "35": 1,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 43,
+  "open": 3374,
+  "down": 86,
+  "up": 127,
+  "chutes": 57,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 184,
+  "secretDoors": 40,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 4,
+   "35": 2,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 44,
+  "open": 3448,
+  "down": 98,
+  "up": 116,
+  "chutes": 62,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 256,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 1,
+   "25": 1,
+   "30": 1,
+   "35": 1,
+   "45": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 45,
+  "open": 3403,
+  "down": 107,
+  "up": 113,
+  "chutes": 65,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 174,
+  "secretDoors": 84,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 3,
+   "30": 1,
+   "35": 2,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 46,
+  "open": 3519,
+  "down": 83,
+  "up": 124,
+  "chutes": 71,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 256,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 2,
+   "20": 2,
+   "25": 1,
+   "30": 3,
+   "35": 1,
+   "40": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 47,
+  "open": 3431,
+  "down": 114,
+  "up": 90,
+  "chutes": 54,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 190,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "20": 1,
+   "25": 1,
+   "30": 3,
+   "35": 1,
+   "40": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 48,
+  "open": 3687,
+  "down": 93,
+  "up": 134,
+  "chutes": 0,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 178,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 1,
+   "15": 4,
+   "20": 2,
+   "25": 4,
+   "35": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 49,
+  "open": 3261,
+  "down": 79,
+  "up": 114,
+  "chutes": 0,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 276,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 4,
+   "20": 1,
+   "25": 3,
+   "30": 3,
+   "35": 2,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 50,
+  "open": 3535,
+  "down": 98,
+  "up": 102,
+  "chutes": 0,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 286,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 1,
+   "20": 3,
+   "25": 3,
+   "35": 1,
+   "40": 1,
+   "45": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 51,
+  "open": 3374,
+  "down": 77,
+  "up": 112,
+  "chutes": 0,
+  "trapdoors": 20,
+  "teleporterSquares": 0,
+  "doors": 218,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 4,
+   "15": 1,
+   "20": 2,
+   "25": 3,
+   "30": 2,
+   "35": 2,
+   "40": 1,
+   "45": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 52,
+  "open": 3259,
+  "down": 85,
+  "up": 85,
+  "chutes": 0,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 262,
+  "secretDoors": 96,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "30": 2,
+   "40": 3,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 53,
+  "open": 2958,
+  "down": 77,
+  "up": 98,
+  "chutes": 0,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 214,
+  "secretDoors": 50,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 2,
+   "20": 2,
+   "30": 1,
+   "35": 2,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 54,
+  "open": 3269,
+  "down": 84,
+  "up": 98,
+  "chutes": 0,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 186,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 2,
+   "20": 1,
+   "25": 2,
+   "35": 2,
+   "40": 2
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 55,
+  "open": 3344,
+  "down": 91,
+  "up": 108,
+  "chutes": 0,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 282,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "25": 1,
+   "30": 1,
+   "35": 2,
+   "45": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 56,
+  "open": 3249,
+  "down": 91,
+  "up": 105,
+  "chutes": 0,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 156,
+  "secretDoors": 82,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "30": 2,
+   "35": 2,
+   "40": 2,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 57,
+  "open": 3289,
+  "down": 88,
+  "up": 111,
+  "chutes": 0,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 210,
+  "secretDoors": 100,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 2,
+   "25": 1,
+   "30": 2,
+   "35": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 58,
+  "open": 3042,
+  "down": 79,
+  "up": 108,
+  "chutes": 0,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 302,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 3,
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "30": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 59,
+  "open": 3593,
+  "down": 85,
+  "up": 98,
+  "chutes": 0,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 176,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 3,
+   "20": 4,
+   "25": 1,
+   "35": 2,
+   "40": 2,
+   "45": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 60,
+  "open": 3235,
+  "down": 81,
+  "up": 109,
+  "chutes": 0,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 184,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 1,
+   "20": 1,
+   "25": 4,
+   "30": 3,
+   "35": 4,
+   "40": 5,
+   "45": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 61,
+  "open": 3128,
+  "down": 71,
+  "up": 74,
+  "chutes": 0,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 200,
+  "secretDoors": 52,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "35": 3,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 62,
+  "open": 3385,
+  "down": 102,
+  "up": 106,
+  "chutes": 0,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 164,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 2,
+   "30": 2,
+   "35": 2,
+   "40": 2,
+   "45": 1,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 63,
+  "open": 3542,
+  "down": 69,
+  "up": 112,
+  "chutes": 0,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 202,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "20": 2,
+   "25": 3,
+   "30": 2,
+   "35": 1,
+   "40": 5,
+   "45": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 64,
+  "open": 3671,
+  "down": 0,
+  "up": 107,
+  "chutes": 0,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 278,
+  "secretDoors": 82,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "20": 1,
+   "25": 4,
+   "35": 1,
+   "40": 2,
+   "45": 4,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 3,
+  "floor": 65,
+  "open": 3048,
+  "down": 0,
+  "up": 116,
+  "chutes": 0,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 124,
+  "secretDoors": 30,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "25": 1,
+   "35": 2,
+   "40": 3,
+   "45": 2,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 0,
+  "open": 3102,
+  "down": 78,
+  "up": 0,
+  "chutes": 0,
+  "trapdoors": 0,
+  "teleporterSquares": 22,
+  "doors": 144,
+  "secretDoors": 62,
+  "town": [
+   39,
+   53,
+   45,
+   49
+  ],
+  "trapdoorDests": {}
+ },
+ {
+  "module": 4,
+  "floor": 1,
+  "open": 3477,
+  "down": 90,
+  "up": 52,
+  "chutes": 47,
+  "trapdoors": 16,
+  "teleporterSquares": 48,
+  "doors": 146,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 4,
+   "25": 2,
+   "30": 3,
+   "40": 1,
+   "45": 1,
+   "50": 1,
+   "55": 1,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 2,
+  "open": 3446,
+  "down": 105,
+  "up": 87,
+  "chutes": 62,
+  "trapdoors": 24,
+  "teleporterSquares": 22,
+  "doors": 216,
+  "secretDoors": 94,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 1,
+   "25": 2,
+   "30": 3,
+   "35": 2,
+   "40": 2,
+   "45": 3,
+   "50": 4,
+   "55": 1,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 3,
+  "open": 3494,
+  "down": 96,
+  "up": 123,
+  "chutes": 58,
+  "trapdoors": 19,
+  "teleporterSquares": 79,
+  "doors": 266,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 5,
+   "10": 2,
+   "15": 2,
+   "30": 1,
+   "45": 2,
+   "50": 2,
+   "55": 1,
+   "60": 2,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 4,
+  "open": 3567,
+  "down": 87,
+  "up": 127,
+  "chutes": 63,
+  "trapdoors": 14,
+  "teleporterSquares": 21,
+  "doors": 314,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 4,
+   "20": 1,
+   "25": 2,
+   "30": 1,
+   "40": 1,
+   "50": 1,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 5,
+  "open": 3331,
+  "down": 84,
+  "up": 93,
+  "chutes": 52,
+  "trapdoors": 18,
+  "teleporterSquares": 40,
+  "doors": 222,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "20": 2,
+   "25": 2,
+   "30": 2,
+   "40": 3,
+   "50": 1,
+   "55": 4,
+   "60": 2,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 6,
+  "open": 3474,
+  "down": 80,
+  "up": 109,
+  "chutes": 51,
+  "trapdoors": 9,
+  "teleporterSquares": 20,
+  "doors": 290,
+  "secretDoors": 74,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "20": 2,
+   "30": 1,
+   "35": 1,
+   "40": 3,
+   "45": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 7,
+  "open": 3297,
+  "down": 91,
+  "up": 90,
+  "chutes": 48,
+  "trapdoors": 12,
+  "teleporterSquares": 71,
+  "doors": 374,
+  "secretDoors": 106,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 1,
+   "20": 2,
+   "25": 2,
+   "30": 2,
+   "45": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 8,
+  "open": 3188,
+  "down": 79,
+  "up": 107,
+  "chutes": 45,
+  "trapdoors": 13,
+  "teleporterSquares": 20,
+  "doors": 162,
+  "secretDoors": 72,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "20": 1,
+   "25": 1,
+   "40": 2,
+   "45": 4,
+   "60": 2,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 9,
+  "open": 3529,
+  "down": 93,
+  "up": 108,
+  "chutes": 57,
+  "trapdoors": 14,
+  "teleporterSquares": 44,
+  "doors": 208,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 2,
+   "30": 1,
+   "40": 1,
+   "45": 1,
+   "50": 1,
+   "55": 2,
+   "60": 2,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 10,
+  "open": 3202,
+  "down": 93,
+  "up": 104,
+  "chutes": 70,
+  "trapdoors": 13,
+  "teleporterSquares": 20,
+  "doors": 316,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "20": 2,
+   "25": 1,
+   "30": 2,
+   "35": 1,
+   "45": 2,
+   "55": 1,
+   "60": 1,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 11,
+  "open": 3441,
+  "down": 88,
+  "up": 104,
+  "chutes": 62,
+  "trapdoors": 13,
+  "teleporterSquares": 103,
+  "doors": 314,
+  "secretDoors": 72,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 2,
+   "20": 1,
+   "25": 1,
+   "35": 2,
+   "45": 1,
+   "50": 1,
+   "60": 2,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 12,
+  "open": 3478,
+  "down": 92,
+  "up": 104,
+  "chutes": 57,
+  "trapdoors": 21,
+  "teleporterSquares": 25,
+  "doors": 308,
+  "secretDoors": 132,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "20": 3,
+   "25": 1,
+   "35": 3,
+   "40": 2,
+   "45": 3,
+   "50": 1,
+   "55": 2,
+   "60": 2,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 13,
+  "open": 3609,
+  "down": 99,
+  "up": 109,
+  "chutes": 75,
+  "trapdoors": 18,
+  "teleporterSquares": 49,
+  "doors": 320,
+  "secretDoors": 122,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 2,
+   "20": 3,
+   "25": 2,
+   "30": 1,
+   "35": 1,
+   "40": 1,
+   "50": 2,
+   "55": 2,
+   "60": 1,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 14,
+  "open": 3431,
+  "down": 83,
+  "up": 103,
+  "chutes": 73,
+  "trapdoors": 17,
+  "teleporterSquares": 23,
+  "doors": 98,
+  "secretDoors": 36,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "35": 3,
+   "40": 3,
+   "55": 2,
+   "60": 2,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 15,
+  "open": 3553,
+  "down": 107,
+  "up": 104,
+  "chutes": 59,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 208,
+  "secretDoors": 50,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "20": 1,
+   "25": 4,
+   "30": 1,
+   "50": 1,
+   "55": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 16,
+  "open": 3507,
+  "down": 104,
+  "up": 108,
+  "chutes": 73,
+  "trapdoors": 24,
+  "teleporterSquares": 0,
+  "doors": 308,
+  "secretDoors": 74,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 4,
+   "20": 2,
+   "25": 2,
+   "30": 4,
+   "35": 2,
+   "40": 3,
+   "50": 1,
+   "55": 2,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 17,
+  "open": 3859,
+  "down": 96,
+  "up": 124,
+  "chutes": 82,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 188,
+  "secretDoors": 40,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "20": 3,
+   "25": 1,
+   "30": 1,
+   "35": 3,
+   "40": 1,
+   "45": 2,
+   "50": 1,
+   "55": 1,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 18,
+  "open": 3585,
+  "down": 98,
+  "up": 120,
+  "chutes": 75,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 216,
+  "secretDoors": 84,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 2,
+   "25": 2,
+   "35": 4,
+   "40": 2,
+   "50": 2,
+   "60": 1,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 19,
+  "open": 3345,
+  "down": 94,
+  "up": 106,
+  "chutes": 71,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 258,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "25": 1,
+   "30": 2,
+   "40": 3,
+   "45": 2,
+   "50": 1,
+   "55": 4,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 20,
+  "open": 3671,
+  "down": 91,
+  "up": 130,
+  "chutes": 56,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 156,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 4,
+   "10": 1,
+   "15": 1,
+   "25": 1,
+   "35": 1,
+   "45": 2,
+   "50": 2,
+   "55": 1,
+   "60": 1,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 21,
+  "open": 3524,
+  "down": 85,
+  "up": 104,
+  "chutes": 65,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 190,
+  "secretDoors": 52,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 5,
+   "15": 1,
+   "25": 2,
+   "30": 1,
+   "35": 1,
+   "40": 1,
+   "50": 4,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 22,
+  "open": 3605,
+  "down": 103,
+  "up": 110,
+  "chutes": 70,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 202,
+  "secretDoors": 38,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 1,
+   "25": 2,
+   "30": 1,
+   "35": 1,
+   "60": 3,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 23,
+  "open": 3455,
+  "down": 97,
+  "up": 110,
+  "chutes": 53,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 262,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 2,
+   "30": 2,
+   "40": 2,
+   "45": 2,
+   "55": 1,
+   "60": 2,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 24,
+  "open": 3242,
+  "down": 84,
+  "up": 105,
+  "chutes": 50,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 174,
+  "secretDoors": 108,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "25": 4,
+   "30": 3,
+   "35": 1,
+   "45": 1,
+   "55": 1,
+   "60": 3,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 25,
+  "open": 3215,
+  "down": 79,
+  "up": 93,
+  "chutes": 46,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 246,
+  "secretDoors": 44,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 2,
+   "30": 1,
+   "35": 2,
+   "40": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 26,
+  "open": 3170,
+  "down": 85,
+  "up": 98,
+  "chutes": 63,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 220,
+  "secretDoors": 102,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1,
+   "20": 1,
+   "30": 2,
+   "35": 1,
+   "40": 1,
+   "45": 1,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   37,
+   75
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 27,
+  "open": 3122,
+  "down": 87,
+  "up": 97,
+  "chutes": 55,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 314,
+  "secretDoors": 84,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "35": 2,
+   "40": 2,
+   "45": 1,
+   "60": 2,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 28,
+  "open": 3396,
+  "down": 91,
+  "up": 110,
+  "chutes": 56,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 192,
+  "secretDoors": 46,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1,
+   "20": 2,
+   "30": 3,
+   "45": 2,
+   "50": 1,
+   "55": 2,
+   "60": 3,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 29,
+  "open": 3202,
+  "down": 90,
+  "up": 106,
+  "chutes": 47,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 218,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "30": 2,
+   "40": 1,
+   "45": 1,
+   "50": 1,
+   "55": 1,
+   "60": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 30,
+  "open": 3426,
+  "down": 77,
+  "up": 117,
+  "chutes": 60,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 218,
+  "secretDoors": 100,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 4,
+   "35": 1,
+   "40": 2,
+   "45": 3,
+   "55": 1,
+   "60": 3,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 31,
+  "open": 3460,
+  "down": 86,
+  "up": 90,
+  "chutes": 59,
+  "trapdoors": 24,
+  "teleporterSquares": 0,
+  "doors": 212,
+  "secretDoors": 70,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 2,
+   "20": 2,
+   "25": 3,
+   "35": 4,
+   "40": 2,
+   "45": 3,
+   "55": 4,
+   "60": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 32,
+  "open": 3255,
+  "down": 84,
+  "up": 105,
+  "chutes": 82,
+  "trapdoors": 7,
+  "teleporterSquares": 0,
+  "doors": 278,
+  "secretDoors": 118,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "25": 1,
+   "45": 1,
+   "55": 1,
+   "60": 2,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 33,
+  "open": 3267,
+  "down": 79,
+  "up": 99,
+  "chutes": 56,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 208,
+  "secretDoors": 36,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "40": 2,
+   "50": 1,
+   "55": 1,
+   "60": 3
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 34,
+  "open": 3270,
+  "down": 83,
+  "up": 107,
+  "chutes": 52,
+  "trapdoors": 20,
+  "teleporterSquares": 0,
+  "doors": 174,
+  "secretDoors": 48,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 4,
+   "15": 3,
+   "25": 1,
+   "40": 1,
+   "45": 4,
+   "50": 3,
+   "55": 1,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 35,
+  "open": 2792,
+  "down": 74,
+  "up": 89,
+  "chutes": 43,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 204,
+  "secretDoors": 70,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "30": 1,
+   "40": 3,
+   "45": 2,
+   "50": 2,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 36,
+  "open": 3482,
+  "down": 96,
+  "up": 105,
+  "chutes": 62,
+  "trapdoors": 21,
+  "teleporterSquares": 0,
+  "doors": 356,
+  "secretDoors": 70,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 2,
+   "20": 2,
+   "25": 2,
+   "30": 2,
+   "40": 3,
+   "50": 2,
+   "55": 2,
+   "60": 2,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 37,
+  "open": 3549,
+  "down": 99,
+  "up": 111,
+  "chutes": 76,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 202,
+  "secretDoors": 74,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 3,
+   "15": 5,
+   "40": 2,
+   "45": 1,
+   "55": 1,
+   "60": 2,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 38,
+  "open": 3927,
+  "down": 110,
+  "up": 115,
+  "chutes": 83,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 188,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 3,
+   "15": 3,
+   "20": 4,
+   "25": 3,
+   "30": 1,
+   "45": 2,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 39,
+  "open": 3631,
+  "down": 90,
+  "up": 117,
+  "chutes": 63,
+  "trapdoors": 25,
+  "teleporterSquares": 0,
+  "doors": 192,
+  "secretDoors": 82,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 1,
+   "15": 4,
+   "20": 1,
+   "25": 3,
+   "30": 2,
+   "40": 1,
+   "45": 6,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 40,
+  "open": 3760,
+  "down": 95,
+  "up": 107,
+  "chutes": 69,
+  "trapdoors": 21,
+  "teleporterSquares": 0,
+  "doors": 240,
+  "secretDoors": 70,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 2,
+   "20": 2,
+   "25": 5,
+   "30": 1,
+   "35": 1,
+   "45": 1,
+   "50": 2,
+   "55": 2,
+   "60": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 41,
+  "open": 3348,
+  "down": 84,
+  "up": 106,
+  "chutes": 63,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 204,
+  "secretDoors": 110,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 1,
+   "20": 3,
+   "35": 1,
+   "45": 2,
+   "60": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 42,
+  "open": 3087,
+  "down": 90,
+  "up": 99,
+  "chutes": 56,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 160,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "30": 1,
+   "45": 1,
+   "55": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 43,
+  "open": 3400,
+  "down": 85,
+  "up": 129,
+  "chutes": 60,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 158,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "35": 2,
+   "45": 1,
+   "50": 4,
+   "55": 2,
+   "60": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 44,
+  "open": 3312,
+  "down": 74,
+  "up": 92,
+  "chutes": 54,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 230,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "20": 2,
+   "35": 1,
+   "45": 1,
+   "50": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 45,
+  "open": 3294,
+  "down": 91,
+  "up": 101,
+  "chutes": 83,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 292,
+  "secretDoors": 42,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "20": 2,
+   "30": 4,
+   "35": 3,
+   "40": 1,
+   "50": 1,
+   "55": 2,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 46,
+  "open": 2989,
+  "down": 98,
+  "up": 108,
+  "chutes": 51,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 164,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "25": 3,
+   "40": 1,
+   "50": 3,
+   "55": 1,
+   "60": 1,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 47,
+  "open": 3446,
+  "down": 83,
+  "up": 115,
+  "chutes": 89,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 270,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 3,
+   "25": 1,
+   "30": 2,
+   "50": 3,
+   "60": 3,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 48,
+  "open": 3312,
+  "down": 88,
+  "up": 101,
+  "chutes": 77,
+  "trapdoors": 8,
+  "teleporterSquares": 0,
+  "doors": 210,
+  "secretDoors": 70,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 1,
+   "25": 2,
+   "35": 1,
+   "40": 1,
+   "55": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 49,
+  "open": 3421,
+  "down": 87,
+  "up": 92,
+  "chutes": 61,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 258,
+  "secretDoors": 46,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 3,
+   "20": 1,
+   "30": 2,
+   "40": 1,
+   "50": 2,
+   "55": 3,
+   "60": 1
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 50,
+  "open": 3528,
+  "down": 75,
+  "up": 110,
+  "chutes": 73,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 270,
+  "secretDoors": 86,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "20": 3,
+   "25": 2,
+   "30": 2,
+   "35": 2,
+   "45": 3,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 51,
+  "open": 3444,
+  "down": 111,
+  "up": 92,
+  "chutes": 64,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 186,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1,
+   "25": 4,
+   "30": 2,
+   "40": 2,
+   "55": 2,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 52,
+  "open": 3552,
+  "down": 96,
+  "up": 112,
+  "chutes": 68,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 234,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 4,
+   "35": 2,
+   "45": 1,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 53,
+  "open": 3714,
+  "down": 98,
+  "up": 138,
+  "chutes": 82,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 378,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 2,
+   "25": 1,
+   "40": 2,
+   "45": 2,
+   "55": 4,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 54,
+  "open": 3641,
+  "down": 83,
+  "up": 115,
+  "chutes": 83,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 146,
+  "secretDoors": 96,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "25": 2,
+   "30": 2,
+   "35": 4,
+   "45": 1,
+   "55": 2,
+   "60": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 55,
+  "open": 3275,
+  "down": 94,
+  "up": 96,
+  "chutes": 74,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 248,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 3,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "30": 1,
+   "40": 1,
+   "50": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 56,
+  "open": 3190,
+  "down": 90,
+  "up": 92,
+  "chutes": 67,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 232,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 2,
+   "25": 1,
+   "40": 1,
+   "60": 3,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 57,
+  "open": 3712,
+  "down": 97,
+  "up": 120,
+  "chutes": 52,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 278,
+  "secretDoors": 84,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 3,
+   "20": 3,
+   "25": 1,
+   "30": 1,
+   "35": 1,
+   "40": 1,
+   "45": 1,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 58,
+  "open": 3588,
+  "down": 94,
+  "up": 122,
+  "chutes": 71,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 202,
+  "secretDoors": 86,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "30": 1,
+   "45": 1,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 59,
+  "open": 3466,
+  "down": 107,
+  "up": 101,
+  "chutes": 73,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 284,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 3,
+   "15": 3,
+   "20": 1,
+   "25": 1,
+   "30": 2,
+   "40": 1,
+   "45": 2,
+   "50": 1,
+   "60": 1,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 60,
+  "open": 3751,
+  "down": 77,
+  "up": 129,
+  "chutes": 58,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 270,
+  "secretDoors": 102,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "35": 1,
+   "40": 2,
+   "45": 2,
+   "50": 1,
+   "55": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 61,
+  "open": 3473,
+  "down": 82,
+  "up": 97,
+  "chutes": 51,
+  "trapdoors": 21,
+  "teleporterSquares": 0,
+  "doors": 216,
+  "secretDoors": 86,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "30": 1,
+   "35": 3,
+   "40": 1,
+   "45": 2,
+   "50": 3,
+   "55": 1,
+   "65": 5
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 62,
+  "open": 3018,
+  "down": 69,
+  "up": 84,
+  "chutes": 33,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 246,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "20": 2,
+   "40": 1,
+   "50": 3,
+   "55": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   50,
+   63
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 63,
+  "open": 3401,
+  "down": 81,
+  "up": 107,
+  "chutes": 0,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 252,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 1,
+   "25": 1,
+   "30": 1,
+   "35": 2,
+   "40": 4,
+   "50": 3,
+   "55": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 64,
+  "open": 3437,
+  "down": 103,
+  "up": 106,
+  "chutes": 0,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 272,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 1,
+   "15": 3,
+   "20": 1,
+   "30": 5,
+   "35": 2,
+   "40": 2,
+   "45": 1,
+   "55": 1,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 65,
+  "open": 3514,
+  "down": 106,
+  "up": 104,
+  "chutes": 0,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 210,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 3,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "35": 1,
+   "40": 1,
+   "45": 3,
+   "50": 2,
+   "55": 1,
+   "60": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 66,
+  "open": 3403,
+  "down": 97,
+  "up": 133,
+  "chutes": 0,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 208,
+  "secretDoors": 78,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 3,
+   "15": 1,
+   "20": 2,
+   "25": 3,
+   "30": 2,
+   "35": 1,
+   "40": 1,
+   "45": 1,
+   "55": 3,
+   "60": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 67,
+  "open": 3367,
+  "down": 70,
+  "up": 126,
+  "chutes": 0,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 154,
+  "secretDoors": 44,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 1,
+   "25": 1,
+   "30": 1,
+   "35": 2,
+   "40": 3,
+   "45": 2,
+   "50": 1,
+   "55": 2,
+   "60": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 68,
+  "open": 3387,
+  "down": 93,
+  "up": 80,
+  "chutes": 0,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 194,
+  "secretDoors": 110,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "20": 1,
+   "25": 1,
+   "30": 1,
+   "35": 2,
+   "50": 1,
+   "55": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 69,
+  "open": 3548,
+  "down": 96,
+  "up": 126,
+  "chutes": 0,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 236,
+  "secretDoors": 86,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 2,
+   "25": 1,
+   "30": 1,
+   "35": 2,
+   "40": 1,
+   "45": 1,
+   "55": 3,
+   "60": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 70,
+  "open": 3719,
+  "down": 105,
+  "up": 124,
+  "chutes": 0,
+  "trapdoors": 20,
+  "teleporterSquares": 0,
+  "doors": 258,
+  "secretDoors": 110,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 2,
+   "20": 1,
+   "25": 3,
+   "30": 3,
+   "35": 1,
+   "40": 2,
+   "45": 1,
+   "50": 2,
+   "60": 2,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 71,
+  "open": 3060,
+  "down": 70,
+  "up": 111,
+  "chutes": 0,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 204,
+  "secretDoors": 36,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "30": 4,
+   "35": 3,
+   "40": 3,
+   "50": 3,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 72,
+  "open": 3510,
+  "down": 102,
+  "up": 99,
+  "chutes": 0,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 266,
+  "secretDoors": 92,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1,
+   "20": 4,
+   "30": 1,
+   "40": 1,
+   "45": 1,
+   "50": 4,
+   "55": 1,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 73,
+  "open": 3210,
+  "down": 87,
+  "up": 97,
+  "chutes": 0,
+  "trapdoors": 9,
+  "teleporterSquares": 0,
+  "doors": 150,
+  "secretDoors": 40,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 1,
+   "30": 1,
+   "40": 1,
+   "45": 2,
+   "50": 1,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 74,
+  "open": 3177,
+  "down": 76,
+  "up": 110,
+  "chutes": 0,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 232,
+  "secretDoors": 70,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "30": 1,
+   "35": 5,
+   "40": 1,
+   "45": 1,
+   "55": 3,
+   "60": 1,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 75,
+  "open": 3087,
+  "down": 92,
+  "up": 109,
+  "chutes": 0,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 246,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 2,
+   "45": 3,
+   "50": 2,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 76,
+  "open": 3602,
+  "down": 89,
+  "up": 112,
+  "chutes": 0,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 156,
+  "secretDoors": 72,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 1,
+   "35": 2,
+   "45": 2,
+   "55": 2,
+   "60": 1,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 77,
+  "open": 3592,
+  "down": 98,
+  "up": 109,
+  "chutes": 0,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 168,
+  "secretDoors": 30,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 3,
+   "20": 2,
+   "25": 1,
+   "30": 1,
+   "35": 1,
+   "40": 1,
+   "45": 1,
+   "50": 2,
+   "55": 1,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 78,
+  "open": 3427,
+  "down": 100,
+  "up": 120,
+  "chutes": 0,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 190,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "20": 3,
+   "25": 2,
+   "30": 1,
+   "40": 2,
+   "45": 2,
+   "50": 2,
+   "55": 1,
+   "60": 2,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 79,
+  "open": 3252,
+  "down": 85,
+  "up": 119,
+  "chutes": 0,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 226,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "20": 3,
+   "25": 1,
+   "35": 1,
+   "45": 1,
+   "50": 1,
+   "55": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 80,
+  "open": 3557,
+  "down": 110,
+  "up": 104,
+  "chutes": 0,
+  "trapdoors": 23,
+  "teleporterSquares": 0,
+  "doors": 182,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 1,
+   "25": 3,
+   "30": 3,
+   "35": 1,
+   "40": 2,
+   "45": 5,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 81,
+  "open": 3603,
+  "down": 85,
+  "up": 128,
+  "chutes": 0,
+  "trapdoors": 23,
+  "teleporterSquares": 0,
+  "doors": 142,
+  "secretDoors": 40,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 2,
+   "20": 5,
+   "25": 2,
+   "35": 3,
+   "40": 2,
+   "45": 2,
+   "50": 2,
+   "55": 3,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 82,
+  "open": 3286,
+  "down": 72,
+  "up": 99,
+  "chutes": 0,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 136,
+  "secretDoors": 64,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 2,
+   "20": 1,
+   "25": 2,
+   "30": 1,
+   "35": 1,
+   "40": 3,
+   "45": 2,
+   "50": 1,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 83,
+  "open": 2905,
+  "down": 46,
+  "up": 96,
+  "chutes": 0,
+  "trapdoors": 12,
+  "teleporterSquares": 0,
+  "doors": 124,
+  "secretDoors": 22,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 4,
+   "25": 1,
+   "30": 2,
+   "50": 1,
+   "55": 2,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 84,
+  "open": 2933,
+  "down": 0,
+  "up": 89,
+  "chutes": 0,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 154,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 1,
+   "25": 1,
+   "30": 3,
+   "35": 2,
+   "40": 1,
+   "50": 2
+  },
+  "trapdoorLanding": [
+   34,
+   77
+  ]
+ },
+ {
+  "module": 4,
+  "floor": 85,
+  "open": 3807,
+  "down": 0,
+  "up": 128,
+  "chutes": 0,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 264,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "20": 3,
+   "25": 2,
+   "30": 1,
+   "35": 4,
+   "45": 3,
+   "50": 3,
+   "65": 1
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 0,
+  "open": 3586,
+  "down": 95,
+  "up": 0,
+  "chutes": 0,
+  "trapdoors": 0,
+  "teleporterSquares": 27,
+  "doors": 260,
+  "secretDoors": 110,
+  "town": [
+   58,
+   54,
+   59,
+   67
+  ],
+  "trapdoorDests": {}
+ },
+ {
+  "module": 5,
+  "floor": 1,
+  "open": 3398,
+  "down": 90,
+  "up": 65,
+  "chutes": 54,
+  "trapdoors": 19,
+  "teleporterSquares": 23,
+  "doors": 162,
+  "secretDoors": 52,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 3,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 1,
+   "50": 2,
+   "55": 2,
+   "60": 1,
+   "65": 3,
+   "70": 1,
+   "75": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 2,
+  "open": 3747,
+  "down": 105,
+  "up": 102,
+  "chutes": 42,
+  "trapdoors": 26,
+  "teleporterSquares": 15,
+  "doors": 192,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 3,
+   "20": 4,
+   "25": 1,
+   "30": 4,
+   "45": 2,
+   "60": 1,
+   "65": 3,
+   "70": 1,
+   "75": 3,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 3,
+  "open": 3781,
+  "down": 113,
+  "up": 124,
+  "chutes": 53,
+  "trapdoors": 21,
+  "teleporterSquares": 18,
+  "doors": 262,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 2,
+   "20": 1,
+   "25": 3,
+   "30": 1,
+   "35": 2,
+   "40": 1,
+   "45": 1,
+   "50": 1,
+   "55": 2,
+   "60": 3,
+   "65": 1,
+   "70": 1,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 4,
+  "open": 3098,
+  "down": 71,
+  "up": 104,
+  "chutes": 43,
+  "trapdoors": 18,
+  "teleporterSquares": 10,
+  "doors": 200,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 2,
+   "15": 2,
+   "20": 2,
+   "25": 3,
+   "35": 1,
+   "45": 1,
+   "60": 1,
+   "65": 3
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 5,
+  "open": 3465,
+  "down": 87,
+  "up": 97,
+  "chutes": 59,
+  "trapdoors": 16,
+  "teleporterSquares": 23,
+  "doors": 274,
+  "secretDoors": 40,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "20": 1,
+   "25": 2,
+   "30": 1,
+   "35": 1,
+   "40": 1,
+   "45": 3,
+   "50": 2,
+   "55": 1,
+   "65": 1,
+   "70": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   34,
+   77
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 6,
+  "open": 3585,
+  "down": 85,
+  "up": 111,
+  "chutes": 50,
+  "trapdoors": 16,
+  "teleporterSquares": 26,
+  "doors": 182,
+  "secretDoors": 48,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 2,
+   "25": 2,
+   "30": 1,
+   "35": 1,
+   "40": 1,
+   "50": 2,
+   "55": 1,
+   "60": 2,
+   "75": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 7,
+  "open": 3243,
+  "down": 92,
+  "up": 106,
+  "chutes": 47,
+  "trapdoors": 27,
+  "teleporterSquares": 20,
+  "doors": 264,
+  "secretDoors": 92,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 3,
+   "20": 2,
+   "25": 4,
+   "30": 1,
+   "40": 2,
+   "45": 2,
+   "60": 3,
+   "65": 1,
+   "70": 1,
+   "75": 6
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 8,
+  "open": 3447,
+  "down": 89,
+  "up": 111,
+  "chutes": 42,
+  "trapdoors": 11,
+  "teleporterSquares": 23,
+  "doors": 258,
+  "secretDoors": 88,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 2,
+   "25": 1,
+   "45": 2,
+   "55": 1,
+   "60": 1,
+   "70": 1,
+   "75": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 9,
+  "open": 3444,
+  "down": 111,
+  "up": 95,
+  "chutes": 51,
+  "trapdoors": 19,
+  "teleporterSquares": 26,
+  "doors": 210,
+  "secretDoors": 64,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "20": 3,
+   "25": 1,
+   "35": 1,
+   "40": 1,
+   "45": 2,
+   "50": 2,
+   "55": 3,
+   "60": 1,
+   "65": 1,
+   "70": 1,
+   "75": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 10,
+  "open": 3616,
+  "down": 94,
+  "up": 123,
+  "chutes": 69,
+  "trapdoors": 23,
+  "teleporterSquares": 25,
+  "doors": 198,
+  "secretDoors": 106,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 1,
+   "20": 3,
+   "25": 1,
+   "30": 3,
+   "40": 2,
+   "45": 3,
+   "50": 1,
+   "55": 2,
+   "60": 2,
+   "65": 2,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 11,
+  "open": 3228,
+  "down": 78,
+  "up": 109,
+  "chutes": 58,
+  "trapdoors": 14,
+  "teleporterSquares": 21,
+  "doors": 242,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 1,
+   "25": 1,
+   "35": 1,
+   "40": 1,
+   "45": 2,
+   "55": 1,
+   "60": 1,
+   "65": 1,
+   "70": 2,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 12,
+  "open": 3627,
+  "down": 97,
+  "up": 110,
+  "chutes": 66,
+  "trapdoors": 35,
+  "teleporterSquares": 16,
+  "doors": 156,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 5,
+   "20": 4,
+   "25": 1,
+   "30": 5,
+   "35": 4,
+   "40": 4,
+   "45": 2,
+   "55": 1,
+   "60": 2,
+   "70": 4,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 13,
+  "open": 3609,
+  "down": 106,
+  "up": 114,
+  "chutes": 74,
+  "trapdoors": 21,
+  "teleporterSquares": 30,
+  "doors": 320,
+  "secretDoors": 122,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1,
+   "25": 5,
+   "30": 2,
+   "40": 2,
+   "50": 2,
+   "65": 2,
+   "70": 1,
+   "75": 3,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 14,
+  "open": 3680,
+  "down": 96,
+  "up": 115,
+  "chutes": 65,
+  "trapdoors": 27,
+  "teleporterSquares": 23,
+  "doors": 196,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 4,
+   "20": 1,
+   "25": 2,
+   "30": 3,
+   "40": 2,
+   "45": 2,
+   "50": 2,
+   "55": 2,
+   "65": 1,
+   "75": 2,
+   "80": 4
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 15,
+  "open": 3511,
+  "down": 93,
+  "up": 115,
+  "chutes": 64,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 258,
+  "secretDoors": 36,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "20": 2,
+   "25": 2,
+   "35": 1,
+   "40": 2,
+   "50": 1,
+   "60": 2,
+   "65": 1,
+   "70": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 16,
+  "open": 3406,
+  "down": 91,
+  "up": 110,
+  "chutes": 53,
+  "trapdoors": 26,
+  "teleporterSquares": 0,
+  "doors": 246,
+  "secretDoors": 102,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 4,
+   "20": 2,
+   "25": 1,
+   "30": 3,
+   "35": 1,
+   "45": 4,
+   "50": 1,
+   "55": 1,
+   "60": 3,
+   "65": 3,
+   "70": 1,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 17,
+  "open": 3335,
+  "down": 92,
+  "up": 103,
+  "chutes": 59,
+  "trapdoors": 23,
+  "teleporterSquares": 0,
+  "doors": 172,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "20": 1,
+   "25": 1,
+   "30": 6,
+   "35": 2,
+   "45": 3,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "65": 1,
+   "70": 2,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 18,
+  "open": 3151,
+  "down": 93,
+  "up": 99,
+  "chutes": 57,
+  "trapdoors": 25,
+  "teleporterSquares": 0,
+  "doors": 198,
+  "secretDoors": 96,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "20": 2,
+   "25": 2,
+   "35": 1,
+   "40": 1,
+   "45": 2,
+   "50": 1,
+   "55": 3,
+   "60": 1,
+   "70": 3,
+   "75": 2,
+   "80": 4
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 19,
+  "open": 3659,
+  "down": 98,
+  "up": 118,
+  "chutes": 76,
+  "trapdoors": 10,
+  "teleporterSquares": 0,
+  "doors": 126,
+  "secretDoors": 36,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "40": 3,
+   "50": 2,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 20,
+  "open": 3688,
+  "down": 126,
+  "up": 120,
+  "chutes": 75,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 212,
+  "secretDoors": 106,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "25": 3,
+   "30": 3,
+   "35": 1,
+   "55": 1,
+   "65": 3,
+   "70": 1,
+   "75": 3
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 21,
+  "open": 3394,
+  "down": 93,
+  "up": 128,
+  "chutes": 66,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 216,
+  "secretDoors": 104,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "35": 1,
+   "45": 3,
+   "50": 2,
+   "60": 3,
+   "65": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 22,
+  "open": 3605,
+  "down": 91,
+  "up": 117,
+  "chutes": 86,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 202,
+  "secretDoors": 38,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 1,
+   "25": 2,
+   "30": 3,
+   "40": 1,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "65": 1,
+   "70": 1,
+   "75": 1,
+   "80": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 23,
+  "open": 3582,
+  "down": 94,
+  "up": 121,
+  "chutes": 66,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 256,
+  "secretDoors": 136,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "25": 2,
+   "30": 2,
+   "35": 1,
+   "40": 4,
+   "45": 3,
+   "55": 2,
+   "60": 3,
+   "65": 1,
+   "70": 2,
+   "75": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 24,
+  "open": 3241,
+  "down": 96,
+  "up": 89,
+  "chutes": 71,
+  "trapdoors": 21,
+  "teleporterSquares": 0,
+  "doors": 170,
+  "secretDoors": 46,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "25": 1,
+   "30": 2,
+   "40": 3,
+   "55": 4,
+   "60": 2,
+   "65": 1,
+   "70": 3,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 25,
+  "open": 3525,
+  "down": 84,
+  "up": 112,
+  "chutes": 57,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 116,
+  "secretDoors": 36,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 3,
+   "15": 1,
+   "20": 1,
+   "35": 1,
+   "40": 1,
+   "45": 2,
+   "60": 2,
+   "65": 2,
+   "70": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 26,
+  "open": 3357,
+  "down": 104,
+  "up": 99,
+  "chutes": 71,
+  "trapdoors": 25,
+  "teleporterSquares": 0,
+  "doors": 190,
+  "secretDoors": 52,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 3,
+   "20": 2,
+   "30": 2,
+   "35": 2,
+   "45": 2,
+   "50": 2,
+   "55": 2,
+   "60": 1,
+   "65": 1,
+   "70": 3,
+   "75": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 27,
+  "open": 3468,
+  "down": 89,
+  "up": 113,
+  "chutes": 62,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 240,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 1,
+   "20": 1,
+   "35": 3,
+   "40": 3,
+   "45": 1,
+   "50": 1,
+   "55": 2,
+   "65": 1,
+   "70": 1,
+   "75": 3,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 28,
+  "open": 3023,
+  "down": 83,
+  "up": 104,
+  "chutes": 69,
+  "trapdoors": 24,
+  "teleporterSquares": 0,
+  "doors": 184,
+  "secretDoors": 44,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "20": 1,
+   "30": 1,
+   "40": 1,
+   "45": 2,
+   "50": 2,
+   "55": 3,
+   "60": 3,
+   "65": 5,
+   "70": 2,
+   "75": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 29,
+  "open": 3436,
+  "down": 83,
+  "up": 97,
+  "chutes": 64,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 266,
+  "secretDoors": 102,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "30": 2,
+   "35": 1,
+   "45": 2,
+   "55": 4,
+   "60": 1,
+   "75": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 30,
+  "open": 3995,
+  "down": 110,
+  "up": 117,
+  "chutes": 88,
+  "trapdoors": 28,
+  "teleporterSquares": 0,
+  "doors": 236,
+  "secretDoors": 64,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 3,
+   "15": 2,
+   "20": 1,
+   "25": 2,
+   "35": 1,
+   "55": 3,
+   "60": 1,
+   "65": 3,
+   "70": 4,
+   "75": 2,
+   "80": 4
+  },
+  "trapdoorLanding": [
+   19,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 31,
+  "open": 3218,
+  "down": 112,
+  "up": 96,
+  "chutes": 71,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 304,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 3,
+   "25": 1,
+   "35": 1,
+   "50": 2,
+   "55": 3,
+   "60": 2,
+   "65": 1,
+   "70": 1,
+   "75": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 32,
+  "open": 3658,
+  "down": 79,
+  "up": 130,
+  "chutes": 83,
+  "trapdoors": 28,
+  "teleporterSquares": 0,
+  "doors": 218,
+  "secretDoors": 74,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 3,
+   "20": 3,
+   "35": 1,
+   "45": 1,
+   "55": 3,
+   "60": 5,
+   "65": 2,
+   "70": 2,
+   "75": 2,
+   "80": 3
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 33,
+  "open": 3576,
+  "down": 93,
+  "up": 105,
+  "chutes": 62,
+  "trapdoors": 31,
+  "teleporterSquares": 0,
+  "doors": 318,
+  "secretDoors": 114,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 3,
+   "15": 4,
+   "20": 2,
+   "25": 1,
+   "35": 1,
+   "40": 1,
+   "45": 5,
+   "50": 2,
+   "55": 2,
+   "60": 2,
+   "65": 1,
+   "70": 1,
+   "75": 3,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 34,
+  "open": 3380,
+  "down": 105,
+  "up": 95,
+  "chutes": 72,
+  "trapdoors": 25,
+  "teleporterSquares": 0,
+  "doors": 264,
+  "secretDoors": 130,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 1,
+   "20": 3,
+   "25": 2,
+   "35": 1,
+   "40": 4,
+   "45": 2,
+   "60": 2,
+   "70": 1,
+   "75": 2,
+   "80": 4
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 35,
+  "open": 3678,
+  "down": 106,
+  "up": 127,
+  "chutes": 75,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 224,
+  "secretDoors": 102,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 2,
+   "20": 2,
+   "25": 3,
+   "40": 1,
+   "45": 1,
+   "55": 1,
+   "60": 1,
+   "70": 3,
+   "75": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 36,
+  "open": 3205,
+  "down": 91,
+  "up": 118,
+  "chutes": 64,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 170,
+  "secretDoors": 64,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 1,
+   "20": 5,
+   "25": 1,
+   "45": 1,
+   "50": 1,
+   "55": 1,
+   "60": 3,
+   "75": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 37,
+  "open": 3622,
+  "down": 101,
+  "up": 125,
+  "chutes": 59,
+  "trapdoors": 24,
+  "teleporterSquares": 0,
+  "doors": 366,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "30": 1,
+   "40": 2,
+   "45": 1,
+   "55": 1,
+   "60": 2,
+   "70": 4,
+   "75": 3,
+   "80": 3
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 38,
+  "open": 3215,
+  "down": 80,
+  "up": 109,
+  "chutes": 58,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 78,
+  "secretDoors": 50,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 1,
+   "40": 1,
+   "45": 1,
+   "50": 5,
+   "55": 2,
+   "60": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 39,
+  "open": 3459,
+  "down": 100,
+  "up": 104,
+  "chutes": 58,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 230,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "40": 1,
+   "45": 2,
+   "55": 1,
+   "60": 1,
+   "65": 1,
+   "70": 4
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 40,
+  "open": 3473,
+  "down": 86,
+  "up": 105,
+  "chutes": 59,
+  "trapdoors": 20,
+  "teleporterSquares": 0,
+  "doors": 330,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 2,
+   "45": 2,
+   "50": 1,
+   "55": 2,
+   "65": 4,
+   "75": 2,
+   "80": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 41,
+  "open": 3847,
+  "down": 97,
+  "up": 115,
+  "chutes": 80,
+  "trapdoors": 23,
+  "teleporterSquares": 0,
+  "doors": 232,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "25": 2,
+   "30": 2,
+   "35": 2,
+   "45": 3,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "65": 2,
+   "70": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 42,
+  "open": 3503,
+  "down": 91,
+  "up": 112,
+  "chutes": 52,
+  "trapdoors": 24,
+  "teleporterSquares": 0,
+  "doors": 228,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "50": 3,
+   "55": 2,
+   "60": 3,
+   "65": 2,
+   "75": 5,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 43,
+  "open": 3151,
+  "down": 85,
+  "up": 100,
+  "chutes": 61,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 360,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "15": 1,
+   "20": 1,
+   "35": 4,
+   "50": 2,
+   "55": 1,
+   "60": 1,
+   "70": 1,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 44,
+  "open": 3568,
+  "down": 95,
+  "up": 108,
+  "chutes": 47,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 228,
+  "secretDoors": 100,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 1,
+   "20": 3,
+   "25": 3,
+   "35": 2,
+   "45": 1,
+   "50": 2,
+   "55": 1,
+   "65": 2,
+   "70": 1,
+   "75": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 45,
+  "open": 3399,
+  "down": 90,
+  "up": 108,
+  "chutes": 61,
+  "trapdoors": 21,
+  "teleporterSquares": 0,
+  "doors": 270,
+  "secretDoors": 98,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 1,
+   "15": 2,
+   "30": 1,
+   "35": 1,
+   "55": 1,
+   "60": 7,
+   "70": 2,
+   "75": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 46,
+  "open": 3751,
+  "down": 90,
+  "up": 126,
+  "chutes": 68,
+  "trapdoors": 27,
+  "teleporterSquares": 0,
+  "doors": 272,
+  "secretDoors": 44,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "15": 5,
+   "20": 3,
+   "25": 1,
+   "30": 3,
+   "35": 1,
+   "40": 3,
+   "50": 2,
+   "60": 1,
+   "80": 4
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 47,
+  "open": 3446,
+  "down": 100,
+  "up": 94,
+  "chutes": 80,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 270,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "20": 1,
+   "30": 1,
+   "35": 2,
+   "50": 1,
+   "55": 2,
+   "60": 3,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 48,
+  "open": 3292,
+  "down": 93,
+  "up": 117,
+  "chutes": 47,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 180,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "15": 1,
+   "20": 1,
+   "25": 3,
+   "35": 1,
+   "40": 1,
+   "50": 1,
+   "60": 2,
+   "65": 2,
+   "70": 2,
+   "75": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 49,
+  "open": 3367,
+  "down": 77,
+  "up": 114,
+  "chutes": 57,
+  "trapdoors": 25,
+  "teleporterSquares": 0,
+  "doors": 162,
+  "secretDoors": 102,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "15": 2,
+   "20": 2,
+   "30": 2,
+   "40": 4,
+   "50": 3,
+   "55": 1,
+   "65": 3,
+   "70": 3,
+   "75": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 50,
+  "open": 3159,
+  "down": 75,
+  "up": 102,
+  "chutes": 77,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 264,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "20": 2,
+   "25": 2,
+   "35": 1,
+   "40": 1,
+   "45": 2,
+   "55": 2,
+   "60": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 51,
+  "open": 3158,
+  "down": 83,
+  "up": 95,
+  "chutes": 61,
+  "trapdoors": 27,
+  "teleporterSquares": 0,
+  "doors": 368,
+  "secretDoors": 102,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 4,
+   "10": 2,
+   "15": 2,
+   "20": 1,
+   "25": 2,
+   "30": 2,
+   "35": 1,
+   "40": 1,
+   "55": 2,
+   "60": 3,
+   "65": 1,
+   "70": 2,
+   "75": 1,
+   "80": 3
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 52,
+  "open": 3201,
+  "down": 81,
+  "up": 95,
+  "chutes": 63,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 152,
+  "secretDoors": 30,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "20": 1,
+   "30": 3,
+   "35": 1,
+   "40": 1,
+   "45": 1,
+   "55": 1,
+   "60": 2,
+   "65": 1,
+   "70": 2,
+   "75": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   50,
+   63
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 53,
+  "open": 2958,
+  "down": 76,
+  "up": 91,
+  "chutes": 51,
+  "trapdoors": 15,
+  "teleporterSquares": 0,
+  "doors": 214,
+  "secretDoors": 50,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "20": 1,
+   "25": 1,
+   "35": 1,
+   "45": 2,
+   "55": 1,
+   "60": 2,
+   "65": 1,
+   "75": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 54,
+  "open": 3352,
+  "down": 69,
+  "up": 112,
+  "chutes": 55,
+  "trapdoors": 20,
+  "teleporterSquares": 0,
+  "doors": 292,
+  "secretDoors": 52,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 4,
+   "15": 2,
+   "20": 1,
+   "25": 1,
+   "30": 1,
+   "40": 1,
+   "45": 2,
+   "55": 1,
+   "65": 3,
+   "70": 1,
+   "75": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 55,
+  "open": 3487,
+  "down": 92,
+  "up": 84,
+  "chutes": 66,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 382,
+  "secretDoors": 114,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "20": 1,
+   "25": 1,
+   "35": 2,
+   "45": 3,
+   "50": 2,
+   "60": 1,
+   "65": 1,
+   "70": 3,
+   "75": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 56,
+  "open": 3190,
+  "down": 87,
+  "up": 93,
+  "chutes": 64,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 232,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "20": 2,
+   "25": 4,
+   "30": 3,
+   "35": 1,
+   "40": 1,
+   "45": 1,
+   "50": 1,
+   "60": 1,
+   "65": 2,
+   "70": 1,
+   "75": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 57,
+  "open": 3593,
+  "down": 107,
+  "up": 111,
+  "chutes": 45,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 208,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 2,
+   "15": 4,
+   "20": 1,
+   "35": 2,
+   "40": 2,
+   "45": 1,
+   "60": 1,
+   "70": 1,
+   "75": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 58,
+  "open": 3673,
+  "down": 93,
+  "up": 110,
+  "chutes": 69,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 208,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 2,
+   "20": 2,
+   "25": 1,
+   "30": 5,
+   "40": 2,
+   "45": 1,
+   "70": 2,
+   "75": 2,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 59,
+  "open": 3441,
+  "down": 83,
+  "up": 129,
+  "chutes": 59,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 300,
+  "secretDoors": 48,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "40": 1,
+   "45": 1,
+   "50": 2,
+   "75": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 60,
+  "open": 3346,
+  "down": 83,
+  "up": 94,
+  "chutes": 81,
+  "trapdoors": 24,
+  "teleporterSquares": 0,
+  "doors": 312,
+  "secretDoors": 116,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "20": 2,
+   "25": 3,
+   "30": 3,
+   "35": 3,
+   "40": 2,
+   "45": 1,
+   "65": 1,
+   "70": 2,
+   "75": 3,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 61,
+  "open": 3574,
+  "down": 85,
+  "up": 94,
+  "chutes": 60,
+  "trapdoors": 25,
+  "teleporterSquares": 0,
+  "doors": 266,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 3,
+   "25": 4,
+   "35": 2,
+   "45": 3,
+   "50": 1,
+   "65": 2,
+   "70": 3,
+   "75": 2,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 62,
+  "open": 2964,
+  "down": 75,
+  "up": 112,
+  "chutes": 72,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 266,
+  "secretDoors": 82,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "20": 2,
+   "30": 2,
+   "35": 1,
+   "40": 2,
+   "45": 4,
+   "50": 3,
+   "65": 1,
+   "70": 2,
+   "75": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   50,
+   63
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 63,
+  "open": 3319,
+  "down": 86,
+  "up": 86,
+  "chutes": 60,
+  "trapdoors": 21,
+  "teleporterSquares": 0,
+  "doors": 134,
+  "secretDoors": 78,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "20": 3,
+   "25": 3,
+   "30": 1,
+   "35": 4,
+   "40": 3,
+   "45": 1,
+   "50": 1,
+   "65": 3,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 64,
+  "open": 3558,
+  "down": 84,
+  "up": 117,
+  "chutes": 68,
+  "trapdoors": 24,
+  "teleporterSquares": 0,
+  "doors": 356,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "30": 3,
+   "35": 1,
+   "40": 2,
+   "45": 3,
+   "50": 2,
+   "55": 2,
+   "70": 4,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 65,
+  "open": 2502,
+  "down": 79,
+  "up": 62,
+  "chutes": 43,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 164,
+  "secretDoors": 68,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "20": 1,
+   "25": 3,
+   "30": 1,
+   "40": 1,
+   "45": 2,
+   "50": 2,
+   "55": 3,
+   "70": 1,
+   "75": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   35,
+   77
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 66,
+  "open": 3574,
+  "down": 89,
+  "up": 108,
+  "chutes": 81,
+  "trapdoors": 28,
+  "teleporterSquares": 0,
+  "doors": 306,
+  "secretDoors": 52,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "30": 1,
+   "35": 3,
+   "40": 3,
+   "45": 1,
+   "50": 2,
+   "55": 3,
+   "60": 3,
+   "70": 1,
+   "75": 2,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 67,
+  "open": 3504,
+  "down": 86,
+  "up": 109,
+  "chutes": 84,
+  "trapdoors": 29,
+  "teleporterSquares": 0,
+  "doors": 154,
+  "secretDoors": 48,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 4,
+   "15": 1,
+   "30": 1,
+   "35": 2,
+   "40": 1,
+   "45": 1,
+   "50": 5,
+   "55": 3,
+   "60": 2,
+   "70": 4,
+   "75": 4
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 68,
+  "open": 3226,
+  "down": 64,
+  "up": 89,
+  "chutes": 59,
+  "trapdoors": 23,
+  "teleporterSquares": 0,
+  "doors": 352,
+  "secretDoors": 100,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 2,
+   "25": 4,
+   "30": 1,
+   "35": 3,
+   "45": 4,
+   "55": 1,
+   "70": 3,
+   "75": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 69,
+  "open": 3452,
+  "down": 84,
+  "up": 84,
+  "chutes": 68,
+  "trapdoors": 21,
+  "teleporterSquares": 0,
+  "doors": 150,
+  "secretDoors": 50,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "25": 3,
+   "30": 2,
+   "35": 2,
+   "45": 1,
+   "55": 4,
+   "60": 1,
+   "75": 2,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 70,
+  "open": 3283,
+  "down": 79,
+  "up": 98,
+  "chutes": 54,
+  "trapdoors": 11,
+  "teleporterSquares": 0,
+  "doors": 262,
+  "secretDoors": 60,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "25": 4,
+   "30": 1,
+   "35": 1,
+   "45": 2,
+   "50": 1,
+   "55": 1,
+   "60": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 71,
+  "open": 3024,
+  "down": 75,
+  "up": 84,
+  "chutes": 57,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 272,
+  "secretDoors": 50,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "20": 2,
+   "25": 2,
+   "45": 1,
+   "60": 1,
+   "65": 1,
+   "75": 2,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 72,
+  "open": 3494,
+  "down": 87,
+  "up": 86,
+  "chutes": 93,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 178,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "20": 1,
+   "25": 1,
+   "30": 3,
+   "35": 3,
+   "55": 1,
+   "60": 4,
+   "75": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 73,
+  "open": 3991,
+  "down": 113,
+  "up": 107,
+  "chutes": 75,
+  "trapdoors": 21,
+  "teleporterSquares": 0,
+  "doors": 222,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 6,
+   "15": 2,
+   "20": 1,
+   "30": 2,
+   "35": 3,
+   "40": 2,
+   "60": 1,
+   "65": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 74,
+  "open": 4001,
+  "down": 109,
+  "up": 121,
+  "chutes": 105,
+  "trapdoors": 27,
+  "teleporterSquares": 0,
+  "doors": 352,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "30": 3,
+   "40": 1,
+   "45": 2,
+   "50": 3,
+   "55": 4,
+   "60": 2,
+   "65": 2,
+   "75": 3,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 75,
+  "open": 3778,
+  "down": 101,
+  "up": 136,
+  "chutes": 61,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 196,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "20": 1,
+   "25": 1,
+   "30": 1,
+   "35": 6,
+   "45": 2,
+   "50": 1,
+   "55": 2,
+   "65": 2,
+   "70": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 76,
+  "open": 3501,
+  "down": 97,
+  "up": 103,
+  "chutes": 52,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 232,
+  "secretDoors": 82,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 2,
+   "15": 1,
+   "30": 2,
+   "35": 1,
+   "45": 1,
+   "55": 2,
+   "65": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 77,
+  "open": 3751,
+  "down": 104,
+  "up": 125,
+  "chutes": 42,
+  "trapdoors": 26,
+  "teleporterSquares": 0,
+  "doors": 210,
+  "secretDoors": 112,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 2,
+   "25": 2,
+   "30": 3,
+   "35": 3,
+   "40": 1,
+   "45": 5,
+   "50": 3,
+   "55": 1,
+   "60": 1,
+   "65": 1,
+   "70": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 78,
+  "open": 3375,
+  "down": 78,
+  "up": 119,
+  "chutes": 0,
+  "trapdoors": 27,
+  "teleporterSquares": 0,
+  "doors": 206,
+  "secretDoors": 58,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 5,
+   "10": 1,
+   "15": 1,
+   "20": 3,
+   "25": 4,
+   "40": 2,
+   "50": 1,
+   "55": 2,
+   "60": 4,
+   "65": 1,
+   "70": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 79,
+  "open": 2938,
+  "down": 69,
+  "up": 94,
+  "chutes": 0,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 154,
+  "secretDoors": 56,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 1,
+   "20": 3,
+   "30": 2,
+   "35": 2,
+   "45": 1,
+   "50": 1,
+   "55": 2,
+   "60": 2,
+   "65": 1,
+   "70": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 80,
+  "open": 3385,
+  "down": 86,
+  "up": 96,
+  "chutes": 0,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 238,
+  "secretDoors": 84,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 2,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "40": 2,
+   "45": 2,
+   "50": 4,
+   "60": 1,
+   "65": 1,
+   "70": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 81,
+  "open": 3453,
+  "down": 85,
+  "up": 98,
+  "chutes": 0,
+  "trapdoors": 20,
+  "teleporterSquares": 0,
+  "doors": 214,
+  "secretDoors": 76,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 4,
+   "15": 2,
+   "20": 1,
+   "25": 1,
+   "30": 2,
+   "35": 1,
+   "40": 1,
+   "45": 3,
+   "50": 1,
+   "65": 1,
+   "75": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 82,
+  "open": 3520,
+  "down": 98,
+  "up": 109,
+  "chutes": 0,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 274,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 4,
+   "30": 2,
+   "35": 3,
+   "45": 1,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "70": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 83,
+  "open": 3398,
+  "down": 92,
+  "up": 104,
+  "chutes": 0,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 328,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 2,
+   "25": 1,
+   "30": 3,
+   "35": 2,
+   "40": 1,
+   "45": 1,
+   "50": 1,
+   "65": 2,
+   "70": 2,
+   "75": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 84,
+  "open": 3728,
+  "down": 90,
+  "up": 116,
+  "chutes": 0,
+  "trapdoors": 18,
+  "teleporterSquares": 0,
+  "doors": 280,
+  "secretDoors": 104,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 2,
+   "15": 1,
+   "20": 4,
+   "25": 1,
+   "30": 1,
+   "35": 3,
+   "40": 1,
+   "55": 2,
+   "60": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 85,
+  "open": 3569,
+  "down": 91,
+  "up": 99,
+  "chutes": 0,
+  "trapdoors": 23,
+  "teleporterSquares": 0,
+  "doors": 184,
+  "secretDoors": 50,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 1,
+   "25": 2,
+   "30": 1,
+   "35": 1,
+   "40": 2,
+   "50": 2,
+   "55": 1,
+   "60": 4,
+   "70": 2,
+   "75": 3,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 86,
+  "open": 3508,
+  "down": 91,
+  "up": 107,
+  "chutes": 0,
+  "trapdoors": 20,
+  "teleporterSquares": 0,
+  "doors": 290,
+  "secretDoors": 122,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "25": 1,
+   "30": 3,
+   "35": 1,
+   "45": 2,
+   "50": 1,
+   "55": 3,
+   "65": 1,
+   "70": 3,
+   "75": 3
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 87,
+  "open": 3514,
+  "down": 87,
+  "up": 118,
+  "chutes": 0,
+  "trapdoors": 24,
+  "teleporterSquares": 0,
+  "doors": 184,
+  "secretDoors": 52,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 4,
+   "15": 2,
+   "20": 3,
+   "25": 2,
+   "30": 1,
+   "35": 2,
+   "55": 3,
+   "65": 1,
+   "70": 1,
+   "75": 4,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 88,
+  "open": 3176,
+  "down": 79,
+  "up": 83,
+  "chutes": 0,
+  "trapdoors": 14,
+  "teleporterSquares": 0,
+  "doors": 258,
+  "secretDoors": 104,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 1,
+   "15": 2,
+   "25": 1,
+   "40": 2,
+   "45": 1,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "65": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   34,
+   78
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 89,
+  "open": 3634,
+  "down": 99,
+  "up": 113,
+  "chutes": 0,
+  "trapdoors": 29,
+  "teleporterSquares": 0,
+  "doors": 228,
+  "secretDoors": 100,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 4,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 2,
+   "35": 2,
+   "40": 3,
+   "45": 4,
+   "50": 3,
+   "55": 1,
+   "60": 1,
+   "65": 2,
+   "75": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 90,
+  "open": 3654,
+  "down": 84,
+  "up": 117,
+  "chutes": 0,
+  "trapdoors": 30,
+  "teleporterSquares": 0,
+  "doors": 256,
+  "secretDoors": 74,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 1,
+   "30": 2,
+   "35": 1,
+   "40": 2,
+   "45": 1,
+   "50": 8,
+   "60": 3,
+   "70": 4,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 91,
+  "open": 3377,
+  "down": 94,
+  "up": 93,
+  "chutes": 0,
+  "trapdoors": 25,
+  "teleporterSquares": 0,
+  "doors": 194,
+  "secretDoors": 86,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "20": 3,
+   "25": 3,
+   "30": 4,
+   "35": 1,
+   "40": 2,
+   "45": 3,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "65": 1,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 92,
+  "open": 3448,
+  "down": 90,
+  "up": 99,
+  "chutes": 0,
+  "trapdoors": 27,
+  "teleporterSquares": 0,
+  "doors": 248,
+  "secretDoors": 62,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "35": 3,
+   "40": 1,
+   "45": 3,
+   "50": 1,
+   "55": 2,
+   "60": 1,
+   "65": 1,
+   "70": 1,
+   "75": 2,
+   "80": 5
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 93,
+  "open": 3804,
+  "down": 83,
+  "up": 120,
+  "chutes": 0,
+  "trapdoors": 28,
+  "teleporterSquares": 0,
+  "doors": 172,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 3,
+   "15": 1,
+   "25": 2,
+   "30": 1,
+   "35": 2,
+   "40": 3,
+   "45": 1,
+   "50": 2,
+   "55": 2,
+   "60": 3,
+   "65": 5,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 94,
+  "open": 3240,
+  "down": 62,
+  "up": 91,
+  "chutes": 0,
+  "trapdoors": 21,
+  "teleporterSquares": 0,
+  "doors": 170,
+  "secretDoors": 34,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 4,
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "30": 1,
+   "40": 1,
+   "50": 1,
+   "60": 2,
+   "65": 3,
+   "70": 1,
+   "75": 2,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 95,
+  "open": 3557,
+  "down": 85,
+  "up": 88,
+  "chutes": 0,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 208,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "10": 4,
+   "15": 1,
+   "20": 1,
+   "25": 2,
+   "35": 3,
+   "40": 1,
+   "45": 1,
+   "55": 1,
+   "65": 1,
+   "75": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 96,
+  "open": 3209,
+  "down": 86,
+  "up": 101,
+  "chutes": 0,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 130,
+  "secretDoors": 26,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 1,
+   "20": 1,
+   "30": 1,
+   "35": 2,
+   "45": 1,
+   "50": 1,
+   "55": 1,
+   "60": 1,
+   "65": 1,
+   "75": 2,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   34,
+   77
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 97,
+  "open": 3180,
+  "down": 100,
+  "up": 94,
+  "chutes": 0,
+  "trapdoors": 16,
+  "teleporterSquares": 0,
+  "doors": 246,
+  "secretDoors": 80,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "15": 2,
+   "30": 2,
+   "40": 2,
+   "50": 2,
+   "55": 1,
+   "65": 1,
+   "70": 1,
+   "80": 3
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 98,
+  "open": 3510,
+  "down": 97,
+  "up": 119,
+  "chutes": 0,
+  "trapdoors": 22,
+  "teleporterSquares": 0,
+  "doors": 188,
+  "secretDoors": 44,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 3,
+   "10": 3,
+   "15": 2,
+   "20": 1,
+   "25": 1,
+   "30": 1,
+   "45": 3,
+   "50": 1,
+   "55": 1,
+   "60": 2,
+   "65": 1,
+   "70": 1,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 99,
+  "open": 3295,
+  "down": 81,
+  "up": 114,
+  "chutes": 0,
+  "trapdoors": 26,
+  "teleporterSquares": 0,
+  "doors": 164,
+  "secretDoors": 54,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 2,
+   "15": 2,
+   "20": 1,
+   "25": 2,
+   "30": 2,
+   "40": 4,
+   "45": 1,
+   "50": 3,
+   "55": 1,
+   "60": 1,
+   "65": 1,
+   "70": 3,
+   "75": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 100,
+  "open": 3609,
+  "down": 110,
+  "up": 99,
+  "chutes": 0,
+  "trapdoors": 17,
+  "teleporterSquares": 0,
+  "doors": 130,
+  "secretDoors": 32,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 3,
+   "20": 3,
+   "30": 2,
+   "40": 1,
+   "45": 1,
+   "50": 1,
+   "60": 1,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 101,
+  "open": 3424,
+  "down": 77,
+  "up": 129,
+  "chutes": 0,
+  "trapdoors": 19,
+  "teleporterSquares": 0,
+  "doors": 258,
+  "secretDoors": 112,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 3,
+   "20": 1,
+   "30": 3,
+   "35": 2,
+   "40": 2,
+   "55": 1,
+   "60": 1,
+   "65": 2,
+   "70": 1,
+   "75": 1,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 102,
+  "open": 3522,
+  "down": 82,
+  "up": 97,
+  "chutes": 0,
+  "trapdoors": 13,
+  "teleporterSquares": 0,
+  "doors": 244,
+  "secretDoors": 90,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 1,
+   "15": 1,
+   "20": 2,
+   "25": 1,
+   "30": 3,
+   "35": 1,
+   "40": 2,
+   "80": 2
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 103,
+  "open": 3651,
+  "down": 64,
+  "up": 102,
+  "chutes": 0,
+  "trapdoors": 25,
+  "teleporterSquares": 0,
+  "doors": 282,
+  "secretDoors": 66,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "10": 3,
+   "15": 1,
+   "25": 5,
+   "35": 1,
+   "40": 1,
+   "45": 1,
+   "50": 1,
+   "55": 2,
+   "60": 4,
+   "65": 2,
+   "70": 1,
+   "75": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   18,
+   92
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 104,
+  "open": 3466,
+  "down": 0,
+  "up": 106,
+  "chutes": 0,
+  "trapdoors": 25,
+  "teleporterSquares": 0,
+  "doors": 382,
+  "secretDoors": 70,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 1,
+   "15": 6,
+   "25": 3,
+   "35": 1,
+   "45": 2,
+   "50": 3,
+   "55": 2,
+   "60": 1,
+   "65": 1,
+   "70": 2,
+   "75": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   17,
+   93
+  ]
+ },
+ {
+  "module": 5,
+  "floor": 105,
+  "open": 3484,
+  "down": 0,
+  "up": 92,
+  "chutes": 0,
+  "trapdoors": 29,
+  "teleporterSquares": 0,
+  "doors": 280,
+  "secretDoors": 82,
+  "town": [
+   0,
+   0,
+   0,
+   0
+  ],
+  "trapdoorDests": {
+   "5": 2,
+   "10": 1,
+   "15": 4,
+   "25": 1,
+   "35": 2,
+   "40": 1,
+   "45": 3,
+   "50": 4,
+   "55": 3,
+   "60": 2,
+   "65": 3,
+   "70": 2,
+   "80": 1
+  },
+  "trapdoorLanding": [
+   16,
+   94
+  ]
+ }
+]

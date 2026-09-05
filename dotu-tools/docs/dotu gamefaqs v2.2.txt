@@ -1,0 +1,3228 @@
+Dungeons of the Unforgiven FAQ by Cagey Rabbit
+
+All trademarks and copyrights contained in this document are owned by their
+respective trademark and copyright holders.
+
+##############################################################################
+#Contents:                                                                   #
+##############################################################################
+#   Topic                                                        Quick Ref ID#
+#1. Using this FAQ                                                     [UFAQ]#
+#2. Version History                                                    [VERH]#
+#3. About the Game                                                     [ABGM]#
+#4. Object                                                             [OBJC]#
+#5. Controls                                                           [CNTR]#
+#6. Setup                                                              [SETP]#
+#---A. Windows                                                         [SWIN]#
+#---B. Linux, Etc.                                                     [SLIN]#
+#---C. OS Independant Dosbox Tweaks                                    [DBTW]#
+#7. Building your Character                                            [CBLD]#
+#8. Getting Started                                                    [STRT]#
+#9. General Tips                                                       [GTPS]#
+#10. Sections of the Game                                              [SCTN]#
+#---A. Monster Information                                             [MONT]#
+#---B. Module I                                                        [MOD1]#
+#---C. Module II                                                       [MOD2]#
+#---D. Module III                                                      [MOD3]#
+#---E. Module IV                                                       [MOD4]#
+#---F. Module V                                                        [MOD5]#
+#11. Combat Mechanics                                                  [COMT]#
+#12. Quick Reference                                                   [QREF]#
+#---A. Puffballs                                                       [PFFB]#
+#---B. Potions                                                         [POTN]#
+#---C. Spells                                                          [SPLL]#
+#---D. Spell Descriptions                                              [SPDS]#
+#---E. Magic Items                                                     [MITM]#
+#---F. Boss Rewards                                                    [BSSR]#
+#---G. Leveling Tables                                                 [EXPT]#
+#---H. Weapon Tables                                                   [WEPT]#
+#---I. Armor Tables                                                    [ARMT]#
+#---J. HP/SP Increase Table                                            [HPSP]#
+#---K. Town Prices and the Inn                                         [TOWN]#
+#---L. Experience and Loot from Kills                                  [LOOT]#
+#---M. Monster Generation                                              [MGEN]#
+#---N. Ladders, Chutes and Trap Doors                                  [LDRS]#
+#---O. Spell Mechanics                                                 [SPMC]#
+#13. How to Cheat                                                      [CHET]#
+#---A. Cheating with File Moving                                       [CEDA]#
+#---B. Cheating with Hexeditors                                        [CEDB]#
+#---C. Cheating with Memory Manipulation                               [CEDC]#
+#---D. Cheat Engine With Dosbox v.74                                   [CEDD]#
+#14. Contact Info                                                      [CINF]#
+##############################################################################
+
+
+##############################################################################
+#[UFAQ]***1. Using this FAQ***                                               #
+##############################################################################
+
+This FAQ is setup in such a way that the sequence of characters in the
+brackets after each topic should only be used in 2 places in the whole FAQ,
+the table of contents and the heading for that section. If there's a specific
+place you want to go in the FAQ you can do a search for the sequence of
+letters after the topic in the table of contents and go straight there.
+
+This FAQ is not a walkthrough. This is more of a guide on how to survive and
+thrive in the dungeon as most of the game is very random (incidentally, the
+game isn't random at all, as the maps are always the same for each character,
+and if you cheat you will find that the monster map is always the same!)
+Hopefully you, the reader, will find this helpful.
+
+
+##############################################################################
+#[VERH]***2. Version History***                                              #
+##############################################################################
+2.2 09/04/2026 John Oleksowicz sent a large batch of corrections and new
+material from a fresh disassembly of the 1993 registered unf.exe, cross
+checked against the recovered piece of the original source code (UNF.CPP)
+that is on GitHub at github.com/Jimbly/unforgiven. Fixed several
+errors in the Combat Mechanics section, the Water Rat experience multiplier,
+the Mace's power, what helping children actually does, and a handful of spell
+notes. Five new Quick Reference sections (K through O) cover town prices and
+the inn, experience and loot from kills, monster generation, ladders, chutes
+and trap doors, and what the spells really do. The hex editing section now
+has the complete layout of the character file and the checksum algorithm.
+
+2.1 12/23/2019 So I'm still going. I've put about 8 hours into it. I've
+been streaming gameplay on twitch if you want to watch me play this thing.
+I'm about 7 hours in and haven't found a ring of regeneration yet. I also
+haven't given into the temptation to cheat or even do save backups yet! I am 
+going through and changing a lot of formatting in this FAQ, getting rid of
+a lot of commentary that is totally useless and doesn't reflect my current
+writing style, and updating things that I'm figuring out about playing this
+totally legit. The only thing I'm not touching is the version history.
+
+2.01 11/30/2019 Why not play this silly game some more? I've had a couple of
+emails with some information and tips to add, so I will go ahead and do so. I
+guess I'll go ahead and give this game some more of my time. Maybe I'll even
+play through legit this time? Update to the character building section with
+info about monks and the general tips section on how to take advantage of the
+monk. Also some information in the cheats section about save editing.
+
+2.00 11/22/2014 Finally incorporated a lot of information Tehtmi has provided
+from disassembling the executable. This results in a complete rewrite of the
+building your character section; some changes to the experience tables section;
+and the addition of weapon tables, armor tables, and a combat mechanics
+section. This has been a huge update. I'm thinking I might actually try and
+beat the game legit this time. It can be done, I've heard from people that
+have done it!
+
+1.63 11/20/2014 Fixed a change of all double spaces after a period to single
+spaces, bringing the style more in line with modern writing styles. This
+version not uploaded to gamefaqs.
+
+1.62 11/20/2014 Rewrote the whole cheating section. This is in preperation to
+try and include info on hex editing as another method of cheating. This
+version not uploaded to gamefaqs.
+
+1.61 11/19/2014 Fixed a typo. Contact info updated. I've received a few emails
+since my last update asking about things and providing additional information.
+I'm going to work on including that in this FAQ over the next couple of weeks.
+This version not uploaded to Gamefaqs.
+
+1.60 01/16/2011 Spell descriptions. Did I mention spell descriptions?  Also,
+there are now spell descriptions. I've also added a cheat engine memloc for
+age. Also added a tip to the end of the tips section.
+
+1.53 01/03/2011 Well I've found a whole slew of new memlocs for you guys to
+have fun with, including several things that I didn't have in my original list
+of cheats!  I've also cleaned up the setup section a little bit to get rid of
+some details that weren't really necessary for the FAQ. Enjoy!
+
+1.52 12/25/2010 Started playing again, *SIGH*, and as such I'm back to working
+on this FAQ. I've cleaned a few areas up, reworded a few things that were a
+little awkward, fixed some typos, made some references to dosbox 0.74 (the now
+current version). I may even get around to posting some new memlocs in the
+next version, if I don't get fed up with this game again too soon!
+
+1.51 08/12/2010 I received an interesting bit of knowledge in my inbox from
+Yoshi Dragon. It's now found in the general tips section, and will be the last
+tip in that section as of this update. I'm also putting a few words of warning
+in the running the game in Linux section. I fixed a couple more typos and I
+reworded a few things.
+
+1.50 12/10/2009 The setup section has undergone a complete rewrite to reflect
+the fact that SVGA support can now be achieved with the official version of
+DosBox as of version 0.73. Some additional instructions for getting the game
+runnng in Linux (Ubuntu in particular) are now included. I've also included
+several OS independant tweaks you can make to DosBox that help the experience
+of playing DotU. I've removed all information, including the memlocs for cheat
+engine, that pertained to running this game in the CVS version of DosBox
+(which is how the game was run in SVGA mode before). Added another small
+comment to the about the game section. I've also fixed some typos and spelling
+errors I found in this document.
+
+1.25 05/04/2009 Received some information from Omeganian that has lead me to
+a forum that has instructions for getting the game running in SVGA mode.
+Instructions will be added for doing so and I'll get the memlocs for the new
+method of running the game started with this version. More memlocs in the next
+version, I promise.
+
+1.06 02/15/2009 Received some information has been contributed to the
+experience section. I've added the first four level experience requirements
+for the I can handle anything difficulty and the first 7 levels of normal
+difficulty. This is a minor update.
+
+1.05 01/06/2009 I received some clarifications and comments from Porticulo so
+I'm including them in this update. Other than that, there have been no
+significant changes in the contents or layout of this version.
+
+1.0 01/03/2009 Well this is likely my last update unless someone else sends me
+something to update. I've added some information to the cheats for use with
+Cheat Engine. This update will have the spell information. It's been fun, this
+was my first FAQ, and it's certainly been a learning experience. Thank you to
+everyone who's read this, all 67 of you at this point lol!
+
+.85 12/22/2008 It seems you can get this running fairly decently in dos box.
+Read more about it in the setup section. This version is going to be uploaded.
+Assuming no one sends me any contributions this will be my second to last
+update.
+
+.81 - 12/22/2008 This is an even more minor update detailing how windows xp
+won't let you use cheat engine with this game. Version .82 will likely
+concentrate on getting this game running better in dos box, with my last
+update sometime after that to do spell tables. I will most likely not choose
+to upload this revision to gamefaqs.
+
+.80 - 12/22/2008 This is a minor update. The only change is the announcement
+that I've figured out how to get Cheat Engine running with this game. I've
+made a trainer using cheat engine that I can provide through email if anyone
+wants it (I can also provide the cheat tables). Keep in mind this will only
+work when running the game in dos box (mega slow), but it's progress at least.
+The next update will have my last attempt at getting cheat engine working with
+the built in dos emulator in windows xp and/or the spell tables.
+EDIT: 11/19/2014 THE TRAINER IS NO LONGER AVAILABLE.
+
+.75 - 12/21/2008 WOW, talk about a big update!  Basically the game is done.
+What's left is to fill in the spell tables (which will be a chore). Anything
+else that gets contributed to this FAQ will probably have to come from outside
+sources, because I'm not going to do the whole Exp chart, I have no more tips,
+I don't know any other methods to cheat, I've told the best way to build a
+character in my opinion, and I don't know how to get this game running in SVGA
+mode on a modern computer. I will of course include and credit anyone who
+sends me anything I've missed in this FAQ. This version will be uploaded very
+late at night, with the final version with the spells to come sometime over
+the weekend.
+
+.25 - 12/20/2008 Module 3 completed. Module 4 started.
+
+.20 - 12/19/2008 Module 2 complete. Module 3 started. Neoseeker.com added as
+an authorized host. More magic items and boss rewards added to the list.
+Gamefaqs will be sent this update.
+
+.12 - 12/18/2008 Module 1 complete. Module 2 started information.  Started
+adding the magic items.
+
+.11 - 12/17/2008 Potions and Puffballs sections are now completed. Basic data
+for all sections of module 1 are in place, with some text from game added.
+Boss details for all module 1 bosses are complete. Module 2 data will begin
+to be added in the next update as well as the completion of module 1 data.
+
+.10 - 12/15/2008 Format changed to reflect the changes gamefaqs.com requires.
+Added various bits of information throughout the whole FAQ. Started an
+Experience chart section. Update number changed to reflect a major release
+(in that it's been accepted by Gamefaqs).
+
+.002 - The first version of this file that is being made public. Some errors
+fixed, some formatting done. Some additional sections partially filled in.
+
+.001 - The first Version of this file. This is a rather ambitious FAQ, and in
+this first release it will be nowhere near complete. Currently the only
+sections with data are the contents (subject to change), Using this FAQ,
+Contact Info, and How to Cheat. I will be updating this guide as I explore
+the game more fully. This version will likely not be released as I'm going to
+confirm a few pieces of data before releasing it in the next version.
+
+
+##############################################################################
+#[ABGM]***3. About the Game***                                               #
+##############################################################################
+
+Dungeons of the Unforgiven is the third game in a trilogy of dungeon crawlers
+by the company Moraffware. The game was released in 1993, and much like the
+name suggests this game is rather unforgiving. Dungeons of the Unforgiven is
+much more difficult than the previous two games in the series and can be
+incredibly frustrating.
+
+Essentially there is no story in this game. After creating your character you
+pop into existence on the first floor of the dungeon with a brief blurb about
+whatever class you've chosen. That's about it. As you wander the dungeon you
+will get messages from the boss of whatever section you're in taunting you,
+and when you enter town you'll get a message about how your level compares to
+the rest of society (or the lack thereof in this game).
+
+Additionally there is no sound or music in this game. The graphics are very
+dated, even for when the game was released. Despite that, it's still a good
+way to kill time and challenge yourself to a good old fashioned dungeon crawl.
+
+I originally played this game back in 1993 as a shareware title obtained from 
+a BBS. I've played it off and on that whole time, and never once finished it
+until I wrote this FAQ. If you're interested in obtaining this game to play
+the shareware version is readily available online and you may be able to find
+the full game on abandonware websites. The company Moraffware does still exist
+and can be found at http://moraffsmahjongg.com/en/ though it appears that they
+no longer offer their older games for sale through their website even though
+they still did when I started this FAQ over 10 years ago!
+
+
+##############################################################################
+#[OBJC]***4. Object***                                                       #
+##############################################################################
+
+This game doesn't really have a set objective. There are 5 modules, and each
+module has several "Shadow" boss monsters. I would say that once you beat all
+or maybe the last of these you have beat the game? Of course you can keep
+playing after beating the last Shadow monster on the lowest level of the last
+module if you want to though.
+
+
+##############################################################################
+#[CNTR]***5. Controls***                                                     #
+##############################################################################
+
+This game can be played with the mouse and/or the keyboard. I'd highly
+suggest learning the keyboard controls because it will be much easier to play,
+and quicker to get around.
+
+I believe these are all the keys that do something, but if they aren't please
+feel free to let me know and I'll update the FAQ.
+
+Movement:
+
+Forward:                            Up arrow key
+Turn Left:                          Left arrow key
+Turn Right:                         Right arrow key
+Turn Around:                        Down arrow key
+Up Ladder:                          U
+Down Ladder:                        D
+Dig Tunnel:                         T
+
+Interacting with Monsters:
+Fight:                              F
+Auto-Fight:                         Ctrl-F
+Wait:                               Enter
+
+Using Items and Magic (in and out of battle):
+Cast Spell:                         C
+Use Item:                           I
+Select Armor:                       A
+Select Weapon:                      W
+Lose Item:                          L
+
+Viewing status screens:
+View Prep Spells in Effect:         1
+View Money:                         M
+View Stats:                         V
+Experience Needed:                  E
+View items (Pockets):               P
+Expanded Map:                       X
+
+Help Screens:
+Help:                               H
+Section Info:                       S
+
+Options Menus:
+Options:                            O
+Graphics:                           G
+
+Misc Stuff:
+Zoom view:                          Z
+Enable/Disable Mouse:               Escape
+
+
+##############################################################################
+#[SETP]***6. Setup***                                                        #
+##############################################################################
+
+This section of the FAQ is divided into two separate sections. The first
+section pertains to getting this game running in a modern Windows environment
+and the second pertains to getting this game running in other environments
+(with a heavy emphasis on distributions of Linux similar to Ubuntu).
+
+No matter which method you use to play this game, do yourself a favor and
+make sure you only play it in 256 color mode!  16 Color mode looks terrible,
+though B/W mode looks acceptable if you're using a B/W monitor for some reason
+(I did play this for a while on a 486 laptop with a monochrome display!). I
+recently did some reading about CGA and don't know if this game had a special
+composite video mode for the CGA setting. It of course looks terrible in CGA
+RGBi mode, but I wouldn't be shocked to find that it actually looks decent in
+CGA composite mode.
+
+This section will end with a section about modifications you can make to your
+dosbox.conf file to help with issues present in the game and to make the game
+run at an acceptable speed. These modifications are universal to any operating
+system as long as you run dosbox.
+
++----------------------------------------------------------------------------+
+|[SWIN]---A. Windows---                                                      |
++----------------------------------------------------------------------------+
+
+Back in 1993 when I played this game on my 486, I had a graphics card that
+had one of the supported chipsets. This meant that I could play the game in
+SVGA mode with high-res graphics and 256 color!  Awesome, right?  Well there
+are now two methods for running this game in a windows environment, and only
+one of them will let you experience the full graphical capabilities of this
+game.
+
+Method A (Windows XP and older only, Vista and Windows 7 32 bit haven't been
+tested, the error message I receive in windows 7 64 bit leads me to believe
+it might work in 32 bit systems, but why would you bother when you can use
+method B, which is far superior?):
+
+You can just run the unforgiv.exe file. That's right, the game will just run.
+It will only run full screen, you won't be able to take advantage of some of
+the methods for cheating (see the appropriate section), and you won't have
+SVGA graphics. However, the game won't take up quite as much CPU to use, you
+don't have to download and install any other programs, and you don't have to
+edit any config files to get the game running using this method. The only
+graphics modes you will be able to get working are 2-7, don't even bother
+trying the other modes, you will only be wasting your time.
+
+When you first run the game you're asked to choose a graphics mode. On a
+modern computer, it's likely that only modes 2-7 will work. I typically
+choose 5, because any of the higher resolution lower color options tend to
+look terrible.
+
+Method B (Preferred method!):
+
+This method gives you the option of using a memory editor (such as Cheat
+Engine), allows you to play in a window if you like, and is required to play
+with SVGA graphics. This is the method I recommend if you aren't afraid to do
+a little bit of easy leg work first.
+
+You can download Dosbox (version 0.73 or higher if you want SVGA graphics)
+from http://www.dosbox.com/ and install it. Once you've installed it you
+will need to figure out where the dosbox.conf file is located (likely in 
+the directory you installed the game to) you'll want to open it and make the
+these changes:
+
+DosBox does not mount any of your hard drives when it starts. This means
+that every time you start DosBox, you need to mount your hard drive. You can
+automate this by finding the section of the conf file that says [autoexec] and
+specifying the following items below the comment right below it:
+
+mount c c:
+cd\<path to game, for instance cd\unforg>
+unforgiv
+exit
+
+This will cause the game to automatically run when you start dosbox and close
+dosbox when you exit the game. If you don't want it to do that then just
+leave the last 2 lines off.
+
+See section [DBTW] OS Independent Dosbox Tweaks for information about getting
+SVGA working and optimizing how it runs.
+
++----------------------------------------------------------------------------+
+|[SLIN]---B. Linux, etc.---                                                  |
++----------------------------------------------------------------------------+
+
+Unlike in a Windows Environment, you will not (likely) be able to run this
+game natively on your machine. WINE allows you to run the .exe file, however
+it doesn't do much past the screen that allows you to select your graphics
+mode. This is where DosBox comes in. At the time of this writing version
+0.74 is available for most operating systems and 0.73 is also widely 
+available. Verison 0.72 will work in a pinch, but you won't have SVGA. Older
+versions have not been tested.
+
+First things first, you need to get DosBox installed on your pc. Different
+operating systems have different methods for doing this, in the event that
+you're on Ubuntu you would simply install it with the Ubuntu Software Center
+or in a terminal you can do a sudo apt install dosbox.
+
+Once you have dosbox installed you may or may not have a config file. If you
+do not have a config file, you can have dos box generate one for you in the
+directory that it will attempt to load it from by default by doing the
+following:
+
+1. Open DosBox.
+2. type the following: config -writeconf dosbox.conf
+3. Exit DosBox by typing exit
+
+Once you have found and opened your dosbox.conf file you should do the
+following:
+
+DosBox does not mount any of your hard drives when it starts. This means
+that every time you start DosBox, you need to mount your hard drive. You can
+automate this by finding the section of the conf file that says [autoexec] and
+specifying the following items below the comment right below it:
+
+mount c <path to game, for instance ~/unforg>
+c:
+unforgiv
+exit
+
+This will cause the game to automatically run when you start dosbox and close
+dosbox when you exit the game. If you don't want it to do that then just
+leave the last 2 lines off.
+
+A word of warning though: I have started playing this game twice in dos box on
+Ubuntu (Dosbox v0.73). Both times I have cheated to start with a high amount
+of luck (so as to find a ring of regeneration earlier in the game). Both
+times at some point I've had my experience change to NaN (Not a Number), which
+basically means that my experience has for some reason either changed to a
+number beyond the variables ability to handle it or more likely changed to
+something that isn't a number at all. This may have been a result of my
+having cheated for a higher luck (though I never encountered this issue in
+v0.72 on windows while cheating or not, but I've never tried v0.73 with or
+without cheating on windows), or it may be a result of just having used linux.
+I would suggest that if you're going to play in linux that you download the
+scanmem tool, and using that find the memory address for experience every time
+you play, that way if it changes to NaN you may be able to reset your
+experience to an actual number. If your experience changes to NaN you won't
+be able to find it with scanmem to change after the fact. If you get NaN
+experience you won't be able to gain more experience, and if you try and level
+up at an inn, you will instantly die and get a game over. I'd also suggest
+backing up your character extremely often. The first time it happened to me
+I was in section 1 of module 1, the second time I was in section 2 of module
+1. I have not encountered this in dosbox v0.74 or without cheating, but it
+could still happen.
+
++----------------------------------------------------------------------------+
+|[DBTW]---C. OS Independant Dosbox Tweaks---                                 |
++----------------------------------------------------------------------------+
+
+The following list of tweaks have all been confirmed present and helpful for
+DosBox version 0.73 and 0.74.
+
+**SVGA SETUP
+Search (probably ctrl+f) for a line starting with
+machine=
+You need to change this line to say:
+machine=svga_et4000 
+This allows you to use graphics modes 8, 9, and A in game. When you select one
+of these modes in game it will want to know which chipset to use, and you will
+want to push 1.
+
+**DISABLE MOUSE TRAP
+This game can use the mouse (I prefer not to however). One irritating
+thing DosBox tends to do is trap the mouse (which can be useful for some games
+just not this one). If you would like to stop it from doing this you need to
+search for autolock=true and change it to autolock=false.
+
+**CHANGE WINDOW MODE RESOLUTION
+Find the line that reads windowresolution=original and change it to read
+windowresolution=<resolution you want, for instance 800x600>.
+
+
+**FIX GAME SPEED
+Dosbox tries to auto detect what CPU speed a game should run at. It doesn't
+pick a good one for DotU by default. Search for the line that says:
+cycles=auto
+and change it to say
+cycles=fixed 30000
+I think 24000 cycles works pretty well if you're running older hardware, but
+I currently run with this setting at 44000 on my laptop to make this game run
+very smoothly. 
+
+
+##############################################################################
+#[CBLD]***7. Building your Character***                                      #
+##############################################################################
+
+There are two difficulty settings. Only the "I can handle anything" difficulty
+is able to access the last module of the game. This is largely irrelevant if
+you're playing the shareware version of the game, as you can only access
+module 1 in the shareware version. There are relatively minor differences
+between the difficulties, though of course ICHA is obviously harder,
+especially early on.
+
+For the record, here is everything the difficulty setting changes, straight
+from the code. Nothing else (monster levels, hit points, damage, drops) is
+affected by it.
+- Experience needed per level: 250*2^(Level-2) instead of 250*1.4^(Level-2)-80
+  (see [EXPT]).
+- Your attack roll: on normal difficulty Strength is added twice, plus 25 more
+  if Strength is over 25. ICHA adds it once (see [COMT]).
+- Money: on normal difficulty every money drop gets an extra 0-6,999 Greater
+  American Dollars (see [LOOT]).
+- Magic crystals cost half again as much on ICHA (see [TOWN]).
+- Starting hit points and rubles are higher on normal difficulty (see below).
+- Module V can only be entered on ICHA.
+
+There are essentially only 3 different classes to choose from when starting
+a new character that aren't so ridiculously hard that it's pointless to play:
+Wizard, Mage, and Priest. Mage and Priest are probably the easiest to play
+because they've got some combat skills and can use decent armor. For a first 
+time player, I would suggest a priest due to the earlier access to the spells
+resist poison, resist disease, and resist level drain.
+
+Tehtmi has provided the following information about how starting HP and SP
+are calculated for the various classes.
+
+Starting HP is calculated as:
++Constitution
++Constitution / 2
++Luck / 2
++Random number between 0 and 6
+If normal difficulty: +25
+If fighter or sage: +random number between 0 and 38
+
+Starting SP table:
+Class:     |Starting SP
+Fighter    |0
+Worshipper |(Wiz * 2 + Int) / 4
+Monk       |1 + (Wiz + Int) / 17
+Wizard     |(Int * 2 + Wiz) / 7
+Priest     |(Wiz * 2 + Int) / 8
+Sage       |(Int + Wiz) / 18
+Mage       |(Int * 2 + Wiz) / 12
+
+You also get to pick from several races. Each race has it's own "base" stats.
+I typically pick the rodent because I like those stats the best. Many others
+prefer the childman, but if you make it past the point where every single
+fight is a life or death struggle it doesn't much matter in the grand scheme
+of things which you choose to start with.
+
+Porticulo contributes:
+"The biggest difference I notice between the races is the height you view the
+dungeon scenes and monsters from, although they all mysteriously see a wall
+the same improbable way when beside one. I always think it's funny being a
+giant and seeing the foes suddenly dip down when you get near them. Especially
+when they have neighbors who continue standing normally."
+
+Thanks to Tehtmi we can finally see the stat breakdown of the starting races.
+Each race gets 60 points randomly distributed among the stats: Strength,
+Intelligence, Wisdom, Constitution, Agility, and Luck.
+
+Race:    |S: |I: |W: |C: |A: |L: |Height:|Weight: |Age:    |Total Stat Points:
+Humanoid |5  |5  |5  |5  |5  |5  |84     |123-142 |15-24   |90
+Ape      |1  |6  |5  |2  |6  |4  |64     |72-87   |10-19   |84
+Childman |7  |0  |2  |8  |6  |1  |56     |90-109  |8-17    |84
+Rodent   |2  |1  |1  |6  |12 |6  |24     |54-65   |30-39   |88
+Hobo     |0  |7  |5  |2  |7  |4  |48     |54-65   |130-139 |85
+Giant    |10 |0  |0  |8  |0  |3  |116    |360-490 |30-39   |81
+Midget   |0  |15 |2  |0  |8  |11 |36     |19-21   |35-44   |96!!!!!!
+Shrimp   |0  |11 |9  |3  |0  |4  |28     |90-109  |17-26   |87
+
+As you can see, it looks like the midget is a good go to class. They rely on
+dodging attacks instead of having high hp, but after surviving the initial
+gameplay they look like they could be very powerful.
+
+Re-rolling your character really only has 1 advantage: you can change the sex
+of your character. Really, it doesn't matter, but that way at least you can
+choose whether you're favorite name, say Fred for instance, will be male or
+female.
+
+Design your character essentially takes a few points away from each of the
+stats in the most recent roll and lets you redistribute those points.
+
+The general consensus seems to be that you want 22 strength or so, and then
+the rest into intelligence and wisdom. I tend to disagree, I think Dexterity
+(or Agility as it's called in other portions of the game) is extremely
+important. Dexterity affects how often you get hit and how often you can hit
+things. Despite being a magic casting class, I tend to pick strength and
+dexterity over intelligence and wisdom when starting. By the time you start
+needing to rely on magic you will hopefully have leveled up enough to have
+some SP to use. I like to start a character with 20ish strength and dexterity
+and the rest of my points split between constitution and luck.
+
+Starting Rubles are calculated as:
+Random number between 5 * Luck and 6 * Luck - 1
+If normal difficulty: +Random number between 500 and 599
+If normal difficulty and Luck > 10: 
+     +The product of three random numbers between 1 and (Luck - 10)
+
+Starting Magic Crystals are calculated as:
+If not fighter:  2 * Luck
+If not fighter: +random number between 0 and (Lucky * 5) -1
+
+the Sage class is presented in such a way that it looks like you gain 
+experience just for exploring, but you don't. The monk and the fighter are the
+two hardest classes. The fighter cannot use magic and the monk cannot use 
+weapons or armor. Contrary to popular belief, David Kirsch reports that the 
+monk can in fact use wands, the floor slosher, and rings of regeneration. 
+The code agrees, but a monk will never find any of them: every after-kill item
+routine skips monks (see [LOOT]). A monk can still make wands with the
+permanent Enchant Wand spells.
+
+
+##############################################################################
+#[STRT]***8. Getting Started***                                              #
+##############################################################################
+
+As soon as you start playing it's best to pop up the nearest up ladder and
+look for a store  (blue square). You will want to buy a leather armor and then
+either a stick or a knife. After that I typically don't ever buy any more
+armor or weapons. You'll find the better armor and weapons just from killing
+monsters. There are no monsters in town so head on down a ladder.
+
+It's time to head out and try not to get killed. Until you're confident about 
+your ability to stay alive (through practice and leveling) you should stick to
+this first level of the dungeon. It's probably best to try and avoid any 
+diseased or poisoned monsters until you have at least enough money to pay to 
+be cured at the temple (yellow squares in town) or until you have resist
+spells. Getting disease/poison cured is very expensive! You should also
+avoid enemies with large amounts of HP (Giant Ball and Trash Can) until you
+have gained a level or two.
+
+I typically wander around the first 2 levels of the dungeon until I've got
+enough experience to hit level 5 before staying at the inn. You can level up
+earlier, but every level you gain increases the cost of staying at the inn,
+the price of culture stock, and the price of magic crystals.
+The exact formulas are in [TOWN].
+
+
+##############################################################################
+#[GTPS]***9. General Tips***                                                 #
+##############################################################################
+
+While playing the game you'll encounter several different events after killing
+a monster. The 3 most common events are finding a cup of health (which
+restores some random amount of health), finding a shimmering ball of thought
+(which restores 1 SP), and/or finding Greater American Dollars (which is
+money). Sometimes you do find weapons or armor, or even more rarely you find
+a magic item.
+
+Cups of health are what will keep you alive until you find a ring of
+regeneration. If you find that you're getting low on health, it's best to go
+up a few levels and fight weak enemies to find the cups of health and
+shimmering balls of thought. Then you can come back down and fight harder
+things).
+
+Money comes in 2 forms in this game: Greater American Dollars and Rubles. GAD
+can't be spent on anything and must be converted to Rubles. This can be
+accomplished at any bank (the orange squares in towns) by selecting option 1.
+GAD is converted to Rubles in a 100:1 ratio. For most of the game you will
+essentially be broke, get used to it. On the plus side, all the weapons and
+armor are fairly cheap by comparison. The amount of GAD you get from killing 
+things is tied to the level of the dungeon you're on, the lower down you go 
+the more you get. You're first big jump in the amount you get is going down 
+from section 1 to section 2.
+
+When you gain enough experience to level up in this game you don't
+automatically level up. You have to go sleep at an inn to level up. Choosing
+when to level up can be a very serious decision. There are three things that
+rapidly increase in price as you go up in levels: Cost of staying at the
+Inn, Culture Stock, and Magic Crystals. When you stay at an inn you need
+a certain number of culture stock to not age. Aging in this game causes
+a lowering of stats. Additionally, for every SP you are missing you need
+a magic crystal for it to be refilled over night. Most people suggest buying
+up as many magic crystals and as much culture stock as you can as early as
+possible, because it's going to get ridiculously expensive to buy as you go
+along.
+
+The levels don't all line up. As a result, if you go up or down a ladder 
+there's no guarantee you're only going up or down 1 level. Sometimes ladders 
+are only 1 way also, so keep that in mind when changing floors. It can be
+helpful to go down ladders and right back up. It seems to identify where local
+pitfalls are and helps you build your map. Pitfalls and digging work the same 
+way, and you can find yourself falling several levels at a time. Monsters can 
+walk over pitfalls. 
+The rules for ladders, chutes, trap doors and digging are in [LDRS].
+
+Helping children is important. You can help children at the temples in town
+(green squares) for 100 rubles each. Each child helped takes 1% off the price
+of culture stock and magic crystals, up to a maximum of 50% off at 50
+children; this discount is given in the form of a refund, so you still need
+the full price up front, but you get a large chunk of that money back.
+Weapons and armor are never discounted. At the inn, every child helped takes
+(your level) rubles off the price of the room, and the room can never drop
+below half of its full price, so at higher levels it keeps paying to help more
+children: at level 10 it takes about 500 children to reach the half price
+floor, at level 20 about 4,000. See [TOWN] for the formulas.
+
+In a pinch, if you're playing the full version of the game, you can hop into a
+teleporter for another module and it will teleport you to another module's
+town. This can be a good way to get back up to the top if you need to in
+a hurry. I've only experimented with Modules I and II, but there always
+appears to be at least 1 portal to other modules from within town, so you can
+use that to get back to the previous module if you weren't ready for the next
+module yet.
+
+If you are near an enemy always 'wait' for the enemy to come to you by hitting
+enter. If you come to the enemy then it gets a first strike in. This is
+even more useful if you have a ring of regeneration (or more than 1). The
+game seems to only check to make sure you don't have more than the max amount
+of health when you move or when you get healed. As a result, it's possible to
+start a fight with more health than the max leading to a faster recovery
+later. Pressing enter can be used as a nice breather for healing without
+having to move around. If you are down health and having a RoR and don't see
+any monsters around, it's usually safe to hit enter a whole bunch of times to
+get your health back up to your max before moving on. If you hit enter while
+next to an enemy the enemy will attack you!
+
+Related to the tip above, if you walk through a door, there could be an enemy
+on the other side of the door waiting to hit you when you walk through (and
+up to it). Pressing enter several times before you walk through a door is
+usually a good idea. Also, before you walk through a section with multiple
+doors in a row, remember that if an enemy follows behind you, you could become
+stuck and need to travel up or down to get unstuck!
+
+If you have too many items for your strength enemies may be able to hit you
+multiple times per your turn. It's usually best to keep no more than 1 armor
+and 1 weapon around at a time. Extras can be dropped by using the Lose Item
+command.
+The actual rule, which involves Agility rather than Strength: a move takes
+1 + (100 + Weight - 10 * Agility) / 100 seconds of game time, rounded down
+(the part in brackets can't go below 0), where Weight is your own body weight
+plus everything you carry. So a 20 pound Midget with Agility 10 moves in 1
+second, a 130 pound Humanoid with the same Agility takes 2, and a 400 pound
+Giant with Agility 0 takes 6; every extra 100 pounds of gear costs another
+second, and the more time passes per move the more often monsters get to act.
+A Feather spell makes Weight count as 0. Each attack takes the weapon's Speed
+plus (85 - Agility) / 5 seconds.
+
+Once you get the spell power weapon 3, most of the enemies can be taken down
+ridiculously easy.
+A power weapon only replaces the damage die of the weapon you are holding; the
+to-hit bonus, magic plus and speed of the weapon in your hand still apply, so
+keep your best weapon in hand while the spell is up (see [WEPT]).
+
+Ascend spells don't work on floor 66 or deeper (the in-game message says
+64th, but the check in the code is "deeper than 65").
+
+I pretty much find it a waste of perfectly good SP to cast an attack magic
+spell. If you've got a power weapon spell you're going to get a lot more bang
+for your buck out of that than casting a direct damage spell. Because of this
+I like to pick a character that gets priest spells. The priest spell book
+gets the power weapon spells sooner and has many more spells that aren't
+direct damage than the mage spell book.
+
+Yoshi Dragon has reported that life drainers outside of section 1 module 1
+(Sustrontima) won't actually drain experience from you if you are level 0.
+Using this knowledge you can go down and fight water elementals, which aren't
+very strong, if you pump your agility up at character creation. This way you
+can get a lot of money, potions, and experience early on. I would add that
+you should be extremely careful using this method as there will be plenty of
+other things down there that can kill you at early levels, so you will be
+doing lots of running away.
+The code confirms this: a monster that drains whole levels does nothing at all
+to a level 0 character, while Sustrontima's 30 points are taken regardless.
+
+There is no age death in this game. I've investigated this by using a memory
+editor to set the age variable to the max that it can hold, and it's not any
+different than when you are considered old for your race. Additionally, I've
+set the age to numbers below zero and zero itself, which also didn't result
+in death.
+Confirmed in the code: aging only happens at the inn, it only lowers Strength
+and Constitution once you are over 60, and nothing checks for a maximum age
+(see [TOWN]).
+
+David Kirsch provided this trick for playing the monk (that could probably be
+adopted into other character classes as well?):
+Without using any cheats I managed to find a few tricks involving the monk's
+ability to cast any spells and leveling up, casting permanent spells to buff 
+my hp or create wands, (Monks were in fact able to carry/use wands, floor
+slosher, rings of renegeration.) then deleveling, and releveling again.  When
+you re-levelup the SP you had spent before is restored based on your current
+stats.  I would use a few SP to create a wand for a damaging spell, then jump
+through teleporters to module 5, search for a puffball and nuke it.  Since it
+is module 5, the exp it gave was tremendous and enough to gain a lot of levels
+at once.  I would take all the SP gained and pump up my hp using permanent
+spells, then find a level drainer to send me back to lvl 0, and repeat this a
+few times.  Once I had a comfortable amount of hp, I'd repeat this a few more
+times and use the create a wand of any level spell to make a bunch of full
+heal wands, or wands to return to town, and plenty of dmg wands or wands of
+power weapon 3.  Since a lvl 0 takes so little damage from enemies, a thousand
+hp or even several hundred hp can go a very long way! One warning I have for
+folks, when your lvl is drained, the hp/sp lost from your maximum seems to be
+based on your current stats and so if you have gained stats since you leveled
+up, you may lose more hp/sp than you gained from your prior levelups, this can
+potentially cause your max hp to be 0 or maybe negative( not sure if it lets
+your hp go negative, but I can confirm you can end up with 0 max hp, even
+above level 1, and the game kills you.) 
+Confirmed in the code: losing a level subtracts a fresh roll of the same HP/SP
+formula as gaining one ([HPSP]), using your current stats, and nothing stops
+maximum HP from reaching zero. Level drain also resets your experience to the
+exact minimum for the new level, so any progress towards the next level is
+lost.
+
+Finally, from Tehtmi we get the chances that any newly created monster will be
+a specific type:
+
+1/20 chance of a random puffball (all 12 are equally likely)
+Otherwise, 1/7 chance of a blocker (garbage can or giant ball)
+Otherwise, 1/15 chance of level drainer
+Otherwise, 1/12 chance of generic diseased/poisoned monster (all 8 are equally
+likely)
+Otherwise, one of the 3 basic monsters for the section (all equally likely)
+
+
+##############################################################################
+#[SCTN]***10. Sections of the Game***                                        #
+##############################################################################
+
+In this section you can find information about the various areas of the game.
+Additionally information on the various monsters can be found in this section.
+
+Before we delve into the individual areas of the game, we need to define some
+information about monsters and talk about monsters that can be found in all
+areas of the game. Monsters are of a specific type, which can be seen below.
+
+Monster
+Type:    |Defense:|Power:|TypeHP:|Speed:|Text:
+0        |26      |3     |200    |6     |"What an annoying monster..."
+1        |2       |2     |200    |8     |"It is blocking your way"
+2        |2       |2     |2      |16    |"This one will change you..."
+3        |10      |5     |8      |10    |"You smell poison, watch out!"
+4        |10      |5     |8      |10    |"This monster looks diseased!"
+5        |30      |50    |50     |55    |"You found me! Can you beat me?"
+6        |15      |10    |10     |15    |"This is an average Joe (Jill)"
+7        |20      |8     |16     |55    |"Look out! This one is fast!"
+8        |24      |40    |22     |5     |"Run away! This one is nasty!"
+9        |15      |10    |10     |13    |"This one drains experience!"
+A        |40      |15    |20     |5     |"This one is massively armored!"
+B        |12      |50    |17     |25    |"This critter's weapon is evil!"
+C        |30      |15    |20     |5     |"This one breathes fire!"
+D        |20      |15    |30     |5     |"This one breathes ice!"
+E        |20      |38    |26     |45    |"This is a powerful monster!"
+F        |10      |5     |8      |10    |"This creature drains strength!"
+
+Monster hit points are calculated with the following formulas:
+[2 + rand(1 + {TypeHP * Level}) + rand(1 + {TypeHP * Level})] / 2
+If shadow monster: + (20*Level)
+If shadow monster and section >= XVIII: Double result
+
+"Level" in that formula is the monster's own level, not the floor number.
+Monsters are generated at Level = Floor + 15 * (Module - 1) give or take one,
+so a monster on floor 1 of Module V is level 61. See [MGEN] for the rest of
+the generation rules.
+
+The following monsters can be found on any floor besides 0 (town):
+Name:              |Type:|Exp:|Notes:
+Giant Garbage Can  |0    |x3  |
+Giant Ball         |1    |x3  |
+Puffball           |2    |x1  |Special stat-affecting attack
+Poison Flask       |3    |x5  |Poison Attack
+Poisoned Druggie   |3    |x5  |Poison Attack
+Chemical Bomb      |3    |x5  |Poison Attack
+Poison Toxic Waste |3    |x5  |Poison Attack
+Flask of Disease   |4    |x5  |Disease attack
+Diseased Druggie   |4    |x5  |Disease attack
+Biological Bomb    |4    |x5  |Disease attack
+Can of Toxic Waste |4    |x5  |Disease attack
+
+With that out of the way, we'll tackle each monster as we come to its section.
+
++----------------------------------------------------------------------------+
+|[MOD1]---B. Module I---                                                     |
++----------------------------------------------------------------------------+
+
+Section 1 of Module I is made up entirely of female warriors (besides the
+generic enemies that are everywhere). The boss, despite some typos that
+indicate otherwise, is the Shadow Gargalon. The Shadow Gargalon can be found
+on the 5th level of the dungeon and defeating her rewards you with an item
+that permanently increases your max HP by 30!  This section is by far the
+easiest section. Every section of the game has at least 1 level draining
+monster type in it. In this section, the level draining monster only drains
+30 experience and not a whole level. Once you get beyond section 1 of Module
+I all level draining monsters drain whole levels.
+
+The in game description is as follows: "You've reached the Gargonian portion
+of this dungeon... This area is dominated by tough, evil, part human, part
+beast monsters which will try to defeat you!
+
+Enemies unique to this section:
+Gargalon: Part human part snake and all evil. This creature line in dark
+ corners of the dungeoun [sic] awaits for its prey. Related to the harpey.
+[sic]
+Type: 6 Exp: x1
+
+Lesdidian Warrior: This ferocious woman comes from a race of all women
+warriors that live in the dungeoun [sic]. She is a quick, agile, and deadly
+opponent.
+Type: 6 Exp: x1
+
+Harpey: This psychotic creature hails from an ancient race of a magical
+inbreed of human-bird-animal. Harpeys are often found near Lesdidians.
+Type: 6 Exp: x1 
+
+Sustrontima (Experience Drainer): This nasty person thrives on other
+creature's life force. Come to think of it, your life force will do nicely!
+Type: 9 Exp: x4 Note: Drains 30 Exp
+
+Shadow Gargalon (Boss): She is the leader of Section I. She commands all
+other local inhabitants, and will be a worthy opponent if you succeed in
+finding her.
+Type: 5 Exp: x16
+
+******************************************************************************
+
+Section 2 is made up of elemental type enemies. The fire elementals have
+a weapon that can REALLY hurt so watch out. Also, the water elemental is
+a level drainer and will drain a whole level from you if they hit you. How
+level draining works is that it knocks you back to the previous level AND sets
+your experience back to the base experience for that level. If you're level
+10, but have enough experience to get to level 15, then you're hit not only
+will you then be level 9, but you'll only have the experience necessary to be
+level 9, OUCH!
+
+The in game description is as follows: "You are entering Elemental Section.
+The monsters in this area are related to the old planet Eart [sic]. They were
+born from Eart [sic], Wind, water, and fire.
+
+Enemies unique to this section:
+Fire Elemental: This flaming monster emits so much heat it is hard to get NEAR
+it!  Its flaming sword is very harmful to humans like yourself.
+Type: B Exp: x2
+
+Stone Elemental: This creature is slow and overbearing, and its blows are
+extremely powerful. It is at home in stone corridors and rooms.
+Type: A Exp: x2
+
+Wind Elemental: It is believed that this creature evolved from a thing called
+a 'storm' on the old planet Eart[sic]. No one knows how it got here.
+Type: 6 Exp: x1
+
+Water Elemental (Level Drainer): Quite simply, your worst nightmare. This
+evil being is strong, powerful, intelligent and worst of all, already dead.
+Good luck.
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Elemental (Boss): This is the leader of the Elementals. This nasty
+creature is capable of defeating even the most powerful adventurers, so be
+careful!
+Type: 5 Exp: x16
+
+******************************************************************************
+
+Section 3 is made up of "Evil Flying Creatures". The default colors in this
+section are kind of hard on the eyes. This area is basically the same as the
+previous section with different graphics and harder enemies.
+
+The in game description is as follows: "Welcome to section III of Dungeons of
+the Unforgiven!  This area is inhabited by evil flying creatures which hope to
+carve you up and dispose of you!"
+
+Enemies unique to this section:
+Vulture of Death: This is a skillfull fighter, who will fly around at high
+Speed, hacking away at its enemies. It is often found near were rat-bats.
+Type: 7 Exp: x1
+
+Flying Spectra: These monsters gain their magical flying abilities by the
+Grace of the shadow vulture. This helps create loyalty in this section.
+Type: 6 Exp: x2
+
+Striker: This monster is called a Striker because of it's highly accurate
+Striking ability. You should not let it gets it's claws into you!
+Type: B Exp: x3
+
+Were Rat-Bat(Level Drainer): This undead bird will make your skin crawl just
+by its mere presence. When it is near, the temperature seems to drop about 20
+degrees.
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Vulture (Boss): The leader of the flying creatures, this evil beast
+Uses it's magical powers to control it's followers.
+Type: 5 Exp: x16
+
+******************************************************************************
+
+Section 4 is more of the same in most ways, except that everything has
+evolved to survive in a watery environment. At some point in this section it 
+becomes impossible to dig a tunnel to a floor below or to use the floor 
+slosher. This can lead to you becoming very stuck if you don't have a spell or
+spell item to cast an ascend, descend, or relocate spell. This is the last 
+section in module 1 and in the shareware version of the game. The Shadow 
+Demon Queen is on level 20, however there are 4 or 5 levels below her as well,
+making it slightly more difficult to find her. Interestingly enough, it seems
+there are few to no pitfalls in this section, possibly because of the watery 
+floors or the very hard ground (quite the contradiction) that prevents 
+tunneling.
+
+The in game description is as follows: "Section IV was flooded many ages
+ago. Since that time, creatures have evolved to thrive in the watery
+corridors. Be ready to do some wading and swimming."
+
+Enemies unique to this section:
+She-Demon: These creatures are servants of the Shadow She-Demon. They serve
+her by providing the bodies of foolish adventurers. They do their job well!
+Type: 6 Exp: x1
+
+Couple from Hell: This fine married couple are generally found drifting in a
+small wooden boat. They are friends with little birds. They don't like you
+Type: 6 Exp: x1
+
+Watery Graverd: When the rivers got really angry with the pollution back on
+Eart [sic], this creature evolved directly from the water to protect the
+rivers.
+Type: 6 Exp: x2
+
+Water Trogladyte (Level Drainer): Yet another water loving creature, this one 
+can breath both air and water!  Also watch out for it's very sharp axe. Eats 
+life too.
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Demon Queen (Boss): This unfriendly characters four hands would each
+like to remove one of your limbs at the same time. Don't let her!
+Type: 5 Exp: x16
+
++----------------------------------------------------------------------------+
+|[MOD2]---B. Module II---                                                    |
++----------------------------------------------------------------------------+
+
+Section 5 is the first section of the registered version of the game. There
+isn't really anything special to note about this section besides that you can
+dig tunnels again if you need to.
+
+The in game description is as follows: "Section V is controlled by lizard-like
+people who once were peace-loving nice folks, just enjoying civilization.
+Then they met the Eartlings.[sic]
+
+Enemies unique to this section:
+Troggisher: This overgrown lizard loves the taste of flesh and will go through
+your armor to get it. It is very quick with its weapon.
+Type: 7 Exp: x1
+
+Torman: This critter is cross-bred by an evil scientist who wanted to know
+what a part-human, part-lizard, part-turtle would look like!  Now we know!
+Type: 6 Exp: x1
+
+Dozard: This almost humanoid lizard is feared far and wide. It has great
+strength, and very thick skin. It is very loyal to the Shadow Troggisher.
+Type: A Exp: x3
+
+Crorder (Level Drainer): This is possibly the wierdest[sic] creature of all.
+The Crorder (Crab-Horse-Spider) proves that everything is just a bit strange
+in the dungeoun.[sic]
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Troggisher (Boss): This is the leader of the evil lizard creatures.
+All lizardoids are totally loyal to it, and will give their lives happily for
+it.
+Type: 5 Exp: x16
+
+******************************************************************************
+
+Section 6 may seem like any other, but it will be over all too soon. Once you
+reach the next section, you'll be wishing you were back here.
+
+The in game description is as follows: "Section VI is littered with squishy
+and slimy critters, who often slurp up nice people like you!  Note the body
+parts protruding from their squishy figures.
+
+Enemies unique to this section:
+Giant Worm: These creatures are always looking for small creatures to use as
+bait. Your lifeless body will serve that need perfectly.
+Type: 6 Exp: x1
+
+Oozing Blob: Blobs form from the slime and gunk on the dungeon walls.
+Although they move very slowly, you could become part of the blob should
+it catch you.
+Type: 8 Exp: x2
+
+Squishy Cube: There are not yet enough creatures stuck in this monsters oozing
+jello-like cubes. All it needs is one more just like you!
+Type: 7 Exp: x1
+
+Shape Shifter (Level Drainer): This guy rises from the floor and attacks all
+foreigners. The dungeon walls then absorb victim's life force.
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Giant Worm (Boss): Worms aren't fish bait any more!  Now they have
+their own sovereign territory, and the Shadow Giant Worm is their leader!
+Type: 5 Exp: x16
+
+******************************************************************************
+
+Section 7 is where the fun really begins. In this area you may find yourself
+looking forward to the giant balls and trash cans, as they're pretty much the 
+only thing that isn't going to steal a level, poison you, or disease you. 
+Here's where you should be hoping you picked priest as your class for all
+those protection spells.  Make sure you've leveled up a bit before this
+section. Being able to cast those protection spells are a huge help, and 
+having a higher level makes it easier to sleep enemies.
+
+Porticulo contributes this tidbit of advice:
+"Both the facks emphasize the need to resist poison and disease in section 7,
+but I still think it's cheaper to just cure them when they're about to steal
+your points. Especially so since it may be a while before one hits you. If
+only the level draining worked the same way, ehhhh."
+
+Another method that may get some traction for you is to sleep enemies, but you
+have to be of a high enough level to pull it off often. I pretty much tried
+to rush through this section to avoid the enemies.
+
+The in game description is as follows: "Section VII is populated by huge
+insect creatures from planet Eart[sic]. As hard as the Humanoids tried to
+destroy all the insects, now they have their own land!"
+
+Enemies unique to this section:
+Giant Scorpian (Disease): All of the black scorpians are children of the
+Shadow Scorpian[sic]. They will do anything to portect[sic] their mother.
+Type: 4 Exp: x5 Note: Disease Attack
+
+Giant Spider (Disease): The Giant Black Spiders are good friends with the
+scorpians[sic], who liberated them during the race-wars of the past.
+Type: 4 Exp: x5 Note: Disease Attack
+
+Giant Rat (Poison): Giant Rats were created by mistake by a cosmetology
+company. The Rats declared war on the Humans, confusing animal rights groups.
+Type: 3 Exp: x5 Note: Poison Task
+
+Giant Bat (Level Drainer): These were the first bats to adapt to space. They
+were actually able to fly between colonies using lifeforce as propulsion.
+Thus they drain levels.
+Type: 9 Exp: x7 Note: Poison Task / Drains 1 Level
+
+Shadow Scorpian (Boss): The great leader of the insects communicates
+telepathically with all of the other insects in her section. Watch out for
+her tail.
+Type: 5 Exp: x16
+
+******************************************************************************
+
+Section 8 is a welcome sight. While the enemies are definitely harder than in
+section 7, at least they won't all poison and disease you. This place has
+watery floors just like section 4 found in module 1. The Hydra breathes a
+fire attack at you that you cannot dodge and the Water Dragon breathes an ice
+attack at you that you cannot dodge. Just like the last time we were in a
+water section, there do not appear to be any pitfalls here. Also just like
+before, at some point you lose the ability to tunnel! This is the last section
+of Module II.
+
+The in game description is as follows: "Section VIII is another flooded
+section of the dungoen[sic]. It's inhabitants have learned to use the water
+to it's fullest potential."
+
+Enemies unique to this section:
+Water Seeker: Each of these monsters wants to become the Shadow Skeeter. The
+one who kills the most adventurers will have that honor.
+Type: 7 Exp: x1
+
+Hydra: This fire breathing monster will burn you if you let it. It is close
+friends with the Water Dragons who breathe ice.
+Type: C Exp: x2 Note: Fire Breath
+
+Water Dragon: This sly monster quietly drifts through the water in search of
+warm blooded victims like you!  It likes to breathe ice storms onto it's
+enemies.
+Type: D Exp: x2 Note: Ice Breath
+
+Animated Waterling (Level Drainer): This monster's evil weapon thrives on
+draining the life from its enemies. If it hits you, it will drain some of
+yours.
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Skeeter (Boss): And you thought only the messiah could walk on water!
+This creature is no messiah (don't tell him that), but he is quite powerful.
+Type: 5 Exp: x16
+
++----------------------------------------------------------------------------+
+|[MOD3]---C. Module III---                                                   |
++----------------------------------------------------------------------------+
+
+Section 9 is the first section of module III. This section, just like section
+5 was, is easier than the end of the previous module. This area doesn't
+provide much money. Tear through this section, beat the boss, and move on.
+
+In game description is as follows: "Section IX is populated by strong
+body-builder types, who tend to look alike. They are all searching for a head
+for their leader. Hmm, what about yours?"
+
+Enemies unique to this section:
+Head Hunter: These followers of the Shadow Head Hunter all cut off their own
+heads in order to be accepted by their leader!
+Type: 7 Exp: x1
+
+Pogerstead: These monsters were not quite brave enough to cut off their own
+head like the Head Hunters, but they still serve their leader's cause.
+Type: B Exp: x3
+
+Grobler: Groblers are distant relatives of the Pogersteads. They also serve
+the shadow Head Hunter, but not by choice. They are killed when they disobey.
+Type: 6 Exp: x1
+
+Wraith (Level Drainer): Wraiths are dead adventurers who were killed by Head
+Hunters. They still wander the halls of this section in search of life.
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Head Hunter (Boss): Ever think you might lose your head?  This fellow
+did!  Don't let that mislead you, however, he is still a very tough monster!
+Type: 5 Exp: x16
+
+******************************************************************************
+
+Section 10 is a fairly normal section once again, with the exception of one
+fire breathing enemy.
+
+In game description is as follows: "Section X is populated by more pseudo-
+humanoid mutants. They are purely evil, and they are always looking for more
+adventurers to kill."
+
+Enemies unique to this section:
+Khagistoll: These followers of the Shadow Khagistoll, are able to attack you
+with four weapons at once!  Running away is highly recommended!
+Type: 7 Exp: x1
+
+Flaming Idiot (Fire): While this monster can attack you with it's arms, it can
+also lean forward and spurt flames at you!  Be prepared to be cooked.
+Type: C Exp: x2 Note: Fire Breath
+
+Triop: These guys also too the 'two heads are better than one' saying to
+heart. They have three heads!  Note the middle one makes most of the
+decisions.
+Type: B Exp: x2
+
+Mummy (Level Drainer): The inhabitants of this section sometimes go to
+cemetaries[sic] and unearth dead humanoids and wrap them up and bring them
+back to life.
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Khagistoll (Boss): These folks took the saying 'Two heads are better
+than one' to its extreme as they have two bodies!  They work together well.
+Type: 5 Exp: x16
+
+******************************************************************************
+
+Well by the time you've reached this point you've committed too much time to
+quit!  So now when you see the enemy graphics of section 11 you won't be able
+to stop, HA!  Seriously, the graphics take a serious turn for the worst in
+this section. Otherwise, this area isn't much harder than the last (except on
+your eyes LoL).
+
+In game description is as follows: "Section XI is ruled by strange critters
+like Eyeballs, Flesh Eaters, and others. These strangers can not be trusted.
+Do not be their friend!"
+
+Enemies unique to this section:
+Eyeball: These are the children of the Shadow Eyeball. If they see you, you
+can assume that the Shadow Eyeball sees you too.
+Type: 7 Exp: x1
+
+Flesh Eater: Flesh is the only food for this hungry monster. This adds a new
+and special meaning to the words, 'Don't feed the animals'!
+Type: 8 Exp: x2
+
+Foot Stomper: Ever wonder what an ant feels like when you crush it under your
+heel?  This monster will help you to know exactly how that feels.
+Type: 8 Exp: x2
+
+Face of Death (Level Drainer): Death is a hobby for this nice-looking monster.
+Your death is a particular focus of its hobby. Everyone has to have a hobby.
+Type: 9 Exp: x5 Note: Drains 1 level
+
+Shadow Eyeball (Boss): Try not to look at this fellow any more than necessary.
+The shadow eyeball is very shy and tends to attack anyone it catches staring!
+Type: 5 Exp: x16
+
+******************************************************************************
+
+The graphics haven't really become any better in this section, but the enemy
+design appears somewhat better. Section 12 actually doesn't have water for a
+floor, or does it?
+
+In game description is as follows: "Section XII is awash in filthy slimy
+sludge water. The inhabitants love to drink it!  They gain their evil power
+from this special sludge.
+
+Enemies unique to this section: 
+Mr. Fang: The Shadow Mr. Fang learned to clone itself, and these critters are
+the result. They all think alike, but are less powerful than their creator.
+Type: A Exp: x2
+
+Orc: Cross-breeding experiments between humans and pigs created this monster.
+At first, the scientists tried to kill them all, but they failed.
+Type: 6 Exp: x1
+
+Gargoyle: A student of the occult found out that statues at the entrances of
+buildings could be animated. Now they breed like rabbits!
+Type: A Exp: x2
+
+Vampire: These once proud but secret members of the Human race are now the
+slaves of the Shadow Blood Sucker. They still drink blood and life for food!
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Mr. Fang: This evil leader controls all of the vampires, orcs, and
+Gargoyals[sic]. It is a very dangerous monster, and is very hard to kill.
+Type: 5 Exp: x16
+
++----------------------------------------------------------------------------+
+|[MOD4]---D. Module IV---                                                    |
++----------------------------------------------------------------------------+
+
+Well at this point I think we can determine that the graphics are going to be
+bad for the rest of the game haha. In any case, just like last time, things
+get easy again when you start a new module. Section XIII is host to many
+medieval looking monsters... and a zombie in a Hawaiian shirt...?
+
+In game description is as follows: "Section XIII is run by armored warriors
+and other human-like creatures. Don't let that deceive you though, they would
+knock off your head with no regrets.
+
+Enemies unique to this section:
+Armored Warrior: Plates of white steel guard this warrior's body. If you plan
+to attack it, be prepared for a very tough battle to get through the armor.
+Type: A Exp: x1
+
+Very Mean Human: This friendly-looking creature is only interested in killing
+its enemies. These monsters have no friends.
+Type: 6 Exp: x2
+
+Dwarf: Don't let this little guy's height deceive you!  He can fight just as
+well as the next guy. Or Girl. Or it.
+Type: 6 Exp: x2
+
+Zombie (Level Drainer): These undead creatures are dangerous, even if they are
+a few pieces of their bodies. The pieces that are left still work fine.
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Warrior (Boss): This tough monster is protected by invisible armor,
+which makes it extremely hard to hit. Spells are highly recommended.
+Type: 5 Exp: x16
+
+******************************************************************************
+
+It looks to me like the demon monster in this section is basically Mr. Fang 
+from Module 3. Aside from this, section XIV is basically more of the same.
+
+In game description is as follows: "Section XIV is a veritable zoo!  Apes,
+Werewolves, and Unicorns, wander about in search of food!  There are signs
+everywhere that say 'feed the animals'!
+
+Enemies unique to this section:
+Ape-Man: Humans once thought the ape-man was an inferior creature. The ape-
+men taught the humans a lesson in the battle of the moon.
+Type: 6 Exp: x1
+
+Werewolf: This powerful enemy is a good monster to run away from. It has
+powerful attacks, fast strikes, and tough armor!
+Type: E Exp: x8
+
+Unicorn: Have you ever eaten a shish-kabob. Try to picture yourself with that
+horn poking through your body and you will see your future!
+Type: B Exp: x2
+
+Demon (Level Drainer): This good friend of the devil been[sic] sent to the
+land of the living to bring back souls. If it hits you, you will lose a level
+and some strength.
+Type: 9 Exp: x5 Note: Drains 1 Level / Drains Strength
+
+Shadow Ape-Man (Boss): Just think of this one as the leader of the 'section of
+the apes'. The Shadow Ape-Man is followed by various animal-types.
+Type: 5 Exp: x16
+
+******************************************************************************
+
+Section 15 is the dragon section. What do dragons imply?  That's right, more
+fire breathing enemies. These enemies are high level and breath fire, so
+don't be surprised to see yourself get hit for well over 100 damage when they
+decide to breath fire on you!
+
+In game description is as follows: "Section XV is stuffed with dragons of
+various sorts. Be prepared to be burned by fire breathing monsters if you
+adventure in this section."
+
+Enemies unique to this section:
+Dragon Prince: Like politicians, all of the Dragon Princes aspire to be the
+Dragon King. Watch out for their fangs and their bad breathe.
+Type: C Exp: x2 Note: Fire Breath
+
+Dragon: All of the dragons, of course, aspire to become Dragon Princes
+(or princesses). They also breathe fire as well as their conventional attack.
+Type: C Exp: x2 Note: Fire Breath
+
+Dragonfly: Like the other inhabitants of this section, the dragonflies all
+want to become dragons. But don't underestimate the Dragonflies!
+Type: C Exp: x2 Note: Fire Breath
+
+Chimera (Level Drainer): These evil creatures not only drain life from their
+victims, They also breathe fire. They learned this trick from the dragons.
+Type: 9 Exp: x5 Note: Drains 1 Level / Fire Breath
+
+Shadow Dragon King (Boss): The leader of the dragons, the Shadow Dragon King
+has evil powers, including it's ability to breathe fire.
+Type: 5 Exp: x16 Note: Fire Breath
+
+******************************************************************************
+
+Well Section 16 is the end of the road for you if you are playing on normal
+difficulty. If you're playing on normal then the Shadow Evil God will be your
+last boss. Otherwise, if you picked ICHA difficulty, it's the last step
+before you get to the last module.
+
+In game description is as follows: "Section XVI is a sort of heaven in which
+you feel very uncomfortable. The demi-gods that live here just don't seem to
+like you much!"
+
+Enemies unique to this section:
+Zeus: Once upon a time Zeus was a very powerful god in his own right, but when
+Zues's[sic] multiplied, they lost their power and now they follow the Evil God.
+Type: E Exp: x8
+
+Troll: Trolls are loyal followers of the Shadow Evil God. Their only purpose
+in life is to destroy enemy adventurers who threaten their god.
+Type: 8 Exp: x2
+
+Titan: Close friends with the other residents of this section, Titans were
+persuaded to turn evil by the Shadow Evil God.
+Type: 8 Exp: x2
+
+Devil (Level Drainer): And you thought the Devil was the most evil creature in
+the universe. Actually, there are numerous devils who follow the Shadow Evil
+God.
+Type: 9 Exp: x5 Note: Drains 1 Level / Drains Strength
+
+Shadow Evil God (Boss): This is the god of all the demi-gods. Don't let that
+scare you though. The Shadow Evil God drains strength and breathes ice.
+Type: 5 Exp: x16 Note: Drains Strength / Ice Breath
+
++----------------------------------------------------------------------------+
+|[MOD5]---E. Module V---                                                     |
++----------------------------------------------------------------------------+
+
+Well you made it, here's the final module. You're almost there if you've made
+it this far. Section XVII is the beginning of the end. The boss will drop
+potions and trap door keys, because he is a level drainer!
+
+In game description is as follows: "Section XVII is another section that is
+overrun with mutant humanoids. If they succeed in killing you, you can be
+sure you will be experimented on!"
+
+Enemies unique to this section:
+Ogre: This powerful monster is very difficult to kill. It has powerful
+attacks, and tough skin as well. Be ready for heavy battle with this one!
+Type: E Exp: x8
+
+Kobald[sic]: These are the little brothers of the Ogres. You may find it
+possible to dispence[sic] these creatures easily, but do not expect the ogres
+to just sit by.
+Type: 6 Exp: x1
+
+Goblin: Goblins are mischievous little critters who are often found near
+kobalds[sic]. Their friendship goes back to the race-wars.
+Type: 6 Exp: x1
+
+Ghoul (Level Drainer): The ghouls gather life force for all the other folks in
+this section. They drain your levels and pass them on the Ogres,
+Kobalds[sic], and Goblins.
+Type: 9 Exp: x5 Note: Drains 1 Level
+
+Shadow Ogres (Boss) (Level Drainer): The Shadow Ogre welcomes you to Module V
+of the Dungeons of the Unforgiven. Do not be deceived by this friendly
+welcome, though.
+Type: 5 Exp: x16 Note: Drains 1 Level
+
+******************************************************************************
+
+This section, section XVIII, appears to be more dangerous than the previous
+area, some enemies say they drain experience. I always take care to avoid them 
+and not get hit, so I can't confirm if this is true currently. If one manages
+to hit me, I'll update this. Just like the previous section, this section has
+a boss that drains levels.
+
+In game description is as follows: "Section XVIII is a strange alliance of
+creatures who hate everything. If you can kill everything here, the universe
+will be a better place."
+
+Enemies unique to this section:
+Stone Giant: The Stone Giants broke ranks with Eart[sic] elementals way back
+during the ancient Race-Wars. Now the Stone Giants have their own territory.
+Type: A Exp: x2
+
+Walking Sword: Warriors have always believed that swords had their own
+personality. This one walks around and attacks on it's own too!
+Type: B Exp: x2
+
+Pit Bull (Strength Drainer): Taking a cue from the humans, Pit Bulls killed
+off all the other species of dogs. They are all extremely evil creatures!
+Type: F Exp: x4 Note: Drains Strength
+
+Skeleton (Level Drainer): These are dead people who never quite got properly
+buried. They really want to be alive again, and they are sure draining you
+will help.
+Type: 9 Exp: x5 Note: Drains 2 Levels / Drains Strength
+
+Shadow Stone Giant (Boss) (Level Drainer): This horrible evil monster is very
+strong, very powerful, and also drains levels!  Don't let this one hit you!
+Type: 5 Exp: x16 Note: Drains 1 Level
+
+******************************************************************************
+
+You remember section 7 right, the one with all the poisoned and diseased
+enemies?  Well, guess what, we're doing it again. Get those protection spells
+ready, because you're going to need them!  (Of course by this point if you're
+a priest, you may have the cure spells meaning this isn't a big deal really at
+all).
+
+In game description is as follows: "Creepy clawly[sic] critters live in
+section XIX. Watch out for poison, which seems to be everywhere!  Casting a
+resist poison might be a wise idea!"
+
+Enemies unique to this section:
+Centipede (Poison): Oh boy! Another poisonous monster!  If this monster hits
+you, you will have to deal with poison. Being poisoned is an unpleasant
+experience.
+Type: 3 Exp: x5 Note: Poison Attack
+
+Giant Ant (Poison): These giant worker ants are controlled not by a queen ant,
+but by the Shadow Centipede. Try not to get in their way.
+Type: 3 Exp: x5 Note: Poison Attack
+
+Giant Toad (Poison): The Giant Toads are often found near the Giant Ants and
+the Centipedes. Watch out for the Giant Toads' poison tongues.
+Type: 3 Exp: x5 Note: Poison Attack
+
+Specter (Level Drainer) (Strength Drainer): Specters drain both levels and
+strength. You must decide whether keys and potions justify the losses these
+promise to inflict on you.
+Type: 9 Exp: x5 Note: Drains 2 Levels / Drains Strength
+
+Shadow Centipede (Boss) (Level Drainer): Another leader of an insect infested
+section, the Shadow Centipede is a serious foe indeed!  It drains life among
+other powers.
+Type: 5 Exp: x16 Note: Drains 1 Level
+
+******************************************************************************
+
+Well this is it, the last section. This section actually seems to have pretty
+decent graphics, especially considering many of the most recent sections
+you've been to. Good luck, you're almost done!
+
+In game description is as follows: "Section XX is the deepest section of
+Dungeons of the Unforgiven!  Take this piece of advice: go home, stay there,
+and never come come back to this section!
+
+Enemies unique to this section:
+Ogeroth: That gigantic fist is very very painful when it hits you!  And at
+that size, how can it miss?  Be prepared for some serious battle!
+Type: B Exp: x2
+
+Water Rat (Disease): Your heard of rats in sewer pipes, well, this is the
+sewer rat from hell!  These rats always carry diseases, so don't let them hit
+you!
+Type: 4 Exp: x5 Note: Disease Attack
+
+Elf Surfer: This fellow descended from the beach bums of Eart[sic]. They can
+do some amazing tricks with their surfboards.
+Type: E Exp: x8
+
+Rotting Swamp Plant (Level Drainer) (Intelligence Drainer): This evil plant
+would like to invite you to rot with it. If it hits you, you will lose two
+levels, and some
+intelligence!
+Type: 9 Exp: x5 Note: Drains 2 Levels / Drains Intelligence
+
+Shadow Ogeroth (Boss): This is the commander of all the Dungeons of the
+Unforgiven!  It drains lots of things, so be extremely careful!
+Type: 5 Exp: x16  Note: Drains 1 Level / Drains Strength
+
+
+##############################################################################
+#[COMT]***11. Combat Mechanics***                                            #
+##############################################################################
+
+This information was provided entirely by Tehtmi from disassembled
+executables. I have taken the liberty of arranging it in a little more
+readable format. We'll start with player attacks.
+
+PLAYER ATTACKS:
+Two scores are calculated when the player attacks: a player attack score and a
+monster defense score. If the attack score is higher than the defense score,
+then the player hits the monster. For every 40 points higher the attack score
+is than the defense score the damage roll happens an additional time. After
+the damage roll(s) then there is a single bonus damage roll.
+
+The player attack score is calculated from the following:
+A random number between 0 to 80
++ (level * 2)
++ Strength
+If normal difficulty: (+ Strength)
+If normal difficult AND Strength is greater than 25: +25
++ Luck (Another reason luck is awesome!)
++ Weapon Hit Bonus (See Weapon Table)
++ Gauntlet Bonus
++ Permanent Weapon Enchantment
++ Preperation Weapon Enchantment
+If deeper than floor 75 there is a 1/30 chance of: +40
+
+The monster defense score is calculated from the following:
+40
++ (level * 2)
++ Defense Score
++ Speed Score
+
+Damage:
+A random number from 0 to [Weapon Power] - 1 (If this is 0, then you miss)
+
+Bonus Damage:
+If random between 0 and 20 is less than level: +random between 0 and Strength
+Otherwise: +random between 0 and (Strength / 3)
+If level < 5: +random between 0 and (5 - Level)
++random between 0 and level
+
+MONSTER ATTACKS:
+Just like with player attacks, this is based upon an attack roll and a defense
+roll. Also just like player attacks, for every 40 points higher the attack is
+than the defense the monster gets an extra damage roll. Also like the player
+attack, if the damage roll is 0, the attack counts as a miss. There are some
+differences as well, but we'll go over those after we calculate the rolls.
+
+Monster attack score calculation:
+random number between 0 and 80
++20
++(Level*2)
+If deeper than 75: +(Depth-75)/2
+
+Player defense score calculation:
+32
+If monk: +random number between 0 and Intelligence
++(Level*2)
++(3*Agility)/2
++Luck (Luck again!!!)
++Armor (from equipped armor)
++Armor Enchantment (from preparation spell)
++Body Armor
++Ring of Protection Bonus
++"Protection" spell bonus (0,2,8,18, or 32)
+
+Monster damage:
+Random number from 0 to [Monster Power] - 1
+
+Here is where things change. Regardless of the monster hitting or not, there
+is a Depth/500 chance of 1 extra damage (which turns a miss into a 1 point
+hit). Then there is a 1/4 chance that whatever was rolled so far is thrown
+away and replaced by a random number from 0 to 2+(Depth/2); this can turn a
+miss into a hit or a hit into a miss.
+
+Monster bonus damage (ONLY if the monster hit AND the depth is greater than
+your character level; if your level is at least the depth none of this
+applies, and neither does the damage reduction below):
++random number between 0 and (Depth-PlayerLevel)
+If deeper than 25: +random number between 0 and (depth*4)
+If deeper than 100: +random number between 0 and (depth*5)
++random number between 0 and Monster Level
+
+Finally, monsters who have a breath attack have a 50% chance of using their
+breath instead. Breath attack damage is: 
+MonsterLevel 
++Random number between 0 and MonsterLevel
+If the player has a resistance spell active for that damage type then damage
+is reduced by 50%.
+A breath attack replaces the normal attack: it ignores your armor,
+protections and the Constitution reduction below, and it never drains levels
+or stats, poisons or diseases you. Only fire and ice breath exist in the
+monster data (acid, which would destroy your armor, is in the code but no
+monster has it).
+
+The player does have some damage protection though (again, only when the
+depth is greater than your level):
+Reduced Damage = Max(1, (Damage * (50 + Max(1, 100-Con))) / 150)
+If the result is more than Depth*4, then the damage becomes just Depth.
+Regardless of depth: if the player is Level 0 and the damage was more than 3,
+then damage is replaced by a random number between 1 and 3. If the player is
+Level 2 or lower and the damage is more than 6, then damage is reduced by 50%.
+
+TIMING:
+Monsters attack on a timer measured in seconds of game time. A monster next
+to you strikes once every (85 - its Speed)/3 + 10 seconds: 36 seconds for a
+Speed 5 monster, 33 for Speed 16, 20 for Speed 55. Your actions advance the
+clock: a move costs the seconds given in [GTPS] (only every other move
+actually advances the clock), and an attack costs your weapon's Speed plus
+(85 - Agility)/5 seconds, so with a Mace (18) and Agility 20 each of your
+swings hands a Speed 55 monster 31 seconds, about 1.5 attacks, and a slow
+character can be hit two or three times between actions. Slow Enemies, Fast
+Move and Invisibility all work on this timer (see [SPMC]).
+
+LEVEL DRAIN, POISON AND DISEASE:
+All of these only happen on a hit (damage above 0), never on a miss or a
+breath attack. A whole-level drainer takes its levels, sets your experience
+to the exact minimum for your new level and subtracts one [HPSP] roll per
+level; at character level 0 it does nothing. Sustrontima only subtracts 30
+experience. Resist Level Drain blocks it completely (100%, not 90%).
+
+Poison and disease are counters that start at 450 when you are hit (a second
+hit while already afflicted changes nothing). Every move the counter drops by
+one, and when it runs out you lose 1 Strength (poison) or 1 Constitution
+(disease), down to a minimum of 1, and the counter restarts at 450 - forever,
+until you pay the temple (300 rubles for poison, 500 for disease) or cast the
+cure spell. Resist Poison / Resist Disease block a new infection completely
+(100%, not 95%) and pause the counter of an existing one while they last.
+
+
+##############################################################################
+#[QREF]***12. Quick Reference***                                             #
+##############################################################################
+
+This will be filled with some charts that are handy to have around for your
+dungeon crawl.
+
++----------------------------------------------------------------------------+
+|[PFFB]---A. Puffballs---                                                    |
++----------------------------------------------------------------------------+
+
+Puffballs are both a blessing and a curse. Some puffballs (typically the
+light colored ones) raise a stat by 1 point, while the others (the dark
+colored ones) typically lower a stat by 1 point. This change in your stats
+only occurs if you get hit by a puffball though. Once a puffball hits you, it
+then dies giving you experience and sometimes money or an item just like
+a normal enemy.
+(The experience part is not quite right: in the code a puffball that has
+touched you is turned into a level 0 monster before it is "killed", so it is
+only worth about 18 experience. Kill it before it reaches you - a wand or a
+damage spell will do - and you get the full experience for its level, which
+is what makes the puffball trick at the end of [GTPS] work.)
+
+Good Puffballs
+Color:    |      Effect:
+Yellow    |      Raises Con by 1 Point
+White     |      Raises Dex by 1 Point
+L. Blue   |      Raises Str by 1 Point
+L. Red    |      Raises Int by 1 Point
+L. Green  |      Raises Wis by 1 point
+Gray      |      Raises Luck by 1 point
+
+Bad Puffballs
+Color:    |      Effect:
+D. Green  |      Lower Wis by 1 Point
+Sky Blue  |      Lower Str by 1 Point
+Brown     |      Lower Con by 1 Point
+Black     |      Lower Dex by 1 Point
+D. Red    |      Lower Int by 1 Point
+D. Gray   |      Lower Luck by 1 Point
+
++----------------------------------------------------------------------------+
+|[POTN]---B. Potions---                                                      |
++----------------------------------------------------------------------------+
+
+Potions raise one of your stats by 6 and lowers another 3. Because of this,
+it's best to use potions in pairs to have a net effect of raising two of your
+stats by 3 each. The pairs are as follows:  Green & White, Orange & Yellow,
+Red & Blue
+
+
+Potion Color:     |Stat Raised By 6|Stat Lowered By 3
+Green             |Intelligence    |Dexterity
+Orange            |Strength        |Luck
+Yellow            |Luck            |Strength
+Red               |Constitution    |Wisdom
+Blue              |Wisdom          |Constitution
+White             |Dexterity       |Intelligence
+
++----------------------------------------------------------------------------+
+|[SPLL]---C. Spells---                                                       |
++----------------------------------------------------------------------------+
+
+Spells come in 4 flavors: Permanent, Preparation, Wizard, and Priest.
+Permanent spells can only be cast in town and permanently reduce your maximum
+spell points and last forever. Preparation spells can only be cast when there
+is at least one space between you and any monster and will last until you next
+sleep at an inn. Wizard and Priest battle spells can be used any time, but
+will only last for a certain number of turns. If you have a choice between
+casting a battle spell and a preparation spell, it's always better to cast the
+preparation version. The Enchant Weapon/Armor permanent and preparation spells
+do the same thing, but count separately!
+
+A spell cast from a spell book costs as many spell points as its line number
+in the lists below (line 1 = 1 SP, line 10 = 10 SP); a permanent spell also
+lowers your maximum SP by that much. Scrolls, wands and spell papers cost no
+SP at all, and a permanent spell cast from a scroll or paper does not lower
+your maximum SP either. See [SPMC] for what every spell actually does.
+
+***Permanent Spells List***
+A)Enchant Weapon Level 1 |B)Extra Health Point      |C)Write Scroll to Level 3
+D)Enchant Armor Level 1  |E)Extra 3 Health Points   |F)Enchant Wand Level 3
+G)Enchant Weapon Level 2 |H)Extra 5 Health Points   |I)Enchant Ring Level 1
+J)Enchant Armor Level 2  |K)Anti-Magic Ring Level 1 |L)Write Scroll - Level 10
+M)Enchant Weapon Level 3 |N)Enchant Ring Level 2    |Q)Body Armor Level 1
+P)Enchant Armor Level 3  |Q)Anti-Magic Ring Level 2 |R)Enchant Wand Level 8
+S)Enchant Ring Level 3   |T)Anti-Magic Ring Level 3 |U)Body Armor Level 2
+V)Enchant Weapon Level 4 |W)Enchant Armor Level 4   |X)Enchant Wand Any Level
+Y)Permanent Feather      |Anti-Magic Ring Level 5   |1)Extra 25 Health Points
+2)Permanent Invisibility |3)Youth                   |4)Body Armor Level 4
+
+***Preparation Spells***
+A)Enchant Armor Level 1  |B)Enchant Weapon Level 1  |C)Little Cure
+D)Enchant Weapon Level 2 |E)Relocate                |F)Detect Level
+G)Cure                   |H)Enchant Armor Level 2   |I)Strength
+J)Enchant Weapon Level 3 |K)Agility                 |L)Descend
+M)Ascend                 |N)Detect Position         |Q)Feather
+P)Big Cure               |Q)Double Ascend           |R)Enchant Weapon Level 4
+S)Invisibility           |T)Enchant Armor Level 3   |U)Fast Move
+V)Super Strength         |W)Enchant Weapon Level 5  |X)Major Descend
+Y)Super Agility          |Z)Cure Poison             |1)Heal All Wounds
+2)Major Ascend           |3)Cure Disease            |4)Enchant Armor Level 4
+
+***Wizard Battle Spells***
+A)Sleep                  |B)Magic Zap               |C)Minor Protection
+D)Slow Enemies           |E)Strength                |F)Minor Shock
+G)Lightning              |H)Magic Missile           |I)Speed
+J)Go Away                |K)Relocate                |L)Power Weapon I
+M)Minor Explosion        |N)Protection              |Q)Resist Poison
+P)Magic Zot              |Q)Shock                   |R)Anti-Cold
+S)Explosion              |T)Pass Wall               |U)Anti-Fire
+V)Magic Bolt             |W)Resist Level Drain      |X)Power Weapon II
+Y)Hold Monster           |Z)Drain Monster           |1)Major Shock
+2)Major Explosion        |3)Autokill                |4)Power Weapon III
+
+***Priest Battle Spells***
+A)Sleep                  |B)Minor Protection        |C)Strength
+D)Resist Poison          |E)Speed                   |F)Fast Cure
+G)Resist Disease         |H)Relocate                |I)Slow Enemies
+J)Anti-Cold              |K)Go Away                 |L)Power Weapon I
+M)Protection             |N)Anti-Fire               |Q)Pass Wall
+P)Resist Level Drain     |Q)Drain Monster           |R)Fast Big Cure
+S)Hold Monster           |T)Power Weapon II         |U)Shock
+V)Major Protection       |W)Explosion               |X)Magic Zot
+Y)Autokill               |Z)Power Weapon III        |1)Strength and Speed
+2)Ultra Protection       |3)Fast Heal               |4)Major Shock
+
++----------------------------------------------------------------------------+
+|[SPDS]---D. Spell Descriptions---                                           |
++----------------------------------------------------------------------------+
+Yes I did type all of these up by hand while looking at the game haha!
+These are the in-game descriptions. Where they disagree with the code, the
+code wins: see [SPMC]. The main offenders are Go Away (no level ratio at
+all), the Resist spells (100%, not 95%/90%), the Power Weapon pluses (not
+used) and the priest's level 5 Protection (identical to Minor Protection).
+
+***Permanent Spells***
+A)Enchant Weapon Level 1   - Turn normal weapon into plus 1 magical weapon.
+B)Extra Health Point       - Permanently increases caster's maximum health
+                             points by1.
+C)Write Scroll to Level 3  - Create a scroll for any spell up to third level.
+D)Enchant Armor Level 1    - Turn normal armor into plus 1 magical armor.
+E)Extra 3 Health Points    - Permanently increases caster's maximum health
+                             points by 3.
+F)Enchant Wand Level 3     - Put five charges of any spell up to third level
+                             into a wand.
+G)Enchant Weapon Level 2   - Turn normal weapon into plus 2 magical weapon.
+H)Extra 5 Health Points    - Permanently increases caster's maximum health
+                             points by 5.
+I)Enchant Ring Level 1     - Improves resistance to physical attacks by 1
+                             point.
+J)Enchant Armor Level 2    - Turns normal armor into plus 2 magical armor.
+K)Anti Magic Ring Level 1  - Creates plus 1 ring to defend wearer against
+                             magical attacks.
+L)Write Scroll to Level 10 - Create a scroll for any spell up to tenth level.
+M)Enchant Weapon Level 3   - Turn normal weapon into plus 3 magical weapon.
+N)Enchant Ring Level 2     - Improves resistance to physical attacks by 2
+                             points.
+O)Body Armor Level 1       - Turns caster's skin into magical armor that is
+                             equivalent to plus 1 magical leather armor.
+P)Enchant Armor Level 3    - Turns normal armor into plus 3 magical armor.
+Q)Anti-Magic Ring Level 2  - Creates plus 2 ring to defend wearer against
+                             magical attacks.
+R)Enchant Wand Level 8     - Put five charges of any spell up to eighth level
+                             into a wand.
+S)Enchant Ring Level 3     - Improves resistance to physical attacks by 3
+                             points.
+T)Anti-Magic Ring Level 3  - Creates plus 3 ring to defend wearer against
+                             magical attacks.
+U)Body Armor Level 2       - Turns caster's skin into magical armor that is
+                             equivalent to plus 2 magical leather armor.
+V)Enchant Weapon Level 4   - Turn normal weapon into plus 4 magical weapon.
+W)Enchant Armor Level 4    - Turn normal armor into plus 4 magical armor.
+X)Enchant Wand Any Level   - Put five charges of any spell into a wand.
+Y)Permanent Feather        - Renders caster permanently weightless.
+Z)Anti-Magic Ring Level 5  - Creates plus 5 ring to defend wearer against
+                             magical attacks.
+1)Extra 25 Health Points   - Permanently increases caster's maximum health
+                             points by 25.
+2)Permanent Invisibility   - Creates a field that permanently bends all light
+                             rays around caster.
+3)Youth                    - Reduces caster's age by 10 years. Does not
+                             return characteristics to their higher levels,
+                             but it does help prevent them from continuing to
+                             decline. It also costs some experience.
+                             (Changes your age to 20 no matter current age,
+                             and takes away 10% of your experience).
+4)Body Armor Level 4       - Turns caster's skin into magical armor that is
+                             equivalent to plus 4 magical leather armor.
+
+***Preparation Spells***
+A)Enchant Armor Level 1    - Improves armor of caster by 1 point.
+B)Enchant Weapon Level 1   - Improves all of the caster's weapons by 1 point.
+C)Little Cure              - Cures 1-20 health points, depending upon the
+                             caster's wisdom.
+D)Enchant Weapon Level 2   - Improves all of the caster's weapons by 2 points.
+E)Relocate                 - Teleports caster randomly to another position on
+                             the same level. Leaving the monster behind.
+F)Detect Level             - Tells caster what level he is on.
+G)Cure                     - Cures 20-60 health points, depending upon the
+                             caster's wisdom.
+H)Enchant Armor Level 2    - Improves armor of caster by 2 points.
+I)Strength                 - Increases the caster's strength by five points.
+J)Enchant Weapon Level 3   - Improves all of the caster's weapons by 3 points.
+K)Agility                  - Increases the caster's agility by five points.
+L)Descend                  - Drop down to the next level with open space
+                             directly beneath the caster.
+M)Ascend                   - Pass up to the next level with open space
+                             directly above the caster.
+N)Detect Position          - Reveals position of caster in terms of X and Y.
+O)Feather                  - Makes caster completely weightless, making it
+                             easier to run from monsters.
+P)Big Cure                 - Cures 50-150 health points, depending upon the
+                             caster's wisdom.
+Q)Double Ascend            - Rise twice as far as the regular ascend spell.
+R)Enchant Weapon Level 4   - Improves all of the caster's weapons by 4 points.
+S)Invisibility             - Renders the caster invisible, making it more
+                             difficult for monsters to pursue and attack.
+T)Enchant Armor Level 3    - Improves armor of caster by 3 points.
+U)Fast Move                - Increases the caster's running speed, enabling
+                             him to escape more easily from dangerous
+                             monsters.
+V)Super Strength           - Increases the caster's strength by ten points.
+W)enchant Weapon Level 5   - Improves all of the caster's weapons by 5 points.
+X)Major Descend            - Drop down about 10 levels into the dungeon.
+Y)Super Agility            - Increases the caster's agility by ten points.
+Z)Cure Poison              - Cures poison if the caster has been poisoned by
+                             any means.
+1)Heal All Wounds          - Cures all wounds instantly.
+2)Major Ascend             - Rise up about 10 levels.
+3)Cure Disease             - Cures any form of disease.
+4)Enchant Armor Level 4    - Improves armor of caster by 4 points.
+
+***Wizard Battle Spells***
+A)Sleep                    - Puts low level monsters to sleep, allowing you to
+                             attack them at will.
+B)Magic Zap                - Zaps any monster for 2 points per level of the
+                             caster.
+C)Minor Protection         - Reduces the likelihood that the caster will be
+                             hit by any monster.
+D)Slow Enemies             - Reduces the number of attacks which monsters may
+                             make upon the caster.
+E)Strength                 - Increases the Caster's strength by 7 points.
+F)Minor Shock              - Does 25 points of to[sic] damage to monster.
+G)Lightning Bolt           - Burns most monsters for 4 points per level of the
+                             caster.
+H)Magic Missile            - Powerful missile does 50 points of damage to
+                             monster.
+I)Speed                    - Increases caster's striking speed, allowing extra
+                             attacks.
+J)Go Away                  - Teleports monster away, allowing your easy
+                             escape. Success is decided by the ratio between
+                             the player and monster levels. Will not work at
+                             all if ratio is worse than 1:4, 1:2 is
+                             recommended.
+K)Relocate                 - Teleports caster randomly to another position on
+                             the same level, leaving the monster behind.
+L)Power Weapon I           - Creates a shimmering magical weapon of
+                             substantial power and plus 3 striking capability.
+M)Minor Explosion          - Creates a small explosion at the feet of the
+                             monster. Does between 75 and 175 points of
+                             damage at random to the monster.
+N)Protection               - Greatly reduces the likelihood of the caster
+                             being hit by any monster.
+O)Resist Poison            - Protects caster against poison 95 percent of the
+                             time.
+P)Magic Zot                - Gives monster an electric jolt, causing 4-8
+                             points of damage per level of the caster.
+Q)Shock                    - Does 125 points of damage to monster.
+R)Anti-Cold                - Prevents damage to caster from damaging cold-
+                             related attacks like that of the white dragon.
+S)Explosion                - Creates a large explosion at the feet of the
+                             monster. Does between 125 and 225 points of
+                             damage at random to the enemy monster.
+T)Pass Wall                - Moves caster to a safe place on the other side of
+                             a nearby wall.
+U)Anti-Fire                - Prevents damage to caster from damaging fire-
+                             related attacks like that of the orange dragon.
+V)Magic Bolt               - Gives monster an electric energy jolt, causing
+                             7-11 points of damage per level of the caster.
+W)Resist Level Drain       - Allows caster 90 percent chance of resisting a
+                             level drain.
+X)Power Weapon II          - Creates a powerful shimmering magical weapon of
+                             great power and plus 9 striking capability.
+Y)Hold Monster             - Stops monster from making any actions.
+Z)Drain Monster            - Reduces the monster's level by the amount of the
+                             caster's wisdom.
+1)Major Shock              - Does 300 points of damage to the enemy monster.
+2)Major Explosion          - Creates a huge explosion at the feet of the
+                             monster. Does between 200 and 500 points of
+                             damage at random to the enemy monster.
+3)Autokill                 - Kills monster. Success is determined by a ratio
+                             between the player and monster levels, wisdom,
+                             and intelligence. This is not terribly reliable
+                             but it is very effective!
+4)Power Weapon III           Creates a highly powerful magical weapon of great
+                             strength and plus 21 striking and damage
+                             capability.
+
+***Priest Battle Spells***
+A)Sleep                    - Puts low level monsters to sleep, allowing you to
+                             attack them at will.
+B)Minor Protection         - Reduces the likelihood that the caster will be
+                             hit by any monster.
+C)Strength                 - Increases the Caster's strength by 7 points.
+D)Resist Poison            - Protects caster against poison 95 percent of the
+                             time.
+E)Speed                    - Increases caster's striking speed, allowing extra
+                             attacks.
+F)Fast Cure                - Easy to cast cure for use in battle.
+G)Resist Disease           - Protects caster against disease 95 percent of the
+                             time.
+H)Relocate                 - Teleports caster randomly to another position on
+                             the same level, leaving the monster behind.
+I)Slow Enemies             - Reduces the number of attacks which monsters may
+                             make upon the caster.
+J)Anti-Cold                - Prevents damage to caster from damaging cold-
+                             related attacks like that of the white dragon.
+K)Go Away                  - Teleports monster away, allowing your easy
+                             escape. Success is decided by the ratio between
+                             the player and monster levels. Will not work at
+                             all if ratio is worse that 1:4, 1:2 is
+                             recommended.
+L)Power Weapon I           - Creates a shimmering magical weapon of
+                             substantial power and plus 3 striking capability.
+M)Protection               - Greatly reduces the likelihood of the caster
+                             being hit by any monster.
+N)Anti-Fire                - Prevents damage to caster from damaging fire-
+                             related attacks like that of the orange dragon.
+O)Pass Wall                - Moves caster to a safe place on the other side of
+                             a nearby wall.
+P)Resist Level Drain       - Allows caster 90 percent chance of resisting a
+                             level drain.
+Q)Drain Monster            - Reduces the monster's level by the amount of the
+                             caster's wisdom.
+R)Fast Big Cure            - Easy to cast cure for use in battle.
+S)Hold Monster             - Stops monster from making any actions.
+T)Power Weapon II          - Creates a powerful shimmering magical weapon of
+                             great power and plus 9 striking capability.
+U)Shock                    - Does 125 points of damage to monster.
+V)Major Protection         - Greatly reduces the likelihood of the caster
+                             being hit by any monster.
+W)Explosion                - Creates a large explosion at the feet of the
+                             monster. Does between 125 and 225 points of
+                             damage at random to the enemy monster.
+X)Magic Zot                - Gives monster an electric jolt, causing 4-8
+                             points of damage per level of the caster.
+Y)Autokill                 - Kills monster. Success is determined by a ratio
+                             between the player and monster levels, wisdom,
+                             and intelligence. This is not terribly reliable
+                             but it is very effective!
+Z)Power Weapon III           Creates a highly powerful magical weapon of great
+                             strength and plus 21 striking and damage
+                             capability.
+1)Strength and Speed       - Helps both strength and agility of the spell
+                             caster.
+2)Ultra Protection         - Greatly reduces the likelihood of the caster
+                             being hit by any monster.
+3)Fast Heal                - Completely heals caster instantly, even during
+                             battle.
+4))Major Shock              - Does 300 points of damage to the enemy monster.
+
++----------------------------------------------------------------------------+
+|[MITM]---E. Magic Items---                                                  |
++----------------------------------------------------------------------------+
+
+There are several different magic items you can find when you kill any enemy.
+These come in the form of either an immediate use item to raise a stat, an
+item you can save and use later, or a passively used item.
+How often each of these turns up is in [LOOT]; Luck plays no part in it, and
+monks never find any of them.
+
+Instant Use (add 2 points to the named stat):
+Book of Wisdom
+Book of Dexterity
+Book of Strength
+Book of Constitution
+Book of Intelligence
+Book of Luck
+
+Passive Use (gets used every time you move or hit enter):
+Ring of Regeneration - As time passes you will regenerate 1 health point per
+ring of regen. These rings are left over from the post national-times of
+Eart[sic].
+
+Active Use (Use through the items menu):
+
+Nuclear Hand Grenade (Doesn't work on bosses) - Nuclear hand grenades are the
+most powerful attack device in existence. Use it by hitting 'I' then select
+-Other'. It will kill the monster period.
+
+Potion of Healing - This potion will heal all of your wounds instantly. You
+may drink this potion so quickly that monsters will not get any extra strikes.
+
+Stone of Teleportation - This stone will probably save your life!  Use it when
+you are absolutely desperate and it will raise you to level zero.
+
+Floor Slosher - The Famous Floor Slosher!  Each time you use this item,
+the floor turns to mush, and you slip down at least one level. This item
+may [used] limitlessly.
+
+Stone of Seeing - Use this item to map an entire level of the dungeon. This
+item is only good for one single use.
+
++----------------------------------------------------------------------------+
+|[BSSR]---F. Boss Rewards---                                                 |
++----------------------------------------------------------------------------+
+The rewards below are given only the first time you kill each Shadow boss
+(the game remembers it in your character file); killing the same boss again
+gives experience only. The orbs SET the plus of one weapon or armor you pick
+to 25, 50 or 101 (they do not add to it), and a later permanent Enchant
+Weapon/Armor spell would overwrite that with its own value (see [SPMC]).
+
+Module I:
+
+Section 1:
+Floor Number: 5
+Boss Name: Shadow Gargalon
+Item: Biotech-Fluid from a mythical planet.
+Effect: Increases health by 30 permanently.
+
+Section 2:
+Floor Number: 10
+Boss Name: Shadow Elemental
+Item: Moraff's Ring of Wisdom
+Effect: Increases Wisdom by 12 permanently.
+
+Section 3:
+Floor Number: 15
+Boss Name: Shadow Vulture
+Item: Very Rare Bottle of Pogerstead's Milk
+Effect: Increase Strength by 12 permanently.
+
+Section 4:
+Floor Number: 20
+Boss Name: Shadow Demon Queen
+Item: Wimpy Orb of Armor Enhancement
+Effect: Turn any armor into plus 25 magic armor.
+
+
+Module II:
+
+Section 5:
+Floor Number: 10
+Boss Name: Shadow Troggisher
+Item: Plus 9 Body Armor
+Effect: Makes it harder for enemies to hit you
+
+Section 6:
+Floor Number: 20
+Boss Name: Shadow Giant Worm
+Item: Plus 12 Gauntlets
+Effect: Your hand seems much stronger and more accurate.
+
+Section 7:
+Floor Number: 30
+Boss Name: Shadow Scorpian[sic]
+Item: Plus 15 Ring of Protection
+Effect: Makes you feel like you can dodge attacks more easily.
+
+Section 8:
+Floor Number: 40
+Boss Name: Shadow Skeeter
+Item: Great Orb of Weapon Enhancement
+Effect: Turns any weapon into a plus 25 attack weapon
+
+
+Module III:
+
+Section 9:
+Floor Number 15
+Boss Name: Shadow Head Hunter
+Item: Rabbit's Foot from an old planet whose name I've forgotten.
+Effect: Increases Luck by 10 permanently.
+
+Section 10:
+Floor Number: 30
+Boss Name: Shadow Khagistoll
+Item: Book titled 'Secrets of Vegetarian Health'
+Effect: Increases Constitution by 10 permanently.
+
+Section 11:
+Floor Number: 45
+Boss Name: Shadow Eyeball
+Item: Bottle of Essen Liquid
+Effect: Increases Intelligence by 10 permanently.
+
+Section 12:
+Floor Number: 60
+Boss Name: Shadow Mr. Fang
+Item: Pile of 10 Stones of Seeing
+Effect: Each one lets you map a whole level.
+
+Module IV:
+
+Section 13:
+Floor Number: 20
+Boss Name: Shadow Warrior
+Item: Plus 25 Body Armor.
+Effect: Makes it much harder for enemies to hit you.
+
+Section 14:
+Floor Number: 40
+Boss Name: Shadow Ape-Man
+Item: Plus 50 Gauntlet
+Effect: Your hand seems much stronger and more accurate.
+
+Section 15:
+Floor Number: 60
+Boss Name: Shadow Dragon King
+Item: Plus 50 Ring of Protection.
+Effect: Makes you feel like you can dodge attacks much more easily.
+
+Section 16:
+Floor Number: 80
+Boss Name: Shadow Evil God
+Item: Mighty Orb of Armor Enhancement.
+Effect: Turn any armor into plus 50 magic armor
+
+Module V:
+
+Section 17:
+Floor Number: 25
+Boss Name: Shadow Ogre
+Item: Bio-Tech Fluid from the mythical planet.
+Effect: Increases Health by 300 permanently.
+
+Section 18:
+Floor Number: 50
+Boss Name: Shadow Stone Giant
+Item: Soran's Ring of Speed
+Effect: Increases Agility by 20 permanently.
+
+Section 19:
+Floor Number: 75
+Boss Name: Shadow Centipede
+Item: Popear's Spinach Juice
+Effect: Increases Strength by 25 permanently.
+
+Section 20:
+Floor Number: 100
+Boss Name: Shadow Ogreth
+Item: Mighty Orb of Explosive Weapon Enhancement
+Effect: Turns any weapon into a plus 101 attack weapon.
+
++----------------------------------------------------------------------------+
+|[EXPT]---G. Leveling Tables---                                              |
++----------------------------------------------------------------------------+
+
+This is where the necessary experience to reach a specific level list will be.
+You need MORE than the listed amount, and the level is only awarded when you
+sleep at an inn (several levels at once if you have the experience).
+
+I Can Handle Anything Difficulty:
+Level:                     Experience Required:
+1                          125
+2                          250
+3                          500
+4                          1000
+5                          2,000
+6                          4,000
+7                          8,000
+8                          16,000
+9                          32,000
+10                         64,000
+11                         128,000
+12                         256,000
+13                         512,000
+14                         1,024,000
+15                         2,048,000
+16                         4,096,000
+17                         8,192,000
+18                         16,384,000
+19                         32,768,000
+20                         65,536,000
+21                         131,072,000
+22                         262,144,000
+23                         524,288,000
+24                         1,048,576,000
+25                         2,097,152,000
+26                         4,194,304,000
+27                         8,388,608,000
+28                         16,777,216,000
+29                         33,554,432,000
+30                         67,108,864,000
+31                         134,217,728,000
+32                         268,435,456,000
+33                         536,870,912,000
+34                         1,073,741,824,000
+35                         2,147,483,648,000
+36                         4,294,967,296,000
+37                         8,589,934,592,000
+
+As can be seen, level 1 requires 125 experience, and then each level requires
+twice as much experience as the level before it. This has been verified to
+level 51 by Omeganian. That would make the formula to determine the amount of
+experience required : experience = 125*[2^(level - 1)]. This formula is
+identically equivalent to the actual formula used in the game code as verified
+by Tehtmi.
+
+Normal Difficulty:
+Level:                     Experience Required
+1                          99
+2                          170
+3                          270
+4                          410
+5                          606
+6                          880
+7                          1,265
+8                          1,802
+9                          2,555
+10                         3,609
+11                         5,085
+12                         7,151
+13                         10,044
+14                         14,093
+15                         19,763
+16                         27,700
+17                         38,812
+18                         54,369
+19                         76,148
+20                         106,640
+21                         149,328
+22                         209,091
+23                         292,759
+24                         409,894
+25                         573,884
+26                         803,470
+27                         1,124,890
+28                         1,574,878
+29                         2,204,861
+30                         3,086,837
+31                         4,321,604
+32                         6,050,278
+33                         8,470,421
+34                         11,858,622
+35                         16,602,103
+36                         23,242,976
+37                         32,540,198
+38                         45,556,309
+39                         63,778,865
+40                         89,290,443
+41                         125,006,652
+42                         175,009,344
+43                         245,013,114
+44                         343,018,391
+45                         480,225,780
+46                         672,316,124
+47                         941,242,605
+48                         1,317,739,679
+49                         1,844,835,583
+50                         2,582,769,849
+
+Tehtmi has disassembled the executable from DotU and shares that this is the
+formula used in the code: 250*[1.4^(Level-2)]-80 with some rounding.
+
+Experience is stored as a double precision floating point number, which holds
+values up to about 1.8 * 10^308 with 15-16 significant digits, so neither
+table has a practical ceiling (on ICHA, level 100 needs 250 * 2^98, about
+7.9 * 10^31). So the NaN experience described in [SLIN] is not a cap being
+hit - nothing in the leveling or experience formulas can produce it - and its
+cause is still unknown. If it happens, the game will not let you gain
+experience and the inn will kill you, so keep backups.
+
++----------------------------------------------------------------------------+
+|[WEPT]---H. Weapon Tables---                                                |
++----------------------------------------------------------------------------+
+
+Worshippers and monks can't equip weapons. Wizards and sages can only use
+a stick or a knife. The only class that can equip the great sword is the
+fighter. Tehtmi has discovered that there is a Power Weapon IV spell in the
+game, but there doesn't seem to be any way to cast it. I wouldn't be surprised
+if power weapon 4 was put in the game to help level up for testing.
+
+Weapon:        |Power:|Hit:|Speed:|Weight:|Cost:
+Fist           |2     |0   |6     |0      |FREE!
+Stick          |4     |1   |9     |4      |1
+Club           |7     |2   |13    |7      |15
+Mace           |12    |3   |18    |11     |300
+Knife          |3     |0   |8     |1      |30
+Short sword    |5     |1   |11    |3      |250
+Long Sword     |9     |2   |16    |6      |450
+Great Sword    |19    |3   |25    |15     |Not for sale
+Power Weapon 1 |69    |4   |8     |0      |N/A
+Power Weapon 2 |129   |6   |8     |0      |N/A
+Power Weapon 3 |199   |10  |8     |0      |N/A
+Power Weapon 4 |399   |20  |8     |0      |N/A
+
+Power is the size of the damage die: each damage roll is 0 to Power-1 (the
+Mace's 12 means 0-11 per roll), which is why a roll of 0 on a hit shows as a
+miss. The Hit and Speed columns of the four Power Weapons are never used:
+while a Power Weapon spell is up the game only swaps in the Power column and
+keeps the Hit bonus, magic plus and Speed of the weapon you are holding, so
+a plus 101 Mace under Power Weapon III strikes with +3 +101 to hit and rolls
+199-sided damage. Each attack takes Speed + (85 - Agility) / 5 seconds of game
+time.
+
+Personally, I tend to roll with the Mace for the greater chance to hit and
+power over the long sword, though they're both viable weapons.
+
++----------------------------------------------------------------------------+
+|[ARMT]---I. Armor Tables---                                                 |
++----------------------------------------------------------------------------+
+
+Worshippers and wizards can't use armor. Monks and sages can only use leather
+armor. 
+
+Armor
+Name:        |Armor:|Weight:|Cost:
+Skin         |0     |0      |FREE!
+Robes        |0     |0      |1
+Leather      |2     |14     |50
+Chain        |4     |24     |300
+Scale        |6     |40     |1500
+Breast Plate |9     |60     |4000
+Field Plate  |12    |72     |9900
+Titanium     |16    |48     |Not for sale
+
+"Robes" is just the store's name for no armor; buying them changes nothing.
+The Armor column is subtracted from the monster's attack roll ([COMT]). Great
+Swords and Titanium have prices in the code (9,900 and 60,000) but the store
+menus only offer six items, so they only turn up as loot (see [LOOT]).
+
++----------------------------------------------------------------------------+
+|[HPSP]---J. HP/SP Increase Table---                                         |
++----------------------------------------------------------------------------+
+
+While your level plays a big part in several parts of the game, when you level
+up you only increase hit points and spell points. The rand() below means a
+randomly picked number between 0 and the number in the parenthesis.
+
+Class:     |HP Increase Formula:         |SP Increase Formula:
+Fighter    |35+rand(Con*2 + Luck/2 + 10) |0
+Worshipper |15+rand(Con/2 + Luck/2 + 10) |(Wis*2 + Int)/3
+Monk       |14+rand(Con/2 + Luck/3 + 5)  |(Wis + Int)/13
+Wizard     |13+rand(Con/3 + Luck/5 + 4)  |(Int*2 + Wis)/5
+Priest     |14+rand(Con/2 + Luck/3 + 4)  |(Wis*2 + Int)/5
+Sage       |55+rand(Con*3 + Luck + 17)   |(Wis + Int)/14
+Mage       |14+rand(Con/2 + Luck/3 + 7)  |(Int*2 + Wis)/8
+
+Current HP goes up by the same amount as maximum HP, and SP is refilled to
+the new maximum. When a level drainer takes a level, the same formula is
+rolled again with your current stats and subtracted from both maximums; there
+is no floor, so a character whose stats have dropped since the level was
+gained can end up with 0 maximum HP.
+
++----------------------------------------------------------------------------+
+|[TOWN]---K. Town Prices and the Inn---                                      |
++----------------------------------------------------------------------------+
+
+Everything in sections K to O was read out of the game code (see the 2.2
+entry in the version history). "Level" means your character level, "Depth"
+the floor number, and all prices are in rubles. Divisions are integer
+divisions: the remainder is thrown away at every step.
+
+GENERAL STORE
+
+Weapon:      |Cost:      Armor:       |Cost:
+Stick        |1          Robes        |1 (no armor value - it's "skin")
+Club         |15         Leather      |50
+Mace         |300        Chain        |300
+Knife        |30         Scale        |1,500
+Short Sword  |250        Breast Plate |4,000
+Long Sword   |450        Field Plate  |9,900
+
+Weapon and armor prices never change and are never discounted. Great Swords
+and Titanium only turn up as loot.
+
+Culture Stock, per unit:   ((Level/3 + 1) * Level^2 + 10) / 3
+Magic Crystals, per unit:  ((Level/2 + 1) * Level^2 + 10) / 3   normal
+                           ((Level/2 + 1) * Level^2 + 10) / 2   ICHA
+
+You type in an amount of rubles and get as many whole units as that buys (the
+change is not taken). Then the children refund from [GTPS] is paid back to
+you: (children helped) percent of what you spent, at most 50 percent.
+
+Level: |Culture Stock: |Crystals (normal): |Crystals (ICHA):
+1      |3              |3                  |5
+5      |20             |28                 |42
+10     |136            |203                |305
+15     |453            |603                |905
+20     |936            |1,470              |2,205
+25     |1,878          |2,711              |4,067
+30     |3,303          |4,803              |7,205
+40     |7,470          |11,203             |16,805
+50     |14,170         |21,670             |32,505
+
+TEMPLE (prices never change)
+
+1) Cure wounds             10 rubles   heals 1-10 points
+2) Cure serious wounds     100         heals 10-186 points (10 + 4*rand(45))
+3) Heal all wounds         500         full heal
+4) Cure poison             300
+5) Cure disease            500
+6) Help a needy child      100         see [GTPS]
+
+BANK
+
+Option 1 converts Greater American Dollars to rubles at 100:1; the leftover
+dollars stay in your pocket. Deposits and withdrawals just move rubles
+between your pocket and the bank. There is no interest and no fee; as far
+as the code is concerned the bank is just a second pocket.
+
+INN
+
+Room price:      Level^4 + 10 - (Level * children helped), but never less
+                 than half of (Level^4 + 10).
+Culture stock used up by a stay:   Level^2 units.
+Magic crystals used up by a stay:  one per spell point you are missing.
+
+Level: |Full Room Price: |Stock Needed:
+1      |11               |1
+5      |635              |25
+10     |10,010           |100
+15     |50,635           |225
+20     |160,010          |400
+25     |390,635          |625
+30     |810,010          |900
+40     |2,560,010        |1,600
+50     |6,250,010        |2,500
+
+A stay does the following, in this order:
+1. Takes the room price. If you can't pay, nothing else happens.
+2. Adds 8 hours to the game clock and ends all preparation spells (temporary
+   weapon/armor pluses, Strength, Agility, Feather, Fast Move and the
+   preparation Invisibility).
+3. Aging. If you have fewer than Level^2 culture stock, all of it is used up
+   and you age by the shortfall, at most 6 years per stay. If you were
+   already over 60 years old before the stay, the same number of points is
+   also taken from your Strength and Constitution (neither can go below 2).
+   With enough stock, Level^2 units are used and you do not age. This is the
+   only place in the game where age changes or matters, and there is no
+   death from old age, so once you are past 60 the only thing culture stock
+   buys you is protecting those two stats.
+4. Refills spell points, one per magic crystal, as far as your crystals go.
+5. If your experience is above the requirement for your next level ([EXPT]),
+   you gain levels - as many as the experience allows, one [HPSP] roll each.
+   Experience is never checked anywhere else, and the inn never lowers your
+   level.
+
++----------------------------------------------------------------------------+
+|[LOOT]---L. Experience and Loot from Kills---                               |
++----------------------------------------------------------------------------+
+
+"ML" below is the monster's level (see [MGEN]), "Depth" the floor number,
+"Level" your character level, and rand(N) a random number from 0 to N-1.
+Each of the rolls below happens on every kill, independently of the others,
+in the order listed.
+
+EXPERIENCE
+
+  Experience = (Exp multiplier from the monster lists in [SCTN]) *
+               (ML + 1 + 5 * 1.23^ML)          with ML capped at 130
+
+Monster level (x1 monster):  |Experience:
+1                            |8
+5                            |20
+10                           |51
+16 (floor 1 of Module II)    |154
+20                           |335
+31 (floor 1 of Module III)   |3,100
+46 (floor 1 of Module IV)    |68,000
+61 (floor 1 of Module V)     |1,500,000
+100                          |4,900,000,000
+130 and above                |2,400,000,000,000
+
+The 1.23 factor is far steeper than the 1.4 (or 2.0) in the leveling table,
+so deeper is always better: one x1 kill on floor 1 of Module V is worth as
+much as 190,000 kills on floor 1 of Module I. Shadow bosses are x16 on top of
+that. A monster that has been hit with Drain Monster is worth less, because
+its level has dropped (one killed outright by it has level 0 and is worth
+6 times its multiplier, and nothing else).
+
+LEVEL DRAINER BONUS (whole-level drainers only, not Sustrontima)
+
+With a (Depth + 175) / 375 chance (47% on floor 1, 60% on floor 50, always
+from floor 200): a random one of the six stat potions. Otherwise, if the
+floor is between 4 and 178 and you don't have it yet: the trap door key for
+this floor's band of five (see [LDRS]).
+
+WEAPON DROP (never for monks)
+
+One of the seven weapons Stick to Great Sword is picked at random (N = 1 for
+the Stick up to 7 for the Great Sword). It drops if rand(100 * N) <= ML + 10
+and you do not already own one of that weapon. So the chance of a Great
+Sword per kill is 1/7 * (ML + 11) / 700: 0.2% at monster level 1, 1.2% at
+level 50, 2.5% at level 110.
+
+ARMOR DROP (never for monks)
+
+Same idea with the six armors Leather to Titanium (N = 1 to 6), except that
+duplicates are allowed. Titanium is only ever found this way: 1/6 *
+(ML + 11) / 600 per kill = 0.3% at monster level 1, 1.7% at level 50, 3.4% at
+level 110. In "high speed mode" (options menu) a weapon or armor that is
+worse than one you already own is thrown away without a message.
+
+MONEY (Greater American Dollars)
+
+  n = Depth + 1
+  Depth 5 and deeper:  amount = rand(n^2) * rand(n) * rand(n^2)
+  If that is 0 (it always is above floor 5): 1/4 chance of rand(200 * n)
+  If the amount is not 0:
+     Worshipper or Wizard:   + rand(200 * Depth)
+     Depth 1-4:              + rand(200 * Depth)
+     Depth 5-14:             + one third
+     Depth 17 and deeper:    - one third
+     Normal difficulty:      + rand(7000)
+     Sage:                   times 3
+  Anything over 107,000,000 is cut back to about that, and your total can
+  never exceed 2,000,000,000.
+
+The three-way product grows like the fifth power of the depth: on average a
+kill is worth about 1,000 dollars on floor 5, 24,000 on floor 10, 120,000 on
+floor 14, 320,000 on floor 20, 2.3 million on floor 30, 28 million on floor
+50, and the 107 million cap is reached around floor 65 (before the normal
+difficulty bonus and the class multipliers). That is the "first big jump"
+from section 1 to section 2 mentioned in [GTPS].
+
+CUP OF HEALTH / BALL OF THOUGHT
+
+1/4 chance: heal rand(11) + 4 points (plus rand(4) more on floor 7 and
+deeper), up to your maximum. 1/6 chance (not for fighters): +1 spell point.
+
+"YOU FIND..." - THE MAGIC ITEMS OF [MITM] (never for monks)
+
+Chance per kill: (Depth + 40) / 550 for fighters and sages, (Depth + 40) /
+950 for everyone else, then multiplied by Depth/20 (so 1/20 on floor 1, 1/2
+on floor 10, always from floor 20 on). When it fires there is a 1/3 chance of
+"nothing" and otherwise one of these twelve, all equally likely: Nuclear
+hand grenade, Stone of teleportation, Stone of seeing, Floor slosher (you
+can only ever own one), Potion of healing, Ring of regeneration, and the six
+Books (+2 to a stat). The chance of one specific item, say a Ring of
+regeneration, is therefore
+
+  (Depth + 40) / 950 * min(1, Depth / 20) * 2/3 * 1/12   per kill
+
+Depth:  |Kills per Ring (most classes):  |Kills per Ring (Fighter, Sage):
+1       |8,300                           |4,800
+5       |1,500                           |880
+10      |680                             |400
+20      |290                             |170
+50      |190                             |110
+100     |120                             |71
+
+Luck plays no part in any of this. The x1.7 for fighters and sages is the
+only class bonus.
+
+SPELL BOOKS, SCROLLS, WANDS AND PAPERS
+
+Spell books (not for fighters or monks): every kill picks a spell level of
+rand(2 * Depth / 3) + 1 (capped at 10; so level 10 books need floor 15 or
+deeper), a random one of the four spell types and a random one of the three
+spells of that level. Wizard books are never offered to worshippers and
+priests, priest books never to wizards and mages. If you don't know the spell
+yet, you learn it. Sages only get this roll about 20% of the time on the
+first floors, rising to 50% deep down (rand(300 - Depth) <= 175 and
+rand(400 - Depth) <= 140 must both pass).
+
+If no book was learned, one of the following is tried (1/3 chance each):
+- Scroll (not fighters/monks): rand(350 - Depth) <= 15 (<= 45 for sages), so
+  about 1 in 22 kills. Spell level rand((Depth + 4) / 2) + 1, capped at 10.
+- Wand (not fighters/monks): same 1 in 22 chance; spell level rand(Depth/4)
+  + 1 (rand(Depth/2) + 1 for sages), capped at 10; never a permanent spell;
+  2 to 6 charges.
+- Spell paper (not monks - fighters DO get these): same 1 in 22 chance; spell
+  level rand(Depth/2) + 1 for fighters and sages, rand(Depth/6) + 1 for
+  everyone else, capped at 10; any type, including permanent spells.
+
+So a fighter finds a spell paper roughly once every 65 kills, and from floor
+20 down it can be any spell up to level 10, permanent spells included - and
+since fighters have no spell points, a permanent spell from a paper costs
+them nothing at all.
+
++----------------------------------------------------------------------------+
+|[MGEN]---M. Monster Generation---                                           |
++----------------------------------------------------------------------------+
+
+A floor is stocked with monsters the first time you enter it, and again
+whenever it has dropped out of the monster file, which only remembers the
+current floor and the two you visited before it (see [CEDA]). Each floor is
+80 squares east-west by 110 north-south and gets 145 monster slots, placed on
+random open squares.
+
+Monster Level = Depth + 15 * (Module - 1), then while a 1/3 roll keeps
+succeeding it is nudged by -1, 0 or +1; the result is clamped to 1..210. So
+the first floor of Module II is stocked with level 16 monsters, Module III
+level 31, Module IV level 46 and Module V level 61, and floor 100 of Module V
+has level 160 monsters. The monster's level drives everything: its hit
+points ([MONT]), its attack and defense rolls ([COMT]), the experience it is
+worth and the weapons and armor it can drop ([LOOT]), and the Sleep, Drain
+Monster and Autokill spells ([SPMC]). Note that the money, potion and item
+drops use the depth, not the monster's level.
+
+The type of each monster is rolled as listed at the end of [GTPS]. Hit
+points are rolled from the type's TypeHP as shown in [MONT]; a Shadow boss
+gets 20 * Level on top, sections 18-20 double the total, and the maximum is
+32,000.
+
+Shadow bosses: the first monster slot of the floor becomes the section's
+Shadow boss on the boss floors listed in [BSSR], but only while that
+section's reward has not been collected. The first time, the boss is placed
+at a random position 25-74 squares from the corner in both directions; the
+position is remembered in your character file, and every later stocking of
+that floor puts the boss within 7 squares of the remembered spot. The "GO
+EAST/WEST/NORTH/SOUTH" homing hints point at it. Once you have the reward,
+the boss is never placed again (a copy left in a backed-up monster file can
+still be killed for experience, see [CEDA]).
+
++----------------------------------------------------------------------------+
+|[LDRS]---N. Ladders, Chutes and Trap Doors---                               |
++----------------------------------------------------------------------------+
+
+The dungeon is not stored anywhere. Every wall, ladder, chute, trap door and
+town building is computed on the spot from a hash of (x, y, floor, module),
+which is why the maps are identical for every character and every
+playthrough. The map files only record which squares you have stood on.
+
+Ladders: about 1 in 27 open squares has a down ladder. It leads to the
+nearest open square directly below on the next floor, or the one after that
+if the square below is solid (never past the bottom of the module). An up
+ladder is generated wherever a down ladder from one of the three floors above
+would land, which is why nearly every ladder works both ways; the rare
+one-way up ladder is one where the two floors in between are both solid at
+that spot, so the down ladder above it doesn't exist.
+
+Chutes: a square is a chute with a 5 in (230 - Depth/3) chance, about 1 in
+46 on the first floors and 1 in 40 around floor 100. Stepping on one drops
+you to the first open square straight down within the next 2 floors (4 floors
+once you are below floor 9), but never below three quarters of the module's
+bottom floor; if there is no open square in that range the chute does
+nothing. Ladder squares are never chutes.
+
+Trap doors: a trap door leads to a floor that is a multiple of 5, never
+within the same block of five floors as the one it is on, and never to the
+bottom fifth of the module (Module I: destinations 5, 10 and 15; Module V: 5
+to 80). They are rare - roughly 1 square in 1,000 in Module I and 1 in 160 in
+Module V. To use one (press K) you need the key for its floor, which is
+dropped by a level drainer killed on floors N to N+4 for the trap door
+labeled N (floors 4 to 178 only, and only when the drainer doesn't give a
+potion instead, see [LOOT]). Every trap door to a given floor lands you on
+the same square of that floor.
+
+Dig Tunnel (T): only allowed down to three quarters of the module's bottom
+floor. It drops you to the first open square straight below within the next
+six floors (but never below five sixths of the module's bottom), or onto a
+random square of the last floor checked if none of them is open. Deeper than
+the limit a fighter who tries to dig is teleported to a random square of the
+same floor instead; other classes are just refused. Monsters get six moves
+while you dig, and one reaching you cancels it.
+
+Floor slosher: drops you exactly one floor, and only works above two thirds
+of the module's bottom floor.
+
+Module bottoms and the limits that follow from them:
+Module:  |Bottom: |Chutes/Dig to: |Slosher to: |Dig lands by: |Trap doors to:
+I        |25      |18             |16          |20            |5-15
+II       |45      |33             |30          |37            |5-35
+III      |65      |48             |43          |54            |5-50
+IV       |85      |63             |56          |70            |5-65
+V        |105     |78             |70          |87            |5-80
+
++----------------------------------------------------------------------------+
+|[SPMC]---O. Spell Mechanics---                                              |
++----------------------------------------------------------------------------+
+
+What the spells actually do, from the code. "Wis" and "Int" are your Wisdom
+and Intelligence, "Level" your character level, "ML" the monster's level
+([MGEN]), "Depth" the floor number and rand(N) a random number from 0 to N-1.
+
+COSTS, DURATIONS AND RULES
+- A spell cast from a book costs its line number in [SPLL] in SP (line 1 = 1
+  SP, line 10 = 10 SP). A permanent spell also lowers maximum SP by that
+  much. Scrolls, wands and papers cost nothing, and a permanent spell cast
+  from a scroll or paper does not lower your maximum SP.
+- Battle spells take 10 seconds of game time to cast, preparation spells 100.
+- Every battle spell with a duration (Strength, Speed, Slow Enemies, the
+  Protections, the Resists, Anti-Cold, Anti-Fire, the Power Weapons) lasts
+  60 moves; casting it again while it is up adds another 60 (Slow Enemies
+  just restarts at 60). Sleep lasts 25 moves and Hold Monster 15, and every
+  attack a sleeping or held monster would have made has a Depth/500 chance
+  of waking or freeing it.
+- Preparation spells last until you sleep at an inn. The preparation Enchant
+  Weapon/Armor spells, the rings and the body armor spells refuse to cast if
+  you already have that value or better. The PERMANENT Enchant Weapon/Armor
+  spells do not check: they set the plus of the item you pick to exactly 1,
+  2, 3 or 4, so never cast one on a plus 25 or plus 101 item from a Shadow
+  boss.
+- Only one spell book of each spell can be owned. Starting spells: every
+  class except the fighter begins with Little Cure; wizards, sages and mages
+  also begin with Magic Zap, and worshippers, priests and sages with the
+  priest's Strength. Monks begin with every spell book in the game.
+- Go Away, Hold Monster, Drain Monster and Autokill (and nuclear grenades)
+  do nothing to a Shadow boss. Sleep and all the damage spells work on
+  bosses.
+
+THE SPELLS
+Cures: Little Cure and Fast Cure heal Wis/2. Cure heals 20 + 2*rand(Wis),
+   capped at 60. Big Cure heals 50 + rand(4*Wis), capped at 150. Fast Big
+   Cure heals rand(4*Wis), capped at 90. Heal All Wounds and Fast Heal are
+   full heals.
+Damage: Magic Zap 2*Level+2. Lightning 4*Level+4. Minor Shock 25, Magic
+   Missile 50, Shock 125, Major Shock 300. Magic Zot is (Level+1) rolls of
+   4+rand(5); Magic Bolt is (Level+1) rolls of 7+rand(5). Minor Explosion
+   75+rand(101), Explosion 125+rand(101), Major Explosion 200+rand(301).
+Sleep: succeeds if rand(ML) < 3: always against monsters of level 3 or
+   less, otherwise a 3/ML chance (15% at monster level 20, 5% at level 60).
+Hold Monster: always works on a non-boss, 15 moves.
+Go Away: always works on a non-boss. There is no level ratio check at all,
+   whatever the description says.
+Drain Monster: if ML < Wis the monster's level and hit points drop to 0 (it
+   dies). Otherwise ML drops by Wis and its hit points by (TypeHP/2)*Wis.
+   Either way the experience is computed from the reduced level, so a
+   monster killed outright by Drain Monster is worth only 6 times its
+   multiplier. Autokill leaves the level alone and pays in full.
+Autokill: succeeds if rand(ML + rand(monster Speed)) is less than
+   rand(Level + rand(Int + Wis)) + rand(Depth).
+Protections: subtract 2 * (protection level)^2 from the monster's attack
+   roll: Minor 2, Protection 8, Major 18, Ultra 32. The priest's level 5
+   "Protection" is a bug - it sets protection level 1, the same as Minor
+   Protection - so a priest goes straight from 2 to Major's 18.
+Resist Poison / Resist Disease / Resist Level Drain / Anti-Cold / Anti-Fire:
+   while active the effect is blocked 100% of the time (not 95% or 90%),
+   breath damage of that type is halved, and an existing poison or disease
+   stops counting down (see [COMT]).
+Strength / Speed (battle): +7 Strength / +7 Agility for 60 moves. Strength
+   and Speed casts both. Preparation Strength / Agility are +5 and Super
+   Strength / Super Agility +10, until the inn.
+Power Weapon I / II / III: your damage die becomes 69 / 129 / 199 instead of
+   your weapon's, for 60 moves. Everything else about the weapon in your hand
+   (to-hit bonus, magic plus, speed) still applies; the "plus 3 / 9 / 21" in
+   the descriptions is not used anywhere. Power Weapon IV (399) is in the
+   weapon table but no spell, scroll, wand or paper casts it.
+Slow Enemies: every second of game time each monster has a 1/4 chance of
+   having Agility/3 seconds added to its attack timer (see the timing notes
+   in [COMT]); with Agility 20 or so that roughly doubles the time between
+   a monster's attacks.
+Fast Move and preparation Invisibility: on 1 in 4 of your moves no monster
+   on the floor moves. Permanent Invisibility does not do this. Both kinds
+   of invisibility also affect the first strike: when a monster engages you
+   its attack timer is normally set to a random 0 to Agility-1 seconds 2
+   times out of 3 (the third time it can strike at once); when you are
+   invisible the delay also applies that third time if rand(Depth * 1.5) is
+   greater than your Level.
+Feather (preparation or permanent): your weight counts as 0 for movement
+   speed (see [GTPS]).
+Ascend / Double Ascend / Major Ascend: 1 / 2 / 10 floors up, landing on a
+   random open square; none of them work on floor 66 or deeper (the message
+   says 64th). Descend goes 1 floor down and Major Descend 10, never past the
+   module's bottom, also to a random square. Relocate: random open square on
+   the same floor.
+Youth: sets your age to 20 and multiplies your experience by 0.9. It does
+   not give back Strength or Constitution lost to aging.
+Enchant Wand: 5 charges. Wands found on monsters have 2 to 6.
+Anti-Magic Ring: nothing in the combat or spell code ever reads it. Save
+   the spell points.
+
+
+##############################################################################
+#[CHET]***13. How to Cheat***                                                #
+##############################################################################
+
+There are a few different ways to cheat at this game. The different methods
+are detailed below and a few of the methods require other programs to be used.
+
++----------------------------------------------------------------------------+
+|[CEDA]---A. Cheating with Files---                                          |
++----------------------------------------------------------------------------+
+
+To use file based cheats it is necessary to understand how the games files are
+arranged. The files we will be manipulating are found in the games main
+directory. Each saved character has three files associated with their save. 
+The first file retains information about the character, the second file
+contains information about the  monsters contained within the game, and the 
+third contains the map revealed so far.
+The monster file only holds three floors: the one you are on and the two you
+visited before it. Any other floor is stocked with fresh monsters when you
+come back to it (see [MGEN]).
+
+Character Slot |Character File |Monster File | Map
+0              |20             |dmon.map     |d00.dun
+1              |21             |emon.map     |e00.dun
+2              |22             |fmon.map     |f00.dun
+3              |23             |gmon.map     |g00.dun
+4              |24             |hmon.map     |h00.dun
+5              |25             |imon.map     |i00.dun
+6              |26             |jmon.map     |j00.dun
+7              |27             |kmon.map     |k00.dun
+8              |28             |lmon.map     |l00.dun
+9              |29             |mmon.map     |m00.dun
+
+Armed with this knowledge (that was provided by Porticulo) there are two
+things we can do to make life safer and one incredibly broken thing we can do.
+
+Cheating Death:
+This game is designed to erase your character when you die. In the shareware
+version it teased you saying that it could bring you back if you bought the
+full version. This does not happen. So the first thing we can do is keep a
+backup of our character file in case you die. How this is done varies by
+operating system. For example for a character in slot 5 you would need to
+backup the file 25. On DOS you would do that by typing the following:
+copy 25 25.bak
+To restore your character you would type:
+erase 25
+copy 25.bak 25
+The only time that your map file is wiped out is when you create a new
+character, so you should only need to backup your character file. You can also
+use this method to copy characters to other slots.
+
+Copycat Cartographer
+The third technique you can use is only really useful if you get yourself
+stuck somehow. You can copy your map progress to another character. That is
+to say, if you can't get away from the square you're in due to a glitch, or
+you have impending death, if you quit the game you can take the map data that
+you've uncovered so far, and use it for another character!  The character in
+slot 20 has their map saved in D00.DUN, the character in slot 21 is E00.DUN
+and so on. Make sure the character receiving the map is already created, then
+simply make a copy of your map. So for instance, if you want to copy the map
+from slot 0 to slot 1 you would type:
+erase e00.dun
+copy d00.dun e00.dun 
+You may notice that there are additional .DUN files (D01.DUN for example).
+The name is [slot letter][floor group][module]: the second character is the
+floor number divided by 32 (0 for floors 0-31, 1 for 32-63, 2 for 64-95, 3
+for 96-105) and the third is the module minus one. So D00.DUN is slot 0,
+floors 0-31 of Module I; D01.DUN is the same character's floors 0-31 of
+Module II; D14.DUN would be floors 32-63 of Module V. A map file only records
+which squares you have stood on - the dungeon itself is generated from a
+formula, see [LDRS] - so copying one between characters is safe.
+
+Duping Monsters
+Okay, so this is probably the most broken thing you can do outside of directly
+editing memory locations. Any monster that would be really beneficial to kill
+repeatedly (like shadow monsters or puffballs) can be killed repeatedly. I'll
+run you through the process using a character that is in slot 1.
+1. Approach a monster you want to kill repeatedly.
+2. If it is a shadow monster you might want to get it really close to being
+dead so that you don't have a hard fight repeatedly.
+3. Quit so that everything is saved.
+4. Make a backup of your monster file, in this case emon.map. In dos you would
+type: copy emon.map emon.bak
+5. Start DotU again and kill the monster (or let the puffball hit you).
+6. Save and quit.
+7. Restore your backed up monster file. In DOS you would type:
+copy emon.bak emon.map
+8. Repeat steps 5, 6, and 7 until you are stupid powerful.
+With the shadow monsters, if you leave the floor that the monster is on you
+will no longer get hints to its location. I'm not sure if leaving the floor
+and coming back after you do this will have the shadow monster still alive. If
+you take advantage of this method of cheating the game is going to get really
+easy for you and you might as well jump into the third method of cheating
+below.
+From the code: the boss stays in the monster file as long as that floor is
+one of the three floors the file holds. Once the floor is stocked again, the
+boss is only placed if you have not yet collected that section's reward,
+which is recorded in your character file (not in the monster file), so you
+get the experience every time but the reward only once.
+
++----------------------------------------------------------------------------+
+|[CEDB]---B. Cheating with Hexeditors---                                     |
++----------------------------------------------------------------------------+
+
+This is an extension of the above topic. Please refer to the chart above to
+locate the appropriate filenames to edit. I have confirmed that the position
+of your character is stored within your character file.
+
+I will caution you that there does seem to be some type of checking in place
+to make sure that you don't tamper with your save files. For instance, I've
+found that somewhere in the 000007b0 area of the save the floor you are on is
+stored, however attempting to change just this one location results in a
+corrupt save. Changing floors results in 5 or 6 different changes in the save
+file. Stats are stored somewhere around 000007fe if you feel like
+experimenting.
+
+Ian J. Burgmyer sent me two links with information from disassembling the
+various files in the game. Here's a link to a wiki with some sample code for
+updating the checksum as well as some information about what type of variable
+stores each piece of data: 
+http://www.shikadi.net/moddingwiki/Dungeons_of_the_Unforgiven_Player_Character
+Here's a link to his personal notes about locations and how to edit the files:
+https://onedrive.live.com/view.aspx?resid=6296F2FB9A2B90!
+3949&ithint=file%2cxlsx&authkey=!AEQcRHR_rh9J_6o
+(Note: Because of how gamefaqs formats things, I had to split the URL into two
+lines. You will need to put the second line right after the first line as a
+single URL).
+
+I'm far too lazy to actually dive in and deal with editing files and
+calculating checksums, but there is definitely information there if you want
+to mess with it.
+
+Since then the whole record has been mapped out from the executable. The
+file is 2,697 bytes: a 2,695 byte character record followed by a 2 byte
+checksum. Offsets below are in hex from the start of the file; multi-byte
+numbers are little-endian (lowest byte first).
+
+Offset |Size    |Contents
+000    |40      |Name
+028    |1       |Race (0 Humanoid, 1 Ape, 2 Childman, 3 Rodent, 4 Hobo,
+       |        |5 Giant, 6 Midget, 7 Shrimp)
+029    |1       |Sex (0 male, 1 female)
+02A    |1       |Class (0 Fighter, 1 Worshipper, 2 Monk, 3 Wizard,
+       |        |4 Priest, 5 Sage, 6 Mage)
+031    |2       |Current HP
+033    |2       |Maximum HP
+035    |4 float |Current SP
+039    |4 float |Maximum SP
+03D    |2       |Height / 4
+03F    |2       |Weight (naked)
+041    |2       |Weight carried (recomputed by the game)
+081    |8       |Weapons owned, one count per weapon: Fist, Stick, Club,
+       |        |Mace, Knife, Short Sword, Long Sword, Great Sword
+08E    |8       |Magic plus of each weapon, same order
+09B    |1       |Weapon in hand (0-7, same order)
+0B0    |8       |Armor owned, one count each: Skin, Leather, Chain, Scale,
+       |        |Breast Plate, Field Plate, Titanium, (unused)
+0B8    |8       |Magic plus of each armor
+0C0    |1       |Armor worn (0-6)
+15D    |6       |Potions: Green, Orange, Yellow, Red, Blue, White
+177    |180     |Spell books known (1 = known). Index = 45 * type +
+       |        |3 * (spell level - 1) + slot, with type 0 Permanent,
+       |        |1 Preparation, 2 Wizard, 3 Priest and slot 0-2 = first
+       |        |to third spell of that level as listed in [SPLL] (room
+       |        |for 15 levels per type is reserved, 10 are used)
+22B    |180     |Scrolls, count per spell, same indexing
+2DF    |180     |Wand charges per spell
+393    |180     |Spell papers per spell
+454    |4       |Rubles in pocket
+458    |4       |Rubles in the bank
+464    |4       |Culture stock
+468    |4       |Children helped
+46C    |4       |Magic crystals
+470    |4       |Greater American Dollars
+7A4    |8 double|Experience
+7AC    |2       |Character level
+7AE    |2       |Facing (0 N, 1 S, 2 W, 3 E)
+7B0    |2       |X (east-west) position
+7B2    |2       |Y (north-south) position
+7B4    |2       |Floor
+7B6    |2       |Module (0-4)
+7C4    |4       |Game clock in seconds (8 hours per inn stay)
+7CA    |1       |Rings of regeneration
+7CB    |1       |Lucky charms: +1 to hit and +1 to defense each. Nothing
+       |        |in the game ever gives you one - editor only!
+7CC    |1       |Nuclear hand grenades
+7CD    |1       |Stones of seeing
+7CE    |2       |Disease counter (see [COMT]), -1 = cured
+7D0    |2       |Poison counter, -1 = cured
+7D2    |1       |Temporary (preparation) weapon plus
+7D3    |1       |Temporary (preparation) armor plus
+7D4    |1       |Body armor
+7D5    |1       |Ring of protection
+7D6    |1       |Anti-magic ring (never used by the game)
+7D7    |1       |Feather (1 preparation, 100 permanent)
+7D8    |1       |Fast move
+7D9    |1       |Invisibility (1 preparation, 100 permanent)
+7DA    |4       |Age
+7DE    |4       |Prep Strength, Agility, Super Strength, Super Agility in
+       |        |effect (1 byte each)
+7E2    |2       |Battle Strength moves left
+7E4    |2       |Battle Speed moves left
+7E6    |2       |Slow Enemies moves left
+7E8    |1       |Power Weapon level (1-3)
+7E9    |2       |Power Weapon moves left
+7EB    |1       |Protection level (1-4)
+7EC    |2       |Protection moves left
+7EE    |2 each  |Moves left of Resist Poison, Resist Disease, Anti-Cold,
+       |        |Anti-Fire, Resist Level Drain, Sleep, Hold (7EE-7FA)
+802    |1       |Floor slosher
+812    |2       |Potions of healing
+814    |2       |Stones of teleportation
+816    |2 each  |Strength, Intelligence, Wisdom, Constitution, Agility,
+       |        |Luck (816, 818, 81A, 81C, 81E, 820)
+822    |36      |Trap door keys, one byte per band of five floors
+       |        |(index = floor / 5)
+849    |5       |Shadow bosses beaten, one byte per module; bits 1, 2, 4,
+       |        |8 = sections 1-4 of that module
+853    |1       |Gauntlet plus
+855    |80      |Remembered boss X positions (16 per module)
+8A5    |80      |Remembered boss Y positions
+8F6    |1       |Difficulty (1 = I Can Handle Anything)
+8F9    |2       |Deepest floor reached
+A87    |2       |Checksum
+
+Checksum: two 8-bit running sums over the 2,695 record bytes:
+   a = 0, c = 0
+   for each byte b:   a = (a + b) mod 256
+                      c = (c + a - a*a) mod 256
+Byte A87 is a and byte A88 is c. Any edit that leaves the checksum wrong
+makes the game treat the file as corrupt (which is the "checking" mentioned
+above), so recompute it after every change. This is the same algorithm as
+on the Shikadi wiki.
+
++----------------------------------------------------------------------------+
+|[CEDC]---B. Cheating with Memory Manipulation---                            |
++----------------------------------------------------------------------------+
+
+The last method for cheating, and the one that really turns the game into a
+cakewalk is editing memory addresses. There are lots of tutorials for doing
+this that vary depending on the operating system you use and tool you use to
+do your editing. On windows a popular choice is Cheat Engine. On Linux I've
+used scanmem. I'm sure there are choices for other operating systems as well.
+No matter what operating system and tool for editing memory you use, you will
+need to target dosbox as the executable to scan. On windows machines NTVDM
+does not provide direct access to memory locations, so you can't use cheat
+engine on windows without dosbox. On linux, DotU doesn't run at all without
+dosbox.
+
+The gist of how this method works is that you will scan the memory associated
+with dosbox for a specific value, say current hp. Then you will cause that
+value to become changed and scan for the new value. Each time you cause a
+change and rescan the number of possible locations is reduced until you only
+have one memory location. You can then set that value to anything you want.
+
+A word of warning, it is definitely possible to change things in such a way
+that the game will just break. If you want to build a super broken character
+this is the easiest way to do it, and it is easiest to do it when you build
+the character. Having hundreds of stat points to distribute at the beginning
+of the game makes things easy.
+
+I've included some cheat engine memory locations I've found in the past below.
+I no longer run windows on any of my systems, so I won't be updating this any
+further.
+
++----------------------------------------------------------------------------+
+|[CEDD]---D. Cheat Engine With Dosbox v.74---                                |
++----------------------------------------------------------------------------+
+
+The following codes have been confirmed to work in version 0.74 on windows 7
+Home 64bit with Cheat Engine, and not tested on any other version of windows
+or dosbox. 
+
+Address: 0074B6B0
+|Effect                          |Offset|Data Type|
+|Max Health                      |3DCE3 |2 Bytes  |
+|Current Health                  |3DCE1 |2 Bytes  |
+|Max Spell Points                |3DCE9 |Float    |
+|Current Spell Points            |3DCE5 |Float    |
+|Current Experience              |3E454 |Double   |
+|Rubles in Pocket                |3E104 |4 Bytes  |
+|Dexterity/Agility               |3E4CE |2 Bytes  |
+|Strength                        |3E4C6 |2 Bytes  |
+|Intelligence                    |3E4C8 |2 Bytes  |
+|Wisdom                          |3E4CA |2 Bytes  |
+|Constitution                    |3E4CC |2 Bytes  |
+|Luck                            |3E4D0 |2 Bytes  |
+|Children Helped                 |3E118 |4 Bytes  |
+|Culture Stock                   |3E114 |4 Bytes  |
+|Magic Crystals                  |3E11C |4 Bytes  |
+|Steps Before Disease Effect*    |3E47E |2 Bytes  |
+|Steps Before Poison Effect*     |3E480 |2 Bytes  |
+|Floor #**                       |3E464 |4 Bytes  |
+|N/S Coordinate**                |3E469 |4 Bytes  |
+|E/W Coordinate**                |3E460 |2 Bytes  |
+|Age***                          |3E48A |2 Bytes  |
+|Status Points***                |42342 |2 Bytes  |
+|Race***                         |3DCD8 |2 Bytes  |
+|Height***/%                     |3DCED |Byte     |
+|Weight***                       |3DCEF |2 Bytes  |
+|Age***                          |3E48A |4 Bytes  |
+
+*Setting this to 32768 or above effectively cures you of this status ailment.
+**These codes can be a bit buggy, and should probably not be used except in
+dire need. Use of these codes WILL permanently mess up your map if you appear
+in a space that isn't normally accessible. To fix your map, please see the
+general cheating section [CHET]. YOU HAVE BEEN WARNED!
+***I've noticed weird glitches while playing with these memlocs active. I
+would suggest disabling these codes before leaving the character creation
+menu.
+%This value gets multiplied by 4 to come up with height. I've experimented
+with it a little bit, and the game has serious graphical issues at a
+setting of 100, I'm not sure what the threshold for these issues is.
+
+All of these addresses are the character record from [CEDB] sitting in
+memory: the address of any field is 3DCB0 + (its file offset), so for
+example the character level (file offset 7AC) is at 3E45C (2 bytes), the
+trap door keys start at 3E4D2 and the boss-beaten bytes at 3E4F9. A few of
+the entries above are slightly off: Floor is 2 bytes, not 4; Race is 1 byte
+(the byte after it is sex); and 3E469 is a map cursor byte - the real N/S
+coordinate is at 3E462 (2 bytes).
+
+
+##############################################################################
+#[CINF]***14. Contact Info***                                                #
+##############################################################################
+
+I can be reached at my email address nicholas@hunsicker.us. If you're
+emailing me, please put the title of the game in the subject line.
+
+Feel free to repost this anywhere as long as it's posted intact and in it's
+entirety with my name attached to it.
+
+I am only uploading this to Gamefaqs, but other websites may repost this as
+long as they follow the terms above. The most up to date version of this FAQ
+can always be found at Gamefaqs.
+
+Copyright 2008, 2009, 2010, 2011, 2014, 2019 Nicholas Hunsicker

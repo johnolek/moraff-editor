@@ -1,0 +1,122 @@
+builtin_00_Giant_Garbage_Can.png	Giant Garbage Can	built-in
+builtin_01_Giant_Ball.png	Giant Ball	built-in
+builtin_02_Lt_Blue_Puffball.png	Lt. Blue Puffball	built-in
+builtin_03_Light_Red_Puffball.png	Light Red Puffball	built-in
+builtin_04_Lt_Green_Puffball.png	Lt. Green Puffball	built-in
+builtin_05_Yellow_Puffball.png	Yellow Puffball	built-in
+builtin_06_White_Puffball.png	White Puffball	built-in
+builtin_07_Gray_Puffball.png	Gray Puffball	built-in
+builtin_08_Sky_Blue_Puffball.png	Sky Blue Puffball	built-in
+builtin_09_Dark_Red_Puffball.png	Dark Red Puffball	built-in
+builtin_10_Dk_Green_Puffball.png	Dk. Green Puffball	built-in
+builtin_11_Brown_Puffball.png	Brown Puffball	built-in
+builtin_12_Black_Puffball.png	Black Puffball	built-in
+builtin_13_Dk_Grey_Puffball.png	Dk. Grey Puffball	built-in
+builtin_14_Poison_Flask.png	Poison Flask	built-in
+builtin_15_Poisoned_Druggie.png	Poisoned Druggie	built-in
+builtin_16_Chemical_Bomb.png	Chemical Bomb	built-in
+builtin_17_Poison_Toxic_Waste.png	Poison Toxic Waste	built-in
+builtin_18_Flask_Of_Disease.png	Flask Of Disease	built-in
+builtin_19_Diseased_Druggie.png	Diseased Druggie	built-in
+builtin_20_Biological_Bomb.png	Biological Bomb	built-in
+builtin_21_Can_Of_Toxic_Waste.png	Can Of Toxic Waste	built-in
+s01_0_Shadow_Gargalon.png	Shadow Gargalon	section 1
+s01_1_Gargalon.png	Gargalon	section 1
+s01_2_Lesdidian_Warrior.png	Lesdidian Warrior	section 1
+s01_3_Harpey.png	Harpey	section 1
+s01_4_Sustrontima.png	Sustrontima	section 1
+s02_0_Shadow_Elemental.png	Shadow Elemental	section 2
+s02_1_Flame_Elemental.png	Flame Elemental	section 2
+s02_2_Stone_Elemental.png	Stone Elemental	section 2
+s02_3_Wind_Elemental.png	Wind Elemental	section 2
+s02_4_Water_Elemental.png	Water Elemental	section 2
+s03_0_Shadow_Vulture.png	Shadow Vulture	section 3
+s03_1_Vulture_Of_Death.png	Vulture Of Death	section 3
+s03_2_Flying_Spectra.png	Flying Spectra	section 3
+s03_3_Striker.png	Striker	section 3
+s03_4_Were_Rat_Bat.png	Were Rat-Bat	section 3
+s04_0_Shadow_Demon_Queen.png	Shadow Demon Queen	section 4
+s04_1_She_Demon.png	She-Demon	section 4
+s04_2_Watery_Graverd.png	Watery Graverd	section 4
+s04_3_Couple_From_Hell.png	Couple From Hell	section 4
+s04_4_Water_Trogladyte.png	Water Trogladyte	section 4
+s05_0_Shadow_Troggisher.png	Shadow Troggisher	section 5
+s05_1_Troggisher.png	Troggisher	section 5
+s05_2_Dozard.png	Dozard	section 5
+s05_3_Torman.png	Torman	section 5
+s05_4_Crorder.png	Crorder	section 5
+s06_0_Shadow_Giant_Worm.png	Shadow Giant Worm	section 6
+s06_1_Giant_Worm.png	Giant Worm	section 6
+s06_2_Oozing_Blob.png	Oozing Blob	section 6
+s06_3_Squishy_Cube.png	Squishy Cube	section 6
+s06_4_Shape_Shifter.png	Shape Shifter	section 6
+s07_0_Shadow_Scorpion.png	Shadow Scorpion	section 7
+s07_1_Scorpion.png	Scorpion	section 7
+s07_2_Giant_Spider.png	Giant Spider	section 7
+s07_3_Giant_Rat.png	Giant Rat	section 7
+s07_4_Giant_Bat.png	Giant Bat	section 7
+s08_0_Shadow_Skeeter.png	Shadow Skeeter	section 8
+s08_1_Water_Skeeter.png	Water Skeeter	section 8
+s08_2_Hydra.png	Hydra	section 8
+s08_3_Water_Dragon.png	Water Dragon	section 8
+s08_4_Animated_Waterling.png	Animated Waterling	section 8
+s09_0_Shadow_Head_Hunter.png	Shadow Head Hunter	section 9
+s09_1_Head_Hunter.png	Head Hunter	section 9
+s09_2_Pogerstead.png	Pogerstead	section 9
+s09_3_Grobler.png	Grobler	section 9
+s09_4_Wraith.png	Wraith	section 9
+s10_0_Shadow_Khagistoll.png	Shadow Khagistoll	section 10
+s10_1_Khagistoll.png	Khagistoll	section 10
+s10_2_Flaming_Idiot.png	Flaming Idiot	section 10
+s10_3_Triop.png	Triop	section 10
+s10_4_Mummy.png	Mummy	section 10
+s11_0_Shadow_Eyeball.png	Shadow Eyeball	section 11
+s11_1_Eyeball.png	Eyeball	section 11
+s11_2_Flesh_Eater.png	Flesh Eater	section 11
+s11_3_Foot_Stomper.png	Foot Stomper	section 11
+s11_4_Face_Of_Death.png	Face Of Death	section 11
+s12_0_Shadow_Mr_Fang.png	Shadow Mr. Fang	section 12
+s12_1_Mr_Fang.png	Mr. Fang	section 12
+s12_2_Orc.png	Orc	section 12
+s12_3_Gargoyle.png	Gargoyle	section 12
+s12_4_Vampire.png	Vampire	section 12
+s13_0_Shadow_Warrior.png	Shadow Warrior	section 13
+s13_1_Armored_Warrior.png	Armored Warrior	section 13
+s13_2_Very_Mean_Human.png	Very Mean Human	section 13
+s13_3_Dwarf.png	Dwarf	section 13
+s13_4_Zombie.png	Zombie	section 13
+s14_0_Shadow_Ape_Man.png	Shadow Ape-Man	section 14
+s14_1_Ape_Man.png	Ape-Man	section 14
+s14_2_Werewolf.png	Werewolf	section 14
+s14_3_Unicorn.png	Unicorn	section 14
+s14_4_Demon.png	Demon	section 14
+s15_0_Shadow_Dragon_King.png	Shadow Dragon King	section 15
+s15_1_Dragon_Prince.png	Dragon Prince	section 15
+s15_2_Dragon.png	Dragon	section 15
+s15_3_Dragonfly.png	Dragonfly	section 15
+s15_4_Chimera.png	Chimera	section 15
+s16_0_Shadow_Evil_God.png	Shadow Evil God	section 16
+s16_1_Zeus.png	Zeus	section 16
+s16_2_Troll.png	Troll	section 16
+s16_3_Titan.png	Titan	section 16
+s16_4_Devil.png	Devil	section 16
+s17_0_Shadow_Ogre.png	Shadow Ogre	section 17
+s17_1_Ogre.png	Ogre	section 17
+s17_2_Kobald.png	Kobald	section 17
+s17_3_Goblin.png	Goblin	section 17
+s17_4_Ghoul.png	Ghoul	section 17
+s18_0_Shadow_Stone_Giant.png	Shadow Stone Giant	section 18
+s18_1_Stone_Giant.png	Stone Giant	section 18
+s18_2_Walking_Sword.png	Walking Sword	section 18
+s18_3_Pit_Bull.png	Pit Bull	section 18
+s18_4_Skeleton.png	Skeleton	section 18
+s19_0_Shadow_Centipede.png	Shadow Centipede	section 19
+s19_1_Centipede.png	Centipede	section 19
+s19_2_Giant_Ant.png	Giant Ant	section 19
+s19_3_Giant_Toad.png	Giant Toad	section 19
+s19_4_Specter.png	Specter	section 19
+s20_0_Shadow_Ogeroth.png	Shadow Ogeroth	section 20
+s20_1_Ogeroth.png	Ogeroth	section 20
+s20_2_Water_Rat.png	Water Rat	section 20
+s20_3_Elf_Surfer.png	Elf Surfer	section 20
+s20_4_Rotten_Swamp_Plant.png	Rotten Swamp Plant	section 20
