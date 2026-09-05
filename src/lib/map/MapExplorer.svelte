@@ -11,6 +11,8 @@
   import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
   import Legend from './Legend.svelte';
+  import { pathToNearestTeleporter, type Route } from './path';
+  import Selection from './Selection.svelte';
   import { squaresOfKind, type LegendKind } from './marks';
   import SquareInfo from './SquareInfo.svelte';
   import type { Point } from './viewport';
@@ -20,6 +22,10 @@
   let cursor = $state<Point | null>(null);
   let highlight = $state<Point | null>(null);
   let legendHover = $state<LegendKind | null>(null);
+  let legendPinned = $state<{ label: string; kind: LegendKind } | null>(null);
+  let selected = $state<Point | null>(null);
+  /** undefined: not asked yet; null: asked, nothing reachable. */
+  let route = $state<Route | null | undefined>(undefined);
   let floorCanvas: FloorCanvas;
 
   const floors = $derived(floorsOfModule(moduleIndex));
@@ -35,7 +41,8 @@
       ? { title: `${cursor!.x}, ${cursor!.y}`, feature: cursorDescription.rock ? 'Rock' : cursorDescription.feature, sides: compactSides(cursorDescription) }
       : null,
   );
-  const marks = $derived(legendHover ? squaresOfKind(rows, floor, legendHover) : []);
+  const markedKind = $derived(legendHover ?? legendPinned?.kind ?? null);
+  const marks = $derived(markedKind ? squaresOfKind(rows, floor, markedKind) : []);
 
   function changeModule(event: Event) {
     moduleIndex = Number((event.currentTarget as HTMLSelectElement).value);
@@ -49,6 +56,16 @@
   function showFloor(level: number) {
     floor = level;
     highlight = null;
+    clearSelection();
+  }
+
+  function clearSelection() {
+    selected = null;
+    route = undefined;
+  }
+
+  function routeToTeleporter() {
+    if (selected) route = pathToNearestTeleporter(rows, selected);
   }
 
   function stepFloor(delta: number) {
@@ -86,13 +103,21 @@
     }
   }
 
-  /** Clicking a ladder, chute or trap door goes to the floor it leads to and marks the landing square. */
+  /** Clicking a ladder, chute or trap door goes to the floor it leads to and marks the landing
+   *  square; clicking any other open square selects it. */
   function follow(square: Point) {
     const target = jumpTarget(bundledDungeon, moduleIndex, floor, rows[square.y][square.x], square.x, square.y);
-    if (!target) return;
+    if (!target) {
+      if (!rows[square.y][square.x].solid) {
+        selected = square;
+        route = undefined;
+      }
+      return;
+    }
     floor = target.floor;
     highlight = { x: target.x, y: target.y };
     cursor = { x: target.x, y: target.y };
+    clearSelection();
   }
 </script>
 
@@ -105,7 +130,7 @@
       <span class="section">Section {section.section} · {section.bossName} on floor {section.bossFloor}</span>
     </div>
     <div class="viewport">
-      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {bounds} bind:cursor {highlight} {marks} {tooltip} onselect={follow} />
+      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {bounds} bind:cursor {highlight} {marks} {selected} route={route?.squares ?? null} {tooltip} onselect={follow} />
     </div>
   </div>
   <aside class="panel">
@@ -140,7 +165,12 @@
       chute or trap door.
     </p>
     <SquareInfo description={cursorDescription} />
-    <Legend onhover={(kind) => (legendHover = kind)} />
+    <Selection {selected} {route} onroute={routeToTeleporter} onclear={clearSelection} />
+    <Legend
+      pinned={legendPinned?.label ?? null}
+      onhover={(kind) => (legendHover = kind)}
+      onpin={(label, kind) => (legendPinned = label && kind ? { label, kind } : null)}
+    />
     <FloorStats {summary} />
   </aside>
 </div>

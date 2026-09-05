@@ -1,0 +1,69 @@
+<script lang="ts">
+  import type { Route } from './path';
+  import type { Point } from './viewport';
+
+  interface Props {
+    selected: Point | null;
+    route: Route | null | undefined;
+    onroute: () => void;
+    onclear: () => void;
+  }
+
+  let { selected, route, onroute, onclear }: Props = $props();
+
+  function describeRoute(route: Route): string {
+    const parts = [`${route.steps} steps`];
+    if (route.doors) parts.push(`${route.doors} ${route.doors === 1 ? 'door' : 'doors'}`);
+    if (route.secretDoors) parts.push(`${route.secretDoors} secret ${route.secretDoors === 1 ? 'door' : 'doors'}`);
+    return parts.join(' · ');
+  }
+</script>
+
+{#if selected}
+  <section>
+    <h2>Selected {selected.x}, {selected.y}</h2>
+    <div class="buttons">
+      <button class="ghost" onclick={onroute}>Path to nearest teleporter</button>
+      <button class="ghost" onclick={onclear}>Clear</button>
+    </div>
+    {#if route}
+      <p>{describeRoute(route)}</p>
+    {:else if route === null}
+      <p>No teleporter reachable from here.</p>
+    {/if}
+  </section>
+{/if}
+
+<style>
+  h2 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .buttons {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  button.ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font: inherit;
+    font-size: 13px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  button.ghost:hover {
+    color: var(--ink);
+    border-color: var(--accent);
+  }
+  p {
+    margin: 8px 0 0;
+    font-size: 13px;
+  }
+</style>

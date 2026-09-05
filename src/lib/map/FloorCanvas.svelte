@@ -1,8 +1,9 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import type { Square } from '../game/unfmap.js';
-  import { drawFloor, drawMarks, drawOutline, squareRect } from './draw-floor';
+  import { drawFloor, drawMarks, drawOutline, drawRoute, squareRect } from './draw-floor';
   import type { Mark } from './marks';
+  import { palette } from './palette';
   import { ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
 
   export interface Tooltip {
@@ -22,12 +23,15 @@
     highlight?: Point | null;
     /** Squares emphasised while a legend entry is hovered. */
     marks?: Mark[];
+    /** Square picked by clicking, and a walking route drawn from it. */
+    selected?: Point | null;
+    route?: Point[] | null;
     /** Details shown in a box beside the cursor square. */
     tooltip?: Tooltip | null;
     onselect?: (square: Point) => void;
   }
 
-  let { rows, floor, bounds, cursor = $bindable(null), highlight = null, marks = [], tooltip = null, onselect }: Props = $props();
+  let { rows, floor, bounds, cursor = $bindable(null), highlight = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -83,7 +87,7 @@
   // Dependencies are read here, synchronously, so the effect re-runs when they change;
   // the frame callback only sees the snapshot.
   $effect(() => {
-    const scene: Scene = { rows, floor, view, cursor, highlight, marks, width: size.width, height: size.height };
+    const scene: Scene = { rows, floor, view, cursor, highlight, marks, selected, route, width: size.width, height: size.height };
     const frame = requestAnimationFrame(() => draw(scene));
     return () => cancelAnimationFrame(frame);
   });
@@ -95,11 +99,13 @@
     cursor: Point | null;
     highlight: Point | null;
     marks: Mark[];
+    selected: Point | null;
+    route: Point[] | null;
     width: number;
     height: number;
   }
 
-  function draw({ rows, floor, view, cursor, highlight, marks, width, height }: Scene) {
+  function draw({ rows, floor, view, cursor, highlight, marks, selected, route, width, height }: Scene) {
     if (!width || !height) return;
     const dpr = window.devicePixelRatio || 1;
     if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
@@ -110,6 +116,8 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawFloor(ctx, rows, { ...view, width, height, floor });
     drawMarks(ctx, marks, view);
+    if (route) drawRoute(ctx, route, view);
+    if (selected) drawOutline(ctx, selected.x, selected.y, view, 2, palette.selection);
     if (highlight) drawOutline(ctx, highlight.x, highlight.y, view, 2, '#ffffff');
     if (cursor) drawOutline(ctx, cursor.x, cursor.y, view, 1, 'rgba(255, 255, 255, 0.75)');
   }

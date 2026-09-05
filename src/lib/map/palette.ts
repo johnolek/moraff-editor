@@ -15,6 +15,9 @@ export const palette = {
   label: '#ffffff',
   /** Outline and label of squares emphasised from the legend. */
   mark: '#ff40ff',
+  /** The selected square and the route drawn from it. */
+  selection: '#ffd040',
+  route: '#ffd040',
   /** Store, temple, bank, inn: the fill of a building square on floor 0. */
   town: ['#51caff', '#ffff51', '#d75100', '#00ff00'],
 } as const;

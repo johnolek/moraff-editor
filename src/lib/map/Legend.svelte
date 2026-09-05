@@ -4,7 +4,19 @@
   import LegendSample from './LegendSample.svelte';
   import type { LegendKind } from './marks';
 
-  let { onhover }: { onhover: (kind: LegendKind | null) => void } = $props();
+  interface Props {
+    /** Label of the entry whose squares stay marked until it is clicked again or cleared. */
+    pinned: string | null;
+    onhover: (kind: LegendKind | null) => void;
+    onpin: (label: string | null, kind: LegendKind | null) => void;
+  }
+
+  let { pinned, onhover, onpin }: Props = $props();
+
+  function toggle(label: string, kind: LegendKind) {
+    if (pinned === label) onpin(null, null);
+    else onpin(label, kind);
+  }
 
   function sample(overrides: Partial<Square>): Square {
     return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
@@ -28,12 +40,26 @@
 </script>
 
 <section>
-  <h2>Legend</h2>
+  <h2>
+    Legend
+    {#if pinned}
+      <button class="clear" onclick={() => onpin(null, null)}>Clear</button>
+    {/if}
+  </h2>
   <ul>
     {#each entries as { label, square, kind }}
-      <li onpointerenter={() => onhover(kind)} onpointerleave={() => onhover(null)}>
-        <LegendSample {square} />
-        <span>{label}</span>
+      <li>
+        <button
+          type="button"
+          class="entry"
+          class:pinned={pinned === label}
+          onpointerenter={() => onhover(kind)}
+          onpointerleave={() => onhover(null)}
+          onclick={() => toggle(label, kind)}
+        >
+          <LegendSample {square} />
+          <span>{label}</span>
+        </button>
       </li>
     {/each}
   </ul>
@@ -46,6 +72,23 @@
     color: var(--accent);
     text-transform: uppercase;
     letter-spacing: 0.4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .clear {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+  }
+  .clear:hover {
+    color: var(--ink);
   }
   ul {
     list-style: none;
@@ -55,17 +98,28 @@
     grid-template-columns: 1fr 1fr;
     gap: 4px 12px;
   }
-  li {
+  .entry {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
+    width: calc(100% + 8px);
     padding: 2px 4px;
     margin: 0 -4px;
+    white-space: nowrap;
+    border: none;
     border-radius: 4px;
-    cursor: default;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
   }
-  li:hover {
+  .entry:hover {
     background: var(--panel-2);
+  }
+  .entry.pinned {
+    background: var(--panel-2);
+    box-shadow: inset 0 0 0 1px var(--accent);
   }
 </style>

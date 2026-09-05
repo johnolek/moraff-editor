@@ -1,7 +1,7 @@
 import { HEIGHT, WIDTH, type Side, type Square } from '../game/unfmap.js';
 import type { Mark } from './marks';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
-import type { Viewport } from './viewport';
+import type { Point, Viewport } from './viewport';
 
 export interface DrawOptions extends Viewport {
   /** Canvas size in CSS pixels, used to skip squares outside the view. */
@@ -180,4 +180,27 @@ export function drawMarks(ctx: CanvasRenderingContext2D, marks: Mark[], view: Vi
     ctx.fillStyle = palette.mark;
     ctx.fillText(mark.label, left + 3, top + 8);
   }
+}
+
+/** A walking route through square centres, drawn over the floor. */
+export function drawRoute(ctx: CanvasRenderingContext2D, route: Point[], view: Viewport): void {
+  if (route.length < 2) return;
+  ctx.beginPath();
+  route.forEach((square, i) => {
+    const { x0, y0, w, h } = squareRect(view, square.x, square.y);
+    const cx = x0 + 1 + w / 2;
+    const cy = y0 + 1 + h / 2;
+    if (i === 0) ctx.moveTo(cx, cy);
+    else ctx.lineTo(cx, cy);
+  });
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.setLineDash([]);
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
+  ctx.stroke();
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = palette.route;
+  ctx.stroke();
+  ctx.lineWidth = 1;
 }
