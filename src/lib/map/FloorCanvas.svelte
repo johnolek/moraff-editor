@@ -4,6 +4,7 @@
   import { drawFloor, drawMarks, drawOutline, drawRoute, squareRect } from './draw-floor';
   import type { Mark } from './marks';
   import { palette } from './palette';
+  import { drawTeleporters, teleporterHue, teleporterSegments } from './teleporters';
   import { ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
 
   export interface Tooltip {
@@ -84,11 +85,40 @@
     view = ensureVisible(untrack(() => view), target, width, height);
   });
 
-  // Dependencies are read here, synchronously, so the effect re-runs when they change;
-  // the frame callback only sees the snapshot.
+  const teleporters = $derived(teleporterSegments(rows));
+
+  // The floor itself is drawn once into a static layer whenever rows, view or size change;
+  // every frame then blits it and draws the overlays (teleporters, marks, route, cursor) on
+  // top. Dependencies are read here, synchronously, so the effect re-runs when they change.
+  const staticLayer = document.createElement('canvas');
+  let staticStale = true;
+  let scene: Scene | null = null;
+  let pendingFrame = 0;
+
+  function overlays() {
+    return { cursor, highlight, marks, selected, route, teleporters };
+  }
+
   $effect(() => {
-    const scene: Scene = { rows, floor, view, cursor, highlight, marks, selected, route, width: size.width, height: size.height };
-    const frame = requestAnimationFrame(() => draw(scene));
+    const next: Scene = { rows, floor, view, width: size.width, height: size.height };
+    staticStale = true;
+    scene = { ...untrack(overlays), ...next };
+    scheduleRender();
+  });
+
+  $effect(() => {
+    const current = overlays();
+    if (!scene) return;
+    scene = { ...scene, ...current };
+    scheduleRender();
+  });
+
+  $effect(() => {
+    if (!teleporters.length) return;
+    let frame = requestAnimationFrame(function tick() {
+      render();
+      frame = requestAnimationFrame(tick);
+    });
     return () => cancelAnimationFrame(frame);
   });
 
@@ -96,26 +126,48 @@
     rows: Square[][];
     floor: number;
     view: Viewport;
-    cursor: Point | null;
-    highlight: Point | null;
-    marks: Mark[];
-    selected: Point | null;
-    route: Point[] | null;
     width: number;
     height: number;
+    cursor?: Point | null;
+    highlight?: Point | null;
+    marks?: Mark[];
+    selected?: Point | null;
+    route?: Point[] | null;
+    teleporters?: ReturnType<typeof teleporterSegments>;
   }
 
-  function draw({ rows, floor, view, cursor, highlight, marks, selected, route, width, height }: Scene) {
-    if (!width || !height) return;
+  function scheduleRender() {
+    if (pendingFrame) return;
+    pendingFrame = requestAnimationFrame(() => {
+      pendingFrame = 0;
+      render();
+    });
+  }
+
+  function render() {
+    if (!scene || !scene.width || !scene.height) return;
+    const { rows, floor, view, width, height, cursor, highlight, marks, selected, route, teleporters } = scene;
     const dpr = window.devicePixelRatio || 1;
-    if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
+    const pixelWidth = Math.round(width * dpr);
+    const pixelHeight = Math.round(height * dpr);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+    }
+    if (staticStale || staticLayer.width !== pixelWidth || staticLayer.height !== pixelHeight) {
+      staticLayer.width = pixelWidth;
+      staticLayer.height = pixelHeight;
+      const staticCtx = staticLayer.getContext('2d')!;
+      staticCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null });
+      staticStale = false;
     }
     const ctx = canvas.getContext('2d')!;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(staticLayer, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawFloor(ctx, rows, { ...view, width, height, floor });
-    drawMarks(ctx, marks, view);
+    drawTeleporters(ctx, teleporters ?? [], view, teleporterHue(performance.now()));
+    drawMarks(ctx, marks ?? [], view);
     if (route) drawRoute(ctx, route, view);
     if (selected) drawOutline(ctx, selected.x, selected.y, view, 2, palette.selection);
     if (highlight) drawOutline(ctx, highlight.x, highlight.y, view, 2, '#ffffff');

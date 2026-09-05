@@ -1,6 +1,7 @@
 import { HEIGHT, WIDTH, type Side, type Square } from '../game/unfmap.js';
 import type { Mark } from './marks';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
+import { teleporterColour, teleporterLineWidth } from './teleporters';
 import type { Point, Viewport } from './viewport';
 
 export interface DrawOptions extends Viewport {
@@ -9,6 +10,8 @@ export interface DrawOptions extends Viewport {
   height: number;
   /** Floor of the drawn rows, needed to label ladder destinations. */
   floor: number;
+  /** Hue for teleporter sides, or null to leave them to an animated overlay. */
+  teleporterHue: number | null;
 }
 
 /** Cell size from which destination floor numbers are drawn inside the glyph squares. */
@@ -37,29 +40,47 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: Square[][], optio
       if (square.solid) continue;
       const x0 = Math.round(originX + x * cell);
       const w = Math.round(originX + (x + 1) * cell) - x0;
-      drawSquare(ctx, square, x0, y0, w, h, options.floor);
+      drawSquare(ctx, square, x0, y0, w, h, options.floor, options.teleporterHue);
     }
   }
 }
 
 /** One square whose top-left corner pixel is (x0, y0) and whose sides are `w` and `h` apart. */
-export function drawSquare(ctx: CanvasRenderingContext2D, square: Square, x0: number, y0: number, w: number, h: number, floor: number): void {
+export function drawSquare(
+  ctx: CanvasRenderingContext2D,
+  square: Square,
+  x0: number,
+  y0: number,
+  w: number,
+  h: number,
+  floor: number,
+  teleporterHue: number | null,
+): void {
   ctx.fillStyle = squareFill(square)!;
   ctx.fillRect(x0 + 1, y0 + 1, w, h);
-  drawSide(ctx, square.w, x0, y0, h, true);
-  drawSide(ctx, square.n, x0, y0, w, false);
-  drawSide(ctx, square.e, x0 + w, y0, h, true);
-  drawSide(ctx, square.s, x0, y0 + h, w, false);
+  drawSide(ctx, square.w, x0, y0, h, true, teleporterHue);
+  drawSide(ctx, square.n, x0, y0, w, false, teleporterHue);
+  drawSide(ctx, square.e, x0 + w, y0, h, true, teleporterHue);
+  drawSide(ctx, square.s, x0, y0 + h, w, false, teleporterHue);
   drawGlyph(ctx, square, x0, y0, w, h, floor);
 }
 
 /** One side, as draw_side does it: a line that stops one pixel short of both corners,
  *  and for doors a bar across the middle. `vertical` sides sit on the square's west edge,
  *  horizontal ones on its north edge; `length` is the square's size along the side. */
-function drawSide(ctx: CanvasRenderingContext2D, side: Side, x0: number, y0: number, length: number, vertical: boolean): void {
+function drawSide(ctx: CanvasRenderingContext2D, side: Side, x0: number, y0: number, length: number, vertical: boolean, teleporterHue: number | null): void {
   const stroke = sideStroke(side);
   if (!stroke) return;
-  ctx.strokeStyle = stroke === 'teleporter' ? palette.teleporter : palette.line;
+  if (stroke === 'teleporter') {
+    if (teleporterHue === null) return;
+    ctx.strokeStyle = teleporterColour(teleporterHue);
+    ctx.lineWidth = teleporterLineWidth(length);
+    if (vertical) line(ctx, x0, y0, x0, y0 + length + 1);
+    else line(ctx, x0, y0, x0 + length + 1, y0);
+    ctx.lineWidth = 1;
+    return;
+  }
+  ctx.strokeStyle = palette.line;
   ctx.setLineDash(stroke === 'secretDoor' ? [2, 2] : []);
   if (vertical) line(ctx, x0, y0 + 1, x0, y0 + length);
   else line(ctx, x0 + 1, y0, x0 + length, y0);

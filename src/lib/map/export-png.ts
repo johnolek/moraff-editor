@@ -1,5 +1,6 @@
 import { HEIGHT, WIDTH, type Square } from '../game/unfmap.js';
 import { drawFloor } from './draw-floor';
+import { TELEPORTER_STILL_HUE } from './teleporters';
 
 export const EXPORT_CELL = 10;
 
@@ -14,7 +15,7 @@ export function renderFloorPng(rows: Square[][], floor: number): Promise<Blob> {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  drawFloor(canvas.getContext('2d')!, rows, { cell: EXPORT_CELL, originX: 0, originY: 0, width, height, floor });
+  drawFloor(canvas.getContext('2d')!, rows, { cell: EXPORT_CELL, originX: 0, originY: 0, width, height, floor, teleporterHue: TELEPORTER_STILL_HUE });
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('PNG encoding failed'))), 'image/png');
   });

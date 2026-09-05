@@ -1,8 +1,8 @@
 import type { Side, Square } from '../game/unfmap.js';
 
 /** Colours of the game's expanded map: entries 0..15 of every DotU palette, read from
- *  drawsquare/draw_side in unf.exe. Secret doors and teleporters are never drawn by the
- *  game, so those two are ours. */
+ *  drawsquare/draw_side in unf.exe. Secret doors are never drawn by the game, so that one
+ *  is ours; teleporter sides are styled in teleporters.ts. */
 export const palette = {
   background: '#710000',
   square: '#000000',
@@ -11,7 +11,6 @@ export const palette = {
   trapdoor: '#ffff51',
   chute: '#51caff',
   secretDoor: '#ffffff',
-  teleporter: '#ff40ff',
   label: '#ffffff',
   /** Outline and label of squares emphasised from the legend. */
   mark: '#ff40ff',

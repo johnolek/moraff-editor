@@ -2,12 +2,15 @@
   import type { Square } from '../game/unfmap.js';
   import { drawSquare } from './draw-floor';
   import { palette } from './palette';
+  import { TELEPORTER_STILL_HUE, teleporterHue } from './teleporters';
 
   const SIZE = 18;
 
   let { square }: { square: Square } = $props();
 
   let canvas: HTMLCanvasElement;
+
+  const animated = $derived([square.n, square.s, square.w, square.e].includes(4));
 
   $effect(() => {
     const sample = square;
@@ -16,10 +19,21 @@
     canvas.width = edge * dpr;
     canvas.height = edge * dpr;
     const ctx = canvas.getContext('2d')!;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = palette.background;
-    ctx.fillRect(0, 0, edge, edge);
-    drawSquare(ctx, sample, 2, 2, SIZE, SIZE, 0);
+    const paint = (hue: number) => {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = palette.background;
+      ctx.fillRect(0, 0, edge, edge);
+      drawSquare(ctx, sample, 2, 2, SIZE, SIZE, 0, hue);
+    };
+    if (!animated) {
+      paint(TELEPORTER_STILL_HUE);
+      return;
+    }
+    let frame = requestAnimationFrame(function tick(time) {
+      paint(teleporterHue(time));
+      frame = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(frame);
   });
 </script>
 
