@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { strike } from '../game/dotu-mech.js';
-import { hitChance, toHitTotal, totalNeeded, type ToHitFighter } from './to-hit';
+import { defenseBeatenChance, hitChance, toHitTotal, totalNeededToBeatDefense, type ToHitFighter } from './to-hit';
 
 /** A repeatable stand-in for Math.random, so a failing sample can be reproduced. */
 function seeded(seed: number): () => number {
@@ -26,11 +26,14 @@ const SWINGS = 20000;
 const TOLERANCE = 0.005;
 /**
  * strike() only reports damage, and a connecting swing can roll no damage at all on a small
- * weapon. A die this big makes that all but impossible, so damage over zero counts the hits.
+ * weapon. A die this big makes that all but impossible, so damage over zero counts the swings
+ * that got past the defense.
  */
 const HUGE_DIE = 1_000_000;
+/** The fist's die is 2 and the smallest weapon's is 4; 3 sits between them. */
+const SMALL_DIE = 3;
 
-function measured(fighter: ToHitFighter, target: Target, seed: number): number {
+function measured(fighter: ToHitFighter, target: Target, seed: number, damageDie: number): number {
   const rnd = seeded(seed);
   const swing = {
     lev: fighter.lev,
@@ -44,7 +47,7 @@ function measured(fighter: ToHitFighter, target: Target, seed: number): number {
     hard: fighter.hard,
     // Past floor 75 a swing can roll a bonus the closed form leaves out.
     depth: 20,
-    damageDie: HUGE_DIE,
+    damageDie,
   };
   let hits = 0;
   for (let i = 0; i < SWINGS; i++) {
@@ -83,35 +86,62 @@ describe('toHitTotal', () => {
   });
 });
 
-describe('hitChance', () => {
+describe('defenseBeatenChance', () => {
   it('is half the swings when the total is one over what the monster takes off', () => {
-    expect(hitChance(2 * 20 + 5 + 30 + 1, 20, 5, 30)).toBeCloseTo(0.5, 10);
+    expect(defenseBeatenChance(2 * 20 + 5 + 30 + 1, 20, 5, 30)).toBeCloseTo(0.5, 10);
   });
 
   it('never leaves the 0 to 1 range', () => {
-    expect(hitChance(0, 100, 10, 40)).toBe(0);
-    expect(hitChance(10000, 100, 10, 40)).toBe(1);
+    expect(defenseBeatenChance(0, 100, 10, 40)).toBe(0);
+    expect(defenseBeatenChance(10000, 100, 10, 40)).toBe(1);
   });
 
   it('gains one swing in 80 for each point of total', () => {
     const monster = 2 * 20 + 5 + 30;
-    expect(hitChance(monster + 10, 20, 5, 30) - hitChance(monster + 9, 20, 5, 30)).toBeCloseTo(1 / 80, 10);
+    expect(defenseBeatenChance(monster + 10, 20, 5, 30) - defenseBeatenChance(monster + 9, 20, 5, 30)).toBeCloseTo(
+      1 / 80,
+      10,
+    );
   });
 });
 
-describe('totalNeeded', () => {
+describe('hitChance', () => {
+  const monster = 2 * 20 + 5 + 30;
+
+  it('drops the half of the one-die swings a 2-sided die rolls a 0 on', () => {
+    // One over the monster's share, so 40 of the 80 rolls get past and each earns one die.
+    expect(defenseBeatenChance(monster + 1, 20, 5, 30)).toBeCloseTo(0.5, 10);
+    expect(hitChance(monster + 1, 20, 5, 30, 2)).toBeCloseTo(0.5 * 0.5, 10);
+  });
+
+  it('needs only one of the two dice a bigger total earns', () => {
+    // 41 over: every roll gets past, and half of them are far enough over to earn a second die.
+    expect(hitChance(monster + 41, 20, 5, 30, 2)).toBeCloseTo((40 * (1 - 1 / 2) + 40 * (1 - 1 / 4)) / 80, 10);
+  });
+
+  it('is a certain miss with a die that can only roll 0', () => {
+    expect(hitChance(monster + 1000, 20, 5, 30, 1)).toBe(0);
+    expect(hitChance(monster + 1000, 20, 5, 30, 0)).toBe(0);
+  });
+
+  it('reaches the chance of getting past the defense as the die grows', () => {
+    expect(hitChance(monster + 20, 20, 5, 30, HUGE_DIE)).toBeCloseTo(defenseBeatenChance(monster + 20, 20, 5, 30), 5);
+  });
+});
+
+describe('totalNeededToBeatDefense', () => {
   it('wants one point over the monster for half the swings and 33 for nine in ten', () => {
     const monster = 2 * 20 + 5 + 30;
-    expect(totalNeeded(0.5, 20, 5, 30)).toBe(monster + 1);
-    expect(totalNeeded(0.9, 20, 5, 30)).toBe(monster + 33);
+    expect(totalNeededToBeatDefense(0.5, 20, 5, 30)).toBe(monster + 1);
+    expect(totalNeededToBeatDefense(0.9, 20, 5, 30)).toBe(monster + 33);
   });
 
   it('is the smallest total that reaches the chance asked for', () => {
     for (let step = 1; step <= 20; step++) {
       const chance = step / 20;
-      const total = totalNeeded(chance, 17, 8, 25);
-      expect(hitChance(total, 17, 8, 25)).toBeGreaterThanOrEqual(chance);
-      expect(hitChance(total - 1, 17, 8, 25)).toBeLessThan(chance);
+      const total = totalNeededToBeatDefense(chance, 17, 8, 25);
+      expect(defenseBeatenChance(total, 17, 8, 25)).toBeGreaterThanOrEqual(chance);
+      expect(defenseBeatenChance(total - 1, 17, 8, 25)).toBeLessThan(chance);
     }
   });
 });
@@ -138,12 +168,28 @@ describe('against the game roll', () => {
     },
   ];
 
-  it.each(pairs)('matches strike() for $label', ({ fighter, target, seed }) => {
-    const expected = hitChance(toHitTotal(fighter), target.level, target.defense, target.speed);
+  it.each(pairs)('counts the swings past the defense of $label', ({ fighter, target, seed }) => {
+    const expected = defenseBeatenChance(toHitTotal(fighter), target.level, target.defense, target.speed);
     // Every pair is one the monster neither always nor never turns away, so the sample is a
     // real test of the closed form rather than of a clamp.
     expect(expected).toBeGreaterThan(0.1);
     expect(expected).toBeLessThan(0.9);
-    expect(Math.abs(measured(fighter, target, seed) - expected)).toBeLessThan(TOLERANCE);
+    expect(Math.abs(measured(fighter, target, seed, HUGE_DIE) - expected)).toBeLessThan(TOLERANCE);
+  });
+
+  it.each(pairs)('counts the swings that do damage on a small die for $label', ({ fighter, target, seed }) => {
+    const total = toHitTotal(fighter);
+    const expected = hitChance(total, target.level, target.defense, target.speed, SMALL_DIE);
+    // A small die throws away a real share of the swings that got past, so this is a test of
+    // the dice term and not of a rounding difference.
+    expect(defenseBeatenChance(total, target.level, target.defense, target.speed) - expected).toBeGreaterThan(0.05);
+    expect(Math.abs(measured(fighter, target, seed, SMALL_DIE) - expected)).toBeLessThan(TOLERANCE);
+  });
+
+  it.each(pairs)('matches the swings past the defense on a huge die for $label', ({ fighter, target, seed }) => {
+    const total = toHitTotal(fighter);
+    const expected = hitChance(total, target.level, target.defense, target.speed, HUGE_DIE);
+    expect(expected).toBeCloseTo(defenseBeatenChance(total, target.level, target.defense, target.speed), 4);
+    expect(Math.abs(measured(fighter, target, seed, HUGE_DIE) - expected)).toBeLessThan(TOLERANCE);
   });
 });

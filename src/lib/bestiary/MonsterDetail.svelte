@@ -18,7 +18,7 @@
   import LevelControl from './LevelControl.svelte';
   import MonsterPicture from './MonsterPicture.svelte';
   import { describeEffects, homeFloor, isPuffball, stockingOdds, whereItAppears, type Monster } from './monsters';
-  import { hitChance, toHitTotal, totalNeeded, type ToHitFighter } from './to-hit';
+  import { hitChance, toHitTotal, totalNeededToBeatDefense, type ToHitFighter } from './to-hit';
 
   interface Props {
     entry: Monster;
@@ -32,9 +32,9 @@
   /** Levels rarer than this are left out of the chart; the nudge has a very long tail. */
   const RARE_LEVEL = 0.0005;
   /** The game's weapon table starts with the fist, which every character can swing. */
-  const FIST = 0;
+  const FIST = weaponById(0);
   /** The character the worked line falls back to when the save editor holds no character. */
-  const EXAMPLE_FIGHTER: ToHitFighter = { lev: 30, str: 40, luck: 20, weaponHit: weaponById(FIST).hit, hard: false };
+  const EXAMPLE_FIGHTER: ToHitFighter = { lev: 30, str: 40, luck: 20, weaponHit: FIST.hit, hard: false };
 
   // The parent keys this component on the monster, so the controls start fresh each time.
   const home = untrack(() => homeFloor(entry));
@@ -74,10 +74,10 @@
 
   const percent = (chance: number) => `${(chance * 100).toFixed(1)}%`;
 
-  const halfTheTime = $derived(totalNeeded(0.5, baseLevel, entry.type.defense, entry.type.speed));
-  const nineSwingsInTen = $derived(totalNeeded(0.9, baseLevel, entry.type.defense, entry.type.speed));
+  const halfTheTime = $derived(totalNeededToBeatDefense(0.5, baseLevel, entry.type.defense, entry.type.speed));
+  const nineSwingsInTen = $derived(totalNeededToBeatDefense(0.9, baseLevel, entry.type.defense, entry.type.speed));
 
-  /** The character open in the save editor, as the pieces of a swing, or null for none. */
+  /** The character open in the save editor, as the pieces of a swing and its die, or null for none. */
   const yours = $derived.by(() => {
     const record = loadedCharacter();
     if (!record) return null;
@@ -92,12 +92,13 @@
       tempWeaponPlus: record.tempWeaponPlus,
       hard: record.hard !== 0,
     };
-    return { name: record.name.trim(), fighter };
+    return { name: record.name.trim(), fighter, damageDie: weaponById(record.weapon).damageDie };
   });
 
   const workedLine = $derived.by(() => {
     const fighter = yours?.fighter ?? EXAMPLE_FIGHTER;
-    const chance = percent(hitChance(toHitTotal(fighter), baseLevel, entry.type.defense, entry.type.speed));
+    const damageDie = yours?.damageDie ?? FIST.damageDie;
+    const chance = percent(hitChance(toHitTotal(fighter), baseLevel, entry.type.defense, entry.type.speed, damageDie));
     if (yours) {
       return (
         `${yours.name}, level ${fighter.lev.toLocaleString()} with Strength ${fighter.str.toLocaleString()} ` +
