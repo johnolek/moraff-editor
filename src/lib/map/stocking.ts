@@ -1,7 +1,8 @@
 import { allMonsters, type Monster } from '../bestiary/monsters';
 import { nudgeLevel, rollHp } from '../bestiary/roll';
+import { sectionOf } from '../game/dotu-files.js';
 import { monsterLevelBase } from '../game/dotu-mech.js';
-import { sectionInfo } from '../game/sections';
+import { sectionInfo, type SectionInfo } from '../game/sections';
 import { HEIGHT, WIDTH, type Square } from '../game/unfmap.js';
 
 /** Monsters the game keeps for one floor, boss included (RE notes 4.1). */
@@ -43,6 +44,20 @@ export function monsterById(id: string): Monster {
   return entry;
 }
 
+/**
+ * The section whose monsters a floor is stocked from, or null when the game itself could not
+ * stock it. The game needs two things the floor override can take away: a floor belonging to
+ * one of its own module's four sections, so there is a monster table to load, and a monster
+ * level of at least 1.
+ */
+export function stockingSection(moduleIndex: number, floor: number): SectionInfo | null {
+  const firstOfModule = moduleIndex * 4 + 1;
+  const section = sectionOf(moduleIndex, floor);
+  if (section < firstOfModule || section > firstOfModule + 3) return null;
+  if (monsterLevelBase(floor, moduleIndex) <= 0) return null;
+  return sectionInfo(moduleIndex, floor);
+}
+
 /** The game's random(n): an integer 0..n-1. */
 const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
 
@@ -55,10 +70,10 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  * The game seeds its generator afresh for every square it draws, which makes the monsters
  * land in diagonal stripes; `rnd` is used plainly here, so they spread out evenly instead.
  *
- * A floor outside every section gets nothing: there is no monster table to draw from.
+ * A floor the game could not stock gets nothing.
  */
 export function stockFloor(rows: Square[][], moduleIndex: number, floor: number, rnd: () => number): StockedMonster[] {
-  const section = sectionInfo(moduleIndex, floor);
+  const section = stockingSection(moduleIndex, floor);
   if (!section) return [];
   const baseLevel = monsterLevelBase(floor, moduleIndex);
   const taken = new Set<number>();

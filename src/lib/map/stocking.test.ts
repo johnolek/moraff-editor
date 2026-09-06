@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { isPuffball } from '../bestiary/monsters';
+import { sectionOf } from '../game/dotu-files.js';
 import { MONSTER_TYPE_ODDS, monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
 import { bundledDungeon } from '../game/dungeon';
 import { sectionInfo } from '../game/sections';
-import { MONSTER_SLOTS, monsterAt, monsterById, monsterCounts, stockFloor, type StockedMonster } from './stocking';
+import { MONSTER_SLOTS, monsterAt, monsterById, monsterCounts, stockFloor, stockingSection, type StockedMonster } from './stocking';
 
 /** A repeatable stand-in for Math.random, so a failing floor can be reproduced. Math.imul
  *  keeps the multiplication exact, which the full period of the generator depends on. */
@@ -63,6 +64,10 @@ describe('stockFloor', () => {
     }
   });
 
+  it('leaves a floor the game could not stock empty', () => {
+    expect(stockFloor(floorOf(0, -5), 0, -5, seeded(3))).toEqual([]);
+  });
+
   it('picks the monster kinds about as often as the game does', () => {
     const rnd = seeded(23);
     const monsters: StockedMonster[] = [];
@@ -80,6 +85,27 @@ function kindOf(id: string): keyof typeof MONSTER_TYPE_ODDS {
   if (isPuffball(entry)) return 'puffball';
   return entry.special === 0 ? 'blocker' : 'poisonDisease';
 }
+
+describe('stockingSection', () => {
+  it('names the section a floor of the module draws its monsters from', () => {
+    expect(stockingSection(0, 3)).toMatchObject({ section: 1 });
+    expect(stockingSection(0, 30000)).toMatchObject({ section: 4 });
+  });
+
+  it('has no section for a floor below the sections of the module', () => {
+    expect(stockingSection(0, -5)).toBeNull();
+    // Section 16 is the fourth of Module IV, so Module V cannot load it.
+    expect(sectionOf(4, -24)).toBe(16);
+    expect(stockingSection(4, -24)).toBeNull();
+  });
+
+  it('has no section where the monsters would come out below level 1', () => {
+    expect(sectionOf(0, -1)).toBe(1);
+    expect(monsterLevelBase(-1, 0)).toBe(-1);
+    expect(stockingSection(0, -1)).toBeNull();
+    expect(stockingSection(0, 0)).toBeNull();
+  });
+});
 
 describe('monsterCounts', () => {
   it('counts each type, commonest first, with the Shadow boss at the top', () => {
