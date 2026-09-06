@@ -9,7 +9,8 @@ town buildings (`store`, `armoury`, `weaponry`, `temple`, `bank`, `inn`).
 Decoders: `reference/unfpic.py` (`parse_pic(bytes) -> (images, consumed)`) and
 `reference/dotu-pic.js` (`parsePic`, `renderImage`, the colour rules).  Rendered output is
 in `pics/monsters` (all 122 monsters + per-section contact sheets), `pics/buildings`,
-`pics/walls`.
+`pics/walls`.  The monster PNGs were rendered before the section 4 colour rule was
+corrected and need re-running through `render_monsters.py`.
 
 ## 1. File format (from `load_building_picture` 3000:974d and `scale_image2` 4000:4818)
 
@@ -69,13 +70,13 @@ palette is built in banks of 16:
 A monster pixel lands at `(colorSet << 4) + v`.  69 of the 122 monsters have `colorSet`
 0, so their body pixels use entries 1..31 directly (UI colours + the section's wall
 colours — which is why the same picture changes hue from section to section); the other
-53 use colour set 2 (entries 32..63).  The tint pixel (value 17) is replaced by the
-monster's `color` byte *before* the base is added, so tints can reach any entry,
-including the 64..79 leak bank below.
+53 use colour set 2 (entries 32..63).  The tint pixel (section 4) is the exception: the
+monster's `color` byte is used as a palette entry directly, with no base added, so a tint
+can name any of the 256 entries — though no monster's tint is higher than 52.
 
 | entries | contents |
 |---|---|
-| 64..79 | **only ever written by the building palette**; keeps whatever the last shop wrote |
+| 64..79 | **only ever written by the building palette**; keeps whatever the last shop wrote (true of the palette, but no monster's tint reaches it) |
 | 80..95 | section-tinted bank used for the 3-D walls (`colorSet` 5); random components in water sections |
 | 96..255 | gradients built by 4000:1150 (distance shading, sky/floor) |
 
@@ -102,30 +103,34 @@ computed in the script.
 For each pixel value `v` (1..31), with `tint = monster.color` and `base = colorSet << 4`:
 
 ```
-if v == 17:            # the "tint" pixel
-    if tint == 0: skip the pixel        # (a tint of 0 leaves a hole)
-    v = tint
-if v == 16 or v == 18: v = 0            # index base+0 = the bank's first colour
-index = (v + base) & 0xff               # always drawn
+tintValue = 28 if base == 0x20 or base == 0x40 else 17
+if v == tintValue:                      # the "tint" pixel
+    skip it if tint == base             # (0x20/0x40 bases; any other base skips on tint 0)
+    index = tint                        # a palette entry in its own right: no base added
+else:
+    index = (v + base) & 0xff
 ```
 
+Two things here are easy to get wrong.  Which pixel value carries the tint depends on the
+colour-set base — 28 for the 0x20 and 0x40 banks, 17 for the rest — and the tint is a
+palette entry, not a 5-bit value, so the base is never added to it.  There is no special
+case for values 16 and 18.
+
+Confirmed against an in-game screenshot of the Ogeroth (section 20, colour set 2, tint 52):
+its body is value 28 and comes out entry 52, a rust brown, and its horns are value 17 and
+come out entry 17 + 32 = 49, grey.  Reading 17 as the tint (which is what the WALL drawer
+does) gives it a red body and blue horns instead.
+
 Every Shadow boss shares its section's picture 7 with the first regular monster; the two
-differ only in the tint.  The regular one has a real tint (a colour in the picture bank or
-the section-tinted bank).  The Shadow bosses come in two flavours:
+differ only in the tint.  The regular one has a real tint — a palette entry with its body
+colour.  Every Shadow boss has the tint that means "skip":
 
-* sections 1-6, 8, 10, 18, 20: `color = 32`, colour set 2, so the tint pixels land on
-  palette entry **64** — the first entry of the bank the dungeon palette never touches.
-  The palette lives in zero-initialised memory, so in a fresh session entry 64 is black
-  and the boss's tinted regions (wings, body, armour) are literally black shadows.  Once
-  you have entered any shop, entry 64 holds that shop palette's first colour (a dark
-  brown, 15/11/0 in 6-bit) for the rest of the session and those regions turn brown.
-  `pics/monsters/_shadow_bosses_1-10.png` shows both looks; `*_fresh.png` / `*_shop.png`
-  are the two variants.
-* sections 7, 9, 11-17, 19: `color = 0`, colour set 0, so the tint pixels are *skipped* —
-  the boss has holes through which the corridor shows.
+* sections 1-6, 8, 10, 18, 20: `color = 32`, colour set 2, and 32 is the base
+* sections 7, 9, 11-17, 19: `color = 0`, colour set 0, and 0 is the base
 
-Either way "Shadow" is not a separate drawing: it is the same picture with its tint
-channel blacked out or cut out.
+So "Shadow" is not a separate drawing and it is not a dark one either: it is the section's
+ordinary picture with its tinted regions (wings, body, armour) cut out, the corridor
+showing through the holes.
 
 Building pictures use fixed bases: images 0 and 2 with `+0x20`, images 1 and 3 with
 `+0x3f`.  Image 1 is the full background, image 0 an overlay on top, images 2/3 the
