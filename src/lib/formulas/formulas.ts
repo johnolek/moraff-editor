@@ -1,30 +1,4 @@
-import areaSource from '../map/area.ts?raw';
-import dropsSource from '../calculators/drops.ts?raw';
-import magicSource from '../game/port/magic.ts?raw';
-import mechSource from '../game/dotu-mech.js?raw';
-import relocateSource from '../map/relocate.ts?raw';
-import rollSource from '../bestiary/roll.ts?raw';
-import stockingSource from '../map/stocking.ts?raw';
-import filesSource from '../game/dotu-files.js?raw';
-import toHitSource from '../bestiary/to-hit.ts?raw';
-import unfmapSource from '../game/unfmap.js?raw';
-import { snippet } from '../ui/source-snippet';
-
-/** The files a formula's code can come from, as text, so the page shows what the app runs. */
-export const SOURCES = {
-  'src/lib/bestiary/roll.ts': rollSource,
-  'src/lib/bestiary/to-hit.ts': toHitSource,
-  'src/lib/calculators/drops.ts': dropsSource,
-  'src/lib/game/dotu-files.js': filesSource,
-  'src/lib/game/dotu-mech.js': mechSource,
-  'src/lib/game/port/magic.ts': magicSource,
-  'src/lib/game/unfmap.js': unfmapSource,
-  'src/lib/map/area.ts': areaSource,
-  'src/lib/map/relocate.ts': relocateSource,
-  'src/lib/map/stocking.ts': stockingSource,
-};
-
-export type SourceFile = keyof typeof SOURCES;
+import { portCode, type SourceFile } from '../source/ports';
 
 /** The declaration whose text an entry shows. */
 export interface CodeReference {
@@ -574,7 +548,7 @@ export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXP
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
-  return formula.code ? snippet(SOURCES[formula.code.file], formula.code.name) : null;
+  return formula.code ? portCode(formula.code.file, formula.code.name) : null;
 }
 
 /** Every entry, in the order the page lists them. */
