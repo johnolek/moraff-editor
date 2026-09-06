@@ -102,12 +102,14 @@ for s in range(20):
 txt = open(os.path.join(game, 'uspells.hlp'), 'rb').read().decode('latin1')
 entries = txt.split('~')[:120]
 TYPES = ["Permanent", "Preparation", "Wizard battle", "Priest battle"]
+# str.title() lower-cases the tail of a Roman numeral ("POWER WEAPON II" -> "Power Weapon Ii").
+ROMAN_NUMERAL = re.compile(r'\b(?:I{1,3}|IV|VI{0,3}|IX|XI{0,3})\b', re.IGNORECASE)
 for i, e in enumerate(entries):
     e = e.replace('\r', '').strip('\n')
     lines = [l.rstrip() for l in e.split('\n')]
     first = lines[0].strip()
     name, _, rest = first.partition(':')
-    name = name.strip().title()
+    name = ROMAN_NUMERAL.sub(lambda m: m.group().upper(), name.strip().title())
     desc = ' '.join([rest.strip()] + [l.strip() for l in lines[1:]]).strip()
     desc = re.sub(r'\s+', ' ', desc)
     t, rest = divmod(i, 30); lv, slot = divmod(rest, 3)
