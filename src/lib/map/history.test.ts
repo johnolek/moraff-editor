@@ -24,12 +24,19 @@ describe('isMapHistoryState', () => {
     expect(isMapHistoryState(state({}, 1.5))).toBe(false);
   });
 
-  it('rejects modules and floors outside the dungeon', () => {
+  it('rejects modules outside the dungeon', () => {
     expect(isMapHistoryState(state({ module: 5 }))).toBe(false);
     expect(isMapHistoryState(state({ module: -1 }))).toBe(false);
-    expect(isMapHistoryState(state({ module: 0, floor: 26 }))).toBe(false);
-    expect(isMapHistoryState(state({ module: 1, floor: 26 }))).toBe(true);
-    expect(isMapHistoryState(state({ floor: -1 }))).toBe(false);
+  });
+
+  it('accepts any floor the game could hold, including ones past the bottom of the module', () => {
+    expect(isMapHistoryState(state({ module: 0, floor: 26 }))).toBe(true);
+    expect(isMapHistoryState(state({ floor: -1 }))).toBe(true);
+    expect(isMapHistoryState(state({ floor: 32767 }))).toBe(true);
+    expect(isMapHistoryState(state({ floor: -32768 }))).toBe(true);
+    expect(isMapHistoryState(state({ floor: 32768 }))).toBe(false);
+    expect(isMapHistoryState(state({ floor: -32769 }))).toBe(false);
+    expect(isMapHistoryState(state({ floor: 1.5 }))).toBe(false);
   });
 
   it('rejects squares outside the grid', () => {

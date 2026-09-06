@@ -1,6 +1,11 @@
 import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
 import type { Point } from './viewport';
 
+/** The game keeps the party's floor in a signed 16-bit variable, and the map's "Any floor"
+ *  override lets you look at every value it can hold. */
+export const FLOOR_MIN = -32768;
+export const FLOOR_MAX = 32767;
+
 /** Where the map is looking: a floor of a module, and the square arrived at, if any. */
 export interface MapPlace {
   module: number;
@@ -24,7 +29,7 @@ export function isMapPlace(value: unknown): value is MapPlace {
   if (typeof value !== 'object' || value === null) return false;
   const { module, floor, square } = value as Partial<MapPlace>;
   if (!Number.isInteger(module) || module! < 0 || module! >= BOTTOM_LEVEL.length) return false;
-  if (!Number.isInteger(floor) || floor! < 0 || floor! > BOTTOM_LEVEL[module!]) return false;
+  if (!Number.isInteger(floor) || floor! < FLOOR_MIN || floor! > FLOOR_MAX) return false;
   return square === null || isPoint(square);
 }
 
