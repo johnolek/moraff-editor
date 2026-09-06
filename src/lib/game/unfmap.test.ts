@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from './dungeon';
-import { LAST_WALKABLE_ROW, floorBounds, floorsOfModule, summarizeFloor, type FloorSummary } from './floor-summary';
+import { floorBounds, floorsOfModule, summarizeFloor, type FloorSummary } from './floor-summary';
+import { MAP_ROWS } from '../map/area';
 import { HEIGHT, WIDTH, render, type Dungeon, type Square } from './unfmap.js';
 
 // Both fixtures were produced by the verified generator (dotu-tools/reference/make_fixtures.mjs).
@@ -26,7 +27,7 @@ describe('bundled dungeon', () => {
 
   it.each([1, 2, 3, 4, 5])('counts every feature of every floor of module %i like the fixture', (module) => {
     const expected = fixtureSummaries.filter((summary) => summary.module === module);
-    const actual = floorsOfModule(module - 1).map((floor) => summarizeFloor(bundledDungeon, floor, module - 1));
+    const actual = floorsOfModule(module - 1).map((floor) => summarizeFloor(bundledDungeon, floor, module - 1, HEIGHT));
     expect(actual).toEqual(expected);
   });
 });
@@ -42,19 +43,30 @@ describe('summarizeFloor', () => {
         throw new Error('trapdoorDest would search for ever');
       },
     } as unknown as Dungeon;
-    const summary = summarizeFloor(solidDungeon, 7, 0);
+    const summary = summarizeFloor(solidDungeon, 7, 0, HEIGHT);
     expect(summary.open).toBe(0);
     expect(summary.trapdoorLanding).toBeUndefined();
+  });
+
+  it('counts a square on a row the game never shows only when asked for every row', () => {
+    const rows = Array.from({ length: HEIGHT }, () =>
+      Array.from({ length: WIDTH }, () => ({ n: 0, s: 0, w: 0, e: 0, solid: true, ladder: 0, chute: 0, trapdoor: -1, town: 0 }) as Square),
+    );
+    rows[3][2] = { ...rows[3][2], solid: false };
+    rows[MAP_ROWS][2] = { ...rows[MAP_ROWS][2], solid: false };
+    const dungeon = { floor: () => rows, trapdoorDest: () => [2, 3] } as unknown as Dungeon;
+    expect(summarizeFloor(dungeon, 7, 0, MAP_ROWS).open).toBe(1);
+    expect(summarizeFloor(dungeon, 7, 0, HEIGHT).open).toBe(2);
   });
 });
 
 describe('floorBounds', () => {
   it('frames the open squares of a floor', () => {
     const rows = bundledDungeon.floor(1, 0);
-    const bounds = floorBounds(rows);
+    const bounds = floorBounds(rows, MAP_ROWS);
     expect(bounds.minX).toBeGreaterThanOrEqual(0);
     expect(bounds.maxX).toBeLessThanOrEqual(79);
-    for (let y = 0; y <= LAST_WALKABLE_ROW; y++) {
+    for (let y = 0; y < MAP_ROWS; y++) {
       for (let x = 0; x < rows[y].length; x++) {
         if (!rows[y][x].solid) {
           expect(x).toBeGreaterThanOrEqual(bounds.minX);
@@ -72,6 +84,6 @@ describe('floorBounds', () => {
   it('leaves out the rows the game cannot walk into', () => {
     const rows = bundledDungeon.floor(1, 0);
     expect(rows[109].some((square) => !square.solid)).toBe(true);
-    expect(floorBounds(rows).maxY).toBe(LAST_WALKABLE_ROW);
+    expect(floorBounds(rows, MAP_ROWS).maxY).toBe(MAP_ROWS - 1);
   });
 });

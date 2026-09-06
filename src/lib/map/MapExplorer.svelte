@@ -4,6 +4,7 @@
   import { floorBounds, floorsOfModule, summarizeFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
+  import { MAP_COLUMNS, MAP_ROWS } from './area';
   import { downloadFloorPng } from './export-png';
   import { describeMonster, describeNote, describeSquare } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
@@ -50,8 +51,8 @@
   const floors = $derived(floorsOfModule(moduleIndex));
   const floorRange = $derived(anyFloor ? { lowest: FLOOR_MIN, highest: FLOOR_MAX } : { lowest: 0, highest: BOTTOM_LEVEL[moduleIndex] });
   const rows = $derived(bundledDungeon.floor(floor, moduleIndex));
-  const summary = $derived(summarizeFloor(bundledDungeon, floor, moduleIndex));
-  const bounds = $derived(floorBounds(rows));
+  const summary = $derived(summarizeFloor(bundledDungeon, floor, moduleIndex, MAP_ROWS));
+  const bounds = $derived(floorBounds(rows, MAP_ROWS));
   const lookup = $derived(dungeonLookup(bundledDungeon, moduleIndex));
   const notable = $derived(notableSquares(lookup, floor, rows));
   const section = $derived(sectionInfo(moduleIndex, floor));

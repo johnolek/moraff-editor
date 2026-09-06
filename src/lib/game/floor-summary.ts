@@ -21,7 +21,11 @@ export interface FloorSummary {
   trapdoorLanding?: [number, number];
 }
 
-export function summarizeFloor(dungeon: Dungeon, level: number, moduleIndex: number): FloorSummary {
+/**
+ * Counts the features of one floor over its first `rowCount` rows. The map counts only the
+ * rows the game itself shows; the fixture check counts every row the generator makes.
+ */
+export function summarizeFloor(dungeon: Dungeon, level: number, moduleIndex: number, rowCount: number): FloorSummary {
   const summary: FloorSummary = {
     module: moduleIndex + 1,
     floor: level,
@@ -36,7 +40,7 @@ export function summarizeFloor(dungeon: Dungeon, level: number, moduleIndex: num
     town: [0, 0, 0, 0],
     trapdoorDests: {},
   };
-  for (const row of dungeon.floor(level, moduleIndex)) {
+  for (const row of dungeon.floor(level, moduleIndex).slice(0, rowCount)) {
     for (const square of row) countSquare(summary, square);
   }
   // trapdoorDest() keeps drawing squares until it finds an open one, so asking it about a floor
@@ -62,20 +66,17 @@ function countSquare(summary: FloorSummary, square: Square): void {
   if (square.town) summary.town[square.town - 1]++;
 }
 
-/** Rows past this one have walls on both their north and south sides, so the game can never
- *  walk into them; the generator still leaves open squares there. */
-export const LAST_WALKABLE_ROW = 103;
-
-/** Inclusive bounding box of the open squares the game can walk on, or the whole floor when
- *  there are none. */
-export function floorBounds(rows: Square[][]): { minX: number; minY: number; maxX: number; maxY: number } {
+/** Inclusive bounding box of the open squares in the first `rowCount` rows, or the whole floor
+ *  when there are none. The rows below that have walls on both their north and south sides, so
+ *  the game can never walk into them, although the generator does leave open squares there. */
+export function floorBounds(rows: Square[][], rowCount: number): { minX: number; minY: number; maxX: number; maxY: number } {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
   let maxY = -Infinity;
   rows.forEach((row, y) =>
     row.forEach((square, x) => {
-      if (square.solid || y > LAST_WALKABLE_ROW) return;
+      if (square.solid || y >= rowCount) return;
       if (x < minX) minX = x;
       if (x > maxX) maxX = x;
       if (y < minY) minY = y;
