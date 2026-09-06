@@ -1,48 +1,64 @@
 <script lang="ts">
-  import SectionHeading from '../ui/SectionHeading.svelte';
+  import PixelText from '../ui/PixelText.svelte';
   import { LIST_NOTES, spellCorrection } from './mechanics';
-  import { searchSpells, spellGroups } from './spells';
+  import { allSpells, spellGroups } from './spells';
 
-  let search = $state('');
+  /** The game's own wording, from the type menu of its spell screen. */
+  const TYPE_HEADING = 'SELECT THE TYPE OF SPELL:';
 
-  const lists = $derived(spellGroups(searchSpells(search)));
+  const lists = spellGroups(allSpells());
+
+  let listIndex = $state(0);
+
+  const list = $derived(lists[listIndex]);
+
+  function typeLabel(label: string, index: number): string {
+    return `${index + 1}) ${label.toUpperCase()} SPELLS`;
+  }
 </script>
 
 <div class="reference">
-  <header>
-    <input type="search" placeholder="Search spells" bind:value={search} />
-  </header>
   <div class="scroll">
-    {#each lists as list}
-      <section>
-        <SectionHeading title={list.label} />
-        {#if LIST_NOTES[list.label]}
-          <p class="list-note">{LIST_NOTES[list.label]}</p>
-        {/if}
-        {#each list.levels as level}
-          <h3>{level.label}</h3>
-          <ul>
-            {#each level.spells as spell}
-              {@const correction = spellCorrection(spell)}
-              <li>
-                <p class="name">{spell.name} <span class="cost">SP cost: {spell.spCost}</span></p>
-                <dl>
-                  <dt>In the game</dt>
-                  <dd class="quote">{spell.description}</dd>
-                  {#if correction}
-                    <dt>What it really does</dt>
-                    <dd>{correction}</dd>
-                  {/if}
-                </dl>
-              </li>
-            {/each}
-          </ul>
+    <div class="types">
+      <p class="type-heading"><PixelText font="small" scale={3} text={TYPE_HEADING} /></p>
+      <div class="type-items">
+        {#each lists as entry, index}
+          <button
+            type="button"
+            class="type-item"
+            class:current={index === listIndex}
+            aria-pressed={index === listIndex}
+            onclick={() => (listIndex = index)}
+          >
+            <PixelText font="small" scale={3} text={typeLabel(entry.label, index)} colour={index === listIndex ? '#000' : undefined} />
+          </button>
         {/each}
-      </section>
-    {/each}
-    {#if lists.length === 0}
-      <p class="empty">No spells match.</p>
+      </div>
+    </div>
+
+    {#if LIST_NOTES[list.label]}
+      <p class="list-note">{LIST_NOTES[list.label]}</p>
     {/if}
+
+    {#each list.levels as level}
+      <h3>{level.label}</h3>
+      <ul>
+        {#each level.spells as spell}
+          {@const correction = spellCorrection(spell)}
+          <li>
+            <p class="name">{spell.name} <span class="cost">SP cost: {spell.spCost}</span></p>
+            <dl>
+              <dt>In the game</dt>
+              <dd class="quote">{spell.description}</dd>
+              {#if correction}
+                <dt>What it really does</dt>
+                <dd>{correction}</dd>
+              {/if}
+            </dl>
+          </li>
+        {/each}
+      </ul>
+    {/each}
   </div>
 </div>
 
@@ -53,40 +69,51 @@
     min-width: 0;
     flex-direction: column;
   }
-  header {
-    padding: 16px 24px;
-    border-bottom: 1px solid var(--line);
-    background: var(--panel);
-  }
-  input {
-    width: 300px;
-    max-width: 100%;
-    background: var(--panel-2);
-    color: var(--ink);
-    border: 1px solid var(--line);
-    border-radius: 5px;
-    padding: 7px 9px;
-    font: inherit;
-    font-size: 13px;
-  }
   .scroll {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     padding: 20px 24px 40px;
   }
-  section {
-    margin-bottom: 28px;
+  /* The game draws its type menu on a grey panel; #404040 is the grey it uses. */
+  .types {
+    padding: 14px 16px 16px;
+    border-radius: 6px;
+    background: #404040;
+  }
+  .type-heading {
+    margin: 0 0 12px;
+    line-height: 0;
+    color: var(--mw-green);
+  }
+  .type-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+  }
+  .type-item {
+    padding: 4px 6px;
+    border: none;
+    border-radius: 3px;
+    background: none;
+    line-height: 0;
+    color: var(--mw-red);
+    cursor: pointer;
+  }
+  /* A DOS menu marks the item you are on by swapping its colours over. */
+  .type-item.current {
+    background: var(--mw-red);
+  }
+  .type-item:focus-visible {
+    outline: 2px solid var(--accent);
   }
   .list-note {
-    margin: 0 0 18px;
+    margin: 18px 0;
     max-width: 88ch;
     font-size: 13px;
     color: var(--muted);
   }
   h3 {
-    position: sticky;
-    top: 0;
     margin: 16px 0 6px;
     padding: 4px 0;
     background: var(--bg);
@@ -136,10 +163,5 @@
   }
   .quote {
     color: var(--mw-cyan);
-  }
-  .empty {
-    margin: 0;
-    font-size: 13px;
-    color: var(--muted);
   }
 </style>

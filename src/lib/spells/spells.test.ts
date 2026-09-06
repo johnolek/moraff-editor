@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { allSpells, gridKey, searchSpells, spellGroups } from './spells';
+import { allSpells, gridKey, spellGroups } from './spells';
 
 describe('spellGroups', () => {
   it('gives each list ten lines of three spells', () => {
@@ -22,22 +22,6 @@ describe('spellGroups', () => {
         });
       });
     }
-  });
-
-  it('leaves out the lists and lines nothing matched', () => {
-    const lists = spellGroups(searchSpells('autokill'));
-    expect(lists.map((list) => list.label)).toEqual(['Wizard battle', 'Priest battle']);
-    expect(lists[0].levels.map((level) => level.label)).toEqual(['Level 10']);
-  });
-});
-
-describe('searchSpells', () => {
-  it('matches part of a name whatever the case', () => {
-    expect(searchSpells('  BiG cUrE ').map((spell) => spell.name)).toEqual(['Big Cure', 'Fast Big Cure']);
-  });
-
-  it('gives every spell for an empty search', () => {
-    expect(searchSpells('   ').length).toBe(120);
   });
 });
 

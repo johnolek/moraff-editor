@@ -18,12 +18,6 @@ export function allSpells(): Spell[] {
   return data.spells;
 }
 
-export function searchSpells(query: string): Spell[] {
-  const wanted = query.trim().toLowerCase();
-  if (!wanted) return allSpells();
-  return allSpells().filter((spell) => spell.name.toLowerCase().includes(wanted));
-}
-
 /** The spells grouped the way the books are: by list, then by the line they sit on. */
 export function spellGroups(spells: Spell[]): SpellList[] {
   const lists: SpellList[] = [];
