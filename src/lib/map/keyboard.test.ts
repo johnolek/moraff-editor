@@ -2,11 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { keyAction } from './keyboard';
 
 describe('keyAction', () => {
-  it('moves the cursor with the arrows', () => {
-    expect(keyAction('ArrowUp')).toEqual({ kind: 'move', dx: 0, dy: -1 });
-    expect(keyAction('ArrowDown')).toEqual({ kind: 'move', dx: 0, dy: 1 });
-    expect(keyAction('ArrowLeft')).toEqual({ kind: 'move', dx: -1, dy: 0 });
-    expect(keyAction('ArrowRight')).toEqual({ kind: 'move', dx: 1, dy: 0 });
+  it('walks with the arrows', () => {
+    expect(keyAction('ArrowUp')).toEqual({ kind: 'walk', dx: 0, dy: -1 });
+    expect(keyAction('ArrowDown')).toEqual({ kind: 'walk', dx: 0, dy: 1 });
+    expect(keyAction('ArrowLeft')).toEqual({ kind: 'walk', dx: -1, dy: 0 });
+    expect(keyAction('ArrowRight')).toEqual({ kind: 'walk', dx: 1, dy: 0 });
+  });
+
+  it('climbs with U and D, shifted or not, the keys the game uses', () => {
+    expect(keyAction('u')).toEqual({ kind: 'climb', direction: 'up' });
+    expect(keyAction('U')).toEqual({ kind: 'climb', direction: 'up' });
+    expect(keyAction('d')).toEqual({ kind: 'climb', direction: 'down' });
+    expect(keyAction('D')).toEqual({ kind: 'climb', direction: 'down' });
   });
 
   it('changes floor with PgUp/PgDn, PgDn going deeper', () => {
@@ -14,15 +21,15 @@ describe('keyAction', () => {
     expect(keyAction('PageDown')).toEqual({ kind: 'floor', delta: 1 });
   });
 
-  it('follows with Enter and zooms with plus and minus, shifted or not', () => {
-    expect(keyAction('Enter')).toEqual({ kind: 'follow' });
+  it('zooms with plus and minus, shifted or not', () => {
     expect(keyAction('+')).toEqual({ kind: 'zoom', direction: 1 });
     expect(keyAction('=')).toEqual({ kind: 'zoom', direction: 1 });
     expect(keyAction('-')).toEqual({ kind: 'zoom', direction: -1 });
     expect(keyAction('_')).toEqual({ kind: 'zoom', direction: -1 });
   });
 
-  it('ignores everything else', () => {
+  it('ignores everything else, Enter included', () => {
+    expect(keyAction('Enter')).toBeNull();
     expect(keyAction('a')).toBeNull();
     expect(keyAction('Escape')).toBeNull();
   });

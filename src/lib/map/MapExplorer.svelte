@@ -9,7 +9,7 @@
   import { describeMonster, describeNote, describeSquare, featureLine } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
-  import { jumpTarget, squareFeature, teleporterTargets } from './floor-info';
+  import { jumpTarget, squareFeature, teleporterTargets, type Destination } from './floor-info';
   import { FLOOR_MAX, FLOOR_MIN, HistoryCursor, isMapHistoryState, type MapHistoryState, type MapPlace } from './history';
   import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
@@ -24,7 +24,7 @@
   import { teleporterSegments } from './teleporters';
   import { monsterAt, stockFloor, stockingSection, type StockedMonster } from './stocking';
   import { boundsIncluding, type Point } from './viewport';
-  import { nearestOpenSquare } from './you';
+  import { nearestOpenSquare, stepFrom } from './you';
 
   let moduleIndex = $state(0);
   let floor = $state(0);
@@ -183,10 +183,13 @@
 
   /** Moving yourself by hand also rewrites the current history entry, so Back and Forward
    *  bring you back to this spot rather than to wherever the last travel left you. */
-  function imHere() {
-    if (!selected) return;
-    you = selected;
+  function standAt(square: Point) {
+    you = square;
     history.replaceState(entry(historyCursor.current, { module: moduleIndex, floor, square: highlight, you }), '');
+  }
+
+  function imHere() {
+    if (selected) standAt(selected);
   }
 
   function pick(square: Point) {
@@ -240,13 +243,32 @@
     if (level !== floor) showFloor(level);
   }
 
-  function moveCursor(dx: number, dy: number) {
-    const from = cursor ?? { x: MAP_COLUMNS >> 1, y: MAP_ROWS >> 1 };
-    cursor = {
-      x: Math.max(0, Math.min(MAP_COLUMNS - 1, from.x + dx)),
-      y: Math.max(0, Math.min(MAP_ROWS - 1, from.y + dy)),
-    };
-    floorCanvas.reveal(cursor);
+  /** An arrow key walks you one square. With nobody on the floor yet, the first press puts you
+   *  down beside the cursor instead of moving. */
+  function walk(dx: number, dy: number) {
+    if (!you) {
+      const start = nearestOpenSquare(rows, cursor ?? { x: MAP_COLUMNS >> 1, y: MAP_ROWS >> 1 });
+      if (start) arriveAt(start);
+      return;
+    }
+    const next = stepFrom(rows, you, dx, dy);
+    if (next) arriveAt(next);
+  }
+
+  function arriveAt(square: Point) {
+    standAt(square);
+    pick(square);
+  }
+
+  /** U and D take the ladder, chute or trap door you are standing on, in the direction the key
+   *  names: a chute and a trap door only ever go down. */
+  function climb(direction: 'up' | 'down') {
+    const from = you ?? cursor;
+    if (!from) return;
+    const target = jumpTarget(bundledDungeon, moduleIndex, floor, rows[from.y][from.x], from.x, from.y);
+    if (!target) return;
+    if (direction === 'up' ? target.floor >= floor : target.floor <= floor) return;
+    jumpTo(target, from);
   }
 
   function onKeydown(event: KeyboardEvent) {
@@ -256,14 +278,14 @@
     if (!action) return;
     event.preventDefault();
     switch (action.kind) {
-      case 'move':
-        moveCursor(action.dx, action.dy);
+      case 'walk':
+        walk(action.dx, action.dy);
+        break;
+      case 'climb':
+        climb(action.direction);
         break;
       case 'floor':
         stepFloor(action.delta);
-        break;
-      case 'follow':
-        if (cursor) follow(cursor);
         break;
       case 'zoom':
         action.direction > 0 ? floorCanvas.zoomIn() : floorCanvas.zoomOut();
@@ -284,8 +306,13 @@
       }
       return;
     }
+    jumpTo(target, square);
+  }
+
+  /** Going where a ladder, chute or trap door leads puts you on the landing square. */
+  function jumpTo(target: Destination, from: Point) {
     const landing = { x: target.x, y: target.y };
-    travel({ module: moduleIndex, floor: target.floor, square: landing, you: landing }, square);
+    travel({ module: moduleIndex, floor: target.floor, square: landing, you: landing }, from);
   }
 </script>
 

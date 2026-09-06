@@ -1,26 +1,30 @@
 export type KeyAction =
-  | { kind: 'move'; dx: number; dy: number }
+  | { kind: 'walk'; dx: number; dy: number }
+  | { kind: 'climb'; direction: 'up' | 'down' }
   | { kind: 'floor'; delta: number }
-  | { kind: 'follow' }
   | { kind: 'zoom'; direction: 1 | -1 };
 
 /** What a key press does on the map; null for keys the map ignores. */
 export function keyAction(key: string): KeyAction | null {
   switch (key) {
     case 'ArrowUp':
-      return { kind: 'move', dx: 0, dy: -1 };
+      return { kind: 'walk', dx: 0, dy: -1 };
     case 'ArrowDown':
-      return { kind: 'move', dx: 0, dy: 1 };
+      return { kind: 'walk', dx: 0, dy: 1 };
     case 'ArrowLeft':
-      return { kind: 'move', dx: -1, dy: 0 };
+      return { kind: 'walk', dx: -1, dy: 0 };
     case 'ArrowRight':
-      return { kind: 'move', dx: 1, dy: 0 };
+      return { kind: 'walk', dx: 1, dy: 0 };
+    case 'u':
+    case 'U':
+      return { kind: 'climb', direction: 'up' };
+    case 'd':
+    case 'D':
+      return { kind: 'climb', direction: 'down' };
     case 'PageUp':
       return { kind: 'floor', delta: -1 };
     case 'PageDown':
       return { kind: 'floor', delta: 1 };
-    case 'Enter':
-      return { kind: 'follow' };
     case '+':
     case '=':
       return { kind: 'zoom', direction: 1 };
