@@ -97,6 +97,30 @@ export interface MonsterKind {
   type: number;
 }
 
+/**
+ * What the three menus of `write_scroll_or_wand` (exe 3000:d384) come back with: a type, a
+ * level and a place on that line. The scroll and wand arrays are indexed
+ * `type * 45 + level * 3 + slot`.
+ */
+export interface SpellChoice {
+  /** 1 preparation, 2 wizard, 3 priest: the digit the first menu takes. */
+  type: number;
+  /** 0..9: the level menu's digit less one, so 0 is a level 1 spell and 9 a level 10 one. */
+  level: number;
+  /** 0..2: the place on that line, the third menu's 1..3 less one. */
+  slot: number;
+}
+
+/**
+ * Something the original does after a spell that this port records instead of doing. See the
+ * README's second departure.
+ */
+export type GameEvent =
+  /** load_level_map (exe 2000:7687) reads in another floor's monsters. */
+  | { kind: 'levelChanged'; from: number; to: number }
+  /** give_hint (exe 2000:313a) prints one of the hints in `UH.BIN`. */
+  | { kind: 'hintShown'; hint: number };
+
 /** The two columns of the type table `mstats` (exe DS:5402) that the battle spells read. */
 export interface MonsterStats {
   /** Hit points per level; Drain Monster takes half of it for each point of wisdom. */
@@ -145,6 +169,8 @@ export interface Game {
   monsterStatusLine: string;
   /** Every line the game has printed, oldest first. */
   messages: string[];
+  /** Every side effect the port declined to carry out, oldest first. */
+  events: GameEvent[];
   rng: Rng;
   /**
    * solidcheck (exe 3000:86b5, unf.c "solidcheck"): whether the square is rock, meaning all
@@ -157,6 +183,21 @@ export interface Game {
    * game, and {@link newGame} cancels by default.
    */
   chooseDirection(): number;
+  /**
+   * mset_gmenu (exe 2000:2b08) reading the eight-line weapon menu enchant_weapon_perm prints:
+   * 1 to 8 for a line of the menu, or null for the -1 it hands back on Escape. {@link newGame}
+   * escapes by default.
+   */
+  chooseWeapon(): number | null;
+  /** The same menu of the eight armors, for enchant_armor_perm. */
+  chooseArmor(): number | null;
+  /**
+   * The three menus write_scroll_or_wand prints — the kind of spell, its level, and which of the
+   * three spells on that line — as one answer, or null for the Escape that leaves the first of
+   * them. `maxLevel` is the deepest level the spell being cast will write, which is all the
+   * level menu does with it. {@link newGame} escapes by default.
+   */
+  chooseSpell(maxLevel: number): SpellChoice | null;
   /**
    * print_menu_only (exe 2000:309e): show a screen of up to eight lines and wait for a key.
    * The game fills the slots it does not use with the empty string at DS:258b; those trailing
@@ -232,6 +273,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
   const messages = overrides.messages ?? [];
   return {
     pc: { ...DEFAULT_PC, ...pcOverrides },
+    events: [],
     monsters: emptySlots(),
     monsterKinds: [...data.builtinMonsters, ...data.sections[0].monsters],
     monsterStats: data.monsterTypes,
@@ -247,6 +289,9 @@ export function newGame(overrides: GameOverrides = {}): Game {
     rng: new BorlandRng(1),
     solid: () => false,
     chooseDirection: () => 5,
+    chooseWeapon: () => null,
+    chooseArmor: () => null,
+    chooseSpell: () => null,
     ...rest,
     messages,
     say(...lines: string[]): void {

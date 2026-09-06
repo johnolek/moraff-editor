@@ -8,7 +8,7 @@ names the reverse engineering worked out. `dotu-tools/docs/UNFORGIVEN-RE-NOTES.m
 This is not a reimplementation and not a tidy-up. Every function here does what the 1993 code
 does, including the parts that look like accidents.
 
-## The one deliberate departure
+## The two deliberate departures
 
 The original keeps the whole game in globals in its data segment: `spell_effect` reads the
 player's wisdom straight out of `DAT_6000_c09a` and writes the monster's hit points through a
@@ -17,8 +17,21 @@ same state as named fields, and reads and writes that. Nothing else changes: the
 read, in the same order, and written with the same values.
 
 Input is the other thing a `Game` carries: the original stops and reads the keyboard in the
-middle of a spell, and Pass Wall's direction menu is the one place in this slice where that
-happens, so `game.chooseDirection()` answers it.
+middle of a spell, so the menus a spell puts up are questions the `Game` answers —
+`chooseDirection` for Pass Wall, `chooseWeapon` and `chooseArmor` for the two permanent
+enchantments, and `chooseSpell` for the three menus Write Scroll and Enchant Wand walk through.
+Each is shaped after what the original's menu code reads back, down to the numbering, and each
+one `newGame` supplies cancels the spell.
+
+**The other departure is that a spell here stops at the character record.** Ascend, Descend
+and the three like them change the floor the character is on and drop them somewhere open on
+it; the original then reloads the game around them, and this port does not. Where the original
+calls `load_level_map` (exe 2000:7687) to read in the new floor's monsters, and `give_hint`
+(exe 2000:313a) with `mgetch_message` (exe 4000:418d) to show Youth's hint out of `UH.BIN`, the
+port appends to `game.events` and carries on. The character record ends up holding exactly what
+the original leaves in it; what is missing is the world around it, which nothing in this slice
+reads. The rest of moving between floors — writing the explored map out, redrawing the screen —
+happens above `spell_effect`, in the caller, and is not part of this port either way.
 
 The character record's fields are named the way `src/lib/game/dotu-files.js` already names those
 save offsets, so `pc.lev` is the character's level and `pc.level` is the floor, exactly as the
