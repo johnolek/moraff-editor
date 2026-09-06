@@ -181,7 +181,87 @@ const WAYS_DOWN: Topic = {
   ],
 };
 
-export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN];
+const MONSTERS: Topic = {
+  id: 'monsters',
+  title: 'Sections and monsters',
+  formulas: [
+    {
+      id: 'sections',
+      title: 'Which section a floor belongs to',
+      explanation:
+        'The twenty sections of the game are four to a module, and a section is simply a band of floors: five floors thick in Module I, ten in Module II, and so on up to twenty-five in Module V, with the module\'s last section swallowing everything below its band. Floors 1 to 5 of Module I are section 1, floors 16 to 25 are all section 4; in Module V section 20 runs from floor 76 to the bottom at 105. The section decides which five monsters the game loads, which Shadow boss guards it and which reward beating that boss pays, and its boss waits on the last floor of its band.',
+      inputs: 'The floor and the module.',
+      origin: 'exe section_number3 2000:1ccc, section_number3 in dotu-tools/decomp/unf.c. Handoff section 4.',
+      code: { file: 'src/lib/game/dotu-files.js', name: 'sectionOf' },
+    },
+    {
+      id: 'monster-level-base',
+      title: 'The level a floor stocks at',
+      explanation:
+        'Every monster on a floor starts from one number: the floor plus fifteen for each module below the one you are in. Floor 10 of Module I stocks level 10 monsters, floor 30 of Module II stocks level 45, and floor 1 of Module V stocks level 61, which is why the deeper modules are brutal from their first step. The one special case, a base of 221 or more falling back to level 1, cannot be reached by any module: Module V bottoms out at 165.',
+      inputs: 'The floor and the module.',
+      origin: 'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1 and FAQ [MGEN].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'monsterLevelBase' },
+    },
+    {
+      id: 'monster-level-nudge',
+      title: 'The nudge on a monster\'s level',
+      explanation:
+        'The floor\'s level is not what gets stored. For each monster the game keeps tossing a one-in-three chance, and every time it comes up the level shifts by minus one, nothing or plus one. Two thirds of monsters therefore stand exactly at the floor\'s level and the rest tail away either side, so a level 45 floor is mostly level 45 with a scattering from about 41 to 49. Whatever comes out is held between 1 and 210.',
+      inputs: 'The floor\'s base level, and the rolls.',
+      origin: 'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1 and FAQ [MGEN].',
+      code: { file: 'src/lib/bestiary/roll.ts', name: 'nudgeLevel' },
+    },
+    {
+      id: 'monster-hp',
+      title: 'A monster\'s hit points',
+      explanation:
+        'Hit points are the average of two rolls, each between zero and the monster type\'s hit points per level times the monster\'s level. Averaging two rolls rather than taking one is why monsters cluster around the middle of their range instead of spreading evenly: an average joe, worth ten hit points a level, comes to about 226 at level 45, but can be anything from 1 to 451. The type\'s hit points per level is the whole difference between a fragile thing and a wall, running from 2 for a puffball to 50 for a Shadow boss.',
+      inputs: 'The monster type\'s hit points per level, the level it was stocked at, and the two rolls.',
+      origin: 'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1 and FAQ [MGEN].',
+      code: { file: 'src/lib/bestiary/roll.ts', name: 'rollHp' },
+    },
+    {
+      id: 'boss-hp',
+      title: 'Why a Shadow boss takes so long',
+      explanation:
+        'A Shadow boss rolls its hit points like anything else and then adds twenty for each of its levels, and in the last three sections the whole total is doubled afterwards. The Shadow boss on floor 50 of Module V is stocked at level 110, which means it rolls about 2,750 hit points, takes 2,200 more for its levels, and then has the whole total doubled because its section is one of the last three: it arrives with close to 9,900 where the same rolls without the bonus would have given 2,750. Nothing in the game can hold more than 32,000.',
+      inputs: 'The rolled hit points, the boss\'s level, and the section it guards.',
+      origin: 'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1 and TIDBITS, "Monsters".',
+      code: { file: 'src/lib/bestiary/roll.ts', name: 'stockedHp' },
+    },
+    {
+      id: 'monster-kind',
+      title: 'Which monster turns up',
+      explanation:
+        'Every slot on a floor gets its own creature by a chain of questions, each asked only if the last one said no. One in twenty is a puffball, of which there are twelve; failing that one in seven is a giant garbage can or a giant ball; failing that one in fifteen is the section\'s level drainer; failing that one in twelve is one of the eight poison or disease things; and everything left over is one of the section\'s three ordinary monsters. Only two of the five branches depend on which section you are in, which is why cans, balls and puffballs follow you all the way to Module V.',
+      inputs: 'The section, and the rolls.',
+      origin: 'exe get_mtype 2000:65f8, get_mtype in dotu-tools/decomp/unf.c. RE notes 4.1 and FAQ [MGEN].',
+      code: { file: 'src/lib/map/stocking.ts', name: 'rollKind' },
+    },
+    {
+      id: 'monster-kind-odds',
+      title: 'How often each kind turns up',
+      explanation:
+        'Multiplying the chain of questions out gives what a floor actually holds: about seven in ten monsters are one of the section\'s three regulars, a touch under one in seven is a can or a ball, one in twenty is a puffball, one in sixteen is poison or disease, and one in eighteen is the section\'s level drainer. Spread over the twelve puffballs and eight poison and disease creatures, any single one of those is rare, which is why the Monsters tab shows the built-in creatures with much smaller shares than the section monsters.',
+      inputs: 'Nothing. The chances are the same on every floor of the game.',
+      origin: 'exe get_mtype 2000:65f8, get_mtype in dotu-tools/decomp/unf.c. FAQ [MGEN] and [GTPS].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'MONSTER_TYPE_ODDS' },
+    },
+    {
+      id: 'stocking',
+      title: 'The 145 monsters on a floor',
+      explanation:
+        'A floor is stocked with exactly 145 monsters, each dropped on a random open square that nothing else is standing on, each given its own kind, level and hit points. On the last floor of a section the very first slot is the Shadow boss instead, placed somewhere in the middle fifty squares of each direction, and once you have beaten it the game stops placing it. The game only remembers three floors of monsters at a time, so a floor you come back to later is stocked fresh; and because the original reseeds its generator for every square it draws, its monsters land in diagonal stripes, which this app does not imitate.',
+      inputs: 'The floor\'s open squares, its section and its base level, and the rolls.',
+      origin:
+        'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1; the stripes are in TIDBITS, "Random numbers that are not random".',
+      code: { file: 'src/lib/map/stocking.ts', name: 'stockFloor' },
+    },
+  ],
+};
+
+export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS];
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
