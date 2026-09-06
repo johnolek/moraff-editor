@@ -5,7 +5,8 @@ import { TELEPORTER_STILL_HUE } from './teleporters';
 export const EXPORT_CELL = 10;
 
 export function floorPngName(moduleIndex: number, floor: number): string {
-  return `dotu-module-${moduleIndex + 1}-${floor === 0 ? 'town' : `floor-${floor}`}.png`;
+  const level = floor < 0 ? `floor-minus-${-floor}` : `floor-${floor}`;
+  return `dotu-module-${moduleIndex + 1}-${floor === 0 ? 'town' : level}.png`;
 }
 
 /** The whole floor at EXPORT_CELL pixels per square, as a PNG blob. */
