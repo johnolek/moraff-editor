@@ -113,37 +113,31 @@ export function explosion(game: Game, kind: number): boolean {
 }
 
 /**
- * sleep_monster (exe 3000:d904, unf.c "sleep_monster"): Sleep, in both battle lists.
- *
- * Ported from the RE notes: the decompilation of 3000:d904 failed (MORF-58). The notes and the
- * function catalog give the roll and the 25 moves it lasts, and the catalog's caller lists say
- * the function prints the "no monster" and "already in effect" refusals. Sleep is the one spell
- * aimed at a monster that never asks boss_immune_check, so it works on a Shadow boss.
- *
- * It also calls print_menu_only itself, and the two strings that sit between explosion's text and
- * boss_immune_check's are DS:392b "MONSTER IS SLEEPING" and DS:393f "THE SPELL FAILS.". Which
- * roll prints which is not in the decompilation; the order they sit in is why the landed roll
- * gets the first and the missed roll the second.
+ * sleep_monster (exe 3000:d904, unf.c "sleep_monster"): Sleep, in both battle lists. It is the
+ * one spell aimed at a monster that never asks boss_immune_check, so it works on a Shadow boss.
+ * Both halves of the roll report success; only what they print differs.
  */
 export function sleepMonster(game: Game): boolean {
   if (game.engaged === -1) {
     msgNoMonster(game);
     return false;
   }
-  if (game.pc.sleepTimer !== 0) {
+  // The original compares the sleep timer to 1 rather than to 0, so this refusal only fires on
+  // the last move of an existing sleep; any earlier and the spell recasts and prints again.
+  if (game.pc.sleepTimer === 1) {
     msgAlreadyInEffect(game);
     return false;
   }
-  // What a missed roll returns is not recoverable; autokill, the other roll of this shape,
-  // reports success whether it lands or not.
+  // The decompilation shows the rand() call with no argument at all. The monster's level is what
+  // the reverse engineering notes and the function catalog record as the argument.
   if (game.rng.random(game.monsters[game.engaged].level) < 3) {
     game.pc.sleepTimer = 25;
-    // DS:392b
-    game.say('MONSTER IS SLEEPING');
-    return true;
+    // DS:392b, into the monster status line rather than onto the message line
+    game.monsterStatusLine = 'MONSTER IS SLEEPING';
+  } else {
+    // DS:393f 258b 2d43
+    game.say('THE SPELL FAILS.', '', 'HIT ANY KEY');
   }
-  // DS:393f
-  game.say('THE SPELL FAILS.');
   return true;
 }
 

@@ -75,5 +75,3 @@ those replace every character that is not a letter or a digit with an underscore
 * The permanent (type 0) and preparation (type 1) spell lists. `spellEffect` throws for those.
 * Everything else: movement, combat, the town, the dungeon (the dungeon generator is already
   ported, verbatim from the reference bundle, in `src/lib/game/unfmap.js`).
-* `sleep_monster` is ported from the reverse-engineering notes rather than from code, because
-  Ghidra failed to decompile it. MORF-58 tracks re-decompiling it.

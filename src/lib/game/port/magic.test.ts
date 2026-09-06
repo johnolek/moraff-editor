@@ -122,14 +122,21 @@ describe('explosion', () => {
 });
 
 describe('sleepMonster', () => {
-  it('refuses when nothing is engaged, and when the monster is already asleep', () => {
+  it('refuses when nothing is engaged', () => {
     const game = newGame();
     expect(sleepMonster(game)).toBe(false);
+  });
 
-    const asleep = fighting().game;
-    asleep.pc.sleepTimer = 25;
-    expect(sleepMonster(asleep)).toBe(false);
-    expect(asleep.messages).toContain('CASTING THIS SPELL WOULD');
+  it('only refuses an already asleep monster on the last move of its sleep', () => {
+    const lastMove = fighting().game;
+    lastMove.pc.sleepTimer = 1;
+    expect(sleepMonster(lastMove)).toBe(false);
+    expect(lastMove.messages).toContain('CASTING THIS SPELL WOULD');
+
+    const stillAsleep = fighting().game;
+    stillAsleep.pc.sleepTimer = 24;
+    expect(sleepMonster(stillAsleep)).toBe(true);
+    expect(stillAsleep.messages).not.toContain('CASTING THIS SPELL WOULD');
   });
 
   it('sleeps a level 40 monster about as often as the notes say, for 25 moves', () => {
@@ -157,18 +164,23 @@ describe('sleepMonster', () => {
     const { game } = fighting(5, { type: BOSS, level: 1 });
     expect(sleepMonster(game)).toBe(true);
     expect(game.pc.sleepTimer).toBe(25);
-    expect(game.messages).toEqual(['MONSTER IS SLEEPING']);
+    expect(game.monsterStatusLine).toBe('MONSTER IS SLEEPING');
   });
 
-  it('says which way the roll went', () => {
+  it('writes the monster status line when it lands and prints when it misses', () => {
     const { game } = fighting(99, { level: 40 });
     for (let i = 0; i < 100; i++) {
       game.pc.sleepTimer = 0;
+      game.monsterStatusLine = '';
       game.messages.length = 0;
-      sleepMonster(game);
-      expect(game.messages).toEqual(
-        game.pc.sleepTimer === 25 ? ['MONSTER IS SLEEPING'] : ['THE SPELL FAILS.'],
-      );
+      expect(sleepMonster(game)).toBe(true);
+      if (game.pc.sleepTimer === 25) {
+        expect(game.monsterStatusLine).toBe('MONSTER IS SLEEPING');
+        expect(game.messages).toEqual([]);
+      } else {
+        expect(game.monsterStatusLine).toBe('');
+        expect(game.messages).toEqual(['THE SPELL FAILS.', '', 'HIT ANY KEY']);
+      }
     }
   });
 });
