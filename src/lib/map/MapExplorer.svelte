@@ -3,7 +3,7 @@
   import { bundledDungeon } from '../game/dungeon';
   import { floorBounds, floorsOfModule, summarizeFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
-  import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
+  import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import { MAP_COLUMNS, MAP_ROWS } from './area';
   import { downloadFloorPng } from './export-png';
   import { describeMonster, describeNote, describeSquare } from './describe';
@@ -237,10 +237,10 @@
   }
 
   function moveCursor(dx: number, dy: number) {
-    const from = cursor ?? { x: WIDTH >> 1, y: HEIGHT >> 1 };
+    const from = cursor ?? { x: MAP_COLUMNS >> 1, y: MAP_ROWS >> 1 };
     cursor = {
-      x: Math.max(0, Math.min(WIDTH - 1, from.x + dx)),
-      y: Math.max(0, Math.min(HEIGHT - 1, from.y + dy)),
+      x: Math.max(0, Math.min(MAP_COLUMNS - 1, from.x + dx)),
+      y: Math.max(0, Math.min(MAP_ROWS - 1, from.y + dy)),
     };
     floorCanvas.reveal(cursor);
   }

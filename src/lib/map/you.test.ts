@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Square } from '../game/unfmap.js';
+import { MAP_COLUMNS, MAP_ROWS } from './area';
 import { nearestOpenSquare, youAlpha } from './you';
 
 /** A floor from a picture: '#' is rock, '.' is an open square. */
@@ -28,6 +29,13 @@ describe('nearestOpenSquare', () => {
 
   it('finds nowhere to stand on a floor of solid rock', () => {
     expect(nearestOpenSquare(floorOf(['##', '##']), { x: 0, y: 0 })).toBeNull();
+  });
+
+  it('ignores the open squares outside the area the game shows', () => {
+    const picture = Array.from({ length: MAP_ROWS + 2 }, () => '#'.repeat(MAP_COLUMNS + 1));
+    picture[MAP_ROWS] = `.${'#'.repeat(MAP_COLUMNS)}`;
+    picture[0] = `${'#'.repeat(MAP_COLUMNS)}.`;
+    expect(nearestOpenSquare(floorOf(picture), { x: 0, y: 0 })).toBeNull();
   });
 });
 

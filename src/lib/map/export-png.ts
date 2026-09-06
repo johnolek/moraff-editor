@@ -1,4 +1,5 @@
-import { HEIGHT, WIDTH, type Square } from '../game/unfmap.js';
+import type { Square } from '../game/unfmap.js';
+import { MAP_COLUMNS, MAP_ROWS } from './area';
 import { drawFloor } from './draw-floor';
 import { TELEPORTER_STILL_HUE } from './teleporters';
 
@@ -9,10 +10,10 @@ export function floorPngName(moduleIndex: number, floor: number): string {
   return `dotu-module-${moduleIndex + 1}-${floor === 0 ? 'town' : level}.png`;
 }
 
-/** The whole floor at EXPORT_CELL pixels per square, as a PNG blob. */
+/** The floor as the game's own map shows it, at EXPORT_CELL pixels per square, as a PNG blob. */
 export function renderFloorPng(rows: Square[][], floor: number): Promise<Blob> {
-  const width = WIDTH * EXPORT_CELL + 2;
-  const height = HEIGHT * EXPORT_CELL + 2;
+  const width = MAP_COLUMNS * EXPORT_CELL + 2;
+  const height = MAP_ROWS * EXPORT_CELL + 2;
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;

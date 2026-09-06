@@ -1,3 +1,4 @@
+import { MAP_COLUMNS, MAP_ROWS } from './area';
 import { squareRect } from './draw-floor';
 import { palette } from './palette';
 import type { StockedMonster } from './stocking';
@@ -13,7 +14,7 @@ export interface MonsterSprites {
   picture(monsterId: string): HTMLCanvasElement;
 }
 
-/** The monsters stocked on the floor, over the squares they stand on. */
+/** The monsters stocked on the floor that the map shows, over the squares they stand on. */
 export function drawMonsters(
   ctx: CanvasRenderingContext2D,
   monsters: StockedMonster[],
@@ -21,6 +22,9 @@ export function drawMonsters(
   sprites: MonsterSprites,
 ): void {
   for (const monster of monsters) {
+    // The game stocks monsters over a wider grid than its map shows, and nothing can reach the
+    // ones that land outside it.
+    if (monster.x >= MAP_COLUMNS || monster.y >= MAP_ROWS) continue;
     const { x0, y0, w, h } = squareRect(view, monster.x, monster.y);
     if (view.cell < PICTURE_MIN_CELL) {
       drawMarker(ctx, x0 + 1 + w / 2, y0 + 1 + h / 2, Math.max(2, view.cell / 4), sprites.isBoss(monster.monsterId));
