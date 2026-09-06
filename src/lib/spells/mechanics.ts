@@ -1,7 +1,5 @@
 import type { Spell } from './spells';
 
-export const NOT_DOCUMENTED = 'Not documented in the disassembly notes.';
-
 /** The key a spell has in the table: names repeat between the four lists. */
 export function spellKey(spell: Spell): string {
   return `${spell.typeName}/${spell.name}`;
@@ -126,7 +124,8 @@ export const SPELL_MECHANICS: Record<string, string> = {
   'Wizard battle/Shock': '125 damage.',
   'Wizard battle/Anti-Cold': 'Halves the damage of cold breath for 60 moves.',
   'Wizard battle/Explosion': '125 + rand(101) damage, so 125 to 225.',
-  'Wizard battle/Pass Wall': NOT_DOCUMENTED,
+  'Wizard battle/Pass Wall':
+    'Moves you 2 to 19 squares in the direction you pick, to the first square that far away that is inside the map, not rock and has no monster on it, through whatever walls lie between. If no square within 19 qualifies nothing happens and the spell points are spent.',
   'Wizard battle/Anti-Fire': 'Halves the damage of fire breath for 60 moves.',
   'Wizard battle/Magic Bolt':
     '(your level + 1) rolls of 7 + rand(5), so 7 to 11 damage for each of your levels plus one.',
@@ -166,7 +165,8 @@ export const SPELL_MECHANICS: Record<string, string> = {
   'Priest battle/Protection':
     'Sets protection level 1, the same as Minor Protection, so it takes only 2 off the monster\'s attack roll where the wizard\'s Protection takes 8. That looks like a bug: a priest goes from 2 straight to Major Protection\'s 18.',
   'Priest battle/Anti-Fire': 'Halves the damage of fire breath for 60 moves.',
-  'Priest battle/Pass Wall': NOT_DOCUMENTED,
+  'Priest battle/Pass Wall':
+    'Moves you 2 to 19 squares in the direction you pick, to the first square that far away that is inside the map, not rock and has no monster on it, through whatever walls lie between. If no square within 19 qualifies nothing happens and the spell points are spent.',
   'Priest battle/Resist Level Drain':
     'Blocks a level drain completely for 60 moves — 100%, not the 90% the help text claims.',
   'Priest battle/Drain Monster':
@@ -192,5 +192,5 @@ export const SPELL_MECHANICS: Record<string, string> = {
 };
 
 export function spellMechanics(spell: Spell): string {
-  return SPELL_MECHANICS[spellKey(spell)] ?? NOT_DOCUMENTED;
+  return SPELL_MECHANICS[spellKey(spell)];
 }
