@@ -303,46 +303,48 @@
     </div>
   </div>
   <aside class="panel">
-    <div class="pickers">
-      <label>
-        <span>Module</span>
-        <select value={moduleIndex} onchange={changeModule}>
-          {#each MODULE_NUMERALS as numeral, index}
-            <option value={index}>{numeral}</option>
-          {/each}
-        </select>
-      </label>
-      <label>
-        <span>Floor</span>
-        {#if anyFloor}
-          <input type="number" min={FLOOR_MIN} max={FLOOR_MAX} step="1" value={floor} onchange={typeFloor} onkeydown={takeFloorOnEnter} />
-        {:else}
-          <select value={floor} onchange={changeFloor}>
-            {#each floors as level}
-              <option value={level}>{level === 0 ? '0 · Town' : level}</option>
+    <div class="controls">
+      <div class="pickers">
+        <label>
+          <span>Module</span>
+          <select value={moduleIndex} onchange={changeModule}>
+            {#each MODULE_NUMERALS as numeral, index}
+              <option value={index}>{numeral}</option>
             {/each}
           </select>
-        {/if}
-      </label>
-      <label class="toggle">
-        <input type="checkbox" checked={anyFloor} onchange={toggleAnyFloor} />
-        <span>Any floor</span>
-      </label>
-      <button class="ghost" onclick={() => stepFloor(-1)} disabled={floor === floorRange.lowest}>▲ Floor up</button>
-      <button class="ghost" onclick={() => stepFloor(1)} disabled={floor === floorRange.highest}>▼ Floor down</button>
-      <button class="ghost" onclick={() => history.back()} disabled={!historyCursor.canGoBack}>◀ Back</button>
-      <button class="ghost" onclick={() => history.forward()} disabled={!historyCursor.canGoForward}>Forward ▶</button>
+        </label>
+        <label>
+          <span>Floor</span>
+          {#if anyFloor}
+            <input type="number" min={FLOOR_MIN} max={FLOOR_MAX} step="1" value={floor} onchange={typeFloor} onkeydown={takeFloorOnEnter} />
+          {:else}
+            <select value={floor} onchange={changeFloor}>
+              {#each floors as level}
+                <option value={level}>{level === 0 ? '0 · Town' : level}</option>
+              {/each}
+            </select>
+          {/if}
+        </label>
+        <label class="toggle">
+          <input type="checkbox" checked={anyFloor} onchange={toggleAnyFloor} />
+          <span>Any floor</span>
+        </label>
+        <button class="ghost" onclick={() => stepFloor(-1)} disabled={floor === floorRange.lowest}>▲ Floor up</button>
+        <button class="ghost" onclick={() => stepFloor(1)} disabled={floor === floorRange.highest}>▼ Floor down</button>
+        <button class="ghost" onclick={() => history.back()} disabled={!historyCursor.canGoBack}>◀ Back</button>
+        <button class="ghost" onclick={() => history.forward()} disabled={!historyCursor.canGoForward}>Forward ▶</button>
+      </div>
+      <div class="zoom">
+        <button class="ghost" onclick={() => floorCanvas.zoomOut()} title="Zoom out">−</button>
+        <button class="ghost" onclick={() => floorCanvas.zoomIn()} title="Zoom in">+</button>
+        <button class="ghost" onclick={() => floorCanvas.fit()}>Fit</button>
+        <button class="ghost" onclick={() => downloadFloorPng(rows, floor, moduleIndex)}>Export PNG</button>
+      </div>
+      <p class="hint">
+        Drag to pan, scroll to zoom. Arrow keys move the cursor, PgUp/PgDn change floor, Enter follows a ladder,
+        chute or trap door.
+      </p>
     </div>
-    <div class="zoom">
-      <button class="ghost" onclick={() => floorCanvas.zoomOut()} title="Zoom out">−</button>
-      <button class="ghost" onclick={() => floorCanvas.zoomIn()} title="Zoom in">+</button>
-      <button class="ghost" onclick={() => floorCanvas.fit()}>Fit</button>
-      <button class="ghost" onclick={() => downloadFloorPng(rows, floor, moduleIndex)}>Export PNG</button>
-    </div>
-    <p class="hint">
-      Drag to pan, scroll to zoom. Arrow keys move the cursor, PgUp/PgDn change floor, Enter follows a ladder,
-      chute or trap door.
-    </p>
     <SquareInfo description={cursorDescription} notes={cursorNotes} />
     <Selection
       {selected}
@@ -418,6 +420,18 @@
     flex-direction: column;
     gap: 20px;
     overflow-y: auto;
+  }
+  .controls {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin: -16px -16px 0;
+    padding: 16px 16px 12px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
   }
   .pickers {
     display: grid;
