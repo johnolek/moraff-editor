@@ -389,7 +389,87 @@ const LOOT: Topic = {
   ],
 };
 
-export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXPERIENCE, LOOT];
+const COMBAT: Topic = {
+  id: 'combat',
+  title: 'Combat',
+  formulas: [
+    {
+      id: 'strike',
+      title: 'Your swing',
+      explanation:
+        'A swing draws a number under eighty and adds everything you bring: twice your level, your strength, your luck, the weapon\'s to-hit, its magic plus, a gauntlet, lucky charms. On the normal difficulty strength is counted a second time and a strength above 25 adds another 25 on top, which is why the same character is far deadlier there than on "I can handle anything". The monster then takes off twice its level plus its armor and its speed, and you roll your damage die once for every full forty points still standing, so a big enough total lands two or three dice on one swing. Anything that connects then picks up extra damage from your strength and your level, and past floor 75 there is a one in thirty chance of a further 40 points of to-hit out of nowhere.',
+      inputs: 'Your level, strength, luck, weapon and its plus, gauntlet, charms, the difficulty, the floor, and the monster\'s level, armor and speed.',
+      origin: 'exe strike 2000:7e36, strike in dotu-tools/decomp/unf.c. RE notes 4.4 and FAQ [COMT].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'strike' },
+    },
+    {
+      id: 'to-hit-total',
+      title: 'What goes into your to-hit total',
+      explanation:
+        'Everything a swing adds before the dice are rolled comes to one number, and it is worth knowing which parts of a character move it. Two points per level, your luck and your weapon\'s to-hit are always there; strength is worth double on the normal difficulty and worth another 25 flat once it passes 25. The magic plus on the weapon, a gauntlet and lucky charms are added straight on, which is why a plus 25 weapon from a boss is worth more than several levels.',
+      inputs: 'Your level, strength, luck, the weapon you hold and what is on it, and the difficulty.',
+      origin: 'exe strike 2000:7e36, strike in dotu-tools/decomp/unf.c. RE notes 4.4 and FAQ [COMT].',
+      code: { file: 'src/lib/bestiary/to-hit.ts', name: 'toHitTotal' },
+    },
+    {
+      id: 'hit-chance',
+      title: 'How often a swing connects',
+      explanation:
+        'Only one thing in a swing is random, the draw under eighty, so the chance of connecting can be counted rather than guessed at. Once the monster has taken its share off your total, 39 of the 80 possible draws still land, so a fight where your total exactly covers the monster is very nearly a coin toss, and every further point of total is another one and a quarter per cent of swings. Eighty points of total is the whole distance from never touching a monster to never missing it. The one in thirty bonus past floor 75 is left out, so these odds are exact down to that floor and slightly pessimistic below it.',
+      inputs: 'Your to-hit total, and the monster\'s level, armor and speed.',
+      origin: 'exe strike 2000:7e36, strike in dotu-tools/decomp/unf.c, worked out in closed form. FAQ [COMT].',
+      code: { file: 'src/lib/bestiary/to-hit.ts', name: 'hitChance' },
+    },
+    {
+      id: 'defend',
+      title: 'The monster hitting back',
+      explanation:
+        'A monster draws under eighty as well, adds twenty and twice its level, and takes off twice your level, your agility and half of it again, your luck, your armor and its plus, body armor, a protection ring and twice the square of your protection spell level. It then rolls its damage die once per forty points, but starts counting from thirty-two rather than forty, so it earns its first die slightly more easily than you do. After the dice come the strange parts: a small chance of one extra point of damage that can turn a miss into a hit, a one in four chance that everything rolled is thrown away and replaced by a small draw that may well be zero, and, only when the floor is deeper than your level, several large bonus rolls followed by a constitution reduction and a cap that turns any damage above four times the floor into exactly the floor.',
+      inputs: 'Your level, class, agility, luck, constitution, armor and protections, the floor, and the monster\'s level and damage die.',
+      origin:
+        'exe defend 2000:82b7, defend in dotu-tools/decomp/unf.c. RE notes 4.4 and FAQ [COMT], which corrected three errors in the older FAQ; the cap and the one in four roll are in TIDBITS, "Bugs".',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'defend' },
+    },
+    {
+      id: 'breath',
+      title: 'Breath',
+      explanation:
+        'A monster that breathes fire or ice uses it instead of striking on half its attacks, and breath ignores everything you are wearing: armor, protection spells and the constitution reduction all count for nothing. The damage is the monster\'s level plus a draw up to its level again, so a level 60 breather does between 60 and 119. The matching resist spell halves it, and nothing else in the game reduces it at all.',
+      inputs: 'The monster\'s level, and whether you have the matching resist up.',
+      origin: 'exe defend 2000:82b7, defend in dotu-tools/decomp/unf.c. FAQ [COMT].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'breathDamage' },
+    },
+    {
+      id: 'attack-seconds',
+      title: 'How long a swing takes',
+      explanation:
+        'The dungeon runs on a clock measured in seconds of game time, and everything you do spends some. A swing costs the weapon\'s own speed plus a fifth of whatever your agility falls short of 85, so a mace at agility 20 costs 31 seconds and the same mace at agility 60 costs 23. Agility is the only stat that buys the clock back, which is why it matters far more than its combat bonus suggests.',
+      inputs: 'The weapon\'s speed and your agility.',
+      origin: 'exe attack_timing 2000:b8f7, attack_timing in dotu-tools/decomp/unf.c. FAQ [COMT] and [GTPS].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'attackSeconds' },
+    },
+    {
+      id: 'monster-interval',
+      title: 'How often a monster hits back',
+      explanation:
+        'A monster standing next to you strikes once every so many seconds of that same clock, decided entirely by its speed: 36 seconds for a slow one at speed 5, 20 for a fast one at speed 55. Since your mace swing hands over 31 seconds, a fast monster gets one and a half attacks for each of yours, and a slow character can eat two or three between actions. Nothing about your character changes the interval; the only way to be hit less is to spend fewer seconds per action.',
+      inputs: 'The monster type\'s speed.',
+      origin: 'exe attack_timing 2000:b8f7, attack_timing in dotu-tools/decomp/unf.c. FAQ [COMT].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'monsterAttackInterval' },
+    },
+    {
+      id: 'move-seconds',
+      title: 'How long a step takes',
+      explanation:
+        'A step costs a second, plus another for every hundred pounds of you and your equipment beyond what your agility carries for free. A twenty pound midget with agility 10 moves in a second, a four hundred pound giant with no agility takes six, and every six seconds of walking is another swing handed to whatever is standing next to you. A Feather spell makes the weight count as nothing, which is the difference between the giant and the midget.',
+      inputs: 'Your body weight plus everything you carry, and your agility.',
+      origin: 'exe movecontrol 2000:c308, movecontrol in dotu-tools/decomp/unf.c. FAQ [GTPS].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'moveSeconds' },
+    },
+  ],
+};
+
+export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXPERIENCE, LOOT, COMBAT];
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
