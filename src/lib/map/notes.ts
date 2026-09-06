@@ -1,4 +1,5 @@
 import type { Dungeon, Square } from '../game/unfmap.js';
+import { forEachShownSquare } from './area';
 import { glyphDestination } from './draw-floor';
 import { squareGlyph } from './palette';
 import type { Point } from './viewport';
@@ -55,13 +56,11 @@ export interface NotableSquares {
 
 export function notableSquares(lookup: FloorLookup, floor: number, rows: Square[][]): NotableSquares {
   const notable: NotableSquares = { oneWayUp: [], intoChute: [] };
-  rows.forEach((row, y) =>
-    row.forEach((square, x) => {
-      for (const note of squareNotes(lookup, floor, square, x, y)) {
-        if (note.kind === 'oneWayUp') notable.oneWayUp.push({ x, y });
-        else notable.intoChute.push({ x, y, chuteFloor: note.chuteFloor });
-      }
-    }),
-  );
+  forEachShownSquare(rows, (square, x, y) => {
+    for (const note of squareNotes(lookup, floor, square, x, y)) {
+      if (note.kind === 'oneWayUp') notable.oneWayUp.push({ x, y });
+      else notable.intoChute.push({ x, y, chuteFloor: note.chuteFloor });
+    }
+  });
   return notable;
 }

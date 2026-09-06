@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import type { Square } from '../game/unfmap.js';
+import { MAP_COLUMNS, MAP_ROWS } from './area';
 import { teleporterColour, teleporterHue, teleporterLineWidth, teleporterSegments } from './teleporters';
 
 function square(overrides: Partial<Square> = {}): Square {
@@ -22,6 +23,15 @@ describe('teleporterSegments', () => {
   it('ignores rock and floors without teleporters', () => {
     expect(teleporterSegments([[square({ solid: true, w: 4 })]])).toEqual([]);
     expect(teleporterSegments(bundledDungeon.floor(20, 1))).toEqual([]);
+  });
+
+  it('leaves out the rows and the column the game never shows', () => {
+    const whole: Square[][] = Array.from({ length: MAP_ROWS + 2 }, () =>
+      Array.from({ length: MAP_COLUMNS + 1 }, () => square({ solid: true })),
+    );
+    whole[MAP_ROWS][0] = square({ n: 4 });
+    whole[0][MAP_COLUMNS] = square({ n: 4 });
+    expect(teleporterSegments(whole)).toEqual([]);
   });
 
   it('matches the fixture count of teleporter squares in spirit: the Module I town has some', () => {

@@ -1,4 +1,5 @@
 import type { Side, Square } from '../game/unfmap.js';
+import { forEachShownSquare } from './area';
 import { glyphDestination } from './draw-floor';
 import { squareGlyph, type Glyph } from './palette';
 
@@ -23,12 +24,10 @@ export function squaresOfKind(rows: Square[][], floor: number, kind: LegendKind)
   if (kind.kind === 'open') return [];
   const labelled = kind.kind === 'glyph' || kind.kind === 'trapdoorTo';
   const marks: Mark[] = [];
-  rows.forEach((row, y) =>
-    row.forEach((square, x) => {
-      if (square.solid) return;
-      if (matches(square, kind)) marks.push({ x, y, label: labelled ? String(glyphDestination(square, floor)) : null });
-    }),
-  );
+  forEachShownSquare(rows, (square, x, y) => {
+    if (square.solid) return;
+    if (matches(square, kind)) marks.push({ x, y, label: labelled ? String(glyphDestination(square, floor)) : null });
+  });
   return marks;
 }
 

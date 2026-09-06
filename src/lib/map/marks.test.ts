@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Square } from '../game/unfmap.js';
+import { MAP_COLUMNS, MAP_ROWS } from './area';
 import { squaresOfKind } from './marks';
 
 function square(overrides: Partial<Square> = {}): Square {
@@ -32,6 +33,16 @@ describe('squaresOfKind', () => {
       { x: 2, y: 0, label: '15' },
     ]);
     expect(squaresOfKind(trapdoors, 3, { kind: 'trapdoorTo', floor: 4 })).toEqual([]);
+  });
+
+  it('leaves out the rows and the column the game never shows', () => {
+    const whole: Square[][] = Array.from({ length: MAP_ROWS + 2 }, () =>
+      Array.from({ length: MAP_COLUMNS + 1 }, () => square({ solid: true })),
+    );
+    whole[0][0] = square({ ladder: 2 });
+    whole[MAP_ROWS][0] = square({ ladder: 2 });
+    whole[0][MAP_COLUMNS] = square({ ladder: 2 });
+    expect(squaresOfKind(whole, 3, { kind: 'glyph', glyph: 'down' })).toEqual([{ x: 0, y: 0, label: '5' }]);
   });
 
   it('marks nothing for the open square entry', () => {

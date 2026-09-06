@@ -1,3 +1,4 @@
+import type { Square } from '../game/unfmap.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX } from '../game/unfmap.js';
 
 /**
@@ -9,3 +10,13 @@ import { DUNGEON_XMAX, DUNGEON_YMAX } from '../game/unfmap.js';
  */
 export const MAP_COLUMNS = DUNGEON_XMAX;
 export const MAP_ROWS = DUNGEON_YMAX;
+
+/** Visits every square of a floor that is inside that area, row by row from the north-west. */
+export function forEachShownSquare(rows: Square[][], visit: (square: Square, x: number, y: number) => void): void {
+  const lastRow = Math.min(rows.length, MAP_ROWS);
+  for (let y = 0; y < lastRow; y++) {
+    const row = rows[y];
+    const lastColumn = Math.min(row.length, MAP_COLUMNS);
+    for (let x = 0; x < lastColumn; x++) visit(row[x], x, y);
+  }
+}

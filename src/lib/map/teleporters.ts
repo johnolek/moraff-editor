@@ -1,4 +1,5 @@
 import type { Square } from '../game/unfmap.js';
+import { forEachShownSquare } from './area';
 import { squareRect } from './draw-floor';
 import type { Viewport } from './viewport';
 
@@ -37,15 +38,13 @@ export function teleporterSegments(rows: Square[][]): TeleporterSegment[] {
     seen.add(key);
     segments.push({ x, y, vertical });
   };
-  rows.forEach((row, y) =>
-    row.forEach((square, x) => {
-      if (square.solid) return;
-      if (square.w === 4) add(x, y, true);
-      if (square.e === 4) add(x + 1, y, true);
-      if (square.n === 4) add(x, y, false);
-      if (square.s === 4) add(x, y + 1, false);
-    }),
-  );
+  forEachShownSquare(rows, (square, x, y) => {
+    if (square.solid) return;
+    if (square.w === 4) add(x, y, true);
+    if (square.e === 4) add(x + 1, y, true);
+    if (square.n === 4) add(x, y, false);
+    if (square.s === 4) add(x, y + 1, false);
+  });
   return segments;
 }
 

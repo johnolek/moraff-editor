@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import type { Square } from '../game/unfmap.js';
+import { MAP_COLUMNS, MAP_ROWS } from './area';
 import { dungeonLookup, notableSquares, squareNotes, type FloorLookup } from './notes';
 
 function square(overrides: Partial<Square> = {}): Square {
@@ -70,5 +71,15 @@ describe('notableSquares on a real floor', () => {
       ],
       intoChute: [{ x: 0, y: 0, chuteFloor: 7 }],
     });
+  });
+
+  it('leaves out the rows and the column the game never shows', () => {
+    const floors = lookup({});
+    const rows: Square[][] = Array.from({ length: MAP_ROWS + 2 }, () =>
+      Array.from({ length: MAP_COLUMNS + 1 }, () => square({ solid: true })),
+    );
+    rows[MAP_ROWS][0] = square({ ladder: -1 });
+    rows[0][MAP_COLUMNS] = square({ ladder: -1 });
+    expect(notableSquares(floors, 5, rows)).toEqual({ oneWayUp: [], intoChute: [] });
   });
 });
