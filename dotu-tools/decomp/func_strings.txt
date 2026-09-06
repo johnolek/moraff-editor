@@ -1,0 +1,647 @@
+1000:0000 entry size=355 ncallers=0 | TO_BE_USED_FOR_WHATEVER_YOU
+1000:0163 FUN_1000_0163 size=19 ncallers=1 | 
+1000:0176 FUN_1000_0176 size=40 ncallers=1 | 
+1000:019e FUN_1000_019e size=18 ncallers=1 | 
+1000:01b0 FUN_1000_01b0 size=67 ncallers=1 | 
+1000:01f3 FUN_1000_01f3 size=45 ncallers=1 | 
+1000:0220 FUN_1000_0220 size=68 ncallers=2 | 
+1000:0264 FUN_1000_0264 size=65 ncallers=2 | 
+1000:02a5 FUN_1000_02a5 size=8 ncallers=2 | 
+1000:02ad FUN_1000_02ad size=63 ncallers=2 | 
+1000:051c FUN_1000_051c size=4 ncallers=1 | 
+1000:0520 FUN_1000_0520 size=154 ncallers=1 | A_GROUP_OF_MISSLES_SPRING ; AND_ELECTRICITY_FLOWS
+1000:05ba FUN_1000_05ba size=33 ncallers=1 | 
+1000:05db FUN_1000_05db size=399 ncallers=1 | ADungeons_of_the_Unforgiven ; 1__TAKE_THE_ARMOR
+1000:076a FUN_1000_076a size=5 ncallers=0 | 
+1000:076f FUN_1000_076f size=43 ncallers=2 | 
+1000:079a FUN_1000_079a size=734 ncallers=0 | 
+1000:0a78 FUN_1000_0a78 size=8 ncallers=0 | 
+1000:0a80 FUN_1000_0a80 size=118 ncallers=0 | 
+1000:0af6 FUN_1000_0af6 size=5 ncallers=0 | 
+1000:0afb FUN_1000_0afb size=52 ncallers=1 | 
+1000:0d04 FUN_1000_0d04 size=164 ncallers=0 | Floating_point_error___s_
+1000:0daa FUN_1000_0daa size=201 ncallers=1 | 
+1000:0e73 FUN_1000_0e73 size=11 ncallers=1 | 
+1000:0e7e FUN_1000_0e7e size=38 ncallers=1 | 
+1000:0ea4 FUN_1000_0ea4 size=26 ncallers=2 | 
+1000:0ebe FUN_1000_0ebe size=106 ncallers=0 | BOLTS_FORWARD__BURNING
+1000:0f28 pow size=363 ncallers=4 | 
+1000:10b1 FUN_1000_10b1 size=144 ncallers=2 | _s___s_error
+1000:1141 FUN_1000_1141 size=26 ncallers=2 | 
+1000:115b ftol size=44 ncallers=12 | 
+1000:1187 FUN_1000_1187 size=45 ncallers=0 | 
+1000:11b4 FUN_1000_11b4 size=73 ncallers=6 | 
+1000:11fd FUN_1000_11fd size=169 ncallers=1 | 
+1000:12a6 FUN_1000_12a6 size=253 ncallers=1 | 
+1000:13a3 FUN_1000_13a3 size=29 ncallers=1 | 
+1000:13c0 FUN_1000_13c0 size=27 ncallers=0 | 
+1000:13db FUN_1000_13db size=51 ncallers=1 | 
+1000:140e FUN_1000_140e size=45 ncallers=0 | 
+1000:143b FUN_1000_143b size=19 ncallers=1 | 
+1000:144e FUN_1000_144e size=23 ncallers=0 | 
+1000:1465 FUN_1000_1465 size=1 ncallers=2 | 
+1000:1466 FUN_1000_1466 size=87 ncallers=2 | 
+1000:14bd exit size=15 ncallers=8 | 
+1000:14cc FUN_1000_14cc size=18 ncallers=1 | 
+1000:14f8 N_LXMUL size=23 ncallers=67 | 
+1000:150f FUN_1000_150f size=19 ncallers=1 | 
+1000:1522 FUN_1000_1522 size=19 ncallers=1 | 
+1000:1535 FUN_1000_1535 size=15 ncallers=1 | 
+1000:1544 FUN_1000_1544 size=17 ncallers=0 | 
+1000:1555 FUN_1000_1555 size=3 ncallers=1 | 
+1000:1558 N_LDIV size=4 ncallers=71 | 
+1000:155f N_LUDIV size=5 ncallers=1 | 
+1000:1564 FUN_1000_1564 size=3 ncallers=1 | 
+1000:1567 N_LMOD size=5 ncallers=2 | 
+1000:156f N_LUMOD size=1 ncallers=0 | 
+1000:1572 FUN_1000_1572 size=145 ncallers=3 | 
+1000:1603 FUN_1000_1603 size=3 ncallers=1 | 
+1000:1606 N_LXLSH size=30 ncallers=16 | 
+1000:1627 N_LXRSH size=29 ncallers=9 | 
+1000:1644 FUN_1000_1644 size=77 ncallers=1 | 
+1000:16a4 FUN_1000_16a4 size=40 ncallers=1 | 
+1000:16cc FUN_1000_16cc size=57 ncallers=18 | 
+1000:1705 FUN_1000_1705 size=18 ncallers=4 | 
+1000:1717 FUN_1000_1717 size=17 ncallers=1 | 
+1000:1728 FUN_1000_1728 size=125 ncallers=5 | 
+1000:17a5 FUN_1000_17a5 size=29 ncallers=1 | 
+1000:17c2 FUN_1000_17c2 size=41 ncallers=6 | 
+1000:17eb FUN_1000_17eb size=63 ncallers=2 | 
+1000:182a FUN_1000_182a size=67 ncallers=0 | 
+1000:186d lmul32 size=23 ncallers=6 | 
+1000:1884 FUN_1000_1884 size=33 ncallers=2 | 
+1000:18a5 srand size=17 ncallers=9 | 
+1000:18b6 rand size=38 ncallers=36 | 
+1000:18dc FUN_1000_18dc size=45 ncallers=2 | 
+1000:1909 FUN_1000_1909 size=22 ncallers=3 | 
+1000:191f FUN_1000_191f size=38 ncallers=1 | 
+1000:1945 FUN_1000_1945 size=25 ncallers=1 | 
+1000:195e FUN_1000_195e size=193 ncallers=1 | 
+1000:1a1f FUN_1000_1a1f size=350 ncallers=3 | 
+1000:1b7d FUN_1000_1b7d size=20 ncallers=1 | 
+1000:1b91 FUN_1000_1b91 size=51 ncallers=0 | 
+1000:1bc4 FUN_1000_1bc4 size=51 ncallers=0 | 
+1000:1bf7 FUN_1000_1bf7 size=24 ncallers=1 | 
+1000:1c0f FUN_1000_1c0f size=19 ncallers=1 | 
+1000:1c22 FUN_1000_1c22 size=19 ncallers=1 | 
+1000:1cda FUN_1000_1cda size=56 ncallers=0 | 
+1000:1d12 FUN_1000_1d12 size=77 ncallers=4 | 
+1000:1d5f FUN_1000_1d5f size=44 ncallers=2 | 
+1000:1d8b FUN_1000_1d8b size=44 ncallers=6 | 
+1000:1db7 FUN_1000_1db7 size=22 ncallers=1 | 
+1000:1dcd FUN_1000_1dcd size=7 ncallers=1 | 
+1000:1dd4 FUN_1000_1dd4 size=9 ncallers=1 | 
+1000:1ddd FUN_1000_1ddd size=8 ncallers=1 | 
+1000:1de5 FUN_1000_1de5 size=26 ncallers=5 | 
+1000:1dff FUN_1000_1dff size=13 ncallers=1 | 
+1000:1e0c FUN_1000_1e0c size=9 ncallers=1 | 
+1000:1e15 FUN_1000_1e15 size=48 ncallers=1 | 
+1000:1e45 FUN_1000_1e45 size=1059 ncallers=1 | 
+1000:2298 FUN_1000_2298 size=37 ncallers=4 | 
+1000:22bd FUN_1000_22bd size=122 ncallers=2 | 
+1000:2337 FUN_1000_2337 size=41 ncallers=3 | 
+1000:2360 FUN_1000_2360 size=34 ncallers=2 | 
+1000:2382 FUN_1000_2382 size=49 ncallers=3 | 
+1000:23b3 FUN_1000_23b3 size=12 ncallers=0 | 
+1000:23bf FUN_1000_23bf size=16 ncallers=0 | 
+1000:23cf clrscr size=41 ncallers=1 | 
+1000:23f8 textcolor size=21 ncallers=1 | 
+1000:240d FUN_1000_240d size=25 ncallers=0 | 
+1000:2426 FUN_1000_2426 size=11 ncallers=0 | 
+1000:2444 FUN_1000_2444 size=293 ncallers=1 | 
+1000:2577 cputs size=22 ncallers=1 | 
+1000:258d FUN_1000_258d size=42 ncallers=1 | 
+1000:25b7 FUN_1000_25b7 size=14 ncallers=2 | 
+1000:25c5 FUN_1000_25c5 size=139 ncallers=9 | 
+1000:266d FUN_1000_266d size=193 ncallers=1 | 
+1000:274d FUN_1000_274d size=1 ncallers=1 | 
+1000:274e FUN_1000_274e size=26 ncallers=1 | 
+1000:2789 FUN_1000_2789 size=97 ncallers=16 | 
+1000:2b80 FUN_1000_2b80 size=26 ncallers=1 | PRIEST_BATTLE_SPELLS
+1000:2ba6 FUN_1000_2ba6 size=99 ncallers=1 | 
+1000:2c09 FUN_1000_2c09 size=113 ncallers=1 | 
+1000:2c7a FUN_1000_2c7a size=41 ncallers=2 | 
+1000:2ca3 FUN_1000_2ca3 size=55 ncallers=1 | 
+1000:2cda FUN_1000_2cda size=41 ncallers=3 | 
+1000:2d03 FUN_1000_2d03 size=100 ncallers=1 | 
+1000:2d67 FUN_1000_2d67 size=90 ncallers=1 | 
+1000:2dc1 FUN_1000_2dc1 size=35 ncallers=1 | 
+1000:2de4 farmalloc size=125 ncallers=5 | 
+1000:2e61 FUN_1000_2e61 size=124 ncallers=1 | 
+1000:2edd FUN_1000_2edd size=100 ncallers=1 | 
+1000:2f41 FUN_1000_2f41 size=122 ncallers=0 | 
+1000:2fbb FUN_1000_2fbb size=118 ncallers=2 | 
+1000:3031 FUN_1000_3031 size=63 ncallers=2 | 
+1000:3070 FUN_1000_3070 size=139 ncallers=2 | 
+1000:30fb FUN_1000_30fb size=80 ncallers=1 | 
+1000:314b FUN_1000_314b size=25 ncallers=2 | 
+1000:31a9 FUN_1000_31a9 size=73 ncallers=4 | 
+1000:31f2 FUN_1000_31f2 size=84 ncallers=1 | 
+1000:3246 FUN_1000_3246 size=84 ncallers=1 | 
+1000:329a int86 size=40 ncallers=14 | 
+1000:32c2 FUN_1000_32c2 size=156 ncallers=2 | 
+1000:335e FUN_1000_335e size=39 ncallers=1 | 
+1000:3385 FUN_1000_3385 size=18 ncallers=14 | 
+1000:3397 FUN_1000_3397 size=151 ncallers=1 | 
+1000:342e FUN_1000_342e size=157 ncallers=1 | 
+1000:34cb FUN_1000_34cb size=29 ncallers=5 | 
+1000:34e8 FUN_1000_34e8 size=58 ncallers=1 | 
+1000:3522 FUN_1000_3522 size=57 ncallers=1 | 
+1000:355b FUN_1000_355b size=28 ncallers=2 | 
+1000:3577 FUN_1000_3577 size=35 ncallers=1 | 
+1000:359a farmalloc_small size=96 ncallers=7 | 
+1000:35fa FUN_1000_35fa size=64 ncallers=1 | 
+1000:363a FUN_1000_363a size=41 ncallers=1 | 
+1000:3663 FUN_1000_3663 size=25 ncallers=1 | 
+1000:3746 FUN_1000_3746 size=19 ncallers=0 | 
+1000:3759 thunk_FUN_1000_05db size=4 ncallers=1 | 
+1000:375d FUN_1000_375d size=56 ncallers=1 | 
+1000:3795 FUN_1000_3795 size=46 ncallers=1 | 
+1000:37c3 FUN_1000_37c3 size=198 ncallers=1 | 
+1000:3889 FUN_1000_3889 size=60 ncallers=3 | 
+1000:38c5 FUN_1000_38c5 size=85 ncallers=3 | 
+1000:391a FUN_1000_391a size=34 ncallers=1 | 
+1000:393c FUN_1000_393c size=358 ncallers=2 | 
+1000:3bbb FUN_1000_3bbb size=28 ncallers=1 | 
+1000:3c34 FUN_1000_3c34 size=44 ncallers=4 | MAY_ATTEMPT_TO_COMPLETE_THIS
+1000:3c60 FUN_1000_3c60 size=7 ncallers=4 | 
+1000:3c67 FUN_1000_3c67 size=31 ncallers=1 | 
+1000:3c86 FUN_1000_3c86 size=10 ncallers=2 | 
+1000:3cb2 atol size=112 ncallers=5 | 
+1000:3d22 FUN_1000_3d22 size=13 ncallers=0 | 
+1000:3d2f FUN_1000_3d2f size=27 ncallers=1 | 
+1000:3d4a FUN_1000_3d4a size=40 ncallers=1 | 
+1000:3d72 FUN_1000_3d72 size=30 ncallers=2 | 
+1000:3d90 FUN_1000_3d90 size=119 ncallers=1 | 
+1000:3e07 fclose size=129 ncallers=23 | 
+1000:3e88 FUN_1000_3e88 size=127 ncallers=6 | 
+1000:3f09 fgets size=98 ncallers=1 | 
+1000:3f6b FUN_1000_3f6b size=58 ncallers=1 | 
+1000:3fa5 FUN_1000_3fa5 size=186 ncallers=1 | 3_VISITOR_S_GUIDE_TO_THE_TOWN
+1000:405f FUN_1000_405f size=156 ncallers=1 | 
+1000:40fb FUN_1000_40fb size=43 ncallers=1 | 
+1000:4126 fopen size=31 ncallers=22 | 
+1000:4145 FUN_1000_4145 size=22 ncallers=2 | 
+1000:415b FUN_1000_415b size=215 ncallers=1 | 
+1000:4232 fread size=75 ncallers=3 | 
+1000:427d FUN_1000_427d size=93 ncallers=2 | 
+1000:42da FUN_1000_42da size=104 ncallers=1 | 
+1000:4342 FUN_1000_4342 size=199 ncallers=0 | 
+1000:4409 fwrite size=76 ncallers=1 | 
+1000:4455 FUN_1000_4455 size=41 ncallers=2 | 
+1000:447e FUN_1000_447e size=89 ncallers=1 | 
+1000:44d7 FUN_1000_44d7 size=18 ncallers=2 | 
+1000:44ec fgetc size=173 ncallers=14 | 
+1000:45a5 FUN_1000_45a5 size=95 ncallers=2 | 
+1000:4604 itoa size=40 ncallers=27 | 
+1000:462c FUN_1000_462c size=26 ncallers=0 | 
+1000:4646 ltoa size=37 ncallers=6 | 
+1000:466b FUN_1000_466b size=31 ncallers=3 | 
+1000:468a FUN_1000_468a size=38 ncallers=1 | 
+1000:46b0 FUN_1000_46b0 size=27 ncallers=1 | 
+1000:46cb FUN_1000_46cb size=25 ncallers=1 | 
+1000:46e4 FUN_1000_46e4 size=18 ncallers=1 | 
+1000:46f6 FUN_1000_46f6 size=344 ncallers=1 | 
+1000:484e FUN_1000_484e size=77 ncallers=1 | 
+1000:489b puts size=23 ncallers=3 | 
+1000:48b2 FUN_1000_48b2 size=25 ncallers=1 | 
+1000:48cb FUN_1000_48cb size=305 ncallers=6 | 
+1000:4a01 FUN_1000_4a01 size=18 ncallers=0 | 
+1000:4a13 FUN_1000_4a13 size=419 ncallers=1 | 
+1000:4bbb FUN_1000_4bbb size=206 ncallers=2 | 
+1000:4c89 FUN_1000_4c89 size=213 ncallers=1 | 4_SPELLS__SCROLLS__WANDS__PAPER
+1000:4d61 FUN_1000_4d61 size=63 ncallers=1 | 
+1000:4da0 FUN_1000_4da0 size=65 ncallers=0 | 
+1000:4df7 FUN_1000_4df7 size=280 ncallers=1 | 
+1000:4f8a FUN_1000_4f8a size=40 ncallers=0 | 
+1000:4fb2 FUN_1000_4fb2 size=29 ncallers=4 | 
+1000:4fcf FUN_1000_4fcf size=28 ncallers=0 | 
+1000:4feb strcat size=57 ncallers=32 | 
+1000:5024 FUN_1000_5024 size=54 ncallers=2 | 
+1000:505a FUN_1000_505a size=47 ncallers=2 | 
+1000:5089 strcpy size=34 ncallers=52 | 
+1000:50ab strlen size=26 ncallers=39 | 
+1000:50c5 FUN_1000_50c5 size=44 ncallers=3 | 
+1000:50f1 FUN_1000_50f1 size=281 ncallers=1 | POISONED_DRUGGIE
+1000:520a FUN_1000_520a size=464 ncallers=1 | uspells_hlp ; ENCHANT_RING_LEVEL_3
+1000:53da FUN_1000_53da size=385 ncallers=2 | 
+1000:555b FUN_1000_555b size=223 ncallers=2 | 
+1000:563a FUN_1000_563a size=270 ncallers=2 | 
+1000:5748 FUN_1000_5748 size=58 ncallers=3 | 
+2000:000d FUN_2000_000d size=98 ncallers=2 | 
+2000:0073 FUN_2000_0073 size=39 ncallers=1 | 
+2000:009a FUN_2000_009a size=41 ncallers=2 | 
+2000:00c3 FUN_2000_00c3 size=136 ncallers=1 | 
+2000:014b FUN_2000_014b size=33 ncallers=0 | 
+2000:016c FUN_2000_016c size=41 ncallers=1 | 
+2000:0195 FUN_2000_0195 size=35 ncallers=1 | 
+2000:01b8 FUN_2000_01b8 size=38 ncallers=1 | 
+2000:01de FUN_2000_01de size=146 ncallers=2 | 
+2000:0272 FUN_2000_0272 size=104 ncallers=5 | 
+2000:02da FUN_2000_02da size=119 ncallers=0 | 
+2000:0351 FUN_2000_0351 size=38 ncallers=1 | 
+2000:0377 FUN_2000_0377 size=17 ncallers=2 | 
+2000:0388 FUN_2000_0388 size=38 ncallers=1 | 
+2000:03ae FUN_2000_03ae size=38 ncallers=1 | 
+2000:03d4 FUN_2000_03d4 size=71 ncallers=5 | 
+2000:041b FUN_2000_041b size=156 ncallers=0 | 
+2000:04b7 FUN_2000_04b7 size=28 ncallers=2 | 
+2000:04d3 FUN_2000_04d3 size=77 ncallers=0 | 
+2000:0520 FUN_2000_0520 size=51 ncallers=0 | 
+2000:0553 FUN_2000_0553 size=135 ncallers=1 | 
+2000:05da FUN_2000_05da size=497 ncallers=2 | 
+2000:07cb FUN_2000_07cb size=96 ncallers=0 | 
+2000:082b FUN_2000_082b size=42 ncallers=0 | 
+2000:0855 FUN_2000_0855 size=106 ncallers=1 | 
+2000:08bf FUN_2000_08bf size=44 ncallers=0 | 
+2000:08eb FUN_2000_08eb size=56 ncallers=0 | 
+2000:0923 FUN_2000_0923 size=227 ncallers=0 | 
+2000:0a06 FUN_2000_0a06 size=445 ncallers=1 | 
+2000:0bc3 FUN_2000_0bc3 size=448 ncallers=1 | 
+2000:0d83 FUN_2000_0d83 size=303 ncallers=2 | 
+2000:0ec2 FUN_2000_0ec2 size=259 ncallers=1 | 
+2000:0fc5 FUN_2000_0fc5 size=549 ncallers=0 | 
+2000:11ea FUN_2000_11ea size=424 ncallers=0 | 
+2000:1392 FUN_2000_1392 size=435 ncallers=2 | 
+2000:1545 FUN_2000_1545 size=44 ncallers=1 | 
+2000:1571 FUN_2000_1571 size=39 ncallers=0 | 
+2000:1598 FUN_2000_1598 size=1353 ncallers=1 | BROWN_PUFFBALL ; HEALTH_POINTS_ ; NUMBER_NAME_SEX_RACE_CLASS
+2000:1af9 FUN_2000_1af9 size=9 ncallers=1 | 
+2000:1b02 shade_palette size=95 ncallers=1 | 
+2000:1b61 FUN_2000_1b61 size=250 ncallers=1 | 
+2000:1c5b FUN_2000_1c5b size=89 ncallers=1 | 
+2000:1ccc section_number3 size=67 ncallers=3 | 
+2000:1d12 section_number_p size=15 ncallers=1 | 
+2000:1d23 section_number size=16 ncallers=6 | 
+2000:1d35 section_number2 size=24 ncallers=5 | 
+2000:1d4f FUN_2000_1d4f size=908 ncallers=0 | 
+2000:20db FUN_2000_20db size=148 ncallers=14 | 
+2000:216f FUN_2000_216f size=249 ncallers=3 | 
+2000:2268 FUN_2000_2268 size=1464 ncallers=6 | 
+2000:2820 FUN_2000_2820 size=158 ncallers=17 | 
+2000:28be FUN_2000_28be size=157 ncallers=17 | 
+2000:295b FUN_2000_295b size=211 ncallers=3 | 
+2000:2a2e FUN_2000_2a2e size=81 ncallers=5 | 
+2000:2a83 FUN_2000_2a83 size=133 ncallers=5 | 
+2000:2b08 mset_gmenu size=645 ncallers=13 | 
+2000:2d93 get_choice size=309 ncallers=17 | 
+2000:2ecc FUN_2000_2ecc size=143 ncallers=1 | 
+2000:2f5d FUN_2000_2f5d size=281 ncallers=6 | 
+2000:3076 FUN_2000_3076 size=40 ncallers=16 | 
+2000:309e print_menu_only size=152 ncallers=28 | 
+2000:313a give_hint size=130 ncallers=26 | 
+2000:31bc FUN_2000_31bc size=749 ncallers=1 | 
+2000:34a9 FUN_2000_34a9 size=65 ncallers=3 | 
+2000:34ea FUN_2000_34ea size=73 ncallers=1 | 
+2000:3533 FUN_2000_3533 size=140 ncallers=3 | 
+2000:35bf FUN_2000_35bf size=130 ncallers=0 | 
+2000:3641 FUN_2000_3641 size=17 ncallers=2 | 
+2000:3654 load_overlay_pic size=216 ncallers=3 | 
+2000:372c load_section_pictures size=1179 ncallers=1 | 
+2000:3bc7 allocate_buffers size=468 ncallers=1 | 
+2000:3d9b FUN_2000_3d9b size=146 ncallers=13 | 
+2000:3e2d FUN_2000_3e2d size=70 ncallers=0 | 
+2000:3e73 FUN_2000_3e73 size=481 ncallers=3 | 
+2000:4054 FUN_2000_4054 size=208 ncallers=31 | 
+2000:412a FUN_2000_412a size=40 ncallers=2 | 
+2000:4156 Random size=84 ncallers=20 | 
+2000:41ae compute_weight size=100 ncallers=6 | 
+2000:4212 end_prep_spells size=123 ncallers=1 | 
+2000:428d store_refund size=254 ncallers=1 | 
+2000:438f show_money size=311 ncallers=3 | 
+2000:44c6 FUN_2000_44c6 size=44 ncallers=1 | 
+2000:44f2 FUN_2000_44f2 size=20 ncallers=1 | 
+2000:4506 FUN_2000_4506 size=165 ncallers=4 | 
+2000:45ab g_store size=1934 ncallers=1 | SELECT_THE_TYPE_OF_WAND_ ; BOLTS_FORWARD__BURNING
+2000:4d39 temple size=666 ncallers=1 | Temple ; HERE_ ; SORRY__CAN_T_BUY_ON_CREDIT ; GIANT_GARBAGE_CAN
+2000:4fe7 flea_inn size=1700 ncallers=1 | Grub_Sleep ; CULTURE_STOCK_NEEDED_TO_AVOID ; AGING_ ; YOU_HAVE__UNITS__ ; MAGIC_CRYSTALS_NEEDED_TO_REGAIN ; SPELL_POINTS_ ; THE_ROOMS_IN_THIS_FINE_PLACE ; COST ; WOULD_YOU_LIKE_TO_STAY_ ; 1__STAY_AND_REST_FOR_A_WHILE ; 2__RUN_FOR_YOUR_LIFE ; _THIS_IS_THE_ONLY ; IN_TOWN_
+2000:568b bank size=813 ncallers=1 | The_Bank ; bank_pic ; PLEASE_TYPE_THE_AMOUNT ; AND_HIT_ENTER_
+2000:59c0 FUN_2000_59c0 size=589 ncallers=3 | 
+2000:5c0d select_player size=875 ncallers=1 | PLEASE_SELECT_A_PLAYER_ ; NUMBER_NAME_SEX_RACE_CLASS ; __SELECT_TO_CREATE_A_NEW_CHARACT ; MALE ; FEMALE
+2000:5f78 decode_quit_message size=116 ncallers=1 | 
+2000:5fec load_md_bin size=252 ncallers=1 | 
+2000:60e8 show_registration_notice size=295 ncallers=1 | 
+2000:620f main size=863 ncallers=1 | THIS_SPELL_
+2000:6573 which_monster size=59 ncallers=2 | 
+2000:65b0 FUN_2000_65b0 size=42 ncallers=6 | 
+2000:65dc set_monster_map size=28 ncallers=8 | 
+2000:65f8 get_mtype size=291 ncallers=1 | 
+2000:671e stock_level size=2320 ncallers=4 | 
+2000:702e save_monster_map size=198 ncallers=1 | HB_mon_map
+2000:70f4 load_monster_map size=284 ncallers=1 | HB_mon_map
+2000:7210 FUN_2000_7210 size=99 ncallers=3 | 
+2000:7277 FUN_2000_7277 size=99 ncallers=1 | 
+2000:72de FUN_2000_72de size=53 ncallers=3 | 
+2000:7313 save_maps size=411 ncallers=3 | 
+2000:74ae load_maps size=473 ncallers=1 | 
+2000:7687 load_level_map size=295 ncallers=7 | 
+2000:77ae FUN_2000_77ae size=78 ncallers=0 | 
+2000:7800 FUN_2000_7800 size=47 ncallers=0 | 
+2000:7832 FUN_2000_7832 size=69 ncallers=0 | 
+2000:787d load_unfdung_bin size=55 ncallers=1 | 
+2000:78b4 load_player size=249 ncallers=1 | Corrupted_Character__Sorry_
+2000:79ad save_player size=203 ncallers=6 | 
+2000:7a78 read_spell_help size=208 ncallers=1 | 
+2000:7b48 exp_needed size=126 ncallers=2 | 
+2000:7bcd FUN_2000_7bcd size=164 ncallers=1 | BEXPERIENCE_NEEDED_FOR_LEVEL_
+2000:7c71 check_gain_level size=174 ncallers=3 | 
+2000:7d23 gain_level size=196 ncallers=1 | 
+2000:7dec FUN_2000_7dec size=74 ncallers=1 | 
+2000:7e36 strike size=845 ncallers=1 | YOU_MISSED_THE_MONSTER ; YOU_HIT_THE_MONSTER___ ; IT_TAKES ; POINTS_OF_DAMAGE_
+2000:8189 FUN_2000_8189 size=216 ncallers=1 | STRENGTH ; INTELLIGENCE ; CONSTITUTION ; DEXTERITY
+2000:826d FUN_2000_826d size=74 ncallers=1 | 
+2000:82b7 defend size=3272 ncallers=1 | DRAINED_BY_PUFFBALL_ ; RAISED_BY_PUFFBALL_ ; GIANT_GARBAGE_CAN ; MISSES_ ; ON_YOU__IT_DOES ; POINT ; POINTS ; A_YOU_LOSE ; EXP__POINTS_ ; LEVELS_ ; OH_NO__HIT_BY_LIFE_DRAINER_ ; HIT_ANY_KEY ; HAS_BEEN_DRAINED_ ; HAS_BEEN_RAISED_
+2000:8f85 FUN_2000_8f85 size=20 ncallers=1 | 
+2000:8f99 null_check size=226 ncallers=1 | Null_pointer_assignment_Divide_e
+2000:907b FUN_2000_907b size=67 ncallers=1 | 
+2000:90be load_level_screen size=372 ncallers=1 | HB_mon_map ; Loading__please_wait___
+2000:9232 FUN_2000_9232 size=117 ncallers=1 | 
+2000:92b1 view_prep_spells size=358 ncallers=1 | PREP_SPELLS_IN_EFFECT ; WEAPONS__PLUS ; ARMOR__PLUS ; INVISIBILITY ; FEATHER ; FAST_MOVE ; STRENGTH__PREP_VERSION_ ; AGILITY__PREP_VERSION_ ; SUPER_STRENGTH ; SUPER_AGILITY
+2000:9417 view_battle_spells size=1184 ncallers=3 | CURRENT_BATTLE_SPELLS_IN_EFFECT ; PROTECT__LEVEL ; POWER_WEAPON ; STRENGTH ; SPEED ; SLOW_MONSTER ; HOLD_MONSTER ; STOP_MONSTER ; RESIST_DRAIN ; RESIST_POISON ; RESIST_DISEASE ; ANTI_COLD ; ANTI_FIRE
+2000:98b7 lose_item size=860 ncallers=1 | WHICH_TYPE_OF_ITEM_WOULD_YOU ; LIKE_TO_DROP_ ; 1__ARMOR ; 2__WEAPON ; 3__MONEY ; OWE__IT_JUST_WON_T_COME_OFF_
+2000:9c13 quit_game size=167 ncallers=1 | HIT_ANY_KEY
+2000:9cba town_features size=87 ncallers=3 | 
+2000:9d17 FUN_2000_9d17 size=843 ncallers=1 | 
+2000:a068 FUN_2000_a068 size=92 ncallers=1 | 
+2000:a0c8 check_engagement size=233 ncallers=2 | 
+2000:a1b7 tick_spell_timers size=354 ncallers=1 | 
+2000:a319 call_check_eng size=547 ncallers=2 | 
+2000:a53c pass_moment size=1258 ncallers=3 | 
+2000:aa26 FUN_2000_aa26 size=111 ncallers=2 | 
+2000:aa95 draw_ladder_prompt size=521 ncallers=1 | TO_GO_UP ; HIT_D_TO ; GO_DOWN
+2000:ac9e FUN_2000_ac9e size=1305 ncallers=1 | B_GO_FORWARD_TURN_LEFT_TURN_AROU
+2000:b1b7 FUN_2000_b1b7 size=39 ncallers=1 | 
+2000:b1e0 FUN_2000_b1e0 size=34 ncallers=1 | 
+2000:b202 use_magic_item size=816 ncallers=1 | YOU_ARE_SLIPPING_THROUGH_THE ; FLOOR__HIT_ANY_KEY___ ; DOESN_T_WORK_THIS_DEEP_ ; YOU_FEEL_GREAT__HIT_A_KEY___ ; THE_MONSTER_CATCHES_THE ; GRADADE_ ; HIT_ANY_KEY___ ; A_MASSIVE_EXPLOSION_KILLS ; THE_MONSTER_INSTANTLY_
+2000:b532 chute size=184 ncallers=1 | UH_OH____A_SINKING_FEELING___ ; YOU_HAVE_FALLEN_DOWN_A_CHUTE_ ; HIT_ANY_KEY_TO_CONTINUE___
+2000:b5ea detect_chute size=157 ncallers=2 | 
+2000:b68d print_battle_hp_info size=245 ncallers=2 | IT_HAS ; HEALTH_POINTS_LEFT
+2000:b782 engagement_timing size=373 ncallers=1 | 
+2000:b8f7 attack_timing size=323 ncallers=2 | 
+2000:ba3f dig_hole size=624 ncallers=1 | A_MONSTER_WANTS_TO_HELP ; DIGGING____DIGGING___ ; BOY_THIS_IS_HARD_WORK_ ; THIS_IS_ONE_WAY_TO_WORK ; UP_A_SWEAT_
+2000:bcb6 FUN_2000_bcb6 size=47 ncallers=1 | 
+2000:bce5 FUN_2000_bce5 size=77 ncallers=1 | 
+2000:bd32 trapdoor size=112 ncallers=2 | 
+2000:bda6 trapdoor_dest size=145 ncallers=1 | 
+2000:be3d explain_trapdoor size=334 ncallers=1 | YOU_HAVE_FOUND_A_TRAP_DOOR ; UNFORTUNATELY__YOU_DO ; NOT_HAVE_THE_CORRECT_KEY_ ; THIS_KEY_CAN_ONLY_BE ; FOUND_BY_KILLING_A_LEVEL ; DRAINER_NEAR_THE_LEVEL ; THIS_TRAP_DOOR_LEADS_TO_ ; TO_USE_THE_KEY_YOU_FOUND ; EARLIER__HIT__K__TO_GO ; THROUGH_THE_DOOR___
+2000:bf91 FUN_2000_bf91 size=216 ncallers=1 | GO_WEST ; GO_EAST ; GO_NORTH ; GO_SOUTH
+2000:c069 delete_character_files size=56 ncallers=1 | 
+2000:c0a5 kill_player size=343 ncallers=1 | HB_mon_map
+2000:c200 FUN_2000_c200 size=43 ncallers=1 | 
+2000:c22d retdwall2 size=90 ncallers=1 | 
+2000:c28b FUN_2000_c28b size=125 ncallers=1 | 
+2000:c308 movecontrol size=7128 ncallers=1 | CHARACTERS_OF_YOUR_PROFESSION ; CAN_NOT_WEAR_ARMOR_OF_THIS_TYPE ; YOU_CONTINUE_TO_WEAR_YOUR_OLD ; ARMOR_ ; WHICH_TYPE_OF_ITEM_ ; 1__SCROLL ; 2__WAND ; 3__PAPER ; 4__MAGIC_POTION ; 5__OTHER ; I_DON_T_SEE_ANY_TRAP ; DOOR_HERE__KEEP_SEARCHING ; HIT_ANY_KEY___ ; CHARACTERS_OF_YOUR_CLASS
+2000:df0e FUN_2000_df0e size=44 ncallers=1 | 
+2000:df3e print_spell_line size=215 ncallers=1 | 
+2000:e017 cast_a_spell size=6918 ncallers=1 | FIGHTERS_CAN_ONLY_CAST ; SPELLS_BY_USING_MAGIC ; PAPER__KEEP_LOOKING_ ; SELECT_THE_TYPE_OF_SPELL_ ; SELECT_THE_TYPE_OF_SCROLL_ ; SELECT_THE_TYPE_OF_WAND_ ; SELECT_THE_TYPE_OF_PAPER_ ; THESE_SPELLS_TAKE_ONE_MONTH ; TO_CAST_AND_CAN_NOT_BE ; USED_IN_THE_DUNGEON_ ; THESE_SPELLS_TAKE_3_MINUTES ; TO_CAST__THIS_CAN_NOT ; BE_DONE_DURING_BATTLE_ ; YOU_ARE_UNABLE_TO_CAST_THIS
+2000:fb25 FUN_2000_fb25 size=161 ncallers=0 | 
+3000:0009 FUN_3000_0009 size=21 ncallers=1 | 
+3000:0022 FUN_3000_0022 size=21 ncallers=1 | 
+3000:003b FUN_3000_003b size=40 ncallers=2 | A_GROUP_OF_MISSLES_SPRING
+3000:0067 FUN_3000_0067 size=24 ncallers=2 | 
+3000:0081 FUN_3000_0081 size=35 ncallers=1 | 
+3000:00a8 FUN_3000_00a8 size=1895 ncallers=2 | 
+3000:080f FUN_3000_080f size=38 ncallers=1 | 
+3000:0837 FUN_3000_0837 size=1854 ncallers=2 | 
+3000:0f75 draw_3d_view size=5949 ncallers=2 | 
+3000:27fc FUN_3000_27fc size=36 ncallers=1 | 
+3000:2822 FUN_3000_2822 size=36 ncallers=1 | 
+3000:2848 draw_map_square size=2758 ncallers=3 | 
+3000:3311 FUN_3000_3311 size=284 ncallers=2 | 
+3000:342d FUN_3000_342d size=5617 ncallers=3 | ENTER
+3000:4a24 FUN_3000_4a24 size=61 ncallers=4 | 
+3000:4a67 FUN_3000_4a67 size=528 ncallers=1 | SEX__MALE ; SEX__FEMALE
+3000:4c77 roll_char size=7641 ncallers=1 | I_CAN_T_FIND_THE_FILE_UROLL_TXT_ ; RACE_ ; STRENGTH_ ; INTELLIGENCE_ ; CONSTITUTION_ ; AGILITY_ ; HEIGHT__INCHES ; WEIGHT__POUNDS ; AGE__YEARS ; Y__KEEP_THIS_CHARACTER ; N__ROLL_A_NEW_CHARACTER ; D__DESIGN_YOUR_OWN_CHARACTER ; PLEASE_SELECT_ONE_OF_THE_ABOVE ; ESC_CANCEL_THIS_CHARACTER
+3000:6a6a FUN_3000_6a6a size=288 ncallers=2 | 
+3000:6b8a FUN_3000_6b8a size=197 ncallers=1 | 
+3000:6c6b set_16_colours size=50 ncallers=1 | 
+3000:6c9d boss_office_message size=488 ncallers=1 | Null_pointer_assignment_Divide_e ; A_MESSAGE_FROM ; THE_OFFICE_OF_THE ; RACE_
+3000:6e85 draw_monster_view size=423 ncallers=1 | 
+3000:703c FUN_3000_703c size=22 ncallers=1 | 
+3000:7052 FUN_3000_7052 size=352 ncallers=1 | 
+3000:71be FUN_3000_71be size=40 ncallers=1 | 
+3000:71e6 FUN_3000_71e6 size=802 ncallers=1 | LEVEL ; PERMANENT_SPELLS ; PREPARATION_SPELLS ; WIZARD_BATTLE_SPELLS ; PRIEST_BATTLE_SPELLS
+3000:7508 FUN_3000_7508 size=61 ncallers=4 | 
+3000:7545 FUN_3000_7545 size=659 ncallers=1 | MISC__MAGIC_ITEMS_ ; HIT__I__AND__5__TO_USE_THESE_ ; 1__NUCLEAR_HAND_GRENADES_ ; 2__STONES_OF_TELEPORTATION_ ; 3__STONES_OF_SEEING_ ; 4__FLOOR_SLOSHERS_ ; 5__POTION_OF_HEALING_ ; HIT__I__AND__4__TO_USE_THESE_ ; 6__GREEN_POTIONS_ ; 7__ORANGE_POTIONS_ ; 8__YELLOW_POTIONS_ ; 9__RED_POTIONS_ ; 10__BLUE_POTIONS_ ; 11__WHITE_POTIONS_
+3000:77e2 view_stats size=1163 ncallers=1 | VIEW_STATS_FOR ; RACE_ ; CLASS_ ; MONEY_IN_POCKET_ ; MONEY_IN_BANK_ ; LOADED_WEIGHT_ ; NAKED_WEIGHT_ ; HEIGHT__INCHES__ ; STRENGTH_ ; INTELLIGENCE_ ; CONSTITUTION_ ; AGILITY_ ; WEAPON_IN_HAND_ ; CURRENT_ARMOR_
+3000:7c6d read_spell_help size=399 ncallers=1 | HELP_FILE_NOT_FOUND ; HIT_ANY_KEY
+3000:7dfc FUN_3000_7dfc size=866 ncallers=1 | A_little_snake_scurries_up_and_s ; _Smarty_is_my_name__and_informat ; is_my_game__Learning_means_earni ; so_what_can_I_do_for_you_ ; HIT_RIGHT_BUTTON_OR_ESCAPE_TO_EX
+3000:81ba myrand size=191 ncallers=5 | 
+3000:827f check_for_ladder size=221 ncallers=3 | 
+3000:8360 retdwall size=204 ncallers=9 | 
+3000:8432 draw_side size=643 ncallers=2 | 
+3000:86b5 solidcheck size=125 ncallers=11 | 
+3000:8736 FUN_3000_8736 size=93 ncallers=0 | 
+3000:8793 FUN_3000_8793 size=75 ncallers=1 | 
+3000:87de drawsquare size=1440 ncallers=3 | 
+3000:8d7e FUN_3000_8d7e size=243 ncallers=0 | 
+3000:8e75 FUN_3000_8e75 size=343 ncallers=1 | 
+3000:8fcc FUN_3000_8fcc size=56 ncallers=3 | 
+3000:9004 FUN_3000_9004 size=34 ncallers=3 | 
+3000:9026 FUN_3000_9026 size=758 ncallers=3 | 
+3000:931c tablet_message size=332 ncallers=6 | 
+3000:9468 FUN_3000_9468 size=32 ncallers=1 | 
+3000:9488 FUN_3000_9488 size=215 ncallers=1 | 
+3000:955f level_up_screen size=300 ncallers=1 | 
+3000:968b load_picture_seq size=194 ncallers=0 | 
+3000:974d load_building_picture size=620 ncallers=4 | 
+3000:99bf title_screen size=1630 ncallers=1 | MoraffWare_Presents___ ; ADungeons_of_the_Unforgiven ; Copyright_1993__by_Steve_Moraff ; Hit_a_Key_to_Begin_Your_Challeng ; Artwork_by_Logan_Gilbert
+3000:a023 show_spell_help size=152 ncallers=5 | 
+3000:a0c1 FUN_3000_a0c1 size=48 ncallers=0 | 
+3000:a0f1 FUN_3000_a0f1 size=9 ncallers=1 | 
+3000:a0fa exp_value size=196 ncallers=2 | 
+3000:a1c4 FUN_3000_a1c4 size=56 ncallers=6 | _GOOD_NEWS___
+3000:a1fc drop_weapon size=475 ncallers=1 | YOU_FIND_A ; _YOU_ALREADY_HAVE ; 1__TAKE_THE_WEAPON ; 2__LEAVE_THE_WEAPON ; NOTE_THAT_YOU_MAY_END_UP ; WITH_SEVERAL_WEAPONS_WHICH ; WILL_WEIGH_YOU_DOWN_
+3000:a3d7 drop_armor size=478 ncallers=1 | YOU_FIND ; _YOU_ALREADY_HAVE ; 1__TAKE_THE_ARMOR ; 2__LEAVE_THE_ARMOR ; NOTE_THAT_YOU_MAY_END_UP ; WITH_SEVERAL_SUITS_OF ; ARMOR_WEIGHING_YOU_DOWN_
+3000:a5b5 FUN_3000_a5b5 size=21 ncallers=0 | 
+3000:a5cc spell_name_to_menu size=145 ncallers=4 | THE_SPELL_IS_A_LEVEL ; PERMANENT_SPELL_ ; PREPARATION_SPELL_ ; WIZARD_SPELL_ ; PRIESTLY_SPELL
+3000:a65d drop_spellbook size=523 ncallers=1 | YOU_HAVE_FOUND_A_SPELLBOOK_ ; HIT_ANY_KEY_FOR_A_DESCRIPTION ; OF_THE_SPELL_
+3000:a870 drop_scroll size=455 ncallers=1 | YOU_HAVE_FOUND_A_SCROLL_ ; HIT_ANY_KEY_FOR_A_DESCRIPTION ; OF_THE_SCROLL_
+3000:aa37 drop_wand size=568 ncallers=1 | YOU_FOUND_A_WAND_WITH ; HIT_ANY_KEY_FOR_A_DESCRIPTION ; OF_THE_WAND_
+3000:ac6f drop_paper size=440 ncallers=1 | YOU_FIND_A_SPELL_PAPER_ ; HIT_ANY_KEY_FOR_A_DESCRIPTION ; OF_THE_SPELL_ON_THE_PAPER_
+3000:ae27 find_item size=390 ncallers=1 | 
+3000:afc5 post_kill_heal size=158 ncallers=1 | 
+3000:b063 post_kill_sp size=135 ncallers=1 | 
+3000:b0ea FUN_3000_b0ea size=67 ncallers=1 | 
+3000:b12d kill_monster size=3129 ncallers=1 | YOU_KILLED_IT_ ; YOU_HAVE_FOUND_A_KEY__IT ; THIS_KEY_WILL_ALLOW_YOU ; TO_USE_TRAP_DOORS_LABELED ; WITH_THIS_NUMBER_ ; HIT_ANY_KEY___ ; YOU_FIND___ ; NOTHING___HIT_ANY_KEY_ ; SELECT_THE_ARMOR_TO_ENHANCE_ ; SELECT_A_WEAPON_TO_ENHANCE_ ; THE_GROUND_BEGINS_TO_RUMBLE_ ; AND_SUDDENLY_THE_BODY_OF_THE ; GREAT_SHADOW_OGEROTH_TURNS ; INTO_A_TINY_CAT_WHICH_SCURRIES
+3000:bd9a go_up_level size=747 ncallers=1 | 
+3000:c093 go_down_level size=764 ncallers=1 | 
+3000:c39d monster_manual size=1807 ncallers=1 | A_B_C_D_E ; PADEAD ; PRESS_A__B__C__D__OR_E_FOR_MORE_I ; SELECT_A_MONSTER_FOR_MORE_INFORM
+3000:caac FUN_3000_caac size=1557 ncallers=1 | so_what_can_I_do_for_you_ ; ARMOR_ ; WEAPON_ ; LEVEL_ ; SPELL_POINTS_ ; CONSTITUTION__AGILITY_OR_LUCK ; HEALTH_POINTS_
+3000:d0c1 msg_no_monster size=45 ncallers=6 | YOU_ARE_NOT_CURRENTLY ; ENGAGING_ANY_MONSTER_ ; HIT_ANY_KEY___
+3000:d0ee msg_already_in_effect size=45 ncallers=9 | CASTING_THIS_SPELL_WOULD ; BE_REDUNDANT_ ; HIT_ANY_KEY___
+3000:d11b FUN_3000_d11b size=45 ncallers=4 | YOU_HAVE_ALREADY_CAST ; THIS_SPELL_ ; HIT_ANY_KEY___
+3000:d148 enchant_weapon_perm size=197 ncallers=1 | 
+3000:d211 enchant_armor_perm size=197 ncallers=1 | 
+3000:d2da set_temp_armor_plus size=32 ncallers=1 | 
+3000:d2fc set_temp_weapon_plus size=32 ncallers=1 | 
+3000:d31e set_body_armor size=32 ncallers=1 | 
+3000:d340 set_prot_ring size=32 ncallers=1 | 
+3000:d362 set_anti_magic_ring size=32 ncallers=1 | 
+3000:d384 write_scroll_or_wand size=1076 ncallers=1 | PLEASE_SELECT_A_TYPE_OF_SPELL_ ; 1__PREPARATION_SPELLS ; 2__WIZARD_SPELLS ; 2_______________ ; 3__PRIESTLY_SPELLS ; 3_______________ ; PLEASE_SELECT_A_THE_LEVEL ; SPELL_YOU_WISH_ENCHANT_ ; MAXIMUM_LEVEL_ ; HIT_0_FOR_10_TH_LEVEL ; HIT_ESC_FOR_PREVIOUS_MENU ; _TYPE_NUMBER_ON_KEYBOARD_ ; PLEASE_SELECT_ONE_OF_THE_ABOVE ; 4__PREVIOUS_MENU
+3000:d7be FUN_3000_d7be size=45 ncallers=1 | YOU_FEEL_GOOD___HIT_ANY_KEY
+3000:d7eb FUN_3000_d7eb size=45 ncallers=4 | YOU_FEEL_VERY_GOOD_ ; HIT_ANY_KEY___
+3000:d818 explosion size=229 ncallers=1 | A_SMALL_EXPLOSION_OCCURS ; A_LARGE_EXPLOSION_OCCURS ; A_HUGE_EXPLOSION_OCCURS ; THE_EXPLOSION_DOES ; ON_THE_GROUND_DIRECTLY ; BELOW_THE_MONSTER_ ; POINTS_OF_DAMAGE_ ; HIT_ANY_KEY
+3000:d904 sleep_monster size=136 ncallers=1 | 
+3000:d990 FUN_3000_d990 size=38 ncallers=1 | 
+3000:d9ba FUN_3000_d9ba size=38 ncallers=1 | 
+3000:d9e4 FUN_3000_d9e4 size=68 ncallers=1 | 
+3000:da2c relocate_spell size=137 ncallers=3 | 
+3000:dab7 boss_immune_check size=99 ncallers=4 | WHEN_YOU_BEGIN_TO_CAST_THE ; SPELL_THE_MONSTER_STOPS_YOU ; AND_SAYS___NO__THAT_SILLY ; SPELL_DOESTN_T_WORK_ON_ME_ ; TRY_SOMETHING_ELSE_WHILE_I ; TEAR_YOUR_LIMBS_FROM_ONE ; ANOTHER__HEE_HEE_HEE_ ; HIT_ANY_KEY
+3000:db1e go_away size=247 ncallers=1 | 
+3000:dc18 autokill size=283 ncallers=1 | THE_MONSTER_S_BRAIN_EXPLODES ; FROM_ULTRA_INTENSE_BRAIN ; WAVES_WHICH_EMINATE_FROM ; YOUR_MIND_ ; HIT_ANY_KEY ; THE_SPELL_FAILS____TOUGH_LUCK ; CHARLIE_
+3000:dd37 FUN_3000_dd37 size=45 ncallers=2 | YOU_HAD_ALREADY_CAST_THIS ; SPELL__SO_NOW_IT_WILL_LAST ; 60_MOVES_LONGER_ ; HIT_ANY_KEY___
+3000:dd64 battle_strength size=99 ncallers=1 | YOUR_WEAPON_BEGINS_TO ; SHIMMER_WITH_POWER__THIS ; WEAPON_IS_AUTOMATICALLY ; IN_USE_UNTIL_THE_SPELL ; HIT_ANY_KEY
+3000:ddc9 battle_speed size=99 ncallers=1 | YOUR_BODY_BEGINS_TO_SHIMMER ; WITH_SHIFTING_COLORS_OF ; LIGHT__THIS_PROTECTION ; WILL_LAST_FOR_60_MOVES ; OR_STEPS_ ; HIT_ANY_KEY
+3000:de2e resist_poison size=53 ncallers=1 | YOU_FEEL_A_WARMTH_IN_YOUR ; BLOOD_AS_THE_RESIST ; POISON_TAKES_EFFECT_ ; HIT_ANY_KEY
+3000:de65 resist_disease size=53 ncallers=1 | YOU_FEEL_A_TINGLING_IN_YOUR ; BODY_AS_THE_RESIST ; DISEASE_TAKES_EFFECT_ ; HIT_ANY_KEY
+3000:de9c anti_cold size=53 ncallers=1 | YOU_FEEL_A_WARM_FEELING_AS ; YOUR_BODY_PREPARES ; FOR_AN_ICE_ATTACK_ ; SPELL_WILL_LAST_60_MOVES_ ; HIT_ANY_KEY
+3000:ded3 anti_fire size=53 ncallers=1 | YOU_FEEL_A_COOL_FEELING_AS ; YOUR_BODY_PREPARES ; FOR_A_FIRE_ATTACK_ ; SPELL_WILL_LAST_60_MOVES_ ; HIT_ANY_KEY
+3000:df0a resist_drain size=53 ncallers=1 | YOU_FEEL_A_HEAVENLY ; PRESENCE_AS_THE_FORCES ; OF_GOOD_GATHER_TO_DEFEND ; YOU_AGAINST_LEVEL_DRAIN_ ; HIT_ANY_KEY
+3000:df41 drain_monster size=192 ncallers=1 | 
+3000:e003 pass_wall size=423 ncallers=1 | SELECT_A_DIRECTION_ ; 1__NORTH__UP_ ; 2__SOUTH__DOWN_ ; 3__EAST__RIGHT_ ; 4__WEST__LEFT_ ; 5__CANCEL_SPELL__ESCAPE_
+3000:e1b8 spell_effect size=5541 ncallers=1 | _YOU_ARE_ON_LEVEL_ ; THAT_SPELL_DOES_NOT ; WORK_THIS_DEEP_ ; HIT_ANY_KEY___ ; WORK_BELOW_THE_64_TH ; LEVEL_ ; THIS_SPELL_CAN_NOT_BE ; USED_TO_MAKE_YOU_FLOAT ; ABOVE_THE_TOWN_ ; YOUR_X_AND_Y_COORDINATES ; THAT_SPELL_DOES_NOT_WORK ; THIS_DEEP_ ; THE_MONSTER_FOR ; WISPS_OF_COLORFUL_LIGHT
+4000:0001 FUN_4000_0001 size=52 ncallers=1 | 
+4000:0035 FUN_4000_0035 size=1637 ncallers=1 | 
+4000:069a FUN_4000_069a size=491 ncallers=10 | 
+4000:0885 FUN_4000_0885 size=158 ncallers=4 | 
+4000:0923 FUN_4000_0923 size=56 ncallers=0 | 
+4000:095b FUN_4000_095b size=74 ncallers=1 | 
+4000:09a5 FUN_4000_09a5 size=282 ncallers=5 | 
+4000:0abf load_font size=244 ncallers=1 | 
+4000:0bb3 pfont size=517 ncallers=41 | 
+4000:0db8 psfont size=422 ncallers=15 | 
+4000:0f5e FUN_4000_0f5e size=54 ncallers=1 | 
+4000:0f94 FUN_4000_0f94 size=44 ncallers=1 | 
+4000:0fc0 gmode size=109 ncallers=6 | 
+4000:102d set_ega_colour size=87 ncallers=2 | 
+4000:1084 FUN_4000_1084 size=62 ncallers=0 | 
+4000:10c2 apply_palette size=142 ncallers=2 | 
+4000:1150 gradient_palette size=371 ncallers=1 | 
+4000:12c3 set_palette size=5120 ncallers=8 | 
+4000:26d3 FUN_4000_26d3 size=78 ncallers=2 | 
+4000:2721 FUN_4000_2721 size=64 ncallers=2 | 
+4000:2761 FUN_4000_2761 size=57 ncallers=2 | BROWN_PUFFBALL
+4000:279a FUN_4000_279a size=110 ncallers=1 | A_MISSLE_BOLTS_FORWARD
+4000:2808 FUN_4000_2808 size=110 ncallers=1 | A_MISSLE_BOLTS_FORWARD
+4000:2876 FUN_4000_2876 size=93 ncallers=1 | A_MISSLE_BOLTS_FORWARD
+4000:28d3 FUN_4000_28d3 size=355 ncallers=0 | SELECT_THE_TYPE_OF_PAPER_
+4000:2a36 fill_rect size=142 ncallers=15 | 
+4000:2ac4 FUN_4000_2ac4 size=45 ncallers=0 | 
+4000:2af1 FUN_4000_2af1 size=56 ncallers=0 | 
+4000:2b29 FUN_4000_2b29 size=55 ncallers=0 | 
+4000:2b60 FUN_4000_2b60 size=55 ncallers=0 | 
+4000:2b97 FUN_4000_2b97 size=55 ncallers=0 | 
+4000:2bce FUN_4000_2bce size=51 ncallers=0 | 
+4000:2c01 FUN_4000_2c01 size=51 ncallers=0 | 
+4000:2c34 FUN_4000_2c34 size=46 ncallers=0 | 
+4000:2c62 FUN_4000_2c62 size=46 ncallers=0 | 
+4000:2c90 FUN_4000_2c90 size=198 ncallers=0 | 
+4000:2d56 FUN_4000_2d56 size=58 ncallers=0 | 
+4000:2d90 FUN_4000_2d90 size=2180 ncallers=4 | 
+4000:38db FUN_4000_38db size=229 ncallers=1 | 12__RINGS_OF_REGENERATION_ ; LOADED_WEIGHT_ ; 13__RING_OF_PROTECTION__PLUS ; 16__GAUNTLET__PLUS ; STRENGTH_DRAINED_ ; YOU_ARE_DISEASED_MOVES_LEFT_UNTI ; STRENGTH_ ; CONSTITUTION_DRAINED_ ; AGILITY_
+4000:39c0 mouse_detect size=50 ncallers=3 | 
+4000:39f8 FUN_4000_39f8 size=58 ncallers=1 | 
+4000:3a38 FUN_4000_3a38 size=69 ncallers=11 | 
+4000:3a81 FUN_4000_3a81 size=91 ncallers=2 | 
+4000:3adc FUN_4000_3adc size=39 ncallers=4 | 
+4000:3b05 FUN_4000_3b05 size=39 ncallers=4 | 
+4000:3b2e FUN_4000_3b2e size=22 ncallers=7 | 
+4000:3b44 FUN_4000_3b44 size=190 ncallers=10 | 
+4000:3c02 FUN_4000_3c02 size=28 ncallers=1 | 
+4000:3c20 FUN_4000_3c20 size=1154 ncallers=8 | 
+4000:40aa FUN_4000_40aa size=152 ncallers=1 | 
+4000:4142 FUN_4000_4142 size=28 ncallers=0 | 
+4000:415e FUN_4000_415e size=29 ncallers=8 | 
+4000:417b FUN_4000_417b size=16 ncallers=13 | 
+4000:418d mgetch_message size=83 ncallers=10 | 
+4000:41e5 FUN_4000_41e5 size=62 ncallers=3 | 
+4000:4225 FUN_4000_4225 size=143 ncallers=5 | 
+4000:42b4 erase_menu_block size=90 ncallers=16 | 
+4000:430e erase_message_block size=48 ncallers=25 | 
+4000:433e FUN_4000_433e size=1240 ncallers=5 | 
+4000:4818 scale_image2 size=1909 ncallers=10 | 
+4000:4f8f FUN_4000_4f8f size=1557 ncallers=1 | 
+4000:55b2 FUN_4000_55b2 size=598 ncallers=3 | 
+4000:580e FUN_4000_580e size=305 ncallers=1 | 
+4000:593f FUN_4000_593f size=291 ncallers=3 | 
+4000:5a62 FUN_4000_5a62 size=35 ncallers=1 | 
+4000:5a87 num_to_string size=63 ncallers=10 | 
+4000:5aca FUN_4000_5aca size=113 ncallers=2 | 
+4000:5b3f FUN_4000_5b3f size=82 ncallers=2 | 
+4000:5b91 FUN_4000_5b91 size=148 ncallers=2 | 
+4000:5c25 FUN_4000_5c25 size=148 ncallers=3 | 
+4000:5cb9 FUN_4000_5cb9 size=401 ncallers=0 | IN_OTHER_MODULES__YOU_WILL ; BATTLE_A_VAST_ARRAY_OF_NEW ; MONSTERS_ ; MODULES_3__4__AND_5_ALSO_HAVE ; MANY_NEW_MONSTERS__AND_IF_YOU ; ORDER_ALL_FOUR_MODULES__AT_A ; DISCOUNTED_PRICE__OF_COURSE__ ; YOU_WILL_RECEIVE_280_ADDITIONAL ; BRAND_NEW_LEVELS_OF_DUNGEON__ALL ; PACKED_WITH_NICE__FRIENDLY_LITTL ; _PEOPLE___SO_PICK_UP_THAT_PHONE ; AND_CALL_NOW_ ; TO_ORDER___800__VGA_GAME ; HIT_ANY_KEY_TO_EXIT
+4000:5e4a FUN_4000_5e4a size=394 ncallers=0 | OH_WELL__YOU_RE_DEAD____DON_T_WO ; IT_S_NOT_LIKE_YOU_CARED_ABOUT_TH ; CHARACTER__OR_DID_YOU__WELL__WE__ ; AN_OFFER_YOU_NO_CAN_REFUSE___IF_Y ; REGISTER_DUNGEONS_OF_THE_UNFORGI ; WE_WILL_BRING_YOU_BACK_TO_LIFE_ ; IN_FACT__AS_A_SPECIAL_REGISTRATI ; BONUS__THIS_DEATH_WILL_BE_COMPLE ; FORGIVEN__AND_YOU_WILL_BE_HEALED ; SO_ORDER_MORE_NEW_MODULES_OF_THI ; FABULOUS_GAME__AND_GET_NEW_MONST ; GRAPHICS__AND_OTHER_STUFF__YOUR_F ; CHARACTER_WILL_GREATLY_APPRECIAT ; KIND_AND_GENEROUS_ACTION_
+4000:5fd4 FUN_4000_5fd4 size=368 ncallers=0 | DECISION_TIME__DO_YOU_ORDER_NEW_E ; VERSION_OF_THIS_GREAT_GAME_AND_S ; HARD_FOUGHT__PROMISSING_CHARACTE ; YOU_ABANDON_YOUR_FRIEND_TO_THE_W ; THIS_IS_A_PRETTY_DECENT_CHARACTE ; HAVE_DEVELOPED__SO_THINK_CAREFUL ; BEFORE_MURDERING_IT__I_MEAN_WHAT ; YOU_TELL_THE_FAMILY__WHO_WILL_CL ; ITS_ROOM_BACK_AT_THE_INN__THINK_O ; THE_BURIAL_EXPENSES__NOT_TO_MENT ; THOSE_WASTED_EXPERIENCE_POINTS_ ; PLEASE_SELECT_ONE_OF_THE_FOLLOWI ; 1__SAVE_SELF__SMART_CHOICE_ ; 2__KILL_SELF__DUMB_CHOICE_
+4000:6144 FUN_4000_6144 size=472 ncallers=0 | WELL__YOU_VE_PASSED_FROM_THIS_EX ; THE_NEXT__BUT_DON_T_BE_DISCOURAG ; THERE_IS_SOMEONE__SOMEWHERE__WHO ; THIS_GAME_WORSE_THAN_YOU_DID_ ; FORTUNATELY__UNLIKE_IN_THE_REAL_W ; _PROBABLY___YOU_CAN_HAVE_ANOTHER ; TO_TRY_TO_PROVE_THAT_YOU_ARE_IND ; FIRST_CLASS_COMPUTER_GAME_NERD_ ; ADVICE__CHOOSE_TO__DESIGN_YOUR_O ; CHARACTER__AND_GIVE_YOURSELF_AN_E ; HIGH_STRENGTH__THEN_STAY_NEAR_TH ; SINCE_THE_DEEPER_YOU_GO__THE_MEA ; MONSTERS_BECOME__GOOD_LUCK___LIK ; HIT_ANY_KEY_TO_START_AGAIN__THEN
+4000:631c FUN_4000_631c size=863 ncallers=1 | 
+4000:667b FUN_4000_667b size=1103 ncallers=1 | __PREP_SPELLS ; VIEW_ONEY ; IEW_STATS ; AST_SPELL ; E_PAND_MAP ; XP_NEEDED ; PTIONS_MENU ; DIG_UNNEL ; IGHT_OSE_ITEM ; RMOR_EAPONS ; OOM_OCKETS ; ELP_RAPHICS ; UIT_USE_TEM ; S__SECTION_INFO
+4000:6aca drop_money size=2396 ncallers=1 | YOU_FIND_GREATER_AMERICAN ; DOLLARS__THESE_CAN_BE_TRADED ; FOR_REAL_CURRENCY_AT_ANY ; YOU_HAVE_FOUND_A_TOTAL_OF ; THAT_MIGHT_EVEN_BUY_YOU ; LUNCH__AT_MORDONALD_S__ ; YOU_COULD_FEED_A_HUNGRY ; CHILD_WITH_THAT_MONEY_ ; A_FEW_MORE_FINDS_LIKE_THIS ; AND_YOU_LL_STILL_BE_POOR_ ; YOU_SURE_KNOW_HOW_TO_PICK ; RICH_OPPONENTS__CHUCKLE____ ; NOT_TOO_BAD_A_CATCH__MONEY ; ISN_T_EVERYTHING_ANYWAY_
+4000:7426 FUN_4000_7426 size=245 ncallers=1 | MOVE_THE_MOUSE_AND_POINT_TO ; THINGS_AND_EXPERIMENT_WITH_IT ; THROUGHOUT_THE_COURSE_OF_THE ; GAME_TO_SEE_WHAT_IT_CAN_DO_ ; POINT_TO_THIS_BOX_AND_HIT ; LEFT_BUTTON_TO_DISABLE_THE_MOUSE ; MANY_FIND_THE_KEYBOARD_CONTROLS ; SUPERIOR_TO_THE_MOUSE_CONTROLS_
+4000:751b shareware_plea_screen size=512 ncallers=0 | PA_WE_AT_MORAFFWARE_MAKE_OUR_LIV ; AWAY_THE_COMPLETE_SHAREWARE_EDIT ; HIGH_RES_GAMES__AND_THEN_RECEIVI ; EVEN_LARGER_COMMERCIAL_EDITIONS_O ; SHAREWARE_EDITIONS_OF_OTHER_MORA ; MAY_BE_OBTAINED_FREE_BY_CALLING_E ; EXEC_PC_IS_THE_LARGEST_BBS_IN_TH ; _414__789_4210_WITH_YOUR_MODEM__O ; MORAFFWARE_VOICE_NUMBER__1_800_V ; A_COUPLE_OF_DOLLARS_PER_GAME_WE_ ; OF_OUR_SHAREWARE_EDITIONS_THROUG ; SO_PLEASE_HELP_US_SUCCEED_BY_GIV ; OF_THIS_GAME_TO_EVERYONE_YOU_KNO ; DELETE_THE_FILE__INTRO_TXT__TO_R
+4000:771b death_screen size=2302 ncallers=1 | WELCOME_TO_MODULE ; _APurchase_Module_II_by_calling_ ; __800__VGA_GAME_or__512__335_639 ; _CAN_T_GO_THERE_YET_
+5000:0006 FUN_5000_0006 size=326 ncallers=5 | 
+5000:0153 FUN_5000_0153 size=35 ncallers=4 | 
+5000:0176 FUN_5000_0176 size=92 ncallers=0 | 
+5000:01d2 FUN_5000_01d2 size=335 ncallers=1 | 
+5000:037e FUN_5000_037e size=420 ncallers=0 | 
+5000:0522 FUN_5000_0522 size=361 ncallers=1 | 
+5000:068b FUN_5000_068b size=12 ncallers=1 | 
+5000:0697 FUN_5000_0697 size=44 ncallers=1 | 
+5000:06c3 FUN_5000_06c3 size=19 ncallers=1 | 
+5000:06d6 FUN_5000_06d6 size=17 ncallers=1 | 
+5000:06e7 FUN_5000_06e7 size=173 ncallers=0 | POWER_WEAPON_3 ; LEATHER
+5000:07c4 FUN_5000_07c4 size=39 ncallers=4 | 
+5000:07eb draw_line size=290 ncallers=1 | overlay_pic
+5000:097e FUN_5000_097e size=32 ncallers=1 | 
+5000:099e FUN_5000_099e size=35 ncallers=4 | 
+5000:09c1 FUN_5000_09c1 size=287 ncallers=1 | YOU_CAN_BE_REWARDED_FOR_GOOD ; REGISTER_THIS_GAME_
+5000:0b4f FUN_5000_0b4f size=34 ncallers=0 | 
+5000:0b71 FUN_5000_0b71 size=61 ncallers=1 | Null_pointer_assignment_Divide_e
+5000:0bae FUN_5000_0bae size=34 ncallers=0 | 
+5000:0bd0 FUN_5000_0bd0 size=34 ncallers=0 | 
+5000:0bf2 FUN_5000_0bf2 size=48 ncallers=0 | 
+5000:0c58 FUN_5000_0c58 size=14 ncallers=1 | Null_pointer_assignment_Divide_e
+5000:0cc2 FUN_5000_0cc2 size=177 ncallers=0 | 
+5000:0d73 FUN_5000_0d73 size=179 ncallers=0 | 
+5000:0e26 FUN_5000_0e26 size=153 ncallers=1 | 
+5000:0ebf FUN_5000_0ebf size=158 ncallers=2 | 
+5000:0f5d FUN_5000_0f5d size=139 ncallers=1 | 
+5000:0fe8 FUN_5000_0fe8 size=170 ncallers=2 | 
+5110:0008 FUN_5110_0008 size=62 ncallers=2 | 
+5110:0046 FUN_5110_0046 size=49 ncallers=0 | 
+5110:0077 FUN_5110_0077 size=45 ncallers=1 | 
+5110:00a4 FUN_5110_00a4 size=55 ncallers=4 | 
+5120:0012 FUN_5120_0012 size=132 ncallers=4 | 
+5120:00ef FUN_5120_00ef size=4 ncallers=1 | BOLTS_FORWARD__BURNING
+5120:00f3 FUN_5120_00f3 size=463 ncallers=3 | BOLTS_FORWARD__BURNING
+5120:02bd FUN_5120_02bd size=234 ncallers=4 | BOLTS_FORWARD__BURNING
+5120:0353 FUN_5120_0353 size=225 ncallers=2 | 
+5120:048a FUN_5120_048a size=973 ncallers=3 | BOLTS_FORWARD__BURNING
+5120:0805 FUN_5120_0805 size=80 ncallers=0 | BOLTS_FORWARD__BURNING
+5120:085a FUN_5120_085a size=111 ncallers=1 | 
+5120:08d1 FUN_5120_08d1 size=219 ncallers=0 | 
+5120:09d9 FUN_5120_09d9 size=237 ncallers=1 | 
+5120:0dc1 FUN_5120_0dc1 size=5 ncallers=2 | 3__CHAIN_________300_RUBLES
+5120:0e27 FUN_5120_0e27 size=22 ncallers=1 | CULTURE_STOCK_HELPS_KEEP_YOU
+5120:0e3d FUN_5120_0e3d size=22 ncallers=3 | 
+5120:0e53 FUN_5120_0e53 size=24 ncallers=3 | BOLTS_FORWARD__BURNING
+5120:0e6b FUN_5120_0e6b size=28 ncallers=3 | 
+5120:0e87 FUN_5120_0e87 size=29 ncallers=3 | 
+5120:0ea4 FUN_5120_0ea4 size=22 ncallers=1 | 
+5120:0eba FUN_5120_0eba size=29 ncallers=1 | 
+5120:1013 FUN_5120_1013 size=106 ncallers=0 | 
+5120:1446 FUN_5120_1446 size=264 ncallers=2 | 
+5120:154e FUN_5120_154e size=237 ncallers=2 | 
+5120:1826 FUN_5120_1826 size=179 ncallers=0 | 
+5120:18d9 FUN_5120_18d9 size=55 ncallers=1 | POWER_WEAPON
+5120:1b5d FUN_5120_1b5d size=57 ncallers=0 | 
+5120:1b96 FUN_5120_1b96 size=87 ncallers=1 | THE_MONSTER_CATCHES_THE
+5120:1eb8 FUN_5120_1eb8 size=47 ncallers=1 | 
+5120:1ee7 FUN_5120_1ee7 size=203 ncallers=0 | 
+5120:1fb2 FUN_5120_1fb2 size=30 ncallers=1 | 
+5120:1fd0 FUN_5120_1fd0 size=204 ncallers=0 | THIS_MIGHT_BUY_THE_DOORKNOB
+5120:2714 FUN_5120_2714 size=99 ncallers=9 | 
+5400:02f0 FUN_5400_02f0 size=22 ncallers=1 | BONUS__THIS_DEATH_WILL_BE_COMPLE
+5400:0306 FUN_5400_0306 size=170 ncallers=0 | THE_CHARGE_DOES
