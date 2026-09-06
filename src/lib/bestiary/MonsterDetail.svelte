@@ -192,8 +192,8 @@
     <div class="to-hit">
       <p class="note">Hitting it</p>
       <p>
-        A to-hit total of {halfTheTime.toLocaleString()} hits it half the time; {nineSwingsInTen.toLocaleString()} hits
-        it 9 swings in 10.
+        A to-hit total of {halfTheTime.toLocaleString()} gets past its defense half the time; {nineSwingsInTen.toLocaleString()}
+        nine swings in ten.
       </p>
       <p>
         Your total is 2 × level + Strength (counted twice, plus 25 over 25, on normal difficulty) + Luck + weapon and
