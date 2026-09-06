@@ -9,16 +9,27 @@ import {
   drainMonster,
   explosion,
   goAway,
+  holdMonster,
+  lightningBolt,
+  magicBolt,
+  magicMissile,
+  magicZap,
+  magicZot,
+  majorShock,
+  minorShock,
   msgNoMonster,
   passWall,
   relocateSpell,
   resistDisease,
   resistDrain,
   resistPoison,
+  shock,
   sleepMonster,
+  slowEnemies,
   speed,
   strength,
   strengthAndSpeed,
+  wizardBattle,
 } from './magic';
 import { BorlandRng } from './rng';
 import type { Game, Monster } from './state';
@@ -434,5 +445,170 @@ describe('the occupancy map', () => {
     expect(monsterAt(game, 3, 4)).toBe(MAP_PLAYER);
     setMonsterMap(game, 3, 4, MAP_EMPTY);
     expect(monsterAt(game, 3, 4)).toBe(-1);
+  });
+});
+
+describe('the wizard list’s damage spells', () => {
+  it.each([
+    [magicZap, 'magicZap' as const, 'WISPS OF COLORFUL LIGHT'],
+    [lightningBolt, 'lightning' as const, 'YOU FORM A BALL WITH YOUR'],
+    [minorShock, 'minorShock' as const, 'YOU TOUCH THE MONSTER'],
+    [magicMissile, 'magicMissile' as const, 'A MISSLE BOLTS FORWARD'],
+    [shock, 'shock' as const, 'YOU TOUCH THE MONSTER'],
+    [majorShock, 'majorShock' as const, 'YOU TOUCH THE MONSTER'],
+  ])('do the damage dotu-mech gives for %s', (cast, name, opening) => {
+    const { game, monster } = fighting();
+    expect(cast(game)).toBe(true);
+    expect(5000 - monster.hp).toBe(damageSpells(game.pc.lev)[name]);
+    expect(game.messages[0]).toBe(opening);
+  });
+
+  it.each([
+    [magicZap, 'THE MONSTER FOR 22'],
+    [lightningBolt, 'THE MONSTER FOR 44'],
+  ])('write the number into the line the way itoa does', (cast, line) => {
+    const { game } = fighting();
+    cast(game);
+    expect(game.messages).toContain(line);
+  });
+
+  it.each([
+    [magicZot, 'magicZot' as const],
+    [magicBolt, 'magicBolt' as const],
+  ])('roll %s over one missile per level, plus one', (cast, name) => {
+    const single = fighting(55);
+    single.game.pc.lev = 0;
+    const [low, high] = damageSpells(0)[name];
+    const seen = new Set<number>();
+    for (let i = 0; i < 500; i++) {
+      const before = single.monster.hp;
+      single.game.messages.length = 0;
+      expect(cast(single.game)).toBe(true);
+      seen.add(before - single.monster.hp);
+    }
+    expect(Math.min(...seen)).toBe(low);
+    expect(Math.max(...seen)).toBe(high);
+
+    const ten = fighting(56);
+    const [tenLow, tenHigh] = damageSpells(ten.game.pc.lev)[name];
+    for (let i = 0; i < 500; i++) {
+      const before = ten.monster.hp;
+      ten.game.messages.length = 0;
+      cast(ten.game);
+      const rolled = before - ten.monster.hp;
+      expect(rolled).toBeGreaterThanOrEqual(tenLow);
+      expect(rolled).toBeLessThanOrEqual(tenHigh);
+    }
+  });
+
+  it('refuse when nothing is engaged', () => {
+    for (const cast of [magicZap, lightningBolt, minorShock, magicMissile, shock, majorShock, magicZot, magicBolt]) {
+      const game = newGame();
+      expect(cast(game)).toBe(false);
+      expect(game.messages[0]).toBe('YOU ARE NOT CURRENTLY');
+    }
+  });
+
+  it('say how many points Magic Zot did', () => {
+    const { game, monster } = fighting(8);
+    magicZot(game);
+    expect(game.messages).toEqual([
+      'A GROUP OF MISSLES SPRING',
+      'FORTH FROM YOUR FINGERTIPS',
+      'AND PLUNGE DIRECTLY INTO',
+      "THE ENEMY'S BODY.",
+      `THE MISSLES DO ${5000 - monster.hp}`,
+      'POINTS OF DAMAGE.',
+      '',
+      'HIT ANY KEY',
+    ]);
+  });
+});
+
+describe('slowEnemies', () => {
+  it('sets the clock to 60 rather than adding to it', () => {
+    const game = newGame({ pc: { slowEnemiesTimer: 50 } });
+    expect(slowEnemies(game)).toBe(true);
+    expect(game.pc.slowEnemiesTimer).toBe(60);
+    expect(game.messages[2]).toBe('HALF SPEED.');
+  });
+});
+
+describe('holdMonster', () => {
+  it('holds for 15 moves and writes the monster’s status line', () => {
+    const { game } = fighting();
+    expect(holdMonster(game)).toBe(true);
+    expect(game.pc.holdMonsterTimer).toBe(15);
+    expect(game.monsterStatusLine).toBe('MONSTER IS HELD');
+  });
+
+  it('refuses a Shadow boss, and refuses when nothing is engaged', () => {
+    const { game } = fighting(1, { type: BOSS });
+    expect(holdMonster(game)).toBe(false);
+    expect(game.pc.holdMonsterTimer).toBe(0);
+
+    const empty = newGame();
+    expect(holdMonster(empty)).toBe(false);
+    expect(empty.messages[0]).toBe('YOU ARE NOT CURRENTLY');
+  });
+});
+
+describe('wizardBattle', () => {
+  it('gives the three protections and the three power weapons their levels', () => {
+    const cells: [number, number, 'protection' | 'powerWeapon', number][] = [
+      [0, 2, 'protection', 1],
+      [4, 1, 'protection', 2],
+      [3, 2, 'powerWeapon', 1],
+      [7, 2, 'powerWeapon', 2],
+      [9, 2, 'powerWeapon', 3],
+    ];
+    for (const [levelIndex, slot, field, expected] of cells) {
+      const game = newGame();
+      expect(wizardBattle(game, levelIndex, slot)).toBe(true);
+      expect(game.pc[field]).toBe(expected);
+    }
+  });
+
+  it('gives the three explosions their sizes', () => {
+    const sizes: [number, 'minorExplosion' | 'explosion' | 'majorExplosion'][] = [
+      [4, 'minorExplosion'],
+      [6, 'explosion'],
+      [9, 'majorExplosion'],
+    ];
+    for (const [levelIndex, name] of sizes) {
+      const { game, monster } = fighting(levelIndex + 60);
+      const [low, high] = damageSpells(game.pc.lev)[name];
+      expect(wizardBattle(game, levelIndex, 0)).toBe(true);
+      expect(5000 - monster.hp).toBeGreaterThanOrEqual(low);
+      expect(5000 - monster.hp).toBeLessThanOrEqual(high);
+    }
+  });
+
+  it('says Go Away and Relocate worked even when Go Away refused a boss', () => {
+    const { game, monster } = fighting(1, { type: BOSS });
+    expect(wizardBattle(game, 3, 0)).toBe(true);
+    expect([monster.x, monster.y]).toEqual([10, 10]);
+  });
+
+  it('hands Pass Wall the direction the player picked', () => {
+    const { game } = fighting();
+    game.chooseDirection = () => 4;
+    expect(wizardBattle(game, 6, 1)).toBe(true);
+    expect([game.pc.x, game.pc.y]).toEqual([38, 50]);
+  });
+
+  it('runs every cell of the list', () => {
+    for (let levelIndex = 0; levelIndex < 10; levelIndex++) {
+      for (let slot = 0; slot < 3; slot++) {
+        const { game } = fighting(200 + levelIndex * 3 + slot);
+        expect(() => wizardBattle(game, levelIndex, slot)).not.toThrow();
+      }
+    }
+  });
+
+  it('reports nothing for a slot the list does not have', () => {
+    const { game } = fighting();
+    expect(wizardBattle(game, 0, 3)).toBe(false);
+    expect(wizardBattle(game, 10, 0)).toBe(false);
   });
 });

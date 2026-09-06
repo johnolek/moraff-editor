@@ -152,6 +152,12 @@ export interface Game {
    */
   solid(x: number, y: number, level: number, module: number): boolean;
   /**
+   * get_choice (exe 2000:2d93) reading the direction menu Pass Wall prints: 1 north, 2 south, 3
+   * east, 4 west, 5 cancel. The original reads the keyboard; the port asks whoever built the
+   * game, and {@link newGame} cancels by default.
+   */
+  chooseDirection(): number;
+  /**
    * print_menu_only (exe 2000:309e): show a screen of up to eight lines and wait for a key.
    * The game fills the slots it does not use with the empty string at DS:258b; those trailing
    * blanks are dropped here, blank lines between two printed ones are kept.
@@ -240,6 +246,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     monsterStatusLine: '',
     rng: new BorlandRng(1),
     solid: () => false,
+    chooseDirection: () => 5,
     ...rest,
     messages,
     say(...lines: string[]): void {

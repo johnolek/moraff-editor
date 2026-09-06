@@ -455,3 +455,287 @@ export function passWall(game: Game, choice: number): boolean {
   }
   return false;
 }
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 1 slot 2: Magic Zap.
+ */
+export function magicZap(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  const damage = game.pc.lev * 2 + 2;
+  game.monsters[game.engaged].hp -= damage;
+  game.say(
+    'WISPS OF COLORFUL LIGHT',
+    'GATHER TOGETHER AND ZAP',
+    `THE MONSTER FOR ${damage}`,
+    'POINTS OF DAMAGE.',
+  );
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 2 slot 1 and priest
+ * battle level 3 slot 3: Slow Enemies.
+ */
+export function slowEnemies(game: Game): boolean {
+  // Every other timer of this kind is added to; this one is set, so re-casting it early throws
+  // away whatever was left.
+  game.pc.slowEnemiesTimer = 60;
+  game.say('ALL YOUR ENEMIES SEEM', 'TO SLOW DOWN TO ABOUT', 'HALF SPEED.', '', 'HIT ANY KEY');
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 2 slot 3: Minor Shock.
+ */
+export function minorShock(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  game.monsters[game.engaged].hp -= 25;
+  game.say(
+    'YOU TOUCH THE MONSTER',
+    'AND ELECTRICITY FLOWS',
+    'THROUGH YOUR HANDS.',
+    'SHOCKING YOUR OPPONENT',
+    'FOR 25 POINTS OF DAMAGE.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 3 slot 1: Lightning
+ * Bolt.
+ */
+export function lightningBolt(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  const damage = game.pc.lev * 4 + 4;
+  game.monsters[game.engaged].hp -= damage;
+  game.say(
+    'YOU FORM A BALL WITH YOUR',
+    unrecoveredLine('3fe0', 24),
+    'BOLTS FORWARD, BURNING',
+    `THE MONSTER FOR ${damage}`,
+    'POINTS OF DAMAGE.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 3 slot 2: Magic
+ * Missile.
+ */
+export function magicMissile(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  game.monsters[game.engaged].hp -= 50;
+  game.say(
+    'A MISSLE BOLTS FORWARD',
+    'FROM YOUR FOREHEAD AND',
+    'STABS THE ENEMY FOR 50',
+    'POINTS OF DAMAGE.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 6 slot 1 and priest
+ * battle level 8 slot 3: Magic Zot, one missile per character level plus one.
+ */
+export function magicZot(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  let damage = 0;
+  // Ghidra lost the argument to Random here; that it is 5, making each missile 4 to 8, is what
+  // the RE notes and dotu-mech.js's magicZot range say.
+  for (let i = 0; i < game.pc.lev + 1; i++) damage += game.rng.random(5) + 4;
+  game.monsters[game.engaged].hp -= damage;
+  game.say(
+    'A GROUP OF MISSLES SPRING',
+    'FORTH FROM YOUR FINGERTIPS',
+    'AND PLUNGE DIRECTLY INTO',
+    "THE ENEMY'S BODY.",
+    `THE MISSLES DO ${damage}`,
+    'POINTS OF DAMAGE.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 6 slot 2 and priest
+ * battle level 7 slot 3: Shock.
+ */
+export function shock(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  game.monsters[game.engaged].hp -= 125;
+  game.say(
+    'YOU TOUCH THE MONSTER',
+    'AND ELECTRICITY FLOWS',
+    'THROUGH YOUR HANDS.',
+    'SHOCKING YOUR OPPONENT',
+    'FOR 125 POINTS OF DAMAGE.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 8 slot 1: Magic Bolt,
+ * Magic Zot's missiles with three more points each.
+ */
+export function magicBolt(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  let damage = 0;
+  // The argument to Random is the same 5 the RE notes and dotu-mech.js give Magic Zot, which
+  // makes each charge 7 to 11.
+  for (let i = 0; i < game.pc.lev + 1; i++) damage += game.rng.random(5) + 7;
+  game.monsters[game.engaged].hp -= damage;
+  game.say(
+    'AN ELECTRIC CHARGE LEAPS',
+    'FORTH FROM YOUR FINGERTIPS',
+    'INTO THE BODY OF THE ENEMY',
+    'MONSTER.',
+    `THE CHARGE DOES ${damage}`,
+    'POINTS OF DAMAGE.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 9 slot 1 and priest
+ * battle level 7 slot 1: Hold Monster, 15 moves.
+ */
+export function holdMonster(game: Game): boolean {
+  // This is the one place that asks about the boss before it asks whether anything is engaged,
+  // so with no monster in front of you the original reads the bytes in front of the monster
+  // table to decide.
+  if (bossImmuneCheck(game)) return false;
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  game.monsterStatusLine = 'MONSTER IS HELD';
+  game.pc.holdMonsterTimer = 15;
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 9 slot 3 and priest
+ * battle level 10 slot 3: Major Shock.
+ */
+export function majorShock(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  game.monsters[game.engaged].hp -= 300;
+  game.say(
+    'YOU TOUCH THE MONSTER',
+    'AND ELECTRICITY FLOWS',
+    'THROUGH YOUR HANDS.',
+    'SHOCKING YOUR OPPONENT',
+    'FOR 300 POINTS OF DAMAGE.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), the wizard battle list: case 2 of the
+ * outer switch, on the spell's level and then its slot. `levelIndex` is 0..9 and `slot` is 0..2,
+ * as the game passes them.
+ *
+ * The original's inner switch has no breaks between its cases, so a slot outside 0..2 falls
+ * through all ten of them and hands back whatever was in the register; nothing calls it that
+ * way, and this returns false instead.
+ */
+export function wizardBattle(game: Game, levelIndex: number, slot: number): boolean {
+  switch (levelIndex) {
+    case 0:
+      if (slot === 0) return sleepMonster(game);
+      if (slot === 1) return magicZap(game);
+      if (slot === 2) return battleSpeed(game, 1);
+      break;
+    case 1:
+      if (slot === 0) return slowEnemies(game);
+      if (slot === 1) return strength(game);
+      if (slot === 2) return minorShock(game);
+      break;
+    case 2:
+      if (slot === 0) return lightningBolt(game);
+      if (slot === 1) return magicMissile(game);
+      if (slot === 2) return speed(game);
+      break;
+    case 3:
+      // The switch throws away what these two report and calls the spell cast either way.
+      if (slot === 0) {
+        goAway(game);
+        return true;
+      }
+      if (slot === 1) {
+        relocateSpell(game);
+        return true;
+      }
+      if (slot === 2) return battleStrength(game, 1);
+      break;
+    case 4:
+      if (slot === 0) return explosion(game, 0);
+      if (slot === 1) return battleSpeed(game, 2);
+      if (slot === 2) return resistPoison(game);
+      break;
+    case 5:
+      if (slot === 0) return magicZot(game);
+      if (slot === 1) return shock(game);
+      if (slot === 2) return antiCold(game);
+      break;
+    case 6:
+      if (slot === 0) return explosion(game, 1);
+      if (slot === 1) return passWall(game, game.chooseDirection());
+      if (slot === 2) return antiFire(game);
+      break;
+    case 7:
+      if (slot === 0) return magicBolt(game);
+      if (slot === 1) return resistDrain(game);
+      if (slot === 2) return battleStrength(game, 2);
+      break;
+    case 8:
+      if (slot === 0) return holdMonster(game);
+      if (slot === 1) return drainMonster(game);
+      if (slot === 2) return majorShock(game);
+      break;
+    case 9:
+      if (slot === 0) return explosion(game, 2);
+      if (slot === 1) return autokill(game);
+      if (slot === 2) return battleStrength(game, 3);
+      break;
+  }
+  return false;
+}
