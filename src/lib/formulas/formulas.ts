@@ -298,7 +298,98 @@ const EXPERIENCE: Topic = {
   ],
 };
 
-export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXPERIENCE];
+const LOOT: Topic = {
+  id: 'loot',
+  title: 'Drops and money',
+  formulas: [
+    {
+      id: 'drop-odds',
+      title: 'What drops when you kill something',
+      explanation:
+        'Each kill runs several rolls that have nothing to do with each other. The weapon roll picks one of the seven weapons and hands it over if a draw against a hundred times its rank comes in under the monster\'s level plus ten, so a Great Sword off a level 50 monster is about one kill in eighty, and a weapon you already own never drops again. Armor works the same way over six kinds but does give duplicates, and Titanium, which no shop sells, is about one kill in sixty at that level. The separate "you find" roll depends on the floor instead of the monster and covers grenades, stones, potions, a slosher, a regeneration ring and the six stat books: on floor 20 a wizard turns something up one kill in twenty-four and a fighter or a sage one in fourteen, and a third of those finds are nothing at all. Monks find nothing anywhere, ever.',
+      inputs: 'The floor, the monster\'s level and your class.',
+      origin:
+        'exe drop_weapon 3000:a1fc, drop_armor 3000:a3d7 and find_item 3000:ae27, all called from kill_monster (exe 3000:b12d); drop_weapon in dotu-tools/decomp/unf.c. RE notes 3 and FAQ [LOOT].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' },
+    },
+    {
+      id: 'drop-spells',
+      title: 'Spell books, scrolls, wands and papers',
+      explanation:
+        'Anyone who can cast at all gets a spell book roll on every single kill: a random book of a random level up to two thirds of the floor, learned if it is one you do not know and your class is allowed it. From floor 15 down that ceiling is the whole ten levels, which is why deep characters fill their books quickly. Only if no book was learned does the game try a scroll, a wand or a spell paper, one third each, and those are much rarer, around one kill in sixty on floor 20. Fighters can only ever be handed spell papers, sages get better scroll odds but have their books gated behind two extra rolls, and monks are shut out of everything except books they already start with.',
+      inputs: 'The floor and your class.',
+      origin:
+        'exe drop_spellbook 3000:a65d, drop_scroll 3000:a870, drop_wand 3000:aa37 and drop_paper 3000:ac6f, called from kill_monster (exe 3000:b12d); drop_spellbook in dotu-tools/decomp/unf.c. RE notes 3 and FAQ [LOOT].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' },
+    },
+    {
+      id: 'drop-drainer',
+      title: 'Trap door keys and stat potions',
+      explanation:
+        'Killing a level drainer, which is about one monster in eighteen, is the only way to be given anything from this pair. It pays a random stat potion with a chance that rises with depth, a little over half the time on floor 20 and nearly three quarters on floor 100, and otherwise it hands you the trap door key for the block of five floors you are standing on, if you do not already have it and you are between floors 4 and 178. Every trap door in the game is locked, so the drainers are the only route to the shortcuts.',
+      inputs: 'The floor, and which keys you already carry.',
+      origin: 'exe kill_monster 3000:b12d, kill_monster in dotu-tools/decomp/unf.c. RE notes 3 and FAQ [LOOT].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' },
+    },
+    {
+      id: 'money',
+      title: 'The money a kill pays',
+      explanation:
+        'Money is a lottery. Three separate draws, all scaled by the floor, are multiplied together, so most kills pay little and the occasional one pays a fortune: on floor 20 the average is around 326,000 American dollars and on floor 50 around 28 million. Shallow floors get a top-up, floors past 16 lose a third, worshippers and wizards get an extra draw, sages triple the lot, and playing on the normal difficulty quietly adds up to 7,000 to every kill. The total is capped a little over 107 million, and the bank changes American dollars into rubles at a hundred to one. Two monsters killed inside the same second pay exactly the same, because the generator is reseeded from a clock that only ticks once a second.',
+      inputs: 'The floor, your class and the difficulty.',
+      origin:
+        'exe drop_money 4000:6aca, drop_money in dotu-tools/decomp/unf.c. RE notes 3; the same-second repeat is in TIDBITS, "Random numbers that are not random".',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'rollMoney' },
+    },
+    {
+      id: 'stock-price',
+      title: 'The price of culture stock',
+      explanation:
+        'Culture stock is what stops a night at the inn ageing you, and what it costs depends on nothing but your character level: 20 rubles a unit at level 5, 936 at level 20, 10,803 at level 45. You need one unit for every level squared each night, so a level 20 character is buying 400 units and a level 45 character 2,025. Nothing you do makes stock cheaper except staying at a lower level.',
+      inputs: 'Your character level.',
+      origin: 'exe g_store 2000:45ab, g_store in dotu-tools/decomp/unf.c. RE notes 2.1 and FAQ [TOWN].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'stockPrice' },
+    },
+    {
+      id: 'crystal-price',
+      title: 'The price of a magic crystal',
+      explanation:
+        'One magic crystal refills one spell point when you rest, and the price again follows only your level: 203 rubles at level 10 and 1,470 at level 20. On "I can handle anything" the same sum is divided by two instead of three, so crystals there cost half as much again, 2,205 at level 20. A caster who empties a deep pool every trip spends far more on crystals than on the room.',
+      inputs: 'Your character level and the difficulty.',
+      origin: 'exe g_store 2000:45ab, g_store in dotu-tools/decomp/unf.c. RE notes 2.1 and FAQ [TOWN].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'crystalPrice' },
+    },
+    {
+      id: 'store-refund',
+      title: 'The discount for helping children',
+      explanation:
+        'Each needy child you have helped at the temple gives one per cent back on culture stock and magic crystals, and the refund stops at half the price. Fifty children is therefore the entire discount, 500 rubles back on a purchase of 1,000, and every child after that buys nothing at the store. Weapons and armor are never discounted at all.',
+      inputs: 'What you are spending and how many children you have helped.',
+      origin: 'exe store_refund 2000:428d, store_refund in dotu-tools/decomp/unf.c. RE notes 2.3 and FAQ [TOWN].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'storeRefund' },
+    },
+    {
+      id: 'inn-cost',
+      title: 'A night at the inn',
+      explanation:
+        'A room costs your level to the fourth power plus ten, which is 635 rubles at level 5, 10,010 at level 10 and 4.1 million at level 45. Every child you have helped takes your level off the bill, so at level 20 fifty children save a thousand rubles on a room of 160,010 and the whole idea has stopped mattering; the discount can never take away more than half the price in any case. Resting is the only way to collect the levels you have earned, so this is a bill you pay whether you like it or not.',
+      inputs: 'Your character level and how many children you have helped.',
+      origin: 'exe flea_inn 2000:4fe7, flea_inn in dotu-tools/decomp/unf.c. RE notes 2.2 and FAQ [TOWN].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'innCost' },
+    },
+    {
+      id: 'temple',
+      title: 'What the temple charges',
+      explanation:
+        'The temple\'s six services are flat prices that never move, whatever your level: 10 rubles for a scratch, 100 for a serious wound, 500 to be healed completely, 300 to cure poison and 500 to cure a disease. Helping a needy child is 100 rubles, and it is the only purchase in the building that lasts, since the count is read afterwards by both the general store and the inn. Against level 20 prices anywhere else in town these are pocket change.',
+      inputs: 'Nothing. The temple never looks at your character.',
+      origin: 'exe temple 2000:4d39, temple in dotu-tools/decomp/unf.c, price table at DS:037f. RE notes 2.3 and FAQ [TOWN].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'TEMPLE' },
+    },
+  ],
+};
+
+export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXPERIENCE, LOOT];
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
