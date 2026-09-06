@@ -7848,15 +7848,196 @@ void __cdecl16far FUN_2000_0923(int param_1,int param_2,int param_3,int param_4,
 
 
 // ==== FUN_2000_0a06 @ 2000:0a06 (size 445) callers: FUN_2000_0fc5
-// DECOMPILE FAILED: Exception while decompiling 2000:0a06: ghidra.program.model.address.AddressOutOfBoundsException: Offset must be between 0x0 and 0x10ffef, got 0xc0000010 instead!
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void __cdecl16far FUN_2000_0a06(int param_1,uint param_2,uint param_3,undefined1 param_4)
+
+{
+  undefined2 *puVar1;
+  byte bVar2;
+  undefined2 *puVar3;
+  uint uVar4;
+  int iVar5;
+  char local_6;
+  
+  iVar5 = (int)(param_1 + param_3) >> 0xf;
+  if ((DAT_6000_c6ac <= iVar5) && ((DAT_6000_c6ac < iVar5 || (DAT_6000_c6aa < param_1 + param_3))))
+  {
+    param_3 = (DAT_6000_c6aa - param_1) + 1;
+  }
+  if (param_2 >> 6 != DAT_6000_4eb4) {
+    if (DAT_6000_8036 == 0) {
+      out(0x3cd,(char)(param_2 >> 6) + (char)(param_2 >> 6) * '\x10');
+    }
+    if (DAT_6000_8036 == 1) {
+      out(0x3c4,0xe);
+      bVar2 = in(0x3c5);
+      out(0x3c5,(bVar2 & 0xf0) + (char)(param_2 >> 6) ^ 2);
+    }
+    if (DAT_6000_8036 == 2) {
+      out(0x3ce,(param_2 >> 6) * 0x1100 + 0xd);
+    }
+    if (DAT_6000_8036 == 3) {
+      out(_DAT_c000_0010,0xb2);
+      bVar2 = in(_DAT_c000_0010 + 1);
+      out(_DAT_c000_0010,(bVar2 & 0xe1 | (param_2 >> 6) << 1) * 0x100 + 0xb2);
+    }
+    if ((DAT_6000_8036 == 4) || (DAT_6000_8036 == 5)) {
+      out(0x3d4,0x38);
+      out(0x3d5,0x48);
+      out(0x3d4,0x31);
+      bVar2 = in(0x3d5);
+      out(0x3d4,0x31);
+      out(0x3d5,bVar2 | 1);
+      out(0x3d4,0x35);
+      bVar2 = in(0x3d5);
+      out(0x3d4,0x35);
+      local_6 = (char)((int)(uint)bVar2 >> 4);
+      out(0x3d5,(char)(param_2 >> 6) + local_6 * '\x10');
+    }
+    if ((DAT_6000_8036 == 6) || (DAT_6000_8036 == 7)) {
+      out(0x3ce,(param_2 >> 6) * 0x1000 + 9);
+    }
+    DAT_6000_4eb4 = param_2 >> 6;
+  }
+  puVar3 = (undefined2 *)(param_2 * 0x400 + param_1);
+  uVar4 = param_3 >> 1;
+  if ((param_3 & 1) != 0) {
+    *(undefined1 *)puVar3 = param_4;
+    puVar3 = (undefined2 *)((int)puVar3 + 1);
+  }
+  for (; uVar4 != 0; uVar4 = uVar4 - 1) {
+    puVar1 = puVar3;
+    puVar3 = puVar3 + 1;
+    *puVar1 = CONCAT11(param_4,param_4);
+  }
+  return;
+}
 
 
 // ==== FUN_2000_0bc3 @ 2000:0bc3 (size 448) callers: draw_3d_view
-// DECOMPILE FAILED: Exception while decompiling 2000:0bc3: ghidra.program.model.address.AddressOutOfBoundsException: Offset must be between 0x0 and 0x10ffef, got 0xc0000010 instead!
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void __cdecl16far FUN_2000_0bc3(int param_1,int param_2,uint param_3,undefined2 param_4)
+
+{
+  undefined2 *puVar1;
+  byte bVar2;
+  int iVar3;
+  uint uVar4;
+  undefined2 *puVar5;
+  char local_6;
+  
+  if (param_1 < 0) {
+    param_1 = 0;
+  }
+  if (0x3ff < (int)(param_1 + param_3)) {
+    param_3 = 0x3ff - param_1;
+  }
+  iVar3 = param_2 >> 6;
+  if (iVar3 != DAT_6000_4eb4) {
+    if (DAT_6000_8036 == 0) {
+      out(0x3cd,(char)iVar3 * '\x11');
+    }
+    if (DAT_6000_8036 == 1) {
+      out(0x3c4,0xe);
+      bVar2 = in(0x3c5);
+      out(0x3c5,(bVar2 & 0xf0) + (char)(param_2 / 0x40) ^ 2);
+    }
+    if (DAT_6000_8036 == 2) {
+      out(0x3ce,iVar3 * 0x1100 + 0xd);
+    }
+    if (DAT_6000_8036 == 3) {
+      out(_DAT_c000_0010,0xb2);
+      bVar2 = in(_DAT_c000_0010 + 1);
+      out(_DAT_c000_0010,(bVar2 & 0xe1 | iVar3 << 1) * 0x100 + 0xb2);
+    }
+    if ((DAT_6000_8036 == 4) || (DAT_6000_8036 == 5)) {
+      out(0x3d4,0x38);
+      out(0x3d5,0x48);
+      out(0x3d4,0x31);
+      bVar2 = in(0x3d5);
+      out(0x3d4,0x31);
+      out(0x3d5,bVar2 | 1);
+      out(0x3d4,0x35);
+      bVar2 = in(0x3d5);
+      out(0x3d4,0x35);
+      local_6 = (char)((int)(uint)bVar2 >> 4);
+      out(0x3d5,(char)iVar3 + local_6 * '\x10');
+    }
+    DAT_6000_4eb4 = iVar3;
+    if ((DAT_6000_8036 == 6) || (DAT_6000_8036 == 7)) {
+      out(0x3ce,iVar3 * 0x1000 + 9);
+    }
+  }
+  puVar5 = (undefined2 *)((param_2 % 0x40) * 0x400 + param_1);
+  uVar4 = param_3 >> 1;
+  if ((param_3 & 1) != 0) {
+    *(char *)puVar5 = (char)param_4;
+    puVar5 = (undefined2 *)((int)puVar5 + 1);
+  }
+  for (; uVar4 != 0; uVar4 = uVar4 - 1) {
+    puVar1 = puVar5;
+    puVar5 = puVar5 + 1;
+    *puVar1 = param_4;
+  }
+  return;
+}
 
 
 // ==== FUN_2000_0d83 @ 2000:0d83 (size 303) callers: FUN_2000_0ec2,FUN_4000_4f8f
-// DECOMPILE FAILED: Exception while decompiling 2000:0d83: ghidra.program.model.address.AddressOutOfBoundsException: Offset must be between 0x0 and 0x10ffef, got 0xc0000010 instead!
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void __cdecl16far FUN_2000_0d83(int param_1)
+
+{
+  byte bVar1;
+  char local_4;
+  
+  if (param_1 != DAT_6000_4eb4) {
+    switch(DAT_6000_8036) {
+    case 0:
+      out(0x3cd,(char)param_1 * '\x11');
+      break;
+    case 1:
+      out(0x3c4,0xe);
+      bVar1 = in(0x3c5);
+      out(0x3c5,(bVar1 & 0xf0) + (char)param_1 ^ 2);
+      break;
+    case 2:
+      out(0x3ce,param_1 * 0x1100 + 0xd);
+      break;
+    case 3:
+      out(_DAT_c000_0010,0xb2);
+      bVar1 = in(_DAT_c000_0010 + 1);
+      out(_DAT_c000_0010,(bVar1 & 0xe1 | param_1 << 1) * 0x100 + 0xb2);
+      break;
+    case 4:
+    case 5:
+      out(0x3d4,0x38);
+      out(0x3d5,0x48);
+      out(0x3d4,0x31);
+      bVar1 = in(0x3d5);
+      out(0x3d4,0x31);
+      out(0x3d5,bVar1 | 1);
+      out(0x3d4,0x35);
+      bVar1 = in(0x3d5);
+      out(0x3d4,0x35);
+      local_4 = (char)((int)(uint)bVar1 >> 4);
+      out(0x3d5,(char)param_1 + local_4 * '\x10');
+      break;
+    case 6:
+    case 7:
+      out(0x3ce,param_1 * 0x1000 + 9);
+    }
+    DAT_6000_4eb4 = param_1;
+    return;
+  }
+  return;
+}
 
 
 // ==== FUN_2000_0ec2 @ 2000:0ec2 (size 259) callers: FUN_2000_0fc5
@@ -8027,11 +8208,121 @@ void __cdecl16far FUN_2000_0fc5(int param_1,int param_2,int param_3,int param_4,
 
 
 // ==== FUN_2000_11ea @ 2000:11ea (size 424) callers: 
-// DECOMPILE FAILED: Exception while decompiling 2000:11ea: ghidra.program.model.address.AddressOutOfBoundsException: Offset must be between 0x0 and 0x10ffef, got 0xc0000010 instead!
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void __cdecl16far FUN_2000_11ea(int param_1,int param_2,undefined1 param_3)
+
+{
+  byte bVar1;
+  int iVar2;
+  uint uVar3;
+  char local_a;
+  
+  iVar2 = param_2 >> 6;
+  if (iVar2 != DAT_6000_4eb4) {
+    if (DAT_6000_8036 == 0) {
+      out(0x3cd,(char)iVar2 * '\x11');
+    }
+    if (DAT_6000_8036 == 1) {
+      out(0x3c4,0xe);
+      bVar1 = in(0x3c5);
+      out(0x3c5,(bVar1 & 0xf0) + (char)(param_2 / 0x40) ^ 2);
+    }
+    if (DAT_6000_8036 == 2) {
+      out(0x3ce,iVar2 * 0x1100 + 0xd);
+    }
+    if (DAT_6000_8036 == 3) {
+      out(_DAT_c000_0010,0xb2);
+      bVar1 = in(_DAT_c000_0010 + 1);
+      out(_DAT_c000_0010,(bVar1 & 0xe1 | iVar2 << 1) * 0x100 + 0xb2);
+    }
+    if ((DAT_6000_8036 == 4) || (DAT_6000_8036 == 5)) {
+      out(0x3d4,0x38);
+      out(0x3d5,0x48);
+      out(0x3d4,0x31);
+      bVar1 = in(0x3d5);
+      out(0x3d4,0x31);
+      out(0x3d5,bVar1 | 1);
+      out(0x3d4,0x35);
+      bVar1 = in(0x3d5);
+      out(0x3d4,0x35);
+      local_a = (char)((int)(uint)bVar1 >> 4);
+      out(0x3d5,(char)iVar2 + local_a * '\x10');
+    }
+    DAT_6000_4eb4 = iVar2;
+    if ((DAT_6000_8036 == 6) || (DAT_6000_8036 == 7)) {
+      out(0x3ce,iVar2 * 0x1000 + 9);
+    }
+  }
+  if ((DAT_6000_c6a8 == 9) && (DAT_6000_8036 == 4)) {
+    do {
+      uVar3 = in(0x9ae8);
+    } while ((uVar3 & 0x200) != 0);
+  }
+  *(undefined1 *)(param_2 * 0x400 + param_1) = param_3;
+  return;
+}
 
 
 // ==== FUN_2000_1392 @ 2000:1392 (size 435) callers: FUN_4000_2af1,FUN_4000_2d90
-// DECOMPILE FAILED: Exception while decompiling 2000:1392: ghidra.program.model.address.AddressOutOfBoundsException: Offset must be between 0x0 and 0x10ffef, got 0xc0000010 instead!
+
+/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
+
+void __cdecl16far FUN_2000_1392(int param_1,int param_2,int param_3,byte param_4)
+
+{
+  byte bVar1;
+  int iVar2;
+  char local_c;
+  undefined4 local_8;
+  
+  if (0x3ff < param_1 + param_3) {
+    param_3 = 0x3ff - param_1;
+  }
+  local_8 = (byte *)CONCAT22(0xa000,(byte *)((param_2 % 0x40) * 0x400 + param_1));
+  iVar2 = param_2 >> 6;
+  if (iVar2 != DAT_6000_4eb4) {
+    if (DAT_6000_8036 == 0) {
+      out(0x3cd,(char)iVar2 * '\x11');
+    }
+    if (DAT_6000_8036 == 1) {
+      out(0x3c4,0xe);
+      bVar1 = in(0x3c5);
+      out(0x3c5,(bVar1 & 0xf0) + (char)(param_2 / 0x40) ^ 2);
+    }
+    if (DAT_6000_8036 == 2) {
+      out(0x3ce,iVar2 * 0x1100 + 0xd);
+    }
+    if (DAT_6000_8036 == 3) {
+      out(_DAT_c000_0010,0xb2);
+      bVar1 = in(_DAT_c000_0010 + 1);
+      out(_DAT_c000_0010,(bVar1 & 0xe1 | iVar2 << 1) * 0x100 + 0xb2);
+    }
+    if ((DAT_6000_8036 == 4) || (DAT_6000_8036 == 5)) {
+      out(0x3d4,0x38);
+      out(0x3d5,0x48);
+      out(0x3d4,0x31);
+      bVar1 = in(0x3d5);
+      out(0x3d4,0x31);
+      out(0x3d5,bVar1 | 1);
+      out(0x3d4,0x35);
+      bVar1 = in(0x3d5);
+      out(0x3d4,0x35);
+      local_c = (char)((int)(uint)bVar1 >> 4);
+      out(0x3d5,(char)iVar2 + local_c * '\x10');
+    }
+    DAT_6000_4eb4 = iVar2;
+    if ((DAT_6000_8036 == 6) || (DAT_6000_8036 == 7)) {
+      out(0x3ce,iVar2 * 0x1000 + 9);
+    }
+  }
+  for (; -1 < param_3; param_3 = param_3 + -1) {
+    *local_8 = *local_8 ^ param_4;
+    local_8 = (byte *)CONCAT22(local_8._2_2_,(byte *)local_8 + 1);
+  }
+  return;
+}
 
 
 // ==== FUN_2000_1545 @ 2000:1545 (size 44) callers: FUN_2000_1598
@@ -8943,8 +9234,26 @@ undefined2 __cdecl16far FUN_2000_2a2e(void)
 
 
 // ==== FUN_2000_2a83 @ 2000:2a83 (size 133) callers: lose_item,movecontrol,kill_monster,enchant_weapon_perm,enchant_armor_perm
-// DECOMPILE FAILED: 
-Low-level Error: Symbol $$undef00000002 extends beyond the end of the address space
+
+char * __cdecl16far FUN_2000_2a83(void)
+
+{
+  char *unaff_BP;
+  char *pcVar1;
+  undefined2 in_stack_00000000;
+  
+  strcpy((char *)CONCAT22(0x80b,DAT_6000_c694),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(0x80f,DAT_6000_c696),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(0x813,DAT_6000_c698),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(0x817,DAT_6000_c69a),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(0x81b,DAT_6000_c69c),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(0x81f,DAT_6000_c69e),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(0x823,DAT_6000_c6a0),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  pcVar1 = strcpy((char *)CONCAT22(0x827,DAT_6000_c6a2),(char *)CONCAT22(in_stack_00000000,unaff_BP)
+                 );
+  return (char *)pcVar1;
+}
+
 
 // ==== mset_gmenu @ 2000:2b08 (size 645) callers: FUN_2000_2ecc,flea_inn,lose_item,movecontrol,cast_a_spell,drop_spellbook,drop_scroll,drop_wand,drop_paper,enchant_weapon_perm,enchant_armor_perm,write_scroll_or_wand,spell_effect  // fill the 8 menu strings
 
@@ -9124,8 +9433,27 @@ LAB_2000_2ea9:
 
 
 // ==== FUN_2000_2ecc @ 2000:2ecc (size 143) callers: g_store
-// DECOMPILE FAILED: 
-Low-level Error: Symbol $$undef00000009 extends beyond the end of the address space
+
+void __cdecl16far
+FUN_2000_2ecc(undefined2 param_1,undefined2 param_2,undefined2 param_3,undefined2 param_4,
+             undefined2 param_5,undefined2 param_6,undefined2 param_7,undefined2 param_8)
+
+{
+  char *unaff_BP;
+  undefined2 in_stack_00000000;
+  
+  strcpy((char *)CONCAT22(param_1,DAT_6000_c694),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(param_2,DAT_6000_c696),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(param_3,DAT_6000_c698),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(param_4,DAT_6000_c69a),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(param_5,DAT_6000_c69c),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(param_6,DAT_6000_c69e),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(param_7,DAT_6000_c6a0),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcpy((char *)CONCAT22(param_8,DAT_6000_c6a2),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  mset_gmenu((undefined2 *)&DAT_6000_c694,0xffff,0,unaff_BP);
+  return;
+}
+
 
 // ==== FUN_2000_2f5d @ 2000:2f5d (size 281) callers: FUN_2000_3076,g_store,defend,lose_item,movecontrol,pass_wall
 
@@ -10024,8 +10352,39 @@ void __cdecl16far store_refund(float param_1)
 
 
 // ==== show_money @ 2000:438f (size 311) callers: g_store,bank,movecontrol  // prints rubles after a purchase
-// DECOMPILE FAILED: 
-Low-level Error: Symbol $$undef00000002 extends beyond the end of the address space
+
+void __cdecl16far show_money(void)
+
+{
+  undefined2 uVar1;
+  char *unaff_BP;
+  undefined2 in_stack_00000000;
+  
+  FUN_2000_28be();
+  pfont(0x3a2,0x301,0,0xb38);
+  strcpy((char *)CONCAT22(0xb52,DAT_6000_c694),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  uVar1 = num_to_string(0xb62,DAT_6000_c05a);
+  strcpy((char *)CONCAT22(uVar1,DAT_6000_c696),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  uVar1 = num_to_string(0xb6d,DAT_6000_bce4);
+  strcpy((char *)CONCAT22(uVar1,DAT_6000_c698),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  uVar1 = num_to_string(0xb7f,DAT_6000_bce8);
+  strcpy((char *)CONCAT22(uVar1,DAT_6000_c69a),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  uVar1 = num_to_string(0xb91,DAT_6000_bcec);
+  strcpy((char *)CONCAT22(uVar1,DAT_6000_c69c),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  uVar1 = num_to_string(0xba3,DAT_6000_bcf0);
+  strcpy((char *)CONCAT22(uVar1,DAT_6000_c69e),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  uVar1 = num_to_string(0xbb5,DAT_6000_bcd4);
+  strcpy((char *)CONCAT22(uVar1,DAT_6000_c6a0),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  uVar1 = num_to_string(0xbc7,DAT_6000_bcd8);
+  strcpy((char *)CONCAT22(uVar1,DAT_6000_c6a2),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  FUN_2000_3076();
+  FUN_2000_4054(unaff_BP);
+  FUN_2000_2820();
+  FUN_2000_28be();
+  erase_message_block();
+  return;
+}
+
 
 // ==== FUN_2000_44c6 @ 2000:44c6 (size 44) callers: g_store
 
@@ -14412,8 +14771,51 @@ void __cdecl16far print_battle_hp_info(void)
 
 
 // ==== engagement_timing @ 2000:b782 (size 373) callers: movecontrol  // probable: monster engagement timer
-// DECOMPILE FAILED: 
-Low-level Error: Symbol $$undef00000005 extends beyond the end of the address space
+
+void __cdecl16far engagement_timing(void)
+
+{
+  short sVar1;
+  char *unaff_BP;
+  longdouble in_ST0;
+  undefined2 in_stack_00000000;
+  char *s;
+  double dVar2;
+  
+  DAT_6000_c657 = 1;
+  DAT_6000_c655 = check_engagement();
+  FUN_2000_2820();
+  num_to_string((char *)s_YOU_ARE_FIGHTING_A_LEVEL_6000_1b13);
+  pfont();
+  pfont();
+  if (DAT_6000_c034 < 0x51) {
+    if (DAT_6000_c034 < 0x29) {
+      if (DAT_6000_c034 < 0xb) {
+        strcpy((char *)CONCAT22((char *)s_EXP__VALUE__6000_1b37,DAT_6000_c427),
+               (char *)CONCAT22(in_stack_00000000,unaff_BP));
+      }
+      else {
+        strcpy((char *)CONCAT22(0x1b31,DAT_6000_c427),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+      }
+    }
+    else {
+      strcpy((char *)CONCAT22(0x1b2d,DAT_6000_c427),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+    }
+  }
+  else {
+    strcpy((char *)CONCAT22(0x6f0,DAT_6000_c427),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  }
+  exp_value();
+  dVar2 = (double)in_ST0;
+  s = (char *)CONCAT22(0x12fb,DAT_6000_c427);
+  sVar1 = strlen(s);
+  FUN_1000_4fb2(DAT_6000_c427 + sVar1,(int)((ulong)s >> 0x10),dVar2,unaff_BP);
+  pfont();
+  pfont();
+  print_battle_hp_info();
+  return;
+}
+
 
 // ==== attack_timing @ 2000:b8f7 (size 323) callers: dig_hole,movecontrol  // probable: attack interval timer
 
@@ -16162,8 +16564,42 @@ char * __cdecl16far FUN_2000_df0e(char *param_1,int param_2)
 
 
 // ==== print_spell_line @ 2000:df3e (size 215) callers: cast_a_spell  // one line of the spell menu
-// DECOMPILE FAILED: 
-Low-level Error: Symbol $$undef0000000a extends beyond the end of the address space
+
+char * __cdecl16far
+print_spell_line(undefined2 param_1,int param_2,undefined2 param_3,undefined2 param_4,int param_5,
+             undefined2 param_6,undefined2 param_7,int param_8,undefined2 param_9)
+
+{
+  char *unaff_BP;
+  undefined2 in_stack_00000000;
+  
+  strcpy((char *)CONCAT22(param_1,DAT_6000_c427),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  if (param_2 == 0) {
+    strcat(DAT_6000_c427,(char *)s_NOT_YET_FOUND_6000_1f65,unaff_BP);
+  }
+  else {
+    strcat(DAT_6000_c427,param_3,unaff_BP);
+  }
+  FUN_2000_df0e(DAT_6000_c427,0x1b);
+  strcat(DAT_6000_c427,param_4,unaff_BP);
+  if (param_5 == 0) {
+    strcat(DAT_6000_c427,(char *)s_NOT_YET_FOUND_6000_1f65);
+  }
+  else {
+    strcat(DAT_6000_c427,param_6);
+  }
+  FUN_2000_df0e(DAT_6000_c427,0x35);
+  strcat(DAT_6000_c427,param_7);
+  if (param_8 == 0) {
+    strcat(DAT_6000_c427,(char *)s_NOT_YET_FOUND_6000_1f65);
+  }
+  else {
+    strcat(DAT_6000_c427,param_9);
+  }
+  FUN_2000_df0e(DAT_6000_c427,0x4f);
+  return DAT_6000_c427;
+}
+
 
 // ==== cast_a_spell @ 2000:e017 (size 6918) callers: movecontrol  // spell/scroll/wand/paper menus, SP accounting
 
@@ -24352,8 +24788,35 @@ undefined2 __cdecl16far explosion(int param_1)
 
 
 // ==== sleep_monster @ 3000:d904 (size 136) callers: spell_effect  // rand(ML) < 3 -> 25 moves
-// DECOMPILE FAILED: 
-Low-level Error: Symbol $$undef00000002 extends beyond the end of the address space
+
+undefined2 __cdecl16far sleep_monster(void)
+
+{
+  int iVar1;
+  char *unaff_BP;
+  undefined2 in_stack_00000000;
+  
+  if (DAT_6000_2517 == -1) {
+    msg_no_monster();
+    return 0;
+  }
+  if (DAT_6000_c078 == 1) {
+    msg_already_in_effect();
+    return 0;
+  }
+  iVar1 = Random();
+  if (iVar1 < 3) {
+    DAT_6000_c078 = 0x19;
+    strcpy((char *)CONCAT22((char *)s_MONSTER_IS_SLEEPING_6000_392b,DAT_6000_c4dd),
+           (char *)CONCAT22(in_stack_00000000,unaff_BP));
+  }
+  else {
+    print_menu_only((char *)s_THE_SPELL_FAILS__6000_393f,0x258b,(char *)s_HIT_ANY_KEY_6000_2d43,0x258b
+                  ,0x258b,0x258b,0x258b,0x258b);
+  }
+  return 1;
+}
+
 
 // ==== FUN_3000_d990 @ 3000:d990 (size 38) callers: spell_effect
 
@@ -29239,8 +29702,18 @@ FUN_4000_593f(char *param_1,undefined2 param_2,undefined2 param_3,undefined2 par
 
 
 // ==== FUN_4000_5a62 @ 4000:5a62 (size 35) callers: view_stats
-// DECOMPILE FAILED: 
-Low-level Error: Symbol $$undef00000003 extends beyond the end of the address space
+
+void __cdecl16far FUN_4000_5a62(undefined2 param_1,undefined2 param_2)
+
+{
+  char *unaff_BP;
+  undefined2 in_stack_00000000;
+  
+  strcpy((char *)CONCAT22(param_1,DAT_6000_c427),(char *)CONCAT22(in_stack_00000000,unaff_BP));
+  strcat(DAT_6000_c427,param_2,unaff_BP);
+  return;
+}
+
 
 // ==== num_to_string @ 4000:5a87 (size 63) callers: store_refund,show_money,g_store,temple,view_prep_spells,view_battle_spells,engagement_timing,FUN_3000_7545,view_stats,FUN_3000_caac  // sprintf-like number formatting
 
