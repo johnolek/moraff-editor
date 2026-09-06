@@ -463,7 +463,7 @@ const COMBAT: Topic = {
       id: 'move-seconds',
       title: 'How long a step takes',
       explanation:
-        'A step costs a second, plus another for every hundred pounds of you and your equipment beyond what your agility carries for free. A twenty pound midget with agility 10 moves in a second, a four hundred pound giant with no agility takes six, and every six seconds of walking is another swing handed to whatever is standing next to you. A Feather spell makes the weight count as nothing, which is the difference between the giant and the midget.',
+        'A step costs a second, plus another for every hundred pounds of you and your equipment beyond what your agility carries for free. A twenty pound midget with agility 10 moves in a second and a four hundred pound giant with no agility takes six, and every one of those seconds is time a monster beside you spends winding up its next attack. A Feather spell makes the weight count as nothing, which is the difference between the giant and the midget.',
       inputs: 'Your body weight plus everything you carry, and your agility.',
       origin: 'exe movecontrol 2000:c308, movecontrol in dotu-tools/decomp/unf.c. FAQ [GTPS].',
       code: { file: 'src/lib/game/dotu-mech.js', name: 'moveSeconds' },
@@ -561,7 +561,7 @@ const TIME: Topic = {
       id: 'inn-night',
       title: 'What a night at the inn does to you',
       explanation:
-        'A stay pushes the clock forward by 28,800 seconds, eight hours, and then works through a fixed list: it takes the room fee, ages you, refills your spell points from your magic crystals one for one, and finally hands you every level your experience has earned. Ageing is the interesting part. If you cannot pay one unit of culture stock for every level squared, whatever stock you have is taken anyway and you age by as many years as you were short, up to six; if you can pay, the stock goes and you do not age at all. Past the age of 60 that same shortfall also comes off your strength and your constitution, each floored at 2, and since nothing else in the game ages anyone, an old character is one who could not afford the groceries.',
+        'A stay takes the room fee, pushes the clock forward by 28,800 seconds, eight hours, and then works through a fixed list: it ages you, refills your spell points from your magic crystals one for one, and finally hands you every level your experience has earned. Ageing is the interesting part. If you cannot pay one unit of culture stock for every level squared, whatever stock you have is taken anyway and you age by as many years as you were short, up to six; if you can pay, the stock goes and you do not age at all. Past the age of 60 that same shortfall also comes off your strength and your constitution, each floored at 2, and since nothing else in the game ages anyone, an old character is one who could not afford the groceries.',
       inputs: 'Your level, your culture stock, your magic crystals, your experience and your age.',
       origin:
         'exe flea_inn 2000:4fe7, flea_inn in dotu-tools/decomp/unf.c. RE notes 2.2. Nothing in this app works the stay out; only the room fee is used, by the economy calculator.',
