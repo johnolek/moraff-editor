@@ -748,10 +748,14 @@ describe('spellEffect', () => {
     expect(priest.pc.protection).toBe(1);
   });
 
-  it('has no permanent or preparation spells yet', () => {
-    const game = newGame();
-    expect(() => spellEffect(game, 0, 0, 0)).toThrow('not ported yet');
-    expect(() => spellEffect(game, 1, 0, 0)).toThrow('not ported yet');
+  it('sends type 0 to the permanent list and type 1 to the preparation list', () => {
+    const permanent = newGame();
+    expect(spellEffect(permanent, 0, 2, 1)).toBe(true);
+    expect(permanent.pc.maxHp).toBe(105);
+
+    const preparation = newGame();
+    expect(spellEffect(preparation, 1, 6, 2)).toBe(true);
+    expect(preparation.pc.fastMove).toBe(1);
   });
 
   it('reports nothing for a type the game does not have', () => {

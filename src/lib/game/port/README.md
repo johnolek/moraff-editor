@@ -47,9 +47,9 @@ save parser has it. Fields that parser does not read are named after their label
   of its own, becomes a function here named after the spell: `magicZap`, `minorShock`. Its
   citation names the list, the level and the slot the spell has in the tables of the RE notes —
   level 1 to 10, slot 1 to 3, each one more than the index the switch itself uses.
-* `spell_effect` is one function in the game and three here: `spellEffect` on the type, and
-  `wizardBattle` and `priestBattle` for the two inner switches, so that one spell's code can be
-  shown on its own.
+* `spell_effect` is one function in the game and five here: `spellEffect` on the type, and
+  `permanentList`, `preparationList`, `wizardBattle` and `priestBattle` for the four inner
+  switches, so that one spell's code can be shown on its own.
 * **Every function's doc comment cites where it came from**: the address in the executable and
   the name it has in `dotu-tools/decomp/unf.c`, and for an inlined spell, which case of the
   switch it is.
@@ -77,14 +77,15 @@ those replace every character that is not a letter or a digit with an underscore
 
 ## What is ported
 
-* `state.ts` — the `Game` state, the monster tables, and `newGame()` for tests.
+* `state.ts` — the `Game` state, the monster and item tables, and `newGame()` for tests.
 * `rng.ts` — `Random(n)` over Borland's generator.
-* `magic.ts` — the wizard and priest battle spell lists, `spellEffect` for those two types, and
-  the helpers they share: the explosion roll, the autokill roll, Drain Monster, Go Away, Sleep,
-  Relocate, Pass Wall, the protection and power weapon levels, and the five resistances.
+* `magic.ts` — all four of `spell_effect`'s spell lists and `spellEffect` itself, with the
+  helpers they share: the explosion roll, the autokill roll, Drain Monster, Go Away, Sleep,
+  Relocate, Pass Wall, the protection and power weapon levels, the five resistances, the two
+  permanent enchantments, the rings, Body Armor, Write Scroll and Enchant Wand, the temporary
+  enchantments, and the carried weight.
 
 ## What is not ported yet
 
-* The permanent (type 0) and preparation (type 1) spell lists. `spellEffect` throws for those.
 * Everything else: movement, combat, the town, the dungeon (the dungeon generator is already
   ported, verbatim from the reference bundle, in `src/lib/game/unfmap.js`).

@@ -19,6 +19,7 @@ import {
   majorDescend,
   prepAgility,
   prepStrength,
+  preparationList,
   setTempArmorPlus,
   setTempWeaponPlus,
   superAgility,
@@ -322,5 +323,71 @@ describe('the floor changing spells', () => {
     const shallow = onFloor(6);
     expect(majorAscend(shallow)).toBe(true);
     expect(shallow.pc.level).toBe(0);
+  });
+});
+
+describe('preparationList', () => {
+  it('gives each Enchant Weapon and Enchant Armor its plus', () => {
+    const weapons: [number, number, number][] = [
+      [0, 1, 1],
+      [1, 0, 2],
+      [3, 0, 3],
+      [5, 2, 4],
+      [7, 1, 5],
+    ];
+    for (const [levelIndex, slot, plus] of weapons) {
+      const game = newGame();
+      expect(preparationList(game, levelIndex, slot)).toBe(true);
+      expect(game.pc.tempWeaponPlus).toBe(plus);
+    }
+
+    const armors: [number, number, number][] = [
+      [0, 0, 1],
+      [2, 1, 2],
+      [6, 1, 3],
+      [9, 2, 4],
+    ];
+    for (const [levelIndex, slot, plus] of armors) {
+      const game = newGame();
+      expect(preparationList(game, levelIndex, slot)).toBe(true);
+      expect(game.pc.tempArmorPlus).toBe(plus);
+    }
+  });
+
+  it('moves the character for Relocate and reports it cast whatever Relocate said', () => {
+    const game = onFloor(10);
+    expect(preparationList(game, 1, 1)).toBe(true);
+    expect([game.pc.x, game.pc.y]).not.toEqual([40, 50]);
+    expect(game.pc.level).toBe(10);
+    expect(game.events).toEqual([]);
+  });
+
+  it('puts each floor changer where the list has it', () => {
+    const cells: [number, number, number][] = [
+      [3, 2, 11],
+      [4, 0, 9],
+      [5, 1, 8],
+      [7, 2, 20],
+      [9, 0, 0],
+    ];
+    for (const [levelIndex, slot, expected] of cells) {
+      const game = onFloor(10);
+      expect(preparationList(game, levelIndex, slot)).toBe(true);
+      expect(game.pc.level).toBe(expected);
+    }
+  });
+
+  it('runs every cell of the list', () => {
+    for (let levelIndex = 0; levelIndex < 10; levelIndex++) {
+      for (let slot = 0; slot < 3; slot++) {
+        const game = onFloor(10, 400 + levelIndex * 3 + slot);
+        expect(() => preparationList(game, levelIndex, slot)).not.toThrow();
+      }
+    }
+  });
+
+  it('reports nothing for a cell the list does not have', () => {
+    expect(preparationList(onFloor(10), 0, 3)).toBe(false);
+    expect(preparationList(onFloor(10), 10, 0)).toBe(false);
   });
 });

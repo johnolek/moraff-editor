@@ -1074,6 +1074,74 @@ export function cureDisease(game: Game): boolean {
 }
 
 /**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), the preparation list: case 1 of the outer
+ * switch. `levelIndex` is 0..9 and `slot` is 0..2, as the game passes them.
+ *
+ * The inner switch has no breaks, so a slot outside 0..2 falls through the ten cases and on into
+ * the wizard battle list; this returns false instead.
+ */
+export function preparationList(game: Game, levelIndex: number, slot: number): boolean {
+  switch (levelIndex) {
+    case 0:
+      if (slot === 0) return setTempArmorPlus(game, 1);
+      if (slot === 1) return setTempWeaponPlus(game, 1);
+      if (slot === 2) return littleCure(game);
+      break;
+    case 1:
+      if (slot === 0) return setTempWeaponPlus(game, 2);
+      // The switch throws away what Relocate reports and calls the spell cast either way, as
+      // both battle lists do.
+      if (slot === 1) {
+        relocateSpell(game);
+        return true;
+      }
+      if (slot === 2) return detectLevel(game);
+      break;
+    case 2:
+      if (slot === 0) return cure(game);
+      if (slot === 1) return setTempArmorPlus(game, 2);
+      if (slot === 2) return prepStrength(game);
+      break;
+    case 3:
+      if (slot === 0) return setTempWeaponPlus(game, 3);
+      if (slot === 1) return prepAgility(game);
+      if (slot === 2) return descend(game);
+      break;
+    case 4:
+      if (slot === 0) return ascend(game);
+      if (slot === 1) return detectPosition(game);
+      if (slot === 2) return feather(game);
+      break;
+    case 5:
+      if (slot === 0) return bigCure(game);
+      if (slot === 1) return doubleAscend(game);
+      if (slot === 2) return setTempWeaponPlus(game, 4);
+      break;
+    case 6:
+      if (slot === 0) return invisibility(game);
+      if (slot === 1) return setTempArmorPlus(game, 3);
+      if (slot === 2) return fastMove(game);
+      break;
+    case 7:
+      if (slot === 0) return superStrength(game);
+      if (slot === 1) return setTempWeaponPlus(game, 5);
+      if (slot === 2) return majorDescend(game);
+      break;
+    case 8:
+      if (slot === 0) return superAgility(game);
+      if (slot === 1) return curePoison(game);
+      if (slot === 2) return healAllWounds(game);
+      break;
+    case 9:
+      if (slot === 0) return majorAscend(game);
+      if (slot === 1) return cureDisease(game);
+      if (slot === 2) return setTempArmorPlus(game, 4);
+      break;
+  }
+  return false;
+}
+
+/**
  * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 1 slot 2: Magic Zap.
  */
 export function magicZap(game: Game): boolean {
@@ -1488,13 +1556,13 @@ export function priestBattle(game: Game, levelIndex: number, slot: number): bool
  * and `slot` is 0..2 for its place on that line.
  *
  * The original is one function, a switch on the type around a switch on the level around tests
- * on the slot. The port splits the two battle lists into wizardBattle and priestBattle, which
- * are the same two switches, so that a spell's own code can be shown on its own.
+ * on the slot. The port splits the four lists into permanentList, preparationList, wizardBattle
+ * and priestBattle, which are the same four switches, so that a spell's own code can be shown
+ * on its own.
  */
 export function spellEffect(game: Game, type: number, levelIndex: number, slot: number): boolean {
-  // Slice 2 of the port (MORF-54's parent epic, MORF-52) brings the permanent and preparation
-  // lists, which need the weapon, armour and floor code the port does not have yet.
-  if (type === 0 || type === 1) throw new Error('not ported yet');
+  if (type === 0) return permanentList(game, levelIndex, slot);
+  if (type === 1) return preparationList(game, levelIndex, slot);
   if (type === 2) return wizardBattle(game, levelIndex, slot);
   if (type === 3) return priestBattle(game, levelIndex, slot);
   return false;
