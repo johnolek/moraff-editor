@@ -19,14 +19,16 @@ describe('pathToNearestTeleporter', () => {
         { x: 2, y: 0 },
         { x: 3, y: 0 },
       ],
+      hops: ['walk', 'walk', 'walk'],
       steps: 3,
       doors: 1,
       secretDoors: 1,
+      passWalls: 0,
     });
   });
 
   it('is a zero-step route when the start square touches a teleporter', () => {
-    expect(pathToNearestTeleporter(corridor, { x: 3, y: 0 })).toEqual({ squares: [{ x: 3, y: 0 }], steps: 0, doors: 0, secretDoors: 0 });
+    expect(pathToNearestTeleporter(corridor, { x: 3, y: 0 })).toEqual({ squares: [{ x: 3, y: 0 }], hops: [], steps: 0, doors: 0, secretDoors: 0, passWalls: 0 });
   });
 
   it('does not walk through walls or teleporter sides', () => {
@@ -49,6 +51,73 @@ describe('pathToNearestTeleporter', () => {
       [square({ n: 3, e: 3 }), square({ n: 3, w: 3, s: 4 })],
     ];
     expect(pathToNearestTeleporter(block, { x: 0, y: 0 })?.steps).toBe(2);
+  });
+});
+
+describe('pathToNearestTeleporter with Pass Wall', () => {
+  const rocks = (count: number) => Array.from({ length: count }, () => square({ solid: true }));
+
+  it('crosses a wall the route is otherwise blocked by', () => {
+    const blocked: Square[][] = [[square({ e: 3 }), square({ w: 3, e: 0 }), square({ w: 0, e: 3 }), square({ w: 3, e: 4 })]];
+    expect(pathToNearestTeleporter(blocked, { x: 0, y: 0 })).toBeNull();
+    expect(pathToNearestTeleporter(blocked, { x: 0, y: 0 }, true)).toEqual({
+      squares: [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 3, y: 0 },
+      ],
+      hops: ['walk', 'passWall'],
+      steps: 2,
+      doors: 0,
+      secretDoors: 0,
+      passWalls: 1,
+    });
+  });
+
+  it('walks on rather than jumping while the side ahead is open', () => {
+    // Five squares open to each other, a teleporter on the east side of the last one. Jumping
+    // across open floor would get there in two casts instead of four steps.
+    const open: Square[][] = [
+      [square({ e: 3 }), square({ w: 3, e: 3 }), square({ w: 3, e: 3 }), square({ w: 3, e: 3 }), square({ w: 3, e: 4 })],
+    ];
+    expect(pathToNearestTeleporter(open, { x: 0, y: 0 }, true)).toMatchObject({ steps: 4, passWalls: 0 });
+  });
+
+  it('casts only at the wall itself, not from the open squares before it', () => {
+    // Open as far as (2, 0), whose east side is a wall; (3, 0) and (4, 0) are rock. Casting from
+    // (0, 0) would be two moves, and is not allowed.
+    const overRock: Square[][] = [
+      [square({ e: 3 }), square({ w: 3, e: 3 }), square({ w: 3, e: 0 }), ...rocks(2), square({ n: 4 })],
+    ];
+    expect(pathToNearestTeleporter(overRock, { x: 0, y: 0 }, true)).toMatchObject({
+      squares: [
+        { x: 0, y: 0 },
+        { x: 1, y: 0 },
+        { x: 2, y: 0 },
+        { x: 5, y: 0 },
+      ],
+      hops: ['walk', 'walk', 'passWall'],
+      steps: 3,
+      passWalls: 1,
+    });
+  });
+
+  it('reaches 19 squares and no further', () => {
+    const nineteen: Square[][] = [[square(), ...rocks(18), square({ n: 4 })]];
+    expect(pathToNearestTeleporter(nineteen, { x: 0, y: 0 }, true)).toMatchObject({ steps: 1, passWalls: 1 });
+    const twenty: Square[][] = [[square(), ...rocks(19), square({ n: 4 })]];
+    expect(pathToNearestTeleporter(twenty, { x: 0, y: 0 }, true)).toBeNull();
+  });
+
+  it('counts the doors, secret doors and casts of a mixed route', () => {
+    // Walk through a door and a secret door, then cast through the wall beyond them.
+    const mixed: Square[][] = [
+      [square({ e: 1 }), square({ w: 1, e: 2 }), square({ w: 2, e: 0 }), ...rocks(1), square({ n: 4 })],
+    ];
+    const route = pathToNearestTeleporter(mixed, { x: 0, y: 0 }, true)!;
+    expect(route).toMatchObject({ steps: 3, doors: 1, secretDoors: 1, passWalls: 1 });
+    expect(route.hops).toEqual(['walk', 'walk', 'passWall']);
+    expect(route.hops).toHaveLength(route.steps);
   });
 });
 
