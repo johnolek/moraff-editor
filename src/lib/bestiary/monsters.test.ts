@@ -176,7 +176,7 @@ describe('describeEffects', () => {
     expect(effectsOf('Shadow Evil God')).toEqual([
       '-1 Strength when it hits you',
       'Breathes ice instead of striking half the time',
-      'Immune to Sleep, Go Away, Autokill, Drain Monster and grenades',
+      'Immune to Go Away, Autokill, Drain Monster, Hold Monster and grenades',
     ]);
   });
 });

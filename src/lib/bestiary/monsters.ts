@@ -259,7 +259,7 @@ export function describeEffects(entry: Monster): string[] {
   if (entry.special === 1) lines.push('Poisons you when it hits you');
   if (entry.special === 2) lines.push('Gives you a disease when it hits you');
   if (entry.special === PUFFBALL_SPECIAL) lines.push('Vanishes when it hits you, and is worth no experience');
-  if (entry.isBoss) lines.push('Immune to Sleep, Go Away, Autokill, Drain Monster and grenades');
+  if (entry.isBoss) lines.push('Immune to Go Away, Autokill, Drain Monster, Hold Monster and grenades');
   return lines;
 }
 
