@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { app } from '../app-state.svelte';
   import { bundledDungeon } from '../game/dungeon';
   import { floorBounds, floorsOfModule, summarizeFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
@@ -272,6 +273,7 @@
   }
 
   function onKeydown(event: KeyboardEvent) {
+    if (app.tab !== 'map') return;
     const target = event.target as HTMLElement | null;
     if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
     const action = keyAction(event.key);
