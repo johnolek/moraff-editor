@@ -94,7 +94,33 @@ const MAP: Topic = {
   ],
 };
 
-export const TOPICS: Topic[] = [MAP];
+const TELEPORTERS: Topic = {
+  id: 'teleporters',
+  title: 'Module teleporters',
+  formulas: [
+    {
+      id: 'teleporter-sides',
+      title: 'Where the teleporters are',
+      explanation:
+        'A module teleporter is not a square but a wall side that has quietly been turned into a way out of the module. The game multiplies the side\'s column by its row, adds the floor times the module number, and if the result is one more than a whole number of 128s, a side that would have been a plain wall becomes a teleporter instead. The rule is switched off from floor 15 downwards in every module but the first, so Module I has them all the way to the bottom while the others only carry them near the surface: floor 1 of Module I has seventeen teleporter squares, floor 30 of Module II has none. In Module I the module number is zero, which drops the floor out of the sum altogether, so the candidate spots are the same on every floor and only the ones that happen to be walls become teleporters.',
+      inputs: 'The side\'s column and row, the floor, the module, and whether that side came out as a wall in the first place.',
+      origin:
+        'exe retdwall2 2000:c22d, retdwall2 in dotu-tools/decomp/unf.c. Handoff section 4. The rule is commented out in the recovered source but live in the executable, and the wall artwork still holds the sign that points at one (TIDBITS, "Colours and pictures").',
+      code: { file: 'src/lib/game/unfmap.js', name: 'side2' },
+    },
+    {
+      id: 'teleporter-landing',
+      title: 'Where a teleporter drops you',
+      explanation:
+        'Walking into a teleporter moves you to the town of the module next door: up from Module I, down from Module V, and your choice of the two in between. Where in that town you appear is decided by drawing a column and a row at random over the area the game shows and drawing again until the square is not rock, so any of the three thousand or so open squares is as likely as any other. The same routine places you after Relocate, after Descend and Ascend, and after digging a hole, which is why none of those ever put you somewhere convenient.',
+      inputs: 'Which squares of the destination floor are rock. Not the square you left, and nothing about your character.',
+      origin: 'exe relocate 3000:da2c, relocate_spell in dotu-tools/decomp/unf.c. Handoff section 4.',
+      code: { file: 'src/lib/map/relocate.ts', name: 'randomOpenSquare' },
+    },
+  ],
+};
+
+export const TOPICS: Topic[] = [MAP, TELEPORTERS];
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
