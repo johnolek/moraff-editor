@@ -6,6 +6,8 @@
     /** Monsters stocked on the floor, empty when it has not been stocked. */
     monsters: StockedMonster[];
     town: boolean;
+    /** Whether the game itself could stock this floor; the override reaches ones it could not. */
+    canStock: boolean;
     /** Monster whose squares stay marked until it is clicked again or cleared. */
     pinned: string | null;
     onstock: () => void;
@@ -14,7 +16,7 @@
     onpin: (monsterId: string | null) => void;
   }
 
-  let { monsters, town, pinned, onstock, onclear, onhover, onpin }: Props = $props();
+  let { monsters, town, canStock, pinned, onstock, onclear, onhover, onpin }: Props = $props();
 
   const counts = $derived(monsterCounts(monsters));
 </script>
@@ -29,7 +31,9 @@
     <p class="hint">The town has no monsters.</p>
   {:else}
     <div class="buttons">
-      <button class="ghost" onclick={onstock}>{monsters.length ? 'Reroll' : 'Stock this floor'}</button>
+      <button class="ghost" onclick={onstock} disabled={!canStock} title={canStock ? undefined : 'The game cannot stock this floor.'}>
+        {monsters.length ? 'Reroll' : 'Stock this floor'}
+      </button>
       {#if monsters.length}
         <button class="ghost" onclick={onclear}>Clear</button>
       {/if}
@@ -74,9 +78,13 @@
     white-space: nowrap;
     cursor: pointer;
   }
-  button.ghost:hover {
+  button.ghost:hover:not(:disabled) {
     color: var(--ink);
     border-color: var(--accent);
+  }
+  button.ghost:disabled {
+    opacity: 0.4;
+    cursor: default;
   }
   .clear {
     background: none;

@@ -9,7 +9,7 @@
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
   import { jumpTarget, squareFeature, teleporterTargets } from './floor-info';
-  import { HistoryCursor, isMapHistoryState, type MapHistoryState, type MapPlace } from './history';
+  import { FLOOR_MAX, FLOOR_MIN, HistoryCursor, isMapHistoryState, type MapHistoryState, type MapPlace } from './history';
   import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
   import Legend from './Legend.svelte';
@@ -21,11 +21,14 @@
   import { squaresOfKind, type LegendKind, type Mark } from './marks';
   import SquareInfo from './SquareInfo.svelte';
   import { teleporterSegments } from './teleporters';
-  import { monsterAt, stockFloor, type StockedMonster } from './stocking';
+  import { monsterAt, stockFloor, stockingSection, type StockedMonster } from './stocking';
   import type { Point } from './viewport';
 
   let moduleIndex = $state(0);
   let floor = $state(0);
+  /** Lets the map be pointed at floors the module does not have, the way the game's own
+   *  16-bit floor variable can be. */
+  let anyFloor = $state(false);
   let cursor = $state<Point | null>(null);
   let highlight = $state<Point | null>(null);
   let legendHover = $state<LegendKind | null>(null);
@@ -41,6 +44,7 @@
   let floorCanvas: FloorCanvas;
 
   const floors = $derived(floorsOfModule(moduleIndex));
+  const floorRange = $derived(anyFloor ? { lowest: FLOOR_MIN, highest: FLOOR_MAX } : { lowest: 0, highest: BOTTOM_LEVEL[moduleIndex] });
   const rows = $derived(bundledDungeon.floor(floor, moduleIndex));
   const summary = $derived(summarizeFloor(bundledDungeon, floor, moduleIndex));
   const bounds = $derived(floorBounds(rows));
@@ -48,6 +52,7 @@
   const notable = $derived(notableSquares(lookup, floor, rows));
   const section = $derived(sectionInfo(moduleIndex, floor));
   const stockKey = $derived(`${moduleIndex}:${floor}`);
+  const canStock = $derived(stockingSection(moduleIndex, floor) !== null);
   const monsters = $derived(stocked.get(stockKey) ?? []);
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(bundledDungeon, moduleIndex, floor, cursorSquare, cursor.x, cursor.y) : null);
@@ -108,6 +113,8 @@
   }
 
   function applyPlace(place: MapPlace) {
+    // A history entry can name a floor the module does not have, and only the override shows one.
+    if (place.floor < 0 || place.floor > BOTTOM_LEVEL[place.module]) anyFloor = true;
     moduleIndex = place.module;
     floor = place.floor;
     highlight = place.square;
@@ -126,11 +133,26 @@
 
   function changeModule(event: Event) {
     const module = Number((event.currentTarget as HTMLSelectElement).value);
-    travel({ module, floor: Math.min(floor, BOTTOM_LEVEL[module]), square: null }, cursor);
+    travel({ module, floor: anyFloor ? floor : Math.min(floor, BOTTOM_LEVEL[module]), square: null }, cursor);
   }
 
   function changeFloor(event: Event) {
     showFloor(Number((event.currentTarget as HTMLSelectElement).value));
+  }
+
+  function typeFloor(event: Event) {
+    const typed = Math.trunc(Number((event.currentTarget as HTMLInputElement).value));
+    if (!Number.isFinite(typed)) return;
+    const level = Math.max(FLOOR_MIN, Math.min(FLOOR_MAX, typed));
+    if (level !== floor) showFloor(level);
+  }
+
+  /** Turning the override off brings the map back to a floor the module has. */
+  function toggleAnyFloor(event: Event) {
+    anyFloor = (event.currentTarget as HTMLInputElement).checked;
+    if (anyFloor) return;
+    const level = Math.max(0, Math.min(BOTTOM_LEVEL[moduleIndex], floor));
+    if (level !== floor) showFloor(level);
   }
 
   function showFloor(level: number) {
@@ -183,7 +205,7 @@
   }
 
   function stepFloor(delta: number) {
-    const level = Math.max(0, Math.min(BOTTOM_LEVEL[moduleIndex], floor + delta));
+    const level = Math.max(floorRange.lowest, Math.min(floorRange.highest, floor + delta));
     if (level !== floor) showFloor(level);
   }
 
@@ -265,14 +287,22 @@
       </label>
       <label>
         <span>Floor</span>
-        <select value={floor} onchange={changeFloor}>
-          {#each floors as level}
-            <option value={level}>{level === 0 ? '0 · Town' : level}</option>
-          {/each}
-        </select>
+        {#if anyFloor}
+          <input type="number" min={FLOOR_MIN} max={FLOOR_MAX} step="1" value={floor} onchange={typeFloor} />
+        {:else}
+          <select value={floor} onchange={changeFloor}>
+            {#each floors as level}
+              <option value={level}>{level === 0 ? '0 · Town' : level}</option>
+            {/each}
+          </select>
+        {/if}
       </label>
-      <button class="ghost" onclick={() => stepFloor(-1)} disabled={floor === 0}>▲ Floor up</button>
-      <button class="ghost" onclick={() => stepFloor(1)} disabled={floor === BOTTOM_LEVEL[moduleIndex]}>▼ Floor down</button>
+      <label class="toggle">
+        <input type="checkbox" checked={anyFloor} onchange={toggleAnyFloor} />
+        <span>Any floor</span>
+      </label>
+      <button class="ghost" onclick={() => stepFloor(-1)} disabled={floor === floorRange.lowest}>▲ Floor up</button>
+      <button class="ghost" onclick={() => stepFloor(1)} disabled={floor === floorRange.highest}>▼ Floor down</button>
       <button class="ghost" onclick={() => history.back()} disabled={!historyCursor.canGoBack}>◀ Back</button>
       <button class="ghost" onclick={() => history.forward()} disabled={!historyCursor.canGoForward}>Forward ▶</button>
     </div>
@@ -300,6 +330,7 @@
     <FloorMonsters
       {monsters}
       town={floor === 0}
+      {canStock}
       pinned={monsterPinned}
       onstock={stockThisFloor}
       onclear={clearMonsters}
@@ -372,13 +403,21 @@
     font-size: 12px;
     color: var(--muted);
   }
-  select {
+  select,
+  input[type='number'] {
     background: var(--panel-2);
     color: var(--ink);
     border: 1px solid var(--line);
     border-radius: 5px;
     padding: 7px 9px;
     font: inherit;
+    min-width: 0;
+  }
+  .toggle {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
   }
   .zoom {
     display: flex;
