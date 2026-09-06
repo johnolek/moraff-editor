@@ -49,7 +49,7 @@
 
   const trapdoorDestinations = $derived(
     Object.entries(summary.trapdoorDests)
-      .map(([floor, count]) => ({ floor: Number(floor), count }))
+      .map(([floor, count]) => ({ floor: Number(floor), count, label: `to ${floor} (${count})` }))
       .sort((a, b) => a.floor - b.floor),
   );
 </script>
@@ -79,8 +79,19 @@
         </button>
         {#if isTrapdoor(kind) && summary.floor > 0}
           <ul class="destinations">
-            {#each trapdoorDestinations as destination}
-              <li>to {destination.floor} ({destination.count})</li>
+            {#each trapdoorDestinations as { floor, label }}
+              <li>
+                <button
+                  type="button"
+                  class="destination"
+                  class:pinned={pinned === label}
+                  onpointerenter={() => onhover({ kind: 'trapdoorTo', floor })}
+                  onpointerleave={() => onhover(null)}
+                  onclick={() => toggle(label, { kind: 'trapdoorTo', floor })}
+                >
+                  {label}
+                </button>
+              </li>
             {/each}
           </ul>
           {#if summary.trapdoorLanding}
@@ -123,10 +134,27 @@
   .destinations {
     display: flex;
     flex-wrap: wrap;
-    gap: 2px 10px;
-    margin: 2px 0 0 30px;
-    font-size: 12px;
+    gap: 2px 6px;
+    margin: 2px 0 0 26px;
+  }
+  .destination {
+    padding: 2px 4px;
+    border: none;
+    border-radius: 4px;
+    background: none;
     color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .destination:hover {
+    background: var(--panel-2);
+    color: var(--ink);
+  }
+  .destination.pinned {
+    background: var(--panel-2);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--accent);
   }
   .landing {
     margin: 4px 0 0 30px;

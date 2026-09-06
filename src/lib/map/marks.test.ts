@@ -25,6 +25,15 @@ describe('squaresOfKind', () => {
     expect(squaresOfKind(rows, 0, { kind: 'town', building: 3 })).toEqual([{ x: 1, y: 1, label: null }]);
   });
 
+  it('finds only the trap doors leading to one floor', () => {
+    const trapdoors: Square[][] = [[square({ trapdoor: 15 }), square({ trapdoor: 9 }), square({ trapdoor: 15 })]];
+    expect(squaresOfKind(trapdoors, 3, { kind: 'trapdoorTo', floor: 15 })).toEqual([
+      { x: 0, y: 0, label: '15' },
+      { x: 2, y: 0, label: '15' },
+    ]);
+    expect(squaresOfKind(trapdoors, 3, { kind: 'trapdoorTo', floor: 4 })).toEqual([]);
+  });
+
   it('marks nothing for the open square entry', () => {
     expect(squaresOfKind(rows, 3, { kind: 'open' })).toEqual([]);
   });
