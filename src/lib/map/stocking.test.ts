@@ -4,7 +4,16 @@ import { sectionOf } from '../game/dotu-files.js';
 import { MONSTER_TYPE_ODDS, monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
 import { bundledDungeon } from '../game/dungeon';
 import { sectionInfo } from '../game/sections';
-import { MONSTER_SLOTS, monsterAt, monsterById, monsterCounts, stockFloor, stockingSection, type StockedMonster } from './stocking';
+import {
+  MONSTER_SLOTS,
+  groupedMonsterCounts,
+  monsterAt,
+  monsterById,
+  monsterCounts,
+  stockFloor,
+  stockingSection,
+  type StockedMonster,
+} from './stocking';
 
 /** A repeatable stand-in for Math.random, so a failing floor can be reproduced. Math.imul
  *  keeps the multiplication exact, which the full period of the generator depends on. */
@@ -119,6 +128,52 @@ describe('monsterCounts', () => {
     }
     const withoutBoss = counts.slice(1).map((entry) => entry.count);
     expect(withoutBoss).toEqual([...withoutBoss].sort((a, b) => b - a));
+  });
+});
+
+describe('groupedMonsterCounts', () => {
+  const listOf = (ids: string[]): StockedMonster[] => ids.map((monsterId, slot) => ({ slot, x: slot, y: 0, monsterId, level: 5, hp: 20 }));
+
+  it('groups the types in a fixed order, commonest first within each group', () => {
+    const groups = groupedMonsterCounts(
+      listOf([
+        'section-1-22',
+        'section-1-23',
+        'section-1-23',
+        'section-1-26',
+        'builtin-0',
+        'builtin-2',
+        'builtin-14',
+        'builtin-18',
+        'builtin-18',
+      ]),
+    );
+    expect(groups.map((group) => group.label)).toEqual(['Shadow boss', 'This section', 'Everywhere', 'Puffballs', 'Poison and disease']);
+    expect(groups.map((group) => group.counts.map((entry) => [entry.monsterId, entry.count]))).toEqual([
+      [['section-1-22', 1]],
+      [
+        ['section-1-23', 2],
+        ['section-1-26', 1],
+      ],
+      [['builtin-0', 1]],
+      [['builtin-2', 1]],
+      [
+        ['builtin-18', 2],
+        ['builtin-14', 1],
+      ],
+    ]);
+  });
+
+  it('leaves out the groups the floor holds none of', () => {
+    expect(groupedMonsterCounts(listOf(['builtin-2', 'builtin-0'])).map((group) => group.label)).toEqual(['Everywhere', 'Puffballs']);
+    expect(groupedMonsterCounts([])).toEqual([]);
+  });
+
+  it('holds every type a stocked floor has, and counts them as the flat list does', () => {
+    const monsters = stockFloor(floorOf(0, 5), 0, 5, seeded(31));
+    const grouped = groupedMonsterCounts(monsters).flatMap((group) => group.counts);
+    expect(grouped).toHaveLength(monsterCounts(monsters).length);
+    expect(grouped.reduce((total, entry) => total + entry.count, 0)).toBe(MONSTER_SLOTS);
   });
 });
 

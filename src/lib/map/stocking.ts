@@ -1,4 +1,4 @@
-import { allMonsters, type Monster } from '../bestiary/monsters';
+import { allMonsters, isPuffball, type Monster } from '../bestiary/monsters';
 import { nudgeLevel, rollHp } from '../bestiary/roll';
 import { sectionOf } from '../game/dotu-files.js';
 import { monsterLevelBase } from '../game/dotu-mech.js';
@@ -107,6 +107,34 @@ export function monsterCounts(monsters: StockedMonster[]): MonsterCount[] {
   return [...counts]
     .map(([monsterId, count]) => ({ monsterId, name: monsterById(monsterId).name, count }))
     .sort((a, b) => Number(monsterById(b.monsterId).isBoss) - Number(monsterById(a.monsterId).isBoss) || b.count - a.count);
+}
+
+export interface MonsterCountGroup {
+  label: string;
+  counts: MonsterCount[];
+}
+
+/** The headings the monster list groups its types under, in the order it shows them. */
+const GROUP_LABELS = ['Shadow boss', 'This section', 'Everywhere', 'Puffballs', 'Poison and disease'] as const;
+
+type GroupLabel = (typeof GROUP_LABELS)[number];
+
+function groupOf(entry: Monster): GroupLabel {
+  if (entry.isBoss) return 'Shadow boss';
+  if (entry.origin.kind === 'section') return 'This section';
+  if (isPuffball(entry)) return 'Puffballs';
+  if (entry.special === 0) return 'Everywhere';
+  return 'Poison and disease';
+}
+
+/** The floor's monster types split into those groups, commonest first within each group.
+ *  A group nothing was stocked from is left out. */
+export function groupedMonsterCounts(monsters: StockedMonster[]): MonsterCountGroup[] {
+  const counts = monsterCounts(monsters);
+  return GROUP_LABELS.map((label) => ({
+    label,
+    counts: counts.filter((entry) => groupOf(monsterById(entry.monsterId)) === label),
+  })).filter((group) => group.counts.length > 0);
 }
 
 /**
