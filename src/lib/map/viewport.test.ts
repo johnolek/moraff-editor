@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FULL_FLOOR,
   MAX_CELL,
   MIN_CELL,
   centerOn,
@@ -24,11 +25,22 @@ describe('squareAt', () => {
     expect(squareAt(view, 100 + 78 * 10, 50 + 103 * 10)).toEqual({ x: 78, y: 103 });
   });
 
-  it('returns null outside the area the game shows', () => {
+  it('finds the squares beyond the area the game shows, where monsters are stocked too', () => {
+    expect(squareAt(view, 100 + 79 * 10, 50)).toEqual({ x: 79, y: 0 });
+    expect(squareAt(view, 100, 50 + 105 * 10)).toEqual({ x: 0, y: 105 });
+  });
+
+  it('returns null outside the generated grid', () => {
     expect(squareAt(view, 99, 50)).toBeNull();
     expect(squareAt(view, 100, 49)).toBeNull();
-    expect(squareAt(view, 100 + 79 * 10, 50)).toBeNull();
-    expect(squareAt(view, 100, 50 + 104 * 10)).toBeNull();
+    expect(squareAt(view, 100 + 80 * 10, 50)).toBeNull();
+    expect(squareAt(view, 100, 50 + 110 * 10)).toBeNull();
+  });
+});
+
+describe('FULL_FLOOR', () => {
+  it('frames the area the game shows rather than the whole grid', () => {
+    expect(FULL_FLOOR).toEqual({ minX: 0, minY: 0, maxX: 78, maxY: 103 });
   });
 });
 

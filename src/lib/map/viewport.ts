@@ -1,3 +1,4 @@
+import { HEIGHT, WIDTH } from '../game/unfmap.js';
 import { MAP_COLUMNS, MAP_ROWS } from './area';
 
 export const MIN_CELL = 4;
@@ -28,10 +29,12 @@ export interface Bounds {
 
 export const FULL_FLOOR: Bounds = { minX: 0, minY: 0, maxX: MAP_COLUMNS - 1, maxY: MAP_ROWS - 1 };
 
+/** The square under a canvas point, anywhere on the generated grid: the squares beyond the
+ *  area the game shows hold stocked monsters worth pointing at. */
 export function squareAt(view: Viewport, px: number, py: number): Point | null {
   const x = Math.floor((px - view.originX) / view.cell);
   const y = Math.floor((py - view.originY) / view.cell);
-  if (x < 0 || x >= MAP_COLUMNS || y < 0 || y >= MAP_ROWS) return null;
+  if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) return null;
   return { x, y };
 }
 

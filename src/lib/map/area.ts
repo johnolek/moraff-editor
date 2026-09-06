@@ -1,5 +1,6 @@
 import type { Square } from '../game/unfmap.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX } from '../game/unfmap.js';
+import type { Point } from './viewport';
 
 /**
  * How much of a floor the game itself shows and lets you walk on. The game keeps the size in
@@ -10,6 +11,11 @@ import { DUNGEON_XMAX, DUNGEON_YMAX } from '../game/unfmap.js';
  */
 export const MAP_COLUMNS = DUNGEON_XMAX;
 export const MAP_ROWS = DUNGEON_YMAX;
+
+/** Whether a square is one of the squares the game shows. */
+export function isOnMap(point: Point): boolean {
+  return point.x < MAP_COLUMNS && point.y < MAP_ROWS;
+}
 
 /** Visits every square of a floor that is inside that area, row by row from the north-west. */
 export function forEachShownSquare(rows: Square[][], visit: (square: Square, x: number, y: number) => void): void {
