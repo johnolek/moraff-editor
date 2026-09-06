@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from './dungeon';
 import { LAST_WALKABLE_ROW, floorBounds, floorsOfModule, summarizeFloor, type FloorSummary } from './floor-summary';
-import { render } from './unfmap.js';
+import { HEIGHT, WIDTH, render, type Dungeon, type Square } from './unfmap.js';
 
 // Both fixtures were produced by the verified generator (dotu-tools/reference/make_fixtures.mjs).
 // A single differing character means the port is wrong.
@@ -28,6 +28,23 @@ describe('bundled dungeon', () => {
     const expected = fixtureSummaries.filter((summary) => summary.module === module);
     const actual = floorsOfModule(module - 1).map((floor) => summarizeFloor(bundledDungeon, floor, module - 1));
     expect(actual).toEqual(expected);
+  });
+});
+
+describe('summarizeFloor', () => {
+  it('asks for no trap door landing on a floor with no open square', () => {
+    const solidRows = Array.from({ length: HEIGHT }, () =>
+      Array.from({ length: WIDTH }, () => ({ n: 0, s: 0, w: 0, e: 0, solid: true, ladder: 0, chute: 0, trapdoor: -1, town: 0 }) as Square),
+    );
+    const solidDungeon = {
+      floor: () => solidRows,
+      trapdoorDest: () => {
+        throw new Error('trapdoorDest would search for ever');
+      },
+    } as unknown as Dungeon;
+    const summary = summarizeFloor(solidDungeon, 7, 0);
+    expect(summary.open).toBe(0);
+    expect(summary.trapdoorLanding).toBeUndefined();
   });
 });
 

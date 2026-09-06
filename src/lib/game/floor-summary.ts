@@ -17,7 +17,7 @@ export interface FloorSummary {
   town: [number, number, number, number];
   /** Trap door count by destination floor. */
   trapdoorDests: Record<string, number>;
-  /** Where trap doors leading to this floor land; absent on floor 0. */
+  /** Where trap doors leading to this floor land; absent on floor 0 and on solid floors. */
   trapdoorLanding?: [number, number];
 }
 
@@ -39,7 +39,9 @@ export function summarizeFloor(dungeon: Dungeon, level: number, moduleIndex: num
   for (const row of dungeon.floor(level, moduleIndex)) {
     for (const square of row) countSquare(summary, square);
   }
-  if (level > 0) summary.trapdoorLanding = dungeon.trapdoorDest(level, moduleIndex);
+  // trapdoorDest() keeps drawing squares until it finds an open one, so asking it about a floor
+  // that is solid all the way through never returns.
+  if (level > 0 && summary.open > 0) summary.trapdoorLanding = dungeon.trapdoorDest(level, moduleIndex);
   return summary;
 }
 
