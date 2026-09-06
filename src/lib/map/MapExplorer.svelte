@@ -176,8 +176,12 @@
     return you && nearestOpenSquare(bundledDungeon.floor(level, module), you);
   }
 
+  /** Moving yourself by hand also rewrites the current history entry, so Back and Forward
+   *  bring you back to this spot rather than to wherever the last travel left you. */
   function imHere() {
-    if (selected) you = selected;
+    if (!selected) return;
+    you = selected;
+    history.replaceState(entry(historyCursor.current, { module: moduleIndex, floor, square: highlight, you }), '');
   }
 
   function pick(square: Point) {
