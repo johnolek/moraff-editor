@@ -54,6 +54,7 @@
   const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, moduleIndex) : null);
   const cursorNotes = $derived(cursor && cursorSquare ? squareNotes(lookup, floor, cursorSquare, cursor.x, cursor.y).map(describeNote) : []);
   const cursorMonster = $derived(cursor ? monsterAt(monsters, cursor.x, cursor.y) : null);
+  const selectedMonster = $derived(selected ? monsterAt(monsters, selected.x, selected.y) : null);
   const tooltip = $derived<Tooltip | null>(
     cursorDescription
       ? {
@@ -218,9 +219,11 @@
   }
 
   /** Clicking a ladder, chute or trap door goes to the floor it leads to and marks the landing
-   *  square; clicking any other open square selects it. */
+   *  square; clicking any other open square selects it. A monster standing on the square comes
+   *  first either way: a click on a monster is aimed at the monster, not at the floor below it. */
   function follow(square: Point) {
-    const target = jumpTarget(bundledDungeon, moduleIndex, floor, rows[square.y][square.x], square.x, square.y);
+    const monster = monsterAt(monsters, square.x, square.y);
+    const target = monster ? null : jumpTarget(bundledDungeon, moduleIndex, floor, rows[square.y][square.x], square.x, square.y);
     if (!target) {
       if (!rows[square.y][square.x].solid) {
         selected = square;
@@ -277,8 +280,17 @@
       Drag to pan, scroll to zoom. Arrow keys move the cursor, PgUp/PgDn change floor, Enter follows a ladder,
       chute or trap door.
     </p>
-    <SquareInfo description={cursorDescription} notes={cursorNotes} monster={cursorMonster} />
-    <Selection {selected} {route} {floorHasTeleporter} {teleporterModules} onroute={routeToTeleporter} onclear={clearSelection} ontake={takeTeleporter} />
+    <SquareInfo description={cursorDescription} notes={cursorNotes} />
+    <Selection
+      {selected}
+      {route}
+      monster={selectedMonster}
+      {floorHasTeleporter}
+      {teleporterModules}
+      onroute={routeToTeleporter}
+      onclear={clearSelection}
+      ontake={takeTeleporter}
+    />
     <FloorMonsters
       {monsters}
       town={floor === 0}

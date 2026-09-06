@@ -1,12 +1,17 @@
 <script lang="ts">
+  import { app } from '../app-state.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
+  import { describeMonster } from './describe';
   import { MODULE_NUMERALS } from './labels';
   import type { Route } from './path';
+  import type { StockedMonster } from './stocking';
   import type { Point } from './viewport';
 
   interface Props {
     selected: Point | null;
     route: Route | null | undefined;
+    /** The stocked monster standing on the selected square, if there is one. */
+    monster: StockedMonster | null;
     /** Whether the floor has a teleporter at all: without one there is nothing to walk to. */
     floorHasTeleporter: boolean;
     /** Modules the teleporter on the selected square leads to; empty when there is no teleporter. */
@@ -16,7 +21,13 @@
     ontake: (module: number) => void;
   }
 
-  let { selected, route, floorHasTeleporter, teleporterModules, onroute, onclear, ontake }: Props = $props();
+  let { selected, route, monster, floorHasTeleporter, teleporterModules, onroute, onclear, ontake }: Props = $props();
+
+  function openInMonsters() {
+    if (!monster) return;
+    app.requestedMonsterId = monster.monsterId;
+    app.tab = 'monsters';
+  }
 
   function describeRoute(route: Route): string {
     const parts = [`${route.steps} steps`];
@@ -29,7 +40,13 @@
 {#if selected}
   <section>
     <SectionHeading title="Selected {selected.x}, {selected.y}" />
+    {#if monster}
+      <p class="monster">{describeMonster(monster)}</p>
+    {/if}
     <div class="buttons">
+      {#if monster}
+        <button class="ghost" onclick={openInMonsters}>Open in Monsters</button>
+      {/if}
       <button class="ghost" onclick={onroute} disabled={!floorHasTeleporter} title={floorHasTeleporter ? undefined : 'No teleporter on this floor.'}>
         Path to nearest teleporter
       </button>
@@ -74,5 +91,8 @@
   p {
     margin: 8px 0 0;
     font-size: 13px;
+  }
+  .monster {
+    margin: 0 0 8px;
   }
 </style>
