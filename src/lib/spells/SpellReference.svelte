@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { app } from '../app-state.svelte';
   import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { LIST_NOTES, spellCorrection } from './mechanics';
@@ -13,6 +14,7 @@
 
   let listIndex = $state(0);
   let selected = $state<Spell | null>(null);
+  let grid: HTMLDivElement;
 
   const list = $derived(lists[listIndex]);
   const correction = $derived(selected ? spellCorrection(selected) : null);
@@ -32,7 +34,42 @@
     listIndex = index;
     selected = null;
   }
+
+  function spellForKey(key: string): Spell | null {
+    for (const [row, level] of list.levels.entries()) {
+      for (const [column, spell] of level.spells.entries()) {
+        if (gridKey(row, column) === key) return spell;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Both menus are keyed the way the game keys them, and both claim 1 to 4. A digit picks a
+   * spell while the keyboard is on the grid, where the game keys the last four spells 1 to 4,
+   * and picks a spell list anywhere else.
+   */
+  function onKeydown(event: KeyboardEvent) {
+    if (app.tab !== 'spells') return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    const target = event.target as HTMLElement | null;
+    if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
+    const key = event.key.toUpperCase();
+    const onGrid = target !== null && grid.contains(target);
+    const type = ['1', '2', '3', '4'].indexOf(key);
+    if (type >= 0 && !onGrid) {
+      pickList(type);
+      event.preventDefault();
+      return;
+    }
+    const spell = spellForKey(key);
+    if (!spell) return;
+    selected = spell;
+    event.preventDefault();
+  }
 </script>
+
+<svelte:window onkeydown={onKeydown} />
 
 <div class="reference">
   <div class="scroll">
@@ -60,7 +97,7 @@
     <div class="book">
       <div class="sheet">
         <p class="book-heading"><PixelText font="small" scale={3} text={GRID_HEADING} /></p>
-        <div class="grid">
+        <div class="grid" bind:this={grid}>
           {#each list.levels as level, row}
             {#each level.spells as spell, column}
               <button
