@@ -26,12 +26,6 @@
     {#if description.rock}
       <p class="feature">Rock</p>
     {:else}
-      <dl>
-        {#each description.sides as [direction, text]}
-          <dt>{direction}</dt>
-          <dd>{text}</dd>
-        {/each}
-      </dl>
       {#if description.feature}
         <p class="feature">{description.feature}</p>
       {/if}
@@ -49,24 +43,13 @@
 </section>
 
 <style>
+  /* Keeps the sections below from jumping as the pointer moves over squares that have more
+     or fewer lines to show. */
   section {
-    min-height: 150px;
-  }
-  dl {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 2px 12px;
-    margin: 0;
-    font-size: 13px;
-  }
-  dt {
-    color: var(--muted);
-  }
-  dd {
-    margin: 0;
+    min-height: 90px;
   }
   .feature {
-    margin: 10px 0 0;
+    margin: 0;
     font-size: 13px;
     color: var(--accent);
   }

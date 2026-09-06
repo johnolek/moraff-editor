@@ -1,20 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { Square } from '../game/unfmap.js';
-import { compactSides, describeFeature, describeMonster, describeNote, describeSide, describeSquare } from './describe';
+import { describeFeature, describeMonster, describeNote, describeSquare, describeTeleporter } from './describe';
 
 function square(overrides: Partial<Square> = {}): Square {
   return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
 }
 
-describe('describeSide', () => {
-  it('names each side kind and where teleporters lead', () => {
-    expect(describeSide(0, 0)).toBe('wall');
-    expect(describeSide(1, 0)).toBe('door');
-    expect(describeSide(2, 0)).toBe('secret door');
-    expect(describeSide(3, 0)).toBe('open');
-    expect(describeSide(4, 0)).toBe('teleporter to Module II');
-    expect(describeSide(4, 2)).toBe('teleporter to Module II or IV');
-    expect(describeSide(4, 4)).toBe('teleporter to Module IV');
+describe('describeTeleporter', () => {
+  it('names the modules a teleporter leads to', () => {
+    expect(describeTeleporter(0)).toBe('Teleporter to Module II');
+    expect(describeTeleporter(2)).toBe('Teleporter to Module II or IV');
+    expect(describeTeleporter(4)).toBe('Teleporter to Module IV');
   });
 });
 
@@ -27,16 +23,15 @@ describe('describeFeature', () => {
   });
 });
 
-describe('describeSquare and compactSides', () => {
-  it('describes rock without sides', () => {
-    const description = describeSquare(square({ solid: true }), null, 5, 6, 0);
-    expect(description).toEqual({ title: 'Square 5, 6', rock: true, sides: [], feature: null });
-    expect(compactSides(description)).toBe('');
+describe('describeSquare', () => {
+  it('describes rock and a plain open square', () => {
+    expect(describeSquare(square({ solid: true }), null, 5, 6, 0)).toEqual({ title: 'Square 5, 6', rock: true, feature: null });
+    expect(describeSquare(square({ n: 0, e: 1 }), null, 5, 6, 0)).toEqual({ title: 'Square 5, 6', rock: false, feature: null });
   });
 
-  it('lists the four sides in one line', () => {
-    const description = describeSquare(square({ n: 0, e: 1 }), null, 5, 6, 0);
-    expect(compactSides(description)).toBe('N wall · S open · W open · E door');
+  it('names a teleporter only when the square holds nothing else', () => {
+    expect(describeSquare(square({ e: 4 }), null, 5, 6, 2).feature).toBe('Teleporter to Module II or IV');
+    expect(describeSquare(square({ e: 4 }), { kind: 'down', destination: { floor: 3, x: 5, y: 6 } }, 5, 6, 2).feature).toBe('Down ladder to floor 3');
   });
 });
 

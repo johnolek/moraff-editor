@@ -1,17 +1,15 @@
-import type { Side, Square } from '../game/unfmap.js';
+import type { Square } from '../game/unfmap.js';
 import { teleporterTargets, type Feature } from './floor-info';
-import { GLYPH_LABELS, MODULE_NUMERALS, SIDE_LABELS, TOWN_BUILDINGS } from './labels';
+import { GLYPH_LABELS, MODULE_NUMERALS, TOWN_BUILDINGS } from './labels';
 import type { Note } from './notes';
-import { sideStroke, type Glyph } from './palette';
+import { hasTeleporterSide } from './path';
+import type { Glyph } from './palette';
 import { monsterById, type StockedMonster } from './stocking';
 
-export function describeSide(side: Side, moduleIndex: number): string {
-  const stroke = sideStroke(side);
-  if (stroke === 'teleporter') {
-    const targets = teleporterTargets(moduleIndex).map((index) => MODULE_NUMERALS[index]);
-    return `${SIDE_LABELS.teleporter} to Module ${targets.join(' or ')}`;
-  }
-  return SIDE_LABELS[stroke ?? 'open'];
+/** Where the teleporter on a square leads: "Teleporter to Module II or IV". */
+export function describeTeleporter(moduleIndex: number): string {
+  const targets = teleporterTargets(moduleIndex).map((index) => MODULE_NUMERALS[index]);
+  return `Teleporter to Module ${targets.join(' or ')}`;
 }
 
 export function describeFeature(feature: Feature): string | null {
@@ -30,30 +28,18 @@ export function describeMonster(monster: StockedMonster): string {
 export interface SquareDescription {
   title: string;
   rock: boolean;
-  /** [direction, description] for north, south, west, east. */
-  sides: [string, string][];
   feature: string | null;
 }
 
+/** A teleporter is only mentioned on squares that hold nothing else, since a ladder, chute,
+ *  trap door or building is the more useful thing to say about the square. */
 export function describeSquare(square: Square, feature: Feature, x: number, y: number, moduleIndex: number): SquareDescription {
+  const named = describeFeature(feature);
   return {
     title: `Square ${x}, ${y}`,
     rock: square.solid,
-    sides: square.solid
-      ? []
-      : [
-          ['North', describeSide(square.n, moduleIndex)],
-          ['South', describeSide(square.s, moduleIndex)],
-          ['West', describeSide(square.w, moduleIndex)],
-          ['East', describeSide(square.e, moduleIndex)],
-        ],
-    feature: describeFeature(feature),
+    feature: named ?? (!square.solid && hasTeleporterSide(square) ? describeTeleporter(moduleIndex) : null),
   };
-}
-
-/** One-line version of the sides for the tooltip: "N wall · S open · W door · E open". */
-export function compactSides(description: SquareDescription): string {
-  return description.sides.map(([direction, text]) => `${direction[0]} ${text}`).join(' · ');
 }
 
 export function describeNote(note: Note): string {

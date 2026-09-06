@@ -5,7 +5,7 @@
   import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
   import { downloadFloorPng } from './export-png';
-  import { compactSides, describeMonster, describeNote, describeSquare } from './describe';
+  import { describeMonster, describeNote, describeSquare } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
   import { jumpTarget, squareFeature, teleporterTargets } from './floor-info';
@@ -59,7 +59,6 @@
           feature: cursorDescription.rock ? 'Rock' : cursorDescription.feature,
           monster: cursorMonster && describeMonster(cursorMonster),
           notes: cursorNotes,
-          sides: compactSides(cursorDescription),
         }
       : null,
   );

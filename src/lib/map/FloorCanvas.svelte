@@ -17,7 +17,6 @@
     /** The monster standing on the square, if the floor has been stocked. */
     monster?: string | null;
     notes: string[];
-    sides: string;
   }
 
   interface Props {
@@ -275,9 +274,6 @@
       {#each tooltip.notes as note}
         <div class="note">{note}</div>
       {/each}
-      {#if tooltip.sides}
-        <div class="sides">{tooltip.sides}</div>
-      {/if}
     </div>
   {/if}
 </div>
@@ -318,8 +314,5 @@
   }
   .note {
     color: var(--ink);
-  }
-  .sides {
-    color: var(--muted);
   }
 </style>
