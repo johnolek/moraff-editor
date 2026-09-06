@@ -1,4 +1,5 @@
 import areaSource from '../map/area.ts?raw';
+import dropsSource from '../calculators/drops.ts?raw';
 import magicSource from '../game/port/magic.ts?raw';
 import mechSource from '../game/dotu-mech.js?raw';
 import relocateSource from '../map/relocate.ts?raw';
@@ -13,6 +14,7 @@ import { snippet } from '../ui/source-snippet';
 export const SOURCES = {
   'src/lib/bestiary/roll.ts': rollSource,
   'src/lib/bestiary/to-hit.ts': toHitSource,
+  'src/lib/calculators/drops.ts': dropsSource,
   'src/lib/game/dotu-files.js': filesSource,
   'src/lib/game/dotu-mech.js': mechSource,
   'src/lib/game/port/magic.ts': magicSource,
@@ -313,6 +315,15 @@ const LOOT: Topic = {
       code: { file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' },
     },
     {
+      id: 'drop-drainer',
+      title: 'Trap door keys and stat potions',
+      explanation:
+        'Killing a monster that drains whole levels is the only way to be handed either of these. It pays a random stat potion with a chance that climbs with depth, a little over half the time on floor 20 and nearly three quarters on floor 100, and otherwise it gives you the trap door key for the block of five floors you are standing on, so long as you do not have it already and you are between floors 4 and 178. Every trap door is locked, which makes these monsters the only route to the shortcuts. One section in twenty has no such monster: the drainer of the very first section takes experience instead of a level, and pays nothing at all.',
+      inputs: 'The floor, the section you are in, and which keys you already carry.',
+      origin: 'exe kill_monster 3000:b12d, kill_monster in dotu-tools/decomp/unf.c. RE notes 3 and FAQ [LOOT].',
+      code: { file: 'src/lib/calculators/drops.ts', name: 'drainerShare' },
+    },
+    {
       id: 'drop-spells',
       title: 'Spell books, scrolls, wands and papers',
       explanation:
@@ -320,15 +331,6 @@ const LOOT: Topic = {
       inputs: 'The floor and your class.',
       origin:
         'exe drop_spellbook 3000:a65d, drop_scroll 3000:a870, drop_wand 3000:aa37 and drop_paper 3000:ac6f, called from kill_monster (exe 3000:b12d); drop_spellbook in dotu-tools/decomp/unf.c. RE notes 3 and FAQ [LOOT].',
-      code: { file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' },
-    },
-    {
-      id: 'drop-drainer',
-      title: 'Trap door keys and stat potions',
-      explanation:
-        'Killing a level drainer, which is about one monster in eighteen, is the only way to be given anything from this pair. It pays a random stat potion with a chance that rises with depth, a little over half the time on floor 20 and nearly three quarters on floor 100, and otherwise it hands you the trap door key for the block of five floors you are standing on, if you do not already have it and you are between floors 4 and 178. Every trap door in the game is locked, so the drainers are the only route to the shortcuts.',
-      inputs: 'The floor, and which keys you already carry.',
-      origin: 'exe kill_monster 3000:b12d, kill_monster in dotu-tools/decomp/unf.c. RE notes 3 and FAQ [LOOT].',
       code: { file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' },
     },
     {
