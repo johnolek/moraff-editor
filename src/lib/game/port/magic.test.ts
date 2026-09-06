@@ -72,7 +72,7 @@ describe('msgNoMonster', () => {
     msgNoMonster(game);
     expect(game.messages).toEqual([
       'YOU ARE NOT CURRENTLY',
-      'ENGAGING ANY MONSTER.',
+      '   ENGAGING ANY MONSTER.',
       '',
       'HIT ANY KEY...',
     ]);
@@ -111,10 +111,10 @@ describe('explosion', () => {
     const damage = 5000 - monster.hp;
     expect(game.messages).toEqual([
       'A SMALL EXPLOSION OCCURS',
-      'ON THE GROUND DIRECTLY',
-      'BELOW THE MONSTER.',
-      `THE EXPLOSION DOES ${damage}`,
-      'POINTS OF DAMAGE.',
+      '   ON THE GROUND DIRECTLY',
+      '   BELOW THE MONSTER.',
+      `   THE EXPLOSION DOES ${damage}`,
+      '   POINTS OF DAMAGE.',
       '',
       'HIT ANY KEY',
     ]);
@@ -166,7 +166,7 @@ describe('autokill', () => {
     const { game, monster } = fighting(1, { type: BOSS });
     expect(autokill(game)).toBe(false);
     expect(monster.hp).toBe(5000);
-    expect(game.messages[2]).toBe('AND SAYS, "NO, THAT SILLY');
+    expect(game.messages[2]).toBe("AND SAYS, 'NO. THAT SILLY");
   });
 
   it('lands about as often as the notes roll says', () => {
@@ -284,7 +284,7 @@ describe('battleStrength', () => {
     const game = newGame({ pc: { powerWeapon: 2, powerWeaponTime: 15 } });
     expect(battleStrength(game, 2)).toBe(true);
     expect(game.pc.powerWeaponTime).toBe(75);
-    expect(game.messages).toContain('60 MOVES LONGER.');
+    expect(game.messages).toContain('  60 MOVES LONGER.');
   });
 
   it('restarts the clock at 60 when a stronger one is cast', () => {
@@ -309,10 +309,10 @@ describe('battleSpeed', () => {
     expect(game.pc.protectionTime).toBe(60);
     expect(game.messages).toEqual([
       'YOUR BODY BEGINS TO SHIMMER',
-      'WITH SHIFTING COLORS OF',
-      'LIGHT. THIS PROTECTION',
-      'WILL LAST FOR 60 MOVES',
-      'OR STEPS.',
+      '   WITH SHIFTING COLORS OF',
+      '   LIGHT. THIS PROTECTION',
+      '   WILL LAST FOR 60 MOVES',
+      '   OR STEPS.',
       '',
       'HIT ANY KEY',
     ]);
@@ -469,8 +469,8 @@ describe('the wizard list’s damage spells', () => {
   });
 
   it.each([
-    [magicZap, 'THE MONSTER FOR 22'],
-    [lightningBolt, 'THE MONSTER FOR 44'],
+    [magicZap, '   THE MONSTER FOR 22'],
+    [lightningBolt, '   THE MONSTER FOR 44'],
   ])('write the number into the line the way itoa does', (cast, line) => {
     const { game } = fighting();
     cast(game);
@@ -519,11 +519,11 @@ describe('the wizard list’s damage spells', () => {
     magicZot(game);
     expect(game.messages).toEqual([
       'A GROUP OF MISSLES SPRING',
-      'FORTH FROM YOUR FINGERTIPS',
-      'AND PLUNGE DIRECTLY INTO',
-      "THE ENEMY'S BODY.",
-      `THE MISSLES DO ${5000 - monster.hp}`,
-      'POINTS OF DAMAGE.',
+      '   FORTH FROM YOUR FINGERTIPS',
+      '   AND PLUNGE DIRECTLY INTO',
+      "   THE ENEMY'S BODY.",
+      `   THE MISSLES DO ${5000 - monster.hp}`,
+      '   POINTS OF DAMAGE.',
       '',
       'HIT ANY KEY',
     ]);
@@ -535,7 +535,7 @@ describe('slowEnemies', () => {
     const game = newGame({ pc: { slowEnemiesTimer: 50 } });
     expect(slowEnemies(game)).toBe(true);
     expect(game.pc.slowEnemiesTimer).toBe(60);
-    expect(game.messages[2]).toBe('HALF SPEED.');
+    expect(game.messages[2]).toBe('   HALF SPEED.');
   });
 });
 
@@ -623,7 +623,7 @@ describe('the priest list’s cures', () => {
     const game = newGame({ pc: { hp: 40, maxHp: 100, wis: 21 } });
     expect(fastCure(game)).toBe(true);
     expect(game.pc.hp).toBe(50);
-    expect(game.messages).toEqual(['YOU FEEL GOOD.  HIT ANY KEY']);
+    expect(game.messages).toEqual(['YOU FEEL GOOD - HIT ANY KEY']);
 
     const nearlyFull = newGame({ pc: { hp: 99, maxHp: 100, wis: 21 } });
     fastCure(nearlyFull);

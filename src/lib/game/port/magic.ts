@@ -1,47 +1,47 @@
 import type { Game } from './state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
 
-/**
- * A line of message text that cannot be recovered. The strings are known only through Ghidra's
- * labels for them — the executable is PKLITE-packed and is not in this repository — and the game
- * passes these two lines to `print_menu_only` as a bare address, which Ghidra never labelled.
- * The address in the data segment and the length of the line are all that is known.
- */
-function unrecoveredLine(address: string, length: number): string {
-  return `<unrecovered DS:${address}, ${length} characters>`;
-}
+// The message text is the exact bytes of the game's own strings, read out of the data segment of
+// the unpacked executable. The comment on each say call gives the address of every line it
+// prints, in order; dotu-tools/reference/scripts/exe_strings.py reads them back.
 
 /** msg_no_monster (exe 3000:d0c1, unf.c "msg_no_monster"). */
 export function msgNoMonster(game: Game): void {
-  game.say('YOU ARE NOT CURRENTLY', 'ENGAGING ANY MONSTER.', '', 'HIT ANY KEY...');
+  // DS:3652 3668 258b 2b3a
+  game.say('YOU ARE NOT CURRENTLY', '   ENGAGING ANY MONSTER.', '', 'HIT ANY KEY...');
 }
 
 /** msg_already_in_effect (exe 3000:d0ee, unf.c "msg_already_in_effect"). */
 export function msgAlreadyInEffect(game: Game): void {
-  game.say('CASTING THIS SPELL WOULD', 'BE REDUNDANT.', '', 'HIT ANY KEY...');
+  // DS:3681 369a 258b 2b3a
+  game.say('CASTING THIS SPELL WOULD', '   BE REDUNDANT.', '', 'HIT ANY KEY...');
 }
 
 /** FUN_3000_d11b (exe 3000:d11b, unf.c "FUN_3000_d11b"): the other "already cast" refusal. */
 export function msgAlreadyCastThisSpell(game: Game): void {
-  game.say('YOU HAVE ALREADY CAST', 'THIS SPELL.', '', 'HIT ANY KEY...');
+  // DS:36ab 36c1 258b 2b3a
+  game.say('YOU HAVE ALREADY CAST', '   THIS SPELL!', '', 'HIT ANY KEY...');
 }
 
 /** FUN_3000_d7be (exe 3000:d7be, unf.c "FUN_3000_d7be"): what a small cure prints. */
 export function msgYouFeelGood(game: Game): void {
-  game.say('YOU FEEL GOOD.  HIT ANY KEY');
+  // DS:3855
+  game.say('YOU FEEL GOOD - HIT ANY KEY');
 }
 
 /** FUN_3000_d7eb (exe 3000:d7eb, unf.c "FUN_3000_d7eb"): what a big cure or a stat boost prints. */
 export function msgYouFeelVeryGood(game: Game): void {
-  game.say('YOU FEEL VERY GOOD.', '', 'HIT ANY KEY...');
+  // DS:3871 258b 2b3a
+  game.say('YOU FEEL VERY GOOD!', '', 'HIT ANY KEY...');
 }
 
 /** FUN_3000_dd37 (exe 3000:dd37, unf.c "FUN_3000_dd37"): re-casting extended the spell. */
 export function msgSixtyMovesLonger(game: Game): void {
+  // DS:3a95 3aaf 3acc 258b 2b3a
   game.say(
     'YOU HAD ALREADY CAST THIS',
-    'SPELL, SO NOW IT WILL LAST',
-    '60 MOVES LONGER.',
+    '  SPELL, SO NOW IT WILL LAST',
+    '  60 MOVES LONGER.',
     '',
     'HIT ANY KEY...',
   );
@@ -58,14 +58,15 @@ export function bossImmuneCheck(game: Game): boolean {
   // six bytes in front of the monster table and asks whether that garbage is 100. Reading
   // nothing is not a boss here.
   if (!monster || game.monsterKinds[monster.type].special !== 100) return false;
+  // DS:3950 396d 3989 39a3 39be 39d9 39f2 2d43
   game.say(
-    'WHEN YOU BEGIN TO CAST THE',
+    '  WHEN YOU BEGIN TO CAST THE',
     'SPELL THE MONSTER STOPS YOU',
-    'AND SAYS, "NO, THAT SILLY',
+    "AND SAYS, 'NO. THAT SILLY",
     "SPELL DOESTN'T WORK ON ME.",
     'TRY SOMETHING ELSE WHILE I',
     'TEAR YOUR LIMBS FROM ONE',
-    'ANOTHER, HEE HEE HEE.',
+    'ANOTHER. HEE HEE HEE.',
     'HIT ANY KEY',
   );
   return true;
@@ -81,9 +82,9 @@ export function explosion(game: Game, kind: number): boolean {
     return false;
   }
   let headline = '';
-  if (kind === 0) headline = 'A SMALL EXPLOSION OCCURS';
-  if (kind === 1) headline = 'A LARGE EXPLOSION OCCURS';
-  if (kind === 2) headline = 'A HUGE EXPLOSION OCCURS';
+  if (kind === 0) headline = 'A SMALL EXPLOSION OCCURS'; // DS:3885
+  if (kind === 1) headline = 'A LARGE EXPLOSION OCCURS'; // DS:389e
+  if (kind === 2) headline = 'A HUGE EXPLOSION OCCURS'; // DS:38b7
   // The original asks the same question a second time here, with nothing in between that could
   // have changed the answer.
   if (game.engaged === -1) {
@@ -98,12 +99,13 @@ export function explosion(game: Game, kind: number): boolean {
   if (damage === 1) damage = game.rng.random(101) + 125;
   if (damage === 2) damage = game.rng.random(301) + 200;
   game.monsters[game.engaged].hp -= damage;
+  // DS:38e6 3900 38cf 3916 258b 2d43, after the headline
   game.say(
     headline,
-    'ON THE GROUND DIRECTLY',
-    'BELOW THE MONSTER.',
-    `THE EXPLOSION DOES ${damage}`,
-    'POINTS OF DAMAGE.',
+    '   ON THE GROUND DIRECTLY',
+    '   BELOW THE MONSTER.',
+    `   THE EXPLOSION DOES ${damage}`,
+    '   POINTS OF DAMAGE.',
     '',
     'HIT ANY KEY',
   );
@@ -238,17 +240,19 @@ export function autokill(game: Game): boolean {
   const playerRoll = game.rng.random(game.pc.lev + game.rng.random(game.pc.iq + game.pc.wis));
   if (monsterRoll < playerRoll + game.rng.random(game.pc.level)) {
     monster.hp = -100;
+    // DS:3a08 3a25 3a41 3a5d 258b 2d43
     game.say(
       "THE MONSTER'S BRAIN EXPLODES",
-      'FROM ULTRA INTENSE BRAIN',
-      'WAVES WHICH EMINATE FROM',
-      'YOUR MIND.',
+      '   FROM ULTRA-INTENSE BRAIN',
+      '   WAVES WHICH EMINATE FROM',
+      '   YOUR MIND.',
       '',
       'HIT ANY KEY',
     );
     return true;
   }
-  game.say('THE SPELL FAILS... TOUGH LUCK', 'CHARLIE.', '', 'HIT ANY KEY');
+  // DS:3a6b 3a89 258b 2d43
+  game.say('THE SPELL FAILS... TOUGH LUCK', '   CHARLIE.', '', 'HIT ANY KEY');
   return true;
 }
 
@@ -271,12 +275,13 @@ export function battleStrength(game: Game, level: number): boolean {
     game.pc.powerWeapon = level;
     // Casting a stronger one sets the clock back to 60 rather than adding to what was left.
     game.pc.powerWeaponTime = 60;
+    // DS:3adf 3af5 3b11 3b2c 3b46 258b 2d43
     game.say(
       'YOUR WEAPON BEGINS TO',
-      'SHIMMER WITH POWER. THIS',
-      'WEAPON IS AUTOMATICALLY',
-      'IN USE UNTIL THE SPELL',
-      unrecoveredLine('3b46', 8),
+      '   SHIMMER WITH POWER. THIS',
+      '   WEAPON IS AUTOMATICALLY',
+      '   IN USE UNTIL THE SPELL',
+      '   ENDS.',
       '',
       'HIT ANY KEY',
     );
@@ -303,12 +308,13 @@ export function battleSpeed(game: Game, level: number): boolean {
   } else {
     game.pc.protection = level;
     game.pc.protectionTime = 60;
+    // DS:3b4f 3b6b 3b86 3ba0 3bba 258b 2d43
     game.say(
       'YOUR BODY BEGINS TO SHIMMER',
-      'WITH SHIFTING COLORS OF',
-      'LIGHT. THIS PROTECTION',
-      'WILL LAST FOR 60 MOVES',
-      'OR STEPS.',
+      '   WITH SHIFTING COLORS OF',
+      '   LIGHT. THIS PROTECTION',
+      '   WILL LAST FOR 60 MOVES',
+      '   OR STEPS.',
       '',
       'HIT ANY KEY',
     );
@@ -319,10 +325,11 @@ export function battleSpeed(game: Game, level: number): boolean {
 /** resist_poison (exe 3000:de2e, unf.c "resist_poison"): Resist Poison, 60 more moves. */
 export function resistPoison(game: Game): boolean {
   game.pc.resistPoisonTimer += 60;
+  // DS:3bc7 3be1 3bf8 258b 2d43
   game.say(
     'YOU FEEL A WARMTH IN YOUR',
-    'BLOOD AS THE RESIST',
-    'POISON TAKES EFFECT.',
+    '   BLOOD AS THE RESIST',
+    '   POISON TAKES EFFECT.',
     '',
     'HIT ANY KEY',
   );
@@ -332,10 +339,11 @@ export function resistPoison(game: Game): boolean {
 /** resist_disease (exe 3000:de65, unf.c "resist_disease"): Resist Disease, 60 more moves. */
 export function resistDisease(game: Game): boolean {
   game.pc.resistDiseaseTimer += 60;
+  // DS:3c10 3c2c 3c42 258b 2d43
   game.say(
     'YOU FEEL A TINGLING IN YOUR',
-    'BODY AS THE RESIST',
-    'DISEASE TAKES EFFECT.',
+    '   BODY AS THE RESIST',
+    '   DISEASE TAKES EFFECT.',
     '',
     'HIT ANY KEY',
   );
@@ -345,11 +353,12 @@ export function resistDisease(game: Game): boolean {
 /** anti_cold (exe 3000:de9c, unf.c "anti_cold"): Anti-Cold, 60 more moves. */
 export function antiCold(game: Game): boolean {
   game.pc.antiColdTimer += 60;
+  // DS:3c5b 3c76 3c8c 3ca2 258b 2d43
   game.say(
     'YOU FEEL A WARM FEELING AS',
-    'YOUR BODY PREPARES',
-    'FOR AN ICE ATTACK.',
-    'SPELL WILL LAST 60 MOVES.',
+    '   YOUR BODY PREPARES',
+    '   FOR AN ICE ATTACK.',
+    '   SPELL WILL LAST 60 MOVES.',
     '',
     'HIT ANY KEY',
   );
@@ -359,11 +368,12 @@ export function antiCold(game: Game): boolean {
 /** anti_fire (exe 3000:ded3, unf.c "anti_fire"): Anti-Fire, 60 more moves. */
 export function antiFire(game: Game): boolean {
   game.pc.antiFireTimer += 60;
+  // DS:3cbf 3c76 3cda 3ca2 258b 2d43
   game.say(
     'YOU FEEL A COOL FEELING AS',
-    'YOUR BODY PREPARES',
-    'FOR A FIRE ATTACK.',
-    'SPELL WILL LAST 60 MOVES.',
+    '   YOUR BODY PREPARES',
+    '   FOR A FIRE ATTACK.',
+    '   SPELL WILL LAST 60 MOVES.',
     '',
     'HIT ANY KEY',
   );
@@ -373,11 +383,12 @@ export function antiFire(game: Game): boolean {
 /** resist_drain (exe 3000:df0a, unf.c "resist_drain"): Resist Level Drain, 60 more moves. */
 export function resistDrain(game: Game): boolean {
   game.pc.resistDrainTimer += 60;
+  // DS:3cf0 3d04 3d1e 3d3a 258b 2d43
   game.say(
     'YOU FEEL A HEAVENLY',
-    'PRESENCE AS THE FORCES',
-    'OF GOOD GATHER TO DEFEND',
-    'YOU AGAINST LEVEL DRAIN.',
+    '   PRESENCE AS THE FORCES',
+    '   OF GOOD GATHER TO DEFEND',
+    '   YOU AGAINST LEVEL DRAIN.',
     '',
     'HIT ANY KEY',
   );
@@ -466,11 +477,12 @@ export function magicZap(game: Game): boolean {
   }
   const damage = game.pc.lev * 2 + 2;
   game.monsters[game.engaged].hp -= damage;
+  // DS:3ec4 3edc 3eb0 3ef7
   game.say(
     'WISPS OF COLORFUL LIGHT',
-    'GATHER TOGETHER AND ZAP',
-    `THE MONSTER FOR ${damage}`,
-    'POINTS OF DAMAGE.',
+    '   GATHER TOGETHER AND ZAP',
+    `   THE MONSTER FOR ${damage}`,
+    '   POINTS OF DAMAGE!',
   );
   return true;
 }
@@ -483,7 +495,14 @@ export function slowEnemies(game: Game): boolean {
   // Every other timer of this kind is added to; this one is set, so re-casting it early throws
   // away whatever was left.
   game.pc.slowEnemiesTimer = 60;
-  game.say('ALL YOUR ENEMIES SEEM', 'TO SLOW DOWN TO ABOUT', 'HALF SPEED.', '', 'HIT ANY KEY');
+  // DS:3f0c 3f22 3f3b 258b 2d43
+  game.say(
+    'ALL YOUR ENEMIES SEEM',
+    '   TO SLOW DOWN TO ABOUT',
+    '   HALF SPEED.',
+    '',
+    'HIT ANY KEY',
+  );
   return true;
 }
 
@@ -496,12 +515,13 @@ export function minorShock(game: Game): boolean {
     return false;
   }
   game.monsters[game.engaged].hp -= 25;
+  // DS:3f4a 3f60 3f79 3f90 3faa 258b 2d43
   game.say(
     'YOU TOUCH THE MONSTER',
-    'AND ELECTRICITY FLOWS',
-    'THROUGH YOUR HANDS.',
-    'SHOCKING YOUR OPPONENT',
-    'FOR 25 POINTS OF DAMAGE.',
+    '   AND ELECTRICITY FLOWS',
+    '   THROUGH YOUR HANDS,',
+    '   SHOCKING YOUR OPPONENT',
+    '   FOR 25 POINTS OF DAMAGE.',
     '',
     'HIT ANY KEY',
   );
@@ -519,12 +539,13 @@ export function lightningBolt(game: Game): boolean {
   }
   const damage = game.pc.lev * 4 + 4;
   game.monsters[game.engaged].hp -= damage;
+  // DS:3fc6 3fe0 3ff9 3eb0 3916 258b 2d43
   game.say(
     'YOU FORM A BALL WITH YOUR',
-    unrecoveredLine('3fe0', 24),
-    'BOLTS FORWARD, BURNING',
-    `THE MONSTER FOR ${damage}`,
-    'POINTS OF DAMAGE.',
+    '   HANDS AND ELECTRICITY',
+    '   BOLTS FORWARD, BURNING',
+    `   THE MONSTER FOR ${damage}`,
+    '   POINTS OF DAMAGE.',
     '',
     'HIT ANY KEY',
   );
@@ -541,11 +562,12 @@ export function magicMissile(game: Game): boolean {
     return false;
   }
   game.monsters[game.engaged].hp -= 50;
+  // DS:4013 402a 4044 3916 258b 2d43
   game.say(
     'A MISSLE BOLTS FORWARD',
-    'FROM YOUR FOREHEAD AND',
-    'STABS THE ENEMY FOR 50',
-    'POINTS OF DAMAGE.',
+    '   FROM YOUR FOREHEAD AND',
+    '   STABS THE ENEMY FOR 50',
+    '   POINTS OF DAMAGE.',
     '',
     'HIT ANY KEY',
   );
@@ -566,13 +588,14 @@ export function magicZot(game: Game): boolean {
   // the RE notes and dotu-mech.js's magicZot range say.
   for (let i = 0; i < game.pc.lev + 1; i++) damage += game.rng.random(5) + 4;
   game.monsters[game.engaged].hp -= damage;
+  // DS:4071 408b 40a9 40c5 405e 3916 258b 2d43
   game.say(
     'A GROUP OF MISSLES SPRING',
-    'FORTH FROM YOUR FINGERTIPS',
-    'AND PLUNGE DIRECTLY INTO',
-    "THE ENEMY'S BODY.",
-    `THE MISSLES DO ${damage}`,
-    'POINTS OF DAMAGE.',
+    '   FORTH FROM YOUR FINGERTIPS',
+    '   AND PLUNGE DIRECTLY INTO',
+    "   THE ENEMY'S BODY.",
+    `   THE MISSLES DO ${damage}`,
+    '   POINTS OF DAMAGE.',
     '',
     'HIT ANY KEY',
   );
@@ -589,12 +612,13 @@ export function shock(game: Game): boolean {
     return false;
   }
   game.monsters[game.engaged].hp -= 125;
+  // DS:3f4a 3f60 3f79 3f90 40da 258b 2d43
   game.say(
     'YOU TOUCH THE MONSTER',
-    'AND ELECTRICITY FLOWS',
-    'THROUGH YOUR HANDS.',
-    'SHOCKING YOUR OPPONENT',
-    'FOR 125 POINTS OF DAMAGE.',
+    '   AND ELECTRICITY FLOWS',
+    '   THROUGH YOUR HANDS,',
+    '   SHOCKING YOUR OPPONENT',
+    '   FOR 125 POINTS OF DAMAGE.',
     '',
     'HIT ANY KEY',
   );
@@ -615,13 +639,14 @@ export function magicBolt(game: Game): boolean {
   // makes each charge 7 to 11.
   for (let i = 0; i < game.pc.lev + 1; i++) damage += game.rng.random(5) + 7;
   game.monsters[game.engaged].hp -= damage;
+  // DS:410b 408b 4124 4142 40f7 3916 258b 2d43
   game.say(
     'AN ELECTRIC CHARGE LEAPS',
-    'FORTH FROM YOUR FINGERTIPS',
-    'INTO THE BODY OF THE ENEMY',
-    'MONSTER.',
-    `THE CHARGE DOES ${damage}`,
-    'POINTS OF DAMAGE.',
+    '   FORTH FROM YOUR FINGERTIPS',
+    '   INTO THE BODY OF THE ENEMY',
+    '   MONSTER.',
+    `   THE CHARGE DOES ${damage}`,
+    '   POINTS OF DAMAGE.',
     '',
     'HIT ANY KEY',
   );
@@ -641,6 +666,7 @@ export function holdMonster(game: Game): boolean {
     msgNoMonster(game);
     return false;
   }
+  // DS:414e
   game.monsterStatusLine = 'MONSTER IS HELD';
   game.pc.holdMonsterTimer = 15;
   return true;
@@ -656,12 +682,13 @@ export function majorShock(game: Game): boolean {
     return false;
   }
   game.monsters[game.engaged].hp -= 300;
+  // DS:3f4a 3f60 3f79 3f90 415e 258b 2d43
   game.say(
     'YOU TOUCH THE MONSTER',
-    'AND ELECTRICITY FLOWS',
-    'THROUGH YOUR HANDS.',
-    'SHOCKING YOUR OPPONENT',
-    'FOR 300 POINTS OF DAMAGE.',
+    '   AND ELECTRICITY FLOWS',
+    '   THROUGH YOUR HANDS,',
+    '   SHOCKING YOUR OPPONENT',
+    '   FOR 300 POINTS OF DAMAGE.',
     '',
     'HIT ANY KEY',
   );
