@@ -17,7 +17,6 @@
   import LevelControl from './LevelControl.svelte';
   import MonsterPicture from './MonsterPicture.svelte';
   import { describeEffects, homeFloor, isPuffball, stockingOdds, whereItAppears, type Monster } from './monsters';
-  import type { Look } from './pictures';
   import { hitChance, toHitTotal, totalNeeded, type ToHitFighter } from './to-hit';
 
   interface Props {
@@ -41,7 +40,6 @@
   let module = $state(home.module);
   let floor = $state(home.floor);
   let baseLevel = $state(monsterLevelBase(home.floor, home.module));
-  let look = $state<Look>('shop');
 
   // The floor control only offers floors of the module the monster appears in, and every one of
   // those belongs to a section.
@@ -72,10 +70,6 @@
       return `Module ${MODULE_NUMERALS[range.module]}, ${floors}`;
     }),
   );
-
-  function switchLook(event: Event) {
-    look = (event.currentTarget as HTMLInputElement).checked ? 'shop' : 'fresh';
-  }
 
   const percent = (chance: number) => `${(chance * 100).toFixed(1)}%`;
 
@@ -119,13 +113,7 @@
 <article>
   <div class="top">
     <div class="art">
-      <MonsterPicture {entry} module={module + 1} part={section.part} {look} />
-      {#if entry.isBoss}
-        <label class="toggle">
-          <input type="checkbox" checked={look === 'shop'} onchange={switchLook} />
-          After visiting a shop
-        </label>
-      {/if}
+      <MonsterPicture {entry} module={module + 1} part={section.part} />
     </div>
     <div class="facts">
       <h2><PixelText text={entry.name} scale={2} /></h2>
@@ -259,13 +247,6 @@
   .group {
     margin: 0;
     font-size: 13px;
-    color: var(--muted);
-  }
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
     color: var(--muted);
   }
   .quote {

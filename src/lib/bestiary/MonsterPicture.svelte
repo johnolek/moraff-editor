@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Monster } from './monsters';
-  import { PICTURE_HEIGHT, PICTURE_WIDTH, renderMonster, type Look } from './pictures';
+  import { PICTURE_HEIGHT, PICTURE_WIDTH, renderMonster } from './pictures';
 
   interface Props {
     entry: Monster;
@@ -8,15 +8,14 @@
     module: number;
     /** Section within the module, 1..4. */
     part: number;
-    look: Look;
   }
 
-  let { entry, module, part, look }: Props = $props();
+  let { entry, module, part }: Props = $props();
 
   let canvas: HTMLCanvasElement;
 
   $effect(() => {
-    const image = renderMonster(entry, module, part, look);
+    const image = renderMonster(entry, module, part, 'shop');
     const context = canvas.getContext('2d');
     if (!context) return;
     context.putImageData(new ImageData(image.data, image.width, image.height), 0, 0);
