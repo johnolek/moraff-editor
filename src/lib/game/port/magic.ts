@@ -1458,8 +1458,7 @@ export function fastCure(game: Game): boolean {
  */
 export function fastBigCure(game: Game): boolean {
   // Ghidra lost the argument to Random; four times wisdom is what the RE notes give, which with
-  // the 20 the decompilation does show makes this heal 20 to 90. dotu-mech.js's fastBigCure
-  // range leaves the 20 out.
+  // the 20 the decompilation does show makes this heal 20 to 90.
   let healed = game.rng.random(4 * game.pc.wis) + 20;
   if (healed > 90) healed = 90;
   game.pc.hp += healed;

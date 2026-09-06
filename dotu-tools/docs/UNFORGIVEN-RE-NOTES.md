@@ -501,7 +501,7 @@ Priest battle (type 3):
 | 3 | Resist disease | Relocate | Slow enemies |
 | 4 | Anti-cold | Go away | Power weapon I |
 | 5 | Protection (**1**, same as minor — looks like a bug) | Anti-fire | Pass wall |
-| 6 | Resist level drain | Drain monster | Fast big cure: `Random(4·wis)`, max 90 |
+| 6 | Resist level drain | Drain monster | Fast big cure: `Random(4·wis) + 20`, max 90 |
 | 7 | Hold monster | Power weapon II | Shock: 125 |
 | 8 | Major protection (3) | Explosion | Magic zot |
 | 9 | Autokill | Power weapon III | Strength and speed |

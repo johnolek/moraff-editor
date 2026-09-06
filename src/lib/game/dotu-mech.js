@@ -251,7 +251,7 @@ export const cureAmounts = wis => ({
   littleCure: T(wis / 2), fastCure: T(wis / 2),
   cure: [20, Math.min(60, 20 + 2 * (wis - 1))],
   bigCure: [50, Math.min(150, 50 + 4 * wis - 1)],
-  fastBigCure: [0, Math.min(90, 4 * wis - 1)],
+  fastBigCure: [20, Math.min(90, 20 + 4 * wis - 1)],
 });
 export const damageSpells = lev => ({
   magicZap: 2 * lev + 2, lightning: 4 * lev + 4, minorShock: 25, magicMissile: 50, shock: 125, majorShock: 300,

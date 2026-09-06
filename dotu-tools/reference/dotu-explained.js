@@ -613,7 +613,7 @@ export function cureAmounts(wisdom) {
     fastCure: wholePart(wisdom / 2),
     cure: { min: 20, max: Math.min(60, 20 + 2 * (wisdom - 1)) },
     bigCure: { min: 50, max: Math.min(150, 50 + 4 * wisdom - 1) },
-    fastBigCure: { min: 0, max: Math.min(90, 4 * wisdom - 1) },
+    fastBigCure: { min: 20, max: Math.min(90, 20 + 4 * wisdom - 1) },
   };
 }
 
