@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { allFormulas, formulaCode } from '../formulas/formulas';
 import { snippet } from './source-snippet';
 
 const SOURCE = [
@@ -68,5 +69,13 @@ describe('snippet', () => {
 
   it('says so when the name is not there', () => {
     expect(() => snippet(SOURCE, 'missing')).toThrow('no declaration of missing');
+  });
+});
+
+describe('the code every formula points at', () => {
+  it('is still there under the name the entry gives', () => {
+    for (const formula of allFormulas()) {
+      expect(() => formulaCode(formula), formula.title).not.toThrow();
+    }
   });
 });

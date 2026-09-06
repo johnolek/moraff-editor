@@ -1,4 +1,4 @@
-export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators';
+export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas';
 
 /** The file open in the save editor, shared so other tabs can read the character out of it. */
 export interface LoadedSave {

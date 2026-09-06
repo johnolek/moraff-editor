@@ -3,6 +3,7 @@
   import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
   import Calculators from './lib/calculators/Calculators.svelte';
   import SaveEditor from './lib/editor/SaveEditor.svelte';
+  import Formulas from './lib/formulas/Formulas.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
   import SpellReference from './lib/spells/SpellReference.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
@@ -13,6 +14,7 @@
     { id: 'monsters', label: 'Monsters' },
     { id: 'spells', label: 'Spells' },
     { id: 'calculators', label: 'Calculators' },
+    { id: 'formulas', label: 'Formulas' },
   ];
 </script>
 
@@ -40,6 +42,9 @@
   </main>
   <main class:hidden={app.tab !== 'calculators'}>
     <Calculators />
+  </main>
+  <main class:hidden={app.tab !== 'formulas'}>
+    <Formulas />
   </main>
 </div>
 
