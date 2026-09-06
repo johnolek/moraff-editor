@@ -1,0 +1,251 @@
+import data from '../dotu-data.json';
+import { DUNGEON_XMAX, DUNGEON_YMAX, HEIGHT, WIDTH } from '../unfmap.js';
+import type { Rng } from './rng';
+import { BorlandRng } from './rng';
+
+/** The occupancy map's code for "nothing here" (0xff). */
+export const MAP_EMPTY = 0xff;
+/** The occupancy map's code for the square the player stands on (0xfe). */
+export const MAP_PLAYER = 0xfe;
+
+/**
+ * The fields of the character record the battle spells read or write. Each is one field of the
+ * save file, and the name is the one `src/lib/game/dotu-files.js` already gives that offset;
+ * fields that file does not parse are named after their label in `src/lib/editor/games.ts`.
+ * The original reaches them as globals in the data segment, where `DAT_6000_xxxx` is save
+ * offset `xxxx - 0xb880`.
+ */
+export interface PlayerCharacter {
+  /** 0x31, DS:b8b1. */
+  hp: number;
+  /** 0x33, DS:b8b3. */
+  maxHp: number;
+  /** 0x7ac, DS:c02c: the character's experience level. */
+  lev: number;
+  /** 0x7b0, DS:c030. */
+  x: number;
+  /** 0x7b2, DS:c032. */
+  y: number;
+  /** 0x7b4, DS:c034: the floor the character is on, not the character's own level. */
+  level: number;
+  /** 0x7b6, DS:c036: 0..4. */
+  module: number;
+  /** 0x7b8, DS:c038: where the character sits in the scrolling map view, not on the floor. */
+  mapCursorX: number;
+  /** 0x7b9, DS:c039. */
+  mapCursorY: number;
+  /** 0x7e2, DS:c062: moves left on the Strength spell's +7 STR. */
+  strengthTimer: number;
+  /** 0x7e4, DS:c064: moves left on the Speed spell's +7 AGI. */
+  speedTimer: number;
+  /** 0x7e6, DS:c066. */
+  slowEnemiesTimer: number;
+  /** 0x7e8, DS:c068: 1, 2 or 3 for Power Weapon I, II and III. */
+  powerWeapon: number;
+  /** 0x7e9, DS:c069. */
+  powerWeaponTime: number;
+  /** 0x7eb, DS:c06b: 1 Minor, 2 Protection, 3 Major, 4 Ultra. */
+  protection: number;
+  /** 0x7ec, DS:c06c. */
+  protectionTime: number;
+  /** 0x7ee, DS:c06e. */
+  resistPoisonTimer: number;
+  /** 0x7f0, DS:c070. */
+  resistDiseaseTimer: number;
+  /** 0x7f2, DS:c072. */
+  antiColdTimer: number;
+  /** 0x7f4, DS:c074. */
+  antiFireTimer: number;
+  /** 0x7f6, DS:c076. */
+  resistDrainTimer: number;
+  /** 0x7f8, DS:c078: moves the engaged monster stays asleep. */
+  sleepTimer: number;
+  /** 0x7fa, DS:c07a: moves the engaged monster stays held. */
+  holdMonsterTimer: number;
+  /** 0x816, DS:c096. */
+  str: number;
+  /** 0x818, DS:c098. */
+  iq: number;
+  /** 0x81a, DS:c09a. */
+  wis: number;
+  /** 0x81e, DS:c09e: agility. The save parser calls this field `dex`. */
+  dex: number;
+}
+
+/**
+ * One of a floor's 145 monster slots: the 6-byte `?MON.MAP` record `[x, y, hp lo, hp hi, type,
+ * level]` the game keeps at DS:c4cd.
+ */
+export interface Monster {
+  x: number;
+  y: number;
+  hp: number;
+  /** Which of the 27 rows of `monsterKinds` this monster is. */
+  type: number;
+  /** The monster's own level, stored as one unsigned byte. */
+  level: number;
+}
+
+/**
+ * The two fields of a monster's 29-byte description (exe DS:4fc9 for the 22 built-in monsters,
+ * `MD.BIN` for the section's 22..26) that the battle spells read.
+ */
+export interface MonsterKind {
+  /** Byte 24. 100 marks a Shadow boss, which several spells refuse to touch. */
+  special: number;
+  /** Byte 25: which row of `monsterStats` this monster fights with. */
+  type: number;
+}
+
+/** The two columns of the type table `mstats` (exe DS:5402) that the battle spells read. */
+export interface MonsterStats {
+  /** Hit points per level; Drain Monster takes half of it for each point of wisdom. */
+  hpPerLevel: number;
+  /** The `dex` column of the table; Autokill rolls against it. */
+  speed: number;
+}
+
+/**
+ * Everything a ported game function touches.
+ *
+ * **This is a deliberate departure from the original.** The 1993 code keeps all of this in
+ * globals in the data segment and every function reads and writes them directly; the port hands
+ * the same state to each function as an argument instead, so a spell can be run and checked
+ * without a running game. Nothing else about a ported function is allowed to depart: the reads,
+ * the writes, the order they happen in and the values are the ones the exe has.
+ */
+export interface Game {
+  pc: PlayerCharacter;
+  /** DS:c4cd: the current floor's 145 monster slots. */
+  monsters: Monster[];
+  /** The 27 monster descriptions for the current section. */
+  monsterKinds: MonsterKind[];
+  /** The 16 rows of `mstats`. */
+  monsterStats: MonsterStats[];
+  /**
+   * DS:c4d1: one byte per square of the whole 80 x 110 grid, indexed `y * 80 + x`. Holds
+   * {@link MAP_EMPTY}, {@link MAP_PLAYER}, or the slot number of the monster standing there.
+   */
+  monsterMap: Uint8Array;
+  /** DS:2517: the slot of the monster the player is fighting, or -1 for none. */
+  engaged: number;
+  /** DS:2328: how many columns of a floor the game lets the player reach. */
+  columns: number;
+  /** DS:232a: how many rows of a floor the game lets the player reach. */
+  rows: number;
+  /** DS:2503: the width of the area being displayed — the whole 80 in the dungeon, less indoors. */
+  areaColumns: number;
+  /** DS:2504: the height of the area being displayed. */
+  areaRows: number;
+  /** DS:0327: the map view has to be re-centred on the player. */
+  recenterMap: boolean;
+  /** DS:c607: the 3D view has to be redrawn. */
+  redrawView: boolean;
+  /** DS:c4dd: the line printed beside the monster during a fight. */
+  monsterStatusLine: string;
+  /** Every line the game has printed, oldest first. */
+  messages: string[];
+  rng: Rng;
+  /**
+   * solidcheck (exe 3000:86b5, unf.c "solidcheck"): whether the square is rock, meaning all
+   * four of its sides are walls. `Dungeon.solid` in `src/lib/game/unfmap.js` is the same test.
+   */
+  solid(x: number, y: number, level: number, module: number): boolean;
+  /**
+   * print_menu_only (exe 3000:2f8a): show a screen of up to eight lines and wait for a key.
+   * The game fills the slots it does not use with the empty string at DS:258b; those trailing
+   * blanks are dropped here, blank lines between two printed ones are kept.
+   */
+  say(...lines: string[]): void;
+}
+
+/**
+ * FUN_2000_65b0 (exe 2000:65b0, unf.c "FUN_2000_65b0"): the slot of the monster standing on a
+ * square, or -1 when the square is empty. A square holding the player reads back as 0xfe, not
+ * as empty.
+ */
+export function monsterAt(game: Game, x: number, y: number): number {
+  const value = game.monsterMap[y * WIDTH + x];
+  return value === MAP_EMPTY ? -1 : value;
+}
+
+/** set_monster_map (exe 2000:65dc, unf.c "set_monster_map"): write one square of the map. */
+export function setMonsterMap(game: Game, x: number, y: number, value: number): void {
+  game.monsterMap[y * WIDTH + x] = value;
+}
+
+/**
+ * The overrides {@link newGame} accepts: any field of a {@link Game} except `say`, which it
+ * always supplies itself, and `pc`, which it takes field by field.
+ */
+export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say'>> {
+  pc?: Partial<PlayerCharacter>;
+}
+
+const DEFAULT_PC: PlayerCharacter = {
+  hp: 100,
+  maxHp: 100,
+  lev: 10,
+  x: 40,
+  y: 50,
+  level: 5,
+  module: 0,
+  mapCursorX: 40,
+  mapCursorY: 55,
+  strengthTimer: 0,
+  speedTimer: 0,
+  slowEnemiesTimer: 0,
+  powerWeapon: 0,
+  powerWeaponTime: 0,
+  protection: 0,
+  protectionTime: 0,
+  resistPoisonTimer: 0,
+  resistDiseaseTimer: 0,
+  antiColdTimer: 0,
+  antiFireTimer: 0,
+  resistDrainTimer: 0,
+  sleepTimer: 0,
+  holdMonsterTimer: 0,
+  str: 20,
+  iq: 20,
+  wis: 20,
+  dex: 20,
+};
+
+/** The 145 empty slots a floor starts with. */
+function emptySlots(): Monster[] {
+  return Array.from({ length: 145 }, () => ({ x: 0, y: 0, hp: 0, type: 0, level: 1 }));
+}
+
+/**
+ * A game to run a ported function against. The defaults are a level 10 character standing on
+ * floor 5 of module I with nothing engaged, an empty floor, and the monster tables of section 1.
+ */
+export function newGame(overrides: GameOverrides = {}): Game {
+  const { pc: pcOverrides, ...rest } = overrides;
+  const messages = overrides.messages ?? [];
+  return {
+    pc: { ...DEFAULT_PC, ...pcOverrides },
+    monsters: emptySlots(),
+    monsterKinds: [...data.builtinMonsters, ...data.sections[0].monsters],
+    monsterStats: data.monsterTypes,
+    monsterMap: new Uint8Array(WIDTH * HEIGHT).fill(MAP_EMPTY),
+    engaged: -1,
+    columns: DUNGEON_XMAX,
+    rows: DUNGEON_YMAX,
+    areaColumns: WIDTH,
+    areaRows: HEIGHT,
+    recenterMap: false,
+    redrawView: false,
+    monsterStatusLine: '',
+    rng: new BorlandRng(1),
+    solid: () => false,
+    ...rest,
+    messages,
+    say(...lines: string[]): void {
+      let last = lines.length;
+      while (last > 0 && lines[last - 1] === '') last--;
+      for (let i = 0; i < last; i++) messages.push(lines[i]);
+    },
+  };
+}
