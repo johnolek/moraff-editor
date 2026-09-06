@@ -137,7 +137,51 @@ const TOWN: Topic = {
   ],
 };
 
-export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN];
+const WAYS_DOWN: Topic = {
+  id: 'ways-down',
+  title: 'Ladders, chutes and trap doors',
+  formulas: [
+    {
+      id: 'ladders',
+      title: 'Ladders up and down',
+      explanation:
+        'One open square in twenty-seven draws the number that makes a down ladder, and the ladder reaches the first square that is not rock one or two floors below; if both of those are rock, or the module has no floor left below, nothing is built. Up ladders are never generated in their own right. A square carries one exactly when a down ladder on one of the three floors above it lands here, which is why the two directions never match up neatly: floor 1 of Module I has 78 ladders going down and 59 coming up from the town.',
+      inputs: 'The square\'s column and row, the floor and the module, and whether the squares directly above and below are rock.',
+      origin: 'exe check_for_ladder 3000:827f, check_for_ladder in dotu-tools/decomp/unf.c. Handoff section 5 and FAQ [LDRS].',
+      code: { file: 'src/lib/game/unfmap.js', name: 'ladder' },
+    },
+    {
+      id: 'chutes',
+      title: 'Chutes',
+      explanation:
+        'A chute is a hole you fall through without being asked. About five squares in every two hundred and thirty have one, a rate that creeps up very slowly with depth, and falling drops you onto the first open square straight below: two floors at most down to floor 9, four floors below that. A square with a ladder is never a chute, and the whole feature is switched off past three quarters of the way to the bottom of the module, so floor 1 of Module I has 41 chutes while floor 100 of Module V has none at all.',
+      inputs: 'The square\'s column and row, the floor and the module, and whether the squares below are rock.',
+      origin: 'exe detect_chute 2000:b5ea, detect_chute in dotu-tools/decomp/unf.c. Handoff section 4 and FAQ [LDRS].',
+      code: { file: 'src/lib/game/unfmap.js', name: 'chute' },
+    },
+    {
+      id: 'trap-doors',
+      title: 'Trap doors and the floors they reach',
+      explanation:
+        'A trap door is a locked shortcut that names the floor it goes to, always a multiple of five, and only opens for a character carrying that floor\'s key. The hash draws a number below twenty-four hundred and multiplies it by five; the answer counts only if it is floor 5 or deeper, above four fifths of the way to the bottom of the module, and in a different block of five floors from the one you are standing on. In Module I that leaves floors 5, 10 and 15 as the only destinations and roughly one square in eight hundred with a trap door on it, while Module V allows sixteen destinations and roughly one square in a hundred and fifty. Floor 12 of Module I, for instance, has five trap doors, and every one of them leads to floor 5 or floor 15.',
+      inputs: 'The square\'s column and row, the floor, the module, and the module\'s bottom floor.',
+      origin: 'exe trapdoor 2000:bd32, trapdoor in dotu-tools/decomp/unf.c. Handoff section 4 and FAQ [LDRS].',
+      code: { file: 'src/lib/game/unfmap.js', name: 'trapdoor' },
+    },
+    {
+      id: 'trap-door-landing',
+      title: 'Where a trap door lands you',
+      explanation:
+        'Every trap door pointing at the same floor drops you on the same square. The game seeds its random number generator with the number ten, draws a column and a row out of it, and if that square is rock it starts again with eleven, then twelve, until it lands on open ground. Nothing about your character or the door you fell through comes into it, and because the seeds never change the answer is fixed for the life of the game: for most floors it is column 18, row 93.',
+      inputs: 'The destination floor and the module, through which squares of that floor are rock.',
+      origin:
+        'exe trapdoor_dest 2000:bda6, trapdoor_dest in dotu-tools/decomp/unf.c. TIDBITS, "Numbers with a story".',
+      code: { file: 'src/lib/game/unfmap.js', name: 'trapdoorDest' },
+    },
+  ],
+};
+
+export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN];
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
