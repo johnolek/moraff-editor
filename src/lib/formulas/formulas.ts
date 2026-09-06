@@ -120,7 +120,24 @@ const TELEPORTERS: Topic = {
   ],
 };
 
-export const TOPICS: Topic[] = [MAP, TELEPORTERS];
+const TOWN: Topic = {
+  id: 'town',
+  title: 'The town',
+  formulas: [
+    {
+      id: 'town-buildings',
+      title: 'Where the buildings are',
+      explanation:
+        'Floor 0 of every module is a town, built by exactly the same machinery as a dungeon floor, with buildings dropped onto squares instead of ladders and chutes. For each square the hash draws a number below sixty: a one is a general store, a two the temple, a three the bank, a four the inn, and everything else is empty ground. Each building therefore has one square in sixty and about one square in fifteen is a doorway, which in the town of Module I works out as 60 stores, 50 temples, 42 banks and 51 inns among its 3,129 open squares. A square that has a ladder is never a building: the game asks about ladders first and only looks for a building when there is none.',
+      inputs: 'The square\'s column and row and the module. The floor is always the town.',
+      origin:
+        'exe town_features 2000:9cba, town_features in dotu-tools/decomp/unf.c. Handoff section 4 and FAQ [LDRS]; the ladder-first order is in drawsquare (exe 3000:87de) and movecontrol (exe 2000:c308).',
+      code: { file: 'src/lib/game/unfmap.js', name: 'townFeature' },
+    },
+  ],
+};
+
+export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN];
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
