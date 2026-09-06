@@ -4,9 +4,9 @@
   import { floorBounds, floorsOfModule, summarizeFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
-  import { MAP_COLUMNS, MAP_ROWS } from './area';
+  import { isOnMap, MAP_COLUMNS, MAP_ROWS } from './area';
   import { downloadFloorPng } from './export-png';
-  import { describeMonster, describeNote, describeSquare } from './describe';
+  import { describeMonster, describeNote, describeSquare, featureLine } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
   import { jumpTarget, squareFeature, teleporterTargets } from './floor-info';
@@ -62,14 +62,16 @@
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(bundledDungeon, moduleIndex, floor, cursorSquare, cursor.x, cursor.y) : null);
   const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, moduleIndex) : null);
-  const cursorNotes = $derived(cursor && cursorSquare ? squareNotes(lookup, floor, cursorSquare, cursor.x, cursor.y).map(describeNote) : []);
+  const cursorNotes = $derived(
+    cursor && cursorSquare && isOnMap(cursor) ? squareNotes(lookup, floor, cursorSquare, cursor.x, cursor.y).map(describeNote) : [],
+  );
   const cursorMonster = $derived(cursor ? monsterAt(monsters, cursor.x, cursor.y) : null);
   const selectedMonster = $derived(selected ? monsterAt(monsters, selected.x, selected.y) : null);
   const tooltip = $derived<Tooltip | null>(
     cursorDescription
       ? {
           title: `${cursor!.x}, ${cursor!.y}`,
-          feature: cursorDescription.rock ? 'Rock' : cursorDescription.feature,
+          feature: featureLine(cursorDescription),
           monster: cursorMonster && describeMonster(cursorMonster),
           notes: cursorNotes,
         }

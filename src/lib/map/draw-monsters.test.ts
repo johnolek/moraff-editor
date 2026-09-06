@@ -28,9 +28,9 @@ function countingContext(): { ctx: CanvasRenderingContext2D; markers: () => numb
 }
 
 describe('drawMonsters', () => {
-  it('leaves out the monsters stocked outside the area the game shows', () => {
+  it('draws the monsters stocked beyond the area the game shows as well', () => {
     const { ctx, markers } = countingContext();
-    drawMonsters(ctx, [monster(1, 1), monster(1, MAP_ROWS), monster(MAP_COLUMNS, 1)], { cell: 8, originX: 0, originY: 0 }, sprites);
-    expect(markers()).toBe(1);
+    drawMonsters(ctx, [monster(1, 1), monster(1, MAP_ROWS + 1), monster(MAP_COLUMNS, 1)], { cell: 8, originX: 0, originY: 0 }, sprites);
+    expect(markers()).toBe(3);
   });
 });

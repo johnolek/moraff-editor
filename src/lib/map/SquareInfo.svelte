@@ -1,6 +1,6 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import type { SquareDescription } from './describe';
+  import { featureLine, type SquareDescription } from './describe';
 
   interface Props {
     description: SquareDescription | null;
@@ -8,17 +8,17 @@
   }
 
   let { description, notes = [] }: Props = $props();
+
+  const line = $derived(description && featureLine(description));
 </script>
 
 <section>
   {#if description}
     <SectionHeading title={description.title} />
-    {#if description.rock}
-      <p class="feature">Rock</p>
-    {:else}
-      {#if description.feature}
-        <p class="feature">{description.feature}</p>
-      {/if}
+    {#if line}
+      <p class="feature">{line}</p>
+    {/if}
+    {#if !description.rock && !description.beyondMap}
       {#each notes as note}
         <p class="note">{note}</p>
       {/each}

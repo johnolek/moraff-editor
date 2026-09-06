@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Square } from '../game/unfmap.js';
-import { describeFeature, describeMonster, describeNote, describeSquare, describeTeleporter } from './describe';
+import { describeFeature, describeMonster, describeNote, describeSquare, describeTeleporter, featureLine } from './describe';
 
 function square(overrides: Partial<Square> = {}): Square {
   return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
@@ -25,13 +25,31 @@ describe('describeFeature', () => {
 
 describe('describeSquare', () => {
   it('describes rock and a plain open square', () => {
-    expect(describeSquare(square({ solid: true }), null, 5, 6, 0)).toEqual({ title: 'Square 5, 6', rock: true, feature: null });
-    expect(describeSquare(square({ n: 0, e: 1 }), null, 5, 6, 0)).toEqual({ title: 'Square 5, 6', rock: false, feature: null });
+    expect(describeSquare(square({ solid: true }), null, 5, 6, 0)).toEqual({ title: 'Square 5, 6', rock: true, feature: null, beyondMap: false });
+    expect(describeSquare(square({ n: 0, e: 1 }), null, 5, 6, 0)).toEqual({ title: 'Square 5, 6', rock: false, feature: null, beyondMap: false });
+  });
+
+  it('says only that nothing can reach a square beyond the area the game shows', () => {
+    const beyond = describeSquare(square({ ladder: -1 }), { kind: 'up', destination: { floor: 4, x: 5, y: 105 } }, 5, 105, 0);
+    expect(beyond).toEqual({
+      title: 'Square 5, 105',
+      rock: false,
+      feature: "Beyond the game's map: nothing can reach this square.",
+      beyondMap: true,
+    });
   });
 
   it('names a teleporter only when the square holds nothing else', () => {
     expect(describeSquare(square({ e: 4 }), null, 5, 6, 2).feature).toBe('Teleporter to Module II or IV');
     expect(describeSquare(square({ e: 4 }), { kind: 'down', destination: { floor: 3, x: 5, y: 6 } }, 5, 6, 2).feature).toBe('Down ladder to floor 3');
+  });
+});
+
+describe('featureLine', () => {
+  it('names rock, and the reason a square beyond the map holds nothing worth naming', () => {
+    expect(featureLine(describeSquare(square({ solid: true }), null, 5, 6, 0))).toBe('Rock');
+    expect(featureLine(describeSquare(square(), { kind: 'town', building: 2 }, 5, 6, 0))).toBe('Temple');
+    expect(featureLine(describeSquare(square({ solid: true }), null, 5, 105, 0))).toBe("Beyond the game's map: nothing can reach this square.");
   });
 });
 
