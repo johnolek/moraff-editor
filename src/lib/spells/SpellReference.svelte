@@ -1,19 +1,31 @@
 <script lang="ts">
   import PixelText from '../ui/PixelText.svelte';
-  import { LIST_NOTES, spellCorrection } from './mechanics';
-  import { allSpells, spellGroups } from './spells';
+  import { LIST_NOTES } from './mechanics';
+  import { allSpells, gridKey, spellGroups, type Spell } from './spells';
 
-  /** The game's own wording, from the type menu of its spell screen. */
+  /** The game's own wording, from the type menu and the spell menu of its spell screen. */
   const TYPE_HEADING = 'SELECT THE TYPE OF SPELL:';
+  const GRID_HEADING = 'SELECT A SPELL-SPELLS USE ONE SPELL POINT PER LEVEL:';
+  const GRID_FOOTER = 'SPELLS ON LINE 1 USE 1 SPELL POINT, ON LINE 3 THEY USE 3, LINE 7 USE 7, ETC.';
 
   const lists = spellGroups(allSpells());
 
   let listIndex = $state(0);
+  let selected = $state<Spell | null>(null);
 
   const list = $derived(lists[listIndex]);
 
   function typeLabel(label: string, index: number): string {
     return `${index + 1}) ${label.toUpperCase()} SPELLS`;
+  }
+
+  function cellLabel(spell: Spell, row: number, column: number): string {
+    return `${gridKey(row, column)})${spell.name.toUpperCase()}`;
+  }
+
+  function pickList(index: number) {
+    listIndex = index;
+    selected = null;
   }
 </script>
 
@@ -28,7 +40,7 @@
             class="type-item"
             class:current={index === listIndex}
             aria-pressed={index === listIndex}
-            onclick={() => (listIndex = index)}
+            onclick={() => pickList(index)}
           >
             <PixelText font="small" scale={3} text={typeLabel(entry.label, index)} colour={index === listIndex ? '#000' : undefined} />
           </button>
@@ -40,25 +52,27 @@
       <p class="list-note">{LIST_NOTES[list.label]}</p>
     {/if}
 
-    {#each list.levels as level}
-      <h3>{level.label}</h3>
-      <ul>
-        {#each level.spells as spell}
-          {@const correction = spellCorrection(spell)}
-          <li>
-            <p class="name">{spell.name} <span class="cost">SP cost: {spell.spCost}</span></p>
-            <dl>
-              <dt>In the game</dt>
-              <dd class="quote">{spell.description}</dd>
-              {#if correction}
-                <dt>What it really does</dt>
-                <dd>{correction}</dd>
-              {/if}
-            </dl>
-          </li>
-        {/each}
-      </ul>
-    {/each}
+    <div class="book">
+      <div class="sheet">
+        <p class="book-heading"><PixelText font="small" scale={3} text={GRID_HEADING} /></p>
+        <div class="grid">
+          {#each list.levels as level, row}
+            {#each level.spells as spell, column}
+              <button
+                type="button"
+                class="cell"
+                class:current={selected === spell}
+                aria-pressed={selected === spell}
+                onclick={() => (selected = spell)}
+              >
+                <PixelText font="small" scale={3} text={cellLabel(spell, row, column)} colour={selected === spell ? '#000' : undefined} />
+              </button>
+            {/each}
+          {/each}
+        </div>
+        <p class="book-footer"><PixelText font="small" scale={3} text={GRID_FOOTER} /></p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -104,7 +118,8 @@
   .type-item.current {
     background: var(--mw-red);
   }
-  .type-item:focus-visible {
+  .type-item:focus-visible,
+  .cell:focus-visible {
     outline: 2px solid var(--accent);
   }
   .list-note {
@@ -113,55 +128,46 @@
     font-size: 13px;
     color: var(--muted);
   }
-  h3 {
-    margin: 16px 0 6px;
-    padding: 4px 0;
-    background: var(--bg);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-  ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  li {
-    max-width: 88ch;
-    padding: 10px 12px;
+  /* The spell menu itself is drawn on the game's black screen. */
+  .book {
+    margin-top: 18px;
     border: 1px solid var(--line);
     border-radius: 6px;
-    background: var(--panel);
+    background: #000;
+    overflow-x: auto;
   }
-  .name {
-    margin: 0 0 8px;
-    font-size: 14px;
-    color: var(--ink);
+  .sheet {
+    width: max-content;
+    min-width: 100%;
+    padding: 18px 20px 20px;
   }
-  .cost {
-    margin-left: 8px;
-    font-size: 12px;
-    color: var(--muted);
+  .book-heading {
+    margin: 0 0 16px;
+    line-height: 0;
+    color: var(--accent);
   }
-  dl {
+  .grid {
     display: grid;
-    grid-template-columns: 130px 1fr;
-    gap: 4px 12px;
+    grid-template-columns: repeat(3, max-content);
+    gap: 4px 24px;
+    margin-bottom: 18px;
+  }
+  .cell {
+    padding: 3px 5px;
+    border: none;
+    border-radius: 3px;
+    background: none;
+    line-height: 0;
+    text-align: left;
+    color: var(--mw-green);
+    cursor: pointer;
+  }
+  .cell.current {
+    background: var(--mw-green);
+  }
+  .book-footer {
     margin: 0;
-    font-size: 13px;
-  }
-  dt {
-    color: var(--muted);
-  }
-  dd {
-    margin: 0;
-  }
-  .quote {
-    color: var(--mw-cyan);
+    line-height: 0;
+    color: var(--mw-red);
   }
 </style>
