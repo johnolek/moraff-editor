@@ -44,16 +44,22 @@ export function parsePic(bytes) {
 /** Map a 6-bit VGA palette ([r,g,b] 0..63 each, 256 entries) to 8-bit RGB. */
 export const vgaToRgb = pal => pal.map(([r, g, b]) => [r * 255 / 63 | 0, g * 255 / 63 | 0, b * 255 / 63 | 0]);
 
-/** Final palette index for a MONSTER picture pixel (scale_image2 with colour set < 0x100).
- *  Returns -1 for "not drawn".  tint = monster.color, colorSet = monster.colorSet.
- *  Shadow bosses have tint 32 with colour set 2, so their tint pixels land on palette entry
- *  64 — a bank the dungeon palette never writes: black until a shop palette has been
- *  applied this session, then that shop's colours (see PICTURES.md). */
+/** Final palette index for a MONSTER picture pixel (the game's picture drawer, scale_image2
+ *  at exe 4000:4818, with colour set < 0x100).  Returns -1 for "not drawn".
+ *  tint = monster.color, colorSet = monster.colorSet, base = colorSet << 4.
+ *  Which pixel value carries the tint depends on the base: 28 for bases 0x20 and 0x40,
+ *  17 for every other base.  The drawer skips that pixel when the tint equals the base
+ *  (0x20/0x40) or when the tint is 0 (any other base); otherwise the tint is used as a raw
+ *  palette index — the base is NOT added to it.  Every other value lands at v + base. */
 export function monsterPixelIndex(v, tint, colorSet) {
   if (v === 0) return -1;
-  if (v === 17) { if (tint === 0) return -1; v = tint; }      // a tint of 0 skips the pixel
-  if (v === 16 || v === 18) v = 0;
-  return (v + (colorSet << 4)) & 0xff;
+  const base = colorSet << 4;
+  if (base === 0x20 || base === 0x40) {
+    if (v === 28) return tint === base ? -1 : tint;
+  } else if (v === 17) {
+    return tint === 0 ? -1 : tint;
+  }
+  return (v + base) & 0xff;
 }
 /** Final palette index for a BUILDING picture pixel: layer 0/2 use +0x20, layers 1/3 use +0x3f. */
 export const buildingPixelIndex = (v, layer) => (v === 0 ? -1 : (v + (layer & 1 ? 0x3f : 0x20)) & 0xff);

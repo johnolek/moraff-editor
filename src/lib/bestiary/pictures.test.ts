@@ -1,8 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parsePic } from '../game/dotu-pic.js';
+import { monsterPixelIndex, parsePic } from '../game/dotu-pic.js';
 import { allMonsters } from './monsters';
-import { monsterPictureFile, pictureImages, renderMonster } from './pictures';
+import { monsterPictureFile, pictureImages, renderMonster, sectionPalette } from './pictures';
+
+/** The pixel value the game replaces with the monster's tint when the colour set is 2. */
+const TINT_VALUE = 28;
 
 const opaquePixels = (data: Uint8ClampedArray) => {
   let count = 0;
@@ -50,11 +53,28 @@ describe('renderMonster', () => {
     expect(opaquePixels(renderMonster(named('Poison Flask'), 1, 1, 'shop').data)).toBeGreaterThan(1000);
   });
 
-  it('leaves a Shadow boss with a black tint until a shop palette has been seen', () => {
+  it("does not draw a Shadow boss's tint pixels", () => {
     const boss = named('Shadow Vulture');
-    const fresh = renderMonster(boss, 1, 3, 'fresh');
-    const shop = renderMonster(boss, 1, 3, 'shop');
-    expect(opaquePixels(fresh.data)).toBe(opaquePixels(shop.data));
-    expect([...fresh.data]).not.toEqual([...shop.data]);
+    const picture = pictureImages('ufmon3.pic')[0];
+    const image = renderMonster(boss, 1, 3, 'fresh');
+    const tintPixels = [...picture].flatMap((v, i) => (v === TINT_VALUE ? [i] : []));
+    expect(tintPixels.length).toBeGreaterThan(1000);
+    expect(tintPixels.filter((i) => image.data[i * 4 + 3] !== 0)).toEqual([]);
+  });
+
+  it('draws the Ogeroth with its tint as a raw palette entry', () => {
+    const ogeroth = named('Ogeroth');
+    const palette = sectionPalette(5, 4, 'fresh');
+    expect(monsterPixelIndex(TINT_VALUE, ogeroth.color, ogeroth.colorSet)).toBe(52);
+    expect(monsterPixelIndex(17, ogeroth.color, ogeroth.colorSet)).toBe(49);
+
+    const picture = pictureImages('ufmon20.pic')[0];
+    const image = renderMonster(ogeroth, 5, 4, 'fresh');
+    const colourAt = (value: number) => {
+      const i = [...picture].indexOf(value);
+      return [...image.data.slice(i * 4, i * 4 + 3)];
+    };
+    expect(colourAt(TINT_VALUE)).toEqual(palette[52]);
+    expect(colourAt(17)).toEqual(palette[49]);
   });
 });

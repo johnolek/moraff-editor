@@ -12,7 +12,14 @@ export type Rgb = [number, number, number];
 /** 6-bit VGA palette entries (0..63 each) to 8-bit RGB. */
 export function vgaToRgb(pal: number[][]): Rgb[];
 
-/** Palette index for a monster picture pixel; -1 means the pixel is not drawn. */
+/**
+ * Palette index for a monster picture pixel; -1 means the pixel is not drawn.
+ *
+ * The tint pixel is value 28 when the colour-set base (colorSet << 4) is 0x20 or 0x40 and
+ * value 17 otherwise; it is skipped when the tint equals the base (0x20/0x40) or is 0 (any
+ * other base), and otherwise takes the tint as a raw palette index. Every other value lands
+ * at v + base.
+ */
 export function monsterPixelIndex(v: number, tint: number, colorSet: number): number;
 export function buildingPixelIndex(v: number, layer: number): number;
 
