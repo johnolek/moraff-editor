@@ -1,5 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { loadedCharacter } from '../calculators/character';
+  import { weaponById } from '../calculators/combat';
   import {
     expValue,
     monsterAttackInterval,
@@ -16,6 +18,7 @@
   import MonsterPicture from './MonsterPicture.svelte';
   import { describeEffects, homeFloor, isPuffball, stockingOdds, whereItAppears, type Monster } from './monsters';
   import type { Look } from './pictures';
+  import { hitChance, toHitTotal, totalNeeded, type ToHitFighter } from './to-hit';
 
   interface Props {
     entry: Monster;
@@ -28,6 +31,10 @@
   const BREATH_RESISTS = ['Anti-Fire', 'Anti-Cold', '', 'Resist Disease', 'Resist Poison'];
   /** Levels rarer than this are left out of the chart; the nudge has a very long tail. */
   const RARE_LEVEL = 0.0005;
+  /** The game's weapon table starts with the fist, which every character can swing. */
+  const FIST = 0;
+  /** The character the worked line falls back to when the save editor holds no character. */
+  const EXAMPLE_FIGHTER: ToHitFighter = { lev: 30, str: 40, luck: 20, weaponHit: weaponById(FIST).hit, hard: false };
 
   // The parent keys this component on the monster, so the controls start fresh each time.
   const home = untrack(() => homeFloor(entry));
@@ -71,6 +78,42 @@
   }
 
   const percent = (chance: number) => `${(chance * 100).toFixed(1)}%`;
+
+  const halfTheTime = $derived(totalNeeded(0.5, baseLevel, entry.type.defense, entry.type.speed));
+  const nineSwingsInTen = $derived(totalNeeded(0.9, baseLevel, entry.type.defense, entry.type.speed));
+
+  /** The character open in the save editor, as the pieces of a swing, or null for none. */
+  const yours = $derived.by(() => {
+    const record = loadedCharacter();
+    if (!record) return null;
+    const fighter: ToHitFighter = {
+      lev: record.lev,
+      str: record.str,
+      luck: record.luck,
+      luckyCharms: record.luckyCharms,
+      weaponHit: weaponById(record.weapon).hit,
+      gauntlet: record.gauntlet,
+      weaponPlus: record.weaponPlus[record.weapon] ?? 0,
+      tempWeaponPlus: record.tempWeaponPlus,
+      hard: record.hard !== 0,
+    };
+    return { name: record.name.trim(), fighter };
+  });
+
+  const workedLine = $derived.by(() => {
+    const fighter = yours?.fighter ?? EXAMPLE_FIGHTER;
+    const chance = percent(hitChance(toHitTotal(fighter), baseLevel, entry.type.defense, entry.type.speed));
+    if (yours) {
+      return (
+        `${yours.name}, level ${fighter.lev.toLocaleString()} with Strength ${fighter.str.toLocaleString()} ` +
+        `and Luck ${fighter.luck.toLocaleString()}, hits it ${chance} of the time.`
+      );
+    }
+    return (
+      `A level ${fighter.lev.toLocaleString()} fighter with Strength ${fighter.str.toLocaleString()} ` +
+      `and Luck ${fighter.luck.toLocaleString()}, on normal difficulty with a fist, hits it ${chance} of the time.`
+    );
+  });
 </script>
 
 <article>
@@ -153,6 +196,19 @@
         </dd>
       {/if}
     </dl>
+
+    <div class="to-hit">
+      <p class="note">Hitting it</p>
+      <p>
+        A to-hit total of {halfTheTime.toLocaleString()} hits it half the time; {nineSwingsInTen.toLocaleString()} hits
+        it 9 swings in 10.
+      </p>
+      <p>
+        Your total is 2 × level + Strength (counted twice, plus 25 over 25, on normal difficulty) + Luck + weapon and
+        gauntlet bonuses.
+      </p>
+      <p>{workedLine}</p>
+    </div>
 
     <div class="charts">
       <BarChart
@@ -247,6 +303,12 @@
   }
   .effects li {
     color: var(--warn);
+  }
+  .to-hit {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 16px;
   }
   .charts {
     display: flex;
