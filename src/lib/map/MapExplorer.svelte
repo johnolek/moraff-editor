@@ -23,7 +23,7 @@
   import SquareInfo from './SquareInfo.svelte';
   import { teleporterSegments } from './teleporters';
   import { monsterAt, stockFloor, stockingSection, type StockedMonster } from './stocking';
-  import type { Point } from './viewport';
+  import { boundsIncluding, type Point } from './viewport';
   import { nearestOpenSquare } from './you';
 
   let moduleIndex = $state(0);
@@ -52,13 +52,15 @@
   const floorRange = $derived(anyFloor ? { lowest: FLOOR_MIN, highest: FLOOR_MAX } : { lowest: 0, highest: BOTTOM_LEVEL[moduleIndex] });
   const rows = $derived(bundledDungeon.floor(floor, moduleIndex));
   const summary = $derived(summarizeFloor(bundledDungeon, floor, moduleIndex, MAP_ROWS));
-  const bounds = $derived(floorBounds(rows, MAP_ROWS));
   const lookup = $derived(dungeonLookup(bundledDungeon, moduleIndex));
   const notable = $derived(notableSquares(lookup, floor, rows));
   const section = $derived(sectionInfo(moduleIndex, floor));
   const stockKey = $derived(`${moduleIndex}:${floor}`);
   const canStock = $derived(stockingSection(moduleIndex, floor) !== null);
   const monsters = $derived(stocked.get(stockKey) ?? []);
+  const beyondMapMonsters = $derived(monsters.filter((monster) => !isOnMap(monster)));
+  /** Fit frames the floor the game shows plus whatever monsters were stocked beyond it. */
+  const bounds = $derived(boundsIncluding(floorBounds(rows, MAP_ROWS), beyondMapMonsters));
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(bundledDungeon, moduleIndex, floor, cursorSquare, cursor.x, cursor.y) : null);
   const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, moduleIndex) : null);

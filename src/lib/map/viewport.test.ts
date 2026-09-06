@@ -3,6 +3,7 @@ import {
   FULL_FLOOR,
   MAX_CELL,
   MIN_CELL,
+  boundsIncluding,
   centerOn,
   ensureVisible,
   fitFloor,
@@ -41,6 +42,19 @@ describe('squareAt', () => {
 describe('FULL_FLOOR', () => {
   it('frames the area the game shows rather than the whole grid', () => {
     expect(FULL_FLOOR).toEqual({ minX: 0, minY: 0, maxX: 78, maxY: 103 });
+  });
+});
+
+describe('boundsIncluding', () => {
+  const bounds = { minX: 2, minY: 3, maxX: 10, maxY: 20 };
+
+  it('grows the bounds around the points outside them', () => {
+    expect(boundsIncluding(bounds, [{ x: 1, y: 25 }, { x: 12, y: 4 }])).toEqual({ minX: 1, minY: 3, maxX: 12, maxY: 25 });
+  });
+
+  it('leaves the bounds as they are when the points are already inside, or there are none', () => {
+    expect(boundsIncluding(bounds, [{ x: 5, y: 5 }])).toEqual(bounds);
+    expect(boundsIncluding(bounds, [])).toBe(bounds);
   });
 });
 

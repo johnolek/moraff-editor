@@ -27,6 +27,20 @@ export interface Bounds {
   maxY: number;
 }
 
+/** The bounds grown to take in every one of the points, or the same bounds when they are
+ *  already inside it. */
+export function boundsIncluding(bounds: Bounds, points: Point[]): Bounds {
+  return points.reduce(
+    (grown, point) => ({
+      minX: Math.min(grown.minX, point.x),
+      minY: Math.min(grown.minY, point.y),
+      maxX: Math.max(grown.maxX, point.x),
+      maxY: Math.max(grown.maxY, point.y),
+    }),
+    bounds,
+  );
+}
+
 export const FULL_FLOOR: Bounds = { minX: 0, minY: 0, maxX: MAP_COLUMNS - 1, maxY: MAP_ROWS - 1 };
 
 /** The square under a canvas point, anywhere on the generated grid: the squares beyond the
