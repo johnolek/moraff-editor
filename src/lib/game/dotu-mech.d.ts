@@ -165,5 +165,29 @@ export function autokillChance(
   n?: number,
   rnd?: () => number,
 ): number;
+/** How much each cure heals at this wisdom; a pair is the lowest and the highest roll. */
+export function cureAmounts(wis: number): {
+  littleCure: number;
+  fastCure: number;
+  cure: [number, number];
+  bigCure: [number, number];
+  fastBigCure: [number, number];
+};
+/** What each damage spell of the two battle lists does at this character level. */
+export function damageSpells(lev: number): {
+  magicZap: number;
+  lightning: number;
+  minorShock: number;
+  magicMissile: number;
+  shock: number;
+  majorShock: number;
+  magicZot: [number, number];
+  magicBolt: [number, number];
+  minorExplosion: [number, number];
+  explosion: [number, number];
+  majorExplosion: [number, number];
+};
+/** Taken off a monster's attack roll, indexed by protection level 0..4. */
+export const PROTECTION_BONUS: [number, number, number, number, number];
 /** The die a Power Weapon I, II or III swaps in for the held weapon's own. */
 export const POWER_WEAPON_DIE: [null, number, number, number];

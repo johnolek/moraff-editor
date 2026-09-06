@@ -1,0 +1,438 @@
+import { describe, expect, it } from 'vitest';
+import { autokillChance, damageSpells, sleepChance } from '../dotu-mech.js';
+import {
+  antiCold,
+  antiFire,
+  autokill,
+  battleSpeed,
+  battleStrength,
+  drainMonster,
+  explosion,
+  goAway,
+  msgNoMonster,
+  passWall,
+  relocateSpell,
+  resistDisease,
+  resistDrain,
+  resistPoison,
+  sleepMonster,
+  speed,
+  strength,
+  strengthAndSpeed,
+} from './magic';
+import { BorlandRng } from './rng';
+import type { Game, Monster } from './state';
+import { MAP_EMPTY, MAP_PLAYER, monsterAt, newGame, setMonsterMap } from './state';
+
+/** Monster kind 23 is one of section 1's ordinary monsters; kind 22 is its Shadow boss. */
+const REGULAR = 23;
+const BOSS = 22;
+
+/** Puts a monster on the floor, marks the square it stands on, and engages it. */
+function engage(game: Game, monster: Partial<Monster> = {}): Monster {
+  const placed = Object.assign(game.monsters[0], {
+    x: 10,
+    y: 10,
+    hp: 5000,
+    type: REGULAR,
+    level: 40,
+    ...monster,
+  });
+  setMonsterMap(game, placed.x, placed.y, 0);
+  game.engaged = 0;
+  return placed;
+}
+
+/** A game with the player at (40, 50) on an open floor and one monster engaged. */
+function fighting(seed = 1, monster: Partial<Monster> = {}): { game: Game; monster: Monster } {
+  const game = newGame({ rng: new BorlandRng(seed) });
+  setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
+  return { game, monster: engage(game, monster) };
+}
+
+describe('msgNoMonster', () => {
+  it('prints the refusal without the blank slots the game pads it with', () => {
+    const game = newGame();
+    msgNoMonster(game);
+    expect(game.messages).toEqual([
+      'YOU ARE NOT CURRENTLY',
+      'ENGAGING ANY MONSTER.',
+      '',
+      'HIT ANY KEY...',
+    ]);
+  });
+});
+
+describe('explosion', () => {
+  it('refuses when nothing is engaged', () => {
+    const game = newGame();
+    expect(explosion(game, 0)).toBe(false);
+    expect(game.messages[0]).toBe('YOU ARE NOT CURRENTLY');
+  });
+
+  it.each([
+    [0, 'minorExplosion' as const, 'A SMALL EXPLOSION OCCURS'],
+    [1, 'explosion' as const, 'A LARGE EXPLOSION OCCURS'],
+    [2, 'majorExplosion' as const, 'A HUGE EXPLOSION OCCURS'],
+  ])('size %i rolls the range dotu-mech gives for %s', (size, name, headline) => {
+    const { game, monster } = fighting(20 + size);
+    const [low, high] = damageSpells(game.pc.lev)[name];
+    const rolled = new Set<number>();
+    for (let i = 0; i < 3000; i++) {
+      const before = monster.hp;
+      game.messages.length = 0;
+      expect(explosion(game, size)).toBe(true);
+      rolled.add(before - monster.hp);
+    }
+    expect(Math.min(...rolled)).toBe(low);
+    expect(Math.max(...rolled)).toBe(high);
+    expect(game.messages[0]).toBe(headline);
+  });
+
+  it('says how much damage it did', () => {
+    const { game, monster } = fighting(7);
+    explosion(game, 0);
+    const damage = 5000 - monster.hp;
+    expect(game.messages).toEqual([
+      'A SMALL EXPLOSION OCCURS',
+      'ON THE GROUND DIRECTLY',
+      'BELOW THE MONSTER.',
+      `THE EXPLOSION DOES ${damage}`,
+      'POINTS OF DAMAGE.',
+      '',
+      'HIT ANY KEY',
+    ]);
+  });
+});
+
+describe('sleepMonster', () => {
+  it('refuses when nothing is engaged, and when the monster is already asleep', () => {
+    const game = newGame();
+    expect(sleepMonster(game)).toBe(false);
+
+    const asleep = fighting().game;
+    asleep.pc.sleepTimer = 25;
+    expect(sleepMonster(asleep)).toBe(false);
+    expect(asleep.messages).toContain('CASTING THIS SPELL WOULD');
+  });
+
+  it('sleeps a level 40 monster about as often as the notes say, for 25 moves', () => {
+    const { game } = fighting(99, { level: 40 });
+    let slept = 0;
+    const runs = 20000;
+    for (let i = 0; i < runs; i++) {
+      game.pc.sleepTimer = 0;
+      sleepMonster(game);
+      if (game.pc.sleepTimer === 25) slept++;
+    }
+    expect(slept / runs).toBeCloseTo(sleepChance(40), 1);
+  });
+
+  it('always takes on a monster of level 3 or less', () => {
+    const { game } = fighting(3, { level: 3 });
+    for (let i = 0; i < 100; i++) {
+      game.pc.sleepTimer = 0;
+      sleepMonster(game);
+      expect(game.pc.sleepTimer).toBe(25);
+    }
+  });
+
+  it('works on a Shadow boss, which no other monster spell does', () => {
+    const { game } = fighting(5, { type: BOSS, level: 1 });
+    expect(sleepMonster(game)).toBe(true);
+    expect(game.pc.sleepTimer).toBe(25);
+    expect(game.messages).toEqual([]);
+  });
+});
+
+describe('autokill', () => {
+  it('refuses a Shadow boss and prints its taunt', () => {
+    const { game, monster } = fighting(1, { type: BOSS });
+    expect(autokill(game)).toBe(false);
+    expect(monster.hp).toBe(5000);
+    expect(game.messages[2]).toBe('AND SAYS, "NO, THAT SILLY');
+  });
+
+  it('lands about as often as the notes roll says', () => {
+    const { game, monster } = fighting(4242, { level: 45 });
+    game.pc.lev = 20;
+    game.pc.iq = 18;
+    game.pc.wis = 22;
+    game.pc.level = 30;
+    const monsterSpeed = game.monsterStats[game.monsterKinds[REGULAR].type].speed;
+    let kills = 0;
+    const runs = 20000;
+    for (let i = 0; i < runs; i++) {
+      monster.hp = 5000;
+      game.messages.length = 0;
+      expect(autokill(game)).toBe(true);
+      if (monster.hp === -100) kills++;
+    }
+    expect(kills / runs).toBeCloseTo(autokillChance(45, monsterSpeed, 20, 18, 22, 30), 1);
+  });
+
+  it('sets the monster to minus 100 hit points when it lands', () => {
+    const { game, monster } = fighting(1, { level: 1 });
+    game.pc.lev = 200;
+    expect(autokill(game)).toBe(true);
+    expect(monster.hp).toBe(-100);
+    expect(game.messages[0]).toBe("THE MONSTER'S BRAIN EXPLODES");
+  });
+});
+
+describe('drainMonster', () => {
+  it('empties a monster whose level is under the caster’s wisdom', () => {
+    const { game, monster } = fighting(1, { level: 19 });
+    game.pc.wis = 20;
+    expect(drainMonster(game)).toBe(true);
+    expect(monster.level).toBe(0);
+    expect(monster.hp).toBe(0);
+    expect(game.messages).toEqual([]);
+  });
+
+  it('otherwise takes wisdom off the level and half the type’s hit points per level per point', () => {
+    const { game, monster } = fighting(1, { level: 50 });
+    game.pc.wis = 20;
+    const perLevel = game.monsterStats[game.monsterKinds[REGULAR].type].hpPerLevel;
+    expect(drainMonster(game)).toBe(true);
+    expect(monster.level).toBe(30);
+    expect(monster.hp).toBe(5000 - Math.trunc(perLevel / 2) * 20);
+  });
+
+  it('refuses a Shadow boss', () => {
+    const { game, monster } = fighting(1, { type: BOSS, level: 50 });
+    expect(drainMonster(game)).toBe(false);
+    expect(monster.level).toBe(50);
+  });
+});
+
+describe('goAway', () => {
+  it('always moves a monster that is not a boss, and moves it on the occupancy map', () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      const { game, monster } = fighting(seed);
+      expect(goAway(game)).toBe(true);
+      expect([monster.x, monster.y]).not.toEqual([10, 10]);
+      expect(monsterAt(game, 10, 10)).toBe(-1);
+      expect(monsterAt(game, monster.x, monster.y)).toBe(0);
+    }
+  });
+
+  it('lands the monster inside the floor the game lets the player reach', () => {
+    const { game, monster } = fighting(11);
+    goAway(game);
+    expect(monster.x).toBeLessThan(game.columns);
+    expect(monster.y).toBeLessThan(game.rows);
+  });
+
+  it('drops the monster in rock, because the loop tests the player’s square', () => {
+    // Rock everywhere except where the player stands: the search should never end, and only
+    // does because it asks about the player's square rather than the monster's.
+    const { game, monster } = fighting(1);
+    game.solid = (x, y) => !(x === game.pc.x && y === game.pc.y);
+    expect(goAway(game)).toBe(true);
+    expect([monster.x, monster.y]).not.toEqual([game.pc.x, game.pc.y]);
+    expect(game.solid(monster.x, monster.y, game.pc.level, game.pc.module)).toBe(true);
+  });
+
+  it('refuses a Shadow boss', () => {
+    const { game, monster } = fighting(1, { type: BOSS });
+    expect(goAway(game)).toBe(false);
+    expect([monster.x, monster.y]).toEqual([10, 10]);
+  });
+});
+
+describe('relocateSpell', () => {
+  it('moves the player to an open square with no monster on it', () => {
+    const { game } = fighting(31);
+    game.solid = (x, y) => x < 5 || y < 5;
+    setMonsterMap(game, 20, 20, 0);
+    expect(relocateSpell(game)).toBe(true);
+    expect(game.solid(game.pc.x, game.pc.y, game.pc.level, game.pc.module)).toBe(false);
+    expect([game.pc.x, game.pc.y]).not.toEqual([20, 20]);
+    expect(monsterAt(game, game.pc.x, game.pc.y)).toBe(MAP_PLAYER);
+    expect(monsterAt(game, 40, 50)).toBe(-1);
+    expect(game.recenterMap).toBe(true);
+  });
+});
+
+describe('battleStrength', () => {
+  it('sets the power weapon level and 60 moves', () => {
+    const game = newGame();
+    expect(battleStrength(game, 1)).toBe(true);
+    expect(game.pc.powerWeapon).toBe(1);
+    expect(game.pc.powerWeaponTime).toBe(60);
+    expect(game.messages[0]).toBe('YOUR WEAPON BEGINS TO');
+  });
+
+  it('adds 60 moves when the same level is cast again', () => {
+    const game = newGame({ pc: { powerWeapon: 2, powerWeaponTime: 15 } });
+    expect(battleStrength(game, 2)).toBe(true);
+    expect(game.pc.powerWeaponTime).toBe(75);
+    expect(game.messages).toContain('60 MOVES LONGER.');
+  });
+
+  it('restarts the clock at 60 when a stronger one is cast', () => {
+    const game = newGame({ pc: { powerWeapon: 1, powerWeaponTime: 55 } });
+    expect(battleStrength(game, 3)).toBe(true);
+    expect(game.pc.powerWeaponTime).toBe(60);
+  });
+
+  it('refuses a weaker one', () => {
+    const game = newGame({ pc: { powerWeapon: 3, powerWeaponTime: 10 } });
+    expect(battleStrength(game, 1)).toBe(false);
+    expect(game.pc.powerWeapon).toBe(3);
+    expect(game.messages[0]).toBe('CASTING THIS SPELL WOULD');
+  });
+});
+
+describe('battleSpeed', () => {
+  it('sets the protection level and 60 moves', () => {
+    const game = newGame();
+    expect(battleSpeed(game, 2)).toBe(true);
+    expect(game.pc.protection).toBe(2);
+    expect(game.pc.protectionTime).toBe(60);
+    expect(game.messages).toEqual([
+      'YOUR BODY BEGINS TO SHIMMER',
+      'WITH SHIFTING COLORS OF',
+      'LIGHT. THIS PROTECTION',
+      'WILL LAST FOR 60 MOVES',
+      'OR STEPS.',
+      '',
+      'HIT ANY KEY',
+    ]);
+  });
+
+  it('refuses a weaker one and extends an equal one', () => {
+    const weaker = newGame({ pc: { protection: 4, protectionTime: 5 } });
+    expect(battleSpeed(weaker, 1)).toBe(false);
+
+    const same = newGame({ pc: { protection: 4, protectionTime: 5 } });
+    expect(battleSpeed(same, 4)).toBe(true);
+    expect(same.pc.protectionTime).toBe(65);
+  });
+});
+
+describe('strength, speed and both together', () => {
+  it('give 7 points and 60 moves, once', () => {
+    const game = newGame();
+    expect(strength(game)).toBe(true);
+    expect([game.pc.str, game.pc.strengthTimer]).toEqual([27, 60]);
+    expect(strength(game)).toBe(false);
+    expect([game.pc.str, game.pc.strengthTimer]).toEqual([27, 60]);
+
+    expect(speed(game)).toBe(true);
+    expect([game.pc.dex, game.pc.speedTimer]).toEqual([27, 60]);
+    expect(speed(game)).toBe(false);
+  });
+
+  it('refuse Strength And Speed only when both are already running', () => {
+    const both = newGame({ pc: { strengthTimer: 10, speedTimer: 10 } });
+    expect(strengthAndSpeed(both)).toBe(false);
+    expect(both.pc.str).toBe(20);
+
+    // With only Strength up, Strength And Speed extends it without a second +7 and grants the
+    // agility properly.
+    const half = newGame({ pc: { strengthTimer: 10 } });
+    expect(strengthAndSpeed(half)).toBe(true);
+    expect([half.pc.str, half.pc.strengthTimer]).toEqual([20, 70]);
+    expect([half.pc.dex, half.pc.speedTimer]).toEqual([27, 60]);
+  });
+});
+
+describe('the resistances', () => {
+  it.each([
+    [resistPoison, 'resistPoisonTimer' as const, 'YOU FEEL A WARMTH IN YOUR'],
+    [resistDisease, 'resistDiseaseTimer' as const, 'YOU FEEL A TINGLING IN YOUR'],
+    [antiCold, 'antiColdTimer' as const, 'YOU FEEL A WARM FEELING AS'],
+    [antiFire, 'antiFireTimer' as const, 'YOU FEEL A COOL FEELING AS'],
+    [resistDrain, 'resistDrainTimer' as const, 'YOU FEEL A HEAVENLY'],
+  ])('add 60 moves every time they are cast', (cast, timer, opening) => {
+    const game = newGame();
+    expect(cast(game)).toBe(true);
+    expect(game.pc[timer]).toBe(60);
+    expect(cast(game)).toBe(true);
+    expect(game.pc[timer]).toBe(120);
+    expect(game.messages[0]).toBe(opening);
+  });
+});
+
+describe('passWall', () => {
+  it('does nothing when the spell is cancelled', () => {
+    const { game } = fighting();
+    expect(passWall(game, 5)).toBe(false);
+    expect([game.pc.x, game.pc.y]).toEqual([40, 50]);
+  });
+
+  it('walks to the first open square 2 away, never to the one next door', () => {
+    const { game } = fighting();
+    expect(passWall(game, 3)).toBe(true);
+    expect([game.pc.x, game.pc.y]).toEqual([42, 50]);
+    expect(monsterAt(game, 40, 50)).toBe(-1);
+    expect(monsterAt(game, 42, 50)).toBe(MAP_PLAYER);
+  });
+
+  it.each([
+    [1, [40, 48]],
+    [2, [40, 52]],
+    [3, [42, 50]],
+    [4, [38, 50]],
+  ])('sends choice %i the way the menu says', (choice, expected) => {
+    const { game } = fighting();
+    expect(passWall(game, choice)).toBe(true);
+    expect([game.pc.x, game.pc.y]).toEqual(expected);
+  });
+
+  it('walks past rock and past a monster to the first square that is neither', () => {
+    const { game } = fighting();
+    game.solid = (x) => x >= 42 && x <= 45;
+    setMonsterMap(game, 46, 50, 0);
+    expect(passWall(game, 3)).toBe(true);
+    expect(game.pc.x).toBe(47);
+  });
+
+  it('gives up after 19 squares and leaves the player where they were', () => {
+    const { game } = fighting();
+    game.solid = (x) => x > 40;
+    expect(passWall(game, 3)).toBe(false);
+    expect([game.pc.x, game.pc.y]).toEqual([40, 50]);
+    expect(monsterAt(game, 40, 50)).toBe(MAP_PLAYER);
+  });
+
+  it('reaches 19 squares but no further', () => {
+    const near = fighting().game;
+    near.solid = (x) => x < 59;
+    expect(passWall(near, 3)).toBe(true);
+    expect(near.pc.x).toBe(59);
+
+    const far = fighting().game;
+    far.solid = (x) => x < 60;
+    expect(passWall(far, 3)).toBe(false);
+  });
+
+  it('will not step off the part of the floor the game lets the player reach', () => {
+    const { game } = fighting();
+    game.pc.x = game.columns - 2;
+    game.solid = () => false;
+    setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
+    expect(passWall(game, 3)).toBe(false);
+    expect(game.pc.x).toBe(game.columns - 2);
+  });
+
+  it('asks for the view to be re-centred and redrawn', () => {
+    const { game } = fighting();
+    expect(passWall(game, 3)).toBe(true);
+    expect([game.recenterMap, game.redrawView]).toEqual([true, true]);
+    expect(game.pc.mapCursorX).toBe(42);
+  });
+});
+
+describe('the occupancy map', () => {
+  it('reads an empty square back as -1 and the player as 0xfe', () => {
+    const game = newGame();
+    expect(monsterAt(game, 3, 4)).toBe(-1);
+    setMonsterMap(game, 3, 4, MAP_PLAYER);
+    expect(monsterAt(game, 3, 4)).toBe(MAP_PLAYER);
+    setMonsterMap(game, 3, 4, MAP_EMPTY);
+    expect(monsterAt(game, 3, 4)).toBe(-1);
+  });
+});

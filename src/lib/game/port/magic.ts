@@ -1,0 +1,453 @@
+import type { Game } from './state';
+import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
+
+/**
+ * A line of message text that cannot be recovered. The strings are known only through Ghidra's
+ * labels for them — the executable is PKLITE-packed and is not in this repository — and the game
+ * passes these two lines to `print_menu_only` as a bare address, which Ghidra never labelled.
+ * The address in the data segment and the length of the line are all that is known.
+ */
+function unrecoveredLine(address: string, length: number): string {
+  return `<unrecovered DS:${address}, ${length} characters>`;
+}
+
+/** msg_no_monster (exe 3000:d0c1, unf.c "msg_no_monster"). */
+export function msgNoMonster(game: Game): void {
+  game.say('YOU ARE NOT CURRENTLY', 'ENGAGING ANY MONSTER.', '', 'HIT ANY KEY...');
+}
+
+/** msg_already_in_effect (exe 3000:d0ee, unf.c "msg_already_in_effect"). */
+export function msgAlreadyInEffect(game: Game): void {
+  game.say('CASTING THIS SPELL WOULD', 'BE REDUNDANT.', '', 'HIT ANY KEY...');
+}
+
+/** FUN_3000_d11b (exe 3000:d11b, unf.c "FUN_3000_d11b"): the other "already cast" refusal. */
+export function msgAlreadyCastThisSpell(game: Game): void {
+  game.say('YOU HAVE ALREADY CAST', 'THIS SPELL.', '', 'HIT ANY KEY...');
+}
+
+/** FUN_3000_d7be (exe 3000:d7be, unf.c "FUN_3000_d7be"): what a small cure prints. */
+export function msgYouFeelGood(game: Game): void {
+  game.say('YOU FEEL GOOD.  HIT ANY KEY');
+}
+
+/** FUN_3000_d7eb (exe 3000:d7eb, unf.c "FUN_3000_d7eb"): what a big cure or a stat boost prints. */
+export function msgYouFeelVeryGood(game: Game): void {
+  game.say('YOU FEEL VERY GOOD.', '', 'HIT ANY KEY...');
+}
+
+/** FUN_3000_dd37 (exe 3000:dd37, unf.c "FUN_3000_dd37"): re-casting extended the spell. */
+export function msgSixtyMovesLonger(game: Game): void {
+  game.say(
+    'YOU HAD ALREADY CAST THIS',
+    'SPELL, SO NOW IT WILL LAST',
+    '60 MOVES LONGER.',
+    '',
+    'HIT ANY KEY...',
+  );
+}
+
+/**
+ * boss_immune_check (exe 3000:dab7, unf.c "boss_immune_check"): whether the monster being fought
+ * is a Shadow boss, which every spell aimed at a monster except Sleep refuses to touch. Prints
+ * the boss's taunt when it is.
+ */
+export function bossImmuneCheck(game: Game): boolean {
+  const monster = game.monsters[game.engaged];
+  // Hold Monster calls this before it checks that anything is engaged, so the original reads the
+  // six bytes in front of the monster table and asks whether that garbage is 100. Reading
+  // nothing is not a boss here.
+  if (!monster || game.monsterKinds[monster.type].special !== 100) return false;
+  game.say(
+    'WHEN YOU BEGIN TO CAST THE',
+    'SPELL THE MONSTER STOPS YOU',
+    'AND SAYS, "NO, THAT SILLY',
+    "SPELL DOESTN'T WORK ON ME.",
+    'TRY SOMETHING ELSE WHILE I',
+    'TEAR YOUR LIMBS FROM ONE',
+    'ANOTHER, HEE HEE HEE.',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * explosion (exe 3000:d818, unf.c "explosion"): Minor Explosion, Explosion and Major Explosion.
+ * `kind` is 0, 1 or 2 for the three sizes.
+ */
+export function explosion(game: Game, kind: number): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  let headline = '';
+  if (kind === 0) headline = 'A SMALL EXPLOSION OCCURS';
+  if (kind === 1) headline = 'A LARGE EXPLOSION OCCURS';
+  if (kind === 2) headline = 'A HUGE EXPLOSION OCCURS';
+  // The original asks the same question a second time here, with nothing in between that could
+  // have changed the answer.
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  // The original rolls the damage into the same variable it took the size in, so these three
+  // tests run one after another on a value that may already be the damage. Every roll comes out
+  // above 2, so a rolled total never matches a later size.
+  let damage = kind;
+  if (damage === 0) damage = game.rng.random(101) + 75;
+  if (damage === 1) damage = game.rng.random(101) + 125;
+  if (damage === 2) damage = game.rng.random(301) + 200;
+  game.monsters[game.engaged].hp -= damage;
+  game.say(
+    headline,
+    'ON THE GROUND DIRECTLY',
+    'BELOW THE MONSTER.',
+    `THE EXPLOSION DOES ${damage}`,
+    'POINTS OF DAMAGE.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * sleep_monster (exe 3000:d904, unf.c "sleep_monster"): Sleep, in both battle lists.
+ *
+ * Ported from the RE notes: the decompilation of 3000:d904 failed (MORF-58). The notes and the
+ * function catalog give the roll and the 25 moves, and the catalog gives the two messages it
+ * calls; the string dump shows the function holds no text of its own, so a made roll and a
+ * missed one are both silent. Sleep is the one spell aimed at a monster that never asks
+ * boss_immune_check, so it works on a Shadow boss.
+ */
+export function sleepMonster(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  if (game.pc.sleepTimer !== 0) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  // What a missed roll returns is not recoverable either; autokill, the other roll of this
+  // shape, reports success whether it lands or not.
+  if (game.rng.random(game.monsters[game.engaged].level) < 3) game.pc.sleepTimer = 25;
+  return true;
+}
+
+/** FUN_3000_d990 (exe 3000:d990, unf.c "FUN_3000_d990"): Strength, +7 STR for 60 moves. */
+export function strength(game: Game): boolean {
+  if (game.pc.strengthTimer === 0) {
+    game.pc.strengthTimer = 60;
+    game.pc.str += 7;
+    msgYouFeelVeryGood(game);
+    return true;
+  }
+  msgAlreadyCastThisSpell(game);
+  return false;
+}
+
+/** FUN_3000_d9ba (exe 3000:d9ba, unf.c "FUN_3000_d9ba"): Speed, +7 AGI for 60 moves. */
+export function speed(game: Game): boolean {
+  if (game.pc.speedTimer === 0) {
+    game.pc.speedTimer = 60;
+    game.pc.dex += 7;
+    msgYouFeelVeryGood(game);
+    return true;
+  }
+  msgAlreadyCastThisSpell(game);
+  return false;
+}
+
+/**
+ * FUN_3000_d9e4 (exe 3000:d9e4, unf.c "FUN_3000_d9e4"): Strength And Speed, both boosts at once.
+ */
+export function strengthAndSpeed(game: Game): boolean {
+  // It only refuses when both are already running: with one of them up, that one is extended by
+  // 60 moves and the other is cast normally.
+  if (game.pc.speedTimer !== 0 && game.pc.strengthTimer !== 0) {
+    msgAlreadyCastThisSpell(game);
+    return false;
+  }
+  game.pc.speedTimer += 60;
+  game.pc.strengthTimer += 60;
+  if (game.pc.speedTimer === 60) game.pc.dex += 7;
+  if (game.pc.strengthTimer === 60) game.pc.str += 7;
+  msgYouFeelVeryGood(game);
+  return true;
+}
+
+/**
+ * relocate_spell (exe 3000:da2c, unf.c "relocate_spell"): Relocate, which drops the player on a
+ * random open square of the same floor that no monster is standing on.
+ */
+export function relocateSpell(game: Game): boolean {
+  setMonsterMap(game, game.pc.x, game.pc.y, MAP_EMPTY);
+  do {
+    do {
+      game.pc.x = game.rng.random(game.columns);
+      game.pc.y = game.rng.random(game.rows);
+    } while (game.solid(game.pc.x, game.pc.y, game.pc.level, game.pc.module));
+  } while (monsterAt(game, game.pc.x, game.pc.y) !== -1);
+  setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
+  game.recenterMap = true;
+  game.redrawView = true;
+  return true;
+}
+
+/**
+ * go_away (exe 3000:db1e, unf.c "go_away"): Go Away, which throws the monster somewhere else on
+ * the floor. There is no level-ratio check anywhere in it, whatever the help text says: on
+ * anything but a Shadow boss it always works.
+ */
+export function goAway(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  if (bossImmuneCheck(game)) return false;
+  const monster = game.monsters[game.engaged];
+  setMonsterMap(game, monster.x, monster.y, MAP_EMPTY);
+  do {
+    monster.x = game.rng.random(game.columns);
+    monster.y = game.rng.random(game.rows);
+    // The loop asks whether the square the *player* is standing on is rock, not the square the
+    // monster just landed on. The player is never standing in rock, so the loop always stops on
+    // the first roll and the monster can be dropped inside solid rock.
+  } while (game.solid(game.pc.x, game.pc.y, game.pc.level, game.pc.module));
+  setMonsterMap(game, monster.x, monster.y, game.engaged);
+  return true;
+}
+
+/**
+ * autokill (exe 3000:dc18, unf.c "autokill"): Autokill, which sets the monster's hit points to
+ * -100 when the roll lands. Reports success either way; only the message changes.
+ */
+export function autokill(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  if (bossImmuneCheck(game)) return false;
+  const monster = game.monsters[game.engaged];
+  const stats = game.monsterStats[game.monsterKinds[monster.type].type];
+  const monsterRoll = game.rng.random(monster.level + game.rng.random(stats.speed));
+  const playerRoll = game.rng.random(game.pc.lev + game.rng.random(game.pc.iq + game.pc.wis));
+  if (monsterRoll < playerRoll + game.rng.random(game.pc.level)) {
+    monster.hp = -100;
+    game.say(
+      "THE MONSTER'S BRAIN EXPLODES",
+      'FROM ULTRA INTENSE BRAIN',
+      'WAVES WHICH EMINATE FROM',
+      'YOUR MIND.',
+      '',
+      'HIT ANY KEY',
+    );
+    return true;
+  }
+  game.say('THE SPELL FAILS... TOUGH LUCK', 'CHARLIE.', '', 'HIT ANY KEY');
+  return true;
+}
+
+/**
+ * battle_strength (exe 3000:dd64, unf.c "battle_strength"): Power Weapon I, II and III, which
+ * put a 69, 129 or 199 damage die in the player's hands for 60 moves. `level` is 1, 2 or 3.
+ *
+ * The catalog's one-line note calls this "+7 STR for 60 moves", which is wrong: that is
+ * FUN_3000_d990. This writes the power weapon level at save offset 0x7e8.
+ */
+export function battleStrength(game: Game, level: number): boolean {
+  if (level < game.pc.powerWeapon) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  if (game.pc.powerWeapon === level) {
+    game.pc.powerWeaponTime += 60;
+    msgSixtyMovesLonger(game);
+  } else {
+    game.pc.powerWeapon = level;
+    // Casting a stronger one sets the clock back to 60 rather than adding to what was left.
+    game.pc.powerWeaponTime = 60;
+    game.say(
+      'YOUR WEAPON BEGINS TO',
+      'SHIMMER WITH POWER. THIS',
+      'WEAPON IS AUTOMATICALLY',
+      'IN USE UNTIL THE SPELL',
+      unrecoveredLine('3b46', 8),
+      '',
+      'HIT ANY KEY',
+    );
+  }
+  return true;
+}
+
+/**
+ * battle_speed (exe 3000:ddc9, unf.c "battle_speed"): Minor Protection, Protection, Major
+ * Protection and Ultra Protection, which take 2, 8, 18 and 32 off a monster's attack roll for 60
+ * moves. `level` is 1, 2, 3 or 4.
+ *
+ * The catalog's one-line note calls this "+7 AGI for 60 moves", which is wrong: that is
+ * FUN_3000_d9ba. This writes the protection level at save offset 0x7eb.
+ */
+export function battleSpeed(game: Game, level: number): boolean {
+  if (level < game.pc.protection) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  if (game.pc.protection === level) {
+    game.pc.protectionTime += 60;
+    msgSixtyMovesLonger(game);
+  } else {
+    game.pc.protection = level;
+    game.pc.protectionTime = 60;
+    game.say(
+      'YOUR BODY BEGINS TO SHIMMER',
+      'WITH SHIFTING COLORS OF',
+      'LIGHT. THIS PROTECTION',
+      'WILL LAST FOR 60 MOVES',
+      'OR STEPS.',
+      '',
+      'HIT ANY KEY',
+    );
+  }
+  return true;
+}
+
+/** resist_poison (exe 3000:de2e, unf.c "resist_poison"): Resist Poison, 60 more moves. */
+export function resistPoison(game: Game): boolean {
+  game.pc.resistPoisonTimer += 60;
+  game.say(
+    'YOU FEEL A WARMTH IN YOUR',
+    'BLOOD AS THE RESIST',
+    'POISON TAKES EFFECT.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/** resist_disease (exe 3000:de65, unf.c "resist_disease"): Resist Disease, 60 more moves. */
+export function resistDisease(game: Game): boolean {
+  game.pc.resistDiseaseTimer += 60;
+  game.say(
+    'YOU FEEL A TINGLING IN YOUR',
+    'BODY AS THE RESIST',
+    'DISEASE TAKES EFFECT.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/** anti_cold (exe 3000:de9c, unf.c "anti_cold"): Anti-Cold, 60 more moves. */
+export function antiCold(game: Game): boolean {
+  game.pc.antiColdTimer += 60;
+  game.say(
+    'YOU FEEL A WARM FEELING AS',
+    'YOUR BODY PREPARES',
+    'FOR AN ICE ATTACK.',
+    'SPELL WILL LAST 60 MOVES.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/** anti_fire (exe 3000:ded3, unf.c "anti_fire"): Anti-Fire, 60 more moves. */
+export function antiFire(game: Game): boolean {
+  game.pc.antiFireTimer += 60;
+  game.say(
+    'YOU FEEL A COOL FEELING AS',
+    'YOUR BODY PREPARES',
+    'FOR A FIRE ATTACK.',
+    'SPELL WILL LAST 60 MOVES.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/** resist_drain (exe 3000:df0a, unf.c "resist_drain"): Resist Level Drain, 60 more moves. */
+export function resistDrain(game: Game): boolean {
+  game.pc.resistDrainTimer += 60;
+  game.say(
+    'YOU FEEL A HEAVENLY',
+    'PRESENCE AS THE FORCES',
+    'OF GOOD GATHER TO DEFEND',
+    'YOU AGAINST LEVEL DRAIN.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * drain_monster (exe 3000:df41, unf.c "drain_monster"): Drain Monster, which takes the caster's
+ * wisdom off the monster's level. A monster whose level is under the caster's wisdom is emptied
+ * outright: level 0 and no hit points. The spell prints nothing at all.
+ */
+export function drainMonster(game: Game): boolean {
+  if (game.engaged === -1) {
+    msgNoMonster(game);
+    return false;
+  }
+  if (bossImmuneCheck(game)) return false;
+  const monster = game.monsters[game.engaged];
+  if (monster.level < game.pc.wis) {
+    monster.level = 0;
+    monster.hp = 0;
+    return true;
+  }
+  const stats = game.monsterStats[game.monsterKinds[monster.type].type];
+  monster.level -= game.pc.wis;
+  monster.hp -= Math.trunc(stats.hpPerLevel / 2) * game.pc.wis;
+  return true;
+}
+
+/**
+ * pass_wall (exe 3000:e003, unf.c "pass_wall"): Pass Wall, which walks the player through
+ * whatever is in the way to the first square 2 to 19 away in the chosen direction that is on the
+ * map, is not rock and has no monster on it. Finding none, it does nothing and the spell points
+ * are still spent.
+ *
+ * `choice` is the number the player picks off the direction menu: 1 north, 2 south, 3 east, 4
+ * west, 5 cancel. The original prints that menu and reads the key itself (FUN_2000_2f5d and
+ * get_choice); the port is handed the number instead and prints nothing.
+ */
+export function passWall(game: Game, choice: number): boolean {
+  if (choice <= 0 || choice >= 5) return false;
+  let dx = 0;
+  let dy = 0;
+  if (choice === 1) dy = -1;
+  if (choice === 2) dy = 1;
+  if (choice === 3) dx = 1;
+  if (choice === 4) dx = -1;
+  for (let distance = 2; distance < 20; distance++) {
+    const x = game.pc.x + dx * distance;
+    const y = game.pc.y + dy * distance;
+    if (x < 0 || x >= game.columns || y < 0 || y >= game.rows) continue;
+    if (game.solid(x, y, game.pc.level, game.pc.module)) continue;
+    if (monsterAt(game, x, y) !== -1) continue;
+    game.pc.mapCursorX += dx * distance;
+    game.pc.mapCursorY += dy * distance;
+    // Asking whether the walk left the view is wasted work: FUN_2000_3d9b below sets the same
+    // flag on every cast anyway.
+    if (
+      game.pc.mapCursorX < 1 ||
+      game.pc.mapCursorY < 1 ||
+      game.pc.mapCursorX > game.areaColumns - 2 ||
+      game.pc.mapCursorY > game.areaRows - 2
+    ) {
+      game.recenterMap = true;
+    }
+    setMonsterMap(game, game.pc.x, game.pc.y, MAP_EMPTY);
+    game.pc.x = x;
+    game.pc.y = y;
+    setMonsterMap(game, x, y, MAP_PLAYER);
+    // FUN_2000_3d9b (exe 2000:3d9b) throws away every cached piece of the display; of that, the
+    // port keeps the two flags it models.
+    game.recenterMap = true;
+    game.redrawView = true;
+    return true;
+  }
+  return false;
+}
