@@ -428,7 +428,10 @@ die is rolled once per full 40 points your roll exceeds the target, and
 ### 5.1 Rules (exe, 2000:e017 / 3000:e1b8)
 
 * Casting from memory costs **(spell level) SP**: line 1 = 1 SP … line 10 = 10 SP.
-  Permanent spells additionally reduce **max SP** by the same amount, forever.
+  A permanent spell cast from the book also takes that same amount off **max SP**,
+  forever. `cast_a_spell` (2000:e017) only does that on the from-memory path, so the
+  same permanent spell cast from a scroll, a wand or a paper costs neither SP nor
+  max SP.
 * Scrolls, wands and papers consume one charge and no SP. Fighters can only use papers.
 * Time passed: battle spells 10 s, preparation spells 100 s, permanent spells
   "a month" (36096 s, i.e. no in-dungeon time is charged).
@@ -477,6 +480,17 @@ Preparation (type 1):
 | 10 | Major ascend (−10, not from deeper than 65) | Cure disease | temp armor +4 |
 
 Module bottoms: 25, 45, 65, 85, 105. Temporary pluses last until you rest at an inn.
+
+Two of these do less than the table suggests:
+
+* **Feather** zeroes the character's own body weight and nothing else. `compute_weight`
+  (2000:41ae) sets the loaded weight to the body weight, replaces that with 0 when the
+  feather flag is set, and then adds on every weapon and every suit of armor the character
+  owns — so a feathered character still carries the full weight of their gear.
+* **Major descend** is not refused on the bottom floor of a module: the depth test only
+  refuses a floor deeper than the bottom, and the cap then leaves the floor number where it
+  was. Cast down there the spell succeeds, drops no floors, and still puts the character on
+  a random open square of the same floor.
 
 Wizard battle (type 2):
 

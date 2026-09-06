@@ -86,5 +86,5 @@ export function spellCorrection(spell: Spell): string | null {
 export const LIST_NOTES: Record<string, string> = {
   Preparation: 'Preparation spells last until you rest at an inn; the inn clears every one of them.',
   Permanent:
-    'Permanent spells can only be cast in town, and each one lowers your maximum spell points by its cost for good.',
+    'Permanent spells can only be cast in town. Cast from your book, each one lowers your maximum spell points by its cost for good; from a scroll, wand or paper it costs nothing.',
 };
