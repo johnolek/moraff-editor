@@ -9,7 +9,6 @@
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
   import { jumpTarget, squareFeature, teleporterTargets } from './floor-info';
-  import FloorStats from './FloorStats.svelte';
   import { HistoryCursor, isMapHistoryState, type MapHistoryState, type MapPlace } from './history';
   import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
@@ -250,11 +249,11 @@
     <Selection {selected} {route} {teleporterModules} onroute={routeToTeleporter} onclear={clearSelection} ontake={takeTeleporter} />
     <FloorMonsters count={monsters.length} town={floor === 0} onstock={stockThisFloor} onclear={clearMonsters} />
     <Legend
+      {summary}
       pinned={legendPinned?.label ?? null}
       onhover={(kind) => (legendHover = kind)}
       onpin={(label, kind) => (legendPinned = label && kind ? { label, kind } : null)}
     />
-    <FloorStats {summary} />
     <Notable entries={notable} onpick={pick} />
   </aside>
 </div>
