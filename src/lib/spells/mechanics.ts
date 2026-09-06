@@ -132,7 +132,7 @@ export const SPELL_MECHANICS: Record<string, string> = {
     '(your level + 1) rolls of 7 + rand(5), so 7 to 11 damage for each of your levels plus one.',
   'Wizard battle/Resist Level Drain':
     'Blocks a level drain completely for 60 moves — 100%, not the 90% the help text claims.',
-  'Wizard battle/Power Weapon Ii':
+  'Wizard battle/Power Weapon II':
     'Your damage die becomes 129 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed.',
   'Wizard battle/Hold Monster-Stops Monster':
     'Always works on anything but a Shadow boss. Lasts 15 moves, and every attack the held monster does not make has a depth in 500 chance of freeing it.',
@@ -142,7 +142,7 @@ export const SPELL_MECHANICS: Record<string, string> = {
   'Wizard battle/Major Explosion': '200 + rand(301) damage, so 200 to 500.',
   'Wizard battle/Autokill':
     'Succeeds when rand(monster level + rand(monster speed)) is less than rand(your level + rand(intelligence + wisdom)) + rand(depth). A success sets the monster\'s hit points to -100 and pays full experience; a Shadow boss is immune.',
-  'Wizard battle/Power Weapon Iii':
+  'Wizard battle/Power Weapon III':
     'Your damage die becomes 199 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed. Power Weapon IV, a 399 die, is in the weapon table but no spell, scroll, wand or paper casts it.',
 
   'Priest battle/Sleep':
@@ -174,7 +174,7 @@ export const SPELL_MECHANICS: Record<string, string> = {
   'Priest battle/Fast Big Cure': 'Heals rand(4 x wisdom), never more than 90, and it can roll 0.',
   'Priest battle/Hold Monster':
     'Always works on anything but a Shadow boss. Lasts 15 moves, and every attack the held monster does not make has a depth in 500 chance of freeing it.',
-  'Priest battle/Power Weapon Ii':
+  'Priest battle/Power Weapon II':
     'Your damage die becomes 129 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed.',
   'Priest battle/Shock': '125 damage.',
   'Priest battle/Major Protection': 'Takes 18 off the monster\'s attack roll for 60 moves.',
@@ -183,7 +183,7 @@ export const SPELL_MECHANICS: Record<string, string> = {
     '(your level + 1) rolls of 4 + rand(5), so 4 to 8 damage for each of your levels plus one.',
   'Priest battle/Autokill':
     'Succeeds when rand(monster level + rand(monster speed)) is less than rand(your level + rand(intelligence + wisdom)) + rand(depth). A success sets the monster\'s hit points to -100 and pays full experience; a Shadow boss is immune.',
-  'Priest battle/Power Weapon Iii':
+  'Priest battle/Power Weapon III':
     'Your damage die becomes 199 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed. Power Weapon IV, a 399 die, is in the weapon table but no spell, scroll, wand or paper casts it.',
   'Priest battle/Strength And Speed': '+7 Strength and +7 Agility for 60 moves: both of the battle spells at once.',
   'Priest battle/Ultra Protection': 'Takes 32 off the monster\'s attack roll for 60 moves.',
