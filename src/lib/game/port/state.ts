@@ -52,6 +52,14 @@ export interface PlayerCharacter {
   mapCursorX: number;
   /** 0x7b9, DS:c039. */
   mapCursorY: number;
+  /** 0x7ce, DS:c04e: moves until the disease bites again; -1 once it is cured. */
+  disease: number;
+  /** 0x7d0, DS:c050: moves until the poison bites again; -1 once it is cured. */
+  poison: number;
+  /** 0x7d2, DS:c052: the plus the preparation Enchant Weapon put on whatever is in hand. */
+  tempWeaponPlus: number;
+  /** 0x7d3, DS:c053: the plus the preparation Enchant Armor put on whatever is worn. */
+  tempArmorPlus: number;
   /** 0x7d4, DS:c054: the level of the Body Armor spell in effect. */
   bodyArmor: number;
   /** 0x7d5, DS:c055: the plus on the Ring of Protection. */
@@ -60,10 +68,20 @@ export interface PlayerCharacter {
   antiMagicRing: number;
   /** 0x7d7, DS:c057: 1 from the preparation spell, 100 from the permanent one. */
   feather: number;
+  /** 0x7d8, DS:c058: 1 from the preparation Fast Move. */
+  fastMove: number;
   /** 0x7d9, DS:c059: 1 from the preparation spell, 100 from the permanent one. */
   invisible: number;
   /** 0x7da, DS:c05a: the character's age in years, a 32-bit field. */
   age: number;
+  /** 0x7de, DS:c05e: 5 while the preparation Strength's +5 STR is on. */
+  prepStrength: number;
+  /** 0x7df, DS:c05f: 5 while the preparation Agility's +5 AGI is on. */
+  prepAgility: number;
+  /** 0x7e0, DS:c060: 10 while Super Strength's +10 STR is on. */
+  superStrength: number;
+  /** 0x7e1, DS:c061: 10 while Super Agility's +10 AGI is on. */
+  superAgility: number;
   /** 0x7e2, DS:c062: moves left on the Strength spell's +7 STR. */
   strengthTimer: number;
   /** 0x7e4, DS:c064: moves left on the Speed spell's +7 AGI. */
@@ -180,6 +198,8 @@ export interface Game {
   weaponWeights: number[];
   /** The weight column of the seven armors (exe DS:01f8, one every 5 bytes). */
   armorWeights: number[];
+  /** The deepest floor of each of the five modules (exe DS:0493): 25, 45, 65, 85, 105. */
+  bottomLevel: number[];
   /**
    * DS:c4d1: one byte per square of the whole 80 x 110 grid, indexed `y * 80 + x`. Holds
    * {@link MAP_EMPTY}, {@link MAP_PLAYER}, or the slot number of the monster standing there.
@@ -284,12 +304,21 @@ function defaultPc(): PlayerCharacter {
     module: 0,
     mapCursorX: 40,
     mapCursorY: 55,
+    disease: 0,
+    poison: 0,
+    tempWeaponPlus: 0,
+    tempArmorPlus: 0,
     bodyArmor: 0,
     protRing: 0,
     antiMagicRing: 0,
     feather: 0,
+    fastMove: 0,
     invisible: 0,
     age: 25,
+    prepStrength: 0,
+    prepAgility: 0,
+    superStrength: 0,
+    superAgility: 0,
     strengthTimer: 0,
     speedTimer: 0,
     slowEnemiesTimer: 0,
@@ -331,6 +360,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     monsterStats: data.monsterTypes,
     weaponWeights: data.weapons.slice(0, 8).map((weapon) => weapon.weight),
     armorWeights: data.armor.map((armor) => armor.weight),
+    bottomLevel: data.constants.bottomLevel,
     monsterMap: new Uint8Array(WIDTH * HEIGHT).fill(MAP_EMPTY),
     engaged: -1,
     columns: DUNGEON_XMAX,

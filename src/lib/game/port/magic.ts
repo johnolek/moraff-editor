@@ -98,6 +98,33 @@ export function enchantArmorPerm(game: Game, plus: number): boolean {
 }
 
 /**
+ * set_temp_armor_plus (exe 3000:d2da, unf.c "set_temp_armor_plus"): the preparation Enchant
+ * Armor, which puts `plus` on whatever the character is wearing until they next rest at an inn.
+ * It refuses a plus that is not better than the one already up.
+ */
+export function setTempArmorPlus(game: Game, plus: number): boolean {
+  if (plus <= game.pc.tempArmorPlus) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.tempArmorPlus = plus;
+  return true;
+}
+
+/**
+ * set_temp_weapon_plus (exe 3000:d2fc, unf.c "set_temp_weapon_plus"): the preparation Enchant
+ * Weapon, the same thing for whatever is in hand.
+ */
+export function setTempWeaponPlus(game: Game, plus: number): boolean {
+  if (plus <= game.pc.tempWeaponPlus) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.tempWeaponPlus = plus;
+  return true;
+}
+
+/**
  * set_body_armor (exe 3000:d31e, unf.c "set_body_armor"): Body Armor, which sets the spell's
  * level unless the character already has that level or better.
  *
@@ -715,6 +742,335 @@ export function permanentList(game: Game, levelIndex: number, slot: number): boo
       break;
   }
   return false;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 1 slot 3: Little Cure,
+ * half the caster's wisdom, the same amount the priests' Fast Cure heals.
+ */
+export function littleCure(game: Game): boolean {
+  game.pc.hp += Math.trunc(game.pc.wis / 2);
+  if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
+  msgYouFeelGood(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 2 slot 3: Detect Level,
+ * which prints the floor number and nothing else.
+ */
+export function detectLevel(game: Game): boolean {
+  // DS:3dc8 with the floor written on the end of it
+  game.say(`YOU ARE ON LEVEL: ${game.pc.level}`);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 3 slot 1: Cure, twice a
+ * roll on the caster's wisdom plus 20, and never more than 60.
+ */
+export function cure(game: Game): boolean {
+  // Ghidra dropped the argument to Random; the instruction at 3000:e60a pushes the wisdom.
+  let healed = game.rng.random(game.pc.wis) * 2 + 20;
+  if (healed > 60) healed = 60;
+  game.pc.hp += healed;
+  if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
+  msgYouFeelGood(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 3 slot 3: Strength, +5
+ * STR until the character rests at an inn. The battle lists have a Strength of their own, which
+ * gives +7 for 60 moves and is {@link strength}.
+ */
+export function prepStrength(game: Game): boolean {
+  // The refusal tests for exactly 5 rather than for anything non-zero.
+  if (game.pc.prepStrength === 5) {
+    msgAlreadyCastThisSpell(game);
+    return false;
+  }
+  game.pc.prepStrength = 5;
+  game.pc.str += 5;
+  msgYouFeelVeryGood(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 4 slot 2: Agility, +5
+ * AGI until the character rests.
+ */
+export function prepAgility(game: Game): boolean {
+  if (game.pc.prepAgility === 5) {
+    msgAlreadyCastThisSpell(game);
+    return false;
+  }
+  game.pc.prepAgility = 5;
+  game.pc.dex += 5;
+  msgYouFeelVeryGood(game);
+  return true;
+}
+
+/**
+ * The refusal Ascend, Double Ascend and Major Ascend print when the character is deeper than
+ * floor 65. The message says 64; the test is `65 < floor`, so floor 65 still works.
+ */
+function msgDoesNotWorkBelowLevel64(game: Game): void {
+  // DS:3ddb 3e01 3e18 258b 2b3a
+  game.say('THAT SPELL DOES NOT', "  WORK BELOW THE 64'TH", '  LEVEL.', '', 'HIT ANY KEY...');
+}
+
+/** The refusal the same three print in the town, which is floor 0. */
+function msgCannotFloatAboveTheTown(game: Game): void {
+  // DS:3e21 3e37 3e50 258b 2b3a
+  game.say(
+    'THIS SPELL CAN NOT BE',
+    '  USED TO MAKE YOU FLOAT',
+    '  ABOVE THE TOWN.',
+    '',
+    'HIT ANY KEY...',
+  );
+}
+
+/**
+ * The lines the five floor-changing spells repeat: move to `level` and land on a random square
+ * of it that is not rock.
+ *
+ * Relocate looks at the occupancy map and will not land on a monster; this does not look at it
+ * at all, because load_level_map lays the new floor's monsters out afterwards. That read is the
+ * one the port records rather than performs — see the README's second departure.
+ */
+function changeFloorTo(game: Game, level: number): void {
+  const from = game.pc.level;
+  game.pc.level = level;
+  do {
+    game.pc.x = game.rng.random(game.columns);
+    game.pc.y = game.rng.random(game.rows);
+  } while (game.solid(game.pc.x, game.pc.y, game.pc.level, game.pc.module));
+  game.events.push({ kind: 'levelChanged', from, to: level });
+  game.recenterMap = true;
+}
+
+/**
+ * The deepest floor of the module the character is in. The original indexes the table at
+ * DS:0493 with DS:022d, the copy of the module the floor loader takes, which always holds what
+ * the character record holds.
+ */
+function bottomOfModule(game: Game): number {
+  return game.bottomLevel[game.pc.module];
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 4 slot 3: Descend, one
+ * floor down.
+ */
+export function descend(game: Game): boolean {
+  if (game.pc.level >= bottomOfModule(game)) {
+    // DS:3ddb 3def 258b 2b3a
+    game.say('THAT SPELL DOES NOT', '  WORK THIS DEEP.', '', 'HIT ANY KEY...');
+    return false;
+  }
+  changeFloorTo(game, game.pc.level + 1);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 5 slot 1: Ascend, one
+ * floor up.
+ */
+export function ascend(game: Game): boolean {
+  if (game.pc.level > 65) {
+    msgDoesNotWorkBelowLevel64(game);
+    return false;
+  }
+  if (game.pc.level <= 0) {
+    msgCannotFloatAboveTheTown(game);
+    return false;
+  }
+  changeFloorTo(game, game.pc.level - 1);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 5 slot 2: Detect
+ * Position, which prints the floor and the coordinates.
+ *
+ * The game shows these through mset_gmenu (exe 2000:2b08) rather than print_menu_only, so the
+ * eight lines are drawn as a menu that takes any key; the port prints them the same way it
+ * prints everything else.
+ */
+export function detectPosition(game: Game): boolean {
+  // DS:3dc8 with the floor on the end, 3e62, 3e7b with the x on the end and 3e86 with the y
+  game.say(
+    `YOU ARE ON LEVEL: ${game.pc.level}`,
+    'YOUR X AND Y COORDINATES',
+    `   ARE: X-${game.pc.x} Y-${game.pc.y}`,
+  );
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 5 slot 3: Feather, which
+ * takes the character's own weight out of what they carry until they rest.
+ */
+export function feather(game: Game): boolean {
+  if (game.pc.feather !== 0) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.feather = 1;
+  computeWeight(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 6 slot 1: Big Cure, a
+ * roll on four times the caster's wisdom plus 50, and never more than 150.
+ */
+export function bigCure(game: Game): boolean {
+  // Ghidra dropped the argument to Random; the instructions at 3000:e96e shift the wisdom left
+  // twice before pushing it.
+  let healed = game.rng.random(game.pc.wis * 4) + 50;
+  if (healed > 150) healed = 150;
+  game.pc.hp += healed;
+  if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
+  msgYouFeelVeryGood(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 6 slot 2: Double Ascend,
+ * two floors up, or one from floor 1.
+ */
+export function doubleAscend(game: Game): boolean {
+  if (game.pc.level > 65) {
+    msgDoesNotWorkBelowLevel64(game);
+    return false;
+  }
+  if (game.pc.level <= 0) {
+    msgCannotFloatAboveTheTown(game);
+    return false;
+  }
+  changeFloorTo(game, game.pc.level < 2 ? game.pc.level - 1 : game.pc.level - 2);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 7 slot 1: Invisibility,
+ * which writes 1 where the permanent spell writes 100 and prints nothing.
+ */
+export function invisibility(game: Game): boolean {
+  if (game.pc.invisible !== 0) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.invisible = 1;
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 7 slot 3: Fast Move.
+ * It prints nothing either.
+ */
+export function fastMove(game: Game): boolean {
+  if (game.pc.fastMove !== 0) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.fastMove = 1;
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 8 slot 1: Super
+ * Strength, +10 STR until the character rests. It stacks with the +5 of {@link prepStrength},
+ * which is a separate field.
+ */
+export function superStrength(game: Game): boolean {
+  if (game.pc.superStrength === 10) {
+    msgAlreadyCastThisSpell(game);
+    return false;
+  }
+  game.pc.superStrength = 10;
+  game.pc.str += 10;
+  msgYouFeelVeryGood(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 8 slot 3: Major Descend,
+ * ten floors down, or as far as the bottom of the module.
+ */
+export function majorDescend(game: Game): boolean {
+  // The test lets the spell through on the bottom floor itself, where the cap then leaves the
+  // floor where it was: it still lands the character somewhere else on the same floor.
+  if (game.pc.level > bottomOfModule(game)) {
+    // DS:3e8a 3ea3 258b 258b 2b3a
+    game.say('THAT SPELL DOES NOT WORK', '  THIS DEEP.', '', '', 'HIT ANY KEY...');
+    return false;
+  }
+  changeFloorTo(game, Math.min(game.pc.level + 10, bottomOfModule(game)));
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 9 slot 1: Super Agility,
+ * +10 AGI until the character rests.
+ */
+export function superAgility(game: Game): boolean {
+  if (game.pc.superAgility === 10) {
+    msgAlreadyCastThisSpell(game);
+    return false;
+  }
+  game.pc.superAgility = 10;
+  game.pc.dex += 10;
+  msgYouFeelVeryGood(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 9 slot 2: Cure Poison,
+ * which puts the countdown at -1. It prints nothing and never refuses, so it can be cast on a
+ * character who was never poisoned.
+ */
+export function curePoison(game: Game): boolean {
+  game.pc.poison = -1;
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 9 slot 3: Heal All
+ * Wounds, every hit point back and nothing printed.
+ */
+export function healAllWounds(game: Game): boolean {
+  game.pc.hp = game.pc.maxHp;
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 10 slot 1: Major Ascend,
+ * ten floors up, or as far as the town.
+ */
+export function majorAscend(game: Game): boolean {
+  if (game.pc.level > 65) {
+    msgDoesNotWorkBelowLevel64(game);
+    return false;
+  }
+  if (game.pc.level <= 0) {
+    msgCannotFloatAboveTheTown(game);
+    return false;
+  }
+  changeFloorTo(game, Math.max(game.pc.level - 10, 0));
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), preparation level 10 slot 2: Cure Disease,
+ * the same thing for the disease countdown.
+ */
+export function cureDisease(game: Game): boolean {
+  game.pc.disease = -1;
+  return true;
 }
 
 /**
