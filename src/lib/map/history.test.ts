@@ -24,6 +24,13 @@ describe('isMapHistoryState', () => {
     expect(isMapHistoryState(state({}, 1.5))).toBe(false);
   });
 
+  it('accepts a place whether or not it says where you stand', () => {
+    expect(isMapHistoryState(state({ you: { x: 4, y: 5 } }))).toBe(true);
+    expect(isMapHistoryState(state({ you: null }))).toBe(true);
+    expect(isMapHistoryState(state({ you: undefined }))).toBe(true);
+    expect(isMapHistoryState(state({ you: { x: 80, y: 5 } }))).toBe(false);
+  });
+
   it('rejects modules outside the dungeon', () => {
     expect(isMapHistoryState(state({ module: 5 }))).toBe(false);
     expect(isMapHistoryState(state({ module: -1 }))).toBe(false);

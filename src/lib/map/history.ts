@@ -11,6 +11,9 @@ export interface MapPlace {
   module: number;
   floor: number;
   square: Point | null;
+  /** Where the party stands on this floor, if anywhere. Entries pushed before the map tracked
+   *  that have no `you` at all. */
+  you?: Point | null;
 }
 
 export interface MapHistoryState {
@@ -27,9 +30,10 @@ function isPoint(value: unknown): value is Point {
 
 export function isMapPlace(value: unknown): value is MapPlace {
   if (typeof value !== 'object' || value === null) return false;
-  const { module, floor, square } = value as Partial<MapPlace>;
+  const { module, floor, square, you } = value as Partial<MapPlace>;
   if (!Number.isInteger(module) || module! < 0 || module! >= BOTTOM_LEVEL.length) return false;
   if (!Number.isInteger(floor) || floor! < FLOOR_MIN || floor! > FLOOR_MAX) return false;
+  if (you !== undefined && you !== null && !isPoint(you)) return false;
   return square === null || isPoint(square);
 }
 
