@@ -33,7 +33,7 @@
   }
 
   function describeRoute(route: Route): string {
-    const parts = [`${route.steps} steps`];
+    const parts = [`${route.steps} ${route.steps === 1 ? 'step' : 'steps'}`];
     if (route.doors) parts.push(`${route.doors} ${route.doors === 1 ? 'door' : 'doors'}`);
     if (route.secretDoors) parts.push(`${route.secretDoors} secret ${route.secretDoors === 1 ? 'door' : 'doors'}`);
     if (route.passWalls) parts.push(`${route.passWalls} pass ${route.passWalls === 1 ? 'wall' : 'walls'}`);
