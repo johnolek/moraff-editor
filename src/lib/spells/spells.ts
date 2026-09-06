@@ -43,3 +43,17 @@ export function spellGroups(spells: Spell[]): SpellList[] {
   }
   return lists;
 }
+
+const GRID_KEYS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234';
+
+/**
+ * The key the game prints in front of a spell, for the spell on `row` (0 for the level 1 line,
+ * 9 for the level 10 line) in `column` (0 for the leftmost of the three). The keys run A to Z
+ * and then 1 to 4, left to right and top to bottom, so the last line is keyed 2, 3 and 4.
+ *
+ * @param row Line of the spell book, 0 to 9.
+ * @param column Slot on that line, 0 to 2.
+ */
+export function gridKey(row: number, column: number): string {
+  return GRID_KEYS[row * 3 + column];
+}
