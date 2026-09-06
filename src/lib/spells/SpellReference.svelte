@@ -1,7 +1,10 @@
 <script lang="ts">
   import { app } from '../app-state.svelte';
+  import magicSource from '../game/port/magic.ts?raw';
+  import { portedSpell } from '../game/port/spell-index';
   import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
+  import { snippet } from '../ui/source-snippet';
   import { LIST_NOTES, spellCorrection } from './mechanics';
   import { allSpells, gridKey, spellGroups, type Spell } from './spells';
 
@@ -9,6 +12,9 @@
   const TYPE_HEADING = 'SELECT THE TYPE OF SPELL:';
   const GRID_HEADING = 'SELECT A SPELL-SPELLS USE ONE SPELL POINT PER LEVEL:';
   const GRID_FOOTER = 'SPELLS ON LINE 1 USE 1 SPELL POINT, ON LINE 3 THEY USE 3, LINE 7 USE 7, ETC.';
+
+  const CODE_NOTE =
+    "The game's own code for this spell, ported line for line; the address it came from is in the comment.";
 
   const lists = spellGroups(allSpells());
 
@@ -19,8 +25,7 @@
   const list = $derived(lists[listIndex]);
   const correction = $derived(selected ? spellCorrection(selected) : null);
 
-  // MORF-61: the selected spell's ported code goes here once the port supplies it.
-  const code: string | null = null;
+  const code = $derived(selected ? portedSpell(selected.type, selected.level - 1, selected.slot - 1) : null);
 
   function typeLabel(label: string, index: number): string {
     return `${index + 1}) ${label.toUpperCase()} SPELLS`;
@@ -130,7 +135,15 @@
         </dl>
         {#if code}
           <SectionHeading title="Code" />
-          <pre>{code}</pre>
+          <p class="code-note">{CODE_NOTE}</p>
+          {#if code.args}
+            <p class="code-note">Called as {code.fn}(game, {code.args}).</p>
+          {/if}
+          <pre>{snippet(magicSource, code.fn)}</pre>
+          {#each code.helpers as helper}
+            <p class="helper">{helper}</p>
+            <pre>{snippet(magicSource, helper)}</pre>
+          {/each}
         {/if}
       </section>
     {/if}
@@ -265,9 +278,26 @@
   .quote {
     color: var(--mw-cyan);
   }
-  pre {
-    margin: 0;
-    overflow-x: auto;
+  .code-note {
+    margin: 0 0 6px;
     font-size: 13px;
+    color: var(--muted);
+  }
+  .helper {
+    margin: 20px 0 0;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  pre {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: var(--panel);
+    overflow-x: auto;
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--mw-cyan);
   }
 </style>
