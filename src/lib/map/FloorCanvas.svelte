@@ -6,6 +6,7 @@
   import { drawFloor, drawMarks, drawOutline, drawRoute, drawYou, squareRect } from './draw-floor';
   import { drawMonsters, type MonsterSprites } from './draw-monsters';
   import type { Mark } from './marks';
+  import type { Route } from './path';
   import { palette } from './palette';
   import { monsterById, type StockedMonster } from './stocking';
   import { drawTeleporters, teleporterHue, teleporterSegments } from './teleporters';
@@ -36,9 +37,9 @@
     you?: Point | null;
     /** Squares emphasised while a legend entry is hovered. */
     marks?: Mark[];
-    /** Square picked by clicking, and a walking route drawn from it. */
+    /** Square picked by clicking, and a route drawn from it. */
     selected?: Point | null;
-    route?: Point[] | null;
+    route?: Route | null;
     /** Details shown in a box beside the cursor square. */
     tooltip?: Tooltip | null;
     onselect?: (square: Point) => void;
@@ -171,7 +172,7 @@
     marks?: Mark[];
     monsters?: StockedMonster[];
     selected?: Point | null;
-    route?: Point[] | null;
+    route?: Route | null;
     teleporters?: ReturnType<typeof teleporterSegments>;
   }
 

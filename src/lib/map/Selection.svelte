@@ -16,13 +16,15 @@
     floorHasTeleporter: boolean;
     /** Modules the teleporter on the selected square leads to; empty when there is no teleporter. */
     teleporterModules: number[];
-    onroute: () => void;
+    onroute: (passWall: boolean) => void;
     onhere: () => void;
     onclear: () => void;
     ontake: (module: number) => void;
   }
 
   let { selected, route, monster, floorHasTeleporter, teleporterModules, onroute, onhere, onclear, ontake }: Props = $props();
+
+  let allowPassWall = $state(false);
 
   function openInMonsters() {
     if (!monster) return;
@@ -34,7 +36,14 @@
     const parts = [`${route.steps} steps`];
     if (route.doors) parts.push(`${route.doors} ${route.doors === 1 ? 'door' : 'doors'}`);
     if (route.secretDoors) parts.push(`${route.secretDoors} secret ${route.secretDoors === 1 ? 'door' : 'doors'}`);
+    if (route.passWalls) parts.push(`${route.passWalls} pass ${route.passWalls === 1 ? 'wall' : 'walls'}`);
     return parts.join(' · ');
+  }
+
+  /** Ticking the box after a route has been worked out asks for it again with the spell allowed. */
+  function togglePassWall(event: Event) {
+    allowPassWall = (event.currentTarget as HTMLInputElement).checked;
+    if (route !== undefined) onroute(allowPassWall);
   }
 </script>
 
@@ -48,9 +57,13 @@
       {#if monster}
         <button class="ghost" onclick={openInMonsters}>Open in Monsters</button>
       {/if}
-      <button class="ghost" onclick={onroute} disabled={!floorHasTeleporter} title={floorHasTeleporter ? undefined : 'No teleporter on this floor.'}>
+      <button class="ghost" onclick={() => onroute(allowPassWall)} disabled={!floorHasTeleporter} title={floorHasTeleporter ? undefined : 'No teleporter on this floor.'}>
         Path to nearest teleporter
       </button>
+      <label class="toggle">
+        <input type="checkbox" checked={allowPassWall} onchange={togglePassWall} />
+        <span>Allow Pass Wall</span>
+      </label>
       <button class="ghost" onclick={onhere}>I'm here</button>
       <button class="ghost" onclick={onclear}>Clear</button>
       {#each teleporterModules as module}
@@ -70,6 +83,15 @@
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+    align-items: center;
+  }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
   }
   button.ghost {
     background: transparent;

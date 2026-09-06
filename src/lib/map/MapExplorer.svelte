@@ -217,8 +217,8 @@
     travel({ module, floor: 0, square: landing, you: landing }, selected);
   }
 
-  function routeToTeleporter() {
-    if (selected) route = pathToNearestTeleporter(rows, selected);
+  function routeToTeleporter(passWall: boolean) {
+    if (selected) route = pathToNearestTeleporter(rows, selected, passWall);
   }
 
   function stepFloor(delta: number) {
@@ -290,7 +290,7 @@
       </span>
     </div>
     <div class="viewport">
-      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {monsters} {bounds} bind:cursor {highlight} {you} {marks} {selected} route={route?.squares ?? null} {tooltip} onselect={follow} />
+      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {monsters} {bounds} bind:cursor {highlight} {you} {marks} {selected} route={route ?? null} {tooltip} onselect={follow} />
     </div>
   </div>
   <aside class="panel">

@@ -1,5 +1,6 @@
 import { HEIGHT, WIDTH, type Side, type Square } from '../game/unfmap.js';
 import type { Mark } from './marks';
+import type { Hop, Route } from './path';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
 import { teleporterColour, teleporterLineWidth } from './teleporters';
 import type { Point, Viewport } from './viewport';
@@ -212,25 +213,38 @@ export function drawMarks(ctx: CanvasRenderingContext2D, marks: Mark[], view: Vi
   }
 }
 
-/** A walking route through square centres, drawn over the floor. */
-export function drawRoute(ctx: CanvasRenderingContext2D, route: Point[], view: Viewport): void {
-  if (route.length < 2) return;
-  ctx.beginPath();
-  route.forEach((square, i) => {
-    const { x0, y0, w, h } = squareRect(view, square.x, square.y);
-    const cx = x0 + 1 + w / 2;
-    const cy = y0 + 1 + h / 2;
-    if (i === 0) ctx.moveTo(cx, cy);
-    else ctx.lineTo(cx, cy);
-  });
+/** A route through square centres, drawn over the floor: a solid line for the steps walked and
+ *  a dashed one for each square crossed by casting Pass Wall. */
+export function drawRoute(ctx: CanvasRenderingContext2D, route: Route, view: Viewport): void {
+  if (route.squares.length < 2) return;
   ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.setLineDash([]);
+  drawHops(ctx, route, 'walk', view, [], 'round');
+  drawHops(ctx, route, 'passWall', view, [7, 6], 'butt');
+  ctx.lineWidth = 1;
+}
+
+function drawHops(ctx: CanvasRenderingContext2D, route: Route, kind: Hop, view: Viewport, dash: number[], cap: CanvasLineCap): void {
+  if (!route.hops.includes(kind)) return;
+  ctx.beginPath();
+  route.hops.forEach((hop, i) => {
+    if (hop !== kind) return;
+    const from = squareCentre(view, route.squares[i]);
+    const to = squareCentre(view, route.squares[i + 1]);
+    ctx.moveTo(from.x, from.y);
+    ctx.lineTo(to.x, to.y);
+  });
+  ctx.lineCap = cap;
+  ctx.setLineDash(dash);
   ctx.lineWidth = 5;
   ctx.strokeStyle = 'rgba(0, 0, 0, 0.8)';
   ctx.stroke();
   ctx.lineWidth = 2.5;
   ctx.strokeStyle = palette.route;
   ctx.stroke();
-  ctx.lineWidth = 1;
+  ctx.setLineDash([]);
+}
+
+function squareCentre(view: Viewport, square: Point): Point {
+  const { x0, y0, w, h } = squareRect(view, square.x, square.y);
+  return { x: x0 + 1 + w / 2, y: y0 + 1 + h / 2 };
 }
