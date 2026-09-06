@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import { HEIGHT, WIDTH, type Square } from '../game/unfmap.js';
-import { randomOpenSquare, RELOCATE_COLUMNS, RELOCATE_ROWS } from './relocate';
+import { MAP_COLUMNS, MAP_ROWS } from './area';
+import { randomOpenSquare } from './relocate';
 
 /** A full-size floor that is rock everywhere except the given squares. */
 function grid(openSquares: [number, number][]): Square[][] {
@@ -26,11 +27,11 @@ const draw = (wanted: number, range: number) => (wanted + 0.5) / range;
 
 describe('randomOpenSquare', () => {
   it('takes x from the first draw and y from the second', () => {
-    expect(randomOpenSquare(grid([[2, 1]]), sequence([draw(2, RELOCATE_COLUMNS), draw(1, RELOCATE_ROWS)]))).toEqual({ x: 2, y: 1 });
+    expect(randomOpenSquare(grid([[2, 1]]), sequence([draw(2, MAP_COLUMNS), draw(1, MAP_ROWS)]))).toEqual({ x: 2, y: 1 });
   });
 
   it('draws again while the square is rock', () => {
-    const rnd = sequence([draw(0, RELOCATE_COLUMNS), draw(0, RELOCATE_ROWS), draw(40, RELOCATE_COLUMNS), draw(50, RELOCATE_ROWS)]);
+    const rnd = sequence([draw(0, MAP_COLUMNS), draw(0, MAP_ROWS), draw(40, MAP_COLUMNS), draw(50, MAP_ROWS)]);
     expect(randomOpenSquare(grid([[40, 50]]), rnd)).toEqual({ x: 40, y: 50 });
   });
 
@@ -38,8 +39,8 @@ describe('randomOpenSquare', () => {
     const everywhere = grid([]).map((row) => row.map((square) => ({ ...square, solid: false })));
     for (let i = 0; i < 500; i++) {
       const { x, y } = randomOpenSquare(everywhere, Math.random);
-      expect(x).toBeLessThan(RELOCATE_COLUMNS);
-      expect(y).toBeLessThan(RELOCATE_ROWS);
+      expect(x).toBeLessThan(MAP_COLUMNS);
+      expect(y).toBeLessThan(MAP_ROWS);
     }
   });
 
