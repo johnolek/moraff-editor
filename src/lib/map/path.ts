@@ -1,4 +1,5 @@
 import type { Square } from '../game/unfmap.js';
+import { isOnMap } from './area';
 import type { Point } from './viewport';
 
 /** How one square of a route was reached from the one before it. */
@@ -26,7 +27,8 @@ export const DIRECTIONS = [
 type Direction = (typeof DIRECTIONS)[number];
 
 /** Pass Wall (exe 3000:e003) looks 2 to 19 squares ahead in the direction you point it and puts
- *  you on the first one that is inside the map and not rock, whatever it crosses on the way. */
+ *  you on the first one that is not rock, whatever it crosses on the way. The landing has to be
+ *  inside the area of the floor the game shows, not just inside the generated grid. */
 const PASS_WALL_NEAREST = 2;
 const PASS_WALL_FURTHEST = 19;
 
@@ -45,7 +47,7 @@ function passWallLanding(rows: Square[][], x: number, y: number, direction: Dire
   for (let distance = PASS_WALL_NEAREST; distance <= PASS_WALL_FURTHEST; distance++) {
     const nx = x + direction.dx * distance;
     const ny = y + direction.dy * distance;
-    if (nx < 0 || ny < 0 || nx >= rows[0].length || ny >= rows.length) return null;
+    if (nx < 0 || ny < 0 || ny >= rows.length || nx >= rows[ny].length || !isOnMap({ x: nx, y: ny })) return null;
     if (!rows[ny][nx].solid) return { x: nx, y: ny };
   }
   return null;

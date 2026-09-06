@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import type { Square } from '../game/unfmap.js';
+import { MAP_ROWS } from './area';
 import { hasTeleporterSide, pathToNearestTeleporter, shortestPath } from './path';
 
 function square(overrides: Partial<Square> = {}): Square {
@@ -107,6 +108,20 @@ describe('pathToNearestTeleporter with Pass Wall', () => {
     expect(pathToNearestTeleporter(nineteen, { x: 0, y: 0 }, true)).toMatchObject({ steps: 1, passWalls: 1 });
     const twenty: Square[][] = [[square(), ...rocks(19), square({ n: 4 })]];
     expect(pathToNearestTeleporter(twenty, { x: 0, y: 0 }, true)).toBeNull();
+  });
+
+  it('does not land past the last row of the map area', () => {
+    // One column of a floor taller than the map area: rock but for the start square and, two
+    // squares south of it, the ladder the search is looking for.
+    const floorWithLadderAt = (ladderY: number): Square[][] => {
+      const rows: Square[][] = Array.from({ length: MAP_ROWS + 6 }, () => [square({ solid: true })]);
+      rows[ladderY - 2] = [square()];
+      rows[ladderY] = [square({ ladder: 1 })];
+      return rows;
+    };
+    const isLadder = (candidate: Square) => candidate.ladder === 1;
+    expect(shortestPath(floorWithLadderAt(MAP_ROWS), { x: 0, y: MAP_ROWS - 2 }, isLadder, true)).toBeNull();
+    expect(shortestPath(floorWithLadderAt(MAP_ROWS - 1), { x: 0, y: MAP_ROWS - 3 }, isLadder, true)).toMatchObject({ steps: 1, passWalls: 1 });
   });
 
   it('counts the doors, secret doors and casts of a mixed route', () => {
