@@ -107,6 +107,10 @@ Layout:
 - `dotu-tools/` — the reverse-engineering bundle: `HANDOFF.md` is the spec for the
   fan tools, with docs, static game data, regression fixtures, the Python
   reference implementation and the rendered game pictures.
+- `dotu-tools/decomp/` — the decompiled game: all 647 functions of `unf.exe` as
+  Ghidra recovered them, carrying the names the docs use, with the function and
+  string indexes and the scripts that produced them. The executable is not
+  included.
 - `src/lib/editor/` — the save editor: a typed field schema per game and a Svelte
   component per field kind.
 
