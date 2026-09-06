@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SectionHeading from '../ui/SectionHeading.svelte';
+  import PixelText from '../ui/PixelText.svelte';
   import { formulaCode, searchFormulas } from './formulas';
 
   let search = $state('');
@@ -33,11 +33,11 @@
   <div class="entries">
     {#each topics as topic}
       <section>
-        <h2>{topic.title}</h2>
+        <h2><PixelText text={topic.title} scale={2} /></h2>
         {#each topic.formulas as formula}
           {@const code = formulaCode(formula)}
           <article id={anchor(formula.id)}>
-            <SectionHeading title={formula.title} />
+            <h3><PixelText text={formula.title} /></h3>
             <p class="explanation">{formula.explanation}</p>
             <dl>
               <dt>Inputs</dt>
@@ -53,7 +53,7 @@
       </section>
     {/each}
     {#if topics.length === 0}
-      <p class="empty">Nothing here matches that.</p>
+      <p class="empty">No formulas match.</p>
     {/if}
   </div>
 </div>
@@ -141,15 +141,17 @@
     position: sticky;
     top: 0;
     z-index: 1;
-    margin: 0 0 12px;
-    padding: 6px 0;
+    margin: 0 0 14px;
+    padding: 8px 0;
     background: var(--bg);
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--accent-dim);
+    line-height: 0;
+    color: var(--accent);
     border-bottom: 1px solid var(--line);
+  }
+  article h3 {
+    margin: 0 0 8px;
+    line-height: 0;
+    color: var(--accent-dim);
   }
   article {
     max-width: 92ch;
@@ -157,7 +159,7 @@
     padding: 12px 14px;
     border: 1px solid var(--line);
     border-radius: 6px;
-    scroll-margin-top: 36px;
+    scroll-margin-top: 44px;
   }
   .explanation {
     margin: 0 0 10px;
