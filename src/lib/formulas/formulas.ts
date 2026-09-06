@@ -469,7 +469,79 @@ const COMBAT: Topic = {
   ],
 };
 
-export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXPERIENCE, LOOT, COMBAT];
+const MAGIC: Topic = {
+  id: 'magic',
+  title: 'Magic',
+  formulas: [
+    {
+      id: 'sleep',
+      title: 'Sleep',
+      explanation:
+        'Sleep draws a number under the monster\'s level and works if it comes up below three, so it is certain against anything of level 3 or less and then falls away as three chances in however many levels the monster has: about one try in seven at level 20 and one in thirty-three at level 100. A sleeping monster stays down for 25 moves, and each of its attacks can shake it off early with a chance that grows with the floor. It is the one spell aimed at a monster that never asks whether the target is a Shadow boss, which makes it the only magic that touches one.',
+      inputs: 'The monster\'s level.',
+      origin: 'exe sleep_monster 3000:d904, sleep_monster in dotu-tools/decomp/unf.c. RE notes 5.2 and FAQ [SPMC].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'sleepChance' },
+    },
+    {
+      id: 'autokill',
+      title: 'Autokill',
+      explanation:
+        'Autokill sets one pile of rolls against another: the monster\'s level with a draw on its speed added, against your level with a draw on your intelligence and wisdom added, plus a draw on the floor you are standing on. If your side comes out higher the monster\'s hit points go to minus a hundred and it is simply gone, whatever it had left. The floor term is what makes the spell good: the deeper you are the more it adds, so a caster with high intelligence and wisdom can clear things far above their own level. Shadow bosses refuse it like every other spell aimed at a monster.',
+      inputs: 'The monster\'s level and speed, your level, intelligence and wisdom, and the floor.',
+      origin: 'exe autokill 3000:dc18, autokill in dotu-tools/decomp/unf.c. RE notes 5.2 and FAQ [SPMC].',
+      code: { file: 'src/lib/game/port/magic.ts', name: 'autokill' },
+    },
+    {
+      id: 'drain-monster',
+      title: 'Drain Monster',
+      explanation:
+        'Drain Monster takes your wisdom straight off the monster\'s level and takes hit points away with it, half the type\'s hit points per level for each level lost. A monster whose level is below your wisdom is emptied outright: level zero, no hit points left. That is a fine way to kill something and a terrible way to be paid for it, because the experience is worked out after the level has gone, so a drained monster is worth what a level zero monster is worth. The spell prints nothing at all, and a Shadow boss ignores it.',
+      inputs: 'Your wisdom, the monster\'s level, and its type\'s hit points per level.',
+      origin:
+        'exe drain_monster 3000:df41, drain_monster in dotu-tools/decomp/unf.c. RE notes 5.2; the experience loss is in TIDBITS, "Bugs".',
+      code: { file: 'src/lib/game/port/magic.ts', name: 'drainMonster' },
+    },
+    {
+      id: 'damage-spells',
+      title: 'What the damage spells do',
+      explanation:
+        'Half the attack spells scale with your character level and half are flat numbers that never change. Magic Zap does two per level plus two and Lightning four per level plus four, while Minor Shock always does 25, Magic Missile 50, Shock 125 and Major Shock 300. Magic Zot and Magic Bolt roll a small die once for each of your levels and once more, so they overtake the flat spells eventually, and the three explosions roll fixed ranges up to 500. Against a monster with several thousand hit points none of them is worth the spell points, which is why a power weapon is the usual answer.',
+      inputs: 'Your character level.',
+      origin: 'exe spell_effect 3000:e1b8, spell_effect in dotu-tools/decomp/unf.c. RE notes 5.2 and FAQ [SPMC].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'damageSpells' },
+    },
+    {
+      id: 'cures',
+      title: 'What the cures heal',
+      explanation:
+        'Every cure is measured in wisdom. The little cure and the priest\'s fast cure heal exactly half your wisdom with no roll at all, whatever the help text suggests; Cure rolls from 20 up to twice your wisdom above that, capped at 60; the big cure starts at 50 and is capped at 150. The priest\'s fast big cure has no floor under it, so it can heal nothing at all. Wisdom is worth having for the cures long before it is worth having for anything else.',
+      inputs: 'Your wisdom.',
+      origin: 'exe spell_effect 3000:e1b8, spell_effect in dotu-tools/decomp/unf.c. RE notes 5.2 and FAQ [SPMC].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'cureAmounts' },
+    },
+    {
+      id: 'protection',
+      title: 'What protection is worth',
+      explanation:
+        'The four protection spells take 2, 8, 18 and 32 off every attack roll a monster makes against you, which is the same currency as armor and worth roughly that many extra points of armor class. Ultra Protection at 32 is worth more than any suit in the game. The priest\'s own Protection is a bug: it sets the weakest level, the same as Minor Protection, so a priest jumps from 2 straight to Major Protection\'s 18 with nothing in between.',
+      inputs: 'Which protection spell is running.',
+      origin:
+        'exe battle_speed 3000:ddc9 and defend 2000:82b7, battle_speed in dotu-tools/decomp/unf.c. RE notes 4.4 and 5.2; the priest bug is in TIDBITS, "Bugs".',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'PROTECTION_BONUS' },
+    },
+    {
+      id: 'spell-cost',
+      title: 'What casting costs',
+      explanation:
+        'Casting from memory costs spell points equal to the spell\'s level, one for a first level spell and ten for a tenth, and a permanent spell takes that many points off your maximum for the rest of the character\'s life. Scrolls, wands and papers spend a charge instead and no spell points at all. Casting also spends the dungeon clock: ten seconds for a battle spell, a hundred for a preparation spell, and a month for a permanent one, which is only castable in town and so costs no dungeon time at all. Every battle spell with a duration runs for 60 moves, except Sleep at 25 and Hold at 15, and casting it again adds another 60.',
+      inputs: 'The spell\'s level and which of the four books it comes from.',
+      origin: 'exe cast_a_spell 2000:e017, cast_a_spell in dotu-tools/decomp/unf.c. RE notes 5.1 and FAQ [SPMC].',
+      code: null,
+    },
+  ],
+};
+
+export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXPERIENCE, LOOT, COMBAT, MAGIC];
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
