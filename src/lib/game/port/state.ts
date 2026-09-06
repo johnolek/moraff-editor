@@ -36,6 +36,8 @@ export interface PlayerCharacter {
   scrolls: number[];
   /** 0x2df, DS:bb5f: 180 wand charge counts, indexed the same way. */
   wands: number[];
+  /** 0x7a4, DS:c024: experience, the one field of the record the game keeps as a double. */
+  exp: number;
   /** 0x7ac, DS:c02c: the character's experience level. */
   lev: number;
   /** 0x7b0, DS:c030. */
@@ -58,6 +60,10 @@ export interface PlayerCharacter {
   antiMagicRing: number;
   /** 0x7d7, DS:c057: 1 from the preparation spell, 100 from the permanent one. */
   feather: number;
+  /** 0x7d9, DS:c059: 1 from the preparation spell, 100 from the permanent one. */
+  invisible: number;
+  /** 0x7da, DS:c05a: the character's age in years, a 32-bit field. */
+  age: number;
   /** 0x7e2, DS:c062: moves left on the Strength spell's +7 STR. */
   strengthTimer: number;
   /** 0x7e4, DS:c064: moves left on the Speed spell's +7 AGI. */
@@ -270,6 +276,7 @@ function defaultPc(): PlayerCharacter {
     armorPlus: [0, 0, 0, 0, 0, 0, 0, 0],
     scrolls: Array.from({ length: 180 }, () => 0),
     wands: Array.from({ length: 180 }, () => 0),
+    exp: 100000,
     lev: 10,
     x: 40,
     y: 50,
@@ -281,6 +288,8 @@ function defaultPc(): PlayerCharacter {
     protRing: 0,
     antiMagicRing: 0,
     feather: 0,
+    invisible: 0,
+    age: 25,
     strengthTimer: 0,
     speedTimer: 0,
     slowEnemiesTimer: 0,

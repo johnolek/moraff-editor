@@ -590,6 +590,134 @@ export function passWall(game: Game, choice: number): boolean {
 }
 
 /**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), permanent level 1 slot 2, level 2 slot 2,
+ * level 3 slot 2 and level 9 slot 3: Extra Health Point, Extra 3, Extra 5 and Extra 25 Health
+ * Points, which add `amount` to the maximum and print nothing.
+ */
+export function extraHealthPoints(game: Game, amount: number): boolean {
+  game.pc.maxHp += amount;
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), permanent level 9 slot 1: Permanent
+ * Feather, which writes 100 where the preparation Feather writes 1 and has the game work the
+ * carried weight out again.
+ */
+export function permanentFeather(game: Game): boolean {
+  // The refusal only fires on exactly 100, so a character under the preparation Feather can
+  // still cast this one and have it stick.
+  if (game.pc.feather === 100) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.feather = 100;
+  computeWeight(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), permanent level 10 slot 1: Permanent
+ * Invisibility. Nothing is printed and no weight is worked out.
+ */
+export function permanentInvisibility(game: Game): boolean {
+  if (game.pc.invisible === 100) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.invisible = 100;
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), permanent level 10 slot 2: Youth, which
+ * makes the character 20 again at the price of a tenth of their experience.
+ */
+export function youth(game: Game): boolean {
+  // The original writes the two halves of the 32-bit age separately, the high word first, which
+  // comes to the same thing as storing 20.
+  game.pc.age = 20;
+  // The multiplier is the double at DS:3dc0, which is 0.9 to the bit.
+  game.pc.exp = 0.9 * game.pc.exp;
+  // give_hint (exe 2000:313a) prints hint 107 out of UH.BIN and mgetch_message (exe 4000:418d)
+  // waits for a key. The port has no hint file; see the README's second departure.
+  game.events.push({ kind: 'hintShown', hint: 107 });
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), the permanent list: case 0 of the outer
+ * switch. `levelIndex` is 0..9 and `slot` is 0..2, as the game passes them.
+ *
+ * Casting a permanent spell from memory takes its level off the character's maximum spell
+ * points for good. That is not in here: cast_a_spell (exe 2000:e017) does it after this
+ * function reports success, and only for a spell cast from memory rather than off a scroll,
+ * a wand or a paper.
+ *
+ * The inner switch has no breaks between its cases, as the battle lists have none, so a slot
+ * outside 0..2 falls through the ten of them and on into the preparation list; this returns
+ * false instead.
+ */
+export function permanentList(game: Game, levelIndex: number, slot: number): boolean {
+  switch (levelIndex) {
+    case 0:
+      if (slot === 0) return enchantWeaponPerm(game, 1);
+      if (slot === 1) return extraHealthPoints(game, 1);
+      if (slot === 2) return writeScrollOrWand(game, 3, 1);
+      break;
+    case 1:
+      if (slot === 0) return enchantArmorPerm(game, 1);
+      if (slot === 1) return extraHealthPoints(game, 3);
+      if (slot === 2) return writeScrollOrWand(game, 3, 2);
+      break;
+    case 2:
+      if (slot === 0) return enchantWeaponPerm(game, 2);
+      if (slot === 1) return extraHealthPoints(game, 5);
+      if (slot === 2) return setProtRing(game, 1);
+      break;
+    case 3:
+      if (slot === 0) return enchantArmorPerm(game, 2);
+      if (slot === 1) return setAntiMagicRing(game, 1);
+      if (slot === 2) return writeScrollOrWand(game, 10, 1);
+      break;
+    case 4:
+      if (slot === 0) return enchantWeaponPerm(game, 3);
+      if (slot === 1) return setProtRing(game, 2);
+      if (slot === 2) return setBodyArmor(game, 1);
+      break;
+    case 5:
+      if (slot === 0) return enchantArmorPerm(game, 3);
+      if (slot === 1) return setAntiMagicRing(game, 2);
+      if (slot === 2) return writeScrollOrWand(game, 8, 2);
+      break;
+    case 6:
+      if (slot === 0) return setProtRing(game, 3);
+      if (slot === 1) return setAntiMagicRing(game, 3);
+      if (slot === 2) return setBodyArmor(game, 2);
+      break;
+    case 7:
+      if (slot === 0) return enchantWeaponPerm(game, 4);
+      if (slot === 1) return enchantArmorPerm(game, 4);
+      if (slot === 2) return writeScrollOrWand(game, 10, 2);
+      break;
+    case 8:
+      if (slot === 0) return permanentFeather(game);
+      // The Anti-Magic Ring goes 1, 2, 3 and then straight to 5; there is no level 4 of it
+      // anywhere in the list.
+      if (slot === 1) return setAntiMagicRing(game, 5);
+      if (slot === 2) return extraHealthPoints(game, 25);
+      break;
+    case 9:
+      if (slot === 0) return permanentInvisibility(game);
+      if (slot === 1) return youth(game);
+      // Body Armor goes 1, 2 and then straight to 4.
+      if (slot === 2) return setBodyArmor(game, 4);
+      break;
+  }
+  return false;
+}
+
+/**
  * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), wizard battle level 1 slot 2: Magic Zap.
  */
 export function magicZap(game: Game): boolean {
