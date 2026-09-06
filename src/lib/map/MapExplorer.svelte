@@ -20,6 +20,7 @@
   import Selection from './Selection.svelte';
   import { squaresOfKind, type LegendKind } from './marks';
   import SquareInfo from './SquareInfo.svelte';
+  import { teleporterSegments } from './teleporters';
   import { monsterAt, stockFloor, type StockedMonster } from './stocking';
   import type { Point } from './viewport';
 
@@ -62,6 +63,7 @@
       : null,
   );
   const teleporterModules = $derived(selected && hasTeleporterSide(rows[selected.y][selected.x]) ? teleporterTargets(moduleIndex) : []);
+  const floorHasTeleporter = $derived(teleporterSegments(rows).length > 0);
   const markedKind = $derived(legendHover ?? legendPinned?.kind ?? null);
   const marks = $derived(markedKind ? squaresOfKind(rows, floor, markedKind) : []);
 
@@ -246,7 +248,7 @@
       chute or trap door.
     </p>
     <SquareInfo description={cursorDescription} notes={cursorNotes} monster={cursorMonster} />
-    <Selection {selected} {route} {teleporterModules} onroute={routeToTeleporter} onclear={clearSelection} ontake={takeTeleporter} />
+    <Selection {selected} {route} {floorHasTeleporter} {teleporterModules} onroute={routeToTeleporter} onclear={clearSelection} ontake={takeTeleporter} />
     <FloorMonsters count={monsters.length} town={floor === 0} onstock={stockThisFloor} onclear={clearMonsters} />
     <Legend
       {summary}

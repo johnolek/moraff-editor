@@ -7,6 +7,8 @@
   interface Props {
     selected: Point | null;
     route: Route | null | undefined;
+    /** Whether the floor has a teleporter at all: without one there is nothing to walk to. */
+    floorHasTeleporter: boolean;
     /** Modules the teleporter on the selected square leads to; empty when there is no teleporter. */
     teleporterModules: number[];
     onroute: () => void;
@@ -14,7 +16,7 @@
     ontake: (module: number) => void;
   }
 
-  let { selected, route, teleporterModules, onroute, onclear, ontake }: Props = $props();
+  let { selected, route, floorHasTeleporter, teleporterModules, onroute, onclear, ontake }: Props = $props();
 
   function describeRoute(route: Route): string {
     const parts = [`${route.steps} steps`];
@@ -28,7 +30,9 @@
   <section>
     <SectionHeading title="Selected {selected.x}, {selected.y}" />
     <div class="buttons">
-      <button class="ghost" onclick={onroute}>Path to nearest teleporter</button>
+      <button class="ghost" onclick={onroute} disabled={!floorHasTeleporter} title={floorHasTeleporter ? undefined : 'No teleporter on this floor.'}>
+        Path to nearest teleporter
+      </button>
       <button class="ghost" onclick={onclear}>Clear</button>
       {#each teleporterModules as module}
         <button class="ghost" onclick={() => ontake(module)}>Take teleporter to Module {MODULE_NUMERALS[module]}</button>
@@ -59,9 +63,13 @@
     white-space: nowrap;
     cursor: pointer;
   }
-  button.ghost:hover {
+  button.ghost:hover:not(:disabled) {
     color: var(--ink);
     border-color: var(--accent);
+  }
+  button.ghost:disabled {
+    opacity: 0.4;
+    cursor: default;
   }
   p {
     margin: 8px 0 0;
