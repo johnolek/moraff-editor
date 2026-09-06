@@ -1,6 +1,7 @@
 <script lang="ts">
   import PixelText from '../ui/PixelText.svelte';
-  import { LIST_NOTES } from './mechanics';
+  import SectionHeading from '../ui/SectionHeading.svelte';
+  import { LIST_NOTES, spellCorrection } from './mechanics';
   import { allSpells, gridKey, spellGroups, type Spell } from './spells';
 
   /** The game's own wording, from the type menu and the spell menu of its spell screen. */
@@ -14,6 +15,10 @@
   let selected = $state<Spell | null>(null);
 
   const list = $derived(lists[listIndex]);
+  const correction = $derived(selected ? spellCorrection(selected) : null);
+
+  // MORF-61: the selected spell's ported code goes here once the port supplies it.
+  const code: string | null = null;
 
   function typeLabel(label: string, index: number): string {
     return `${index + 1}) ${label.toUpperCase()} SPELLS`;
@@ -73,6 +78,25 @@
         <p class="book-footer"><PixelText font="small" scale={3} text={GRID_FOOTER} /></p>
       </div>
     </div>
+
+    {#if selected}
+      <section class="detail">
+        <h2><PixelText text={selected.name} scale={2} /></h2>
+        <p class="cost">SP cost: {selected.spCost}</p>
+        <dl>
+          <dt>In the game</dt>
+          <dd class="quote">{selected.description}</dd>
+          {#if correction}
+            <dt>What it really does</dt>
+            <dd>{correction}</dd>
+          {/if}
+        </dl>
+        {#if code}
+          <SectionHeading title="Code" />
+          <pre>{code}</pre>
+        {/if}
+      </section>
+    {/if}
   </div>
 </div>
 
@@ -169,5 +193,44 @@
     margin: 0;
     line-height: 0;
     color: var(--mw-red);
+  }
+  .detail {
+    margin-top: 18px;
+    max-width: 88ch;
+    padding: 14px 16px 16px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: var(--panel);
+  }
+  h2 {
+    margin: 0;
+    line-height: 0;
+    color: var(--accent);
+  }
+  .cost {
+    margin: 10px 0 12px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  dl {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 4px 12px;
+    margin: 0;
+    font-size: 14px;
+  }
+  dt {
+    color: var(--muted);
+  }
+  dd {
+    margin: 0;
+  }
+  .quote {
+    color: var(--mw-cyan);
+  }
+  pre {
+    margin: 0;
+    overflow-x: auto;
+    font-size: 13px;
   }
 </style>
