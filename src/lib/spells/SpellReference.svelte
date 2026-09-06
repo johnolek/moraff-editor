@@ -20,13 +20,16 @@
           <h3>{level.label}</h3>
           <ul>
             {#each level.spells as spell}
+              {@const correction = spellCorrection(spell)}
               <li>
                 <p class="name">{spell.name} <span class="cost">SP cost: {spell.spCost}</span></p>
                 <dl>
                   <dt>In the game</dt>
                   <dd class="quote">{spell.description}</dd>
-                  <dt>What it really does</dt>
-                  <dd>{spellCorrection(spell)}</dd>
+                  {#if correction}
+                    <dt>What it really does</dt>
+                    <dd>{correction}</dd>
+                  {/if}
                 </dl>
               </li>
             {/each}
