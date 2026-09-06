@@ -374,8 +374,8 @@
   </div>
   <aside class="panel">
     <p class="hint">
-      Drag to pan, scroll to zoom. Arrow keys move the cursor, PgUp/PgDn change floor, Enter follows a ladder,
-      chute or trap door.
+      Drag to pan, scroll to zoom. Arrow keys walk you across the floor, U and D take the ladder, chute or trap
+      door you stand on, PgUp/PgDn change floor.
     </p>
     <SquareInfo description={cursorDescription} notes={cursorNotes} />
     <Selection
