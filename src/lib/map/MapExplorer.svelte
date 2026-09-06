@@ -18,7 +18,7 @@
   import { hasTeleporterSide, pathToNearestTeleporter, type Route } from './path';
   import { randomOpenSquare } from './relocate';
   import Selection from './Selection.svelte';
-  import { squaresOfKind, type LegendKind } from './marks';
+  import { squaresOfKind, type LegendKind, type Mark } from './marks';
   import SquareInfo from './SquareInfo.svelte';
   import { teleporterSegments } from './teleporters';
   import { monsterAt, stockFloor, type StockedMonster } from './stocking';
@@ -30,6 +30,8 @@
   let highlight = $state<Point | null>(null);
   let legendHover = $state<LegendKind | null>(null);
   let legendPinned = $state<{ label: string; kind: LegendKind } | null>(null);
+  let monsterHover = $state<string | null>(null);
+  let monsterPinned = $state<string | null>(null);
   let selected = $state<Point | null>(null);
   /** undefined: not asked yet; null: asked, nothing reachable. */
   let route = $state<Route | null | undefined>(undefined);
@@ -64,8 +66,20 @@
   );
   const teleporterModules = $derived(selected && hasTeleporterSide(rows[selected.y][selected.x]) ? teleporterTargets(moduleIndex) : []);
   const floorHasTeleporter = $derived(teleporterSegments(rows).length > 0);
-  const markedKind = $derived(legendHover ?? legendPinned?.kind ?? null);
-  const marks = $derived(markedKind ? squaresOfKind(rows, floor, markedKind) : []);
+  /** What the map marks: whichever of the legend and the monster list the pointer is over,
+   *  and otherwise the one entry a click pinned. */
+  const marked = $derived<{ from: 'legend'; kind: LegendKind } | { from: 'monsters'; monsterId: string } | null>(
+    legendHover
+      ? { from: 'legend', kind: legendHover }
+      : monsterHover
+        ? { from: 'monsters', monsterId: monsterHover }
+        : legendPinned
+          ? { from: 'legend', kind: legendPinned.kind }
+          : monsterPinned
+            ? { from: 'monsters', monsterId: monsterPinned }
+            : null,
+  );
+  const marks = $derived(!marked ? [] : marked.from === 'legend' ? squaresOfKind(rows, floor, marked.kind) : squaresOfMonster(marked.monsterId));
 
   onMount(() => {
     const state = history.state;
@@ -135,6 +149,22 @@
     const rest = new Map(stocked);
     rest.delete(stockKey);
     stocked = rest;
+  }
+
+  function squaresOfMonster(monsterId: string): Mark[] {
+    return monsters.filter((monster) => monster.monsterId === monsterId).map(({ x, y }) => ({ x, y, label: null }));
+  }
+
+  /** The map marks one thing at a time, so pinning from the legend drops a pinned monster
+   *  type and the other way round. */
+  function pinLegendEntry(label: string | null, kind: LegendKind | null) {
+    legendPinned = label && kind ? { label, kind } : null;
+    if (legendPinned) monsterPinned = null;
+  }
+
+  function pinMonster(monsterId: string | null) {
+    monsterPinned = monsterId;
+    if (monsterPinned) legendPinned = null;
   }
 
   function clearSelection() {
@@ -249,12 +279,20 @@
     </p>
     <SquareInfo description={cursorDescription} notes={cursorNotes} monster={cursorMonster} />
     <Selection {selected} {route} {floorHasTeleporter} {teleporterModules} onroute={routeToTeleporter} onclear={clearSelection} ontake={takeTeleporter} />
-    <FloorMonsters count={monsters.length} town={floor === 0} onstock={stockThisFloor} onclear={clearMonsters} />
+    <FloorMonsters
+      {monsters}
+      town={floor === 0}
+      pinned={monsterPinned}
+      onstock={stockThisFloor}
+      onclear={clearMonsters}
+      onhover={(monsterId) => (monsterHover = monsterId)}
+      onpin={pinMonster}
+    />
     <Legend
       {summary}
       pinned={legendPinned?.label ?? null}
       onhover={(kind) => (legendHover = kind)}
-      onpin={(label, kind) => (legendPinned = label && kind ? { label, kind } : null)}
+      onpin={pinLegendEntry}
     />
     <Notable {notable} onpick={pick} />
   </aside>

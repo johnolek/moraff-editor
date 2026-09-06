@@ -75,6 +75,22 @@ export function monsterAt(monsters: StockedMonster[], x: number, y: number): Sto
   return monsters.find((monster) => monster.x === x && monster.y === y) ?? null;
 }
 
+export interface MonsterCount {
+  monsterId: string;
+  name: string;
+  count: number;
+}
+
+/** How many of each monster type a stocked floor holds, commonest first, with the Shadow
+ *  boss ahead of them all. */
+export function monsterCounts(monsters: StockedMonster[]): MonsterCount[] {
+  const counts = new Map<string, number>();
+  for (const monster of monsters) counts.set(monster.monsterId, (counts.get(monster.monsterId) ?? 0) + 1);
+  return [...counts]
+    .map(([monsterId, count]) => ({ monsterId, name: monsterById(monsterId).name, count }))
+    .sort((a, b) => Number(monsterById(b.monsterId).isBoss) - Number(monsterById(a.monsterId).isBoss) || b.count - a.count);
+}
+
 /**
  * The type roll: 1 in 20 a puffball, else 1 in 7 a garbage can or ball, else 1 in 15 the
  * section's level drainer, else 1 in 12 a poison or disease monster, else one of the

@@ -1,30 +1,58 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
+  import { monsterCounts, type StockedMonster } from './stocking';
 
   interface Props {
-    /** Monsters stocked on the floor, 0 when it has not been stocked. */
-    count: number;
+    /** Monsters stocked on the floor, empty when it has not been stocked. */
+    monsters: StockedMonster[];
     town: boolean;
+    /** Monster whose squares stay marked until it is clicked again or cleared. */
+    pinned: string | null;
     onstock: () => void;
     onclear: () => void;
+    onhover: (monsterId: string | null) => void;
+    onpin: (monsterId: string | null) => void;
   }
 
-  let { count, town, onstock, onclear }: Props = $props();
+  let { monsters, town, pinned, onstock, onclear, onhover, onpin }: Props = $props();
+
+  const counts = $derived(monsterCounts(monsters));
 </script>
 
 <section>
-  <SectionHeading title="Monsters" />
+  <SectionHeading title="Monsters">
+    {#if pinned}
+      <button class="clear" onclick={() => onpin(null)}>Clear</button>
+    {/if}
+  </SectionHeading>
   {#if town}
     <p class="hint">The town has no monsters.</p>
   {:else}
     <div class="buttons">
-      <button class="ghost" onclick={onstock}>{count ? 'Reroll' : 'Stock this floor'}</button>
-      {#if count}
+      <button class="ghost" onclick={onstock}>{monsters.length ? 'Reroll' : 'Stock this floor'}</button>
+      {#if monsters.length}
         <button class="ghost" onclick={onclear}>Clear</button>
       {/if}
     </div>
-    {#if count}
-      <p>{count} monsters</p>
+    {#if monsters.length}
+      <p>{monsters.length} monsters</p>
+      <ul>
+        {#each counts as { monsterId, name, count }}
+          <li>
+            <button
+              type="button"
+              class="type"
+              class:pinned={pinned === monsterId}
+              onpointerenter={() => onhover(monsterId)}
+              onpointerleave={() => onhover(null)}
+              onclick={() => onpin(pinned === monsterId ? null : monsterId)}
+            >
+              <span>{name}</span>
+              <span class="count">{count}</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
     {/if}
   {/if}
 </section>
@@ -50,11 +78,59 @@
     color: var(--ink);
     border-color: var(--accent);
   }
+  .clear {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    font-size: 11px;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0;
+    cursor: pointer;
+  }
+  .clear:hover {
+    color: var(--ink);
+  }
   p {
     margin: 8px 0 0;
     font-size: 13px;
   }
   .hint {
+    color: var(--muted);
+  }
+  ul {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .type {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    width: calc(100% + 8px);
+    margin: 0 -4px;
+    padding: 2px 4px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+  }
+  .type:hover {
+    background: var(--panel-2);
+  }
+  .type.pinned {
+    background: var(--panel-2);
+    box-shadow: inset 0 0 0 1px var(--accent);
+  }
+  .count {
     color: var(--muted);
   }
 </style>

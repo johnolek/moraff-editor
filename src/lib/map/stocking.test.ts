@@ -3,7 +3,7 @@ import { isPuffball } from '../bestiary/monsters';
 import { MONSTER_TYPE_ODDS, monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
 import { bundledDungeon } from '../game/dungeon';
 import { sectionInfo } from '../game/sections';
-import { MONSTER_SLOTS, monsterAt, monsterById, stockFloor, type StockedMonster } from './stocking';
+import { MONSTER_SLOTS, monsterAt, monsterById, monsterCounts, stockFloor, type StockedMonster } from './stocking';
 
 /** A repeatable stand-in for Math.random, so a failing floor can be reproduced. Math.imul
  *  keeps the multiplication exact, which the full period of the generator depends on. */
@@ -80,6 +80,21 @@ function kindOf(id: string): keyof typeof MONSTER_TYPE_ODDS {
   if (isPuffball(entry)) return 'puffball';
   return entry.special === 0 ? 'blocker' : 'poisonDisease';
 }
+
+describe('monsterCounts', () => {
+  it('counts each type, commonest first, with the Shadow boss at the top', () => {
+    const monsters = stockFloor(floorOf(0, 5), 0, 5, seeded(31));
+    const counts = monsterCounts(monsters);
+    expect(counts[0].name).toBe(sectionInfo(0, 5).bossName);
+    expect(counts[0].count).toBe(1);
+    expect(counts.reduce((total, entry) => total + entry.count, 0)).toBe(MONSTER_SLOTS);
+    for (const entry of counts) {
+      expect(entry.count).toBe(monsters.filter((monster) => monster.monsterId === entry.monsterId).length);
+    }
+    const withoutBoss = counts.slice(1).map((entry) => entry.count);
+    expect(withoutBoss).toEqual([...withoutBoss].sort((a, b) => b - a));
+  });
+});
 
 describe('monsterAt', () => {
   it('finds the monster standing on a square, if any', () => {
