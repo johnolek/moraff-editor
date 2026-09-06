@@ -1,6 +1,6 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { monsterCounts, type StockedMonster } from './stocking';
+  import { groupedMonsterCounts, type StockedMonster } from './stocking';
 
   interface Props {
     /** Monsters stocked on the floor, empty when it has not been stocked. */
@@ -18,7 +18,7 @@
 
   let { monsters, town, canStock, pinned, onstock, onclear, onhover, onpin }: Props = $props();
 
-  const counts = $derived(monsterCounts(monsters));
+  const groups = $derived(groupedMonsterCounts(monsters));
 </script>
 
 <section>
@@ -40,23 +40,26 @@
     </div>
     {#if monsters.length}
       <p>{monsters.length} monsters</p>
-      <ul>
-        {#each counts as { monsterId, name, count }}
-          <li>
-            <button
-              type="button"
-              class="type"
-              class:pinned={pinned === monsterId}
-              onpointerenter={() => onhover(monsterId)}
-              onpointerleave={() => onhover(null)}
-              onclick={() => onpin(pinned === monsterId ? null : monsterId)}
-            >
-              <span>{name}</span>
-              <span class="count">{count}</span>
-            </button>
-          </li>
-        {/each}
-      </ul>
+      {#each groups as group}
+        <h3>{group.label}</h3>
+        <ul>
+          {#each group.counts as { monsterId, name, count }}
+            <li>
+              <button
+                type="button"
+                class="type"
+                class:pinned={pinned === monsterId}
+                onpointerenter={() => onhover(monsterId)}
+                onpointerleave={() => onhover(null)}
+                onclick={() => onpin(pinned === monsterId ? null : monsterId)}
+              >
+                <span>{name}</span>
+                <span class="count">{count}</span>
+              </button>
+            </li>
+          {/each}
+        </ul>
+      {/each}
     {/if}
   {/if}
 </section>
@@ -107,9 +110,17 @@
   .hint {
     color: var(--muted);
   }
+  h3 {
+    margin: 12px 0 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
   ul {
     list-style: none;
-    margin: 6px 0 0;
+    margin: 0;
     padding: 0;
     display: flex;
     flex-direction: column;
