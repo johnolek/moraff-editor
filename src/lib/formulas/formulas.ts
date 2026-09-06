@@ -261,7 +261,44 @@ const MONSTERS: Topic = {
   ],
 };
 
-export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS];
+const EXPERIENCE: Topic = {
+  id: 'experience',
+  title: 'Experience',
+  formulas: [
+    {
+      id: 'exp-needed',
+      title: 'What the next level costs',
+      explanation:
+        'Each level needs forty per cent more experience than the one before it, starting from 250 and with a flat 80 knocked off the whole curve. Level 10 wants 3,609 experience, level 20 wants 106,640 and level 30 wants a little over three million. On "I can handle anything" the curve doubles instead of growing by two fifths and the 80 is gone, so the first few levels are barely harder and the later ones are ruinous: level 20 costs 65 million there against 106,640 on the normal setting.',
+      inputs: 'The level you are aiming at and the difficulty the character was rolled on.',
+      origin:
+        'exe exp_needed 2000:7b48, exp_needed in dotu-tools/decomp/unf.c, from the constants at DS:0421, DS:0429, DS:12d6 and DS:12da. RE notes 1.1 and FAQ [EXPT].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'expNeeded' },
+    },
+    {
+      id: 'exp-value',
+      title: 'What a kill is worth',
+      explanation:
+        'A kill pays out on the monster\'s level, and the payout grows by twenty-three per cent for every level, which utterly swamps the rest of the sum. A level 30 monster is worth about 2,500 experience, a level 60 one about 1.2 million and a level 61 one about 1.5 million, so one floor deeper is worth more than a much longer stay where you are. The whole thing is then multiplied by the monster\'s own worth: one for an ordinary section monster, three for a garbage can or ball, five for a poison or disease creature, and sixteen for a Shadow boss. Levels above 130 pay no more than level 130 does.',
+      inputs: 'The monster\'s level and the multiplier its kind carries.',
+      origin:
+        'exe exp_value 3000:a0fa, exp_value in dotu-tools/decomp/unf.c, from the constants at DS:2f60 and DS:2f68. RE notes 3 and FAQ [LOOT].',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'expValue' },
+    },
+    {
+      id: 'level-for-exp',
+      title: 'When a level is actually granted',
+      explanation:
+        'Killing things never levels you up. Experience piles up while you are in the dungeon and the game only compares it against the table when you pay for a room at an inn, handing you every level you have earned since the last stay in one go. Losing experience, to a drainer or to the Youth spell, never takes a level back at the inn; only a level drainer\'s hit does that, and it sets your experience to the exact minimum for the level it leaves you on.',
+      inputs: 'The experience you are carrying, the difficulty, and the level you are already on.',
+      origin:
+        'exe gain_level 2000:7d23 and check_gain_level 2000:7c71, called from flea_inn (exe 2000:4fe7); gain_level in dotu-tools/decomp/unf.c. RE notes 1.1 and 2.2.',
+      code: { file: 'src/lib/game/dotu-mech.js', name: 'levelForExp' },
+    },
+  ],
+};
+
+export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXPERIENCE];
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
