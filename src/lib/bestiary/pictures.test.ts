@@ -44,19 +44,19 @@ describe('renderMonster', () => {
   });
 
   it('draws a section monster', () => {
-    const image = renderMonster(named('Vulture Of Death'), 1, 3, 'shop');
+    const image = renderMonster(named('Vulture Of Death'), 1, 3);
     expect([image.width, image.height]).toEqual([256, 200]);
     expect(opaquePixels(image.data)).toBeGreaterThan(1000);
   });
 
   it('draws a built-in monster', () => {
-    expect(opaquePixels(renderMonster(named('Poison Flask'), 1, 1, 'shop').data)).toBeGreaterThan(1000);
+    expect(opaquePixels(renderMonster(named('Poison Flask'), 1, 1).data)).toBeGreaterThan(1000);
   });
 
   it("does not draw a Shadow boss's tint pixels", () => {
     const boss = named('Shadow Vulture');
     const picture = pictureImages('ufmon3.pic')[0];
-    const image = renderMonster(boss, 1, 3, 'fresh');
+    const image = renderMonster(boss, 1, 3);
     const tintPixels = [...picture].flatMap((v, i) => (v === TINT_VALUE ? [i] : []));
     expect(tintPixels.length).toBeGreaterThan(1000);
     expect(tintPixels.filter((i) => image.data[i * 4 + 3] !== 0)).toEqual([]);
@@ -64,12 +64,12 @@ describe('renderMonster', () => {
 
   it('draws the Ogeroth with its tint as a raw palette entry', () => {
     const ogeroth = named('Ogeroth');
-    const palette = sectionPalette(5, 4, 'fresh');
+    const palette = sectionPalette(5, 4);
     expect(monsterPixelIndex(TINT_VALUE, ogeroth.color, ogeroth.colorSet)).toBe(52);
     expect(monsterPixelIndex(17, ogeroth.color, ogeroth.colorSet)).toBe(49);
 
     const picture = pictureImages('ufmon20.pic')[0];
-    const image = renderMonster(ogeroth, 5, 4, 'fresh');
+    const image = renderMonster(ogeroth, 5, 4);
     const colourAt = (value: number) => {
       const i = [...picture].indexOf(value);
       return [...image.data.slice(i * 4, i * 4 + 3)];

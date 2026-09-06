@@ -113,7 +113,7 @@
       const key = `${id}:${moduleIndex}:${part}`;
       const cached = pictures.get(key);
       if (cached) return cached;
-      const image = renderMonster(monsterById(id), moduleIndex + 1, part, 'shop');
+      const image = renderMonster(monsterById(id), moduleIndex + 1, part);
       const sprite = document.createElement('canvas');
       sprite.width = image.width;
       sprite.height = image.height;

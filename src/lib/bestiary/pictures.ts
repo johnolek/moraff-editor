@@ -1,4 +1,3 @@
-import banks from '../game/building-palette-banks.json';
 import {
   PIC_H,
   PIC_W,
@@ -13,13 +12,6 @@ import {
 } from '../game/dotu-pic.js';
 import palettes from '../game/palettes.json';
 import type { Monster } from './monsters';
-
-/**
- * Palette entries 64..79 are the only ones the dungeon palette never writes. They are black
- * until you enter a shop, and hold that shop's colours for the rest of the session, which
- * changes the tint of the Shadow bosses of half the sections.
- */
-export type Look = 'fresh' | 'shop';
 
 export const PICTURE_WIDTH = PIC_W;
 export const PICTURE_HEIGHT = PIC_H;
@@ -53,17 +45,20 @@ export function pictureImages(file: string): PicImage[] {
   return images;
 }
 
-/** The dungeon palette of a section, by 1-based module and part 1..4 within the module. */
-export function sectionPalette(module: number, part: number, look: Look): Rgb[] {
-  return dungeonPalette(palettes, look === 'shop' ? banks.bankB_entries64_95 : null, module, part);
+/**
+ * The dungeon palette of a section, by 1-based module and part 1..4 within the module. Entries
+ * 64..79 stay black, since only a shop's palette writes them and no monster's tint reaches them.
+ */
+export function sectionPalette(module: number, part: number): Rgb[] {
+  return dungeonPalette(palettes, null, module, part);
 }
 
 /** The monster drawn with the palette of the given section; module is 1-based. */
-export function renderMonster(entry: Monster, module: number, part: number, look: Look): RenderedImage {
+export function renderMonster(entry: Monster, module: number, part: number): RenderedImage {
   const images = pictureImages(monsterPictureFile(entry));
   const index =
     entry.origin.kind === 'builtin' ? builtinPictureIndex(entry.picnum) : sectionPictureIndex(entry.picnum);
-  return renderImage(images[index], sectionPalette(module, part, look), (v) =>
+  return renderImage(images[index], sectionPalette(module, part), (v) =>
     monsterPixelIndex(v, entry.color, entry.colorSet),
   );
 }

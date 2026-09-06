@@ -15,7 +15,7 @@
   let canvas: HTMLCanvasElement;
 
   $effect(() => {
-    const image = renderMonster(entry, module, part, 'shop');
+    const image = renderMonster(entry, module, part);
     const context = canvas.getContext('2d');
     if (!context) return;
     context.putImageData(new ImageData(image.data, image.width, image.height), 0, 0);
