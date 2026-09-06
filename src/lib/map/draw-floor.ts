@@ -1,4 +1,5 @@
-import { HEIGHT, WIDTH, type Side, type Square } from '../game/unfmap.js';
+import type { Side, Square } from '../game/unfmap.js';
+import { MAP_COLUMNS, MAP_ROWS } from './area';
 import type { Mark } from './marks';
 import type { Hop, Route } from './path';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
@@ -28,9 +29,9 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: Square[][], optio
   ctx.fillRect(0, 0, width, height);
 
   const firstX = Math.max(0, Math.floor(-originX / cell));
-  const lastX = Math.min(WIDTH - 1, Math.ceil((width - originX) / cell));
+  const lastX = Math.min(MAP_COLUMNS - 1, Math.ceil((width - originX) / cell));
   const firstY = Math.max(0, Math.floor(-originY / cell));
-  const lastY = Math.min(HEIGHT - 1, Math.ceil((height - originY) / cell));
+  const lastY = Math.min(MAP_ROWS - 1, Math.ceil((height - originY) / cell));
 
   ctx.lineWidth = 1;
   for (let y = firstY; y <= lastY; y++) {

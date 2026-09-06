@@ -21,14 +21,14 @@ describe('squareAt', () => {
     expect(squareAt(view, 100, 50)).toEqual({ x: 0, y: 0 });
     expect(squareAt(view, 109.9, 59.9)).toEqual({ x: 0, y: 0 });
     expect(squareAt(view, 110, 60)).toEqual({ x: 1, y: 1 });
-    expect(squareAt(view, 100 + 79 * 10, 50 + 109 * 10)).toEqual({ x: 79, y: 109 });
+    expect(squareAt(view, 100 + 78 * 10, 50 + 103 * 10)).toEqual({ x: 78, y: 103 });
   });
 
-  it('returns null outside the floor', () => {
+  it('returns null outside the area the game shows', () => {
     expect(squareAt(view, 99, 50)).toBeNull();
     expect(squareAt(view, 100, 49)).toBeNull();
-    expect(squareAt(view, 100 + 80 * 10, 50)).toBeNull();
-    expect(squareAt(view, 100, 50 + 110 * 10)).toBeNull();
+    expect(squareAt(view, 100 + 79 * 10, 50)).toBeNull();
+    expect(squareAt(view, 100, 50 + 104 * 10)).toBeNull();
   });
 });
 
@@ -85,9 +85,9 @@ describe('wheelZoomFactor', () => {
 describe('fitFloor', () => {
   it('fits the whole floor by default, centred', () => {
     const fitted = fitFloor(1000, 1400);
-    expect(fitted.cell).toBeCloseTo(998 / 80);
+    expect(fitted.cell).toBeCloseTo(998 / 79);
     expect(fitted.originX).toBeCloseTo(1);
-    expect(fitted.originY).toBeCloseTo((1400 - 110 * fitted.cell) / 2);
+    expect(fitted.originY).toBeCloseTo((1400 - 104 * fitted.cell) / 2);
   });
 
   it('fits and centres the given bounds', () => {
@@ -114,7 +114,7 @@ describe('centerOn and ensureVisible', () => {
   it('leaves the viewport alone when the square is already on screen', () => {
     expect(isVisible(view, { x: 0, y: 0 }, 800, 600)).toBe(true);
     expect(ensureVisible(view, { x: 0, y: 0 }, 800, 600)).toBe(view);
-    expect(isVisible(view, { x: 79, y: 0 }, 800, 600)).toBe(false);
-    expect(squareAt(ensureVisible(view, { x: 79, y: 0 }, 800, 600), 400, 300)).toEqual({ x: 79, y: 0 });
+    expect(isVisible(view, { x: 78, y: 0 }, 800, 600)).toBe(false);
+    expect(squareAt(ensureVisible(view, { x: 78, y: 0 }, 800, 600), 400, 300)).toEqual({ x: 78, y: 0 });
   });
 });

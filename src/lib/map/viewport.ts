@@ -1,4 +1,4 @@
-import { HEIGHT, WIDTH } from '../game/unfmap.js';
+import { MAP_COLUMNS, MAP_ROWS } from './area';
 
 export const MIN_CELL = 4;
 export const MAX_CELL = 64;
@@ -26,12 +26,12 @@ export interface Bounds {
   maxY: number;
 }
 
-export const FULL_FLOOR: Bounds = { minX: 0, minY: 0, maxX: WIDTH - 1, maxY: HEIGHT - 1 };
+export const FULL_FLOOR: Bounds = { minX: 0, minY: 0, maxX: MAP_COLUMNS - 1, maxY: MAP_ROWS - 1 };
 
 export function squareAt(view: Viewport, px: number, py: number): Point | null {
   const x = Math.floor((px - view.originX) / view.cell);
   const y = Math.floor((py - view.originY) / view.cell);
-  if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) return null;
+  if (x < 0 || x >= MAP_COLUMNS || y < 0 || y >= MAP_ROWS) return null;
   return { x, y };
 }
 
