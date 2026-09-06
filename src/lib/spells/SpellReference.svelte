@@ -1,6 +1,6 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { spellMechanics } from './mechanics';
+  import { spellCorrection } from './mechanics';
   import { searchSpells, spellGroups } from './spells';
 
   let search = $state('');
@@ -26,7 +26,7 @@
                   <dt>In the game</dt>
                   <dd class="quote">{spell.description}</dd>
                   <dt>What it really does</dt>
-                  <dd>{spellMechanics(spell)}</dd>
+                  <dd>{spellCorrection(spell)}</dd>
                 </dl>
               </li>
             {/each}
