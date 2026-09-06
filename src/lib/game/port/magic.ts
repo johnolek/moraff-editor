@@ -739,3 +739,130 @@ export function wizardBattle(game: Game, levelIndex: number, slot: number): bool
   }
   return false;
 }
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), priest battle level 2 slot 3: Fast Cure,
+ * half the caster's wisdom with no roll in it at all.
+ */
+export function fastCure(game: Game): boolean {
+  game.pc.hp += Math.trunc(game.pc.wis / 2);
+  if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
+  msgYouFeelGood(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), priest battle level 6 slot 3: Fast Big
+ * Cure, 20 points plus a roll, and never more than 90.
+ */
+export function fastBigCure(game: Game): boolean {
+  // Ghidra lost the argument to Random; four times wisdom is what the RE notes give, which with
+  // the 20 the decompilation does show makes this heal 20 to 90. dotu-mech.js's fastBigCure
+  // range leaves the 20 out.
+  let healed = game.rng.random(4 * game.pc.wis) + 20;
+  if (healed > 90) healed = 90;
+  game.pc.hp += healed;
+  if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
+  msgYouFeelVeryGood(game);
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), priest battle level 10 slot 2: Fast Heal,
+ * every hit point back. It prints nothing.
+ */
+export function fastHeal(game: Game): boolean {
+  game.pc.hp = game.pc.maxHp;
+  return true;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"), the priest battle list: case 3 of the
+ * outer switch. `levelIndex` is 0..9 and `slot` is 0..2, as the game passes them.
+ *
+ * Ghidra could not tell case 3 from case 2 — the jump table left both bodies under one label —
+ * so this is the second of the two switches at unf.c line 25516, the one whose first case calls
+ * sleep_monster, battle_speed and FUN_3000_d990.
+ */
+export function priestBattle(game: Game, levelIndex: number, slot: number): boolean {
+  switch (levelIndex) {
+    case 0:
+      if (slot === 0) return sleepMonster(game);
+      if (slot === 1) return battleSpeed(game, 1);
+      if (slot === 2) return strength(game);
+      break;
+    case 1:
+      if (slot === 0) return resistPoison(game);
+      if (slot === 1) return speed(game);
+      if (slot === 2) return fastCure(game);
+      break;
+    case 2:
+      if (slot === 0) return resistDisease(game);
+      if (slot === 1) {
+        relocateSpell(game);
+        return true;
+      }
+      if (slot === 2) return slowEnemies(game);
+      break;
+    case 3:
+      if (slot === 0) return antiCold(game);
+      if (slot === 1) {
+        goAway(game);
+        return true;
+      }
+      if (slot === 2) return battleStrength(game, 1);
+      break;
+    case 4:
+      // The priest's Protection asks for level 1, the same as the Minor Protection two lines
+      // up, so it takes 2 off a monster's roll where the wizard's takes 8. It looks unintended:
+      // the priest goes from 2 straight to Major Protection's 18.
+      if (slot === 0) return battleSpeed(game, 1);
+      if (slot === 1) return antiFire(game);
+      if (slot === 2) return passWall(game, game.chooseDirection());
+      break;
+    case 5:
+      if (slot === 0) return resistDrain(game);
+      if (slot === 1) return drainMonster(game);
+      if (slot === 2) return fastBigCure(game);
+      break;
+    case 6:
+      if (slot === 0) return holdMonster(game);
+      if (slot === 1) return battleStrength(game, 2);
+      if (slot === 2) return shock(game);
+      break;
+    case 7:
+      if (slot === 0) return battleSpeed(game, 3);
+      if (slot === 1) return explosion(game, 1);
+      if (slot === 2) return magicZot(game);
+      break;
+    case 8:
+      if (slot === 0) return autokill(game);
+      if (slot === 1) return battleStrength(game, 3);
+      if (slot === 2) return strengthAndSpeed(game);
+      break;
+    case 9:
+      if (slot === 0) return battleSpeed(game, 4);
+      if (slot === 1) return fastHeal(game);
+      if (slot === 2) return majorShock(game);
+      break;
+  }
+  return false;
+}
+
+/**
+ * spell_effect (exe 3000:e1b8, unf.c "spell_effect"): cast one spell. `type` is 0 permanent,
+ * 1 preparation, 2 wizard battle, 3 priest battle; `levelIndex` is 0..9 for the spell's level
+ * and `slot` is 0..2 for its place on that line.
+ *
+ * The original is one function, a switch on the type around a switch on the level around tests
+ * on the slot. The port splits the two battle lists into wizardBattle and priestBattle, which
+ * are the same two switches, so that a spell's own code can be shown on its own.
+ */
+export function spellEffect(game: Game, type: number, levelIndex: number, slot: number): boolean {
+  // Slice 2 of the port (MORF-54's parent epic, MORF-52) brings the permanent and preparation
+  // lists, which need the weapon, armour and floor code the port does not have yet.
+  if (type === 0 || type === 1) throw new Error('not ported yet');
+  if (type === 2) return wizardBattle(game, levelIndex, slot);
+  if (type === 3) return priestBattle(game, levelIndex, slot);
+  return false;
+}

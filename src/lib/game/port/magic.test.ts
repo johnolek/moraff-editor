@@ -8,6 +8,9 @@ import {
   battleStrength,
   drainMonster,
   explosion,
+  fastBigCure,
+  fastCure,
+  fastHeal,
   goAway,
   holdMonster,
   lightningBolt,
@@ -19,12 +22,14 @@ import {
   minorShock,
   msgNoMonster,
   passWall,
+  priestBattle,
   relocateSpell,
   resistDisease,
   resistDrain,
   resistPoison,
   shock,
   sleepMonster,
+  spellEffect,
   slowEnemies,
   speed,
   strength,
@@ -610,5 +615,122 @@ describe('wizardBattle', () => {
     const { game } = fighting();
     expect(wizardBattle(game, 0, 3)).toBe(false);
     expect(wizardBattle(game, 10, 0)).toBe(false);
+  });
+});
+
+describe('the priest list’s cures', () => {
+  it('Fast Cure heals half the caster’s wisdom, with no roll and no overheal', () => {
+    const game = newGame({ pc: { hp: 40, maxHp: 100, wis: 21 } });
+    expect(fastCure(game)).toBe(true);
+    expect(game.pc.hp).toBe(50);
+    expect(game.messages).toEqual(['YOU FEEL GOOD.  HIT ANY KEY']);
+
+    const nearlyFull = newGame({ pc: { hp: 99, maxHp: 100, wis: 21 } });
+    fastCure(nearlyFull);
+    expect(nearlyFull.pc.hp).toBe(100);
+  });
+
+  it('Fast Big Cure heals 20 to 90', () => {
+    const game = newGame({ rng: new BorlandRng(3), pc: { hp: 0, maxHp: 100000, wis: 20 } });
+    const healed = new Set<number>();
+    for (let i = 0; i < 3000; i++) {
+      game.pc.hp = 0;
+      game.messages.length = 0;
+      expect(fastBigCure(game)).toBe(true);
+      healed.add(game.pc.hp);
+    }
+    expect(Math.min(...healed)).toBe(20);
+    expect(Math.max(...healed)).toBe(90);
+  });
+
+  it('Fast Big Cure will not push past the maximum', () => {
+    const game = newGame({ rng: new BorlandRng(3), pc: { hp: 95, maxHp: 100, wis: 20 } });
+    expect(fastBigCure(game)).toBe(true);
+    expect(game.pc.hp).toBe(100);
+  });
+
+  it('Fast Heal fills the bar and says nothing', () => {
+    const game = newGame({ pc: { hp: 1, maxHp: 250 } });
+    expect(fastHeal(game)).toBe(true);
+    expect(game.pc.hp).toBe(250);
+    expect(game.messages).toEqual([]);
+  });
+});
+
+describe('priestBattle', () => {
+  it('gives Protection level 1, the same as Minor Protection', () => {
+    const game = newGame();
+    expect(priestBattle(game, 4, 0)).toBe(true);
+    expect(game.pc.protection).toBe(1);
+
+    // And so a priest who already has Minor Protection is told Protection would be redundant.
+    const minor = newGame();
+    expect(priestBattle(minor, 0, 1)).toBe(true);
+    expect(priestBattle(minor, 4, 0)).toBe(true);
+    expect(minor.pc.protection).toBe(1);
+    expect(minor.pc.protectionTime).toBe(120);
+  });
+
+  it('gives Major and Ultra Protection their own levels', () => {
+    const major = newGame();
+    expect(priestBattle(major, 7, 0)).toBe(true);
+    expect(major.pc.protection).toBe(3);
+
+    const ultra = newGame();
+    expect(priestBattle(ultra, 9, 0)).toBe(true);
+    expect(ultra.pc.protection).toBe(4);
+  });
+
+  it('gives the three power weapons their levels', () => {
+    const cells: [number, number, number][] = [
+      [3, 2, 1],
+      [6, 1, 2],
+      [8, 1, 3],
+    ];
+    for (const [levelIndex, slot, expected] of cells) {
+      const game = newGame();
+      expect(priestBattle(game, levelIndex, slot)).toBe(true);
+      expect(game.pc.powerWeapon).toBe(expected);
+    }
+  });
+
+  it('throws the ordinary explosion, not the small or the huge one', () => {
+    const { game, monster } = fighting(77);
+    const [low, high] = damageSpells(game.pc.lev).explosion;
+    expect(priestBattle(game, 7, 1)).toBe(true);
+    expect(5000 - monster.hp).toBeGreaterThanOrEqual(low);
+    expect(5000 - monster.hp).toBeLessThanOrEqual(high);
+    expect(game.messages[0]).toBe('A LARGE EXPLOSION OCCURS');
+  });
+
+  it('runs every cell of the list', () => {
+    for (let levelIndex = 0; levelIndex < 10; levelIndex++) {
+      for (let slot = 0; slot < 3; slot++) {
+        const { game } = fighting(300 + levelIndex * 3 + slot);
+        expect(() => priestBattle(game, levelIndex, slot)).not.toThrow();
+      }
+    }
+  });
+});
+
+describe('spellEffect', () => {
+  it('sends type 2 to the wizard list and type 3 to the priest list', () => {
+    const wizard = newGame();
+    expect(spellEffect(wizard, 2, 4, 1)).toBe(true);
+    expect(wizard.pc.protection).toBe(2);
+
+    const priest = newGame();
+    expect(spellEffect(priest, 3, 4, 0)).toBe(true);
+    expect(priest.pc.protection).toBe(1);
+  });
+
+  it('has no permanent or preparation spells yet', () => {
+    const game = newGame();
+    expect(() => spellEffect(game, 0, 0, 0)).toThrow('not ported yet');
+    expect(() => spellEffect(game, 1, 0, 0)).toThrow('not ported yet');
+  });
+
+  it('reports nothing for a type the game does not have', () => {
+    expect(spellEffect(newGame(), 4, 0, 0)).toBe(false);
   });
 });

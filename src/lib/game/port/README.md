@@ -16,6 +16,10 @@ pointer at `DAT_6000_c64b`. **Every function in this port takes a `Game` instead
 same state as named fields, and reads and writes that. Nothing else changes: the same fields are
 read, in the same order, and written with the same values.
 
+Input is the other thing a `Game` carries: the original stops and reads the keyboard in the
+middle of a spell, and Pass Wall's direction menu is the one place in this slice where that
+happens, so `game.chooseDirection()` answers it.
+
 The character record's fields are named the way `src/lib/game/dotu-files.js` already names those
 save offsets, so `pc.lev` is the character's level and `pc.level` is the floor, exactly as the
 save parser has it. Fields that parser does not read are named after their label in
@@ -27,7 +31,12 @@ save parser has it. Fields that parser does not read are named after their label
   catalog, in camelCase: `sleep_monster` becomes `sleepMonster`. Where the catalog has no name
   for a function, it is named for what it does.
 * A spell whose code the original writes inline inside `spell_effect`, rather than in a function
-  of its own, becomes a function here named after the spell: `magicZap`, `minorShock`.
+  of its own, becomes a function here named after the spell: `magicZap`, `minorShock`. Its
+  citation names the list, the level and the slot the spell has in the tables of the RE notes —
+  level 1 to 10, slot 1 to 3, each one more than the index the switch itself uses.
+* `spell_effect` is one function in the game and three here: `spellEffect` on the type, and
+  `wizardBattle` and `priestBattle` for the two inner switches, so that one spell's code can be
+  shown on its own.
 * **Every function's doc comment cites where it came from**: the address in the executable and
   the name it has in `dotu-tools/decomp/unf.c`, and for an inlined spell, which case of the
   switch it is.
