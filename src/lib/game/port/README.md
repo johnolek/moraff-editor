@@ -8,6 +8,20 @@ names the reverse engineering worked out. `dotu-tools/docs/UNFORGIVEN-RE-NOTES.m
 This is not a reimplementation and not a tidy-up. Every function here does what the 1993 code
 does, including the parts that look like accidents.
 
+## Where this is going
+
+This port is meant to become the game: Dungeons of the Unforgiven, playable in a browser and
+almost entirely faithful to the 1993 original, built function by function out of the
+decompilation until enough of it is here to run. Every piece of logic it runs is a cited port of
+the function it came from, bugs included.
+
+The one deliberate difference in play will be the random numbers. The original re-seeds from the
+clock before nearly every roll, so what it hands back falls into patterns a player can feel — see
+"Your to-hit roll is a clock" in `dotu-tools/docs/TIDBITS.md`. The browser game will roll
+genuinely random ones, which is why `Rng` is something a `Game` is handed rather than something a
+ported function reaches for: `BorlandRng` reproduces the original's rolls for a test that has to
+match them, and a real source of randomness goes in to play.
+
 ## The three deliberate departures
 
 The original keeps the whole game in globals in its data segment: `spell_effect` reads the
