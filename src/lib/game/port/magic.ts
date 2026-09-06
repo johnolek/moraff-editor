@@ -120,10 +120,10 @@ export function explosion(game: Game, kind: number): boolean {
  * the function prints the "no monster" and "already in effect" refusals. Sleep is the one spell
  * aimed at a monster that never asks boss_immune_check, so it works on a Shadow boss.
  *
- * It also calls print_menu_only itself, so it prints something more when it is actually cast:
- * the roughly 40 bytes of unlabelled string sitting at DS:3928, between explosion's text and
- * boss_immune_check's, are almost certainly it. Nothing recovers those words, so the port stays
- * silent there.
+ * It also calls print_menu_only itself, and the two strings that sit between explosion's text and
+ * boss_immune_check's are DS:392b "MONSTER IS SLEEPING" and DS:393f "THE SPELL FAILS.". Which
+ * roll prints which is not in the decompilation; the order they sit in is why the landed roll
+ * gets the first and the missed roll the second.
  */
 export function sleepMonster(game: Game): boolean {
   if (game.engaged === -1) {
@@ -134,9 +134,16 @@ export function sleepMonster(game: Game): boolean {
     msgAlreadyInEffect(game);
     return false;
   }
-  // What a missed roll returns is not recoverable either; autokill, the other roll of this
-  // shape, reports success whether it lands or not.
-  if (game.rng.random(game.monsters[game.engaged].level) < 3) game.pc.sleepTimer = 25;
+  // What a missed roll returns is not recoverable; autokill, the other roll of this shape,
+  // reports success whether it lands or not.
+  if (game.rng.random(game.monsters[game.engaged].level) < 3) {
+    game.pc.sleepTimer = 25;
+    // DS:392b
+    game.say('MONSTER IS SLEEPING');
+    return true;
+  }
+  // DS:393f
+  game.say('THE SPELL FAILS.');
   return true;
 }
 

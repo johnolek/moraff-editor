@@ -157,7 +157,19 @@ describe('sleepMonster', () => {
     const { game } = fighting(5, { type: BOSS, level: 1 });
     expect(sleepMonster(game)).toBe(true);
     expect(game.pc.sleepTimer).toBe(25);
-    expect(game.messages).toEqual([]);
+    expect(game.messages).toEqual(['MONSTER IS SLEEPING']);
+  });
+
+  it('says which way the roll went', () => {
+    const { game } = fighting(99, { level: 40 });
+    for (let i = 0; i < 100; i++) {
+      game.pc.sleepTimer = 0;
+      game.messages.length = 0;
+      sleepMonster(game);
+      expect(game.messages).toEqual(
+        game.pc.sleepTimer === 25 ? ['MONSTER IS SLEEPING'] : ['THE SPELL FAILS.'],
+      );
+    }
   });
 });
 
