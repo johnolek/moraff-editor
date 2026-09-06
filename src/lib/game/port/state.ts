@@ -152,7 +152,7 @@ export interface Game {
    */
   solid(x: number, y: number, level: number, module: number): boolean;
   /**
-   * print_menu_only (exe 3000:2f8a): show a screen of up to eight lines and wait for a key.
+   * print_menu_only (exe 2000:309e): show a screen of up to eight lines and wait for a key.
    * The game fills the slots it does not use with the empty string at DS:258b; those trailing
    * blanks are dropped here, blank lines between two printed ones are kept.
    */

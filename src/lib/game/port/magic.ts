@@ -114,10 +114,14 @@ export function explosion(game: Game, kind: number): boolean {
  * sleep_monster (exe 3000:d904, unf.c "sleep_monster"): Sleep, in both battle lists.
  *
  * Ported from the RE notes: the decompilation of 3000:d904 failed (MORF-58). The notes and the
- * function catalog give the roll and the 25 moves, and the catalog gives the two messages it
- * calls; the string dump shows the function holds no text of its own, so a made roll and a
- * missed one are both silent. Sleep is the one spell aimed at a monster that never asks
- * boss_immune_check, so it works on a Shadow boss.
+ * function catalog give the roll and the 25 moves it lasts, and the catalog's caller lists say
+ * the function prints the "no monster" and "already in effect" refusals. Sleep is the one spell
+ * aimed at a monster that never asks boss_immune_check, so it works on a Shadow boss.
+ *
+ * It also calls print_menu_only itself, so it prints something more when it is actually cast:
+ * the roughly 40 bytes of unlabelled string sitting at DS:3928, between explosion's text and
+ * boss_immune_check's, are almost certainly it. Nothing recovers those words, so the port stays
+ * silent there.
  */
 export function sleepMonster(game: Game): boolean {
   if (game.engaged === -1) {
