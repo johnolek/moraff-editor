@@ -54,13 +54,13 @@ The game prints through `print_menu_only`, which takes eight lines and waits for
 that is `game.say(...lines)`, which appends to `game.messages`; the empty strings the game pads
 the unused slots with are dropped from the end of a call and kept in the middle.
 
-The text is upper-case because the game's is. It comes from Ghidra's labels for the string
-table, which replace every character that is not a letter or a digit with an underscore, so the
-words and the length of each line are certain but the punctuation is reconstructed. The
-executable is PKLITE-packed and is not in this repository, so there is nothing better to read.
-Two lines cannot be recovered at all, because the game passes them by bare address and Ghidra
-never labelled them; `unrecoveredLine` marks those, with the address and the length that are
-known.
+The text is upper-case because the game's is. Every line is the exact bytes of the game's own
+string, punctuation and spacing included — the leading spaces on a line are the game indenting
+its continuation lines. `dotu-tools/reference/scripts/exe_strings.py` prints those strings out
+of the data segment of the PKLITE-unpacked executable, which is not in this repository; the
+comment on each `say` call lists the address of every line the call prints, in order, so they
+can be checked against it. Do not read the text off Ghidra's labels for the string table:
+those replace every character that is not a letter or a digit with an underscore.
 
 ## What is ported
 
