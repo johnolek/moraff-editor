@@ -146,6 +146,11 @@
     showFloor(Number((event.currentTarget as HTMLSelectElement).value));
   }
 
+  /** Enter is how a typed floor is expected to be taken; on its own the box waits to lose focus. */
+  function takeFloorOnEnter(event: KeyboardEvent) {
+    if (event.key === 'Enter') typeFloor(event);
+  }
+
   function typeFloor(event: Event) {
     const typed = Math.trunc(Number((event.currentTarget as HTMLInputElement).value));
     if (!Number.isFinite(typed)) return;
@@ -306,7 +311,7 @@
       <label>
         <span>Floor</span>
         {#if anyFloor}
-          <input type="number" min={FLOOR_MIN} max={FLOOR_MAX} step="1" value={floor} onchange={typeFloor} />
+          <input type="number" min={FLOOR_MIN} max={FLOOR_MAX} step="1" value={floor} onchange={typeFloor} onkeydown={takeFloorOnEnter} />
         {:else}
           <select value={floor} onchange={changeFloor}>
             {#each floors as level}
