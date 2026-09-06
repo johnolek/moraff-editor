@@ -1,6 +1,6 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { groupedMonsterCounts, type StockedMonster } from './stocking';
+  import { beyondMapCount, groupedMonsterCounts, type StockedMonster } from './stocking';
 
   interface Props {
     /** Monsters stocked on the floor, empty when it has not been stocked. */
@@ -19,6 +19,7 @@
   let { monsters, town, canStock, pinned, onstock, onclear, onhover, onpin }: Props = $props();
 
   const groups = $derived(groupedMonsterCounts(monsters));
+  const beyondMap = $derived(beyondMapCount(monsters));
 </script>
 
 <section>
@@ -40,6 +41,11 @@
     </div>
     {#if monsters.length}
       <p>{monsters.length} monsters</p>
+      {#if beyondMap === 1}
+        <p class="hint">1 stands beyond the game's map, below row 103, where nothing can reach it.</p>
+      {:else if beyondMap}
+        <p class="hint">{beyondMap} stand beyond the game's map, below row 103, where nothing can reach them.</p>
+      {/if}
       {#each groups as group}
         <h3>{group.label}</h3>
         <ul>

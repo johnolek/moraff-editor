@@ -6,6 +6,7 @@ import { bundledDungeon } from '../game/dungeon';
 import { sectionInfo } from '../game/sections';
 import {
   MONSTER_SLOTS,
+  beyondMapCount,
   groupedMonsterCounts,
   monsterAt,
   monsterById,
@@ -174,6 +175,25 @@ describe('groupedMonsterCounts', () => {
     const grouped = groupedMonsterCounts(monsters).flatMap((group) => group.counts);
     expect(grouped).toHaveLength(monsterCounts(monsters).length);
     expect(grouped.reduce((total, entry) => total + entry.count, 0)).toBe(MONSTER_SLOTS);
+  });
+});
+
+describe('beyondMapCount', () => {
+  it('counts the monsters standing outside the area the game shows', () => {
+    const monsters: StockedMonster[] = [
+      { slot: 0, x: 78, y: 103, monsterId: 'builtin-0', level: 5, hp: 20 },
+      { slot: 1, x: 79, y: 10, monsterId: 'builtin-0', level: 5, hp: 20 },
+      { slot: 2, x: 10, y: 104, monsterId: 'builtin-0', level: 5, hp: 20 },
+      { slot: 3, x: 10, y: 109, monsterId: 'builtin-0', level: 5, hp: 20 },
+    ];
+    expect(beyondMapCount(monsters)).toBe(3);
+    expect(beyondMapCount([])).toBe(0);
+  });
+
+  it('finds about one monster in twenty beyond it on a stocked floor', () => {
+    const monsters = stockFloor(floorOf(0, 12), 0, 12, seeded(41));
+    expect(beyondMapCount(monsters)).toBeGreaterThan(0);
+    expect(beyondMapCount(monsters)).toBeLessThan(monsters.length / 4);
   });
 });
 

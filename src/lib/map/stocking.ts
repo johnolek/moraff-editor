@@ -4,6 +4,7 @@ import { sectionOf } from '../game/dotu-files.js';
 import { monsterLevelBase } from '../game/dotu-mech.js';
 import { sectionInfo, type SectionInfo } from '../game/sections';
 import { HEIGHT, WIDTH, type Square } from '../game/unfmap.js';
+import { isOnMap } from './area';
 
 /** Monsters the game keeps for one floor, boss included (RE notes 4.1). */
 export const MONSTER_SLOTS = 145;
@@ -107,6 +108,11 @@ export function monsterCounts(monsters: StockedMonster[]): MonsterCount[] {
   return [...counts]
     .map(([monsterId, count]) => ({ monsterId, name: monsterById(monsterId).name, count }))
     .sort((a, b) => Number(monsterById(b.monsterId).isBoss) - Number(monsterById(a.monsterId).isBoss) || b.count - a.count);
+}
+
+/** How many of the floor's monsters stand outside the area the game shows. */
+export function beyondMapCount(monsters: StockedMonster[]): number {
+  return monsters.filter((monster) => !isOnMap(monster)).length;
 }
 
 export interface MonsterCountGroup {
