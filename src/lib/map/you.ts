@@ -1,5 +1,6 @@
 import type { Square } from '../game/unfmap.js';
-import { forEachShownSquare } from './area';
+import { forEachShownSquare, isOnMap } from './area';
+import { DIRECTIONS, passable } from './path';
 import type { Point } from './viewport';
 
 /** One pulse a second, between these two opacities. */
@@ -21,6 +22,20 @@ export function nearestOpenSquare(rows: Square[][], from: Point): Point | null {
     bestDistance = distance;
   });
   return best;
+}
+
+/**
+ * Where one step from a square in the given direction lands, or null when nothing is there to
+ * walk to: a wall or a teleporter side between the two squares, a step off the area the game
+ * shows, or a direction that is not one of the four the party can walk in.
+ */
+export function stepFrom(rows: Square[][], from: Point, dx: number, dy: number): Point | null {
+  const direction = DIRECTIONS.find((candidate) => candidate.dx === dx && candidate.dy === dy);
+  if (!direction) return null;
+  if (!passable(rows[from.y][from.x][direction.side])) return null;
+  const to = { x: from.x + dx, y: from.y + dy };
+  if (to.x < 0 || to.y < 0 || !isOnMap(to)) return null;
+  return to;
 }
 
 /** How solid the marker showing where you stand is drawn at a moment in time. */

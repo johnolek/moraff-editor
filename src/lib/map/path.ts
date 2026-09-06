@@ -15,7 +15,8 @@ export interface Route {
   passWalls: number;
 }
 
-const DIRECTIONS = [
+/** The four squares one step away, with the side of the square crossed to reach each. */
+export const DIRECTIONS = [
   { dx: 0, dy: -1, side: 'n' },
   { dx: 0, dy: 1, side: 's' },
   { dx: -1, dy: 0, side: 'w' },
@@ -31,7 +32,7 @@ const PASS_WALL_FURTHEST = 19;
 
 /** Open, door and secret door sides can be walked through; walls and teleporter sides cannot
  *  (walking into a teleporter side is what triggers the teleport, so the route ends beside it). */
-function passable(side: number): boolean {
+export function passable(side: number): boolean {
   return side === 1 || side === 2 || side === 3;
 }
 
