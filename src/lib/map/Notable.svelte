@@ -1,32 +1,41 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { describeNote } from './describe';
-  import { GLYPH_LABELS } from './labels';
-  import type { NotableSquare } from './notes';
+  import type { NotableSquares } from './notes';
   import type { Point } from './viewport';
 
-  let { entries, onpick }: { entries: NotableSquare[]; onpick: (square: Point) => void } = $props();
+  let { notable, onpick }: { notable: NotableSquares; onpick: (square: Point) => void } = $props();
 </script>
 
-<section>
-  <SectionHeading title="Notable" />
-  {#if entries.length === 0}
-    <p class="hint">Nothing odd on this floor.</p>
-  {:else}
+{#if notable.oneWayUp.length === 0 && notable.intoChute.length === 0}
+  <p class="hint">Nothing odd on this floor.</p>
+{/if}
+{#if notable.oneWayUp.length}
+  <section>
+    <SectionHeading title="One-way up ladders" />
     <ul>
-      {#each entries as entry}
+      {#each notable.oneWayUp as square}
         <li>
-          <button type="button" onclick={() => onpick({ x: entry.x, y: entry.y })}>
-            <span class="where">{GLYPH_LABELS[entry.glyph]} at {entry.x}, {entry.y}</span>
-            {#each entry.notes as note}
-              <span class="note">{describeNote(note)}</span>
-            {/each}
+          <button type="button" onclick={() => onpick(square)}>{square.x}, {square.y}</button>
+        </li>
+      {/each}
+    </ul>
+  </section>
+{/if}
+{#if notable.intoChute.length}
+  <section>
+    <SectionHeading title="Up ladders into a chute" />
+    <ul>
+      {#each notable.intoChute as square}
+        <li>
+          <button type="button" onclick={() => onpick({ x: square.x, y: square.y })}>
+            {square.x}, {square.y}
+            <span class="destination">to floor {square.chuteFloor}</span>
           </button>
         </li>
       {/each}
     </ul>
-  {/if}
-</section>
+  </section>
+{/if}
 
 <style>
   ul {
@@ -34,31 +43,24 @@
     margin: 0;
     padding: 0;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    flex-wrap: wrap;
+    gap: 2px 6px;
   }
   button {
-    display: flex;
-    flex-direction: column;
-    width: calc(100% + 8px);
-    margin: 0 -4px;
-    padding: 3px 4px;
+    padding: 2px 4px;
     border: none;
     border-radius: 4px;
     background: none;
     color: var(--ink);
     font: inherit;
     font-size: 12px;
-    text-align: left;
+    white-space: nowrap;
     cursor: pointer;
   }
   button:hover {
     background: var(--panel-2);
   }
-  .where {
-    color: var(--ink);
-  }
-  .note {
+  .destination {
     color: var(--muted);
   }
   .hint {

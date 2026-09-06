@@ -3,7 +3,6 @@ import { teleporterTargets, type Feature } from './floor-info';
 import { GLYPH_LABELS, MODULE_NUMERALS, TOWN_BUILDINGS } from './labels';
 import type { Note } from './notes';
 import { hasTeleporterSide } from './path';
-import type { Glyph } from './palette';
 import { monsterById, type StockedMonster } from './stocking';
 
 /** Where the teleporter on a square leads: "Teleporter to Module II or IV". */
@@ -44,13 +43,5 @@ export function describeSquare(square: Square, feature: Feature, x: number, y: n
 
 export function describeNote(note: Note): string {
   if (note.kind === 'oneWayUp') return `One way: no ladder back down from floor ${note.topFloor}.`;
-  const landing = NOTE_LANDING_LABELS[note.glyph];
-  return `Lands on ${landing} to floor ${note.destination}.`;
+  return `Lands on a chute to floor ${note.chuteFloor}.`;
 }
-
-const NOTE_LANDING_LABELS: Record<Glyph, string> = {
-  down: 'a down ladder',
-  up: 'an up ladder',
-  trapdoor: 'a trap door',
-  chute: 'a chute',
-};

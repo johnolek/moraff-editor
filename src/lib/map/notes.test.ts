@@ -8,18 +8,14 @@ function square(overrides: Partial<Square> = {}): Square {
 }
 
 /** A lookup over a few hand-made squares keyed by "x,y,floor"; everything else is plain. */
-function lookup(squares: Record<string, Square>, landing: [number, number] = [5, 5]): FloorLookup {
-  return {
-    squareOn: (x, y, level) => squares[`${x},${y},${level}`] ?? square(),
-    trapdoorLanding: () => landing,
-  };
+function lookup(squares: Record<string, Square>): FloorLookup {
+  return { squareOn: (x, y, level) => squares[`${x},${y},${level}`] ?? square() };
 }
 
 describe('squareNotes', () => {
-  it('says nothing about ordinary ladders that pair up', () => {
-    const floors = lookup({ '1,1,4': square({ ladder: -1 }), '1,1,3': square({ ladder: 1 }) });
-    expect(squareNotes(floors, 3, square({ ladder: 1 }), 1, 1)).toEqual([]);
-    expect(squareNotes(floors, 4, square({ ladder: -1 }), 1, 1)).toEqual([]);
+  it('says nothing about an up ladder with a ladder back down', () => {
+    const floors = lookup({ '1,1,4': square({ ladder: 1 }) });
+    expect(squareNotes(floors, 5, square({ ladder: -1 }), 1, 1)).toEqual([]);
   });
 
   it('flags an up ladder with no ladder back down', () => {
@@ -27,28 +23,21 @@ describe('squareNotes', () => {
     expect(squareNotes(floors, 5, square({ ladder: -3 }), 1, 1)).toEqual([{ kind: 'oneWayUp', topFloor: 2 }]);
   });
 
-  it('flags an up ladder that arrives on a chute, and one that arrives on another up ladder', () => {
-    const ontoChute = lookup({ '1,1,2': square({ chute: 4 }) });
-    expect(squareNotes(ontoChute, 5, square({ ladder: -3 }), 1, 1)).toEqual([
+  it('flags an up ladder that arrives on a chute', () => {
+    const floors = lookup({ '1,1,2': square({ chute: 4 }) });
+    expect(squareNotes(floors, 5, square({ ladder: -3 }), 1, 1)).toEqual([
       { kind: 'oneWayUp', topFloor: 2 },
-      { kind: 'landsOn', glyph: 'chute', destination: 4 },
-    ]);
-    const ontoUp = lookup({ '1,1,4': square({ ladder: -2 }) });
-    expect(squareNotes(ontoUp, 5, square({ ladder: -1 }), 1, 1)).toEqual([
-      { kind: 'oneWayUp', topFloor: 4 },
-      { kind: 'landsOn', glyph: 'up', destination: 2 },
+      { kind: 'landsOnChute', chuteFloor: 4 },
     ]);
   });
 
-  it('flags chutes and trap doors that land on other features', () => {
-    const floors = lookup({ '1,1,7': square({ chute: 9 }), '5,5,10': square({ ladder: 1 }) });
-    expect(squareNotes(floors, 6, square({ chute: 7 }), 1, 1)).toEqual([{ kind: 'landsOn', glyph: 'chute', destination: 9 }]);
-    expect(squareNotes(floors, 6, square({ trapdoor: 10 }), 1, 1)).toEqual([{ kind: 'landsOn', glyph: 'down', destination: 11 }]);
-  });
-
-  it('ignores squares without a feature', () => {
-    expect(squareNotes(lookup({}), 6, square(), 1, 1)).toEqual([]);
-    expect(squareNotes(lookup({}), 0, square({ town: 2 }), 1, 1)).toEqual([]);
+  it('says nothing about anything but an up ladder', () => {
+    const floors = lookup({ '1,1,7': square({ chute: 9 }), '1,1,4': square({ ladder: -2 }) });
+    expect(squareNotes(floors, 6, square({ chute: 7 }), 1, 1)).toEqual([]);
+    expect(squareNotes(floors, 6, square({ trapdoor: 10 }), 1, 1)).toEqual([]);
+    expect(squareNotes(floors, 3, square({ ladder: 1 }), 1, 1)).toEqual([]);
+    expect(squareNotes(floors, 6, square(), 1, 1)).toEqual([]);
+    expect(squareNotes(floors, 0, square({ town: 2 }), 1, 1)).toEqual([]);
   });
 });
 
@@ -63,14 +52,23 @@ describe('dungeonLookup', () => {
 });
 
 describe('notableSquares on a real floor', () => {
-  it('finds one-way up ladders and only lists squares with notes', () => {
+  it('lists up ladders and nothing else', () => {
     const floors = dungeonLookup(bundledDungeon, 0);
     const rows = bundledDungeon.floor(5, 0);
     const notable = notableSquares(floors, 5, rows);
-    expect(notable.length).toBeGreaterThan(0);
-    for (const entry of notable) expect(entry.notes.length).toBeGreaterThan(0);
-    const oneWay = notable.filter((entry) => entry.notes.some((note) => note.kind === 'oneWayUp'));
-    expect(oneWay.length).toBeGreaterThan(0);
-    for (const entry of oneWay) expect(rows[entry.y][entry.x].ladder).toBeLessThan(0);
+    expect(notable.oneWayUp.length).toBeGreaterThan(0);
+    for (const entry of [...notable.oneWayUp, ...notable.intoChute]) expect(rows[entry.y][entry.x].ladder).toBeLessThan(0);
+  });
+
+  it('groups a hand-made floor by what is odd about each up ladder', () => {
+    const floors = lookup({ '0,0,2': square({ chute: 7 }), '1,0,2': square({ ladder: 1 }), '2,0,2': square() });
+    const rows = [[square({ ladder: -3 }), square({ ladder: -3 }), square({ ladder: -3 }), square({ ladder: 1 })]];
+    expect(notableSquares(floors, 5, rows)).toEqual({
+      oneWayUp: [
+        { x: 0, y: 0 },
+        { x: 2, y: 0 },
+      ],
+      intoChute: [{ x: 0, y: 0, chuteFloor: 7 }],
+    });
   });
 });

@@ -254,7 +254,7 @@
       onhover={(kind) => (legendHover = kind)}
       onpin={(label, kind) => (legendPinned = label && kind ? { label, kind } : null)}
     />
-    <Notable entries={notable} onpick={pick} />
+    <Notable {notable} onpick={pick} />
   </aside>
 </div>
 

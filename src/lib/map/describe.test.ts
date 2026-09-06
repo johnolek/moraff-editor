@@ -38,8 +38,7 @@ describe('describeSquare', () => {
 describe('describeNote', () => {
   it('spells out the two note kinds', () => {
     expect(describeNote({ kind: 'oneWayUp', topFloor: 2 })).toBe('One way: no ladder back down from floor 2.');
-    expect(describeNote({ kind: 'landsOn', glyph: 'chute', destination: 4 })).toBe('Lands on a chute to floor 4.');
-    expect(describeNote({ kind: 'landsOn', glyph: 'up', destination: 1 })).toBe('Lands on an up ladder to floor 1.');
+    expect(describeNote({ kind: 'landsOnChute', chuteFloor: 4 })).toBe('Lands on a chute to floor 4.');
   });
 });
 
