@@ -17,11 +17,12 @@
     /** Modules the teleporter on the selected square leads to; empty when there is no teleporter. */
     teleporterModules: number[];
     onroute: () => void;
+    onhere: () => void;
     onclear: () => void;
     ontake: (module: number) => void;
   }
 
-  let { selected, route, monster, floorHasTeleporter, teleporterModules, onroute, onclear, ontake }: Props = $props();
+  let { selected, route, monster, floorHasTeleporter, teleporterModules, onroute, onhere, onclear, ontake }: Props = $props();
 
   function openInMonsters() {
     if (!monster) return;
@@ -50,6 +51,7 @@
       <button class="ghost" onclick={onroute} disabled={!floorHasTeleporter} title={floorHasTeleporter ? undefined : 'No teleporter on this floor.'}>
         Path to nearest teleporter
       </button>
+      <button class="ghost" onclick={onhere}>I'm here</button>
       <button class="ghost" onclick={onclear}>Clear</button>
       {#each teleporterModules as module}
         <button class="ghost" onclick={() => ontake(module)}>Take teleporter to Module {MODULE_NUMERALS[module]}</button>

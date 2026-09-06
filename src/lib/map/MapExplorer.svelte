@@ -23,6 +23,7 @@
   import { teleporterSegments } from './teleporters';
   import { monsterAt, stockFloor, stockingSection, type StockedMonster } from './stocking';
   import type { Point } from './viewport';
+  import { nearestOpenSquare } from './you';
 
   let moduleIndex = $state(0);
   let floor = $state(0);
@@ -30,6 +31,9 @@
    *  16-bit floor variable can be. */
   let anyFloor = $state(false);
   let cursor = $state<Point | null>(null);
+  /** Where the party stands. Every way of changing floor moves it, so it is always on the
+   *  floor being looked at, or nowhere at all. */
+  let you = $state<Point | null>(null);
   let highlight = $state<Point | null>(null);
   let legendHover = $state<LegendKind | null>(null);
   let legendPinned = $state<{ label: string; kind: LegendKind } | null>(null);
@@ -94,7 +98,7 @@
       applyPlace(state.place);
       return;
     }
-    history.replaceState(entry(0, { module: moduleIndex, floor, square: null }), '');
+    history.replaceState(entry(0, { module: moduleIndex, floor, square: null, you }), '');
   });
 
   /** The browser structured-clones what it stores, and Svelte's state proxies cannot be cloned, so
@@ -106,7 +110,7 @@
   /** Go to another floor and leave a history entry behind, so the browser's Back button returns to
    *  `fromSquare` on the floor being left. */
   function travel(place: MapPlace, fromSquare: Point | null) {
-    history.replaceState(entry(historyCursor.current, { module: moduleIndex, floor, square: fromSquare }), '');
+    history.replaceState(entry(historyCursor.current, { module: moduleIndex, floor, square: fromSquare, you }), '');
     history.pushState(entry(historyCursor.current + 1, place), '');
     historyCursor = historyCursor.pushed();
     applyPlace(place);
@@ -117,6 +121,7 @@
     if (place.floor < 0 || place.floor > BOTTOM_LEVEL[place.module]) anyFloor = true;
     moduleIndex = place.module;
     floor = place.floor;
+    you = place.you ?? null;
     highlight = place.square;
     clearSelection();
     if (place.square) {
@@ -133,7 +138,8 @@
 
   function changeModule(event: Event) {
     const module = Number((event.currentTarget as HTMLSelectElement).value);
-    travel({ module, floor: anyFloor ? floor : Math.min(floor, BOTTOM_LEVEL[module]), square: null }, cursor);
+    const level = anyFloor ? floor : Math.min(floor, BOTTOM_LEVEL[module]);
+    travel({ module, floor: level, square: null, you: youOn(module, level) }, cursor);
   }
 
   function changeFloor(event: Event) {
@@ -156,7 +162,17 @@
   }
 
   function showFloor(level: number) {
-    travel({ module: moduleIndex, floor: level, square: null }, cursor);
+    travel({ module: moduleIndex, floor: level, square: null, you: youOn(moduleIndex, level) }, cursor);
+  }
+
+  /** Changing floor walks the party to the nearest square it can stand on. It stays nowhere
+   *  if it was nowhere. */
+  function youOn(module: number, level: number): Point | null {
+    return you && nearestOpenSquare(bundledDungeon.floor(level, module), you);
+  }
+
+  function imHere() {
+    if (selected) you = selected;
   }
 
   function pick(square: Point) {
@@ -197,7 +213,8 @@
 
   /** Taking a teleporter lands the party somewhere random in the destination town. */
   function takeTeleporter(module: number) {
-    travel({ module, floor: 0, square: randomOpenSquare(bundledDungeon.floor(0, module), Math.random) }, selected);
+    const landing = randomOpenSquare(bundledDungeon.floor(0, module), Math.random);
+    travel({ module, floor: 0, square: landing, you: landing }, selected);
   }
 
   function routeToTeleporter() {
@@ -253,7 +270,8 @@
       }
       return;
     }
-    travel({ module: moduleIndex, floor: target.floor, square: { x: target.x, y: target.y } }, square);
+    const landing = { x: target.x, y: target.y };
+    travel({ module: moduleIndex, floor: target.floor, square: landing, you: landing }, square);
   }
 </script>
 
@@ -272,7 +290,7 @@
       </span>
     </div>
     <div class="viewport">
-      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {monsters} {bounds} bind:cursor {highlight} {marks} {selected} route={route?.squares ?? null} {tooltip} onselect={follow} />
+      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {monsters} {bounds} bind:cursor {highlight} {you} {marks} {selected} route={route?.squares ?? null} {tooltip} onselect={follow} />
     </div>
   </div>
   <aside class="panel">
@@ -324,6 +342,7 @@
       {floorHasTeleporter}
       {teleporterModules}
       onroute={routeToTeleporter}
+      onhere={imHere}
       onclear={clearSelection}
       ontake={takeTeleporter}
     />

@@ -3,13 +3,14 @@
   import { renderMonster } from '../bestiary/pictures';
   import { sectionInfo } from '../game/sections';
   import type { Square } from '../game/unfmap.js';
-  import { drawFloor, drawMarks, drawOutline, drawRoute, squareRect } from './draw-floor';
+  import { drawFloor, drawMarks, drawOutline, drawRoute, drawYou, squareRect } from './draw-floor';
   import { drawMonsters, type MonsterSprites } from './draw-monsters';
   import type { Mark } from './marks';
   import { palette } from './palette';
   import { monsterById, type StockedMonster } from './stocking';
   import { drawTeleporters, teleporterHue, teleporterSegments } from './teleporters';
   import { ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
+  import { youAlpha } from './you';
 
   export interface Tooltip {
     title: string;
@@ -31,6 +32,8 @@
     cursor?: Point | null;
     /** Landing square after a jump. */
     highlight?: Point | null;
+    /** Where the party stands, when it stands on this floor. */
+    you?: Point | null;
     /** Squares emphasised while a legend entry is hovered. */
     marks?: Mark[];
     /** Square picked by clicking, and a walking route drawn from it. */
@@ -41,7 +44,7 @@
     onselect?: (square: Point) => void;
   }
 
-  let { rows, floor, moduleIndex, monsters = [], bounds, cursor = $bindable(null), highlight = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
+  let { rows, floor, moduleIndex, monsters = [], bounds, cursor = $bindable(null), highlight = null, you = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -128,7 +131,7 @@
   let pendingFrame = 0;
 
   function overlays() {
-    return { cursor, highlight, marks, monsters, selected, route, teleporters };
+    return { cursor, highlight, you, marks, monsters, selected, route, teleporters };
   }
 
   $effect(() => {
@@ -145,8 +148,10 @@
     scheduleRender();
   });
 
+  // Teleporter sides cycle through the rainbow and the "you are here" mark pulses, so the
+  // canvas redraws every frame while either is on the floor.
   $effect(() => {
-    if (!teleporters.length) return;
+    if (!teleporters.length && !you) return;
     let frame = requestAnimationFrame(function tick() {
       render();
       frame = requestAnimationFrame(tick);
@@ -162,6 +167,7 @@
     height: number;
     cursor?: Point | null;
     highlight?: Point | null;
+    you?: Point | null;
     marks?: Mark[];
     monsters?: StockedMonster[];
     selected?: Point | null;
@@ -179,7 +185,7 @@
 
   function render() {
     if (!scene || !scene.width || !scene.height) return;
-    const { rows, floor, view, width, height, cursor, highlight, marks, monsters, selected, route, teleporters } = scene;
+    const { rows, floor, view, width, height, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
     const dpr = window.devicePixelRatio || 1;
     const pixelWidth = Math.round(width * dpr);
     const pixelHeight = Math.round(height * dpr);
@@ -203,6 +209,7 @@
     if (monsters?.length) drawMonsters(ctx, monsters, view, sprites);
     drawMarks(ctx, marks ?? [], view);
     if (route) drawRoute(ctx, route, view);
+    if (you) drawYou(ctx, you.x, you.y, view, youAlpha(performance.now()));
     if (selected) drawOutline(ctx, selected.x, selected.y, view, 2, palette.selection);
     if (highlight) drawOutline(ctx, highlight.x, highlight.y, view, 2, '#ffffff');
     if (cursor) drawOutline(ctx, cursor.x, cursor.y, view, 1, 'rgba(255, 255, 255, 0.75)');

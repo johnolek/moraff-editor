@@ -183,6 +183,15 @@ export function drawOutline(ctx: CanvasRenderingContext2D, x: number, y: number,
   ctx.lineWidth = 1;
 }
 
+/** The square you stand on: a filled block inside it, drawn at whatever opacity the caller is
+ *  pulsing through. */
+export function drawYou(ctx: CanvasRenderingContext2D, x: number, y: number, view: Viewport, alpha: number): void {
+  const { x0, y0, w, h } = squareRect(view, x, y);
+  const inset = 2;
+  ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+  ctx.fillRect(x0 + 1 + inset, y0 + 1 + inset, Math.max(1, w - 2 * inset), Math.max(1, h - 2 * inset));
+}
+
 /** Emphasised squares: a bright outline each, plus the label beside those that have one. */
 export function drawMarks(ctx: CanvasRenderingContext2D, marks: Mark[], view: Viewport): void {
   if (!marks.length) return;
