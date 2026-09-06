@@ -29,12 +29,13 @@
 </section>
 
 <style>
-  /* The min-height keeps the sections below from jumping as the pointer moves over squares
-     that have more or fewer lines to show. It also overrides the automatic minimum size a
-     flex item gets, which is what stops the panel from squeezing this section shorter than
-     its own text and drawing it over the section below. */
+  /* The min-height reserves room for the common case, a heading and one line about the square,
+     so the sections below hold still as the pointer moves from square to square. A square that
+     also has notes is taller than that and does push them down a little. The min-height also
+     overrides the automatic minimum size a flex item gets, which is what stops the panel from
+     squeezing this section shorter than its own text and drawing it over the section below. */
   section {
-    min-height: 90px;
+    min-height: 40px;
     flex-shrink: 0;
   }
   .feature {
