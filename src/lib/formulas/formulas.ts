@@ -541,7 +541,34 @@ const MAGIC: Topic = {
   ],
 };
 
-export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXPERIENCE, LOOT, COMBAT, MAGIC];
+const TIME: Topic = {
+  id: 'time',
+  title: 'Time and ageing',
+  formulas: [
+    {
+      id: 'poison-disease',
+      title: 'Poison and disease',
+      explanation:
+        'Being poisoned or diseased starts a counter at 450 moves. Every move takes one off it, and when it runs out you lose a point of strength to poison or a point of constitution to disease and the counter starts again at 450, forever, so an untreated affliction grinds a character down for as long as it is carried. Neither stat can be ground below one, being hit again while already afflicted changes nothing, and the only ways out are the temple, at 300 rubles for poison and 500 for disease, or the matching cure spell. The resist spells block a new infection outright for their 60 moves and merely pause the counter of one you already have.',
+      inputs: 'How many moves you have made since the counter last ran out.',
+      origin:
+        'exe pass_moment 2000:a53c, pass_moment in dotu-tools/decomp/unf.c. TIDBITS, "Monsters", and FAQ [COMT]. Nothing in this app works the counter out; the save editor only shows it.',
+      code: null,
+    },
+    {
+      id: 'inn-night',
+      title: 'What a night at the inn does to you',
+      explanation:
+        'A stay pushes the clock forward by 28,800 seconds, eight hours, and then works through a fixed list: it takes the room fee, ages you, refills your spell points from your magic crystals one for one, and finally hands you every level your experience has earned. Ageing is the interesting part. If you cannot pay one unit of culture stock for every level squared, whatever stock you have is taken anyway and you age by as many years as you were short, up to six; if you can pay, the stock goes and you do not age at all. Past the age of 60 that same shortfall also comes off your strength and your constitution, each floored at 2, and since nothing else in the game ages anyone, an old character is one who could not afford the groceries.',
+      inputs: 'Your level, your culture stock, your magic crystals, your experience and your age.',
+      origin:
+        'exe flea_inn 2000:4fe7, flea_inn in dotu-tools/decomp/unf.c. RE notes 2.2. Nothing in this app works the stay out; only the room fee is used, by the economy calculator.',
+      code: null,
+    },
+  ],
+};
+
+export const TOPICS: Topic[] = [MAP, TELEPORTERS, TOWN, WAYS_DOWN, MONSTERS, EXPERIENCE, LOOT, COMBAT, MAGIC, TIME];
 
 /** The source text of the declaration an entry shows. */
 export function formulaCode(formula: Formula): string | null {
