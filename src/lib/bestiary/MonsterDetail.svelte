@@ -7,6 +7,7 @@
     monsterAttackInterval,
     monsterHpRange,
     monsterLevelBase,
+    sleepChance,
   } from '../game/dotu-mech.js';
   import { sectionInfo } from '../game/sections';
   import { MODULE_NUMERALS } from '../map/labels';
@@ -175,6 +176,8 @@
       <dd>{isPuffball(entry) ? 'None' : experience.toLocaleString()}</dd>
       <dt>Seconds between attacks</dt>
       <dd>{monsterAttackInterval(entry.type.speed)}</dd>
+      <dt>Sleep</dt>
+      <dd>Works on it {percent(sleepChance(baseLevel))} of the time.</dd>
       {#if entry.breath > 0}
         <dt>Breath damage</dt>
         <dd>
