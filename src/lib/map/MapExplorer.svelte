@@ -241,7 +241,13 @@
   <div class="map">
     <div class="floor-header">
       <span class="where">Module {MODULE_NUMERALS[moduleIndex]} · {floor === 0 ? 'Town' : `Floor ${floor}`}</span>
-      <span class="section">Section {section.section} · {section.bossName} on floor {section.bossFloor}</span>
+      <span class="section">
+        {#if section}
+          Section {section.section} · {section.bossName} on floor {section.bossFloor}
+        {:else}
+          Section ?
+        {/if}
+      </span>
     </div>
     <div class="viewport">
       <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {monsters} {bounds} bind:cursor {highlight} {marks} {selected} route={route?.squares ?? null} {tooltip} onselect={follow} />

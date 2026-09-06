@@ -11,8 +11,12 @@ export interface SectionInfo {
   bossName: string;
 }
 
-export function sectionInfo(moduleIndex: number, floor: number): SectionInfo {
+/** The section a floor belongs to, or null when there is none. The map can be pointed at any
+ *  floor the game's 16-bit floor variable can hold, and floors below the town fall outside the
+ *  twenty sections the game knows about. */
+export function sectionInfo(moduleIndex: number, floor: number): SectionInfo | null {
   const section = sectionOf(moduleIndex, floor);
   const entry = data.sections[section - 1];
+  if (!entry) return null;
   return { section, part: entry.part, bossFloor: entry.bossFloor, bossName: entry.monsters[0].name };
 }

@@ -95,7 +95,8 @@
   });
 
   const teleporters = $derived(teleporterSegments(rows));
-  const part = $derived(sectionInfo(moduleIndex, floor).part);
+  // Floors outside every section can hold no monsters, so the fallback part is never drawn with.
+  const part = $derived(sectionInfo(moduleIndex, floor)?.part ?? 1);
 
   // Monster pictures are drawn once each into an offscreen canvas and kept, since the same
   // few monsters stand all over a floor. A monster looks different in each section, so the

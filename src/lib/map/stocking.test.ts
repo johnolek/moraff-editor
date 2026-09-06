@@ -34,7 +34,7 @@ describe('stockFloor', () => {
 
   it('gives slot 0 to the Shadow boss on a boss floor and to nothing else elsewhere', () => {
     const boss = stockFloor(floorOf(0, 5), 0, 5, seeded(13));
-    expect(monsterById(boss[0].monsterId).name).toBe(sectionInfo(0, 5).bossName);
+    expect(monsterById(boss[0].monsterId).name).toBe(sectionInfo(0, 5)!.bossName);
     expect(boss.slice(1).some((monster) => monsterById(monster.monsterId).isBoss)).toBe(false);
 
     const plain = stockFloor(floorOf(0, 4), 0, 4, seeded(13));
@@ -85,7 +85,7 @@ describe('monsterCounts', () => {
   it('counts each type, commonest first, with the Shadow boss at the top', () => {
     const monsters = stockFloor(floorOf(0, 5), 0, 5, seeded(31));
     const counts = monsterCounts(monsters);
-    expect(counts[0].name).toBe(sectionInfo(0, 5).bossName);
+    expect(counts[0].name).toBe(sectionInfo(0, 5)!.bossName);
     expect(counts[0].count).toBe(1);
     expect(counts.reduce((total, entry) => total + entry.count, 0)).toBe(MONSTER_SLOTS);
     for (const entry of counts) {

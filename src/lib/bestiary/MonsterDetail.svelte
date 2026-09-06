@@ -36,7 +36,9 @@
   let baseLevel = $state(monsterLevelBase(home.floor, home.module));
   let look = $state<Look>('shop');
 
-  const section = $derived(sectionInfo(module, floor));
+  // The floor control only offers floors of the module the monster appears in, and every one of
+  // those belongs to a section.
+  const section = $derived(sectionInfo(module, floor)!);
   const sectionNumber = $derived(entry.origin.kind === 'section' ? entry.origin.section : section.section);
   const effects = $derived(describeEffects(entry));
   const appearance = $derived(whereItAppears(entry));

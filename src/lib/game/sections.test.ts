@@ -9,8 +9,17 @@ describe('sectionInfo', () => {
   });
 
   it('places boss floors at multiples of 5 per module', () => {
-    expect(sectionInfo(1, 1).bossFloor).toBe(10);
-    expect(sectionInfo(1, 11).bossFloor).toBe(20);
-    expect(sectionInfo(2, 45).bossFloor).toBe(45);
+    expect(sectionInfo(1, 1)?.bossFloor).toBe(10);
+    expect(sectionInfo(1, 11)?.bossFloor).toBe(20);
+    expect(sectionInfo(2, 45)?.bossFloor).toBe(45);
+  });
+
+  it('has no section for floors below the town', () => {
+    expect(sectionInfo(0, -5)).toBeNull();
+    expect(sectionInfo(0, -32768)).toBeNull();
+  });
+
+  it('keeps the fourth section for floors far below the bottom of the module', () => {
+    expect(sectionInfo(0, 30000)).toMatchObject({ section: 4, part: 4 });
   });
 });

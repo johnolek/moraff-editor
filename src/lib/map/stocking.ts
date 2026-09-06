@@ -54,9 +54,12 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  *
  * The game seeds its generator afresh for every square it draws, which makes the monsters
  * land in diagonal stripes; `rnd` is used plainly here, so they spread out evenly instead.
+ *
+ * A floor outside every section gets nothing: there is no monster table to draw from.
  */
 export function stockFloor(rows: Square[][], moduleIndex: number, floor: number, rnd: () => number): StockedMonster[] {
   const section = sectionInfo(moduleIndex, floor);
+  if (!section) return [];
   const baseLevel = monsterLevelBase(floor, moduleIndex);
   const taken = new Set<number>();
   const monsters: StockedMonster[] = [];
