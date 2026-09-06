@@ -81,3 +81,10 @@ export const SPELL_CORRECTIONS: Record<string, string> = {
 export function spellCorrection(spell: Spell): string | null {
   return SPELL_CORRECTIONS[spellKey(spell)] ?? null;
 }
+
+/** What holds for a whole spell list, keyed by the list's name. */
+export const LIST_NOTES: Record<string, string> = {
+  Preparation: 'Preparation spells last until you rest at an inn; the inn clears every one of them.',
+  Permanent:
+    'Permanent spells can only be cast in town, and each one lowers your maximum spell points by its cost for good.',
+};

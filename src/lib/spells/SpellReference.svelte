@@ -1,6 +1,6 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { spellCorrection } from './mechanics';
+  import { LIST_NOTES, spellCorrection } from './mechanics';
   import { searchSpells, spellGroups } from './spells';
 
   let search = $state('');
@@ -16,6 +16,9 @@
     {#each lists as list}
       <section>
         <SectionHeading title={list.label} />
+        {#if LIST_NOTES[list.label]}
+          <p class="list-note">{LIST_NOTES[list.label]}</p>
+        {/if}
         {#each list.levels as level}
           <h3>{level.label}</h3>
           <ul>
@@ -74,6 +77,12 @@
   }
   section {
     margin-bottom: 28px;
+  }
+  .list-note {
+    margin: 0 0 18px;
+    max-width: 88ch;
+    font-size: 13px;
+    color: var(--muted);
   }
   h3 {
     position: sticky;

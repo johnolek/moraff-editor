@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SPELL_CORRECTIONS, spellCorrection, spellKey } from './mechanics';
-import { allSpells } from './spells';
+import { LIST_NOTES, SPELL_CORRECTIONS, spellCorrection, spellKey } from './mechanics';
+import { allSpells, spellGroups } from './spells';
 
 describe('SPELL_CORRECTIONS', () => {
   it('has no key that is not a spell', () => {
@@ -22,5 +22,12 @@ describe('spellCorrection', () => {
   it('gives the correction for a spell the code contradicts', () => {
     const goAway = allSpells().find((spell) => spellKey(spell) === 'Wizard battle/Go Away');
     expect(spellCorrection(goAway!)).toContain('There is no level ratio check at all');
+  });
+});
+
+describe('LIST_NOTES', () => {
+  it('has no key that is not a spell list', () => {
+    const labels = new Set(spellGroups(allSpells()).map((list) => list.label));
+    expect(Object.keys(LIST_NOTES).filter((key) => !labels.has(key))).toEqual([]);
   });
 });
