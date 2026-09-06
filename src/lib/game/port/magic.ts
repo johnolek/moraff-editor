@@ -48,6 +48,127 @@ export function msgSixtyMovesLonger(game: Game): void {
 }
 
 /**
+ * compute_weight (exe 2000:41ae, unf.c "compute_weight"): add up what the character is
+ * carrying — their own weight, then every weapon and every suit of armor they own.
+ *
+ * Feather zeroes the character's own weight and nothing else, so a feathered character still
+ * carries the full weight of their gear. The function catalog's note that the loaded weight is
+ * 0 with Feather is not what the code does.
+ */
+export function computeWeight(game: Game): void {
+  const pc = game.pc;
+  pc.loadedWeight = pc.weight;
+  if (pc.feather !== 0) pc.loadedWeight = 0;
+  for (let i = 0; i < 7; i++) pc.loadedWeight += pc.armorOwned[i] * game.armorWeights[i];
+  for (let i = 0; i < 8; i++) pc.loadedWeight += pc.weaponsOwned[i] * game.weaponWeights[i];
+}
+
+/**
+ * enchant_weapon_perm (exe 3000:d148, unf.c "enchant_weapon_perm"): Enchant Weapon, which puts
+ * `plus` on one of the eight weapons the character owns. It sets the plus rather than adding to
+ * it, so a weaker Enchant Weapon cast on an already better weapon takes the plus back down.
+ *
+ * The menu lists all eight slots, naming the ones the character owns with their plus and
+ * drawing the rest as dashes. Picking a slot they own nothing in does nothing at all.
+ */
+export function enchantWeaponPerm(game: Game, plus: number): boolean {
+  const choice = game.chooseWeapon();
+  // Escape makes mset_gmenu hand back -1, which the original subtracts one from and uses as an
+  // index, so it reads the unlabelled save byte at 0x7f rather than a weapon and would write the
+  // plus at 0x8c. That byte is zero in every save, so escaping cancels the spell by accident.
+  if (choice === null) return false;
+  const slot = choice - 1;
+  if (game.pc.weaponsOwned[slot] === 0) return false;
+  game.pc.weaponPlus[slot] = plus;
+  return true;
+}
+
+/**
+ * enchant_armor_perm (exe 3000:d211, unf.c "enchant_armor_perm"): Enchant Armor, the same menu
+ * over the eight suits of armor. It sets the plus rather than adding to it, and escaping reads
+ * the unlabelled save byte at 0xae the same way {@link enchantWeaponPerm} reads 0x7f.
+ */
+export function enchantArmorPerm(game: Game, plus: number): boolean {
+  const choice = game.chooseArmor();
+  if (choice === null) return false;
+  const slot = choice - 1;
+  if (game.pc.armorOwned[slot] === 0) return false;
+  game.pc.armorPlus[slot] = plus;
+  return true;
+}
+
+/**
+ * set_body_armor (exe 3000:d31e, unf.c "set_body_armor"): Body Armor, which sets the spell's
+ * level unless the character already has that level or better.
+ *
+ * The original hands back the level it just set rather than 1; every caller only asks whether
+ * it is zero, so the port reports a boolean. The same goes for {@link setProtRing} and
+ * {@link setAntiMagicRing}.
+ */
+export function setBodyArmor(game: Game, level: number): boolean {
+  if (level <= game.pc.bodyArmor) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.bodyArmor = level;
+  return true;
+}
+
+/** set_prot_ring (exe 3000:d340, unf.c "set_prot_ring"): the Ring of Protection's plus. */
+export function setProtRing(game: Game, level: number): boolean {
+  if (level <= game.pc.protRing) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.protRing = level;
+  return true;
+}
+
+/**
+ * set_anti_magic_ring (exe 3000:d362, unf.c "set_anti_magic_ring"): the Anti-Magic Ring's plus.
+ * Nothing in the game ever reads the field back.
+ */
+export function setAntiMagicRing(game: Game, level: number): boolean {
+  if (level <= game.pc.antiMagicRing) {
+    msgAlreadyInEffect(game);
+    return false;
+  }
+  game.pc.antiMagicRing = level;
+  return true;
+}
+
+/**
+ * write_scroll_or_wand (exe 3000:d384, unf.c "write_scroll_or_wand"): Write Scroll and Enchant
+ * Wand, which add one scroll of a spell the player picks or five charges of a wand of it.
+ * `maxLevel` is the deepest spell level the level menu will take, and `kind` is 1 for a scroll
+ * and 2 for a wand.
+ *
+ * The first of the three menus draws the wizard line as dashes for a character whose class
+ * cannot cast wizard spells, and the priest line likewise, but get_choice takes the key
+ * regardless: a fighter can write a wizard scroll off a menu that offers them nothing.
+ */
+export function writeScrollOrWand(game: Game, maxLevel: number, kind: number): boolean {
+  const choice = game.chooseSpell(maxLevel);
+  if (choice === null) return false;
+  const index = choice.type * 45 + choice.level * 3 + choice.slot;
+  if (kind === 1) {
+    game.pc.scrolls[index] += 1;
+    // DS:37f7 380b 258b 2d43
+    game.say('THE SCROLL HAS BEEN', '   SUCCESSFULLY WRITTEN!', '', 'HIT ANY KEY');
+    return true;
+  }
+  if (kind === 2) {
+    game.pc.wands[index] += 5;
+    // DS:3824 383c 258b 2d43
+    game.say('YOU NOW HOLD A GLOWING,', '   CHARGED WAND IN HAND!', '', 'HIT ANY KEY');
+    return true;
+  }
+  // Nothing passes a kind other than 1 or 2. The original would put the spell menus up again
+  // and keep asking, for ever.
+  return false;
+}
+
+/**
  * boss_immune_check (exe 3000:dab7, unf.c "boss_immune_check"): whether the monster being fought
  * is a Shadow boss, which every spell aimed at a monster except Sleep refuses to touch. Prints
  * the boss's taunt when it is.

@@ -20,6 +20,22 @@ export interface PlayerCharacter {
   hp: number;
   /** 0x33, DS:b8b3. */
   maxHp: number;
+  /** 0x3f, DS:b8bf: what the character weighs with nothing carried. */
+  weight: number;
+  /** 0x41, DS:b8c1: what the character weighs carrying everything they own. */
+  loadedWeight: number;
+  /** 0x81, DS:b901: how many of each of the eight weapons the character owns. */
+  weaponsOwned: number[];
+  /** 0x8e, DS:b90e: the plus on each of the eight weapons. */
+  weaponPlus: number[];
+  /** 0xb0, DS:b930: how many of each of the eight armors the character owns. */
+  armorOwned: number[];
+  /** 0xb8, DS:b938: the plus on each of the eight armors. */
+  armorPlus: number[];
+  /** 0x22b, DS:baab: 180 scroll counts, indexed `type * 45 + level * 3 + slot`. */
+  scrolls: number[];
+  /** 0x2df, DS:bb5f: 180 wand charge counts, indexed the same way. */
+  wands: number[];
   /** 0x7ac, DS:c02c: the character's experience level. */
   lev: number;
   /** 0x7b0, DS:c030. */
@@ -34,6 +50,14 @@ export interface PlayerCharacter {
   mapCursorX: number;
   /** 0x7b9, DS:c039. */
   mapCursorY: number;
+  /** 0x7d4, DS:c054: the level of the Body Armor spell in effect. */
+  bodyArmor: number;
+  /** 0x7d5, DS:c055: the plus on the Ring of Protection. */
+  protRing: number;
+  /** 0x7d6, DS:c056: the plus on the Anti-Magic Ring. */
+  antiMagicRing: number;
+  /** 0x7d7, DS:c057: 1 from the preparation spell, 100 from the permanent one. */
+  feather: number;
   /** 0x7e2, DS:c062: moves left on the Strength spell's +7 STR. */
   strengthTimer: number;
   /** 0x7e4, DS:c064: moves left on the Speed spell's +7 AGI. */
@@ -146,6 +170,10 @@ export interface Game {
   monsterKinds: MonsterKind[];
   /** The 16 rows of `mstats`. */
   monsterStats: MonsterStats[];
+  /** The weight column of the eight weapons (exe DS:01a6, one every 7 bytes). */
+  weaponWeights: number[];
+  /** The weight column of the seven armors (exe DS:01f8, one every 5 bytes). */
+  armorWeights: number[];
   /**
    * DS:c4d1: one byte per square of the whole 80 x 110 grid, indexed `y * 80 + x`. Holds
    * {@link MAP_EMPTY}, {@link MAP_PLAYER}, or the slot number of the monster standing there.
@@ -229,35 +257,50 @@ export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say'>> {
   pc?: Partial<PlayerCharacter>;
 }
 
-const DEFAULT_PC: PlayerCharacter = {
-  hp: 100,
-  maxHp: 100,
-  lev: 10,
-  x: 40,
-  y: 50,
-  level: 5,
-  module: 0,
-  mapCursorX: 40,
-  mapCursorY: 55,
-  strengthTimer: 0,
-  speedTimer: 0,
-  slowEnemiesTimer: 0,
-  powerWeapon: 0,
-  powerWeaponTime: 0,
-  protection: 0,
-  protectionTime: 0,
-  resistPoisonTimer: 0,
-  resistDiseaseTimer: 0,
-  antiColdTimer: 0,
-  antiFireTimer: 0,
-  resistDrainTimer: 0,
-  sleepTimer: 0,
-  holdMonsterTimer: 0,
-  str: 20,
-  iq: 20,
-  wis: 20,
-  dex: 20,
-};
+/** A character to run a ported function against. Fresh each call, arrays and all. */
+function defaultPc(): PlayerCharacter {
+  return {
+    hp: 100,
+    maxHp: 100,
+    weight: 150,
+    loadedWeight: 150,
+    weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 0],
+    weaponPlus: [0, 0, 0, 0, 0, 0, 0, 0],
+    armorOwned: [1, 0, 0, 0, 0, 0, 0, 0],
+    armorPlus: [0, 0, 0, 0, 0, 0, 0, 0],
+    scrolls: Array.from({ length: 180 }, () => 0),
+    wands: Array.from({ length: 180 }, () => 0),
+    lev: 10,
+    x: 40,
+    y: 50,
+    level: 5,
+    module: 0,
+    mapCursorX: 40,
+    mapCursorY: 55,
+    bodyArmor: 0,
+    protRing: 0,
+    antiMagicRing: 0,
+    feather: 0,
+    strengthTimer: 0,
+    speedTimer: 0,
+    slowEnemiesTimer: 0,
+    powerWeapon: 0,
+    powerWeaponTime: 0,
+    protection: 0,
+    protectionTime: 0,
+    resistPoisonTimer: 0,
+    resistDiseaseTimer: 0,
+    antiColdTimer: 0,
+    antiFireTimer: 0,
+    resistDrainTimer: 0,
+    sleepTimer: 0,
+    holdMonsterTimer: 0,
+    str: 20,
+    iq: 20,
+    wis: 20,
+    dex: 20,
+  };
+}
 
 /** The 145 empty slots a floor starts with. */
 function emptySlots(): Monster[] {
@@ -272,11 +315,13 @@ export function newGame(overrides: GameOverrides = {}): Game {
   const { pc: pcOverrides, ...rest } = overrides;
   const messages = overrides.messages ?? [];
   return {
-    pc: { ...DEFAULT_PC, ...pcOverrides },
+    pc: { ...defaultPc(), ...pcOverrides },
     events: [],
     monsters: emptySlots(),
     monsterKinds: [...data.builtinMonsters, ...data.sections[0].monsters],
     monsterStats: data.monsterTypes,
+    weaponWeights: data.weapons.slice(0, 8).map((weapon) => weapon.weight),
+    armorWeights: data.armor.map((armor) => armor.weight),
     monsterMap: new Uint8Array(WIDTH * HEIGHT).fill(MAP_EMPTY),
     engaged: -1,
     columns: DUNGEON_XMAX,
