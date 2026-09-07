@@ -12,6 +12,7 @@ const copies: [string, string][] = [
   ['src/lib/game/dotu-data.json', 'dotu-tools/data/dotu-data.json'],
   ['src/lib/game/dotu-fonts.json', 'dotu-tools/data/dotu-fonts.json'],
   ['src/lib/game/uroll.txt', 'dotu-tools/data/uroll.txt'],
+  ['src/lib/game/roll.txt', 'mw-tools/data/roll.txt'],
   ['src/lib/game/palettes.json', 'dotu-tools/data/palettes.json'],
   ['src/lib/game/building-palette-banks.json', 'dotu-tools/data/building-palette-banks.json'],
 ];
