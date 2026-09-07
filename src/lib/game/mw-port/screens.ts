@@ -1,5 +1,8 @@
 import { MW_CLASS_NAMES, MW_RACES } from './character';
+import { experienceForKill } from './combat';
 import type { MwGame } from './state';
+import { mwOccupantAt } from './state';
+
 
 /**
  * The screens Moraff's World puts up between one move and the next: the vital statistics, the
@@ -218,4 +221,217 @@ export function viewStats(game: MwGame): void {
   });
   game.pressAnyKey();
   game.eraseScreen();
+}
+
+/**
+ * FUN_2000_7421 (WORLD.EXE 2000:7421): the two halves of the spells-in-force panel, which
+ * movecontrol redraws down the left-hand edge whenever a spell goes up or runs out.
+ *
+ * Half 0 is what a preparation spell put up and half 1 what a battle spell did. Each line only
+ * appears while its field is set, and the panel names the spell without saying how long is left —
+ * {@link mwSpellTimers} is the same list with the numbers the record holds.
+ *
+ * Half 1 leaves y 0x156 empty: it has ten lines for the eleven slots and ANTI-FIRE sits in the
+ * eleventh, so there is a gap between ANTI-COLD and it.
+ */
+export function drawSpellsInForce(game: MwGame, half: number): void {
+  const pc = game.pc;
+  game.eraseScreen();
+  if (half === 0) {
+    // DS:2a41 2a50, each with its plus on the end
+    if (pc.enchantWeaponLevel !== 0) {
+      game.draw({ text: `WEAPONS, PLUS ${pc.enchantWeaponLevel}`, x: 0, y: 0, font: 0, colour: 3 });
+    }
+    if (pc.enchantArmorLevel !== 0) {
+      game.draw({ text: `ARMOR, PLUS ${pc.enchantArmorLevel}`, x: 0, y: 0x26, font: 0, colour: 3 });
+    }
+    // DS:2a5d 2a65 2a72 2a7e 2a8e 2a9d 2aac 2aba 2aca
+    if (pc.feather !== 0) game.draw({ text: 'FEATHER', x: 0, y: 0x4c, font: 0, colour: 7 });
+    if (pc.invisibility !== 0) {
+      game.draw({ text: 'INVISIBILITY', x: 0, y: 0x72, font: 0, colour: 7 });
+    }
+    if (pc.fastMove !== 0) game.draw({ text: 'FAST - MOVE', x: 0, y: 0x98, font: 0, colour: 7 });
+    if (pc.prepStrength !== 0) {
+      game.draw({ text: 'STRENGTH (PREP)', x: 0, y: 0xbe, font: 0, colour: 6 });
+    }
+    if (pc.prepAgility !== 0) {
+      game.draw({ text: 'AGILITY (PREP)', x: 0, y: 0xe4, font: 0, colour: 6 });
+    }
+    if (pc.superStrength !== 0) {
+      game.draw({ text: 'SUPER STRENGTH', x: 0, y: 0x10a, font: 0, colour: 6 });
+    }
+    if (pc.superAgility !== 0) {
+      game.draw({ text: 'SUPER AGILITY', x: 0, y: 0x130, font: 0, colour: 6 });
+    }
+    if (pc.strengthTimer > 0) {
+      game.draw({ text: 'BATTLE STRENGTH', x: 0, y: 0x156, font: 0, colour: 3 });
+    }
+    if (pc.speedTimer > 0) game.draw({ text: 'BATTLE SPEED', x: 0, y: 0x17c, font: 0, colour: 3 });
+    return;
+  }
+  // DS:2ad7 2ae7, each with its level on the end
+  if (pc.protectionLevel !== 0) {
+    game.draw({ text: `PROTECT, LEVEL ${pc.protectionLevel}`, x: 0, y: 0, font: 0, colour: 5 });
+  }
+  if (pc.powerWeaponLevel !== 0) {
+    game.draw({ text: `POWER WEAPON ${pc.powerWeaponLevel}`, x: 0, y: 0x26, font: 0, colour: 5 });
+  }
+  // DS:2af5 2b02 2b0f 2b1c 2b2a 2b39 2b46 2b50
+  if (pc.slowEnemiesTimer > 0) {
+    game.draw({ text: 'SLOW MONSTER', x: 0, y: 0x4c, font: 0, colour: 7 });
+  }
+  if (pc.holdMonsterTimer > 0) {
+    game.draw({ text: 'HOLD MONSTER', x: 0, y: 0x72, font: 0, colour: 7 });
+  }
+  if (pc.sleepTimer > 0) game.draw({ text: 'STOP MONSTER', x: 0, y: 0x98, font: 0, colour: 7 });
+  if (pc.resistPoisonTimer > 0) {
+    game.draw({ text: 'RESIST POISON', x: 0, y: 0xbe, font: 0, colour: 6 });
+  }
+  if (pc.resistDiseaseTimer > 0) {
+    game.draw({ text: 'RESIST DISEASE', x: 0, y: 0xe4, font: 0, colour: 6 });
+  }
+  if (pc.resistDrainTimer > 0) {
+    game.draw({ text: 'RESIST DRAIN', x: 0, y: 0x10a, font: 0, colour: 6 });
+  }
+  if (pc.antiColdTimer > 0) game.draw({ text: 'ANTI-COLD', x: 0, y: 0x130, font: 0, colour: 6 });
+  if (pc.antiFireTimer > 0) game.draw({ text: 'ANTI-FIRE', x: 0, y: 0x17c, font: 0, colour: 6 });
+}
+
+/** One running spell, by the name the panel gives it and the number the record holds. */
+export interface MwSpellTimer {
+  /** The label FUN_2000_7421 prints for it. */
+  label: string;
+  /**
+   * How much longer it lasts. The battle spells count the character's moves down to zero; Sleep
+   * and Hold Monster count the engaged monster's own turns instead; the preparation markers have
+   * no clock at all, so their own level or flag stands here and a night at the inn is what clears
+   * them. Protection and Power Weapon have a level as well, which the panel is what prints.
+   */
+  turns: number;
+}
+
+/**
+ * Every field the spells-in-force panel draws a line for, with the number behind the line, and the
+ * disease and poison clocks after them.
+ *
+ * MORF-66 says the browser game shows the hidden numbers, and these are the ones the original
+ * keeps to itself: the panel prints SLOW MONSTER without saying how many moves are left on it.
+ * The order is the order the two halves draw in.
+ */
+export function mwSpellTimers(game: MwGame): MwSpellTimer[] {
+  const pc = game.pc;
+  return [
+    { label: 'WEAPONS, PLUS', turns: pc.enchantWeaponLevel },
+    { label: 'ARMOR, PLUS', turns: pc.enchantArmorLevel },
+    { label: 'FEATHER', turns: pc.feather },
+    { label: 'INVISIBILITY', turns: pc.invisibility },
+    { label: 'FAST - MOVE', turns: pc.fastMove },
+    { label: 'STRENGTH (PREP)', turns: pc.prepStrength },
+    { label: 'AGILITY (PREP)', turns: pc.prepAgility },
+    { label: 'SUPER STRENGTH', turns: pc.superStrength },
+    { label: 'SUPER AGILITY', turns: pc.superAgility },
+    { label: 'BATTLE STRENGTH', turns: pc.strengthTimer },
+    { label: 'BATTLE SPEED', turns: pc.speedTimer },
+    { label: 'PROTECT, LEVEL', turns: pc.protectionTimer },
+    { label: 'POWER WEAPON', turns: pc.powerWeaponTimer },
+    { label: 'SLOW MONSTER', turns: pc.slowEnemiesTimer },
+    { label: 'HOLD MONSTER', turns: pc.holdMonsterTimer },
+    { label: 'STOP MONSTER', turns: pc.sleepTimer },
+    { label: 'RESIST POISON', turns: pc.resistPoisonTimer },
+    { label: 'RESIST DISEASE', turns: pc.resistDiseaseTimer },
+    { label: 'RESIST DRAIN', turns: pc.resistDrainTimer },
+    { label: 'ANTI-COLD', turns: pc.antiColdTimer },
+    { label: 'ANTI-FIRE', turns: pc.antiFireTimer },
+    { label: 'DISEASE', turns: pc.diseaseTimer },
+    { label: 'POISON', turns: pc.poisonTimer },
+  ];
+}
+
+/**
+ * The colour every line drawn straight onto the play screen comes out in (exe DS:1303, which
+ * holds 15 and which nothing in the executable writes).
+ */
+const TEXT_COLOUR = 15;
+
+/**
+ * FUN_2000_8728 (WORLD.EXE 2000:8728): the monster's hit points, drawn on the side of the play
+ * screen the monster stands on.
+ *
+ * The four corners are worked out from the square rather than passed in, one comparison at a
+ * time, so a monster level with the character in both axes would leave the position uninitialised
+ * — which cannot happen, because only the four orthogonal neighbours are ever drawn.
+ *
+ * The original clears a rectangle around the number before printing it. Drawing over the same x
+ * and y already replaces the line here, so the port prints and nothing else.
+ */
+export function drawMonsterHitPoints(game: MwGame, x: number, y: number, slot: number): void {
+  const pc = game.pc;
+  let left = 0;
+  let top = 0;
+  if (y < pc.y) [left, top] = [0x2d4, 4];
+  if (pc.y < y) [left, top] = [0x2d4, 0x260];
+  if (x < pc.x) [left, top] = [0x11d, 0x1b2];
+  if (pc.x < x) [left, top] = [0x48b, 0x1b2];
+  // DS:2bc9 with the hit points on the end
+  game.draw({
+    text: `HP:${game.monsters[slot].hp}`,
+    x: left + 0xdb,
+    y: top,
+    font: 0,
+    colour: TEXT_COLOUR,
+  });
+}
+
+/**
+ * The prefix FUN_2000_892d puts in front of the experience a kill is worth. The deeper the floor
+ * the shorter it gets, because the number itself grows and the line has to fit.
+ */
+function experienceLabel(floor: number): string {
+  if (floor >= 0x51) return ''; // DS:1476
+  if (floor >= 0x29) return 'EX:'; // DS:2bd2
+  if (floor >= 0xb) return 'EXP: '; // DS:2bd6
+  return 'EXP. VALUE: '; // DS:2bdc
+}
+
+/**
+ * FUN_2000_892d (WORLD.EXE 2000:892d): the three lines beside an adjacent monster — its level, its
+ * hit points and what killing it is worth.
+ *
+ * movecontrol calls it once for each of the four sides the character can see through, with the x
+ * and y of the corner that side's picture is drawn in: (0x2d4, 7) north, (0x2d4, 0x25f) south,
+ * (0x11d, 0x1b5) west and (0x48b, 0x1b5) east. It draws nothing when nothing is standing there.
+ *
+ * The level is the monster's own depth, which is what both combat formulas use in place of the
+ * floor number, and the experience is what {@link experienceForKill} works out for the live
+ * monster — the same number monster_killed hands over, before it blanks the slot.
+ *
+ * The original prints the experience with "%-20.0f", so the number is padded out to twenty
+ * characters with the spaces that rub out a longer number underneath it.
+ */
+export function drawMonsterInfo(
+  game: MwGame,
+  x: number,
+  y: number,
+  monsterX: number,
+  monsterY: number,
+): void {
+  const slot = mwOccupantAt(game, monsterX, monsterY);
+  if (slot === -1) return;
+  const depth = game.monsters[slot].depth;
+  // DS:26c3 / DS:2bcd with the level on the end
+  game.draw({
+    text: `${depth < 10 ? 'LEVEL:' : 'LEV:'}${depth}`,
+    x,
+    y,
+    font: 0,
+    colour: TEXT_COLOUR,
+  });
+  drawMonsterHitPoints(game, monsterX, monsterY, slot);
+  game.draw({
+    text: experienceLabel(game.pc.floor) + experienceForKill(game, slot).toFixed(0).padEnd(20),
+    x,
+    y: y + (y < 0x24e ? 0x226 : 0x201),
+    font: 0,
+    colour: TEXT_COLOUR,
+  });
 }
