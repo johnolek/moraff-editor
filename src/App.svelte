@@ -15,6 +15,7 @@
   import NewCharacter from './lib/roller/NewCharacter.svelte';
   import Snake from './lib/snake/Snake.svelte';
   import SourceViewer from './lib/source/SourceViewer.svelte';
+  import MwSpellReference from './lib/mw-spells/MwSpellReference.svelte';
   import SpellReference from './lib/spells/SpellReference.svelte';
   import Tidbits from './lib/tidbits/Tidbits.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
@@ -76,7 +77,8 @@
   </header>
   {#if app.game === 'moraffsWorld'}
     <p class="game-note">
-      Moraff's World has the Save Editor, the Monsters and New Character so far. The map and the rest are on the way.
+      Moraff's World has the Save Editor, the Monsters, Spells and New Character so far. The map and the rest are on
+      the way.
     </p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
@@ -96,7 +98,7 @@
     {/if}
   </main>
   <main class:hidden={app.tab !== 'spells'}>
-    <SpellReference />
+    {#if app.game === 'moraffsWorld'}<MwSpellReference />{:else}<SpellReference />{/if}
   </main>
   <main class:hidden={app.tab !== 'calculators'}>
     <Calculators />

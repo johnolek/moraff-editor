@@ -21,7 +21,7 @@ export const TABS: TabEntry[] = [
 
 /** The tabs that know anything about Moraff's World. Everything else — the dungeon, the
  *  monsters, the numbers behind them — is Dungeons of the Unforgiven's alone. */
-const MORAFFS_WORLD_TABS: Tab[] = ['editor', 'monsters', 'roller'];
+const MORAFFS_WORLD_TABS: Tab[] = ['editor', 'monsters', 'spells', 'roller', 'source'];
 
 /** Where a game goes when the tab that was showing is not one of its own. */
 const FALLBACK_TAB: Tab = 'editor';

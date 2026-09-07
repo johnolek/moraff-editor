@@ -12,6 +12,7 @@ import rollSource from '../bestiary/roll.ts?raw';
 import dropsSource from '../calculators/drops.ts?raw';
 import filesSource from '../game/dotu-files.js?raw';
 import characterSource from '../game/port/character.ts?raw';
+import mwSpellsSource from '../game/mw-port/spells.ts?raw';
 import combatSource from '../game/port/combat.ts?raw';
 import hintsSource from '../game/port/hints.ts?raw';
 import mechSource from '../game/dotu-mech.js?raw';
@@ -36,6 +37,7 @@ export const SOURCES = {
   'src/lib/game/port/state.ts': stateSource,
   'src/lib/game/port/rng.ts': rngSource,
   'src/lib/game/port/spell-index.ts': spellIndexSource,
+  'src/lib/game/mw-port/spells.ts': mwSpellsSource,
   'src/lib/game/unfmap.js': unfmapSource,
   'src/lib/game/dotu-mech.js': mechSource,
   'src/lib/game/dotu-files.js': filesSource,
