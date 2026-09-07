@@ -147,3 +147,54 @@ describe('the temple', () => {
     expect(session.box).toEqual([]);
   });
 });
+
+describe('the bank', () => {
+  it('opens its menu when U is pressed on the square', async () => {
+    const session = standingOn(3);
+    await press(session, KEY.up);
+    expect(session.box[0]).toBe("WELCOME TO MORAFF'S SECOND");
+    expect(session.box).toContain('2) DEPOSIT MONEY');
+  });
+
+  it('takes a deposit and gives it back', async () => {
+    const session = standingOn(3, { money: 500, bank: 0 });
+    await press(session, KEY.up);
+    await press(session, 0x32);
+    await type(session, '300');
+    expect(session.game.pc.money).toBe(200);
+    expect(session.game.pc.bank).toBe(300);
+    expect(session.box).toContain('RUBLES IN BANK:  300');
+    await press(session, KEY.escape);
+    await press(session, 0x33);
+    await type(session, '100');
+    expect(session.game.pc.money).toBe(300);
+    expect(session.game.pc.bank).toBe(200);
+  });
+
+  it('moves the whole balance when the amount typed is bigger than it', async () => {
+    const session = standingOn(3, { money: 40, bank: 0 });
+    await press(session, KEY.up);
+    await press(session, 0x32);
+    await type(session, '900');
+    expect(session.game.pc.money).toBe(0);
+    expect(session.game.pc.bank).toBe(40);
+  });
+
+  it('changes a hundred dollars into a ruble and will not be robbed', async () => {
+    const session = standingOn(3, { money: 0, dollars: 250 });
+    await press(session, KEY.up);
+    await press(session, 0x31);
+    expect(session.game.pc.money).toBe(2);
+    expect(session.game.pc.dollars).toBe(50);
+    await press(session, KEY.escape);
+    await press(session, 0x34);
+    expect(session.box[0]).toBe("  I DIDN'T LET YOU ROB THE");
+  });
+
+  it('leaves the bank on Escape', async () => {
+    const session = standingOn(3);
+    await press(session, KEY.up);
+    await press(session, KEY.escape);
+    expect(session.box).toEqual([]);
+  });
+});

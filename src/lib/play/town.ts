@@ -1,13 +1,18 @@
 import { typedName } from '../game/port/character';
 import {
+  bankDeposit,
+  bankWithdraw,
   buyArmor,
   buyCultureStock,
   buyMagicCrystals,
   buyWeapon,
+  convertDollars,
   cultureStockPrice,
+  enterBank,
   enterStore,
   enterTemple,
   magicCrystalPrice,
+  robBank,
   temple,
 } from '../game/port/town';
 import { printMenus, showBox } from './boxes';
@@ -50,6 +55,9 @@ const SHELF_MENU = menuKeys(6);
 /** The temple's menu: five cures, a needy child and a seventh entry that leaves. */
 const TEMPLE_MENU = menuKeys(7);
 
+/** The bank's menu: the money changer, a deposit, a withdrawal, a robbery and the way out. */
+const BANK_MENU = menuKeys(5);
+
 /** What the town's four buildings are called, in the order the generator numbers them from 1. */
 const BUILDINGS = ['STORE', 'TEMPLE', 'BANK', 'INN'];
 
@@ -85,6 +93,10 @@ const PROMPT_COLOUR = 5;
 const STORE_PROMPT_Y = [0x329, 0x351, 0x38d, 0x3b5, 0x3dd];
 const STORE_TYPED_Y = 0x42d;
 
+/** Where the bank draws the same thing, which is three lines and the last line of the box. */
+const BANK_PROMPT_Y = [0x329, 0x35b, 0x38d];
+const BANK_TYPED_Y = 0x487;
+
 /**
  * movecontrol's 0x75 branch when the square holds a building: the town is entered, played and
  * left, and no moment passes for any of it.
@@ -93,11 +105,12 @@ export async function enterBuilding(turn: Turn): Promise<void> {
   const session = turn.session;
   if (turn.building === 1) await store(session);
   if (turn.building === 2) await visitTheTemple(session);
+  if (turn.building === 3) await visitTheBank(session);
   // erase_menu_block (exe 4000:42b4) and erase_message_block (exe 4000:430e), which movecontrol
   // runs on the way back out to the map.
   session.game.eraseScreen();
   session.box = [];
-  if (turn.building > 2) notBuiltYet(session.game, `GO INTO THE ${BUILDINGS[turn.building - 1]}`);
+  if (turn.building > 3) notBuiltYet(session.game, `GO INTO THE ${BUILDINGS[turn.building - 1]}`);
 }
 
 /** g_store (exe 2000:45ab, unf.c "g_store"): the store, until the player leaves it. */
@@ -228,6 +241,49 @@ async function visitTheTemple(session: GameSession): Promise<void> {
     await printMenus(session, () => temple(game, entry));
     if (entry === 7) return;
   }
+}
+
+/**
+ * bank (exe 2000:568b, unf.c "bank"): the bank, until the player leaves it. It pays no interest
+ * and charges nothing; all it does is hold money and change dollars into rubles.
+ */
+async function visitTheBank(session: GameSession): Promise<void> {
+  const game = session.game;
+  for (;;) {
+    showBox(session, () => enterBank(game));
+    const chosen = await session.choice(BANK_MENU);
+    if (chosen === KEY.escape) return;
+    const entry = menuEntry(chosen);
+    if (entry === 5) return;
+    if (entry === 1) await printMenus(session, () => convertDollars(game));
+    if (entry === 2) await depositMoney(session);
+    if (entry === 3) await withdrawMoney(session);
+    if (entry === 4) await printMenus(session, () => robBank(game));
+  }
+}
+
+/** bank's second entry: a deposit, asked for over what the character is carrying. */
+async function depositMoney(session: GameSession): Promise<void> {
+  const game = session.game;
+  const rubles = await typedAmount(session, bankPrompt(game.pc.money), BANK_TYPED_Y);
+  await printMenus(session, () => bankDeposit(game, rubles));
+}
+
+/** bank's third entry: a withdrawal, asked for over the balance instead. */
+async function withdrawMoney(session: GameSession): Promise<void> {
+  const game = session.game;
+  const rubles = await typedAmount(session, bankPrompt(game.pc.bank), BANK_TYPED_Y);
+  await printMenus(session, () => bankWithdraw(game, rubles));
+}
+
+/** The three lines the bank asks for an amount under. */
+function bankPrompt(available: number): PromptLine[] {
+  // DS:0ebe with the number after it, DS:118a, DS:11a1
+  return [
+    `MONEY AVAILABLE: ${available}`,
+    'PLEASE TYPE THE AMOUNT',
+    '  AND HIT ENTER:',
+  ].map((text, line) => ({ text, y: BANK_PROMPT_Y[line] }));
 }
 
 /** One of the lines a typed amount is asked for under, at the y the game draws it at. */
