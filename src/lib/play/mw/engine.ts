@@ -8,7 +8,6 @@ import type { Rng } from '../../game/port/rng';
 import type { ScreenLine } from '../../game/port/state';
 import { MORAFFS_WORLD_MAP, type MapSquare } from '../../map/game';
 import type { StockedMonster } from '../../map/stocking';
-import { bundledMwDungeon as townFeatures } from '../../game/mw-dungeon';
 import { fallDownAChute, chuteUnder } from './chute';
 import { digAHole } from './dig';
 import { castAtTheSpellScreen, useAnItem } from './cast';
@@ -20,6 +19,7 @@ import { MW_KEY } from './keys';
 import { resolveStep, turnAndStep, waitAMoment } from './move';
 import { loadMwPlayer, saveMwPlayer } from './record';
 import { mwMessageBoxLines, mwNotBuiltYet, MW_MESSAGE_BOX } from './screens';
+import { buildingUnder } from './town';
 import { explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
 /**
@@ -336,7 +336,11 @@ export class MwGameSession {
       monsters: drawn,
       box: mwMessageBoxLines(this.box),
       screen: game.screen,
-      prompt: ladderPrompt(ladderUnder(game), buildingUnder(game), trapdoorHere(this)),
+      prompt: ladderPrompt(
+        ladderUnder(game),
+        pc.floor === 0 ? buildingUnder(game) : 0,
+        trapdoorHere(this),
+      ),
       banner: this.banner,
       moves: game.movesTaken,
       engaged: game.engaged === -1 ? null : (drawn.find((monster) => monster.slot === game.engaged) ?? null),
@@ -344,15 +348,6 @@ export class MwGameSession {
       dead: this.dead,
     };
   }
-}
-
-/**
- * surface_feature (WORLD.EXE 2000:7c2d, mw.c "surface_feature"): what a square of floor 0 holds —
- * 1 store, 2 temple, 3 bank, 4 inn, 5 the gate out to the world map, and 0 for open ground.
- */
-export function buildingUnder(game: MwGame): number {
-  if (game.pc.floor !== 0) return 0;
-  return townFeatures.surface(game.pc.x, game.pc.y, game.pc.floor, game.pc.dungeon);
 }
 
 /**

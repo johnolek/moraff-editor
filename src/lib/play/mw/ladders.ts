@@ -3,7 +3,7 @@ import { arrivalHint } from '../../game/mw-port/town';
 import type { MwGame } from '../../game/mw-port/state';
 import { digAHole } from './dig';
 import type { MwTurn } from './engine';
-import { mwNotBuiltYet } from './screens';
+import { enterBuilding } from './town';
 
 /** The ladders: U to climb one, D to go down one, and the line the game puts under the map. */
 
@@ -43,7 +43,7 @@ export async function goUp(turn: MwTurn): Promise<void> {
     game.recenterMap = true;
     return;
   }
-  if (turn.building !== 0) mwNotBuiltYet(game, 'OPEN THE BUILDING OF THE TOWN YOU ARE STANDING ON');
+  if (turn.building !== 0) await enterBuilding(turn);
   session.flushKeys();
 }
 
