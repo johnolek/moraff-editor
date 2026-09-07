@@ -22,13 +22,13 @@ export const SPELL_CORRECTIONS: Record<string, string> = {
   'Permanent/Enchant Armor Level 3': 'Sets the plus of the one armor you pick to exactly 3, up or down.',
   'Permanent/Enchant Armor Level 4': 'Sets the plus of the one armor you pick to exactly 4, up or down.',
   'Permanent/Anti Magic Ring Level 1':
-    'Nothing in the combat or the spell code ever reads the anti-magic ring, so this costs you 4 maximum spell points and does nothing at all.',
+    'Nothing in the combat or the spell code ever reads the anti-magic ring, so this costs you 4 maximum spell points when cast from the book and does nothing at all.',
   'Permanent/Anti-Magic Ring Level 2':
-    'The anti-magic ring is never read by any formula in the game: 6 maximum spell points for nothing.',
+    'The anti-magic ring is never read by any formula in the game: 6 maximum spell points from the book for nothing.',
   'Permanent/Anti-Magic Ring Level 3':
-    'Another ring no formula in the game ever reads: 7 maximum spell points for nothing.',
+    'Another ring no formula in the game ever reads: 7 maximum spell points from the book for nothing.',
   'Permanent/Anti-Magic Ring Level 5':
-    'The strongest anti-magic ring, and just as unread by the game as the others: 9 maximum spell points for nothing.',
+    'The strongest anti-magic ring, and just as unread by the game as the others: 9 maximum spell points from the book for nothing.',
   'Permanent/Permanent Invisibility':
     'Only changes a monster\'s first strike: the delay it normally skips 1 time in 3 applies anyway when rand(1.5 x depth) comes out above your level. Unlike the preparation Invisibility it never stops monsters moving.',
   'Permanent/Youth':

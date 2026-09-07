@@ -233,7 +233,7 @@ export function simulate(fn, n = 20000) {
 }
 
 // ---------------------------------------------------------------- timing
-export const moveSeconds = (weight, agi) => T(Math.max(0, 100 + weight - 10 * agi) / 100) + 1;   // weight = body + gear (0 with Feather)
+export const moveSeconds = (weight, agi) => T(Math.max(0, 100 + weight - 10 * agi) / 100) + 1;   // weight = body (0 with Feather) + gear, which Feather never touches
 export const attackSeconds = (weaponSpeed, agi) => weaponSpeed + (85 - agi > 1 ? T((85 - agi) / 5) : 0);
 export const monsterAttackInterval = speed => T((85 - speed) / 3) + 10;                           // seconds between a monster's strikes
 

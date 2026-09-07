@@ -477,7 +477,7 @@ const COMBAT: Topic = {
       id: 'move-seconds',
       title: 'How long a step takes',
       explanation:
-        'A step costs a second, plus another for every hundred pounds of you and your equipment beyond what your agility carries for free. A twenty pound midget with agility 10 moves in a second and a four hundred pound giant with no agility takes six, and every one of those seconds is time a monster beside you spends winding up its next attack. A Feather spell makes the weight count as nothing, which is the difference between the giant and the midget.',
+        'A step costs a second, plus another for every hundred pounds of you and your equipment beyond what your agility carries for free. A twenty pound midget with agility 10 moves in a second and a four hundred pound giant with no agility takes six, and every one of those seconds is time a monster beside you spends winding up its next attack. A Feather spell only zeroes your own body weight; every suit of armor and every weapon you own is added back on afterwards, so it barely moves the number for a well equipped character.',
       inputs: 'Your body weight plus everything you carry, and your agility.',
       origin: 'exe movecontrol 2000:c308, movecontrol in dotu-tools/decomp/unf.c. FAQ [GTPS].',
       c: 'movecontrol',
