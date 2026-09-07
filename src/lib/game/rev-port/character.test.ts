@@ -222,7 +222,7 @@ describe('the screens', () => {
     expect(game.screen[game.screen.length - 1]).toMatchObject({ row: 25, column: 28, text: 'MORE   (HIT ANY KEY)' });
   });
 
-  it('prints the seventh paragraph in colour 0, which is black on black', () => {
+  it('prints the seventh paragraph in blue, the first colour of the table', () => {
     let keys = 0;
     const game = newRevGame({
       rng: spread(1),
@@ -237,7 +237,7 @@ describe('the screens', () => {
     });
     expect(() => rollChar(game)).toThrow('stop');
     const laziness = game.screen.find((line) => line.text.startsWith('Laziness:'));
-    expect(laziness?.colour).toBe(0);
+    expect(laziness?.colour).toBe(9);
   });
 
   it('narrows to forty columns for the race menu and marks the race being pointed at', () => {

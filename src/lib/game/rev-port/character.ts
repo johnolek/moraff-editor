@@ -51,10 +51,11 @@ export const REV_TOWN_ROWS = [96, 240, 9180, 15872, 512, 512, 512, 512, 512, 153
 export const REV_COLOUR_SETTING: number = 10;
 
 /**
- * The colour table the paragraphs cycle through, `C(J) = J + 9` for J of 1 to 6 (CHCHAR 044E).
- * Element 0 is never filled in, which is what makes every seventh paragraph black.
+ * The colour table the paragraphs cycle through, `C(J) = J + 9` (CHCHAR 044E), filled from J = 0,
+ * so the seventh colour is 9, blue. John's screenshot of the real characteristics screen shows the
+ * cycle: green, cyan, red, magenta, yellow, white, blue, then green again.
  */
-export const REV_PARAGRAPH_COLOURS = [0, 10, 11, 12, 13, 14, 15];
+export const REV_PARAGRAPH_COLOURS = [9, 10, 11, 12, 13, 14, 15];
 
 /** The colour the race menu draws with, `2 * NAME + 7` (CHCHAR 0965). */
 export const REV_MENU_COLOUR = 2 * REV_COLOUR_SETTING + 7;
@@ -183,9 +184,8 @@ export function printUsing(format: string, value: number): string {
 /**
  * The next paragraph colour (CHCHAR 16E8).
  *
- * `C2 = C2 + 1: IF C2 > 6 THEN C2 = 0: COLOR C(C2)`. The table only has colours in elements 1 to
- * 6, so the seventh paragraph of a screen is printed in colour 0 — black on a black screen, which
- * is why the laziness paragraph of the characteristics screen cannot be read in the real game.
+ * `C2 = C2 + 1: IF C2 > 6 THEN C2 = 0: COLOR C(C2)`, so the seventh paragraph of a screen takes
+ * element 0 of the table, blue, and the eighth starts the cycle again at green.
  */
 function nextColour(game: RevGame): void {
   game.colourStep += 1;
