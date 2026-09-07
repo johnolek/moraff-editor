@@ -64,7 +64,7 @@ describe('the decompilation the app ships', () => {
   it('lists the named functions before the ones only known by their address', () => {
     const names = sectionsByName().map((section) => section.name);
     expect(names.length).toBe(SECTIONS.length);
-    expect(names.filter((name) => name.startsWith('FUN_')).length).toBe(461);
-    expect(names.findIndex((name) => name.startsWith('FUN_'))).toBe(186);
+    expect(names.filter((name) => name.startsWith('FUN_')).length).toBe(447);
+    expect(names.findIndex((name) => name.startsWith('FUN_'))).toBe(200);
   });
 });

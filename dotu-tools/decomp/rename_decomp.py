@@ -2,7 +2,7 @@
 """Apply the function catalog's names to Ghidra's raw dump of unf.exe.
 
 Ghidra calls most functions FUN_<segment>_<offset>.  The reverse engineering gave
-names to 184 of them, which live in the KNOWN dict of
+names to 199 of them, which live in the KNOWN dict of
 reference/scripts/make_catalog.py keyed by "segment:offset".  This script rewrites
 every FUN_ identifier whose address is in KNOWN to that name, everywhere it
 appears: the "// ==== " section headers, the callers lists, the function

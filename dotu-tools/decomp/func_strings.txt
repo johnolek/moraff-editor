@@ -299,7 +299,7 @@
 2000:3654 load_overlay_pic size=216 ncallers=3 | 
 2000:372c load_section_pictures size=1179 ncallers=1 | 
 2000:3bc7 allocate_buffers size=468 ncallers=1 | 
-2000:3d9b FUN_2000_3d9b size=146 ncallers=13 | 
+2000:3d9b reset_view_caches size=146 ncallers=13 | 
 2000:3e2d FUN_2000_3e2d size=70 ncallers=0 | 
 2000:3e73 FUN_2000_3e73 size=481 ncallers=3 | 
 2000:4054 FUN_2000_4054 size=208 ncallers=31 | 
@@ -323,7 +323,7 @@
 2000:60e8 show_registration_notice size=295 ncallers=1 | 
 2000:620f main size=863 ncallers=1 | THIS_SPELL_
 2000:6573 which_monster size=59 ncallers=2 | 
-2000:65b0 FUN_2000_65b0 size=42 ncallers=6 | 
+2000:65b0 monster_at size=42 ncallers=6 | 
 2000:65dc set_monster_map size=28 ncallers=8 | 
 2000:65f8 get_mtype size=291 ncallers=1 | 
 2000:671e stock_level size=2320 ncallers=4 | 
@@ -348,7 +348,7 @@
 2000:7d23 gain_level size=196 ncallers=1 | 
 2000:7dec FUN_2000_7dec size=74 ncallers=1 | 
 2000:7e36 strike size=845 ncallers=1 | YOU_MISSED_THE_MONSTER ; YOU_HIT_THE_MONSTER___ ; IT_TAKES ; POINTS_OF_DAMAGE_
-2000:8189 FUN_2000_8189 size=216 ncallers=1 | STRENGTH ; INTELLIGENCE ; CONSTITUTION ; DEXTERITY
+2000:8189 gain_or_drain size=216 ncallers=1 | STRENGTH ; INTELLIGENCE ; CONSTITUTION ; DEXTERITY
 2000:826d FUN_2000_826d size=74 ncallers=1 | 
 2000:82b7 defend size=3272 ncallers=1 | DRAINED_BY_PUFFBALL_ ; RAISED_BY_PUFFBALL_ ; GIANT_GARBAGE_CAN ; MISSES_ ; ON_YOU__IT_DOES ; POINT ; POINTS ; A_YOU_LOSE ; EXP__POINTS_ ; LEVELS_ ; OH_NO__HIT_BY_LIFE_DRAINER_ ; HIT_ANY_KEY ; HAS_BEEN_DRAINED_ ; HAS_BEEN_RAISED_
 2000:8f85 FUN_2000_8f85 size=20 ncallers=1 | 
@@ -360,7 +360,7 @@
 2000:9417 view_battle_spells size=1184 ncallers=3 | CURRENT_BATTLE_SPELLS_IN_EFFECT ; PROTECT__LEVEL ; POWER_WEAPON ; STRENGTH ; SPEED ; SLOW_MONSTER ; HOLD_MONSTER ; STOP_MONSTER ; RESIST_DRAIN ; RESIST_POISON ; RESIST_DISEASE ; ANTI_COLD ; ANTI_FIRE
 2000:98b7 lose_item size=860 ncallers=1 | WHICH_TYPE_OF_ITEM_WOULD_YOU ; LIKE_TO_DROP_ ; 1__ARMOR ; 2__WEAPON ; 3__MONEY ; OWE__IT_JUST_WON_T_COME_OFF_
 2000:9c13 quit_game size=167 ncallers=1 | HIT_ANY_KEY
-2000:9cba town_features size=87 ncallers=3 | 
+2000:9cba trapdoor size=87 ncallers=3 | 
 2000:9d17 FUN_2000_9d17 size=843 ncallers=1 | 
 2000:a068 FUN_2000_a068 size=92 ncallers=1 | 
 2000:a0c8 check_engagement size=233 ncallers=2 | 
@@ -370,7 +370,7 @@
 2000:aa26 FUN_2000_aa26 size=111 ncallers=2 | 
 2000:aa95 draw_ladder_prompt size=521 ncallers=1 | TO_GO_UP ; HIT_D_TO ; GO_DOWN
 2000:ac9e FUN_2000_ac9e size=1305 ncallers=1 | B_GO_FORWARD_TURN_LEFT_TURN_AROU
-2000:b1b7 FUN_2000_b1b7 size=39 ncallers=1 | 
+2000:b1b7 move_seconds size=39 ncallers=1 | 
 2000:b1e0 FUN_2000_b1e0 size=34 ncallers=1 | 
 2000:b202 use_magic_item size=816 ncallers=1 | YOU_ARE_SLIPPING_THROUGH_THE ; FLOOR__HIT_ANY_KEY___ ; DOESN_T_WORK_THIS_DEEP_ ; YOU_FEEL_GREAT__HIT_A_KEY___ ; THE_MONSTER_CATCHES_THE ; GRADADE_ ; HIT_ANY_KEY___ ; A_MASSIVE_EXPLOSION_KILLS ; THE_MONSTER_INSTANTLY_
 2000:b532 chute size=184 ncallers=1 | UH_OH____A_SINKING_FEELING___ ; YOU_HAVE_FALLEN_DOWN_A_CHUTE_ ; HIT_ANY_KEY_TO_CONTINUE___
@@ -381,12 +381,12 @@
 2000:ba3f dig_hole size=624 ncallers=1 | A_MONSTER_WANTS_TO_HELP ; DIGGING____DIGGING___ ; BOY_THIS_IS_HARD_WORK_ ; THIS_IS_ONE_WAY_TO_WORK ; UP_A_SWEAT_
 2000:bcb6 FUN_2000_bcb6 size=47 ncallers=1 | 
 2000:bce5 FUN_2000_bce5 size=77 ncallers=1 | 
-2000:bd32 trapdoor size=112 ncallers=2 | 
+2000:bd32 town_features size=112 ncallers=2 | 
 2000:bda6 trapdoor_dest size=145 ncallers=1 | 
 2000:be3d explain_trapdoor size=334 ncallers=1 | YOU_HAVE_FOUND_A_TRAP_DOOR ; UNFORTUNATELY__YOU_DO ; NOT_HAVE_THE_CORRECT_KEY_ ; THIS_KEY_CAN_ONLY_BE ; FOUND_BY_KILLING_A_LEVEL ; DRAINER_NEAR_THE_LEVEL ; THIS_TRAP_DOOR_LEADS_TO_ ; TO_USE_THE_KEY_YOU_FOUND ; EARLIER__HIT__K__TO_GO ; THROUGH_THE_DOOR___
 2000:bf91 FUN_2000_bf91 size=216 ncallers=1 | GO_WEST ; GO_EAST ; GO_NORTH ; GO_SOUTH
-2000:c069 delete_character_files size=56 ncallers=1 | 
-2000:c0a5 kill_player size=343 ncallers=1 | HB_mon_map
+2000:c069 module_installed size=56 ncallers=1 | 
+2000:c0a5 change_module size=343 ncallers=1 | HB_mon_map
 2000:c200 FUN_2000_c200 size=43 ncallers=1 | 
 2000:c22d retdwall2 size=90 ncallers=1 | 
 2000:c28b FUN_2000_c28b size=125 ncallers=1 | 
@@ -409,8 +409,8 @@
 3000:2848 draw_map_square size=2758 ncallers=3 | 
 3000:3311 FUN_3000_3311 size=284 ncallers=2 | 
 3000:342d FUN_3000_342d size=5617 ncallers=3 | ENTER
-3000:4a24 FUN_3000_4a24 size=61 ncallers=4 | 
-3000:4a67 FUN_3000_4a67 size=528 ncallers=1 | SEX__MALE ; SEX__FEMALE
+3000:4a24 read_uroll_line size=61 ncallers=4 | 
+3000:4a67 show_rolled_character size=528 ncallers=1 | SEX__MALE ; SEX__FEMALE
 3000:4c77 roll_char size=7641 ncallers=1 | I_CAN_T_FIND_THE_FILE_UROLL_TXT_ ; RACE_ ; STRENGTH_ ; INTELLIGENCE_ ; CONSTITUTION_ ; AGILITY_ ; HEIGHT__INCHES ; WEIGHT__POUNDS ; AGE__YEARS ; Y__KEEP_THIS_CHARACTER ; N__ROLL_A_NEW_CHARACTER ; D__DESIGN_YOUR_OWN_CHARACTER ; PLEASE_SELECT_ONE_OF_THE_ABOVE ; ESC_CANCEL_THIS_CHARACTER
 3000:6a6a FUN_3000_6a6a size=288 ncallers=2 | 
 3000:6b8a FUN_3000_6b8a size=197 ncallers=1 | 
@@ -470,7 +470,7 @@
 3000:caac FUN_3000_caac size=1557 ncallers=1 | so_what_can_I_do_for_you_ ; ARMOR_ ; WEAPON_ ; LEVEL_ ; SPELL_POINTS_ ; CONSTITUTION__AGILITY_OR_LUCK ; HEALTH_POINTS_
 3000:d0c1 msg_no_monster size=45 ncallers=6 | YOU_ARE_NOT_CURRENTLY ; ENGAGING_ANY_MONSTER_ ; HIT_ANY_KEY___
 3000:d0ee msg_already_in_effect size=45 ncallers=9 | CASTING_THIS_SPELL_WOULD ; BE_REDUNDANT_ ; HIT_ANY_KEY___
-3000:d11b FUN_3000_d11b size=45 ncallers=4 | YOU_HAVE_ALREADY_CAST ; THIS_SPELL_ ; HIT_ANY_KEY___
+3000:d11b msg_already_cast_this_spell size=45 ncallers=4 | YOU_HAVE_ALREADY_CAST ; THIS_SPELL_ ; HIT_ANY_KEY___
 3000:d148 enchant_weapon_perm size=197 ncallers=1 | 
 3000:d211 enchant_armor_perm size=197 ncallers=1 | 
 3000:d2da set_temp_armor_plus size=32 ncallers=1 | 
@@ -479,20 +479,20 @@
 3000:d340 set_prot_ring size=32 ncallers=1 | 
 3000:d362 set_anti_magic_ring size=32 ncallers=1 | 
 3000:d384 write_scroll_or_wand size=1076 ncallers=1 | PLEASE_SELECT_A_TYPE_OF_SPELL_ ; 1__PREPARATION_SPELLS ; 2__WIZARD_SPELLS ; 2_______________ ; 3__PRIESTLY_SPELLS ; 3_______________ ; PLEASE_SELECT_A_THE_LEVEL ; SPELL_YOU_WISH_ENCHANT_ ; MAXIMUM_LEVEL_ ; HIT_0_FOR_10_TH_LEVEL ; HIT_ESC_FOR_PREVIOUS_MENU ; _TYPE_NUMBER_ON_KEYBOARD_ ; PLEASE_SELECT_ONE_OF_THE_ABOVE ; 4__PREVIOUS_MENU
-3000:d7be FUN_3000_d7be size=45 ncallers=1 | YOU_FEEL_GOOD___HIT_ANY_KEY
-3000:d7eb FUN_3000_d7eb size=45 ncallers=4 | YOU_FEEL_VERY_GOOD_ ; HIT_ANY_KEY___
+3000:d7be msg_you_feel_good size=45 ncallers=1 | YOU_FEEL_GOOD___HIT_ANY_KEY
+3000:d7eb msg_you_feel_very_good size=45 ncallers=4 | YOU_FEEL_VERY_GOOD_ ; HIT_ANY_KEY___
 3000:d818 explosion size=229 ncallers=1 | A_SMALL_EXPLOSION_OCCURS ; A_LARGE_EXPLOSION_OCCURS ; A_HUGE_EXPLOSION_OCCURS ; THE_EXPLOSION_DOES ; ON_THE_GROUND_DIRECTLY ; BELOW_THE_MONSTER_ ; POINTS_OF_DAMAGE_ ; HIT_ANY_KEY
 3000:d904 sleep_monster size=136 ncallers=1 | 
-3000:d990 FUN_3000_d990 size=38 ncallers=1 | 
-3000:d9ba FUN_3000_d9ba size=38 ncallers=1 | 
-3000:d9e4 FUN_3000_d9e4 size=68 ncallers=1 | 
-3000:da2c relocate_spell size=137 ncallers=3 | 
+3000:d990 strength size=38 ncallers=1 | 
+3000:d9ba speed size=38 ncallers=1 | 
+3000:d9e4 strength_and_speed size=68 ncallers=1 | 
+3000:da2c relocate size=137 ncallers=3 | 
 3000:dab7 boss_immune_check size=99 ncallers=4 | WHEN_YOU_BEGIN_TO_CAST_THE ; SPELL_THE_MONSTER_STOPS_YOU ; AND_SAYS___NO__THAT_SILLY ; SPELL_DOESTN_T_WORK_ON_ME_ ; TRY_SOMETHING_ELSE_WHILE_I ; TEAR_YOUR_LIMBS_FROM_ONE ; ANOTHER__HEE_HEE_HEE_ ; HIT_ANY_KEY
 3000:db1e go_away size=247 ncallers=1 | 
 3000:dc18 autokill size=283 ncallers=1 | THE_MONSTER_S_BRAIN_EXPLODES ; FROM_ULTRA_INTENSE_BRAIN ; WAVES_WHICH_EMINATE_FROM ; YOUR_MIND_ ; HIT_ANY_KEY ; THE_SPELL_FAILS____TOUGH_LUCK ; CHARLIE_
-3000:dd37 FUN_3000_dd37 size=45 ncallers=2 | YOU_HAD_ALREADY_CAST_THIS ; SPELL__SO_NOW_IT_WILL_LAST ; 60_MOVES_LONGER_ ; HIT_ANY_KEY___
-3000:dd64 battle_strength size=99 ncallers=1 | YOUR_WEAPON_BEGINS_TO ; SHIMMER_WITH_POWER__THIS ; WEAPON_IS_AUTOMATICALLY ; IN_USE_UNTIL_THE_SPELL ; HIT_ANY_KEY
-3000:ddc9 battle_speed size=99 ncallers=1 | YOUR_BODY_BEGINS_TO_SHIMMER ; WITH_SHIFTING_COLORS_OF ; LIGHT__THIS_PROTECTION ; WILL_LAST_FOR_60_MOVES ; OR_STEPS_ ; HIT_ANY_KEY
+3000:dd37 msg_sixty_moves_longer size=45 ncallers=2 | YOU_HAD_ALREADY_CAST_THIS ; SPELL__SO_NOW_IT_WILL_LAST ; 60_MOVES_LONGER_ ; HIT_ANY_KEY___
+3000:dd64 power_weapon size=99 ncallers=1 | YOUR_WEAPON_BEGINS_TO ; SHIMMER_WITH_POWER__THIS ; WEAPON_IS_AUTOMATICALLY ; IN_USE_UNTIL_THE_SPELL ; HIT_ANY_KEY
+3000:ddc9 protection size=99 ncallers=1 | YOUR_BODY_BEGINS_TO_SHIMMER ; WITH_SHIFTING_COLORS_OF ; LIGHT__THIS_PROTECTION ; WILL_LAST_FOR_60_MOVES ; OR_STEPS_ ; HIT_ANY_KEY
 3000:de2e resist_poison size=53 ncallers=1 | YOU_FEEL_A_WARMTH_IN_YOUR ; BLOOD_AS_THE_RESIST ; POISON_TAKES_EFFECT_ ; HIT_ANY_KEY
 3000:de65 resist_disease size=53 ncallers=1 | YOU_FEEL_A_TINGLING_IN_YOUR ; BODY_AS_THE_RESIST ; DISEASE_TAKES_EFFECT_ ; HIT_ANY_KEY
 3000:de9c anti_cold size=53 ncallers=1 | YOU_FEEL_A_WARM_FEELING_AS ; YOUR_BODY_PREPARES ; FOR_AN_ICE_ATTACK_ ; SPELL_WILL_LAST_60_MOVES_ ; HIT_ANY_KEY
@@ -562,7 +562,7 @@
 4000:433e FUN_4000_433e size=1240 ncallers=5 | 
 4000:4818 scale_image2 size=1909 ncallers=10 | 
 4000:4f8f FUN_4000_4f8f size=1557 ncallers=1 | 
-4000:55b2 FUN_4000_55b2 size=598 ncallers=3 | 
+4000:55b2 typed_name size=598 ncallers=3 | 
 4000:580e FUN_4000_580e size=305 ncallers=1 | 
 4000:593f FUN_4000_593f size=291 ncallers=3 | 
 4000:5a62 FUN_4000_5a62 size=35 ncallers=1 | 
@@ -580,7 +580,7 @@
 4000:6aca drop_money size=2396 ncallers=1 | YOU_FIND_GREATER_AMERICAN ; DOLLARS__THESE_CAN_BE_TRADED ; FOR_REAL_CURRENCY_AT_ANY ; YOU_HAVE_FOUND_A_TOTAL_OF ; THAT_MIGHT_EVEN_BUY_YOU ; LUNCH__AT_MORDONALD_S__ ; YOU_COULD_FEED_A_HUNGRY ; CHILD_WITH_THAT_MONEY_ ; A_FEW_MORE_FINDS_LIKE_THIS ; AND_YOU_LL_STILL_BE_POOR_ ; YOU_SURE_KNOW_HOW_TO_PICK ; RICH_OPPONENTS__CHUCKLE____ ; NOT_TOO_BAD_A_CATCH__MONEY ; ISN_T_EVERYTHING_ANYWAY_
 4000:7426 FUN_4000_7426 size=245 ncallers=1 | MOVE_THE_MOUSE_AND_POINT_TO ; THINGS_AND_EXPERIMENT_WITH_IT ; THROUGHOUT_THE_COURSE_OF_THE ; GAME_TO_SEE_WHAT_IT_CAN_DO_ ; POINT_TO_THIS_BOX_AND_HIT ; LEFT_BUTTON_TO_DISABLE_THE_MOUSE ; MANY_FIND_THE_KEYBOARD_CONTROLS ; SUPERIOR_TO_THE_MOUSE_CONTROLS_
 4000:751b shareware_plea_screen size=512 ncallers=0 | PA_WE_AT_MORAFFWARE_MAKE_OUR_LIV ; AWAY_THE_COMPLETE_SHAREWARE_EDIT ; HIGH_RES_GAMES__AND_THEN_RECEIVI ; EVEN_LARGER_COMMERCIAL_EDITIONS_O ; SHAREWARE_EDITIONS_OF_OTHER_MORA ; MAY_BE_OBTAINED_FREE_BY_CALLING_E ; EXEC_PC_IS_THE_LARGEST_BBS_IN_TH ; _414__789_4210_WITH_YOUR_MODEM__O ; MORAFFWARE_VOICE_NUMBER__1_800_V ; A_COUPLE_OF_DOLLARS_PER_GAME_WE_ ; OF_OUR_SHAREWARE_EDITIONS_THROUG ; SO_PLEASE_HELP_US_SUCCEED_BY_GIV ; OF_THIS_GAME_TO_EVERYONE_YOU_KNO ; DELETE_THE_FILE__INTRO_TXT__TO_R
-4000:771b death_screen size=2302 ncallers=1 | WELCOME_TO_MODULE ; _APurchase_Module_II_by_calling_ ; __800__VGA_GAME_or__512__335_639 ; _CAN_T_GO_THERE_YET_
+4000:771b module_transition_screen size=2302 ncallers=1 | WELCOME_TO_MODULE ; _APurchase_Module_II_by_calling_ ; __800__VGA_GAME_or__512__335_639 ; _CAN_T_GO_THERE_YET_
 5000:0006 FUN_5000_0006 size=326 ncallers=5 | 
 5000:0153 FUN_5000_0153 size=35 ncallers=4 | 
 5000:0176 FUN_5000_0176 size=92 ncallers=0 | 

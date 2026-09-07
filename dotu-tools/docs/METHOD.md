@@ -3,7 +3,7 @@
 A 1993 Borland C++ executable has no symbols.  What it does have is a lot of structure,
 and this note records the techniques that turned `FUN_2000_7e36` into `strike()` — in
 roughly the order they were useful.  The result is `FUNCTION-CATALOG.md` (647 functions,
-184 named) and the addresses quoted throughout the FAQ and the RE notes.
+199 named) and the addresses quoted throughout the FAQ and the RE notes.
 
 ## 0. Getting a clean binary
 

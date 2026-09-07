@@ -1230,7 +1230,7 @@ void __cdecl16far FUN_1000_1141(void)
 }
 
 
-// ==== ftol @ 1000:115b (size 44) callers: FUN_2000_3d9b,FUN_2000_4054,store_refund,flea_inn,FUN_3000_0837,draw_3d_view,draw_map_square,FUN_3000_3311,FUN_3000_342d,roll_char,FUN_3000_caac,FUN_4000_069a  // float/double -> long conversion helper
+// ==== ftol @ 1000:115b (size 44) callers: reset_view_caches,FUN_2000_4054,store_refund,flea_inn,FUN_3000_0837,draw_3d_view,draw_map_square,FUN_3000_3311,FUN_3000_342d,roll_char,FUN_3000_caac,FUN_4000_069a  // float/double -> long conversion helper
 
 undefined2 __cdecl16far ftol(void)
 
@@ -1591,7 +1591,7 @@ void __cdecl16far FUN_1000_14cc(undefined2 param_1)
 }
 
 
-// ==== N_LXMUL @ 1000:14f8 (size 23) callers: FUN_2000_041b,FUN_2000_05da,FUN_2000_0923,FUN_2000_0fc5,FUN_2000_1d4f,FUN_2000_20db,FUN_2000_216f,FUN_2000_2268,FUN_2000_295b,FUN_2000_31bc,Random,g_store,temple,flea_inn,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7832,strike,defend,pass_moment,attack_timing,trapdoor_dest,FUN_2000_c28b,movecontrol,cast_a_spell,FUN_3000_00a8,FUN_3000_0837,draw_3d_view,draw_map_square,FUN_3000_342d,roll_char,draw_monster_view,FUN_3000_7508,FUN_3000_8d7e,FUN_3000_8e75,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,monster_manual,FUN_4000_0035,FUN_4000_069a,pfont,psfont,set_palette,FUN_4000_3adc,FUN_4000_3b05,FUN_4000_3c20,FUN_4000_4225,FUN_4000_433e,scale_image2,FUN_4000_55b2,FUN_4000_580e,FUN_4000_593f,drop_money,death_screen  // 32-bit multiply helper: DX:AX * CX:BX
+// ==== N_LXMUL @ 1000:14f8 (size 23) callers: FUN_2000_041b,FUN_2000_05da,FUN_2000_0923,FUN_2000_0fc5,FUN_2000_1d4f,FUN_2000_20db,FUN_2000_216f,FUN_2000_2268,FUN_2000_295b,FUN_2000_31bc,Random,g_store,temple,flea_inn,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7832,strike,defend,pass_moment,attack_timing,trapdoor_dest,FUN_2000_c28b,movecontrol,cast_a_spell,FUN_3000_00a8,FUN_3000_0837,draw_3d_view,draw_map_square,FUN_3000_342d,roll_char,draw_monster_view,FUN_3000_7508,FUN_3000_8d7e,FUN_3000_8e75,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,monster_manual,FUN_4000_0035,FUN_4000_069a,pfont,psfont,set_palette,FUN_4000_3adc,FUN_4000_3b05,FUN_4000_3c20,FUN_4000_4225,FUN_4000_433e,scale_image2,typed_name,FUN_4000_580e,FUN_4000_593f,drop_money,module_transition_screen  // 32-bit multiply helper: DX:AX * CX:BX
 
 long __cdecl16far N_LXMUL(long a,long b)
 
@@ -1684,7 +1684,7 @@ void FUN_1000_1555(void)
 }
 
 
-// ==== N_LDIV @ 1000:1558 (size 4) callers: FUN_2000_041b,FUN_2000_05da,FUN_2000_0923,FUN_2000_0fc5,FUN_2000_1598,FUN_2000_1d4f,FUN_2000_20db,FUN_2000_216f,FUN_2000_2268,FUN_2000_295b,FUN_2000_31bc,Random,g_store,temple,flea_inn,bank,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7800,FUN_2000_7832,strike,defend,call_check_eng,pass_moment,attack_timing,FUN_2000_bce5,trapdoor_dest,FUN_2000_c28b,movecontrol,cast_a_spell,FUN_3000_00a8,FUN_3000_0837,draw_3d_view,FUN_3000_342d,roll_char,draw_monster_view,FUN_3000_7508,FUN_3000_8d7e,FUN_3000_8e75,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,monster_manual,FUN_4000_069a,pfont,psfont,apply_palette,set_palette,FUN_4000_3adc,FUN_4000_3b05,FUN_4000_3c20,FUN_4000_4225,FUN_4000_433e,scale_image2,FUN_4000_55b2,FUN_4000_580e,FUN_4000_593f,drop_money,death_screen  // signed 32-bit divide (stack args, retf 8)
+// ==== N_LDIV @ 1000:1558 (size 4) callers: FUN_2000_041b,FUN_2000_05da,FUN_2000_0923,FUN_2000_0fc5,FUN_2000_1598,FUN_2000_1d4f,FUN_2000_20db,FUN_2000_216f,FUN_2000_2268,FUN_2000_295b,FUN_2000_31bc,Random,g_store,temple,flea_inn,bank,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7800,FUN_2000_7832,strike,defend,call_check_eng,pass_moment,attack_timing,FUN_2000_bce5,trapdoor_dest,FUN_2000_c28b,movecontrol,cast_a_spell,FUN_3000_00a8,FUN_3000_0837,draw_3d_view,FUN_3000_342d,roll_char,draw_monster_view,FUN_3000_7508,FUN_3000_8d7e,FUN_3000_8e75,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,monster_manual,FUN_4000_069a,pfont,psfont,apply_palette,set_palette,FUN_4000_3adc,FUN_4000_3b05,FUN_4000_3c20,FUN_4000_4225,FUN_4000_433e,scale_image2,typed_name,FUN_4000_580e,FUN_4000_593f,drop_money,module_transition_screen  // signed 32-bit divide (stack args, retf 8)
 
 long __stdcall16far N_LDIV(long a,long b)
 
@@ -1718,7 +1718,7 @@ void FUN_1000_1564(void)
 }
 
 
-// ==== N_LMOD @ 1000:1567 (size 5) callers: bank,death_screen  // signed 32-bit modulo
+// ==== N_LMOD @ 1000:1567 (size 5) callers: bank,module_transition_screen  // signed 32-bit modulo
 
 long __stdcall16far N_LMOD(long a,long b)
 
@@ -2185,7 +2185,7 @@ void __cdecl16far FUN_1000_18dc(int param_1)
 }
 
 
-// ==== FUN_1000_1909 @ 1000:1909 (size 22) callers: null_check,load_level_screen,kill_player
+// ==== FUN_1000_1909 @ 1000:1909 (size 22) callers: null_check,load_level_screen,change_module
 
 undefined2 __cdecl16far FUN_1000_1909(void)
 
@@ -2544,7 +2544,7 @@ uint __cdecl16far FUN_1000_1d5f(uint param_1)
 }
 
 
-// ==== FUN_1000_1d8b @ 1000:1d8b (size 44) callers: cast_a_spell,roll_char,monster_manual,FUN_4000_55b2,FUN_4000_580e,FUN_4000_593f
+// ==== FUN_1000_1d8b @ 1000:1d8b (size 44) callers: cast_a_spell,roll_char,monster_manual,typed_name,FUN_4000_580e,FUN_4000_593f
 
 uint __cdecl16far FUN_1000_1d8b(uint param_1)
 
@@ -5255,7 +5255,7 @@ undefined2 __cdecl16far FUN_1000_3d90(uint param_1)
 }
 
 
-// ==== fclose @ 1000:3e07 (size 129) callers: FUN_1000_405f,give_hint,load_overlay_pic,load_section_pictures,select_player,load_md_bin,show_registration_notice,save_monster_map,load_monster_map,save_maps,load_maps,load_unfdung_bin,load_player,save_player,read_spell_help,delete_character_files,roll_char,FUN_3000_6a6a,read_spell_help,tablet_message,load_picture_seq,load_building_picture,load_font  // libc
+// ==== fclose @ 1000:3e07 (size 129) callers: FUN_1000_405f,give_hint,load_overlay_pic,load_section_pictures,select_player,load_md_bin,show_registration_notice,save_monster_map,load_monster_map,save_maps,load_maps,load_unfdung_bin,load_player,save_player,read_spell_help,module_installed,roll_char,FUN_3000_6a6a,read_spell_help,tablet_message,load_picture_seq,load_building_picture,load_font  // libc
 
 short __cdecl16far fclose(void *f)
 
@@ -5517,7 +5517,7 @@ uint __cdecl16near FUN_1000_40fb(void)
 }
 
 
-// ==== fopen @ 1000:4126 (size 31) callers: give_hint,load_overlay_pic,load_section_pictures,select_player,load_md_bin,show_registration_notice,save_monster_map,load_monster_map,save_maps,load_maps,load_unfdung_bin,load_player,save_player,read_spell_help,delete_character_files,roll_char,FUN_3000_6a6a,read_spell_help,tablet_message,load_picture_seq,load_building_picture,load_font  // libc
+// ==== fopen @ 1000:4126 (size 31) callers: give_hint,load_overlay_pic,load_section_pictures,select_player,load_md_bin,show_registration_notice,save_monster_map,load_monster_map,save_maps,load_maps,load_unfdung_bin,load_player,save_player,read_spell_help,module_installed,roll_char,FUN_3000_6a6a,read_spell_help,tablet_message,load_picture_seq,load_building_picture,load_font  // libc
 
 void * __cdecl16far fopen(char *name,char *mode)
 
@@ -5843,7 +5843,7 @@ void __cdecl16far FUN_1000_44d7(int *param_1)
 }
 
 
-// ==== fgetc @ 1000:44ec (size 173) callers: FUN_1000_44d7,load_overlay_pic,load_section_pictures,select_player,show_registration_notice,load_monster_map,load_maps,load_player,read_spell_help,FUN_3000_4a24,read_spell_help,load_picture_seq,load_building_picture,load_font  // libc
+// ==== fgetc @ 1000:44ec (size 173) callers: FUN_1000_44d7,load_overlay_pic,load_section_pictures,select_player,show_registration_notice,load_monster_map,load_maps,load_player,read_spell_help,read_uroll_line,read_spell_help,load_picture_seq,load_building_picture,load_font  // libc
 
 short __cdecl16far fgetc(void *f)
 
@@ -5947,7 +5947,7 @@ char * __cdecl16far FUN_1000_45a5(char *param_1)
 }
 
 
-// ==== itoa @ 1000:4604 (size 40) callers: load_section_pictures,flea_inn,select_player,load_player,save_player,FUN_2000_7bcd,strike,defend,load_level_screen,lose_item,print_battle_hp_info,explain_trapdoor,movecontrol,FUN_3000_4a67,roll_char,FUN_3000_71e6,read_spell_help,drop_weapon,drop_armor,spell_name_to_menu,drop_wand,kill_monster,enchant_weapon_perm,enchant_armor_perm,write_scroll_or_wand,explosion,spell_effect  // libc
+// ==== itoa @ 1000:4604 (size 40) callers: load_section_pictures,flea_inn,select_player,load_player,save_player,FUN_2000_7bcd,strike,defend,load_level_screen,lose_item,print_battle_hp_info,explain_trapdoor,movecontrol,show_rolled_character,roll_char,FUN_3000_71e6,read_spell_help,drop_weapon,drop_armor,spell_name_to_menu,drop_wand,kill_monster,enchant_weapon_perm,enchant_armor_perm,write_scroll_or_wand,explosion,spell_effect  // libc
 
 char * __cdecl16far itoa(short v,char *s,short radix)
 
@@ -6632,7 +6632,7 @@ void __cdecl16far FUN_1000_4fcf(undefined1 *param_1,undefined2 param_2,undefined
 }
 
 
-// ==== strcat @ 1000:4feb (size 57) callers: FUN_1000_17eb,store_refund,g_store,flea_inn,bank,select_player,decode_quit_message,show_registration_notice,FUN_2000_7bcd,strike,defend,lose_item,print_battle_hp_info,explain_trapdoor,movecontrol,print_spell_line,boss_office_message,read_spell_help,drop_weapon,drop_armor,drop_wand,kill_monster,FUN_3000_caac,enchant_weapon_perm,enchant_armor_perm,write_scroll_or_wand,spell_effect,FUN_4000_5a62,num_to_string,FUN_4000_5aca,drop_money,death_screen  // libc
+// ==== strcat @ 1000:4feb (size 57) callers: FUN_1000_17eb,store_refund,g_store,flea_inn,bank,select_player,decode_quit_message,show_registration_notice,FUN_2000_7bcd,strike,defend,lose_item,print_battle_hp_info,explain_trapdoor,movecontrol,print_spell_line,boss_office_message,read_spell_help,drop_weapon,drop_armor,drop_wand,kill_monster,FUN_3000_caac,enchant_weapon_perm,enchant_armor_perm,write_scroll_or_wand,spell_effect,FUN_4000_5a62,num_to_string,FUN_4000_5aca,drop_money,module_transition_screen  // libc
 
 char * __cdecl16far strcat(char *param_1,char *param_2)
 
@@ -6748,7 +6748,7 @@ int __cdecl16far FUN_1000_505a(char *param_1,char *param_2)
 }
 
 
-// ==== strcpy @ 1000:5089 (size 34) callers: FUN_1000_1b91,FUN_1000_1bc4,FUN_1000_4d61,FUN_1000_53da,FUN_2000_2a83,FUN_2000_2ecc,FUN_2000_2f5d,print_menu_only,show_money,g_store,flea_inn,bank,select_player,decode_quit_message,save_monster_map,load_monster_map,save_maps,load_maps,FUN_2000_7bcd,strike,FUN_2000_8189,defend,null_check,load_level_screen,tick_spell_timers,print_battle_hp_info,engagement_timing,explain_trapdoor,kill_player,print_spell_line,FUN_3000_6a6a,boss_office_message,tablet_message,drop_weapon,drop_armor,spell_name_to_menu,drop_spellbook,drop_scroll,drop_wand,drop_paper,kill_monster,FUN_3000_caac,write_scroll_or_wand,explosion,sleep_monster,spell_effect,FUN_4000_580e,FUN_4000_5a62,num_to_string,FUN_4000_5aca,drop_money,death_screen  // libc
+// ==== strcpy @ 1000:5089 (size 34) callers: FUN_1000_1b91,FUN_1000_1bc4,FUN_1000_4d61,FUN_1000_53da,FUN_2000_2a83,FUN_2000_2ecc,FUN_2000_2f5d,print_menu_only,show_money,g_store,flea_inn,bank,select_player,decode_quit_message,save_monster_map,load_monster_map,save_maps,load_maps,FUN_2000_7bcd,strike,gain_or_drain,defend,null_check,load_level_screen,tick_spell_timers,print_battle_hp_info,engagement_timing,explain_trapdoor,change_module,print_spell_line,FUN_3000_6a6a,boss_office_message,tablet_message,drop_weapon,drop_armor,spell_name_to_menu,drop_spellbook,drop_scroll,drop_wand,drop_paper,kill_monster,FUN_3000_caac,write_scroll_or_wand,explosion,sleep_monster,spell_effect,FUN_4000_580e,FUN_4000_5a62,num_to_string,FUN_4000_5aca,drop_money,module_transition_screen  // libc
 
 char * __cdecl16far strcpy(char *dst,char *src)
 
@@ -9366,7 +9366,7 @@ LAB_2000_2d42:
 }
 
 
-// ==== get_choice @ 2000:2d93 (size 309) callers: g_store,temple,flea_inn,bank,lose_item,use_magic_item,dig_hole,kill_player,movecontrol,boss_office_message,FUN_3000_7052,FUN_3000_7545,drop_weapon,drop_armor,kill_monster,write_scroll_or_wand,pass_wall  // wait for a menu key in a range
+// ==== get_choice @ 2000:2d93 (size 309) callers: g_store,temple,flea_inn,bank,lose_item,use_magic_item,dig_hole,change_module,movecontrol,boss_office_message,FUN_3000_7052,FUN_3000_7545,drop_weapon,drop_armor,kill_monster,write_scroll_or_wand,pass_wall  // wait for a menu key in a range
 
 int __cdecl16far get_choice(int param_1,int param_2)
 
@@ -9506,7 +9506,7 @@ void __cdecl16far FUN_2000_3076(undefined2 *param_1)
 }
 
 
-// ==== print_menu_only @ 2000:309e (size 152) callers: store_refund,FUN_2000_44c6,g_store,temple,use_magic_item,dig_hole,movecontrol,cast_a_spell,kill_monster,msg_no_monster,msg_already_in_effect,FUN_3000_d11b,write_scroll_or_wand,FUN_3000_d7be,FUN_3000_d7eb,explosion,sleep_monster,boss_immune_check,autokill,FUN_3000_dd37,battle_strength,battle_speed,resist_poison,resist_disease,anti_cold,anti_fire,resist_drain,spell_effect  // show an 8-line message box
+// ==== print_menu_only @ 2000:309e (size 152) callers: store_refund,FUN_2000_44c6,g_store,temple,use_magic_item,dig_hole,movecontrol,cast_a_spell,kill_monster,msg_no_monster,msg_already_in_effect,msg_already_cast_this_spell,write_scroll_or_wand,msg_you_feel_good,msg_you_feel_very_good,explosion,sleep_monster,boss_immune_check,autokill,msg_sixty_moves_longer,power_weapon,protection,resist_poison,resist_disease,anti_cold,anti_fire,resist_drain,spell_effect  // show an 8-line message box
 
 undefined2 __cdecl16far
 print_menu_only(undefined2 param_1,undefined2 param_2,undefined2 param_3,undefined2 param_4,
@@ -9533,7 +9533,7 @@ print_menu_only(undefined2 param_1,undefined2 param_2,undefined2 param_3,undefin
 }
 
 
-// ==== give_hint @ 2000:313a (size 130) callers: FUN_2000_31bc,FUN_2000_44f2,g_store,temple,flea_inn,bank,main,FUN_2000_8f85,FUN_2000_9232,lose_item,pass_moment,use_magic_item,dig_hole,kill_player,FUN_2000_c200,movecontrol,boss_office_message,FUN_3000_703c,FUN_3000_7052,FUN_3000_7545,find_item,post_kill_heal,post_kill_sp,kill_monster,spell_effect,drop_money  // print hint n from UH.BIN
+// ==== give_hint @ 2000:313a (size 130) callers: FUN_2000_31bc,FUN_2000_44f2,g_store,temple,flea_inn,bank,main,FUN_2000_8f85,FUN_2000_9232,lose_item,pass_moment,use_magic_item,dig_hole,change_module,FUN_2000_c200,movecontrol,boss_office_message,FUN_3000_703c,FUN_3000_7052,FUN_3000_7545,find_item,post_kill_heal,post_kill_sp,kill_monster,spell_effect,drop_money  // print hint n from UH.BIN
 
 void __cdecl16far give_hint(int param_1)
 
@@ -9553,11 +9553,11 @@ void __cdecl16far give_hint(int param_1)
   }
   for (local_4 = 0; local_4 < param_1; local_4 = local_4 + 1) {
     for (iVar2 = 0; iVar2 < 8; iVar2 = iVar2 + 1) {
-      FUN_3000_4a24(local_54,pvVar1);
+      read_uroll_line(local_54,pvVar1);
     }
   }
   for (iVar2 = 0; iVar2 < 8; iVar2 = iVar2 + 1) {
-    FUN_3000_4a24(((undefined2 *)&DAT_6000_c694)[iVar2],pvVar1);
+    read_uroll_line(((undefined2 *)&DAT_6000_c694)[iVar2],pvVar1);
   }
   FUN_2000_3076((undefined2 *)&DAT_6000_c694);
   fclose((void *)CONCAT22(unaff_DI,pvVar1));
@@ -10071,9 +10071,9 @@ void __cdecl16far allocate_buffers(void)
 }
 
 
-// ==== FUN_2000_3d9b @ 2000:3d9b (size 146) callers: dig_hole,kill_player,movecontrol,roll_char,boss_office_message,FUN_3000_71e6,FUN_3000_7545,view_stats,FUN_3000_7dfc,FUN_3000_9488,level_up_screen,monster_manual,pass_wall
+// ==== reset_view_caches @ 2000:3d9b (size 146) callers: dig_hole,change_module,movecontrol,roll_char,boss_office_message,FUN_3000_71e6,FUN_3000_7545,view_stats,FUN_3000_7dfc,FUN_3000_9488,level_up_screen,monster_manual,pass_wall  // throws away everything cached about the view, so the next frame is drawn from nothing
 
-void __cdecl16far FUN_2000_3d9b(void)
+void __cdecl16far reset_view_caches(void)
 
 {
   int iVar1;
@@ -10136,7 +10136,7 @@ void __cdecl16far FUN_2000_3e2d(void)
 }
 
 
-// ==== FUN_2000_3e73 @ 2000:3e73 (size 481) callers: FUN_2000_4054,FUN_2000_412a,death_screen
+// ==== FUN_2000_3e73 @ 2000:3e73 (size 481) callers: FUN_2000_4054,FUN_2000_412a,module_transition_screen
 
 void __cdecl16far FUN_2000_3e73(int param_1,int param_2)
 
@@ -10180,7 +10180,7 @@ void __cdecl16far FUN_2000_3e73(int param_1,int param_2)
 }
 
 
-// ==== FUN_2000_4054 @ 2000:4054 (size 208) callers: print_menu_only,show_money,FUN_2000_44f2,g_store,temple,flea_inn,bank,main,FUN_2000_7bcd,defend,FUN_2000_8f85,FUN_2000_9232,lose_item,pass_moment,use_magic_item,chute,dig_hole,kill_player,FUN_2000_c200,movecontrol,FUN_3000_703c,FUN_3000_7052,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,drop_money
+// ==== FUN_2000_4054 @ 2000:4054 (size 208) callers: print_menu_only,show_money,FUN_2000_44f2,g_store,temple,flea_inn,bank,main,FUN_2000_7bcd,defend,FUN_2000_8f85,FUN_2000_9232,lose_item,pass_moment,use_magic_item,chute,dig_hole,change_module,FUN_2000_c200,movecontrol,FUN_3000_703c,FUN_3000_7052,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,drop_money
 
 undefined2 __cdecl16far FUN_2000_4054(void)
 
@@ -10232,7 +10232,7 @@ undefined2 __cdecl16far FUN_2000_412a(void)
 }
 
 
-// ==== Random @ 2000:4156 (size 84) callers: get_mtype,stock_level,defend,FUN_2000_9232,use_magic_item,attack_timing,movecontrol,draw_monster_view,title_screen,drop_spellbook,drop_scroll,drop_wand,drop_paper,kill_monster,explosion,sleep_monster,relocate_spell,go_away,autokill,spell_effect  // srand(clock()) then random(n)
+// ==== Random @ 2000:4156 (size 84) callers: get_mtype,stock_level,defend,FUN_2000_9232,use_magic_item,attack_timing,movecontrol,draw_monster_view,title_screen,drop_spellbook,drop_scroll,drop_wand,drop_paper,kill_monster,explosion,sleep_monster,relocate,go_away,autokill,spell_effect  // srand(clock()) then random(n)
 
 undefined2 __cdecl16far Random(int param_1)
 
@@ -10603,7 +10603,7 @@ void __cdecl16far g_store(void)
       pcStackY_9e = local_2e;
       uStackY_a0 = 0x4000;
       uStackY_a2 = 0x49d0;
-      FUN_4000_55b2();
+      typed_name();
       local_8 = atol();
       local_6 = iVar6;
       if (CONCAT22(iVar6,local_8) < local_c) {
@@ -10679,7 +10679,7 @@ void __cdecl16far g_store(void)
       pcStackY_9e = local_2e;
       uStackY_a0 = 0x4000;
       uStackY_a2 = 0x4c67;
-      FUN_4000_55b2();
+      typed_name();
       local_8 = atol();
       local_6 = iVar6;
       if (CONCAT22(iVar6,local_8) < local_c) {
@@ -11150,7 +11150,7 @@ void __cdecl16far bank(void)
         pfont(0x3a2,0x35b,0,(char *)s_PLEASE_TYPE_THE_AMOUNT_6000_118a,5);
         pfont(0x3a2,0x38d,0,(char *)s_AND_HIT_ENTER__6000_11a1,5);
         iVar4 = 0x3a2;
-        FUN_4000_55b2(local_24,0x3a2,0,0x487,0,0x49c,0,0,9,9);
+        typed_name(local_24,0x3a2,0,0x487,0,0x49c,0,0,9,9);
         local_6 = atol(local_24);
         if (((DAT_6000_bcd6 < iVar4) || ((iVar4 == DAT_6000_bcd6 && (DAT_6000_bcd4 < local_6)))) ||
            ((local_4 = iVar4, iVar4 < 1 && (iVar4 < 0)))) {
@@ -11174,7 +11174,7 @@ void __cdecl16far bank(void)
         pfont(0x3a2,0x35b,0,(char *)s_PLEASE_TYPE_THE_AMOUNT_6000_118a,5);
         pfont(0x3a2,0x38d,0,(char *)s_AND_HIT_ENTER__6000_11a1,5);
         iVar4 = 0x3a2;
-        FUN_4000_55b2(local_24,0x3a2,0,0x487,0,0x49c,0,0,9,9);
+        typed_name(local_24,0x3a2,0,0x487,0,0x49c,0,0,9,9);
         local_6 = atol(local_24);
         if (((DAT_6000_bcda < iVar4) || ((iVar4 == DAT_6000_bcda && (DAT_6000_bcd8 < local_6)))) ||
            ((local_4 = iVar4, iVar4 < 1 && (iVar4 < 0)))) {
@@ -11733,9 +11733,9 @@ uint __cdecl16far which_monster(int param_1,int param_2)
 }
 
 
-// ==== FUN_2000_65b0 @ 2000:65b0 (size 42) callers: check_engagement,pass_moment,movecontrol,title_screen,relocate_spell,pass_wall
+// ==== monster_at @ 2000:65b0 (size 42) callers: check_engagement,pass_moment,movecontrol,title_screen,relocate,pass_wall  // the slot of the monster standing on a square, or -1 when it is empty
 
-uint __cdecl16far FUN_2000_65b0(int param_1,int param_2)
+uint __cdecl16far monster_at(int param_1,int param_2)
 
 {
   uint uVar1;
@@ -11748,7 +11748,7 @@ uint __cdecl16far FUN_2000_65b0(int param_1,int param_2)
 }
 
 
-// ==== set_monster_map @ 2000:65dc (size 28) callers: stock_level,load_monster_map,pass_moment,FUN_2000_bcb6,FUN_2000_bce5,movecontrol,relocate_spell,pass_wall  // write the 80x110 occupancy map
+// ==== set_monster_map @ 2000:65dc (size 28) callers: stock_level,load_monster_map,pass_moment,FUN_2000_bcb6,FUN_2000_bce5,movecontrol,relocate,pass_wall  // write the 80x110 occupancy map
 
 void __cdecl16far set_monster_map(int param_1,int param_2,undefined1 param_3)
 
@@ -12231,7 +12231,7 @@ void __cdecl16far FUN_2000_72de(int param_1,int param_2)
 }
 
 
-// ==== save_maps @ 2000:7313 (size 411) callers: load_level_map,quit_game,kill_player  // writes <letter><module><n>.DUN ('wb'); called on floor change, quit and death
+// ==== save_maps @ 2000:7313 (size 411) callers: load_level_map,quit_game,change_module  // writes <letter><module><n>.DUN ('wb'); called on floor change, quit and death
 
 void __cdecl16far save_maps(char param_1)
 
@@ -12571,7 +12571,7 @@ void __cdecl16far load_player(short param_1)
 }
 
 
-// ==== save_player @ 2000:79ad (size 203) callers: defend,quit_game,pass_moment,chute,kill_player,roll_char  // itoa(slot) file name, fwrite 0xa87 bytes; called by defend, pass_moment, chute, kill_player, quit, roll_char
+// ==== save_player @ 2000:79ad (size 203) callers: defend,quit_game,pass_moment,chute,change_module,roll_char  // itoa(slot) file name, fwrite 0xa87 bytes; called by defend, pass_moment, chute, change_module, quit, roll_char
 
 void __cdecl16far save_player(short param_1)
 
@@ -12934,9 +12934,9 @@ int __cdecl16far strike(void)
 }
 
 
-// ==== FUN_2000_8189 @ 2000:8189 (size 216) callers: defend
+// ==== gain_or_drain @ 2000:8189 (size 216) callers: defend  // moves one of the six stats by a point, the stat picked by the size of -6..-1 / 1..6
 
-char * __cdecl16far FUN_2000_8189(uint param_1)
+char * __cdecl16far gain_or_drain(uint param_1)
 
 {
   char *pcVar1;
@@ -13033,7 +13033,7 @@ int __cdecl16far defend(int param_1)
   uVar3 = (uint)*(byte *)((int)DAT_6000_c4cd + param_1 * 6 + 4);
   if (*(char *)(uVar3 * 0x1d + 0x4fe1) == '\x06') {
     iVar5 = (int)*(char *)(uVar3 * 0x1d + 0x4fdf);
-    FUN_2000_8189(iVar5);
+    gain_or_drain(iVar5);
     FUN_2000_28be();
     if (iVar5 < 0) {
       strcat(DAT_6000_c427,(char *)s_DRAINED_BY_PUFFBALL__6000_1387);
@@ -13260,7 +13260,7 @@ int __cdecl16far defend(int param_1)
             FUN_1000_2789(500);
             erase_message_block();
             FUN_2000_28be();
-            FUN_2000_8189(iVar6);
+            gain_or_drain(iVar6);
             if (iVar6 < 0) {
               strcat(DAT_6000_c427,(char *)s_HAS_BEEN_DRAINED__6000_1536);
             }
@@ -13848,9 +13848,9 @@ void __cdecl16far quit_game(void)
 }
 
 
-// ==== town_features @ 2000:9cba (size 87) callers: movecontrol,draw_map_square,drawsquare  // store/temple/bank/inn at (x, y)
+// ==== trapdoor @ 2000:9cba (size 87) callers: movecontrol,draw_map_square,drawsquare  // trap door destination for a square
 
-int __cdecl16far town_features(int param_1,int param_2)
+int __cdecl16far trapdoor(int param_1,int param_2)
 
 {
   undefined2 local_4;
@@ -14033,7 +14033,7 @@ int __cdecl16far check_engagement(void)
     }
     iVar2 = iVar2 + 1;
   }
-  iVar2 = FUN_2000_65b0(iVar2,iVar3);
+  iVar2 = monster_at(iVar2,iVar3);
   if ((iVar2 != -1) && (iVar2 != 0xfe)) {
     return iVar2;
   }
@@ -14271,7 +14271,7 @@ void __cdecl16far pass_moment(void)
             uVar3 = retdwall(*(undefined1 *)((int)DAT_6000_c4cd + iVar7 * 6),
                                   *(undefined1 *)((int)DAT_6000_c4cd + iVar7 * 6 + 1),uVar3 & 0xff00
                                   ,DAT_6000_c034), (char)uVar3 != '\0')) &&
-           (uVar3 = FUN_2000_65b0(), uVar3 == 0xffff)) {
+           (uVar3 = monster_at(), uVar3 == 0xffff)) {
           uVar8 = (undefined2)((ulong)DAT_6000_c4cd >> 0x10);
           *(char *)((int)DAT_6000_c4cd + iVar7 * 6) = *(char *)((int)DAT_6000_c4cd + iVar7 * 6) + -1
           ;
@@ -14281,13 +14281,13 @@ void __cdecl16far pass_moment(void)
                  cVar1 = retdwall(*(byte *)((int)DAT_6000_c4cd + iVar7 * 6) + 1,
                                        *(undefined1 *)((int)DAT_6000_c4cd + iVar7 * 6 + 1),
                                        uVar3 & 0xff00,DAT_6000_c034), cVar1 == '\0')) ||
-                (iVar4 = FUN_2000_65b0(), iVar4 != -1)) {
+                (iVar4 = monster_at(), iVar4 != -1)) {
           if ((((int)uVar6 < 0) &&
               (uVar8 = (undefined2)((ulong)DAT_6000_c4cd >> 0x10),
               cVar1 = retdwall(*(undefined1 *)((int)DAT_6000_c4cd + iVar7 * 6),
                                     *(undefined1 *)((int)DAT_6000_c4cd + iVar7 * 6 + 1),1,
                                     DAT_6000_c034), cVar1 != '\0')) &&
-             (iVar4 = FUN_2000_65b0(), iVar4 == -1)) {
+             (iVar4 = monster_at(), iVar4 == -1)) {
             uVar8 = (undefined2)((ulong)DAT_6000_c4cd >> 0x10);
             *(char *)((int)DAT_6000_c4cd + iVar7 * 6 + 1) =
                  *(char *)((int)DAT_6000_c4cd + iVar7 * 6 + 1) + -1;
@@ -14297,7 +14297,7 @@ void __cdecl16far pass_moment(void)
                    cVar1 = retdwall(*(undefined1 *)((int)DAT_6000_c4cd + iVar7 * 6),
                                          *(byte *)((int)DAT_6000_c4cd + iVar7 * 6 + 1) + 1,1,
                                          DAT_6000_c034), cVar1 != '\0')) &&
-                  (iVar4 = FUN_2000_65b0(), iVar4 == -1)) {
+                  (iVar4 = monster_at(), iVar4 == -1)) {
             uVar8 = (undefined2)((ulong)DAT_6000_c4cd >> 0x10);
             *(char *)((int)DAT_6000_c4cd + iVar7 * 6 + 1) =
                  *(char *)((int)DAT_6000_c4cd + iVar7 * 6 + 1) + '\x01';
@@ -14518,9 +14518,9 @@ FUN_2000_ac9e(undefined2 *param_1,undefined2 *param_2,undefined2 *param_3,undefi
 }
 
 
-// ==== FUN_2000_b1b7 @ 2000:b1b7 (size 39) callers: FUN_2000_bce5
+// ==== move_seconds @ 2000:b1b7 (size 39) callers: FUN_2000_bce5  // seconds one step costs: a second, plus one per 100 of weight over 10x agility
 
-int __cdecl16far FUN_2000_b1b7(void)
+int __cdecl16far move_seconds(void)
 
 {
   int iVar1;
@@ -14888,8 +14888,8 @@ undefined2 __cdecl16far dig_hole(void)
     if (DAT_6000_b8aa == '\0') {
       give_hint(0x73);
       FUN_2000_4054();
-      relocate_spell();
-      FUN_2000_3d9b();
+      relocate();
+      reset_view_caches();
       return 0;
     }
     give_hint(0x1d);
@@ -14957,7 +14957,7 @@ undefined2 __cdecl16far dig_hole(void)
     cVar1 = solidcheck(DAT_6000_c030,DAT_6000_c032,iVar2,DAT_6000_c036);
   } while (cVar1 != '\0');
   while (cVar1 = solidcheck(DAT_6000_c030,DAT_6000_c032,iVar2,DAT_6000_c036), cVar1 != '\0') {
-    relocate_spell();
+    relocate();
   }
   FUN_2000_aa26();
   DAT_6000_c034 = iVar2;
@@ -14997,7 +14997,7 @@ void __cdecl16far FUN_2000_bce5(void)
   sVar1 = rand();
   lVar2 = N_LDIV(CONCAT22((sVar1 >> 0xf) << 1 | (uint)(sVar1 < 0),sVar1 << 1),lVar2);
   if ((int)lVar2 != 0) {
-    FUN_2000_b1b7();
+    move_seconds();
     call_check_eng();
   }
   pass_moment();
@@ -15005,9 +15005,9 @@ void __cdecl16far FUN_2000_bce5(void)
 }
 
 
-// ==== trapdoor @ 2000:bd32 (size 112) callers: movecontrol,drawsquare  // trap door destination for a square
+// ==== town_features @ 2000:bd32 (size 112) callers: movecontrol,drawsquare  // store/temple/bank/inn at (x, y)
 
-int __cdecl16far trapdoor(undefined2 param_1,undefined2 param_2,int param_3,undefined2 param_4)
+int __cdecl16far town_features(undefined2 param_1,undefined2 param_2,int param_3,undefined2 param_4)
 
 {
   int iVar1;
@@ -15142,9 +15142,9 @@ void __cdecl16far FUN_2000_bf91(void)
 }
 
 
-// ==== delete_character_files @ 2000:c069 (size 56) callers: kill_player  // probable: removes a dead character's files
+// ==== module_installed @ 2000:c069 (size 56) callers: change_module  // fopen() test on the module's first UFMON picture file
 
-bool __cdecl16far delete_character_files(int param_1)
+bool __cdecl16far module_installed(int param_1)
 
 {
   void *pvVar1;
@@ -15162,9 +15162,9 @@ bool __cdecl16far delete_character_files(int param_1)
 }
 
 
-// ==== kill_player @ 2000:c0a5 (size 343) callers: movecontrol  // death: saves maps/monster map, death screen (4000:771b)
+// ==== change_module @ 2000:c0a5 (size 343) callers: movecontrol  // the module teleporter: next/previous module menu (normal difficulty may not enter Module V), saves maps, floor = 0, relocate() into the new town, saves the player
 
-undefined2 __cdecl16far kill_player(void)
+undefined2 __cdecl16far change_module(void)
 
 {
   int iVar1;
@@ -15202,13 +15202,13 @@ undefined2 __cdecl16far kill_player(void)
     FUN_2000_4054();
     return 0xffff;
   }
-  iVar1 = delete_character_files();
+  iVar1 = module_installed();
   if (iVar1 != 0) {
-    death_screen(0);
+    module_transition_screen(0);
     save_maps();
     DAT_6000_c034 = 0;
     DAT_6000_c036 = DAT_6000_c036 + iVar2;
-    relocate_spell();
+    relocate();
     save_player();
     DAT_6000_022d = DAT_6000_022d + iVar2;
     strcpy((char *)CONCAT22((char *)s_HB_mon_map_6000_128f + 2,DAT_6000_c427),src);
@@ -15219,8 +15219,8 @@ undefined2 __cdecl16far kill_player(void)
     FUN_2000_4054();
     return 1;
   }
-  death_screen(1,DAT_6000_c036 + iVar2);
-  FUN_2000_3d9b();
+  module_transition_screen(1,DAT_6000_c036 + iVar2);
+  reset_view_caches();
   give_hint();
   FUN_2000_4054();
   erase_menu_block();
@@ -15412,10 +15412,10 @@ undefined2 __cdecl16far movecontrol(void)
     local_16 = check_for_ladder(DAT_6000_c030,DAT_6000_c032,DAT_6000_c034);
     if (local_16 == 0) {
       if (DAT_6000_c034 == 0) {
-        local_1a = town_features(DAT_6000_c030);
+        local_1a = trapdoor(DAT_6000_c030);
       }
       if (((local_1a == 0) &&
-          (local_18 = trapdoor(DAT_6000_c030,DAT_6000_c032,DAT_6000_c034), local_18 != -1)) &&
+          (local_18 = town_features(DAT_6000_c030,DAT_6000_c032,DAT_6000_c034), local_18 != -1)) &&
          (iVar5 = explain_trapdoor(), iVar5 == 0)) {
         local_18 = -1;
       }
@@ -15596,13 +15596,13 @@ undefined2 __cdecl16far movecontrol(void)
               }
               if (local_10 == 4) {
                 if ((((((DAT_6000_c02e == 0) && (iVar5 == 3)) &&
-                      (iVar16 = FUN_2000_65b0(DAT_6000_c030), iVar16 != -1)) ||
+                      (iVar16 = monster_at(DAT_6000_c030), iVar16 != -1)) ||
                      (((DAT_6000_c02e == 1 && (iVar6 == 3)) &&
-                      (iVar16 = FUN_2000_65b0(DAT_6000_c030), iVar16 != -1)))) ||
+                      (iVar16 = monster_at(DAT_6000_c030), iVar16 != -1)))) ||
                     (((DAT_6000_c02e == 3 && (iVar7 == 3)) &&
-                     (iVar16 = FUN_2000_65b0(DAT_6000_c030 + 1), iVar16 != -1)))) ||
+                     (iVar16 = monster_at(DAT_6000_c030 + 1), iVar16 != -1)))) ||
                    (((DAT_6000_c02e == 2 && (iVar8 == 3)) &&
-                    (iVar16 = FUN_2000_65b0(DAT_6000_c030 + -1), iVar16 != -1)))) {
+                    (iVar16 = monster_at(DAT_6000_c030 + -1), iVar16 != -1)))) {
                   iVar16 = 0x66;
                 }
                 else {
@@ -15755,7 +15755,7 @@ undefined2 __cdecl16far movecontrol(void)
     if (((DAT_6000_c307 == 1) && (DAT_6000_c30d == 0)) &&
        ((DAT_6000_c309 == 0 && (iVar10 = FUN_1000_5024(0x1cdc), iVar10 != 0)))) {
       erase_menu_block();
-      FUN_2000_3d9b();
+      reset_view_caches();
       DAT_6000_c307 = 0;
     }
     if (((DAT_6000_c307 == 0) || (DAT_6000_c309 == 1)) || (DAT_6000_c30d == 1)) {
@@ -15893,7 +15893,7 @@ LAB_2000_cddc:
           FUN_2000_4054();
         }
         else if (*(int *)(DAT_6000_022d * 2 + 0x493) < local_16 + DAT_6000_c034) {
-          iVar16 = kill_player();
+          iVar16 = change_module();
           if (iVar16 == 1) {
             DAT_6000_0327 = '\x01';
             DAT_6000_2517 = -1;
@@ -16018,7 +16018,7 @@ LAB_2000_cddc:
         DAT_6000_c307 = uVar4;
         if (iVar16 == 0x67) {
           give_hint();
-          FUN_2000_3d9b();
+          reset_view_caches();
           local_e = get_choice(1);
           if (local_e == 0x31) {
             DAT_6000_c307 = 0;
@@ -16143,7 +16143,7 @@ LAB_2000_cddc:
           break;
         case 6:
           give_hint();
-          FUN_2000_3d9b();
+          reset_view_caches();
           local_e = get_choice(1);
           if (local_e == 0x31) {
             uVar13 = (int)(DAT_6000_00c3 + 1) % 2;
@@ -16265,7 +16265,7 @@ LAB_2000_cddc:
       }
       FUN_2000_c28b();
       erase_menu_block();
-      FUN_2000_3d9b();
+      reset_view_caches();
       erase_message_block();
       DAT_6000_c307 = uVar4;
     }
@@ -16307,7 +16307,7 @@ LAB_2000_cddc:
             erase_menu_block();
             DAT_6000_2505 = 0;
             set_palette();
-            FUN_2000_3d9b();
+            reset_view_caches();
           }
         }
         else {
@@ -16367,7 +16367,7 @@ LAB_2000_cddc:
       DAT_6000_c30d = 0;
       uVar13 = (int)(DAT_6000_c307 + 1) % 2;
       DAT_6000_c307 = uVar13;
-      FUN_2000_3d9b();
+      reset_view_caches();
       if ((DAT_6000_2517 == -1) || (DAT_6000_c307 != 1)) {
         DAT_6000_c309 = 0;
       }
@@ -16437,7 +16437,7 @@ LAB_2000_cddc:
       local_10 = iVar8;
     }
     if (local_10 == 4) {
-      iVar5 = kill_player();
+      iVar5 = change_module();
       if (iVar5 == 1) {
         DAT_6000_0327 = '\x01';
         DAT_6000_2517 = -1;
@@ -16451,7 +16451,7 @@ LAB_2000_cddc:
       pfont();
     }
     else {
-      iVar5 = FUN_2000_65b0(DAT_6000_c030 + local_4);
+      iVar5 = monster_at(DAT_6000_c030 + local_4);
       if (iVar5 == -1) {
         if ((DAT_6000_2517 != -1) && (local_6 != local_4)) {
           iVar5 = Random();
@@ -19079,7 +19079,7 @@ draw_map_square(float param_1,float param_2,float param_3,float param_4,undefine
     if ((iVar2 == 0) && (DAT_6000_c034 == 0)) {
       ftol();
       uVar1 = ftol();
-      iVar2 = town_features(uVar1);
+      iVar2 = trapdoor(uVar1);
       iVar2 = -iVar2;
     }
     if (iVar2 < 0) {
@@ -19861,9 +19861,9 @@ FUN_3000_342d(int param_1,int param_2,int param_3,int param_4,int param_5,int pa
 }
 
 
-// ==== FUN_3000_4a24 @ 3000:4a24 (size 61) callers: give_hint,roll_char,FUN_3000_6a6a,tablet_message
+// ==== read_uroll_line @ 3000:4a24 (size 61) callers: give_hint,roll_char,FUN_3000_6a6a,tablet_message  // reads the next line of UROLL.TXT, dropping every '|'
 
-int __cdecl16far FUN_3000_4a24(int param_1,void *param_2)
+int __cdecl16far read_uroll_line(int param_1,void *param_2)
 
 {
   short sVar1;
@@ -19888,9 +19888,9 @@ int __cdecl16far FUN_3000_4a24(int param_1,void *param_2)
 }
 
 
-// ==== FUN_3000_4a67 @ 3000:4a67 (size 528) callers: roll_char
+// ==== show_rolled_character @ 3000:4a67 (size 528) callers: roll_char  // draws the rolled character's numbers, or rubs them out again
 
-void __cdecl16far FUN_3000_4a67(int param_1)
+void __cdecl16far show_rolled_character(int param_1)
 
 {
   char *pcVar1;
@@ -19976,35 +19976,35 @@ void roll_char(void)
     mgetch_message();
     FUN_2000_04b7();
   }
-  uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+  uVar1 = read_uroll_line(local_8e,local_a,4);
   pfont(0,0,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+  uVar1 = read_uroll_line(local_8e,local_a,4);
   pfont(100,100,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,0xbe,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,0xfa,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,0x136,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,0x172,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+  uVar1 = read_uroll_line(local_8e,local_a,4);
   pfont(100,0x1ea,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,0x244,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,0x280,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,700,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,0x2f8,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,0x334,1,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0xa0,0x370,1,uVar1);
-  FUN_3000_4a24(local_8e,local_a);
-  FUN_3000_4a24(local_8e,local_a);
-  FUN_3000_4a24(local_8e,local_a);
+  read_uroll_line(local_8e,local_a);
+  read_uroll_line(local_8e,local_a);
+  read_uroll_line(local_8e,local_a);
   erase_message_block();
   FUN_2000_03d4(0x23fc);
   do {
@@ -20037,101 +20037,101 @@ void roll_char(void)
   }
   if (DAT_6000_c647 == 1) {
     erase_menu_block();
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,10,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,100,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,0xbe,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,0x118,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,0x172,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,0x1cc,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,0x226,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,0x280,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,0x2da,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,0x334,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+    uVar1 = read_uroll_line(local_8e,local_a,4);
     pfont(10,0x38e,1,uVar1);
-    uVar1 = FUN_3000_4a24(local_8e,local_a,6);
+    uVar1 = read_uroll_line(local_8e,local_a,6);
     pfont(10,0x44c,1,uVar1);
     mgetch_message();
     erase_menu_block();
     tablet_message(0x55);
   }
   else {
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
-    FUN_3000_4a24(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
+    read_uroll_line(local_8e,local_a);
   }
   erase_menu_block();
-  uVar1 = FUN_3000_4a24(local_8e,local_a,3);
+  uVar1 = read_uroll_line(local_8e,local_a,3);
   pfont(0,0,2,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0,0x78,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0,0xdc,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0,0x140,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0,0x1a4,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0,0x208,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0,0x26c,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0,0x2d0,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x334,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x398,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x3fc,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+  uVar1 = read_uroll_line(local_8e,local_a,4);
   pfont(0,0x47e,0,uVar1);
   erase_message_block();
   mgetch_message();
   erase_menu_block();
   seed = FUN_1000_1d12(0);
   srand(seed);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,3);
+  uVar1 = read_uroll_line(local_8e,local_a,3);
   pfont(0,0,2,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+  uVar1 = read_uroll_line(local_8e,local_a,4);
   pfont(0,100,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,4);
+  uVar1 = read_uroll_line(local_8e,local_a,4);
   pfont(0,0x96,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,5);
+  uVar1 = read_uroll_line(local_8e,local_a,5);
   pfont(0,0xdc,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x140,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x1a4,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x208,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x26c,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x2d0,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x334,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x398,0,uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,8);
+  uVar1 = read_uroll_line(local_8e,local_a,8);
   pfont(0,0x3fc,0,uVar1);
   FUN_2000_03d4(0x23ba);
   do {
@@ -20227,7 +20227,7 @@ void roll_char(void)
           }
         }
       }
-      FUN_3000_4a67(1);
+      show_rolled_character(1);
       pfont(0xbe,700,1,(char *)s_Y__KEEP_THIS_CHARACTER_6000_26eb,4);
       pfont(0xbe,0x302,1,(char *)s_N__ROLL_A_NEW_CHARACTER_6000_2702,4);
       pfont(0xbe,0x348,1,(char *)s_D__DESIGN_YOUR_OWN_CHARACTER_6000_271a,4);
@@ -20260,7 +20260,7 @@ void roll_char(void)
       }
       if (local_6 == 0) goto LAB_3000_5fda;
       if (local_6 == 1) {
-        FUN_3000_4a67(0);
+        show_rolled_character(0);
       }
     } while (local_6 != 2);
     uVar12 = 0;
@@ -20271,14 +20271,14 @@ void roll_char(void)
     lVar8 = N_LXMUL(0x2b2,CONCAT22(DAT_6000_c6b0,DAT_6000_c6ae));
     lVar8 = N_LDIV(lVar8,CONCAT22(uVar10,uVar11));
     fill_rect(0,(int)lVar8,uVar3,uVar1,uVar12);
-    FUN_3000_4a67(0);
+    show_rolled_character(0);
     DAT_6000_c096 = DAT_6000_c096 + -4;
     DAT_6000_c098 = DAT_6000_c098 + -4;
     DAT_6000_c09a = DAT_6000_c09a + -4;
     DAT_6000_c09c = DAT_6000_c09c + -4;
     DAT_6000_c09e = DAT_6000_c09e + -4;
     DAT_6000_c0a0 = DAT_6000_c0a0 + -4;
-    FUN_3000_4a67(1);
+    show_rolled_character(1);
     pfont(0x96,0x226,1,(char *)s_ESC_CANCEL_THIS_CHARACTER_6000_2756,4);
     psfont(0,700,0x63f,1,(char *)s_YOU_MAY_ASSIGN_24_ADDITIONAL_POI_6000_2770,3);
     psfont(200,0x302,0x578,1,(char *)s_TO_THE_ABOVE_CHARACTERISTICS__6000_2794,3);
@@ -20409,7 +20409,7 @@ LAB_3000_5fda:
   lVar8 = N_LDIV(lVar8,CONCAT22(uVar10,uVar11));
   fill_rect(0,(int)lVar8,uVar3,uVar1,uVar12);
   pfont(0,700,1,(char *)s_PLEASE_TYPE_YOUR_NAME__6000_2872,7);
-  FUN_4000_55b2((undefined1 *)&DAT_6000_b880,0,0,1000,0,0x44c,0,2,0x12,4);
+  typed_name((undefined1 *)&DAT_6000_b880,0,0,1000,0,0x44c,0,2,0x12,4);
   if ((DAT_6000_c6ac < 0) || ((DAT_6000_c6ac < 1 && (DAT_6000_c6aa < 0x281)))) {
     FUN_4000_580e((undefined1 *)&DAT_6000_b880,0,0,1000,0,0x44c,0,2,0x12,0);
     pfont(0,700,1,(char *)s_PLEASE_TYPE_YOUR_NAME__6000_2872,0);
@@ -20436,37 +20436,37 @@ LAB_3000_5fda:
   uVar1 = 1;
   sVar2 = strlen((char *)0x1b880);
   FUN_4000_593f((undefined1 *)&DAT_6000_b880,0x38e,0,0x136,0,sVar2 * 0x24 + 0x38e,0,uVar1,uVar11);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0,0,0x1e0,0,0x5dc,0,1,2);
+  uVar1 = read_uroll_line(local_8e,local_a,0,0,0x1e0,0,0x5dc,0,1,2);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0,0,0x226,0,0x640,0,0,3);
+  uVar1 = read_uroll_line(local_8e,local_a,0,0,0x226,0,0x640,0,0,3);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0x5a,0,0x24e,0,0x640,0,0,3);
+  uVar1 = read_uroll_line(local_8e,local_a,0x5a,0,0x24e,0,0x640,0,0,3);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0,0,0x280,0,0x640,0,0,4);
+  uVar1 = read_uroll_line(local_8e,local_a,0,0,0x280,0,0x640,0,0,4);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0x5a,0,0x2a8,0,0x640,0,0,4);
+  uVar1 = read_uroll_line(local_8e,local_a,0x5a,0,0x2a8,0,0x640,0,0,4);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0,0,0x2da,0,0x640,0,0,5);
+  uVar1 = read_uroll_line(local_8e,local_a,0,0,0x2da,0,0x640,0,0,5);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0x5a,0,0x302,0,0x640,0,0,5);
+  uVar1 = read_uroll_line(local_8e,local_a,0x5a,0,0x302,0,0x640,0,0,5);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0,0,0x334,0,0x640,0,0,6);
+  uVar1 = read_uroll_line(local_8e,local_a,0,0,0x334,0,0x640,0,0,6);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0x5a,0,0x35c,0,0x640,0,0,6);
+  uVar1 = read_uroll_line(local_8e,local_a,0x5a,0,0x35c,0,0x640,0,0,6);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0,0,0x38e,0,0x640,0,0,8);
+  uVar1 = read_uroll_line(local_8e,local_a,0,0,0x38e,0,0x640,0,0,8);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0x5a,0,0x3b6,0,0x640,0,0,8);
+  uVar1 = read_uroll_line(local_8e,local_a,0x5a,0,0x3b6,0,0x640,0,0,8);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0,0,1000,0,0x640,0,0,7);
+  uVar1 = read_uroll_line(local_8e,local_a,0,0,1000,0,0x640,0,0,7);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0x5a,0,0x410,0,0x640,0,0,7);
+  uVar1 = read_uroll_line(local_8e,local_a,0x5a,0,0x410,0,0x640,0,0,7);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0x5a,0,0x438,0,0x640,0,0,7);
+  uVar1 = read_uroll_line(local_8e,local_a,0x5a,0,0x438,0,0x640,0,0,7);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0,0,0x465,0,0x640,0,0,2);
+  uVar1 = read_uroll_line(local_8e,local_a,0,0,0x465,0,0x640,0,0,2);
   FUN_4000_593f(uVar1);
-  uVar1 = FUN_3000_4a24(local_8e,local_a,0x5a,0,0x48d,0,0x640,0,0,2);
+  uVar1 = read_uroll_line(local_8e,local_a,0x5a,0,0x48d,0,0x640,0,0,2);
   FUN_4000_593f(uVar1);
   fclose((void *)CONCAT22(unaff_DI,local_a));
   erase_message_block();
@@ -20654,7 +20654,7 @@ LAB_3000_5fda:
       DAT_6000_bcd6 = DAT_6000_bcd6 + ((int)uVar3 >> 0xf) + (uint)bVar6;
     }
   }
-  FUN_2000_3d9b();
+  reset_view_caches();
   save_player((int)DAT_6000_035a);
   stock_level(0);
   erase_menu_block();
@@ -20685,13 +20685,13 @@ void __cdecl16far FUN_3000_6a6a(int param_1)
     return;
   }
   for (iVar3 = 0; iVar3 <= param_1; iVar3 = iVar3 + 1) {
-    uVar2 = FUN_3000_4a24(local_52,pvVar1);
+    uVar2 = read_uroll_line(local_52,pvVar1);
     strcpy((char *)CONCAT22(uVar2,local_a2),(char *)CONCAT22(unaff_SI,unaff_DI));
-    uVar2 = FUN_3000_4a24(local_52,pvVar1);
+    uVar2 = read_uroll_line(local_52,pvVar1);
     strcpy((char *)CONCAT22(uVar2,local_f2),(char *)CONCAT22(unaff_SI,unaff_DI));
-    uVar2 = FUN_3000_4a24(local_52,pvVar1);
+    uVar2 = read_uroll_line(local_52,pvVar1);
     strcpy((char *)CONCAT22(uVar2,local_142),(char *)CONCAT22(unaff_SI,unaff_DI));
-    uVar2 = FUN_3000_4a24(local_52,pvVar1);
+    uVar2 = read_uroll_line(local_52,pvVar1);
     strcpy((char *)CONCAT22(uVar2,local_192),(char *)CONCAT22(unaff_SI,unaff_DI));
   }
   fclose((void *)CONCAT22(unaff_DI,pvVar1));
@@ -20813,7 +20813,7 @@ void __cdecl16far boss_office_message(void)
       src = (char *)CONCAT22(unaff_BP,pcVar3);
       if (pcVar3 == (char *)s_Null_pointer_assignment_Divide_e_6000_002f + 2) {
         erase_menu_block();
-        FUN_2000_3d9b();
+        reset_view_caches();
         DAT_6000_2412 = 3;
         if (DAT_6000_022d == 0) {
           section_number();
@@ -21099,7 +21099,7 @@ void __cdecl16far FUN_3000_71e6(int param_1)
   }
   mgetch_message();
   erase_menu_block();
-  FUN_2000_3d9b();
+  reset_view_caches();
   return;
 }
 
@@ -21147,7 +21147,7 @@ void __cdecl16far FUN_3000_7545(void)
         FUN_3000_71e6(0xbc13);
         break;
       case 4:
-        FUN_2000_3d9b();
+        reset_view_caches();
         FUN_3000_7508();
         DAT_6000_c692 = 0;
         FUN_3000_71be((char *)s_MISC__MAGIC_ITEMS__6000_295f);
@@ -21218,7 +21218,7 @@ void __cdecl16far view_stats(void)
 {
   undefined2 uVar1;
   
-  FUN_2000_3d9b();
+  reset_view_caches();
   FUN_3000_7508();
   uVar1 = FUN_4000_5a62((char *)s_VIEW_STATS_FOR_6000_2b49,(undefined1 *)&DAT_6000_b880,3);
   pfont(0x2d0,0,0,uVar1);
@@ -21392,7 +21392,7 @@ void __cdecl16far FUN_3000_7dfc(void)
   int iVar5;
   int local_4;
   
-  FUN_2000_3d9b();
+  reset_view_caches();
   set_palette();
   FUN_4000_3b2e();
   FUN_3000_9026((char *)s_A_little_snake_scurries_up_and_s_6000_2d57,
@@ -21585,7 +21585,7 @@ override_jmp_3000_809b_case_17:
 }
 
 
-// ==== myrand @ 3000:81ba (size 191) callers: town_features,detect_chute,trapdoor,check_for_ladder,retdwall  // the dungeon hash
+// ==== myrand @ 3000:81ba (size 191) callers: trapdoor,detect_chute,town_features,check_for_ladder,retdwall  // the dungeon hash
 
 int __cdecl16far myrand(int param_1,int param_2,int param_3,int param_4,int param_5)
 
@@ -21764,7 +21764,7 @@ void __cdecl16far draw_side(char param_1,int param_2,int param_3,char param_4)
 }
 
 
-// ==== solidcheck @ 3000:86b5 (size 125) callers: stock_level,use_magic_item,detect_chute,dig_hole,trapdoor_dest,check_for_ladder,title_screen,relocate_spell,go_away,pass_wall,spell_effect  // square is rock?
+// ==== solidcheck @ 3000:86b5 (size 125) callers: stock_level,use_magic_item,detect_chute,dig_hole,trapdoor_dest,check_for_ladder,title_screen,relocate,go_away,pass_wall,spell_effect  // square is rock?
 
 undefined2 __cdecl16far solidcheck(int param_1,int param_2,undefined2 param_3,undefined2 param_4)
 
@@ -21861,12 +21861,12 @@ drawsquare(int param_1,int param_2,int param_3,undefined2 param_4,char param_5,c
   }
   local_4 = check_for_ladder(param_1,param_2,param_3,param_4);
   if (((local_4 == 0) && (DAT_6000_c034 == 0)) &&
-     (iVar2 = town_features(param_1,param_2), iVar2 != 0)) {
+     (iVar2 = trapdoor(param_1,param_2), iVar2 != 0)) {
     if ((DAT_6000_c6a8 < 2) || (DAT_6000_00c7 == 1)) {
       local_4 = 0xf;
     }
     else {
-      local_6 = town_features(param_1,param_2);
+      local_6 = trapdoor(param_1,param_2);
       local_6 = local_6 + 2;
     }
     if (local_6 == 6) {
@@ -21902,7 +21902,7 @@ drawsquare(int param_1,int param_2,int param_3,undefined2 param_4,char param_5,c
     }
     if ((local_6 == 0) && (local_4 == 0)) {
       uVar6 = 0x2000;
-      iVar2 = trapdoor(param_1,param_2,param_3,param_4);
+      iVar2 = town_features(param_1,param_2,param_3,param_4);
       local_8 = iVar2;
     }
     if (((local_4 == 0) && (local_8 == -1)) && (param_3 != 0)) {
@@ -22192,13 +22192,13 @@ void __cdecl16far tablet_message(int param_1)
     return;
   }
   for (local_4 = 0; local_4 <= param_1; local_4 = local_4 + 1) {
-    uVar2 = FUN_3000_4a24(local_54,pvVar1);
+    uVar2 = read_uroll_line(local_54,pvVar1);
     strcpy((char *)CONCAT22(uVar2,local_a4),(char *)CONCAT22(unaff_SI,unaff_DI));
-    uVar2 = FUN_3000_4a24(local_54,pvVar1);
+    uVar2 = read_uroll_line(local_54,pvVar1);
     strcpy((char *)CONCAT22(uVar2,local_f4),(char *)CONCAT22(unaff_SI,unaff_DI));
-    uVar2 = FUN_3000_4a24(local_54,pvVar1);
+    uVar2 = read_uroll_line(local_54,pvVar1);
     strcpy((char *)CONCAT22(uVar2,local_144),(char *)CONCAT22(unaff_SI,unaff_DI));
-    uVar2 = FUN_3000_4a24(local_54,pvVar1);
+    uVar2 = read_uroll_line(local_54,pvVar1);
     strcpy((char *)CONCAT22(uVar2,local_194),(char *)CONCAT22(unaff_SI,unaff_DI));
   }
   fclose((void *)CONCAT22(unaff_DI,pvVar1));
@@ -22256,7 +22256,7 @@ void __cdecl16far FUN_3000_9468(void)
 void __cdecl16far FUN_3000_9488(void)
 
 {
-  FUN_2000_3d9b();
+  reset_view_caches();
   erase_menu_block();
   if (DAT_6000_c179 < 4) {
     tablet_message(0);
@@ -22297,7 +22297,7 @@ void __cdecl16far FUN_3000_9488(void)
 void __cdecl16far level_up_screen(void)
 
 {
-  FUN_2000_3d9b();
+  reset_view_caches();
   erase_menu_block();
   if (DAT_6000_c02c < 2) {
     tablet_message(10);
@@ -22606,7 +22606,7 @@ void __cdecl16far title_screen(void)
                 DAT_6000_c032 = iVar7 + 10;
                 cVar4 = solidcheck(DAT_6000_c030,DAT_6000_c032,DAT_6000_c034);
               } while (cVar4 != '\0');
-              iVar7 = FUN_2000_65b0(DAT_6000_c030);
+              iVar7 = monster_at(DAT_6000_c030);
             } while (iVar7 != -1);
             iVar7 = draw_3d_view(DAT_6000_c030,DAT_6000_c032,DAT_6000_c034,DAT_6000_c036,1,
                                   iVar6 * 0x226,iVar8 * 700,iVar6 * 0x226 + 499,iVar8 * 700 + 499);
@@ -22629,7 +22629,7 @@ void __cdecl16far title_screen(void)
             DAT_6000_c032 = iVar8 + 10;
             cVar4 = solidcheck(DAT_6000_c030,DAT_6000_c032,DAT_6000_c034);
           } while (cVar4 != '\0');
-          iVar8 = FUN_2000_65b0(DAT_6000_c030);
+          iVar8 = monster_at(DAT_6000_c030);
         } while (iVar8 != -1);
         iVar8 = FUN_4000_41e5();
         if (iVar8 != 0) {
@@ -24247,7 +24247,7 @@ void __cdecl16far monster_manual(void)
     local_4 = iVar5;
   }
   DAT_6000_2412 = 0;
-  FUN_2000_3d9b();
+  reset_view_caches();
   erase_menu_block();
   DAT_6000_c645 = DAT_6000_c034;
   set_palette();
@@ -24418,7 +24418,7 @@ void __cdecl16far msg_no_monster(void)
 }
 
 
-// ==== msg_already_in_effect @ 3000:d0ee (size 45) callers: set_temp_armor_plus,set_temp_weapon_plus,set_body_armor,set_prot_ring,set_anti_magic_ring,sleep_monster,battle_strength,battle_speed,spell_effect  // spell already active message
+// ==== msg_already_in_effect @ 3000:d0ee (size 45) callers: set_temp_armor_plus,set_temp_weapon_plus,set_body_armor,set_prot_ring,set_anti_magic_ring,sleep_monster,power_weapon,protection,spell_effect  // spell already active message
 
 void __cdecl16far msg_already_in_effect(void)
 
@@ -24429,9 +24429,9 @@ void __cdecl16far msg_already_in_effect(void)
 }
 
 
-// ==== FUN_3000_d11b @ 3000:d11b (size 45) callers: FUN_3000_d990,FUN_3000_d9ba,FUN_3000_d9e4,spell_effect
+// ==== msg_already_cast_this_spell @ 3000:d11b (size 45) callers: strength,speed,strength_and_speed,spell_effect  // the other 'already cast' refusal
 
-void __cdecl16far FUN_3000_d11b(void)
+void __cdecl16far msg_already_cast_this_spell(void)
 
 {
   print_menu_only((char *)s_YOU_HAVE_ALREADY_CAST_6000_36ab,(char *)s_THIS_SPELL__6000_36c1,0x258b,
@@ -24710,9 +24710,9 @@ undefined2 __cdecl16far write_scroll_or_wand(int param_1,int param_2)
 }
 
 
-// ==== FUN_3000_d7be @ 3000:d7be (size 45) callers: spell_effect
+// ==== msg_you_feel_good @ 3000:d7be (size 45) callers: spell_effect  // what a small cure prints
 
-void __cdecl16far FUN_3000_d7be(void)
+void __cdecl16far msg_you_feel_good(void)
 
 {
   print_menu_only((char *)s_YOU_FEEL_GOOD___HIT_ANY_KEY_6000_3855,0x258b,0x258b,0x258b,0x258b,0x258b,
@@ -24721,9 +24721,9 @@ void __cdecl16far FUN_3000_d7be(void)
 }
 
 
-// ==== FUN_3000_d7eb @ 3000:d7eb (size 45) callers: FUN_3000_d990,FUN_3000_d9ba,FUN_3000_d9e4,spell_effect
+// ==== msg_you_feel_very_good @ 3000:d7eb (size 45) callers: strength,speed,strength_and_speed,spell_effect  // what a big cure or a stat boost prints
 
-void __cdecl16far FUN_3000_d7eb(void)
+void __cdecl16far msg_you_feel_very_good(void)
 
 {
   print_menu_only((char *)s_YOU_FEEL_VERY_GOOD__6000_3871,0x258b,(char *)s_HIT_ANY_KEY____6000_2b3a,
@@ -24818,45 +24818,45 @@ undefined2 __cdecl16far sleep_monster(void)
 }
 
 
-// ==== FUN_3000_d990 @ 3000:d990 (size 38) callers: spell_effect
+// ==== strength @ 3000:d990 (size 38) callers: spell_effect  // +7 STR for 60 moves
 
-undefined2 __cdecl16far FUN_3000_d990(void)
+undefined2 __cdecl16far strength(void)
 
 {
   if (DAT_6000_c062 == 0) {
     DAT_6000_c062 = 0x3c;
     DAT_6000_c096 = DAT_6000_c096 + 7;
-    FUN_3000_d7eb();
+    msg_you_feel_very_good();
     return 1;
   }
-  FUN_3000_d11b();
+  msg_already_cast_this_spell();
   return 0;
 }
 
 
-// ==== FUN_3000_d9ba @ 3000:d9ba (size 38) callers: spell_effect
+// ==== speed @ 3000:d9ba (size 38) callers: spell_effect  // +7 AGI for 60 moves
 
-undefined2 __cdecl16far FUN_3000_d9ba(void)
+undefined2 __cdecl16far speed(void)
 
 {
   if (DAT_6000_c064 == 0) {
     DAT_6000_c064 = 0x3c;
     DAT_6000_c09e = DAT_6000_c09e + 7;
-    FUN_3000_d7eb();
+    msg_you_feel_very_good();
     return 1;
   }
-  FUN_3000_d11b();
+  msg_already_cast_this_spell();
   return 0;
 }
 
 
-// ==== FUN_3000_d9e4 @ 3000:d9e4 (size 68) callers: spell_effect
+// ==== strength_and_speed @ 3000:d9e4 (size 68) callers: spell_effect  // both boosts at once, each extended by 60 moves if it is already running
 
-undefined2 __cdecl16far FUN_3000_d9e4(void)
+undefined2 __cdecl16far strength_and_speed(void)
 
 {
   if ((DAT_6000_c064 != 0) && (DAT_6000_c062 != 0)) {
-    FUN_3000_d11b();
+    msg_already_cast_this_spell();
     return 0;
   }
   DAT_6000_c064 = DAT_6000_c064 + 0x3c;
@@ -24867,14 +24867,14 @@ undefined2 __cdecl16far FUN_3000_d9e4(void)
   if (DAT_6000_c062 == 0x3c) {
     DAT_6000_c096 = DAT_6000_c096 + 7;
   }
-  FUN_3000_d7eb();
+  msg_you_feel_very_good();
   return 1;
 }
 
 
-// ==== relocate_spell @ 3000:da2c (size 137) callers: dig_hole,kill_player,spell_effect  // relocate/teleport the player
+// ==== relocate @ 3000:da2c (size 137) callers: dig_hole,change_module,spell_effect  // random non-rock, unoccupied square (x 0..78, y 0..103); also used by change_module and by Fighters digging too deep
 
-undefined2 __cdecl16far relocate_spell(void)
+undefined2 __cdecl16far relocate(void)
 
 {
   char cVar1;
@@ -24887,7 +24887,7 @@ undefined2 __cdecl16far relocate_spell(void)
       DAT_6000_c032 = Random(DAT_6000_232a);
       cVar1 = solidcheck(DAT_6000_c030,DAT_6000_c032,DAT_6000_c034,DAT_6000_c036);
     } while (cVar1 != '\0');
-    iVar2 = FUN_2000_65b0(DAT_6000_c030,DAT_6000_c032);
+    iVar2 = monster_at(DAT_6000_c030,DAT_6000_c032);
   } while (iVar2 != -1);
   set_monster_map(DAT_6000_c030,DAT_6000_c032,0xfe);
   DAT_6000_0327 = 1;
@@ -24995,9 +24995,9 @@ undefined2 __cdecl16far autokill(void)
 }
 
 
-// ==== FUN_3000_dd37 @ 3000:dd37 (size 45) callers: battle_strength,battle_speed
+// ==== msg_sixty_moves_longer @ 3000:dd37 (size 45) callers: power_weapon,protection  // re-casting extended the spell by 60 moves
 
-void __cdecl16far FUN_3000_dd37(void)
+void __cdecl16far msg_sixty_moves_longer(void)
 
 {
   print_menu_only((char *)s_YOU_HAD_ALREADY_CAST_THIS_6000_3a95,
@@ -25007,9 +25007,9 @@ void __cdecl16far FUN_3000_dd37(void)
 }
 
 
-// ==== battle_strength @ 3000:dd64 (size 99) callers: spell_effect  // +7 STR for 60 moves
+// ==== power_weapon @ 3000:dd64 (size 99) callers: spell_effect  // Power Weapon I to III: sets the power-weapon level (save 0x7e8) and its 60-move clock
 
-undefined2 __cdecl16far battle_strength(uint param_1)
+undefined2 __cdecl16far power_weapon(uint param_1)
 
 {
   if ((int)param_1 < (int)(uint)DAT_6000_c068) {
@@ -25018,7 +25018,7 @@ undefined2 __cdecl16far battle_strength(uint param_1)
   }
   if (DAT_6000_c068 == param_1) {
     DAT_6000_c069 = DAT_6000_c069 + 0x3c;
-    FUN_3000_dd37();
+    msg_sixty_moves_longer();
   }
   else {
     DAT_6000_c068 = (byte)param_1;
@@ -25033,9 +25033,9 @@ undefined2 __cdecl16far battle_strength(uint param_1)
 }
 
 
-// ==== battle_speed @ 3000:ddc9 (size 99) callers: spell_effect  // +7 AGI for 60 moves
+// ==== protection @ 3000:ddc9 (size 99) callers: spell_effect  // Minor/Major/Ultra Protection: sets the protection level and its 60-move clock
 
-undefined2 __cdecl16far battle_speed(uint param_1)
+undefined2 __cdecl16far protection(uint param_1)
 
 {
   if ((int)param_1 < (int)(uint)DAT_6000_c06b) {
@@ -25044,7 +25044,7 @@ undefined2 __cdecl16far battle_speed(uint param_1)
   }
   if (DAT_6000_c06b == param_1) {
     DAT_6000_c06c = DAT_6000_c06c + 0x3c;
-    FUN_3000_dd37();
+    msg_sixty_moves_longer();
   }
   else {
     DAT_6000_c06b = (byte)param_1;
@@ -25204,7 +25204,7 @@ undefined2 __cdecl16far pass_wall(void)
       if (((((-1 < iVar4) && (iVar4 < DAT_6000_2328)) && (-1 < iVar5)) &&
           ((iVar5 < DAT_6000_232a &&
            (cVar1 = solidcheck(iVar4,iVar5,DAT_6000_c034,DAT_6000_c036), cVar1 == '\0')))) &&
-         (iVar3 = FUN_2000_65b0(iVar4,iVar5), iVar3 == -1)) {
+         (iVar3 = monster_at(iVar4,iVar5), iVar3 == -1)) {
         DAT_6000_c038 = DAT_6000_c038 + (char)local_8 * (char)iVar2;
         DAT_6000_c039 = DAT_6000_c039 + (char)local_a * (char)iVar2;
         if (((DAT_6000_c038 < '\x01') || (DAT_6000_c039 < '\x01')) ||
@@ -25216,7 +25216,7 @@ undefined2 __cdecl16far pass_wall(void)
         DAT_6000_c030 = iVar4;
         DAT_6000_c032 = iVar5;
         set_monster_map(iVar4,iVar5,0xfe);
-        FUN_2000_3d9b();
+        reset_view_caches();
         return 1;
       }
     }
@@ -25416,7 +25416,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             if (DAT_6000_b8b3 < DAT_6000_b8b1) {
               DAT_6000_b8b1 = DAT_6000_b8b3;
             }
-            FUN_3000_d7be();
+            msg_you_feel_good();
             return 1;
           }
         case 1:
@@ -25425,7 +25425,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return iVar4;
           }
           if (param_3 == 1) {
-            relocate_spell();
+            relocate();
             return 1;
           }
           if (param_3 == 2) {
@@ -25450,7 +25450,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             if (DAT_6000_b8b3 < DAT_6000_b8b1) {
               DAT_6000_b8b1 = DAT_6000_b8b3;
             }
-            FUN_3000_d7be();
+            msg_you_feel_good();
             return 1;
           }
           if (param_3 == 1) {
@@ -25459,12 +25459,12 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
           }
           if (param_3 == 2) {
             if (DAT_6000_c05e == '\x05') {
-              FUN_3000_d11b();
+              msg_already_cast_this_spell();
               return 0;
             }
             DAT_6000_c05e = 5;
             DAT_6000_c096 = DAT_6000_c096 + 5;
-            FUN_3000_d7eb();
+            msg_you_feel_very_good();
             return 1;
           }
         case 3:
@@ -25474,12 +25474,12 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
           }
           if (param_3 == 1) {
             if (DAT_6000_c05f == '\x05') {
-              FUN_3000_d11b();
+              msg_already_cast_this_spell();
               return 0;
             }
             DAT_6000_c05f = 5;
             DAT_6000_c09e = DAT_6000_c09e + 5;
-            FUN_3000_d7eb();
+            msg_you_feel_very_good();
             return 1;
           }
           if (param_3 == 2) {
@@ -25570,7 +25570,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             if (DAT_6000_b8b3 < DAT_6000_b8b1) {
               DAT_6000_b8b1 = DAT_6000_b8b3;
             }
-            FUN_3000_d7eb();
+            msg_you_feel_very_good();
             return 1;
           }
           if (param_3 == 1) {
@@ -25630,12 +25630,12 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
         case 7:
           if (param_3 == 0) {
             if (DAT_6000_c060 == '\n') {
-              FUN_3000_d11b();
+              msg_already_cast_this_spell();
               return 0;
             }
             DAT_6000_c060 = 10;
             DAT_6000_c096 = DAT_6000_c096 + 10;
-            FUN_3000_d7eb();
+            msg_you_feel_very_good();
             return 1;
           }
           if (param_3 == 1) {
@@ -25665,12 +25665,12 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
         case 8:
           if (param_3 == 0) {
             if (DAT_6000_c061 == '\n') {
-              FUN_3000_d11b();
+              msg_already_cast_this_spell();
               return 0;
             }
             DAT_6000_c061 = 10;
             DAT_6000_c09e = DAT_6000_c09e + 10;
-            FUN_3000_d7eb();
+            msg_you_feel_very_good();
             return 1;
           }
           if (param_3 == 1) {
@@ -25747,7 +25747,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return 0;
           }
           if (param_3 == 2) {
-            iVar4 = battle_speed();
+            iVar4 = protection();
             return iVar4;
           }
         case 1:
@@ -25759,7 +25759,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return 1;
           }
           if (param_3 == 1) {
-            iVar4 = FUN_3000_d990();
+            iVar4 = strength();
             return iVar4;
           }
           if (param_3 == 2) {
@@ -25810,7 +25810,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return 0;
           }
           if (param_3 == 2) {
-            iVar4 = FUN_3000_d9ba();
+            iVar4 = speed();
             return iVar4;
           }
         case 3:
@@ -25819,11 +25819,11 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return 1;
           }
           if (param_3 == 1) {
-            relocate_spell();
+            relocate();
             return 1;
           }
           if (param_3 == 2) {
-            iVar4 = battle_strength();
+            iVar4 = power_weapon();
             return iVar4;
           }
         case 4:
@@ -25832,7 +25832,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return iVar4;
           }
           if (param_3 == 1) {
-            iVar4 = battle_speed();
+            iVar4 = protection();
             return iVar4;
           }
           if (param_3 == 2) {
@@ -25925,7 +25925,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return iVar4;
           }
           if (param_3 == 2) {
-            iVar4 = battle_strength();
+            iVar4 = power_weapon();
             return iVar4;
           }
         case 8:
@@ -25971,7 +25971,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
           }
           in_AX = param_3;
           if (param_3 == 2) {
-            iVar4 = battle_strength();
+            iVar4 = power_weapon();
             return iVar4;
           }
         }
@@ -25985,11 +25985,11 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return iVar4;
           }
           if (param_3 == 1) {
-            iVar4 = battle_speed();
+            iVar4 = protection();
             return iVar4;
           }
           if (param_3 == 2) {
-            iVar4 = FUN_3000_d990();
+            iVar4 = strength();
             return iVar4;
           }
         case 1:
@@ -25998,7 +25998,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return iVar4;
           }
           if (param_3 == 1) {
-            iVar4 = FUN_3000_d9ba();
+            iVar4 = speed();
             return iVar4;
           }
           if (param_3 == 2) {
@@ -26006,7 +26006,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             if (DAT_6000_b8b3 < DAT_6000_b8b1) {
               DAT_6000_b8b1 = DAT_6000_b8b3;
             }
-            FUN_3000_d7be();
+            msg_you_feel_good();
             return 1;
           }
         case 2:
@@ -26015,7 +26015,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return iVar4;
           }
           if (param_3 == 1) {
-            relocate_spell();
+            relocate();
             return 1;
           }
           if (param_3 == 2) {
@@ -26035,12 +26035,12 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return 1;
           }
           if (param_3 == 2) {
-            iVar4 = battle_strength();
+            iVar4 = power_weapon();
             return iVar4;
           }
         case 4:
           if (param_3 == 0) {
-            iVar4 = battle_speed();
+            iVar4 = protection();
             return iVar4;
           }
           if (param_3 == 1) {
@@ -26070,7 +26070,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             if (DAT_6000_b8b3 < DAT_6000_b8b1) {
               DAT_6000_b8b1 = DAT_6000_b8b3;
             }
-            FUN_3000_d7eb();
+            msg_you_feel_very_good();
             return 1;
           }
         case 6:
@@ -26088,7 +26088,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return 0;
           }
           if (param_3 == 1) {
-            iVar4 = battle_strength();
+            iVar4 = power_weapon();
             return iVar4;
           }
           if (param_3 == 2) {
@@ -26107,7 +26107,7 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
           }
         case 7:
           if (param_3 == 0) {
-            iVar4 = battle_speed();
+            iVar4 = protection();
             return iVar4;
           }
           if (param_3 == 1) {
@@ -26144,16 +26144,16 @@ int __cdecl16far spell_effect(uint param_1,uint param_2,int param_3)
             return iVar4;
           }
           if (param_3 == 1) {
-            iVar4 = battle_strength();
+            iVar4 = power_weapon();
             return iVar4;
           }
           if (param_3 == 2) {
-            iVar4 = FUN_3000_d9e4();
+            iVar4 = strength_and_speed();
             return iVar4;
           }
         case 9:
           if (param_3 == 0) {
-            iVar4 = battle_speed();
+            iVar4 = protection();
             return iVar4;
           }
           if (param_3 == 1) {
@@ -26339,7 +26339,7 @@ void __cdecl16far FUN_4000_0035(char param_1,int param_2,int param_3)
 }
 
 
-// ==== FUN_4000_069a @ 4000:069a (size 491) callers: FUN_3000_342d,FUN_3000_9026,title_screen,monster_manual,FUN_4000_0885,FUN_4000_0923,pfont,psfont,shareware_plea_screen,death_screen
+// ==== FUN_4000_069a @ 4000:069a (size 491) callers: FUN_3000_342d,FUN_3000_9026,title_screen,monster_manual,FUN_4000_0885,FUN_4000_0923,pfont,psfont,shareware_plea_screen,module_transition_screen
 
 void __cdecl16far FUN_4000_069a(char *param_1)
 
@@ -26440,7 +26440,7 @@ void __cdecl16far FUN_4000_095b(int param_1)
 }
 
 
-// ==== FUN_4000_09a5 @ 4000:09a5 (size 282) callers: pfont,psfont,FUN_4000_55b2,FUN_4000_580e,FUN_4000_593f
+// ==== FUN_4000_09a5 @ 4000:09a5 (size 282) callers: pfont,psfont,typed_name,FUN_4000_580e,FUN_4000_593f
 
 void __cdecl16far FUN_4000_09a5(int param_1,int param_2,int param_3,char param_4,int param_5)
 
@@ -26531,7 +26531,7 @@ void __cdecl16far load_font(int param_1)
 }
 
 
-// ==== pfont @ 4000:0bb3 (size 517) callers: FUN_2000_04d3,mset_gmenu,FUN_2000_2f5d,load_section_pictures,show_money,g_store,temple,bank,select_player,strike,defend,view_prep_spells,view_battle_spells,lose_item,quit_game,use_magic_item,chute,print_battle_hp_info,engagement_timing,dig_hole,FUN_2000_bf91,movecontrol,cast_a_spell,FUN_2000_fb25,FUN_3000_342d,FUN_3000_4a67,roll_char,FUN_3000_6a6a,boss_office_message,FUN_3000_71be,FUN_3000_71e6,view_stats,read_spell_help,FUN_3000_a1c4,kill_monster,FUN_3000_caac,FUN_4000_55b2,FUN_4000_5cb9,FUN_4000_5e4a,FUN_4000_5fd4,FUN_4000_6144  // print text at x,y
+// ==== pfont @ 4000:0bb3 (size 517) callers: FUN_2000_04d3,mset_gmenu,FUN_2000_2f5d,load_section_pictures,show_money,g_store,temple,bank,select_player,strike,defend,view_prep_spells,view_battle_spells,lose_item,quit_game,use_magic_item,chute,print_battle_hp_info,engagement_timing,dig_hole,FUN_2000_bf91,movecontrol,cast_a_spell,FUN_2000_fb25,FUN_3000_342d,show_rolled_character,roll_char,FUN_3000_6a6a,boss_office_message,FUN_3000_71be,FUN_3000_71e6,view_stats,read_spell_help,FUN_3000_a1c4,kill_monster,FUN_3000_caac,typed_name,FUN_4000_5cb9,FUN_4000_5e4a,FUN_4000_5fd4,FUN_4000_6144  // print text at x,y
 
 void __cdecl16far pfont(int param_1,int param_2,int param_3,char *param_4,int param_5)
 
@@ -28525,7 +28525,7 @@ void __cdecl16far FUN_4000_3b2e(void)
 }
 
 
-// ==== FUN_4000_3b44 @ 4000:3b44 (size 190) callers: FUN_2000_2a2e,mset_gmenu,get_choice,movecontrol,cast_a_spell,FUN_3000_7dfc,title_screen,monster_manual,FUN_4000_3c20,death_screen
+// ==== FUN_4000_3b44 @ 4000:3b44 (size 190) callers: FUN_2000_2a2e,mset_gmenu,get_choice,movecontrol,cast_a_spell,FUN_3000_7dfc,title_screen,monster_manual,FUN_4000_3c20,module_transition_screen
 
 void __cdecl16far FUN_4000_3b44(void)
 
@@ -28730,7 +28730,7 @@ void __cdecl16far FUN_4000_415e(void)
 }
 
 
-// ==== FUN_4000_417b @ 4000:417b (size 16) callers: FUN_2000_2a2e,mset_gmenu,get_choice,select_player,strike,movecontrol,cast_a_spell,roll_char,FUN_3000_7dfc,monster_manual,mgetch_message,erase_message_block,FUN_4000_55b2
+// ==== FUN_4000_417b @ 4000:417b (size 16) callers: FUN_2000_2a2e,mset_gmenu,get_choice,select_player,strike,movecontrol,cast_a_spell,roll_char,FUN_3000_7dfc,monster_manual,mgetch_message,erase_message_block,typed_name
 
 void __cdecl16far FUN_4000_417b(void)
 
@@ -28770,7 +28770,7 @@ int __cdecl16far mgetch_message(void)
 }
 
 
-// ==== FUN_4000_41e5 @ 4000:41e5 (size 62) callers: movecontrol,title_screen,death_screen
+// ==== FUN_4000_41e5 @ 4000:41e5 (size 62) callers: movecontrol,title_screen,module_transition_screen
 
 undefined2 __cdecl16far FUN_4000_41e5(void)
 
@@ -28817,7 +28817,7 @@ void __cdecl16far FUN_4000_4225(int param_1,int param_2)
 }
 
 
-// ==== erase_menu_block @ 4000:42b4 (size 90) callers: FUN_2000_1598,main,quit_game,kill_player,movecontrol,roll_char,boss_office_message,FUN_3000_71e6,FUN_3000_7dfc,FUN_3000_9026,FUN_3000_9468,FUN_3000_9488,level_up_screen,title_screen,monster_manual,FUN_4000_5cb9  // clears the menu area
+// ==== erase_menu_block @ 4000:42b4 (size 90) callers: FUN_2000_1598,main,quit_game,change_module,movecontrol,roll_char,boss_office_message,FUN_3000_71e6,FUN_3000_7dfc,FUN_3000_9026,FUN_3000_9468,FUN_3000_9488,level_up_screen,title_screen,monster_manual,FUN_4000_5cb9  // clears the menu area
 
 void __cdecl16far erase_menu_block(void)
 
@@ -28843,7 +28843,7 @@ void __cdecl16far erase_menu_block(void)
 }
 
 
-// ==== erase_message_block @ 4000:430e (size 48) callers: mset_gmenu,FUN_2000_2f5d,FUN_2000_4054,FUN_2000_412a,show_money,g_store,flea_inn,bank,select_player,main,defend,chute,dig_hole,movecontrol,roll_char,boss_office_message,view_stats,FUN_3000_7dfc,FUN_3000_9026,title_screen,drop_weapon,drop_armor,kill_monster,monster_manual,death_screen  // clears the message line
+// ==== erase_message_block @ 4000:430e (size 48) callers: mset_gmenu,FUN_2000_2f5d,FUN_2000_4054,FUN_2000_412a,show_money,g_store,flea_inn,bank,select_player,main,defend,chute,dig_hole,movecontrol,roll_char,boss_office_message,view_stats,FUN_3000_7dfc,FUN_3000_9026,title_screen,drop_weapon,drop_armor,kill_monster,monster_manual,module_transition_screen  // clears the message line
 
 void __cdecl16far erase_message_block(void)
 
@@ -29515,10 +29515,10 @@ FUN_4000_4f8f(int param_1,int param_2,int param_3,int param_4,int param_5,int pa
 }
 
 
-// ==== FUN_4000_55b2 @ 4000:55b2 (size 598) callers: g_store,bank,roll_char
+// ==== typed_name @ 4000:55b2 (size 598) callers: g_store,bank,roll_char  // reads a typed string into a buffer: letters, digits and the space bar, backspace, Enter or Escape
 
 void __cdecl16far
-FUN_4000_55b2(int param_1,undefined2 param_2,undefined2 param_3,undefined2 param_4,
+typed_name(int param_1,undefined2 param_2,undefined2 param_3,undefined2 param_4,
              undefined2 param_5,undefined2 param_6,undefined2 param_7,undefined2 param_8,int param_9
              ,undefined2 param_10)
 
@@ -30505,12 +30505,12 @@ void __cdecl16far shareware_plea_screen(void)
 }
 
 
-// ==== death_screen @ 4000:771b (size 2302) callers: kill_player  // called by kill_player
+// ==== module_transition_screen @ 4000:771b (size 2302) callers: change_module  // shown by change_module
 
 /* WARNING: Removing unreachable block (ram,0x00047f6f) */
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl16far death_screen(int param_1,uint param_2)
+void __cdecl16far module_transition_screen(int param_1,uint param_2)
 
 {
   undefined2 uVar1;

@@ -2,7 +2,7 @@
 
 Addresses are Ghidra's view of the re-laid-out executable: segment 1000 = Borland runtime,
 2000 = WORLD (the recovered UNF.CPP), 3000 = TOWN/MAGICFNC/CAT, 4000/5000+ = DISP and video
-drivers, 6000 = data.  647 functions; 185 identified.  Names are ours, not the original symbols,
+drivers, 6000 = data.  647 functions; 199 identified.  Names are ours, not the original symbols,
 except where UNF.CPP gave them.  See METHOD.md for how the identifications were made.
 
 | address | name | size | purpose | module | callers |
@@ -37,7 +37,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 1000:0f28 | pow | 363 | libm pow(double, double), returns in ST0 | Borland runtime / libc | exp_needed, check_gain_level, gain_level, exp_value |
 | 1000:10b1 | FUN_1000_10b1 | 144 |  | Borland runtime / libc | FUN_1000_0ebe, pow |
 | 1000:1141 | FUN_1000_1141 | 26 |  | Borland runtime / libc | FUN_3000_27fc, FUN_3000_3311 |
-| 1000:115b | ftol | 44 | float/double -> long conversion helper | Borland runtime / libc | FUN_2000_3d9b, FUN_2000_4054, store_refund, flea_inn, FUN_3000_0837, draw_3d_view … |
+| 1000:115b | ftol | 44 | float/double -> long conversion helper | Borland runtime / libc | reset_view_caches, FUN_2000_4054, store_refund, flea_inn, FUN_3000_0837, draw_3d_view … |
 | 1000:1187 | FUN_1000_1187 | 45 |  | Borland runtime / libc |  |
 | 1000:11b4 | FUN_1000_11b4 | 73 |  | Borland runtime / libc | Random, stock_level, strike, defend, movecontrol, FUN_3000_8fcc |
 | 1000:11fd | FUN_1000_11fd | 169 |  | Borland runtime / libc | FUN_1000_3397 |
@@ -96,7 +96,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 1000:1cda | FUN_1000_1cda | 56 |  | Borland runtime / libc |  |
 | 1000:1d12 | FUN_1000_1d12 | 77 |  | Borland runtime / libc | main, stock_level, roll_char, drop_money |
 | 1000:1d5f | FUN_1000_1d5f | 44 |  | Borland runtime / libc | movecontrol, FUN_3000_7dfc |
-| 1000:1d8b | FUN_1000_1d8b | 44 |  | Borland runtime / libc | cast_a_spell, roll_char, monster_manual, FUN_4000_55b2, FUN_4000_580e, FUN_4000_593f |
+| 1000:1d8b | FUN_1000_1d8b | 44 |  | Borland runtime / libc | cast_a_spell, roll_char, monster_manual, typed_name, FUN_4000_580e, FUN_4000_593f |
 | 1000:1db7 | FUN_1000_1db7 | 22 |  | Borland runtime / libc | fclose |
 | 1000:1dcd | FUN_1000_1dcd | 7 |  | Borland runtime / libc | FUN_1000_1e45 |
 | 1000:1dd4 | FUN_1000_1dd4 | 9 |  | Borland runtime / libc | FUN_1000_1dcd |
@@ -308,7 +308,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:3654 | load_overlay_pic | 216 | loads OVERLAY.PIC (the water overlay) into the picture table | WORLD (UNF.CPP) | allocate_buffers, load_picture_seq, load_building_picture |
 | 2000:372c | load_section_pictures | 1179 | loads UFMON<n>.PIC / UFWALL<n>.PIC for a section (name tables DS:02c5 / DS:02ef); sets the water flag for sections 4, 8, 20 | WORLD (UNF.CPP) | load_level_map |
 | 2000:3bc7 | allocate_buffers | 468 | farmalloc all the big arrays (monster map, menus) | WORLD (UNF.CPP) | main |
-| 2000:3d9b | FUN_2000_3d9b | 146 |  | WORLD (UNF.CPP) | dig_hole, change_module, movecontrol, roll_char, boss_office_message, FUN_3000_71e6 … |
+| 2000:3d9b | reset_view_caches | 146 | throws away everything cached about the view, so the next frame is drawn from nothing | WORLD (UNF.CPP) | dig_hole, change_module, movecontrol, roll_char, boss_office_message, FUN_3000_71e6 … |
 | 2000:3e2d | FUN_2000_3e2d | 70 |  | WORLD (UNF.CPP) |  |
 | 2000:3e73 | FUN_2000_3e73 | 481 |  | WORLD (UNF.CPP) | FUN_2000_4054, FUN_2000_412a, module_transition_screen |
 | 2000:4054 | FUN_2000_4054 | 208 |  | WORLD (UNF.CPP) | print_menu_only, show_money, FUN_2000_44f2, g_store, temple, flea_inn … |
@@ -332,7 +332,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:60e8 | show_registration_notice | 295 | prints the file 'v' in yellow text mode, waits for a key, 5-way checksum vs constants; mismatch sets the tamper flag -> main exits | WORLD (UNF.CPP) | main |
 | 2000:620f | main | 863 | game main loop | WORLD (UNF.CPP) | entry |
 | 2000:6573 | which_monster | 59 | monster index at (x, y) | WORLD (UNF.CPP) | draw_3d_view, draw_map_square |
-| 2000:65b0 | FUN_2000_65b0 | 42 |  | WORLD (UNF.CPP) | check_engagement, pass_moment, movecontrol, title_screen, relocate, pass_wall |
+| 2000:65b0 | monster_at | 42 | the slot of the monster standing on a square, or -1 when it is empty | WORLD (UNF.CPP) | check_engagement, pass_moment, movecontrol, title_screen, relocate, pass_wall |
 | 2000:65dc | set_monster_map | 28 | write the 80x110 occupancy map | WORLD (UNF.CPP) | stock_level, load_monster_map, pass_moment, FUN_2000_bcb6, FUN_2000_bce5, movecontrol … |
 | 2000:65f8 | get_mtype | 291 | random monster type for stocking | WORLD (UNF.CPP) | stock_level |
 | 2000:671e | stock_level | 2320 | populate a floor with 145 monsters (boss placement) | WORLD (UNF.CPP) | load_monster_map, load_level_map, roll_char, title_screen |
@@ -357,7 +357,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:7d23 | gain_level | 196 | apply level-ups | WORLD (UNF.CPP) | flea_inn |
 | 2000:7dec | FUN_2000_7dec | 74 |  | WORLD (UNF.CPP) | strike |
 | 2000:7e36 | strike | 845 | player attack roll | WORLD (UNF.CPP) | movecontrol |
-| 2000:8189 | FUN_2000_8189 | 216 |  | WORLD (UNF.CPP) | defend |
+| 2000:8189 | gain_or_drain | 216 | moves one of the six stats by a point, the stat picked by the size of -6..-1 / 1..6 | WORLD (UNF.CPP) | defend |
 | 2000:826d | FUN_2000_826d | 74 |  | WORLD (UNF.CPP) | defend |
 | 2000:82b7 | defend | 3272 | monster attack roll + drains/poison/disease | WORLD (UNF.CPP) | call_check_eng |
 | 2000:8f85 | FUN_2000_8f85 | 20 |  | WORLD (UNF.CPP) | FUN_2000_9232 |
@@ -379,7 +379,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:aa26 | FUN_2000_aa26 | 111 |  | WORLD (UNF.CPP) | flea_inn, dig_hole |
 | 2000:aa95 | draw_ladder_prompt | 521 | HIT U/D box with the ladder picture | WORLD (UNF.CPP) | FUN_2000_ac9e |
 | 2000:ac9e | FUN_2000_ac9e | 1305 |  | WORLD (UNF.CPP) | movecontrol |
-| 2000:b1b7 | FUN_2000_b1b7 | 39 |  | WORLD (UNF.CPP) | FUN_2000_bce5 |
+| 2000:b1b7 | move_seconds | 39 | seconds one step costs: a second, plus one per 100 of weight over 10x agility | WORLD (UNF.CPP) | FUN_2000_bce5 |
 | 2000:b1e0 | FUN_2000_b1e0 | 34 |  | WORLD (UNF.CPP) | movecontrol |
 | 2000:b202 | use_magic_item | 816 | U key: rings/stones/cups/balls | WORLD (UNF.CPP) | movecontrol |
 | 2000:b532 | chute | 184 | fall-through message + landing, saves the player | WORLD (UNF.CPP) | movecontrol |
@@ -418,8 +418,8 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 3000:2848 | draw_map_square | 2758 | expanded-map square drawing | TOWN / MAGICFNC / CAT | FUN_3000_00a8, FUN_3000_0837, draw_3d_view |
 | 3000:3311 | FUN_3000_3311 | 284 |  | TOWN / MAGICFNC / CAT | draw_3d_view, draw_map_square |
 | 3000:342d | FUN_3000_342d | 5617 |  | TOWN / MAGICFNC / CAT | FUN_3000_00a8, FUN_3000_0837, draw_3d_view |
-| 3000:4a24 | FUN_3000_4a24 | 61 |  | TOWN / MAGICFNC / CAT | give_hint, roll_char, FUN_3000_6a6a, tablet_message |
-| 3000:4a67 | FUN_3000_4a67 | 528 |  | TOWN / MAGICFNC / CAT | roll_char |
+| 3000:4a24 | read_uroll_line | 61 | reads the next line of UROLL.TXT, dropping every '|' | TOWN / MAGICFNC / CAT | give_hint, roll_char, FUN_3000_6a6a, tablet_message |
+| 3000:4a67 | show_rolled_character | 528 | draws the rolled character's numbers, or rubs them out again | TOWN / MAGICFNC / CAT | roll_char |
 | 3000:4c77 | roll_char | 7641 | character creation (stats, HP/SP, money) | TOWN / MAGICFNC / CAT | main |
 | 3000:6a6a | FUN_3000_6a6a | 288 |  | TOWN / MAGICFNC / CAT | FUN_3000_6b8a, draw_monster_view |
 | 3000:6b8a | FUN_3000_6b8a | 197 |  | TOWN / MAGICFNC / CAT | draw_monster_view |
@@ -479,7 +479,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 3000:caac | FUN_3000_caac | 1557 |  | TOWN / MAGICFNC / CAT | movecontrol |
 | 3000:d0c1 | msg_no_monster | 45 | 'there is no monster' message | TOWN / MAGICFNC / CAT | explosion, sleep_monster, go_away, autokill, drain_monster, spell_effect |
 | 3000:d0ee | msg_already_in_effect | 45 | spell already active message | TOWN / MAGICFNC / CAT | set_temp_armor_plus, set_temp_weapon_plus, set_body_armor, set_prot_ring, set_anti_magic_ring, sleep_monster … |
-| 3000:d11b | FUN_3000_d11b | 45 |  | TOWN / MAGICFNC / CAT | FUN_3000_d990, FUN_3000_d9ba, FUN_3000_d9e4, spell_effect |
+| 3000:d11b | msg_already_cast_this_spell | 45 | the other 'already cast' refusal | TOWN / MAGICFNC / CAT | strength, speed, strength_and_speed, spell_effect |
 | 3000:d148 | enchant_weapon_perm | 197 | set a weapon's plus | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:d211 | enchant_armor_perm | 197 | set an armor's plus | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:d2da | set_temp_armor_plus | 32 | prep enchant armor (refuses if not better) | TOWN / MAGICFNC / CAT | spell_effect |
@@ -488,20 +488,20 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 3000:d340 | set_prot_ring | 32 | ring of protection spell | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:d362 | set_anti_magic_ring | 32 | anti-magic ring spell (never read by the game) | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:d384 | write_scroll_or_wand | 1076 | scroll/wand creation menus | TOWN / MAGICFNC / CAT | spell_effect |
-| 3000:d7be | FUN_3000_d7be | 45 |  | TOWN / MAGICFNC / CAT | spell_effect |
-| 3000:d7eb | FUN_3000_d7eb | 45 |  | TOWN / MAGICFNC / CAT | FUN_3000_d990, FUN_3000_d9ba, FUN_3000_d9e4, spell_effect |
+| 3000:d7be | msg_you_feel_good | 45 | what a small cure prints | TOWN / MAGICFNC / CAT | spell_effect |
+| 3000:d7eb | msg_you_feel_very_good | 45 | what a big cure or a stat boost prints | TOWN / MAGICFNC / CAT | strength, speed, strength_and_speed, spell_effect |
 | 3000:d818 | explosion | 229 | minor/normal/major explosion damage | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:d904 | sleep_monster | 136 | rand(ML) < 3 -> 25 moves | TOWN / MAGICFNC / CAT | spell_effect |
-| 3000:d990 | FUN_3000_d990 | 38 |  | TOWN / MAGICFNC / CAT | spell_effect |
-| 3000:d9ba | FUN_3000_d9ba | 38 |  | TOWN / MAGICFNC / CAT | spell_effect |
-| 3000:d9e4 | FUN_3000_d9e4 | 68 |  | TOWN / MAGICFNC / CAT | spell_effect |
+| 3000:d990 | strength | 38 | +7 STR for 60 moves | TOWN / MAGICFNC / CAT | spell_effect |
+| 3000:d9ba | speed | 38 | +7 AGI for 60 moves | TOWN / MAGICFNC / CAT | spell_effect |
+| 3000:d9e4 | strength_and_speed | 68 | both boosts at once, each extended by 60 moves if it is already running | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:da2c | relocate | 137 | random non-rock, unoccupied square (x 0..78, y 0..103); also used by change_module and by Fighters digging too deep | TOWN / MAGICFNC / CAT | dig_hole, change_module, spell_effect |
 | 3000:dab7 | boss_immune_check | 99 | 'NO, THAT SILLY SPELL DOESN'T WORK ON ME' | TOWN / MAGICFNC / CAT | go_away, autokill, drain_monster, spell_effect |
 | 3000:db1e | go_away | 247 | teleports the monster | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:dc18 | autokill | 283 | the autokill roll | TOWN / MAGICFNC / CAT | spell_effect |
-| 3000:dd37 | FUN_3000_dd37 | 45 |  | TOWN / MAGICFNC / CAT | battle_strength, battle_speed |
-| 3000:dd64 | battle_strength | 99 | +7 STR for 60 moves | TOWN / MAGICFNC / CAT | spell_effect |
-| 3000:ddc9 | battle_speed | 99 | +7 AGI for 60 moves | TOWN / MAGICFNC / CAT | spell_effect |
+| 3000:dd37 | msg_sixty_moves_longer | 45 | re-casting extended the spell by 60 moves | TOWN / MAGICFNC / CAT | power_weapon, protection |
+| 3000:dd64 | power_weapon | 99 | Power Weapon I to III: sets the power-weapon level (save 0x7e8) and its 60-move clock | TOWN / MAGICFNC / CAT | spell_effect |
+| 3000:ddc9 | protection | 99 | Minor/Major/Ultra Protection: sets the protection level and its 60-move clock | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:de2e | resist_poison | 53 | 60 moves | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:de65 | resist_disease | 53 | 60 moves | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:de9c | anti_cold | 53 | 60 moves | TOWN / MAGICFNC / CAT | spell_effect |
@@ -516,7 +516,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 4000:0885 | FUN_4000_0885 | 158 |  | DISP (graphics) | g_store, temple, flea_inn, bank |
 | 4000:0923 | FUN_4000_0923 | 56 |  | DISP (graphics) |  |
 | 4000:095b | FUN_4000_095b | 74 |  | DISP (graphics) | FUN_2000_1598 |
-| 4000:09a5 | FUN_4000_09a5 | 282 |  | DISP (graphics) | pfont, psfont, FUN_4000_55b2, FUN_4000_580e, FUN_4000_593f |
+| 4000:09a5 | FUN_4000_09a5 | 282 |  | DISP (graphics) | pfont, psfont, typed_name, FUN_4000_580e, FUN_4000_593f |
 | 4000:0abf | load_font | 244 | .FNT loader | DISP (graphics) | FUN_2000_1c5b |
 | 4000:0bb3 | pfont | 517 | print text at x,y | DISP (graphics) | FUN_2000_04d3, mset_gmenu, FUN_2000_2f5d, load_section_pictures, show_money, g_store … |
 | 4000:0db8 | psfont | 422 | print text with wrapping | DISP (graphics) | FUN_2000_3e73, defend, view_battle_spells, draw_ladder_prompt, FUN_2000_ac9e, cast_a_spell … |
@@ -571,7 +571,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 4000:433e | FUN_4000_433e | 1240 |  | DISP (graphics) | FUN_2000_4506, draw_map_square, boss_office_message, FUN_3000_9026, title_screen |
 | 4000:4818 | scale_image2 | 1909 | draws a .PIC image scaled into a rectangle | DISP (graphics) | FUN_2000_3e73, select_player, draw_ladder_prompt, movecontrol, draw_3d_view, draw_map_square … |
 | 4000:4f8f | FUN_4000_4f8f | 1557 |  | DISP (graphics) | FUN_3000_342d |
-| 4000:55b2 | FUN_4000_55b2 | 598 |  | DISP (graphics) | g_store, bank, roll_char |
+| 4000:55b2 | typed_name | 598 | reads a typed string into a buffer: letters, digits and the space bar, backspace, Enter or Escape | DISP (graphics) | g_store, bank, roll_char |
 | 4000:580e | FUN_4000_580e | 305 |  | DISP (graphics) | roll_char |
 | 4000:593f | FUN_4000_593f | 291 |  | DISP (graphics) | mset_gmenu, FUN_2000_2f5d, roll_char |
 | 4000:5a62 | FUN_4000_5a62 | 35 |  | DISP (graphics) | view_stats |
