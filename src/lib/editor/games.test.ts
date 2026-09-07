@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseSave, spellIndex } from '../game/dotu-files.js';
+import { readScalar } from './fields';
 import { GAMES, MORAFFS_WORLD, pickGameByFileSize, UNFORGIVEN } from './games';
-import type { Field } from './schema';
+import type { Field, ScalarField } from './schema';
 
 function lastByte(field: Field): number {
   switch (field.kind) {
@@ -71,12 +72,13 @@ describe("the Moraff's World roller's own fields", () => {
   );
 
   it.each([
+    [0x07b2, 'Dungeon'],
     [0x07b4, 'Map Cursor X'],
     [0x07b5, 'Map Cursor Y'],
     [0x07d6, 'Age (minutes)'],
     [0x07f8, 'Overworld X'],
     [0x07fa, 'Overworld Y'],
-    [0x0804, 'Return Module'],
+    [0x0804, 'Return Dungeon'],
     [0x0806, 'Return X'],
     [0x0808, 'Return Y'],
     [0x080a, 'Unused Counter'],
@@ -89,5 +91,26 @@ describe("the Moraff's World roller's own fields", () => {
 
   it('gives each of them its own offset', () => {
     expect(new Set(offsets).size).toBe(offsets.length);
+  });
+});
+
+describe("the Moraff's World dungeon number", () => {
+  const field = MORAFFS_WORLD.sections
+    .flatMap((section) => section.fields)
+    .find((entry) => 'label' in entry && entry.label === 'Dungeon') as ScalarField;
+
+  // load_player (WORLD.EXE 2000:580e) freads the whole record flat, so the dungeon is the word
+  // at DS:c8a4 minus the record's own DS:c0f2. The world map (exe 3000:8235) makes the number
+  // out of the map square the player goes in from, which can leave it negative.
+  it('reads the signed word at 0x07b2', () => {
+    const bytes = new Uint8Array(MORAFFS_WORLD.fileSize);
+    const view = new DataView(bytes.buffer);
+    expect(field.kind).toBe('int16');
+    expect(field.offset).toBe(0x07b2);
+    expect(readScalar(view, field)).toBe(0);
+    view.setInt16(0x07b2, 3528, true);
+    expect(readScalar(view, field)).toBe(3528);
+    view.setInt16(0x07b2, -3204, true);
+    expect(readScalar(view, field)).toBe(-3204);
   });
 });

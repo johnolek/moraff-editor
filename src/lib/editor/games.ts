@@ -92,13 +92,18 @@ export const MORAFFS_WORLD: GameSchema = {
     },
     {
       title: 'Position',
-      note: 'Warp the character by changing Current Floor and the X/Y coordinates. Module = 0 for the main game.',
+      note: 'Warp the character by changing Current Floor and the X/Y coordinates. A new character starts in dungeon 0.',
       fields: [
         { kind: 'enum_uint8', offset: 0x07aa, label: 'Facing Direction', choices: FACINGS },
         { kind: 'int16', offset: 0x07ac, label: 'Position X' },
         { kind: 'int16', offset: 0x07ae, label: 'Position Y' },
         { kind: 'int16', offset: 0x07b0, label: 'Current Floor' },
-        { kind: 'int16', offset: 0x07b2, label: 'Module' },
+        {
+          kind: 'int16',
+          offset: 0x07b2,
+          label: 'Dungeon',
+          hint: 'Which dungeon the character is in. The number goes into the hash every floor is generated from, so another one is a whole different set of floors — and the maps the character has explored are for the old one. A new character starts in 0; the gate on floor 0 leads to the world map, and going in from a different square there gives a number between −3,204 and 3,528.',
+        },
         {
           kind: 'uint8',
           offset: 0x07b4,
@@ -116,8 +121,8 @@ export const MORAFFS_WORLD: GameSchema = {
         {
           kind: 'int16',
           offset: 0x0804,
-          label: 'Return Module',
-          hint: 'Where the game puts the character back when they leave a place they went into. A new character gets the square they start on; −1 in Return X means there is nowhere to go back to.',
+          label: 'Return Dungeon',
+          hint: 'Half of the raise-dead contract the temple sells. Dying with one puts the character back in this dungeon, on floor 0, at Return X and Y, and spends it; −1 in Return X means there is no contract, and dying deletes the character.',
         },
         { kind: 'int16', offset: 0x0806, label: 'Return X' },
         { kind: 'int16', offset: 0x0808, label: 'Return Y' },
