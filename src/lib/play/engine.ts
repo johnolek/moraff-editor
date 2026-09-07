@@ -24,6 +24,7 @@ import { KEY } from './keys';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
+import { lookInPockets } from './pockets';
 import { MESSAGE_BOX, messageBoxLines, notBuiltYet } from './screens';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
@@ -347,7 +348,7 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.weapon]: { c: 'movecontrol, the 0x77 branch', run: (turn) => notBuiltYet(turn.game, 'CHANGE THE WEAPON IN YOUR HAND') },
   [KEY.expNeeded]: { c: 'FUN_2000_7bcd', run: showExpNeeded },
   [KEY.viewStats]: { c: 'view_stats', run: showStats },
-  [KEY.pockets]: { c: 'FUN_3000_7545', run: (turn) => notBuiltYet(turn.game, 'LOOK IN YOUR POCKETS') },
+  [KEY.pockets]: { c: 'FUN_3000_7545', run: lookInPockets },
   [KEY.money]: { c: 'show_money', run: (turn) => notBuiltYet(turn.game, 'COUNT YOUR MONEY') },
   [KEY.loseItem]: { c: 'lose_item', run: dropSomething },
   [KEY.monsterManual]: { c: 'monster_manual', run: (turn) => notBuiltYet(turn.game, 'READ ABOUT THE MONSTERS DOWN HERE') },
