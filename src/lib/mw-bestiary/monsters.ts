@@ -94,7 +94,8 @@ const EXP_DEPTH_CAP = data.constants.expDepthCap;
 
 /** The puffball, which pops instead of fighting. */
 const PUFFBALL = 6;
-/** The monster no battle spell and no grenade touches (exe 2000:cc66, mw.c "spell_proof"). */
+/** The monster that refuses Go Away, Hold Monster, Drain Monster and Autokill (exe 2000:cc66,
+ *  mw.c "spell_proof") and catches a thrown grenade without using it up (exe 3000:e221). */
 const SPELL_PROOF = 100;
 const POISONS = 1;
 const DISEASES = 2;
@@ -291,7 +292,7 @@ export function describeEffects(monster: MwMonster): string[] {
   }
   if (monster.kind === POISONS) lines.push('Poisons you when it hits you');
   if (monster.kind === DISEASES) lines.push('Gives you a disease when it hits you');
-  if (isSpellProof(monster)) lines.push('No battle spell touches it, and it catches a thrown grenade');
+  if (isSpellProof(monster)) lines.push('Refuses Go Away, Hold Monster, Drain Monster and Autokill, and catches a thrown grenade without using it up');
   return lines;
 }
 

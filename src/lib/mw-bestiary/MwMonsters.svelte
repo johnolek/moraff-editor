@@ -10,8 +10,10 @@
   }));
 
   const REROLL_NOTE =
-    'The game rolls a floor’s 145 monsters from the clock every time you arrive, so no two visits ' +
-    'hold the same ones. What can be shown is how often each monster turns up, not which are down there.';
+    'The game rolls a floor’s 145 monsters from the clock the first time you arrive and keeps the three ' +
+    'floors you were on last, so going up a ladder and back finds them where they were, while a floor left ' +
+    'two floors behind is rolled afresh. What can be shown is how often each monster turns up, not which ' +
+    'are down there.';
 </script>
 
 <MonsterDatabase {groups} {detail} note={REROLL_NOTE} />

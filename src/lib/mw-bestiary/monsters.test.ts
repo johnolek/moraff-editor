@@ -164,7 +164,7 @@ describe('what a monster does to you', () => {
   it('marks the poison, the disease and the monster no spell touches', () => {
     expect(describeEffects(named('BLACK SPIDER'))).toContain('Poisons you when it hits you');
     expect(describeEffects(named('GREEN SPIDER'))).toContain('Gives you a disease when it hits you');
-    expect(describeEffects(named('ZEUS'))).toContain('No battle spell touches it, and it catches a thrown grenade');
+    expect(describeEffects(named('ZEUS'))).toContain('Refuses Go Away, Hold Monster, Drain Monster and Autokill, and catches a thrown grenade without using it up');
   });
 });
 
