@@ -390,6 +390,31 @@ simply asks the square whether it is a ladder each time it draws it.
 
 In the code: [ladders up and down](formula:ladders) and [chutes](formula:chutes).
 
+### Module II's town is Module I's town with the buildings moved
+
+Walk into the second module's town and the streets are the ones you already know: every wall,
+every door and every secret door across the whole floor stands where it does in the first
+module's town. What moved is the buildings. Module I's town holds 60 stores, 50 temples, 42 banks
+and 51 inns, Module II's holds 51, 54, 55 and 39, and 402 of the squares you can walk on hold
+something different in one town than in the other. The ladders down moved too, since a town's
+ladders depend on the floors underneath it, and those are ordinary dungeon floors with nothing in
+common.
+
+On the town floor the only part of the hash that knows which module you are in comes to
+`7 * 13 * (module + 15)` plus the remainder of `13 * 27` over `module + 15`, counting the modules
+from zero: 1,371 for Module I and 1,471 for Module II, exactly 100 apart. Walls take one of 25
+patterns per sixteen-by-sixteen block, and 100 is a multiple of 25, so every block of the two
+towns draws the same pattern. Buildings take a remainder of 60 from the same hash, and 100 is not
+a multiple of 60, so the shops land elsewhere.
+
+Modules III and V are paired the other way about. Their numbers are 180 apart, which 60 divides
+and 25 does not, so those two towns have every store, temple, bank and inn on the same square and
+not one wall in common. No other pair of towns shares either.
+
+In the code: [myrand](source:ts/unfmap.js/myrand),
+[why every dungeon is the same](formula:map-hash) and
+[where the buildings are](formula:town-buildings).
+
 ## Town and money
 
 ### Two kills in the same second pay exactly the same
