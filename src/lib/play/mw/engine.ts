@@ -8,6 +8,7 @@ import type { Rng } from '../../game/port/rng';
 import type { ScreenLine } from '../../game/port/state';
 import { MORAFFS_WORLD_MAP, type MapSquare } from '../../map/game';
 import type { StockedMonster } from '../../map/stocking';
+import { adviseTheWalker, type MwLessons } from './advice';
 import { fallDownAChute, chuteUnder } from './chute';
 import { digAHole } from './dig';
 import { castAtTheSpellScreen, useAnItem } from './cast';
@@ -16,6 +17,16 @@ import { MwFloorMonsters, mwDrawnMonsters, mwEnterLevel } from './floor';
 import { killTheDead } from './kill';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { MW_KEY } from './keys';
+import {
+  chooseArmor,
+  chooseWeapon,
+  showExperienceNeeded,
+  showHelpMenu,
+  showMoney,
+  showPockets,
+  showSpellsInForce,
+  showVitalStats,
+} from './letters';
 import { resolveStep, turnAndStep, waitAMoment } from './move';
 import { loadMwPlayer, saveMwPlayer } from './record';
 import { mwMessageBoxLines, mwNotBuiltYet, MW_MESSAGE_BOX } from './screens';
@@ -124,6 +135,9 @@ export class MwGameSession {
   private waiting: ((key: number) => void) | null = null;
   /** A ported function has called wait_key and is owed a key once it has finished. */
   private waitOwed = false;
+  /** How far through the fourteen lessons the little mouse has got (DS:4482). */
+  readonly lessons: MwLessons = { next: 0 };
+
   /** Every box printed since the last one was shown, oldest first. */
   private pending: string[][] = [];
   /** Where what the game says goes while a fight is being drawn. */
@@ -384,16 +398,16 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.fight]: { c: 'strike, and the two spend_time calls after it', run: swingAtMonster },
   [MW_KEY.cast]: { c: 'spell_screen', run: castAtTheSpellScreen },
   [MW_KEY.useItem]: { c: 'movecontrol, case 0x69 of its letter switch', run: useAnItem },
-  [MW_KEY.viewStats]: { c: 'view_stats', run: (turn) => mwNotBuiltYet(turn.game, "SHOW YOUR VITAL STATISTICS") },
-  [MW_KEY.viewPrepSpells]: { c: 'FUN_2000_7421(0)', run: (turn) => mwNotBuiltYet(turn.game, 'LIST THE PREPARATION SPELLS IN FORCE') },
-  [MW_KEY.viewBattleSpells]: { c: 'FUN_2000_7421(1)', run: (turn) => mwNotBuiltYet(turn.game, 'LIST THE BATTLE SPELLS IN FORCE') },
-  [MW_KEY.pockets]: { c: 'FUN_3000_a047', run: (turn) => mwNotBuiltYet(turn.game, 'VIEW THE CONTENTS OF YOUR POCKETS') },
-  [MW_KEY.help]: { c: 'FUN_2000_919a', run: (turn) => mwNotBuiltYet(turn.game, 'OPEN THE HELP MENU') },
-  [MW_KEY.f1]: { c: 'FUN_2000_919a', run: (turn) => mwNotBuiltYet(turn.game, 'OPEN THE HELP MENU') },
-  [MW_KEY.expNeeded]: { c: 'experience_for_level', run: (turn) => mwNotBuiltYet(turn.game, 'SHOW THE EXPERIENCE NEEDED TO GAIN A LEVEL') },
-  [MW_KEY.money]: { c: 'financial_statement', run: (turn) => mwNotBuiltYet(turn.game, 'VIEW YOUR MONETARY BREAKDOWN') },
-  [MW_KEY.weapon]: { c: 'movecontrol, the 0x77 branch', run: (turn) => mwNotBuiltYet(turn.game, 'SELECT THE WEAPON IN YOUR HAND') },
-  [MW_KEY.armor]: { c: 'movecontrol, the 0x61 branch', run: (turn) => mwNotBuiltYet(turn.game, 'CHANGE THE ARMOR YOU WEAR') },
+  [MW_KEY.viewStats]: { c: 'view_stats', run: showVitalStats },
+  [MW_KEY.viewPrepSpells]: { c: 'FUN_2000_7421(0)', run: (turn) => showSpellsInForce(turn, 0) },
+  [MW_KEY.viewBattleSpells]: { c: 'FUN_2000_7421(1)', run: (turn) => showSpellsInForce(turn, 1) },
+  [MW_KEY.pockets]: { c: 'FUN_3000_a047', run: showPockets },
+  [MW_KEY.help]: { c: 'FUN_2000_919a', run: showHelpMenu },
+  [MW_KEY.f1]: { c: 'FUN_2000_919a', run: showHelpMenu },
+  [MW_KEY.expNeeded]: { c: 'experience_for_level', run: showExperienceNeeded },
+  [MW_KEY.money]: { c: 'financial_statement', run: showMoney },
+  [MW_KEY.weapon]: { c: 'movecontrol, the 0x77 branch', run: chooseWeapon },
+  [MW_KEY.armor]: { c: 'movecontrol, the 0x61 branch', run: chooseArmor },
   [MW_KEY.save]: { c: 'save_player', run: (turn) => mwNotBuiltYet(turn.game, 'SAVE AND CARRY ON PLAYING') },
   [MW_KEY.quit]: { c: 'FUN_2000_7b86', run: (turn) => mwNotBuiltYet(turn.game, 'QUIT AND SAVE YOUR POSITION') },
   [MW_KEY.loseItem]: { c: 'FUN_2000_7756', run: (turn) => mwNotBuiltYet(turn.game, 'DROP A WEAPON, A SUIT OF ARMOR OR SOME MONEY') },
@@ -431,6 +445,10 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     if (handler) await handler.run(turn);
     await session.settle();
     if (session.over) return;
+    if (turn.step.dx !== 0 || turn.step.dy !== 0) {
+      adviseTheWalker(game, session.lessons);
+      await session.settle();
+    }
     await killTheDead(session);
     await session.settle();
     await session.fighting(() => resolveStep(turn));
