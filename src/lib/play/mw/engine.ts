@@ -12,6 +12,13 @@ import { adviseTheWalker, type MwLessons } from './advice';
 import { fallDownAChute, chuteUnder } from './chute';
 import { mwDie } from './death';
 import { castAtTheSpellScreen, useAnItem } from './cast';
+import {
+  changeTheBrickSpeed,
+  expandTheMap,
+  stepTheBackgroundColour,
+  switchTheSound,
+  zoomTheView,
+} from './display';
 import { dropSomething } from './drop';
 import { swingAtMonster } from './fight';
 import { MwFloorMonsters, mwDrawnMonsters, mwEnterLevel } from './floor';
@@ -30,7 +37,7 @@ import {
 } from './letters';
 import { resolveStep, turnAndStep, waitAMoment } from './move';
 import { loadMwPlayer, saveMwPlayer } from './record';
-import { mwMessageBoxLines, mwNotBuiltYet, MW_MESSAGE_BOX } from './screens';
+import { mwMessageBoxLines, MW_MESSAGE_BOX } from './screens';
 import { quitAndSave } from './quit';
 import { buildingUnder } from './town';
 import { explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
@@ -416,13 +423,13 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.save]: { c: 'save_player', run: (turn) => turn.session.save() },
   [MW_KEY.quit]: { c: 'FUN_2000_7b86', run: quitAndSave },
   [MW_KEY.loseItem]: { c: 'FUN_2000_7756', run: dropSomething },
-  [MW_KEY.brickSpeed]: { c: 'movecontrol, the 0x62 branch', run: (turn) => mwNotBuiltYet(turn.game, 'CHANGE HOW FAST THE WALLS ARE DRAWN') },
-  [MW_KEY.sound]: { c: 'movecontrol, the 0x6f branch', run: (turn) => mwNotBuiltYet(turn.game, 'TURN THE SOUND ON AND OFF') },
-  [MW_KEY.expandMap]: { c: 'movecontrol, the 0x78 branch', run: (turn) => mwNotBuiltYet(turn.game, 'SHOW THE MAP A THIRD AT A TIME') },
-  [MW_KEY.zoomView]: { c: 'FUN_2000_9968', run: (turn) => mwNotBuiltYet(turn.game, 'ZOOM IN ON THE MONSTER IN FRONT OF YOU') },
-  [MW_KEY.paletteRed]: { c: 'movecontrol, the 0x28 branch', run: (turn) => mwNotBuiltYet(turn.game, 'DARKEN THE RED IN THE PALETTE') },
-  [MW_KEY.paletteGreen]: { c: 'movecontrol, the 0x29 branch', run: (turn) => mwNotBuiltYet(turn.game, 'DARKEN THE GREEN IN THE PALETTE') },
-  [MW_KEY.paletteBlue]: { c: 'movecontrol, the 0x2a branch', run: (turn) => mwNotBuiltYet(turn.game, 'DARKEN THE BLUE IN THE PALETTE') },
+  [MW_KEY.brickSpeed]: { c: 'movecontrol, the 0x62 branch', run: changeTheBrickSpeed },
+  [MW_KEY.sound]: { c: 'movecontrol, the 0x6f branch', run: switchTheSound },
+  [MW_KEY.expandMap]: { c: 'movecontrol, the 0x78 branch', run: expandTheMap },
+  [MW_KEY.zoomView]: { c: 'FUN_2000_9968', run: zoomTheView },
+  [MW_KEY.paletteGreen]: { c: 'movecontrol, the 0x28 branch', run: (turn) => stepTheBackgroundColour(turn, 'GREEN') },
+  [MW_KEY.paletteBlue]: { c: 'movecontrol, the 0x29 branch', run: (turn) => stepTheBackgroundColour(turn, 'BLUE') },
+  [MW_KEY.paletteRed]: { c: 'movecontrol, the 0x2a branch', run: (turn) => stepTheBackgroundColour(turn, 'RED') },
 };
 
 /**

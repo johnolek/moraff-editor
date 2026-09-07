@@ -138,10 +138,4 @@ describe('the message box', () => {
     await pressMw(session, MW_KEY.escape);
     expect(session.box).toEqual([]);
   });
-
-  it('says what a key the port does not run yet would have done', async () => {
-    const session = playingMw(mwCharacterFile({ floor: 0, ...townWalk() }));
-    await pressMw(session, MW_KEY.zoomView);
-    expect(session.box).toEqual(['NOT BUILT YET: ZOOM IN ON THE MONSTER IN FRONT OF YOU']);
-  });
 });

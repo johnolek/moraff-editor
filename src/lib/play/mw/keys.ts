@@ -22,10 +22,10 @@ export const MW_KEY = {
   escape: 0x1b,
   /** Space, which is the same branch as T: a moment passes where the character stands. */
   space: 0x20,
-  /** The three keys that shade the palette a step darker. */
-  paletteRed: 0x28,
-  paletteGreen: 0x29,
-  paletteBlue: 0x2a,
+  /** The three keys that each step one colour of the background on by sixteen. */
+  paletteGreen: 0x28,
+  paletteBlue: 0x29,
+  paletteRed: 0x2a,
   viewPrepSpells: 0x31,
   viewBattleSpells: 0x32,
   armor: 0x61,
