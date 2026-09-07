@@ -18,6 +18,8 @@ import filesSource from '../game/dotu-files.js?raw';
 import characterSource from '../game/port/character.ts?raw';
 import combatSource from '../game/port/combat.ts?raw';
 import hintsSource from '../game/port/hints.ts?raw';
+import momentSource from '../game/port/moment.ts?raw';
+import recordSource from '../game/port/record.ts?raw';
 import mechSource from '../game/dotu-mech.js?raw';
 import magicSource from '../game/port/magic.ts?raw';
 import rngSource from '../game/port/rng.ts?raw';
@@ -28,6 +30,19 @@ import areaSource from '../map/area.ts?raw';
 import pathSource from '../map/path.ts?raw';
 import relocateSource from '../map/relocate.ts?raw';
 import stockingSource from '../map/stocking.ts?raw';
+import playArrivalSource from '../play/arrival.ts?raw';
+import playChuteSource from '../play/chute.ts?raw';
+import playDigSource from '../play/dig.ts?raw';
+import playEngineSource from '../play/engine.ts?raw';
+import playFloorSource from '../play/floor.ts?raw';
+import playHelpSource from '../play/help.ts?raw';
+import playKeysSource from '../play/keys.ts?raw';
+import playLaddersSource from '../play/ladders.ts?raw';
+import playModulesSource from '../play/modules.ts?raw';
+import playMoveSource from '../play/move.ts?raw';
+import playQuitSource from '../play/quit.ts?raw';
+import playScreensSource from '../play/screens.ts?raw';
+import playTrapdoorSource from '../play/trapdoor.ts?raw';
 import twinsSource from '../map/twins.ts?raw';
 import mwCharacterSource from '../game/mw-port/character.ts?raw';
 import mwSpellsSource from '../game/mw-port/spells.ts?raw';
@@ -46,9 +61,24 @@ const UNFORGIVEN_SOURCES = {
   'src/lib/game/port/combat.ts': combatSource,
   'src/lib/game/port/character.ts': characterSource,
   'src/lib/game/port/hints.ts': hintsSource,
+  'src/lib/game/port/moment.ts': momentSource,
+  'src/lib/game/port/record.ts': recordSource,
   'src/lib/game/port/state.ts': stateSource,
   'src/lib/game/port/rng.ts': rngSource,
   'src/lib/game/port/spell-index.ts': spellIndexSource,
+  'src/lib/play/engine.ts': playEngineSource,
+  'src/lib/play/move.ts': playMoveSource,
+  'src/lib/play/ladders.ts': playLaddersSource,
+  'src/lib/play/trapdoor.ts': playTrapdoorSource,
+  'src/lib/play/chute.ts': playChuteSource,
+  'src/lib/play/dig.ts': playDigSource,
+  'src/lib/play/modules.ts': playModulesSource,
+  'src/lib/play/quit.ts': playQuitSource,
+  'src/lib/play/help.ts': playHelpSource,
+  'src/lib/play/floor.ts': playFloorSource,
+  'src/lib/play/arrival.ts': playArrivalSource,
+  'src/lib/play/screens.ts': playScreensSource,
+  'src/lib/play/keys.ts': playKeysSource,
   'src/lib/game/unfmap.js': unfmapSource,
   'src/lib/game/dotu-mech.js': mechSource,
   'src/lib/game/dotu-files.js': filesSource,
