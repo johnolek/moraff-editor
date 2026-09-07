@@ -1,0 +1,174 @@
+import { sectionOf } from '../game/dotu-files.js';
+import type { Rng } from '../game/port/rng';
+import type { Game, Monster } from '../game/port/state';
+import { MAP_EMPTY, MAP_PLAYER, monsterAt, sectionMonsterKinds, setMonsterMap } from '../game/port/state';
+import { WIDTH } from '../game/unfmap.js';
+import type { MapSquare } from '../map/game';
+import { MONSTER_SLOTS, stockFloor, type StockedMonster } from '../map/stocking';
+
+/**
+ * Arriving on a floor: what the game loads, stocks and remembers.
+ *
+ * The monsters come from the map explorer's own stocking — `src/lib/map/stocking.ts` is a port of
+ * `stock_level` (exe 2000:671e) and there is only one of them — turned into the six-byte slots
+ * the game keeps at DS:c4cd.
+ */
+
+/**
+ * How many monster kinds the game has loaded at a time: the 22 built-in ones and the five of the
+ * section, which are the rows a stocked monster's type points at.
+ */
+const BUILTIN_KINDS = 22;
+
+const BUILTIN_ID = /^builtin-(\d+)$/;
+const SECTION_ID = /^section-\d+-(\d+)$/;
+
+/**
+ * The monster type a stocked monster is: which of the 27 rows of the table the game has loaded
+ * for the section it stands in. The built-in monsters are rows 0 to 21, and a section's own five
+ * are rows 22 to 26, which is the slot number their id already carries.
+ */
+export function monsterTypeOf(monsterId: string): number {
+  const builtin = BUILTIN_ID.exec(monsterId);
+  if (builtin) return Number(builtin[1]);
+  const section = SECTION_ID.exec(monsterId);
+  if (section) return Number(section[1]);
+  throw new Error(`no monster type for ${monsterId}`);
+}
+
+/** The id `src/lib/map/stocking.ts` knows a monster of this type by, on a floor of `section`. */
+export function monsterIdOf(type: number, section: number): string {
+  return type < BUILTIN_KINDS ? `builtin-${type}` : `section-${section}-${type}`;
+}
+
+/** One of the game's 145 monster slots, empty. */
+function emptySlot(): Monster {
+  return { x: 0, y: 0, hp: 0, type: 0, level: 1 };
+}
+
+/** A floor's monster table, and which floor it belongs to. */
+interface FloorTable {
+  /** The floor this table holds the monsters of, or null for a table nothing has been put in. */
+  level: number | null;
+  monsters: Monster[];
+}
+
+function emptyTable(): FloorTable {
+  return { level: null, monsters: Array.from({ length: MONSTER_SLOTS }, emptySlot) };
+}
+
+/**
+ * stock_level (exe 2000:671e, unf.c "stock_level"): the floor's 145 monsters, and the memory of
+ * the last three floors that decides whether they are rolled again.
+ *
+ * The game keeps three monster tables and rotates between them. Arriving on the floor either of
+ * the other two holds, it swaps that table back in and rebuilds the occupancy grid from it, so
+ * the monsters are exactly where they were left, minus the ones that were killed; arriving
+ * anywhere else, the oldest table is emptied and filled with a fresh roll. The town is the one
+ * floor that is emptied and never filled.
+ *
+ * The original starts with three tables it believes hold floor 0, and reads the monsters of the
+ * floor a character is loaded onto out of that character's `?MON.MAP` file. There is no such file
+ * in a browser, so this starts with three tables holding no floor at all and rolls the floor a
+ * character starts on like any other.
+ */
+export class FloorMonsters {
+  /** The three tables, the one in play first. */
+  private tables: FloorTable[] = [emptyTable(), emptyTable(), emptyTable()];
+
+  /** Which floors are remembered, the one in play first. */
+  get remembered(): (number | null)[] {
+    return this.tables.map((table) => table.level);
+  }
+
+  /**
+   * Put a floor's monsters in play, rolling them unless one of the three tables already holds
+   * that floor. `rows` is the floor they are rolled onto.
+   */
+  stock(game: Game, rows: MapSquare[][], level: number, rng: Rng): void {
+    const [current, previous, older] = this.tables;
+    if (level === previous.level) this.tables = [previous, current, older];
+    else if (level === older.level) this.tables = [older, previous, current];
+    else this.tables = [older, current, previous];
+    const table = this.tables[0];
+    const rolled = table.level !== level;
+    table.level = level;
+    game.monsters = table.monsters;
+    game.monsterMap.fill(MAP_EMPTY);
+    if (rolled) {
+      for (const slot of table.monsters) Object.assign(slot, emptySlot());
+      // The player is on the grid before the roll, so nothing is stocked on top of them.
+      setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
+      if (level !== 0) {
+        fill(table.monsters, stockFloor(rows, game.pc.module, level, fractions(rng), [squareIndex(game.pc.x, game.pc.y)]));
+      }
+    }
+    for (let slot = 0; slot < table.monsters.length; slot++) {
+      const monster = table.monsters[slot];
+      if (monster.hp > 0) setMonsterMap(game, monster.x, monster.y, slot);
+    }
+    setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
+  }
+}
+
+/** Write a roll of a floor's monsters into the game's own slots. */
+function fill(slots: Monster[], stocked: StockedMonster[]): void {
+  for (const monster of stocked) {
+    const slot = slots[monster.slot];
+    slot.x = monster.x;
+    slot.y = monster.y;
+    slot.hp = monster.hp;
+    slot.level = monster.level;
+    slot.type = monsterTypeOf(monster.monsterId);
+  }
+}
+
+/**
+ * The uniform fraction the stocking draws its rolls out of, taken from the port's generator.
+ *
+ * `Random(n)` (exe 2000:4156) is `rand() * n / 0x8000` over a generator whose numbers run from 0
+ * to 0x7fff, so a fraction of those same fifteen bits is exactly what the game divides up.
+ */
+function fractions(rng: Rng): () => number {
+  return () => rng.random(0x8000) / 0x8000;
+}
+
+/**
+ * load_level_map (exe 2000:7687, unf.c "load_level_map"): arrive on a floor. The section's
+ * monster descriptions are loaded when the section changes, and the floor is stocked.
+ *
+ * What the original does besides is about files and pictures: it reads `MD.BIN` and the section's
+ * `.PIC` files, writes the explored map of the floor being left out to its `.DUN` file, reads the
+ * new one in, and sets the palette.
+ */
+export function loadLevelMap(game: Game, floors: FloorMonsters, rows: MapSquare[][], level: number, rng: Rng): void {
+  game.monsterKinds = sectionMonsterKinds(sectionOf(game.pc.module, level));
+  floors.stock(game, rows, level, rng);
+}
+
+/**
+ * The monsters standing on the floor, as the map draws them: every slot the occupancy grid holds
+ * at its own square, which is what `which_monster` (exe 2000:6573) reads to draw one.
+ */
+export function drawnMonsters(game: Game, level: number): StockedMonster[] {
+  const section = sectionOf(game.pc.module, level);
+  const drawn: StockedMonster[] = [];
+  for (let slot = 0; slot < game.monsters.length; slot++) {
+    const monster = game.monsters[slot];
+    if (monsterAt(game, monster.x, monster.y) !== slot) continue;
+    drawn.push({
+      slot,
+      x: monster.x,
+      y: monster.y,
+      monsterId: monsterIdOf(monster.type, section),
+      level: monster.level,
+      hp: monster.hp,
+    });
+  }
+  return drawn;
+}
+
+/** Where a square sits in the 80 x 110 occupancy grid. */
+function squareIndex(x: number, y: number): number {
+  return y * WIDTH + x;
+}

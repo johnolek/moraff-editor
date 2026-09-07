@@ -649,11 +649,16 @@ function defaultPc(): PlayerCharacter {
 }
 
 /**
- * The 27 monster descriptions of section 1. `dotu-data.json` title-cases the names for the
- * bestiary; the game holds them upper case, which is how a battle message prints them.
+ * The 27 monster descriptions the game has loaded while the character is in a section: the 22
+ * built-in ones, then the five load_md_bin (exe 2000:5fec) reads out of `MD.BIN` for that
+ * section, which fill slots 22 to 26. `section` is 1 to 20, the way section_number (exe
+ * 2000:1d23) counts them.
+ *
+ * `dotu-data.json` title-cases the names for the bestiary; the game holds them upper case,
+ * which is how a battle message prints them.
  */
-function sectionMonsterKinds(): MonsterKind[] {
-  return [...data.builtinMonsters, ...data.sections[0].monsters].map((kind) => ({
+export function sectionMonsterKinds(section = 1): MonsterKind[] {
+  return [...data.builtinMonsters, ...data.sections[section - 1].monsters].map((kind) => ({
     name: kind.name.toUpperCase(),
     levelDrain: kind.levelDrain,
     statDrain: kind.statDrain,
