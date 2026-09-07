@@ -11,6 +11,7 @@ import type { StockedMonster } from '../../map/stocking';
 import { bundledMwDungeon as townFeatures } from '../../game/mw-dungeon';
 import { fallDownAChute, chuteUnder } from './chute';
 import { digAHole } from './dig';
+import { castAtTheSpellScreen, useAnItem } from './cast';
 import { swingAtMonster } from './fight';
 import { MwFloorMonsters, mwDrawnMonsters, mwEnterLevel } from './floor';
 import { killTheDead } from './kill';
@@ -386,8 +387,8 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.up]: { c: 'movecontrol, the 0x75 branch, and the town', run: goUp },
   [MW_KEY.trapDoor]: { c: 'movecontrol, the 0x6b branch, and FUN_2000_a6fa', run: goThroughTrapDoor },
   [MW_KEY.fight]: { c: 'strike, and the two spend_time calls after it', run: swingAtMonster },
-  [MW_KEY.cast]: { c: 'spell_screen', run: (turn) => mwNotBuiltYet(turn.game, 'CAST A SPELL') },
-  [MW_KEY.useItem]: { c: 'movecontrol, case 0x69 of its letter switch', run: (turn) => mwNotBuiltYet(turn.game, 'USE A SCROLL, A WAND, A PAPER, A PILL OR ANOTHER ITEM') },
+  [MW_KEY.cast]: { c: 'spell_screen', run: castAtTheSpellScreen },
+  [MW_KEY.useItem]: { c: 'movecontrol, case 0x69 of its letter switch', run: useAnItem },
   [MW_KEY.viewStats]: { c: 'view_stats', run: (turn) => mwNotBuiltYet(turn.game, "SHOW YOUR VITAL STATISTICS") },
   [MW_KEY.viewPrepSpells]: { c: 'FUN_2000_7421(0)', run: (turn) => mwNotBuiltYet(turn.game, 'LIST THE PREPARATION SPELLS IN FORCE') },
   [MW_KEY.viewBattleSpells]: { c: 'FUN_2000_7421(1)', run: (turn) => mwNotBuiltYet(turn.game, 'LIST THE BATTLE SPELLS IN FORCE') },
