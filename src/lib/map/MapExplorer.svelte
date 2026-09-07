@@ -136,6 +136,16 @@
     }
   }
 
+  // The character panel can send the party to the square its character stands on.
+  $effect(() => {
+    const place = app.requestedPlace;
+    if (!place) return;
+    app.requestedPlace = null;
+    if (place.module < 0 || place.module >= BOTTOM_LEVEL.length) return;
+    const square = place.x >= 0 && place.y >= 0 && isOnMap(place) ? { x: place.x, y: place.y } : null;
+    travel({ module: place.module, floor: place.floor, square, you: square }, cursor);
+  });
+
   /** Only an entry naming somewhere else moves the map. Every entry carries the map's place,
    *  including the ones a tab switch pushed, and stepping through those must leave it alone. */
   function onPopState(event: PopStateEvent) {

@@ -25,6 +25,12 @@
     app.tab = tab;
   }
 
+  function showOnMap() {
+    if (!status?.place) return;
+    app.requestedPlace = { ...status.place };
+    app.tab = 'map';
+  }
+
   const points = (value: number) => String(Math.trunc(value));
 </script>
 
@@ -79,6 +85,7 @@
       {#if character.slot !== null}<span>Character {character.slot}</span>{/if}
       <button type="button" class="link" onclick={() => show('editor')}>Edit in Save Editor</button>
       <button type="button" class="link" onclick={() => show('roller')}>Roll another</button>
+      {#if status.place}<button type="button" class="link" onclick={showOnMap}>Show on map</button>{/if}
     </div>
   {/if}
 

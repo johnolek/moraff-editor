@@ -21,6 +21,14 @@ export interface CurrentCharacter {
   bytes: Uint8Array<ArrayBuffer>;
 }
 
+/** A square of the dungeon to send the map to, taken from where a character stands. */
+export interface PlaceRequest {
+  module: number;
+  floor: number;
+  x: number;
+  y: number;
+}
+
 export interface AppState {
   tab: Tab;
   /** How far the map has moved through the browser's history, so its own Back and Forward
@@ -33,6 +41,8 @@ export interface AppState {
   requestedSource: SourceRequest | null;
   /** Set to the id of a formula to open in the Formulas tab; that tab clears it once it has. */
   requestedFormula: string | null;
+  /** Set to stand the party somewhere in the Map tab; the map clears it once it has. */
+  requestedPlace: PlaceRequest | null;
   character: CurrentCharacter | null;
   /** Bumped whenever the current character changes: a different one is chosen, or a field of
    *  the one in hand is edited. Everything that reads the record watches this. */
@@ -45,6 +55,7 @@ export const app = $state<AppState>({
   requestedMonsterId: null,
   requestedSource: null,
   requestedFormula: null,
+  requestedPlace: null,
   character: null,
   characterVersion: 0,
 });
