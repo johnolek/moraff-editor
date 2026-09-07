@@ -71,7 +71,7 @@ describe('the decompilations the app ships', () => {
   });
 
   it('looks in the game\'s own decompilation for a name', () => {
-    expect(decompSection('sleep_monster', 'moraffsWorld')).toBeNull();
+    expect(decompSection('give_hint', 'moraffsWorld')).toBeNull();
     expect(decompSection('read_roll_line')).toBeNull();
   });
 
