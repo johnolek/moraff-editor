@@ -25,6 +25,7 @@
   import SquareInfo from './SquareInfo.svelte';
   import { teleporterSegments } from './teleporters';
   import { monsterAt, stockFloor, stockingSection, type StockedMonster } from './stocking';
+  import { twinsOf, type TwinFloor } from './twins';
   import { boundsIncluding, type Point } from './viewport';
   import { nearestOpenSquare, stepFrom } from './you';
 
@@ -56,6 +57,7 @@
   const lookup = $derived(dungeonLookup(bundledDungeon, moduleIndex));
   const notable = $derived(notableSquares(lookup, floor, rows));
   const section = $derived(sectionInfo(moduleIndex, floor));
+  const twins = $derived(twinsOf(moduleIndex, floor));
   const stockKey = $derived(`${moduleIndex}:${floor}`);
   const canStock = $derived(stockingSection(moduleIndex, floor) !== null);
   const monsters = $derived(stocked.get(stockKey) ?? []);
@@ -146,6 +148,11 @@
     const module = Number((event.currentTarget as HTMLSelectElement).value);
     const level = anyFloor ? floor : Math.min(floor, BOTTOM_LEVEL[module]);
     travel({ module, floor: level, square: null, you: youOn(module, level) }, cursor);
+  }
+
+  /** A twin is always a floor its own module has, so the override is left alone. */
+  function goToTwin(twin: TwinFloor) {
+    travel({ module: twin.module, floor: twin.floor, square: null, you: youOn(twin.module, twin.floor) }, cursor);
   }
 
   function changeFloor(event: Event) {
@@ -324,14 +331,27 @@
 <div class="explorer">
   <div class="map">
     <div class="floor-header">
-      <span class="where">Module {MODULE_NUMERALS[moduleIndex]} · {floor === 0 ? 'Town' : `Floor ${floor}`}</span>
-      <span class="section">
-        {#if section}
-          Section {section.section} · {section.bossName} on floor {section.bossFloor}
-        {:else}
-          Section ?
-        {/if}
-      </span>
+      <div class="place">
+        <span class="where">Module {MODULE_NUMERALS[moduleIndex]} · {floor === 0 ? 'Town' : `Floor ${floor}`}</span>
+        <span class="section">
+          {#if section}
+            Section {section.section} · {section.bossName} on floor {section.bossFloor}
+          {:else}
+            Section ?
+          {/if}
+        </span>
+      </div>
+      {#if twins.length}
+        <div
+          class="twins"
+          title="The map hash gives these modules the same pattern for every block on this floor; ladders, chutes, trap doors and buildings still differ."
+        >
+          Same walls as
+          {#each twins as twin, index}{index > 0 ? ', ' : ''}<button type="button" class="link" onclick={() => goToTwin(twin)}
+              >Module {MODULE_NUMERALS[twin.module]} {twin.floor === 0 ? 'town' : `floor ${twin.floor}`}</button
+            >{/each}
+        </div>
+      {/if}
     </div>
     <div class="viewport">
       <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {monsters} {bounds} bind:cursor {highlight} {you} {marks} {selected} route={route ?? null} {tooltip} onselect={follow} />
@@ -427,12 +447,17 @@
   }
   .floor-header {
     display: flex;
-    justify-content: space-between;
-    gap: 16px;
+    flex-direction: column;
+    gap: 4px;
     padding: 8px 16px;
     font-size: 13px;
     border-bottom: 1px solid var(--line);
     background: var(--panel);
+  }
+  .place {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
   }
   .where {
     color: var(--ink);
@@ -440,6 +465,20 @@
   }
   .section {
     color: var(--muted);
+  }
+  .twins {
+    color: var(--muted);
+  }
+  .twins .link {
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: var(--mw-cyan);
+    cursor: pointer;
+  }
+  .twins .link:hover {
+    text-decoration: underline;
   }
   .viewport {
     flex: 1;
