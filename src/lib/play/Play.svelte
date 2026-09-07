@@ -187,7 +187,7 @@
           </div>
         </div>
         <div class="numbers">
-          <span>{Math.round(view.seconds)} seconds of game time</span>
+          <span>{Math.round(view.seconds)} second{Math.round(view.seconds) === 1 ? '' : 's'} of game time</span>
           {#if view.engaged}<span>Facing a level {view.engaged.level} monster on {view.engaged.hp} health points</span>{/if}
         </div>
       </aside>
