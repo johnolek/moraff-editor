@@ -4,8 +4,10 @@ import { MW_FROM_PAPER, MW_FROM_SPELLBOOK, spellHeld as mwSpellHeld } from './ma
 import { type HelpLine, readHelpScreen } from '../port/hints';
 import type { MwSpellChoice } from './state';
 import {
+  MW_PRIESTLY_CLASSES,
   MW_SPELL_CATEGORY_LABELS,
   MW_SPELL_NAMES,
+  MW_WIZARD_CLASSES,
   mwCanCast,
   mwSpellHelp,
   mwSpellRecord,
@@ -530,7 +532,10 @@ export function applySpellCategory(game: MwGame, source: number, choice: number)
     );
     return -1;
   }
-  if (source === MW_FROM_SPELLBOOK && !mwCanCast(game.pc.cls, category % 4)) {
+  const gated =
+    (category % 4 === 2 && !MW_WIZARD_CLASSES.includes(game.pc.cls)) ||
+    (category % 4 === 3 && !MW_PRIESTLY_CLASSES.includes(game.pc.cls));
+  if (source === MW_FROM_SPELLBOOK && gated) {
     // DS:41af 41cb 1476 20bd
     game.say('YOU ARE UNABLE TO CAST THIS', '   TYPE OF SPELLS.', '', 'HIT ANY KEY...');
     return -1;
