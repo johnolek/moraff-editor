@@ -1,6 +1,7 @@
 import type { Rng } from '../port/rng';
 import { BorlandRng } from '../port/rng';
 import type { ScreenLine } from '../port/state';
+import type { MwStockedMonster } from './stocking';
 
 /**
  * The character record Moraff's World writes, as far as `roll_char` fills it in.
@@ -111,6 +112,96 @@ export interface MwCharacter {
   dex: number;
   /** 0x81c, DS:c90e. */
   luck: number;
+
+  // spells
+
+  /**
+   * 0x7a8, DS:c89a: the character's own level, which is not the floor
+   * {@link MwCharacter.floor} holds. The damage spells multiply by it and autokill rolls it.
+   */
+  lev: number;
+  /** 0x41, DS:c133: what the character weighs with everything carried. */
+  loadedWeight: number;
+  /** 0x8e, DS:c180: the plus on each of the eight weapons. */
+  weaponPlus: number[];
+  /** 0xb8, DS:c1aa: the plus on each of the eight armors. */
+  armorPlus: number[];
+  /**
+   * 0x45c, DS:c54e: the six stone piles — copper, silver, ivory, gold, platinum and jewel
+   * stones, in that order.
+   */
+  stones: number[];
+  /**
+   * 0x22b, DS:c31d: how many scrolls of each spell the character carries, laid out exactly like
+   * {@link MwCharacter.spellbook} — 180 bytes indexed `category * 45 + level * 3 + slot`.
+   */
+  scrolls: number[];
+  /** 0x2df, DS:c3d1: charges left on each spell's wand, in the same 180-byte layout. */
+  wands: number[];
+  /** 0x393, DS:c485: sheets of magic paper for each spell, in the same 180-byte layout. */
+  paper: number[];
+  /** 0x7ca, DS:c8bc: moves until the disease takes another point of constitution. */
+  diseaseTimer: number;
+  /** 0x7cc, DS:c8be: moves until the poison takes another point of strength. */
+  poisonTimer: number;
+  /** 0x7ce, DS:c8c0: the preparation Enchant Weapon plus, added to the attack roll. */
+  enchantWeaponLevel: number;
+  /** 0x7cf, DS:c8c1: the preparation Enchant Armor plus, taken off a monster's attack roll. */
+  enchantArmorLevel: number;
+  /** 0x7d0, DS:c8c2: the Body Armor level, also taken off a monster's attack roll. */
+  bodyArmorLevel: number;
+  /** 0x7d1, DS:c8c3: the ring of protection's plus. */
+  ringOfProtection: number;
+  /**
+   * 0x7d2, DS:c8c4: the anti-magic ring's plus. Only the inventory screen reads it back, so the
+   * ring does nothing.
+   */
+  antiMagicRing: number;
+  /** 0x7d3, DS:c8c5: 1 from the preparation Feather, 100 from the permanent one. */
+  feather: number;
+  /** 0x7d4, DS:c8c6: 1 from the preparation Fast Move. */
+  fastMove: number;
+  /** 0x7d5, DS:c8c7: 1 from the preparation Invisibility, 100 from the permanent one. */
+  invisibility: number;
+  /** 0x7da, DS:c8cc: 5 while the preparation Strength is up, which is +5 on the strength. */
+  prepStrength: number;
+  /** 0x7db, DS:c8cd: 5 while the preparation Agility is up. */
+  prepAgility: number;
+  /** 0x7dc, DS:c8ce: 10 while Super Strength is up. */
+  superStrength: number;
+  /** 0x7dd, DS:c8cf: 10 while Super Agility is up. */
+  superAgility: number;
+  /** 0x7de, DS:c8d0: moves left on the battle Strength spell, which is worth +7. */
+  strengthTimer: number;
+  /** 0x7e0, DS:c8d2: moves left on the battle Speed spell, worth +7 agility. */
+  speedTimer: number;
+  /** 0x7e2, DS:c8d4: moves left on Slow Enemies. */
+  slowEnemiesTimer: number;
+  /** 0x7e4, DS:c8d6: 1, 2 or 3, which damage die a Power Weapon spell put in hand. */
+  powerWeaponLevel: number;
+  /** 0x7e5, DS:c8d7: moves left on that weapon. */
+  powerWeaponTimer: number;
+  /** 0x7e7, DS:c8d9: 1 to 4, the protection level; a monster's attack roll loses 2 × level². */
+  protectionLevel: number;
+  /** 0x7e8, DS:c8da: moves left on it. */
+  protectionTimer: number;
+  /** 0x7ea, DS:c8dc: moves left on Resist Poison. */
+  resistPoisonTimer: number;
+  /** 0x7ec, DS:c8de: moves left on Resist Disease. */
+  resistDiseaseTimer: number;
+  /** 0x7ee, DS:c8e0: moves left on Anti-Cold. */
+  antiColdTimer: number;
+  /** 0x7f0, DS:c8e2: moves left on Anti-Fire. */
+  antiFireTimer: number;
+  /** 0x7f2, DS:c8e4: moves left on Resist Level Drain. */
+  resistDrainTimer: number;
+  /**
+   * 0x7f4, DS:c8e6: how many of the engaged monster's own turns it stays asleep, rather than
+   * moves.
+   */
+  sleepTimer: number;
+  /** 0x7f6, DS:c8e8: the same count of the monster's turns for Hold Monster. */
+  holdMonsterTimer: number;
 }
 
 /**
@@ -126,7 +217,39 @@ export type MwEvent =
    * generate_section (WORLD.EXE 2000:46a4, mw.c "generate_section") builds the map and the
    * monsters of the floor the character starts on. Nothing of the world is ported yet.
    */
-  | { kind: 'sectionGenerated'; section: number };
+  | { kind: 'sectionGenerated'; section: number }
+  /**
+   * enter_level (WORLD.EXE 2000:55fc, mw.c "enter_level") switches the floor under the
+   * character: it writes the explored map out, reads the new floor's monsters back in or stocks
+   * them afresh, and redraws. The five spells that move between floors leave the character
+   * record holding the new floor and a square on it; nothing of the world around them is ported.
+   */
+  | { kind: 'levelEntered'; floor: number };
+
+/**
+ * One answer to the three menus that the Write Scroll and Enchant Wand spells walk through: the
+ * kind of spell, its level, and which of the three spells on that line.
+ */
+export interface MwSpellChoice {
+  /** 1 preparation, 2 wizard, 3 priestly: the digit the first menu takes. */
+  category: number;
+  /** 0 to 9, the level menu's digit less one, so 0 is a level 1 spell and 9 a level 10 one. */
+  level: number;
+  /** 0 to 2, the place on that line, the third menu's 1 to 3 less one. */
+  slot: number;
+}
+
+/** The stride of the occupancy grid, which is a floor's 80 columns (exe DS:448b). */
+export const MW_FLOOR_COLUMNS = 80;
+
+/** How many rows a floor has (exe DS:448d). */
+export const MW_FLOOR_ROWS = 110;
+
+/** The occupancy grid's byte for a square nobody is standing on. */
+export const MW_SQUARE_EMPTY = 0xff;
+
+/** The occupancy grid's byte for the square the character is standing on. */
+export const MW_SQUARE_PLAYER = 0xfe;
 
 /**
  * Everything the ported roller touches.
@@ -158,6 +281,47 @@ export interface MwGame {
   /** Every side effect the port declined to carry out, oldest first. */
   events: MwEvent[];
   rng: Rng;
+
+  // spells
+
+  /** DS:cbde: the current floor's 145 monster slots. */
+  monsters: MwStockedMonster[];
+  /** DS:4593: the slot of the monster the character is fighting, or -1 for none. */
+  engaged: number;
+  /**
+   * DS:cbe2: one byte per square of the whole 80 x 110 floor, indexed `y * 80 + x`. It holds
+   * {@link MW_SQUARE_EMPTY}, {@link MW_SQUARE_PLAYER}, or the slot of the monster standing there.
+   */
+  monsterMap: Uint8Array;
+  /** DS:448b: how many columns a floor has, which is 80. */
+  columns: number;
+  /** DS:448d: how many rows a floor has, which is 110. */
+  rows: number;
+  /** DS:cbee: the line printed beside the monster during a fight. */
+  monsterStatusLine: string;
+  /** DS:123d: the map view has to be re-centred on the character. */
+  recenterMap: boolean;
+  /** DS:cd18: the view has to be redrawn. */
+  redrawView: boolean;
+  /**
+   * is_solid (WORLD.EXE 3000:a854, mw.c "is_solid"): whether the square is rock, meaning all
+   * four of its sides are walls. `Dungeon.solid` in `src/lib/game/mw-dungeon.js` is the same
+   * test over the same map hash.
+   */
+  isSolid(x: number, y: number, floor: number, dungeon: number): boolean;
+  /**
+   * The eight-line weapon menu enchant_weapon prints, read back by the menu at WORLD.EXE
+   * 2000:1d0b: 1 to 8 for a line of it, or -1 for Escape. {@link newMwGame} escapes by default.
+   */
+  chooseWeaponSlot(): number;
+  /** The same menu over the eight armors, for enchant_armour. */
+  chooseArmorSlot(): number;
+  /**
+   * The three menus the Write Scroll and Enchant Wand spells print, as one answer, or null for
+   * the Escape that leaves them. `maxLevel` is the deepest level the spell being cast will
+   * write, which is all the level menu does with it. {@link newMwGame} escapes by default.
+   */
+  chooseSpellToWrite(maxLevel: number): MwSpellChoice | null;
   /**
    * The race menu, which takes 1 to 8: 0 to 7, one of the eight rows of the race table. Escape
    * leaves the game through quit (exe 2000:03cb), which a browser has nothing to do with, so
@@ -259,7 +423,57 @@ export function blankMwCharacter(): MwCharacter {
     con: 0,
     dex: 0,
     luck: 0,
+    lev: 0,
+    loadedWeight: 0,
+    weaponPlus: [0, 0, 0, 0, 0, 0, 0, 0],
+    armorPlus: [0, 0, 0, 0, 0, 0, 0, 0],
+    stones: [0, 0, 0, 0, 0, 0],
+    scrolls: Array.from({ length: 180 }, () => 0),
+    wands: Array.from({ length: 180 }, () => 0),
+    paper: Array.from({ length: 180 }, () => 0),
+    diseaseTimer: 0,
+    poisonTimer: 0,
+    enchantWeaponLevel: 0,
+    enchantArmorLevel: 0,
+    bodyArmorLevel: 0,
+    ringOfProtection: 0,
+    antiMagicRing: 0,
+    feather: 0,
+    fastMove: 0,
+    invisibility: 0,
+    prepStrength: 0,
+    prepAgility: 0,
+    superStrength: 0,
+    superAgility: 0,
+    strengthTimer: 0,
+    speedTimer: 0,
+    slowEnemiesTimer: 0,
+    powerWeaponLevel: 0,
+    powerWeaponTimer: 0,
+    protectionLevel: 0,
+    protectionTimer: 0,
+    resistPoisonTimer: 0,
+    resistDiseaseTimer: 0,
+    antiColdTimer: 0,
+    antiFireTimer: 0,
+    resistDrainTimer: 0,
+    sleepTimer: 0,
+    holdMonsterTimer: 0,
   };
+}
+
+/**
+ * occupant_at (WORLD.EXE 2000:4575, mw.c "occupant_at"): the slot of the monster standing on a
+ * square, or -1 when nothing is. The character's own square reads back as 0xfe, not as -1.
+ */
+export function mwOccupantAt(game: MwGame, x: number, y: number): number {
+  const value = game.monsterMap[y * MW_FLOOR_COLUMNS + x];
+  return value === MW_SQUARE_EMPTY ? -1 : value;
+}
+
+/** set_occupant (WORLD.EXE 2000:45a1, mw.c "set_occupant"): write one square of the grid. */
+export function mwSetOccupant(game: MwGame, x: number, y: number, value: number): void {
+  game.monsterMap[y * MW_FLOOR_COLUMNS + x] = value;
 }
 
 /**
@@ -287,6 +501,18 @@ export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
     askName: () => '',
     askClass: () => 0,
     pressAnyKey: () => {},
+    monsters: [],
+    engaged: -1,
+    monsterMap: new Uint8Array(MW_FLOOR_COLUMNS * MW_FLOOR_ROWS).fill(MW_SQUARE_EMPTY),
+    columns: MW_FLOOR_COLUMNS,
+    rows: MW_FLOOR_ROWS,
+    monsterStatusLine: '',
+    recenterMap: false,
+    redrawView: false,
+    isSolid: () => false,
+    chooseWeaponSlot: () => -1,
+    chooseArmorSlot: () => -1,
+    chooseSpellToWrite: () => null,
     ...rest,
     messages,
     screen,
