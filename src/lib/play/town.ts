@@ -6,7 +6,9 @@ import {
   buyWeapon,
   cultureStockPrice,
   enterStore,
+  enterTemple,
   magicCrystalPrice,
+  temple,
 } from '../game/port/town';
 import { printMenus, showBox } from './boxes';
 import type { GameSession, Turn } from './engine';
@@ -44,6 +46,9 @@ const STORE_MENU = menuKeys(5);
 
 /** The weapon and the armor menus, which both offer six. */
 const SHELF_MENU = menuKeys(6);
+
+/** The temple's menu: five cures, a needy child and a seventh entry that leaves. */
+const TEMPLE_MENU = menuKeys(7);
 
 /** What the town's four buildings are called, in the order the generator numbers them from 1. */
 const BUILDINGS = ['STORE', 'TEMPLE', 'BANK', 'INN'];
@@ -87,11 +92,12 @@ const STORE_TYPED_Y = 0x42d;
 export async function enterBuilding(turn: Turn): Promise<void> {
   const session = turn.session;
   if (turn.building === 1) await store(session);
+  if (turn.building === 2) await visitTheTemple(session);
   // erase_menu_block (exe 4000:42b4) and erase_message_block (exe 4000:430e), which movecontrol
   // runs on the way back out to the map.
   session.game.eraseScreen();
   session.box = [];
-  if (turn.building !== 1) notBuiltYet(session.game, `GO INTO THE ${BUILDINGS[turn.building - 1]}`);
+  if (turn.building > 2) notBuiltYet(session.game, `GO INTO THE ${BUILDINGS[turn.building - 1]}`);
 }
 
 /** g_store (exe 2000:45ab, unf.c "g_store"): the store, until the player leaves it. */
@@ -202,6 +208,26 @@ async function buyCrystals(session: GameSession): Promise<void> {
     STORE_TYPED_Y,
   );
   await printMenus(session, () => buyMagicCrystals(game, rubles));
+}
+
+/**
+ * temple (exe 2000:4d39, unf.c "temple"): the temple, until the player leaves it.
+ *
+ * The money is drawn above the box rather than printed in it, and it is drawn again every time
+ * round, so a cure that has just been paid for shows what is left straight away.
+ */
+async function visitTheTemple(session: GameSession): Promise<void> {
+  const game = session.game;
+  for (;;) {
+    // DS:101a with the money after it
+    game.draw({ text: `MONEY WITH YOU: ${game.pc.money}`, x: 0x3a2, y: 0x301, font: 0, colour: 8 });
+    showBox(session, () => enterTemple(game));
+    const chosen = await session.choice(TEMPLE_MENU);
+    if (chosen === KEY.escape) return;
+    const entry = menuEntry(chosen);
+    await printMenus(session, () => temple(game, entry));
+    if (entry === 7) return;
+  }
 }
 
 /** One of the lines a typed amount is asked for under, at the y the game draws it at. */

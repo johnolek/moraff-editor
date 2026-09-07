@@ -192,6 +192,11 @@ export function buyMagicCrystals(game: Game, rubles: number): void {
   showMoney(game);
 }
 
+/** temple (exe 2000:4d39, unf.c "temple"): the menu the temple greets the player with. */
+export function enterTemple(game: Game): void {
+  showHint(game, 95);
+}
+
 /**
  * temple (exe 2000:4d39, unf.c "temple"): one visit to the temple. `choice` is the menu entry,
  * 1 to 7: the three cures, cure poison, cure disease, helping a needy child, and leaving.

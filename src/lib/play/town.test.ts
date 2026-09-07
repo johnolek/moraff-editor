@@ -106,3 +106,44 @@ describe('the store', () => {
     expect(session.box[0]).toBe('YOU HAVE ENTERED A STORE');
   });
 });
+
+describe('the temple', () => {
+  it('opens its menu when U is pressed on the square', async () => {
+    const session = standingOn(2);
+    await press(session, KEY.up);
+    expect(session.box[0]).toBe('PLEASE SELECT A SPELL');
+    expect(session.box).toContain('3) HEAL ALL WOUNDS.....500 RUBLES');
+  });
+
+  it('heals all wounds for five hundred rubles', async () => {
+    const session = standingOn(2, { money: 600, hp: 10, maxHp: 200 });
+    await press(session, KEY.up);
+    await press(session, 0x33);
+    expect(session.game.pc.hp).toBe(200);
+    expect(session.game.pc.money).toBe(100);
+  });
+
+  it('cures poison and disease', async () => {
+    const session = standingOn(2, { money: 800, poison: 400, disease: 200 });
+    await press(session, KEY.up);
+    await press(session, 0x34);
+    expect(session.game.pc.poison).toBe(-1);
+    await press(session, 0x35);
+    expect(session.game.pc.disease).toBe(-1);
+  });
+
+  it('will not sell a cure on credit', async () => {
+    const session = standingOn(2, { money: 9, hp: 10, maxHp: 200 });
+    await press(session, KEY.up);
+    await press(session, 0x31);
+    expect(session.game.pc.hp).toBe(10);
+    expect(session.box[0]).toBe("SORRY, CAN'T BUY ON CREDIT");
+  });
+
+  it('leaves the temple on Escape', async () => {
+    const session = standingOn(2, { money: 600 });
+    await press(session, KEY.up);
+    await press(session, KEY.escape);
+    expect(session.box).toEqual([]);
+  });
+});
