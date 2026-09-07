@@ -25,6 +25,7 @@ import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
 import { MESSAGE_BOX, messageBoxLines, notBuiltYet } from './screens';
+import { showBattleSpells, showPrepSpells } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
 /**
@@ -340,8 +341,8 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.repeatFight]: { c: 'movecontrol, the DS:0437 repeat flag', run: keepSwinging },
   [KEY.cast]: { c: 'cast_a_spell', run: (turn) => castASpell(turn, CAST_SPELLBOOK) },
   [KEY.useItem]: { c: 'movecontrol, case 0x69, and use_magic_item', run: useAnItem },
-  [KEY.viewPrepSpells]: { c: 'view_prep_spells', run: (turn) => notBuiltYet(turn.game, 'LIST THE PREPARATION SPELLS IN EFFECT') },
-  [KEY.viewBattleSpells]: { c: 'view_battle_spells', run: (turn) => notBuiltYet(turn.game, 'LIST THE BATTLE SPELLS IN EFFECT') },
+  [KEY.viewPrepSpells]: { c: 'view_prep_spells', run: showPrepSpells },
+  [KEY.viewBattleSpells]: { c: 'view_battle_spells', run: showBattleSpells },
   [KEY.armor]: { c: 'movecontrol, the 0x61 branch', run: (turn) => notBuiltYet(turn.game, 'CHANGE THE ARMOR YOU WEAR') },
   [KEY.weapon]: { c: 'movecontrol, the 0x77 branch', run: (turn) => notBuiltYet(turn.game, 'CHANGE THE WEAPON IN YOUR HAND') },
   [KEY.expNeeded]: { c: 'FUN_2000_7bcd', run: (turn) => notBuiltYet(turn.game, 'SHOW THE EXPERIENCE YOU NEED') },
