@@ -7,19 +7,25 @@ import {
   showSpellHelp,
   spellCost,
   spellListChoice,
+  CAST_PAPER,
+  CAST_SCROLL,
   CAST_SPELLBOOK,
+  CAST_WAND,
 } from '../game/port/inventory';
+import { useMagicItem } from '../game/port/drops';
 import { passMoment } from '../game/port/moment';
 import {
   anyKeyChoice,
   clearMenuBlock,
   clearMessageLine,
   clearRect,
+  getChoice,
   gmenuChoice,
   type MenuChoice,
 } from '../game/port/screens';
 import type { Game } from '../game/port/state';
 import type { Turn } from './engine';
+import { notBuiltYet } from './screens';
 
 /**
  * cast_a_spell (exe 2000:e017, unf.c "cast_a_spell"), the whole of it: the menu of the eight
@@ -143,4 +149,53 @@ function spendSpellSeconds(game: Game, seconds: number): void {
   }
   passMoment(game);
   game.redrawView = true;
+}
+
+/** The five lines of the menu the I key puts up (exe DS:1ed7 06f0 1eeb 1ef5 1efd 1f06 1f16). */
+const ITEM_MENU = [
+  'WHICH TYPE OF ITEM?',
+  '',
+  '1) SCROLL',
+  '2) WAND',
+  '3) PAPER',
+  '4) MAGIC POTION',
+  '5) OTHER',
+];
+
+/** Which source each of the first three lines casts out of. */
+const ITEM_MENU_SOURCES = [CAST_SCROLL, CAST_WAND, CAST_PAPER];
+
+/**
+ * movecontrol (exe 2000:c308, unf.c "movecontrol"), its 0x69 branch: the I key, which asks what
+ * kind of item is being used and casts out of it.
+ *
+ * The first three lines are cast_a_spell over the scrolls, the wands and the sheets of paper,
+ * and a scroll or a sheet is used up where a wand loses one of its charges. The fourth line is
+ * the potion menu (exe 3000:7052), which is not built yet and says so; the fifth is
+ * use_magic_item (exe 2000:b202), the six things a kill turns up.
+ *
+ * movecontrol draws "USE MAGIC MENU:" one line above the box first (exe 2000:d5b0), in the colour
+ * at DS:0435, which is white and nothing ever writes to.
+ */
+const MAGIC_MENU_HEADING = { text: 'USE MAGIC MENU:', x: 0x3a2, y: 0x301, font: 0, colour: 15 };
+
+export async function useAnItem(turn: Turn): Promise<void> {
+  const { game } = turn;
+  clearMessageLine(game);
+  game.draw(MAGIC_MENU_HEADING);
+  game.say(...ITEM_MENU);
+  const line = await menuChoice(game, (key) => getChoice(2, 6, key));
+  game.eraseScreen(MAGIC_MENU_HEADING.y);
+  if (line === 'escape') return;
+  const source = ITEM_MENU_SOURCES[line - 1];
+  if (source !== undefined) {
+    await castASpell(turn, source);
+    return;
+  }
+  if (line === 5) {
+    await useMagicItem(game);
+    return;
+  }
+  notBuiltYet(game, 'DRINK ONE OF THE SIX POTIONS');
+  game.pressAnyKey();
 }

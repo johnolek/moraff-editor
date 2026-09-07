@@ -51,6 +51,20 @@ function townSquare(): { x: number; y: number } {
   throw new Error('the town has no free square');
 }
 
+/** A wizard standing in the town with `charges` of every spell `owned` names on their wands. */
+function wandCarrier(owned: number[], charges: number): CharacterFile {
+  const wands = Array.from({ length: 180 }, () => 0);
+  for (const index of owned) wands[index] = charges;
+  return characterFile({ level: 0, cls: 3, sp: 0, maxSp: 0, wands, ...townSquare() });
+}
+
+/** A fighter standing in the town with one sheet of paper of every spell `owned` names. */
+function paperCarrier(owned: number[]): CharacterFile {
+  const papers = Array.from({ length: 180 }, () => 0);
+  for (const index of owned) papers[index] = 1;
+  return characterFile({ level: 0, cls: 0, sp: 0, maxSp: 0, papers, ...townSquare() });
+}
+
 /** A wizard standing in the town who knows the spells `owned` names. */
 function wizard(owned: number[], overrides: Partial<PlayerCharacter> = {}): CharacterFile {
   const spellbook = Array.from({ length: 180 }, () => 0);
@@ -166,5 +180,46 @@ describe('casting from the spellbook', () => {
     expect(screenText(session).some((text) => text.includes('MINOR PROTECTION'))).toBe(false);
     await press(session, KEY.cast, 0x33);
     expect(screenText(session)).toContain('5) SWITCH TO LARGE, SLOW, CAST SPELL MENU');
+  });
+});
+
+describe('casting out of an item', () => {
+  it('takes a charge off the wand instead of a spell point', async () => {
+    const session = playing(wandCarrier([MINOR_PROTECTION], 3));
+    await press(session, KEY.useItem);
+    expect(session.box).toContain('2) WAND');
+    await press(session, 0x32, 0x33, SPELL_C);
+    expect(session.game.pc.protection).toBe(1);
+    expect(session.game.pc.wands[MINOR_PROTECTION]).toBe(2);
+    expect(session.game.pc.sp).toBe(0);
+  });
+
+  it('lets a fighter cast a wizard spell off a sheet of paper', async () => {
+    const session = playing(paperCarrier([MINOR_PROTECTION]));
+    await press(session, KEY.cast);
+    expect(session.box[0]).toBe('FIGHTERS CAN ONLY CAST');
+    // print_menu_only waits for a key, so one is owed before the next one is the game's again.
+    await press(session, KEY.escape);
+    await press(session, KEY.useItem, 0x33, 0x33, SPELL_C);
+    expect(session.game.pc.protection).toBe(1);
+    expect(session.game.pc.papers[MINOR_PROTECTION]).toBe(0);
+  });
+
+  it('turns a fighter away from a wand, which only paper gets past', async () => {
+    const session = playing(characterFile({ level: 0, cls: 0, ...townSquare() }));
+    await press(session, KEY.useItem, 0x32);
+    expect(session.box).toContain('FIGHTERS CAN ONLY CAST');
+  });
+
+  it('says what the two lines it does not run yet would do', async () => {
+    const session = playing(wandCarrier([], 0));
+    await press(session, KEY.useItem, 0x35);
+    expect(session.box).toContain('NOT BUILT YET: USE A GRENADE, A STONE OR A SLOSHER');
+  });
+
+  it('closes the menu on escape', async () => {
+    const session = playing(wandCarrier([MINOR_PROTECTION], 1));
+    await press(session, KEY.useItem, KEY.escape);
+    expect(session.game.pc.wands[MINOR_PROTECTION]).toBe(1);
   });
 });
