@@ -146,7 +146,7 @@
     min-width: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 20px 24px 40px;
+    padding: 0 24px 40px;
   }
   section {
     margin-bottom: 28px;
@@ -156,7 +156,7 @@
     top: 0;
     z-index: 1;
     margin: 0 0 14px;
-    padding: 8px 0;
+    padding: 20px 0 8px;
     background: var(--bg);
     line-height: 0;
     color: var(--accent);
@@ -173,7 +173,7 @@
     padding: 12px 14px;
     border: 1px solid var(--line);
     border-radius: 6px;
-    scroll-margin-top: 44px;
+    scroll-margin-top: 50px;
   }
   .explanation {
     margin: 0 0 10px;
@@ -203,6 +203,9 @@
     font-size: 12px;
     line-height: 1.5;
     color: var(--mw-cyan);
+  }
+  .entries .empty {
+    padding-top: 20px;
   }
   .empty {
     margin: 0;
