@@ -7,6 +7,7 @@
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import Formulas from './lib/formulas/Formulas.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
+  import NewCharacter from './lib/roller/NewCharacter.svelte';
   import SourceViewer from './lib/source/SourceViewer.svelte';
   import SpellReference from './lib/spells/SpellReference.svelte';
   import Tidbits from './lib/tidbits/Tidbits.svelte';
@@ -20,6 +21,7 @@
     { id: 'calculators', label: 'Calculators' },
     { id: 'formulas', label: 'Formulas' },
     { id: 'tidbits', label: 'Tidbits' },
+    { id: 'roller', label: 'New Character' },
     { id: 'source', label: 'Source' },
   ];
 
@@ -84,6 +86,8 @@
   </main>
   <main class:hidden={app.tab !== 'tidbits'}>
     <Tidbits />
+  <main class:hidden={app.tab !== 'roller'}>
+    <NewCharacter />
   </main>
   <main class:hidden={app.tab !== 'source'}>
     <SourceViewer />

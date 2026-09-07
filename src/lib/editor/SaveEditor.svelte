@@ -37,13 +37,26 @@
     app.saveVersion++;
   }
 
-  async function load(file: File, game: GameSchema) {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    doc = { name: file.name, game, bytes, view: new DataView(bytes.buffer), pristine: bytes.slice() };
+  function open(name: string, game: GameSchema, bytes: Uint8Array<ArrayBuffer>) {
+    doc = { name, game, bytes, view: new DataView(bytes.buffer), pristine: bytes.slice() };
     unrecognised = null;
     version++;
     share();
   }
+
+  async function load(file: File, game: GameSchema) {
+    open(file.name, game, new Uint8Array(await file.arrayBuffer()));
+  }
+
+  // Another tab can hand over a save it built rather than a file the user picked.
+  $effect(() => {
+    const request = app.requestedSave;
+    if (!request) return;
+    app.requestedSave = null;
+    const game = GAMES.find((entry) => entry.id === request.game);
+    if (!game) return;
+    open(request.name, game, request.bytes);
+  });
 
   function receive(file: File) {
     const game = pickGameByFileSize(file.size);

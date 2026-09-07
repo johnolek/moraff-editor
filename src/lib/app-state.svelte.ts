@@ -1,6 +1,6 @@
 import { HistoryCursor } from './history';
 
-export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'source';
+export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'roller' | 'source';
 
 /** A function to open in the Source tab: one of the port's, or one of the decompilation's. */
 export type SourceRequest = { kind: 'ts'; file: string; name: string } | { kind: 'c'; name: string };
@@ -10,6 +10,15 @@ export interface LoadedSave {
   /** The GameSchema id the editor matched the file to. */
   game: string;
   bytes: Uint8Array;
+}
+
+/** A save to open in the Save Editor, from a tab that built one rather than loaded a file. */
+export interface SaveRequest {
+  /** What to call the downloaded file; for Unforgiven that is the character number. */
+  name: string;
+  /** The GameSchema id the bytes belong to. */
+  game: string;
+  bytes: Uint8Array<ArrayBuffer>;
 }
 
 export interface AppState {
@@ -24,6 +33,8 @@ export interface AppState {
   requestedSource: SourceRequest | null;
   /** Set to the id of a formula to open in the Formulas tab; that tab clears it once it has. */
   requestedFormula: string | null;
+  /** Set to open a freshly built save in the editor; the editor clears it once it has. */
+  requestedSave: SaveRequest | null;
   save: LoadedSave | null;
   /** Bumped whenever the editor swaps in a different set of bytes. Field edits write into the
    *  bytes that are already there, so they do not bump it. */
@@ -36,6 +47,7 @@ export const app = $state<AppState>({
   requestedMonsterId: null,
   requestedSource: null,
   requestedFormula: null,
+  requestedSave: null,
   save: null,
   saveVersion: 0,
 });
