@@ -55,3 +55,17 @@ describe('the screen', () => {
     expect(() => game.pressAnyKey()).not.toThrow();
   });
 });
+
+describe('the keyboard', () => {
+  it('says so rather than waiting forever when a game has none', () => {
+    const game = newGame();
+    expect(() => game.key()).toThrow('no keyboard');
+    expect(() => game.choice([0x31])).toThrow('no keyboard');
+  });
+
+  it('is whatever the game was built with', async () => {
+    const game = newGame({ key: async () => 0x66, choice: async (allowed) => allowed[0] });
+    expect(await game.key()).toBe(0x66);
+    expect(await game.choice([0x31, 0x32])).toBe(0x31);
+  });
+});

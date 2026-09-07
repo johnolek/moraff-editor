@@ -122,6 +122,11 @@ export interface PlayerCharacter {
   mapCursorX: number;
   /** 0x7b9, DS:c039. */
   mapCursorY: number;
+  /**
+   * 0x7ca, DS:c04a: how many Rings of Regeneration the character wears, which is the hit
+   * points every step gives back.
+   */
+  regenRings: number;
   /** 0x7cb, DS:c04b: how many lucky charms the character carries. */
   luckyCharms: number;
   /** 0x7ce, DS:c04e: moves until the disease bites again; -1 once it is cured. */
@@ -202,6 +207,28 @@ export interface PlayerCharacter {
   unread80e: number;
   /** 0x810, DS:c090: zero on every character, and read nowhere. */
   unread810: number;
+  /**
+   * 0x822, DS:c0a2: one trap door key per floor a trap door can lead to, indexed by that floor
+   * divided by five. explain_trapdoor (exe 2000:be3d) reads the one for the door being stood on
+   * and will not open the door without it.
+   */
+  keys: number[];
+  /**
+   * 0x849, DS:c0c9: one byte per module, whose low four bits say which of that module's four
+   * section bosses have been killed.
+   */
+  objective: number[];
+  /**
+   * 0x854, DS:c0d4: refill hit points and spell points to the maximum. movecontrol reads it on
+   * its next pass round the loop, fills the character up and writes zero back.
+   */
+  fillOnLoad: number;
+  /**
+   * 0x8f9, DS:c179: the deepest floor the character has reached, which movecontrol raises to
+   * the current floor on every pass round its loop. The snake's greeting in the town is picked
+   * by it.
+   */
+  deepestFloor: number;
   /** 0x816, DS:c096. */
   str: number;
   /** 0x818, DS:c098. */
@@ -471,8 +498,33 @@ export interface Game {
    * mgetch_message (exe 4000:418d, unf.c "mgetch_message"): wait for a key with the screen as it
    * stands, which is what keeps a screen up until the player has read it. {@link newGame} returns
    * at once.
+   *
+   * This one stays synchronous because the functions that call it are: a spell prints its box in
+   * the middle of its own arithmetic. A game being played answers it by remembering that a wait
+   * is owed and doing the waiting with {@link Game.key} once the spell has finished.
    */
   pressAnyKey(): void;
+  /**
+   * getch (exe 4000:417b, unf.c "FUN_4000_417b"): the key movecontrol (exe 2000:c308) stops and
+   * waits for, which is where every turn of the game begins.
+   *
+   * The value is the byte the original ends up dispatching on: a key that produces a character
+   * is that character, and one that does not — an arrow key, a function key — is the negative of
+   * its scan code, which is what movecontrol makes of the zero byte the BIOS sends first.
+   * `src/lib/play/keys.ts` names them all. {@link newGame} has no keyboard and throws.
+   */
+  key(): Promise<number>;
+  /**
+   * get_choice (exe 2000:2d93, unf.c "get_choice"): wait for one of a menu's keys, ignoring
+   * everything else, and hand back the byte.
+   *
+   * The original takes the first and last box of the menu it is under and works the digits out
+   * from those, so what it accepts is always a run of digits from '1'; the port takes the keys
+   * themselves so that a menu lettered rather than numbered can use it too. Escape always ends
+   * it, which is the one answer the original takes outside the run. {@link newGame} has no
+   * keyboard and throws.
+   */
+  choice(allowed: number[]): Promise<number>;
 }
 
 /**
@@ -496,6 +548,15 @@ export function setMonsterMap(game: Game, x: number, y: number, value: number): 
  */
 export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say' | 'draw' | 'eraseScreen'>> {
   pc?: Partial<PlayerCharacter>;
+}
+
+/**
+ * What {@link newGame} answers a read of the keyboard with. A game built for a test has no
+ * keyboard, and a loop that waits for a key it will never be given would never come back, so
+ * asking says so instead.
+ */
+function noKeyboard(): never {
+  throw new Error('this game has no keyboard: give it a key() to be played');
 }
 
 /** A character to run a ported function against. Fresh each call, arrays and all. */
@@ -534,6 +595,7 @@ function defaultPc(): PlayerCharacter {
     module: 0,
     mapCursorX: 40,
     mapCursorY: 55,
+    regenRings: 0,
     luckyCharms: 0,
     disease: 0,
     poison: 0,
@@ -571,6 +633,10 @@ function defaultPc(): PlayerCharacter {
     unread80c: 0,
     unread80e: 0,
     unread810: 0,
+    keys: Array.from({ length: 36 }, () => 0),
+    objective: [0, 0, 0, 0, 0],
+    fillOnLoad: 0,
+    deepestFloor: 0,
     str: 20,
     iq: 20,
     wis: 20,
@@ -655,6 +721,8 @@ export function newGame(overrides: GameOverrides = {}): Game {
     askName: () => '',
     askClass: () => 0,
     pressAnyKey: () => {},
+    key: noKeyboard,
+    choice: noKeyboard,
     ...rest,
     messages,
     screen,
