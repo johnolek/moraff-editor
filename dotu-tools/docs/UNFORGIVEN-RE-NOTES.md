@@ -421,6 +421,17 @@ die is rolled once per full 40 points your roll exceeds the target, and
 `protection` spells subtract `2·prot²` from the monster's roll (Minor = 2, Protection
 = 8, Major = 18, Ultra = 32).
 
+Two more, from porting `defend()`:
+
+* The **permanent plus on the armor being worn is never subtracted**. The roll takes off the
+  armor's own AC bonus, the preparation Enchant Armor plus (0x7d3), body armor (0x7d4), the
+  ring of protection (0x7d5) and the byte at 0xdd (`shield` in `UNF.CPP`, which nothing in the
+  game writes), and that is all. A permanently enchanted suit therefore defends exactly as well
+  as a plain one; the plus is only ever printed, and zeroed when acid breath destroys the suit.
+* An **experience drainer always takes exactly 30**, the float 30.0 at DS:14df, whatever the
+  monster's own `ldrain` says. That value is only what the message prints. Every experience
+  drainer in the game holds -30, so the two have never disagreed on screen.
+
 ---
 
 ## 5. Magic

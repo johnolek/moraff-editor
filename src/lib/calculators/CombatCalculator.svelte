@@ -242,7 +242,10 @@
         <input type="number" min="0" bind:value={character.protRing} />
       </label>
     </div>
-    <p class="note">A weapon's plus only helps you hit; the damage die is the weapon's own.</p>
+    <p class="note">
+      A weapon's plus only helps you hit; the damage die is the weapon's own. Armor's permanent plus is only ever
+      printed — the game's defence roll never reads it — so it changes none of the numbers below.
+    </p>
   </section>
 
   <section>

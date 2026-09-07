@@ -98,6 +98,12 @@ describe('combatReport', () => {
     expect(report.meanDamageTaken).toBeCloseTo((report.its.meanDamage + report.breath!.mean) / 2, 9);
   });
 
+  it('takes no notice of the permanent plus on the armor', () => {
+    const plain = combatReport(fighter(), fight, { trials, rnd: seeded(3) });
+    const plussed = combatReport(fighter({ armorPlus: 20 }), fight, { trials, rnd: seeded(3) });
+    expect(plussed.its).toEqual(plain.its);
+  });
+
   it('has no breath for a monster that only strikes', () => {
     expect(combatReport(fighter(), fight, { trials, rnd: seeded(3) }).breath).toBeNull();
   });

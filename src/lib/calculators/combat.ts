@@ -41,6 +41,7 @@ export interface Fighter {
   tempWeaponPlus: number;
   gauntlet: number;
   armor: number;
+  /** The permanent plus on the worn armor. The game's defence roll never reads it. */
   armorPlus: number;
   tempArmorPlus: number;
   bodyArmor: number;
@@ -192,9 +193,7 @@ export function combatReport(fighter: Fighter, fight: Fight, { trials = 20000, r
           dex: fighter.dex,
           luck: fighter.luck,
           luckyCharms: fighter.luckyCharms,
-          // defend() takes one armour class number, so the worn armor's rating and the
-          // permanent plus the game keeps for that armor are added together here.
-          armor: armorById(fighter.armor).armor + fighter.armorPlus,
+          armor: armorById(fighter.armor).armor,
           tempArmorPlus: fighter.tempArmorPlus,
           bodyArmor: fighter.bodyArmor,
           protRing: fighter.protRing,
