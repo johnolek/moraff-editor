@@ -69,3 +69,31 @@ describe('the spells in effect', () => {
     expect(session.battleSpellsShown[3]).toBe(true);
   });
 });
+
+describe('the character\'s own numbers', () => {
+  it('shows the V screen and holds it until a key comes', async () => {
+    const session = playing({ name: 'MERLIN', str: 14, poison: 300 });
+    await press(session, KEY.viewStats);
+    expect(screenText(session)).toEqual(
+      expect.arrayContaining([
+        'VIEW STATS FOR MERLIN',
+        'STRENGTH: 14',
+        '  STRENGTH DRAINED: 300',
+        'HIT ANY KEY TO RETURN TO GAME...',
+      ]),
+    );
+    await press(session, KEY.enter);
+    expect(screenText(session)).not.toContain('VIEW STATS FOR MERLIN');
+  });
+
+  it('lists what the next seven levels cost', async () => {
+    const session = playing({ lev: 1 });
+    await press(session, KEY.expNeeded);
+    expect(session.box[0]).toBe('EXPERIENCE NEEDED FOR LEVEL:');
+    expect(session.box).toHaveLength(8);
+    expect(session.box[1].startsWith('2) ')).toBe(true);
+    // The box has a key owed to it, which is what clears it.
+    await press(session, KEY.enter);
+    expect(session.box).toEqual([]);
+  });
+});
