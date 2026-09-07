@@ -1,4 +1,4 @@
-import { app } from '../app-state.svelte';
+import { currentEntry } from '../app-state.svelte';
 import { UNFORGIVEN } from '../editor/games';
 import { parseSave, type SaveRecord } from '../game/dotu-files.js';
 
@@ -8,7 +8,7 @@ import { parseSave, type SaveRecord } from '../game/dotu-files.js';
  * picks up whatever has been edited since.
  */
 export function currentCharacter(): SaveRecord | null {
-  const character = app.character;
+  const character = currentEntry();
   if (!character || character.game !== UNFORGIVEN.id) return null;
   return parseSave(character.bytes);
 }

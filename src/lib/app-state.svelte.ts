@@ -54,8 +54,9 @@ export interface AppState {
   requestedPlace: PlaceRequest | null;
   /** Every character kept in the browser, oldest first. */
   roster: RosterEntry[];
-  /** The one being worked on, which is one of the roster's own entries. */
-  character: RosterEntry | null;
+  /** Which of them is being worked on. The entry itself is only ever reached through the
+   *  roster, so that everything reading a character reads the same object. */
+  characterId: string | null;
   /** Bumped whenever the current character changes: a different one is chosen, or a field of
    *  the one in hand is edited. Everything that reads the record watches this. */
   characterVersion: number;
@@ -69,6 +70,11 @@ export const app = $state<AppState>({
   requestedFormula: null,
   requestedPlace: null,
   roster: [],
-  character: null,
+  characterId: null,
   characterVersion: 0,
 });
+
+/** The character being worked on, or null when there is none. */
+export function currentEntry(): RosterEntry | null {
+  return app.roster.find((entry) => entry.id === app.characterId) ?? null;
+}

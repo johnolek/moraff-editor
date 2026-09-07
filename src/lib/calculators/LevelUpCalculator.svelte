@@ -31,7 +31,7 @@
   // Picking a different character starts the calculator from it. Editing the one in hand does
   // not, so an override survives an edit and is marked as changed instead.
   $effect(() => {
-    void app.character;
+    void app.characterId;
     untrack(useCharacter);
   });
 

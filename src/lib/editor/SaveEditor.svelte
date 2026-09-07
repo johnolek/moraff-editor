@@ -1,6 +1,6 @@
 <script lang="ts">
   import './editor.css';
-  import { app } from '../app-state.svelte';
+  import { currentEntry } from '../app-state.svelte';
   import { characterEdited, importCharacter, replaceCharacterBytes, unloadCharacter } from '../character/current';
   import { characterFileName } from '../character/record';
   import { GAMES, pickGameByFileSize } from './games';
@@ -26,7 +26,10 @@
   let fileInput = $state<HTMLInputElement>();
 
   /** What the file this is editing is called, which is the character's number when it has one. */
-  const fileName = $derived(characterFileName(app.character?.slot ?? null, app.character?.name ?? ''));
+  const fileName = $derived.by(() => {
+    const current = currentEntry();
+    return current ? characterFileName(current.slot, current.name) : '';
+  });
 
   function showToast(message: string, warn = false) {
     toast = { message, warn };
@@ -50,7 +53,7 @@
   // The character can be made current somewhere else — rolled in the New Character tab, chosen
   // in the panel, or brought back from the last visit — and the editor then opens it.
   $effect(() => {
-    const current = app.character;
+    const current = currentEntry();
     if (!current) {
       doc = null;
       return;

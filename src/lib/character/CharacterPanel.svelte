@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app, type RosterEntry, type Tab } from '../app-state.svelte';
+  import { app, currentEntry, type RosterEntry, type Tab } from '../app-state.svelte';
   import { GAMES, UNFORGIVEN } from '../editor/games';
   import { chooseCharacter, forgetCharacter, renameCharacter, restoreCharacterImport } from './current';
   import { EXP_NEEDED_HEADING, expNeededRows } from './exp-needed';
@@ -16,7 +16,7 @@
   let renaming = $state<string | null>(null);
   let typedName = $state('');
 
-  const character = $derived(app.character);
+  const character = $derived(currentEntry());
   const status = $derived.by(() => {
     void app.characterVersion;
     return character ? characterStatus(character) : null;
