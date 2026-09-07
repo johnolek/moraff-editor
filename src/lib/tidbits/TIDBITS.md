@@ -69,6 +69,45 @@ Power Weapon I swings the 129-point die of Power Weapon 2 and Power Weapon III s
 In the code: [strike](source:ts/combat.ts/strike) and
 [battleStrength](source:ts/magic.ts/battleStrength).
 
+### Permanent spells are free off a scroll
+
+Casting a permanent spell out of your spell book takes its level off your maximum spell points
+for good. That is the price of the improvement, and it is the reason nobody casts the deep ones.
+Cast the very same spell off a scroll, a wand or a spell paper and the game does not charge you:
+the deduction is made by the caster, only for a spell cast from memory, and the improvement
+lands either way.
+
+Writing the scroll is itself a permanent spell and costs its own level, but the deepest Write
+Scroll is level 4 and it will write a scroll of anything up to level 10. Extra 25 Health Points
+costs 9 maximum spell points from the book and 4 through a scroll, every time.
+
+In the code: [permanentList](source:ts/magic.ts/permanentList) and
+[what casting costs](formula:spell-cost).
+
+### Sleep is the one spell a Shadow boss cannot refuse
+
+A Shadow boss stops Go Away, Autokill, Drain Monster, Hold Monster and the hand grenades, and
+prints its taunt instead. That is the whole list. Sleep never asks whether the monster is a boss,
+so it works, and a sleeping boss does not swing at you.
+
+The odds are the same as against anything else: certain against a monster of level 3 or below,
+and three chances in its level after that. Against a boss with several thousand hit points, a
+spell that buys you free swings is worth more than a spell that does damage.
+
+In the code: [sleepMonster](source:ts/magic.ts/sleepMonster),
+[bossImmuneCheck](source:ts/magic.ts/bossImmuneCheck),
+[boss_immune_check](source:c/boss_immune_check) and [Sleep](formula:sleep).
+
+### Two strength spells run at once
+
+The preparation Strength gives +5 and Super Strength gives +10, and they are kept in two
+different fields, so both can be up at the same time for +15 until you next rest. Neither
+refuses because the other is running; each only refuses when its own field already holds its own
+number.
+
+In the code: [prepStrength](source:ts/magic.ts/prepStrength) and
+[superStrength](source:ts/magic.ts/superStrength).
+
 ## Combat
 
 ### A big swing rolls the damage die several times
@@ -118,6 +157,28 @@ spells are the only things that clear it.
 In the code: [poison and disease](formula:poison-disease) and
 [drainsAndAilments in defend](source:c/defend).
 
+### A life drainer always takes 30 experience
+
+When an experience drainer hits you the message names a number out of the monster's own record.
+The subtraction uses a constant of 30 instead. Every experience drainer in the game happens to
+carry -30, so the two agree, by luck rather than by design.
+
+Monsters that drain whole levels are a different matter: they take the levels, write your
+experience back down to exactly what the level below is worth, and take back the hit points and
+spell points that level gave you.
+
+In the code: [defend](source:ts/combat.ts/defend), [goDownLevel](source:ts/combat.ts/goDownLevel)
+and [what the next level costs](formula:exp-needed).
+
+### Acid breath eats the armour you are wearing
+
+Acid is the only attack in the game that takes something away. It does its damage, sets the
+permanent plus on the suit you have on to zero, removes one of that suit from what you own, and
+leaves you standing in your skin. Anti-Fire and Anti-Cold halve their kinds of breath; there is
+no anti-acid.
+
+In the code: [defend](source:ts/combat.ts/defend) and [breath](formula:breath).
+
 ## Magic
 
 ### Fast Move and Invisibility are the same trick
@@ -158,6 +219,76 @@ first one that does not.
 
 In the code: [ascend](source:ts/magic.ts/ascend) and
 [majorAscend](source:ts/magic.ts/majorAscend).
+
+### Feather leaves your gear behind
+
+Feather sets your own body weight to zero and stops there. Everything you own is then added back
+on: every suit of armour, every weapon, whether or not you are using it. A well equipped
+character is carrying most of their weight in gear, so the spell that is supposed to make you
+light barely moves the number.
+
+Note the "own", not "carry". Selling the spare weapons in your pack speeds you up as much as the
+spell does.
+
+In the code: [computeWeight](source:ts/magic.ts/computeWeight),
+[compute_weight](source:c/compute_weight) and [how long a step takes](formula:move-seconds).
+
+### The permanent enchantments set the plus, they do not add to it
+
+Enchant Weapon writes its plus over whatever the weapon already had. Casting the level 1 version,
+worth +1, on a weapon already carrying +4 takes it back down to +1. The same goes for Enchant
+Armor. Cast the deepest one you have and never a shallower one afterwards.
+
+In the code: [enchantWeaponPerm](source:ts/magic.ts/enchantWeaponPerm) and
+[enchantArmorPerm](source:ts/magic.ts/enchantArmorPerm).
+
+### Fast Big Cure has a hidden 20
+
+Fast Big Cure heals a roll on four times your wisdom and then adds 20, capped at 90. The 20 is
+in no description anywhere. It means the spell can never be a waste: even the worst roll gives
+20 hit points back, where its slower cousin Big Cure starts from 50 and caps at 150.
+
+In the code: [fastBigCure](source:ts/magic.ts/fastBigCure), [bigCure](source:ts/magic.ts/bigCure)
+and [what the cures heal](formula:cures).
+
+### Go Away never fails
+
+The help text for Go Away talks about the monster's level against yours. There is no such test
+anywhere in the spell. Against anything except a Shadow boss it works every single time, which
+makes it the cheapest way out of a fight you cannot win.
+
+In the code: [goAway](source:ts/magic.ts/goAway) and [go_away](source:c/go_away).
+
+### Major Descend works on the bottom floor
+
+Descend refuses to go deeper than the bottom of the module. Major Descend's version of the same
+test is one number out, so on the bottom floor it goes through, and the ten-floor drop is then
+clamped back to the floor you are already on. The spell reports success, spends its points and
+drops you on a random open square of the same floor. It is a Relocate that costs more.
+
+In the code: [majorDescend](source:ts/magic.ts/majorDescend) and
+[descend](source:ts/magic.ts/descend).
+
+### The resistances are absolute while they last
+
+Resist Poison, Resist Disease and Resist Level Drain are not chances. While the timer is running
+the poisoning, the disease and the drain do not happen at all, with no roll anywhere, and the
+matching breath weapon does half damage. There is no level or depth at which they start to leak.
+
+Each cast adds 60 moves to the timer rather than replacing it, so casting one again while it is
+up is not wasted.
+
+In the code: [resistPoison](source:ts/magic.ts/resistPoison),
+[resistDrain](source:ts/magic.ts/resistDrain) and [defend](source:ts/combat.ts/defend).
+
+### Pass Wall can find nowhere and charge you anyway
+
+Pass Wall looks 2 to 19 squares along the direction you chose and takes the first square that is
+on the map, is not rock and has no monster standing on it. If there is no such square it does
+nothing whatsoever, and the spell points are gone. Pointing it at the edge of the map is the
+usual way to waste it.
+
+In the code: [passWall](source:ts/magic.ts/passWall) and [pass_wall](source:c/pass_wall).
 
 ## Monsters
 
@@ -208,6 +339,20 @@ In the code: [rollHp](source:ts/roll.ts/rollHp) and
 In the three water sections the built-in monsters are drawn 140 rows tall instead of 200, and
 the water overlay is drawn over the bottom of the picture. The cans and puffballs are not
 hovering; their feet are underneath the water.
+
+### The Shadow bosses are holes in the shape of another monster
+
+Every Shadow boss shares its picture with the first regular monster of its section. Shadow
+Ogeroth is the Ogeroth, Shadow Vulture is the Vulture Of Death, Shadow Evil God is Zeus. The
+only thing that differs between the two records is the tint colour.
+
+The boss's tint is exactly the value the picture drawer reads as "do not draw this pixel", so a
+Shadow boss is not a dark version of the monster. It is that monster with every tinted pixel
+missing and the corridor showing through the gaps. All twenty of them work this way, ten by
+having a tint that matches their colour set and ten by having no tint at all.
+
+In the code: [scale_image2](source:c/scale_image2) and
+[which monster turns up](formula:monster-kind).
 
 ## Map and travel
 
@@ -303,6 +448,70 @@ boss is not actually there, and the cache above is one way to arrange that, the 
 pointing at an empty square and never changes. The manual's advice for this is real: `FIX`
 deletes every `.MAP` file and runs `f_bug.exe`, which puts the special monster back.
 
+### Go Away can drop a monster inside solid rock
+
+Go Away rolls a new square for the monster and then checks whether it is solid before accepting
+it. It checks the wrong square: it asks about the square **you** are standing on, not the one the
+monster just landed on. You are never standing in rock, so the check always passes on the first
+roll, and the monster can end up sealed inside a wall where nothing can ever reach it.
+
+In the code: [goAway](source:ts/magic.ts/goAway) and [go_away](source:c/go_away).
+
+### Priest Protection is Minor Protection again
+
+The priest's level 5 Protection asks for protection level 1, which is what the level 1 Minor
+Protection asks for. Both take 2 off a monster's attack roll. The wizard's Protection, on the
+same level, asks for level 2 and takes off 8.
+
+So the priest's protection goes 2, then 2 again, then straight to Major Protection's 18 three
+levels later, and casting the level 5 spell over the level 1 one buys nothing at all.
+
+In the code: [priestBattle](source:ts/magic.ts/priestBattle),
+[battleSpeed](source:ts/magic.ts/battleSpeed) and
+[what protection is worth](formula:protection).
+
+### The anti-magic ring does nothing
+
+The Anti-Magic Ring is bought with four permanent spells, stored in the save file, shown on your
+character sheet, and refused by the spell when you already have a better one. No line anywhere in
+the game ever reads the field back. It protects against nothing at all.
+
+The spell levels give it away as unfinished: the ring goes 1, 2, 3 and then straight to 5, with
+no level 4 anywhere in the list.
+
+In the code: [setAntiMagicRing](source:ts/magic.ts/setAntiMagicRing) and
+[permanentList](source:ts/magic.ts/permanentList).
+
+### An enchanted suit of armour protects no better than a plain one
+
+The permanent plus on the armour you are wearing appears nowhere in the sum that decides whether
+a monster hits you. It is printed on your sheet, and acid destroys it, and that is the whole of
+what it does. The temporary Enchant Armor preparation writes a different field, and that one is
+subtracted properly.
+
+In the code: [defend](source:ts/combat.ts/defend) and
+[setTempArmorPlus](source:ts/magic.ts/setTempArmorPlus).
+
+### Escaping the enchantment menu cancels the spell by accident
+
+Pressing escape at the weapon list of Enchant Weapon hands the spell back -1. It subtracts one
+and uses the answer as an index, which lands on an unlabelled byte of the save record instead of
+on a weapon. That byte is zero in every save there has ever been, so the spell decides you own no
+such weapon and stops. The cancel you expect is a bug that happens to behave.
+
+In the code: [enchantWeaponPerm](source:ts/magic.ts/enchantWeaponPerm).
+
+### Monsters are stocked into rows nothing can reach
+
+The dungeon generator fills a grid 80 columns by 110 rows. The game only ever draws and walks 79
+columns by 104 rows. Column 79 and rows 104 to 109 are real, hold real open squares, and the
+stocking routine drops monsters into them quite happily, where nothing can reach them and they
+can never reach you. The map explorer counts how many of a floor's 145 went there.
+
+In the code: [MAP_ROWS](source:ts/area.ts/MAP_ROWS),
+[beyondMapCount](source:ts/stocking.ts/beyondMapCount) and
+[the part of a floor you can reach](formula:map-area).
+
 ## Trivia and history
 
 ### The file called v
@@ -317,7 +526,7 @@ There is no check that the file opened. If `v` is missing altogether the game re
 instead, starting at the Borland copyright string, and keeps going until it happens to meet a
 `~` byte.
 
-### `intro.txt` is a joke at your expense
+### intro.txt is a joke at your expense
 
 The whole of `intro.txt` reads: you can remove this file, but modifying it is an "Unforgivable"
 action. It is a wink at the check above, and nothing reads it. The shareware nag screen that

@@ -40,22 +40,19 @@
   }
 </script>
 
-{#snippet run(nodes: Inline[])}
-  {#each nodes as node}
-    {#if node.kind === 'code'}
-      <code>{node.text}</code>
-    {:else if node.kind === 'bold'}
-      <strong>{node.text}</strong>
-    {:else if node.kind === 'link'}
-      {#if node.target.kind === 'url'}
-        <a href={node.target.href} target="_blank" rel="noreferrer">{node.text}</a>
-      {:else}
-        {@const target = node.target}
-        <button type="button" class="link" onclick={() => open(target)}>{node.text}</button>
-      {/if}
-    {:else}{node.text}{/if}
-  {/each}
-{/snippet}
+<!--
+  Written without a break between the tags: whitespace in the template would come out as a space
+  in the middle of a sentence, in front of the full stop that follows a link.
+-->
+{#snippet run(nodes: Inline[])}{#each nodes as node}{#if node.kind === 'code'}<code
+        >{node.text}</code
+      >{:else if node.kind === 'bold'}<strong>{node.text}</strong>{:else if node.kind === 'link'}{@const target =
+        node.target}{#if target.kind === 'url'}<a
+          href={target.href}
+          target="_blank"
+          rel="noreferrer">{node.text}</a
+        >{:else}<button type="button" class="link" onclick={() => open(target)}>{node.text}</button
+        >{/if}{:else}{node.text}{/if}{/each}{/snippet}
 
 <div class="tidbits">
   <div class="index">

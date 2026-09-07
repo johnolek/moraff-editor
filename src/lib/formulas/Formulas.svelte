@@ -16,13 +16,14 @@
   }
 
   // Another tab can ask for a formula; the search box is cleared so the entry is sure to be on
-  // the page, and the jump waits for it to be drawn.
+  // the page, and the jump waits for it to be drawn. It is not animated: this pane was
+  // display:none until the click that asked for it, so there is nothing to scroll away from.
   $effect(() => {
     const id = app.requestedFormula;
     if (!id) return;
     app.requestedFormula = null;
     search = '';
-    tick().then(() => jumpTo(id));
+    tick().then(() => document.getElementById(anchor(id))?.scrollIntoView({ block: 'start' }));
   });
 </script>
 
