@@ -1532,3 +1532,86 @@ export function castSpell(
   if (category !== 1) return MW_SPELL_TIME.battle;
   return MW_SPELL_TIME.preparation;
 }
+
+/**
+ * tick_spell_timers (WORLD.EXE 2000:7e4f, mw.c "tick_spell_timers"): count every spell timer down
+ * by the moves that have passed, and undo what runs out.
+ *
+ * The strength and speed timers take their 7 back off the characteristic when they expire, and
+ * Power Weapon and Protection lose the level beside the timer — but only when the timer was above
+ * zero to begin with, so a level left standing over a zero timer stays until a night at the inn
+ * or a hole dug through the floor.
+ */
+export function tickSpellTimers(game: MwGame, moves: number): void {
+  const pc = game.pc;
+  if (pc.slowEnemiesTimer > 0) {
+    pc.slowEnemiesTimer -= moves;
+    if (pc.slowEnemiesTimer < 0) pc.slowEnemiesTimer = 0;
+  }
+  if (pc.strengthTimer > 0) {
+    if (moves < pc.strengthTimer) {
+      pc.strengthTimer -= moves;
+    } else {
+      pc.strengthTimer = 0;
+      pc.str -= 7;
+    }
+  }
+  if (pc.speedTimer > 0) {
+    if (moves < pc.speedTimer) {
+      pc.speedTimer -= moves;
+    } else {
+      pc.speedTimer = 0;
+      pc.dex -= 7;
+    }
+  }
+  if (pc.powerWeaponTimer > 0) {
+    pc.powerWeaponTimer -= moves;
+    if (pc.powerWeaponTimer < 1) {
+      pc.powerWeaponLevel = 0;
+      pc.powerWeaponTimer = 0;
+    }
+  }
+  if (pc.protectionTimer > 0) {
+    pc.protectionTimer -= moves;
+    if (pc.protectionTimer < 1) {
+      pc.protectionLevel = 0;
+      pc.protectionTimer = 0;
+    }
+  }
+  if (pc.antiFireTimer > 0) {
+    pc.antiFireTimer -= moves;
+    if (pc.antiFireTimer < 0) pc.antiFireTimer = 0;
+  }
+  if (pc.antiColdTimer > 0) {
+    pc.antiColdTimer -= moves;
+    if (pc.antiColdTimer < 0) pc.antiColdTimer = 0;
+  }
+  if (pc.resistDrainTimer > 0) {
+    pc.resistDrainTimer -= moves;
+    if (pc.resistDrainTimer < 0) pc.resistDrainTimer = 0;
+  }
+  if (pc.resistPoisonTimer > 0) {
+    pc.resistPoisonTimer -= moves;
+    if (pc.resistPoisonTimer < 0) pc.resistPoisonTimer = 0;
+  }
+  if (pc.resistDiseaseTimer > 0) {
+    pc.resistDiseaseTimer -= moves;
+    if (pc.resistDiseaseTimer < 0) pc.resistDiseaseTimer = 0;
+  }
+  if (pc.sleepTimer > 0) {
+    if (moves < pc.sleepTimer) {
+      pc.sleepTimer -= moves;
+    } else {
+      pc.sleepTimer = 0;
+      game.monsterStatusLine = '';
+    }
+  }
+  if (pc.holdMonsterTimer > 0) {
+    if (moves < pc.holdMonsterTimer) {
+      pc.holdMonsterTimer -= moves;
+    } else {
+      pc.holdMonsterTimer = 0;
+      game.monsterStatusLine = '';
+    }
+  }
+}

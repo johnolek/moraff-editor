@@ -16,6 +16,7 @@ import {
   writeScrollOrWand,
   castSpell,
   spellHeld,
+  tickSpellTimers,
   MW_FROM_PAPER,
   MW_FROM_SCROLL,
   MW_FROM_SPELLBOOK,
@@ -653,5 +654,90 @@ describe('spellHeld', () => {
     expect(spellHeld(world, MW_FROM_SPELLBOOK, 1, 1, 0)).toBe(true);
     expect(spellHeld(world, MW_FROM_SCROLL, 1, 1, 0)).toBe(false);
     expect(spellHeld(world, MW_FROM_WAND, 1, 1, 0)).toBe(true);
+  });
+});
+
+describe('tickSpellTimers', () => {
+  it('counts every timer down by the moves taken', () => {
+    const world = game({
+      pc: {
+        slowEnemiesTimer: 60,
+        strengthTimer: 60,
+        speedTimer: 60,
+        powerWeaponTimer: 60,
+        protectionTimer: 60,
+        antiFireTimer: 60,
+        antiColdTimer: 60,
+        resistDrainTimer: 60,
+        resistPoisonTimer: 60,
+        resistDiseaseTimer: 60,
+        sleepTimer: 60,
+        holdMonsterTimer: 60,
+      },
+    });
+    tickSpellTimers(world, 10);
+    for (const timer of [
+      world.pc.slowEnemiesTimer,
+      world.pc.strengthTimer,
+      world.pc.speedTimer,
+      world.pc.powerWeaponTimer,
+      world.pc.protectionTimer,
+      world.pc.antiFireTimer,
+      world.pc.antiColdTimer,
+      world.pc.resistDrainTimer,
+      world.pc.resistPoisonTimer,
+      world.pc.resistDiseaseTimer,
+      world.pc.sleepTimer,
+      world.pc.holdMonsterTimer,
+    ]) {
+      expect(timer).toBe(50);
+    }
+  });
+
+  it('takes the 7 back off the two characteristics when their timers run out', () => {
+    const world = game({ pc: { str: 27, dex: 22, strengthTimer: 5, speedTimer: 5 } });
+    tickSpellTimers(world, 5);
+    expect(world.pc.strengthTimer).toBe(0);
+    expect(world.pc.speedTimer).toBe(0);
+    expect(world.pc.str).toBe(20);
+    expect(world.pc.dex).toBe(15);
+  });
+
+  it('leaves the characteristic alone while the timer is still running', () => {
+    const world = game({ pc: { str: 27, strengthTimer: 5 } });
+    tickSpellTimers(world, 4);
+    expect(world.pc.strengthTimer).toBe(1);
+    expect(world.pc.str).toBe(27);
+  });
+
+  it('clears the level beside a Power Weapon or Protection timer that expires', () => {
+    const world = game({
+      pc: { powerWeaponLevel: 3, powerWeaponTimer: 2, protectionLevel: 4, protectionTimer: 2 },
+    });
+    tickSpellTimers(world, 2);
+    expect(world.pc.powerWeaponLevel).toBe(0);
+    expect(world.pc.protectionLevel).toBe(0);
+  });
+
+  it('leaves a level standing over a timer that was already zero', () => {
+    const world = game({ pc: { powerWeaponLevel: 3, powerWeaponTimer: 0 } });
+    tickSpellTimers(world, 60);
+    expect(world.pc.powerWeaponLevel).toBe(3);
+  });
+
+  it('takes the monster line off the screen when the sleep or the hold ends', () => {
+    const asleep = game({ pc: { sleepTimer: 1 }, monsterStatusLine: 'MONSTER IS SLEEPING' });
+    tickSpellTimers(asleep, 1);
+    expect(asleep.monsterStatusLine).toBe('');
+    const held = game({ pc: { holdMonsterTimer: 1 }, monsterStatusLine: 'MONSTER IS HELD' });
+    tickSpellTimers(held, 1);
+    expect(held.monsterStatusLine).toBe('');
+  });
+
+  it('leaves a cleared poison or disease timer at minus one', () => {
+    const world = game({ pc: { poisonTimer: -1, diseaseTimer: -1 } });
+    tickSpellTimers(world, 60);
+    expect(world.pc.poisonTimer).toBe(-1);
+    expect(world.pc.diseaseTimer).toBe(-1);
   });
 });
