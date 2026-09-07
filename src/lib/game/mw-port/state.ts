@@ -633,16 +633,19 @@ export function mwMessageLine(text: string, colour: number): ScreenLine {
 }
 
 /**
- * The fill_rect (WORLD.EXE 4000:2020) both of them wipe that strip with before they write on it.
+ * Whether a drawn line stands on that strip.
  *
  * The screen keeps a string's top left corner rather than the box its letters fill, so a line
  * counts as inside the strip when the point it was drawn at is.
  */
+export function mwOnMessageLine(line: ScreenLine): boolean {
+  return line.x < MW_MESSAGE_LINE_WIDTH && line.y < MW_MESSAGE_LINE_HEIGHT;
+}
+
+/** The fill_rect (WORLD.EXE 4000:2020) both of them wipe that strip with before they write on it. */
 export function mwClearMessageLine(game: MwGame): void {
   for (let at = game.screen.length - 1; at >= 0; at -= 1) {
-    const line = game.screen[at];
-    const inside = line.x < MW_MESSAGE_LINE_WIDTH && line.y < MW_MESSAGE_LINE_HEIGHT;
-    if (inside) game.screen.splice(at, 1);
+    if (mwOnMessageLine(game.screen[at])) game.screen.splice(at, 1);
   }
 }
 

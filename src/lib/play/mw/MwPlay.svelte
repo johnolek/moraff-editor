@@ -7,22 +7,15 @@
   import { MORAFFS_WORLD_MAP } from '../../map/game';
   import { FULL_FLOOR } from '../../map/viewport';
   import GameScreen from '../../ui/GameScreen.svelte';
+  import { SCREEN_COLOURS } from '../../roller/screen';
   import PixelText from '../../ui/PixelText.svelte';
   import MwPanel from './MwPanel.svelte';
   import MwPortrait from './MwPortrait.svelte';
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
-  import { MW_MESSAGE_BOX } from './screens';
-
-  /** How wide the corner of the game's screen the message box and the banner share is, in the
-   *  game's own units. */
-  const BOX_WINDOW = {
-    x: MW_MESSAGE_BOX.x,
-    y: 0,
-    width: MW_MESSAGE_BOX.right,
-    height: MW_MESSAGE_BOX.y + MW_MESSAGE_BOX.step * MW_MESSAGE_BOX.lines,
-  };
+  import { mwOnMessageLine } from '../../game/mw-port/state';
+  import { mwCorner, MW_CORNER_WIDTH } from './screens';
 
   /** How many pixels a square is drawn at when the map is centred on the character. */
   const PLAY_CELL = 22;
@@ -41,6 +34,16 @@
     return currentEntry();
   });
   const playable = $derived(character !== null && character.game === MORAFFS_WORLD_MAP.id);
+
+  /** A screen with a line outside the corner the message box lives in is one the game has taken
+   *  the whole display over with; one that fits is drawn in that corner with the rest of it. */
+  const screenTakesOver = $derived(view !== null && !view.screen.every(mwOnMessageLine));
+  const corner = $derived(
+    view === null
+      ? { lines: [], height: 0 }
+      : mwCorner(screenTakesOver ? [] : view.screen, view.banner, view.box),
+  );
+  const cornerWindow = $derived({ x: 0, y: 0, width: MW_CORNER_WIDTH, height: corner.height });
 
   function start() {
     const entry = currentEntry();
@@ -167,7 +170,8 @@
     </div>
   {:else}
     <div class="stage">
-      <div class="map">
+      <!-- The overlays are drawn in the game's own palette entries, the way it draws them. -->
+      <div class="map" style:--status-colour={SCREEN_COLOURS[5]}>
         <FloorCanvas
           bind:this={canvas}
           game={MORAFFS_WORLD_MAP}
@@ -179,11 +183,18 @@
           you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
           focus={{ x: view.place.x, y: view.place.y, cell: PLAY_CELL }}
         />
-        {#if view.screen.length > 0}
-          <div class="overlay"><GameScreen lines={view.screen} /></div>
+        {#if corner.lines.length > 0}
+          <div class="corner top-left">
+            <GameScreen lines={corner.lines} window={cornerWindow} />
+          </div>
         {/if}
-        {#if view.prompt}
-          <div class="prompt">{view.prompt}</div>
+        <div class="corner top-right">
+          {#if view.prompt}
+            <div class="status">{view.prompt}</div>
+          {/if}
+        </div>
+        {#if screenTakesOver}
+          <div class="overlay"><GameScreen lines={view.screen} /></div>
         {/if}
         {#if view.over}
           <div class="over">
@@ -201,12 +212,6 @@
           <span>{view.place.x}, {view.place.y}</span>
           <span>{['North', 'South', 'West', 'East'][view.place.dir]}</span>
         </div>
-        {#if view.banner.length > 0}
-          <div class="banner">
-            {#each view.banner as line}<div>{line}</div>{/each}
-          </div>
-        {/if}
-        <GameScreen lines={view.box} window={BOX_WINDOW} />
         <div class="keys">
           <div class="key-note">Arrow keys:</div>
           <div class="styles">
@@ -298,18 +303,37 @@
   .overlay :global(.screen) {
     width: min(100%, 1100px);
   }
-  .prompt {
+  /* The four corners of the game's own screen, laid over the map the way it lays them over the
+     3-D views: the message box top left, the monster faced top right, the character's own block
+     bottom left and the characteristics bottom right. */
+  .corner {
     position: absolute;
-    left: 12px;
-    top: 12px;
-    padding: 8px 12px;
-    border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .top-left {
+    left: 10px;
+    top: 10px;
+    width: clamp(240px, 34%, 460px);
+  }
+  .top-right {
+    right: 10px;
+    top: 10px;
+    align-items: flex-end;
+    width: clamp(180px, 26%, 330px);
+  }
+  /* FUN_2000_a9bd (WORLD.EXE 2000:a9bd) prints this one in colour 5. */
+  .status {
+    padding: 6px 10px;
     border-radius: 8px;
     background: rgba(0, 0, 0, 0.8);
     font-family: var(--font-dos);
     font-size: 20px;
     line-height: 1.1;
-    color: #fff;
+    text-align: right;
+    color: var(--status-colour);
   }
   .over {
     position: absolute;
@@ -363,12 +387,6 @@
     border-left: 1px solid var(--line);
     overflow-y: auto;
   }
-  /* The message box is as tall as it is wide times its aspect ratio and holds nothing that takes
-     up room of its own, so a column with more in it than fits would otherwise squash it to
-     nothing. */
-  .side :global(.screen) {
-    flex-shrink: 0;
-  }
   /* Narrow enough that a column beside the map would leave the map the smaller of the two: the
      side goes under the map instead and the whole tab scrolls. */
   @media (max-width: 900px) {
@@ -394,16 +412,6 @@
     gap: 4px 14px;
     color: var(--muted);
     font-size: 12px;
-  }
-  .banner {
-    padding: 8px 10px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: #000;
-    font-family: var(--font-dos);
-    font-size: 17px;
-    line-height: 1.15;
-    color: #fff;
   }
   .key-note {
     margin-bottom: 4px;
