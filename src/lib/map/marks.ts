@@ -16,12 +16,14 @@ export type LegendKind =
   | { kind: 'side'; side: number }
   | { kind: 'town'; building: number }
   | { kind: 'trapdoorTo'; floor: number }
-  | { kind: 'open' };
+  | { kind: 'open' }
+  | { kind: 'explored' };
 
 /** Every square of the floor matching a legend entry. Ladders, chutes and trap doors carry
- *  their destination floor as the label. "Open square" would be the whole floor, so nothing. */
+ *  their destination floor as the label. "Open square" and "Explored" would be most of the
+ *  floor, so nothing. */
 export function squaresOfKind(rows: MapSquare[][], floor: number, kind: LegendKind, area: MapArea): Mark[] {
-  if (kind.kind === 'open') return [];
+  if (kind.kind === 'open' || kind.kind === 'explored') return [];
   const labelled = kind.kind === 'glyph' || kind.kind === 'trapdoorTo';
   const marks: Mark[] = [];
   forEachShownSquare(rows, area, (square, x, y) => {

@@ -15,6 +15,8 @@ export const palette = {
   label: '#ffffff',
   /** Outline and label of squares emphasised from the legend. */
   mark: '#ff40ff',
+  /** Squares a loaded .DUN file marks as seen: a wash laid over the square. */
+  explored: 'rgba(92, 255, 122, 0.28)',
   /** The selected square and the route drawn from it. */
   selection: '#ffd040',
   route: '#ffd040',

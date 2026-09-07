@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { drawSquare } from './draw-floor';
+  import { drawExplored, drawSquare } from './draw-floor';
   import type { MapGame, MapSquare } from './game';
   import { palette } from './palette';
   import { TELEPORTER_STILL_HUE, teleporterHue } from './teleporters';
 
   const SIZE = 18;
 
-  let { square, game }: { square: MapSquare; game: MapGame } = $props();
+  let { square, game, explored = false }: { square: MapSquare; game: MapGame; explored?: boolean } = $props();
 
   let canvas: HTMLCanvasElement;
 
@@ -24,6 +24,7 @@
       ctx.fillStyle = palette.background;
       ctx.fillRect(0, 0, edge, edge);
       drawSquare(ctx, sample, 2, 2, SIZE, SIZE, 0, hue, game);
+      if (explored) drawExplored(ctx, 2, 2, SIZE, SIZE);
     };
     if (!animated) {
       paint(TELEPORTER_STILL_HUE);

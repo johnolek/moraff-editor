@@ -12,11 +12,13 @@
     summary: MapFloorSummary;
     /** Label of the entry whose squares stay marked until it is clicked again or cleared. */
     pinned: string | null;
+    /** Squares of this floor a loaded explored map has seen, or null when none is loaded. */
+    exploredCount: number | null;
     onhover: (kind: LegendKind | null) => void;
     onpin: (label: string | null, kind: LegendKind | null) => void;
   }
 
-  let { game, summary, pinned, onhover, onpin }: Props = $props();
+  let { game, summary, pinned, exploredCount, onhover, onpin }: Props = $props();
 
   function toggle(label: string, kind: LegendKind) {
     if (pinned === label) onpin(null, null);
@@ -50,6 +52,9 @@
       kind: { kind: 'town', building: index + 1 } as LegendKind,
       count: summary.town[index],
     })),
+    ...(exploredCount === null
+      ? []
+      : [{ label: 'Explored', square: sample({ n: 0, s: 0 }), kind: { kind: 'explored' } as LegendKind, count: exploredCount }]),
   ]);
 
   const trapdoorDestinations = $derived(
@@ -76,7 +81,7 @@
           onpointerleave={() => onhover(null)}
           onclick={() => toggle(label, kind)}
         >
-          <LegendSample {square} {game} />
+          <LegendSample {square} {game} explored={kind.kind === 'explored'} />
           <span class="text">
             <span>{label}</span>
             <span class="count">{count}</span>

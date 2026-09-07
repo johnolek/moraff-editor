@@ -3,6 +3,7 @@
   import { renderMonster } from '../bestiary/pictures';
   import { sectionInfo } from '../game/sections';
   import { drawFloor, drawMarks, drawOutline, drawRoute, drawYou, squareRect } from './draw-floor';
+  import { isExplored, type ExploredSquares } from './explored';
   import { drawMonsters, type MonsterSprites } from './draw-monsters';
   import type { MapGame, MapSquare } from './game';
   import type { Mark } from './marks';
@@ -30,6 +31,8 @@
     monsters?: StockedMonster[];
     /** Area "Fit" frames: the open squares of the floor. */
     bounds: Bounds;
+    /** Squares of this floor a loaded explored map has seen. */
+    explored?: ExploredSquares | null;
     /** The square the info panel describes: follows the pointer, moved by the keyboard. */
     cursor?: Point | null;
     /** Landing square after a jump. */
@@ -46,7 +49,7 @@
     onselect?: (square: Point) => void;
   }
 
-  let { game, rows, floor, dungeon, monsters = [], bounds, cursor = $bindable(null), highlight = null, you = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
+  let { game, rows, floor, dungeon, monsters = [], bounds, explored = null, cursor = $bindable(null), highlight = null, you = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -137,7 +140,7 @@
   }
 
   $effect(() => {
-    const next: Scene = { game, rows, floor, view, width: size.width, height: size.height };
+    const next: Scene = { game, rows, floor, view, width: size.width, height: size.height, explored };
     staticStale = true;
     scene = { ...untrack(overlays), ...next };
     scheduleRender();
@@ -168,6 +171,7 @@
     view: Viewport;
     width: number;
     height: number;
+    explored?: ExploredSquares | null;
     cursor?: Point | null;
     highlight?: Point | null;
     you?: Point | null;
@@ -188,7 +192,7 @@
 
   function render() {
     if (!scene || !scene.width || !scene.height) return;
-    const { game, rows, floor, view, width, height, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
+    const { game, rows, floor, view, width, height, explored, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
     const dpr = window.devicePixelRatio || 1;
     const pixelWidth = Math.round(width * dpr);
     const pixelHeight = Math.round(height * dpr);
@@ -201,7 +205,7 @@
       staticLayer.height = pixelHeight;
       const staticCtx = staticLayer.getContext('2d')!;
       staticCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null, game });
+      drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null, game, explored: explored ? (x, y) => isExplored(explored, x, y) : undefined });
       staticStale = false;
     }
     const ctx = canvas.getContext('2d')!;

@@ -15,6 +15,8 @@ export interface DrawOptions extends Viewport {
   floor: number;
   /** Hue for teleporter sides, or null to leave them to an animated overlay. */
   teleporterHue: number | null;
+  /** Whether a loaded explored map has seen a square, when one is loaded. */
+  explored?: (x: number, y: number) => boolean;
 }
 
 /** Cell size from which destination floor numbers are drawn inside the glyph squares. */
@@ -44,6 +46,7 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: MapSquare[][], op
       const x0 = Math.round(originX + x * cell);
       const w = Math.round(originX + (x + 1) * cell) - x0;
       drawSquare(ctx, square, x0, y0, w, h, options.floor, options.teleporterHue, game);
+      if (options.explored?.(x, y)) drawExplored(ctx, x0, y0, w, h);
     }
   }
 }
@@ -67,6 +70,13 @@ export function drawSquare(
   drawSide(ctx, square.e, x0 + w, y0, h, true, teleporterHue);
   drawSide(ctx, square.s, x0, y0 + h, w, false, teleporterHue);
   drawGlyph(ctx, square, x0, y0, w, h, floor);
+}
+
+/** The wash over a square a loaded explored map has seen. It goes on after the square is
+ *  drawn, so the sides and the glyph show through it. */
+export function drawExplored(ctx: CanvasRenderingContext2D, x0: number, y0: number, w: number, h: number): void {
+  ctx.fillStyle = palette.explored;
+  ctx.fillRect(x0 + 1, y0 + 1, w, h);
 }
 
 /** One side, as draw_side does it: a line that stops one pixel short of both corners,

@@ -8,6 +8,8 @@
   import { forEachShownSquare, isOnMap } from './area';
   import { downloadFloorPng } from './export-png';
   import { describeMonster, describeNote, describeSquare, featureLine } from './describe';
+  import { addDunFloors, exploredCounts, readDunFile, type ExploredFloors } from './explored';
+  import ExploredMaps from './ExploredMaps.svelte';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
   import { floorsOf, hasDungeon, MAP_GAMES, type MapGame } from './game';
@@ -27,6 +29,10 @@
   import { twinsOf, type TwinFloor } from './twins';
   import { boundsIncluding, type Point } from './viewport';
   import { nearestOpenSquare, stepFrom } from './you';
+
+  /** No file loaded, which is every floor of Dungeons of the Unforgiven: it saves nothing
+   *  about where a character has been. */
+  const NO_EXPLORED_FLOORS: ExploredFloors = new Map();
 
   /** Which Moraff's World dungeon the map was last pointed at. Dungeons of the Unforgiven has
    *  five modules in a picker, so only this game's number is worth remembering. */
@@ -52,6 +58,11 @@
   let route = $state<Route | null | undefined>(undefined);
   /** Stocked floors by "dungeon:floor", kept while other floors are browsed. */
   let stocked = $state(new Map<string, StockedMonster[]>());
+  /** Explored floors from the .DUN files dropped on the map. Nothing is stored, so a reload
+   *  starts with none. */
+  let dunFloors = $state<ExploredFloors>(new Map());
+  /** Why the files last dropped could not be read. */
+  let dunErrors = $state<string[]>([]);
   let floorCanvas: FloorCanvas;
 
   const floors = $derived(floorsOf(game, dungeon));
@@ -70,6 +81,9 @@
   const beyondMapMonsters = $derived(monsters.filter((monster) => !isOnMap(monster, game.area)));
   /** Fit frames the floor the game shows plus whatever monsters were stocked beyond it. */
   const bounds = $derived(boundsIncluding(floorBounds(rows, game.area.rows), beyondMapMonsters));
+  const explored = $derived(game.modules ? NO_EXPLORED_FLOORS : dunFloors);
+  const exploredHere = $derived(explored.get(floor) ?? null);
+  const exploredCount = $derived(exploredHere ? exploredCounts(rows, exploredHere, game.area) : { seen: 0, rock: 0 });
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(game, dungeon, floor, cursorSquare, cursor.x, cursor.y) : null);
   const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, game, dungeon) : null);
@@ -286,6 +300,33 @@
     stocked = new Map(stocked).set(stockKey, stockFloor(rows, dungeon, floor, Math.random));
   }
 
+  /** Reads the .DUN files given onto the map, naming whichever of them cannot be read. */
+  async function loadDunFiles(files: File[]) {
+    let floors = dunFloors;
+    const errors: string[] = [];
+    for (const file of files) {
+      try {
+        floors = addDunFloors(floors, readDunFile(file.name, new Uint8Array(await file.arrayBuffer())));
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : String(error));
+      }
+    }
+    dunFloors = floors;
+    dunErrors = errors;
+  }
+
+  function clearDunFiles() {
+    dunFloors = new Map();
+    dunErrors = [];
+  }
+
+  /** How the floor picker names a floor, marking the ones a loaded explored map has seen
+   *  squares on. */
+  function floorLabel(level: number): string {
+    const name = level === 0 ? '0 · Town' : String(level);
+    return explored.has(level) ? `${name} · explored` : name;
+  }
+
   function clearMonsters() {
     const rest = new Map(stocked);
     rest.delete(stockKey);
@@ -432,7 +473,24 @@
       {/if}
     </div>
     <div class="viewport">
-      <FloorCanvas bind:this={floorCanvas} {game} {rows} {floor} {dungeon} {monsters} {bounds} bind:cursor {highlight} {you} {marks} {selected} route={route ?? null} {tooltip} onselect={follow} />
+      <FloorCanvas
+        bind:this={floorCanvas}
+        {game}
+        {rows}
+        {floor}
+        {dungeon}
+        {monsters}
+        {bounds}
+        explored={exploredHere}
+        bind:cursor
+        {highlight}
+        {you}
+        {marks}
+        {selected}
+        route={route ?? null}
+        {tooltip}
+        onselect={follow}
+      />
       <div class="controls">
         <div class="pickers">
           <label>
@@ -462,7 +520,7 @@
             {:else}
               <select value={floor} onchange={changeFloor}>
                 {#each floors as level}
-                  <option value={level}>{level === 0 ? '0 · Town' : level}</option>
+                  <option value={level}>{floorLabel(level)}</option>
                 {/each}
               </select>
             {/if}
@@ -514,10 +572,13 @@
         onhover={(monsterId) => (monsterHover = monsterId)}
         onpin={pinMonster}
       />
+    {:else}
+      <ExploredMaps floors={explored} errors={dunErrors} onfiles={loadDunFiles} onclear={clearDunFiles} />
     {/if}
     <Legend
       {game}
       {summary}
+      exploredCount={explored.size ? exploredCount.seen : null}
       pinned={legendPinned?.label ?? null}
       onhover={(kind) => (legendHover = kind)}
       onpin={pinLegendEntry}

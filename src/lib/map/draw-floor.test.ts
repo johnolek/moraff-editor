@@ -32,4 +32,13 @@ describe('drawFloor', () => {
     expect(Math.max(...squares.map((fill) => fill.x))).toBe(MAP_COLUMNS);
     expect(Math.max(...squares.map((fill) => fill.y))).toBe(MAP_ROWS);
   });
+
+  it('washes the squares a loaded explored map has seen', () => {
+    const fills: { x: number; y: number }[] = [];
+    const options = { cell: 1, originX: 0, originY: 0, width: WIDTH, height: HEIGHT, floor: 1, teleporterHue: null, game: UNFORGIVEN_MAP };
+    drawFloor(recordingContext(fills), openFloor(), { ...options, explored: (x, y) => x === 2 && y === 3 });
+    // The seen square is filled twice, once for the square itself and once for the wash.
+    expect(fills.filter((fill) => fill.x === 3 && fill.y === 4)).toHaveLength(2);
+    expect(fills.filter((fill) => fill.x === 4 && fill.y === 4)).toHaveLength(1);
+  });
 });
