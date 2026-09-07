@@ -20,6 +20,8 @@ something the original does, a comment says so.
 * **`screens.ts`** — where the message box goes, and `notBuiltYet`.
 * **`arrival.ts`** — the hint the snake brings on arriving on a floor.
 * **`Play.svelte`** — the tab: the map, the message box, the screens and the row of keys.
+* **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
+  prints, beside the map, and the picture of the monster in front of the character over them.
 
 ## Waiting for a key
 
@@ -105,9 +107,9 @@ ladder finds the monsters where they were left.
 The monsters the map draws are worked out from the occupancy grid (`drawnMonsters`), so a monster
 that has been killed and taken off the grid stops being drawn without anything else being told.
 
-## What the side panel can have
+## The side panel
 
-`session.view()` is what the tab draws, and it is where a panel of numbers should look:
+`session.view()` is what the tab draws, and it is where the panel of numbers looks:
 
 | field | what it is |
 | --- | --- |
@@ -120,10 +122,19 @@ that has been killed and taken off the grid stops being drawn without anything e
 | `prompt` | the ladder or doorway box |
 | `seconds` | game time spent, which `call_check_eng` counts |
 | `engaged` | the monster being faced, with its level and hit points |
+| `ahead` | that monster is the one straight ahead, which is when the game draws its picture |
 | `over`, `dead` | the loop has come back |
 
 `session.game` is the whole `Game` for anything else — the spell timers, the poison and disease
 clocks, the wand and scroll counts are all fields of `session.game.pc`.
+
+`panel.ts` is where those are read, one function per block the panel shows, each of them pure and
+each naming the function of the game its number comes from: the moves left on every battle spell
+in `view_battle_spells`' own order, the spells in effect that have no timer, the poison and
+disease clocks `pass_moment` counts down, the charges on every wand, scroll and paper, the
+engaged monster with the chance a swing lands from `src/lib/bestiary/to-hit.ts`, what the square
+underfoot holds, and the monsters nearest by. The view arrives fresh after every action, and
+reading it is what sends the panel back to the record.
 
 ## What is not built yet
 
