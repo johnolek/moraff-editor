@@ -194,6 +194,7 @@ export function die(game: MwGame): MwDeath {
   pc.returnX = -1;
   game.engaged = -1;
   game.redrawView = true;
+  game.recenterMap = true;
   if (pc.con > 2) pc.con -= 1;
   pc.hp = pc.maxHp;
   pc.sp = pc.maxSp;

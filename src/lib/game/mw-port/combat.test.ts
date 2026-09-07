@@ -292,6 +292,13 @@ describe('tickSpellTimers', () => {
     expect(game.pc.dex).toBe(24);
   });
 
+  it("wipes the monster's line when sleep and hold run out", () => {
+    const game = newMwGame({ pc: { sleepTimer: 1, holdMonsterTimer: 1 } });
+    game.monsterStatusLine = 'IT IS ASLEEP';
+    tickSpellTimers(game, 1);
+    expect(game.monsterStatusLine).toBe('');
+  });
+
   it("clears the level beside the timer for Power Weapon and Protection", () => {
     const game = newMwGame({
       pc: { powerWeaponLevel: 3, powerWeaponTimer: 2, protectionLevel: 4, protectionTimer: 60 },

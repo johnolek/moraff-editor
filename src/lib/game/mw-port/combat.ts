@@ -469,14 +469,20 @@ export function tickSpellTimers(game: MwGame, moves: number): void {
     pc.resistDiseaseTimer -= moves;
     if (pc.resistDiseaseTimer < 0) pc.resistDiseaseTimer = 0;
   }
-  // Both of these also wipe the monster status line at DS:cbee when they run out.
+  // Both of these wipe the line printed beside the monster when they run out.
   if (pc.sleepTimer > 0) {
     if (moves < pc.sleepTimer) pc.sleepTimer -= moves;
-    else pc.sleepTimer = 0;
+    else {
+      pc.sleepTimer = 0;
+      game.monsterStatusLine = '';
+    }
   }
   if (pc.holdMonsterTimer > 0) {
     if (moves < pc.holdMonsterTimer) pc.holdMonsterTimer -= moves;
-    else pc.holdMonsterTimer = 0;
+    else {
+      pc.holdMonsterTimer = 0;
+      game.monsterStatusLine = '';
+    }
   }
 }
 

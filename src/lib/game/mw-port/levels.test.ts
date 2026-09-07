@@ -130,6 +130,7 @@ describe('die', () => {
     expect(game.pc.con).toBe(14);
     expect(game.pc.returnX).toBe(-1);
     expect(game.engaged).toBe(-1);
+    expect(game.recenterMap).toBe(true);
     expect(game.events).toEqual([
       { kind: 'playerSaved' },
       { kind: 'hintShown', record: HINT.death },
