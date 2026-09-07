@@ -128,24 +128,30 @@
     flex-direction: column;
     height: 100vh;
   }
+  /* The title, the tabs and the game switch are too wide for a laptop screen together, so the
+     switch drops to a line of its own rather than the labels being squeezed. */
   header {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 28px;
+    gap: 12px 28px;
     padding: 14px 24px;
     border-bottom: 1px solid var(--line);
   }
   h1 {
     margin: 0;
+    flex-shrink: 0;
     line-height: 0;
     color: var(--accent);
   }
   nav {
     display: flex;
+    flex-wrap: wrap;
     gap: 4px;
   }
   .tab {
     padding: 6px 12px;
+    white-space: nowrap;
     border: none;
     border-radius: 6px;
     background: none;
@@ -163,6 +169,7 @@
   }
   .games {
     display: flex;
+    flex-shrink: 0;
     margin-left: auto;
     border: 1px solid var(--line);
     border-radius: 6px;
@@ -170,6 +177,7 @@
   }
   .game {
     padding: 6px 14px;
+    white-space: nowrap;
     border: none;
     background: none;
     font: inherit;

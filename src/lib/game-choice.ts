@@ -8,7 +8,7 @@ const LAST_CHARACTER_PREFIX = 'moraff-tools.last-character.';
 
 /** The games the site knows, as the switch in the header names them. */
 export const GAME_CHOICES: { id: GameId; label: string }[] = [
-  { id: 'unforgiven', label: 'DotU' },
+  { id: 'unforgiven', label: 'Dungeons of the Unforgiven' },
   { id: 'moraffsWorld', label: "Moraff's World" },
 ];
 
