@@ -15,6 +15,13 @@ import { KEY } from './keys';
 /** How many rows the menu has; the topics fill the left column first. */
 const MENU_ROWS = 14;
 
+/**
+ * How wide a label is in the two tables the menu is built from (exe DS:52d8 and DS:52f4). Every
+ * one of the twenty-eight strings is padded out to this with spaces, and psfont spreads a line
+ * to fill the width it is given, so the padding is what sets the gaps between the letters.
+ */
+const LABEL_WIDTH = 31;
+
 /** Where the two columns of the menu start and how far each line is spread. */
 const LEFT_X = 0x6e;
 const LEFT_TO = 0x2b2;
@@ -58,7 +65,7 @@ function drawMenu(game: Game): void {
   HELP_TOPICS.forEach((topic, index) => {
     const right = index >= MENU_ROWS;
     game.draw({
-      text: topic.label,
+      text: topic.label.padEnd(LABEL_WIDTH),
       x: right ? RIGHT_X : LEFT_X,
       y: MENU_Y + (index % MENU_ROWS) * MENU_STEP,
       spreadTo: right ? RIGHT_TO : LEFT_TO,
