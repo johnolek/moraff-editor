@@ -35,7 +35,9 @@ middle of a spell, so the menus a spell puts up are questions the `Game` answers
 `chooseDirection` for Pass Wall, `chooseWeapon` and `chooseArmor` for the two permanent
 enchantments, and `chooseSpell` for the three menus Write Scroll and Enchant Wand walk through.
 Each is shaped after what the original's menu code reads back, down to the numbering, and each
-one `newGame` supplies cancels the spell.
+one `newGame` supplies cancels the spell. The character roller asks its six questions the same
+way, through `askDifficulty`, `askRace`, `askKeepRerollDesign`, `askDesignStat`, `askName` and
+`askClass`.
 
 **The second departure is that a spell here stops at the character record.** Ascend, Descend
 and the three like them change the floor the character is on and drop them somewhere open on
@@ -114,6 +116,11 @@ those replace every character that is not a letter or a digit with an underscore
   and the five breath weapons, and the clock that decides how many attacks an adjacent monster
   gets while the player acts: `check_engagement`, `call_check_eng`, `attack_timing`, the battle
   banner, and the seconds a step and a swing cost.
+* `character.ts` — `roll_char`: the screens it reads out of `UROLL.TXT`, the questions it asks,
+  the race table, the roll, the keep/reroll/design loop, the starting spells, health, spell
+  points, kit and money, and the record a new character starts play with. Where it writes the
+  character file the port records a `characterCreated` event; where it stocks floor 1 with
+  monsters, through `stock_level` (exe 2000:671e), it does nothing.
 * `magic.ts` — all four of `spell_effect`'s spell lists and `spellEffect` itself, with the
   helpers they share: the explosion roll, the autokill roll, Drain Monster, Go Away, Sleep,
   Relocate, Pass Wall, the protection and power weapon levels, the five resistances, the two
