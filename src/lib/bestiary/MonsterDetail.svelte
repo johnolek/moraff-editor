@@ -11,6 +11,7 @@
   } from '../game/dotu-mech.js';
   import { sectionInfo } from '../game/sections';
   import { MODULE_NUMERALS } from '../map/labels';
+  import SourceLink from '../source/SourceLink.svelte';
   import BarChart from '../ui/BarChart.svelte';
   import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
@@ -178,7 +179,10 @@
       <dt>Seconds between attacks</dt>
       <dd>{monsterAttackInterval(entry.type.speed)}</dd>
       <dt>Sleep</dt>
-      <dd>Works on it {percent(sleepChance(baseLevel))} of the time.</dd>
+      <dd>
+        Works on it {percent(sleepChance(baseLevel))} of the time.
+        <SourceLink ts={{ file: 'src/lib/game/port/magic.ts', name: 'sleepMonster' }} c="sleep_monster" />
+      </dd>
       {#if entry.breath > 0}
         <dt>Breath damage</dt>
         <dd>
@@ -190,7 +194,10 @@
     </dl>
 
     <div class="to-hit">
-      <p class="note">Hitting it</p>
+      <p class="note">
+        Hitting it
+        <SourceLink ts={{ file: 'src/lib/bestiary/to-hit.ts', name: 'hitChance' }} c="strike" />
+      </p>
       <p>
         A to-hit total of {halfTheTime.toLocaleString()} gets past its defense half the time; {nineSwingsInTen.toLocaleString()}
         nine swings in ten.
