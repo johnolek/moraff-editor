@@ -3,14 +3,16 @@
   import { app, currentEntry } from '../app-state.svelte';
   import { characterEdited, importCharacter, replaceCharacterBytes, unloadCharacter } from '../character/current';
   import { characterFileName } from '../character/record';
-  import { GAME_SCHEMAS, GAMES, pickGameByFileSize } from './games';
-  import type { GameSchema } from './schema';
+  import { GAME_SCHEMAS, GAMES, pickGameForFile } from './games';
+  import type { GameSchema, TextRecord } from './schema';
   import SectionView from './SectionView.svelte';
 
   interface Document {
     game: GameSchema;
     bytes: Uint8Array<ArrayBuffer>;
     view: DataView;
+    /** The numbers of a text record, for a game whose file is text rather than a run of bytes. */
+    record: TextRecord | null;
     /** Copy of the file as it was opened, for "Discard changes". */
     pristine: Uint8Array<ArrayBuffer>;
   }
@@ -26,7 +28,7 @@
   /** What the file this is editing is called, which is the character's number when it has one. */
   const fileName = $derived.by(() => {
     const current = currentEntry();
-    return current ? characterFileName(current.slot, current.name) : '';
+    return current ? characterFileName(current.slot, current.name, current.game) : '';
   });
 
   function showToast(message: string, warn = false) {
@@ -36,14 +38,30 @@
   }
 
   function open(game: GameSchema, bytes: Uint8Array<ArrayBuffer>) {
-    doc = { game, bytes, view: new DataView(bytes.buffer), pristine: bytes.slice() };
+    const values = game.readRecord?.(bytes) ?? null;
+    doc = {
+      game,
+      bytes,
+      view: new DataView(bytes.buffer),
+      record: values && { values },
+      pristine: bytes.slice(),
+    };
     version++;
   }
 
-  /** A file the user picked joins the roster and becomes the character being worked on, which
-   *  is what opens it here. */
-  async function load(file: File, game: GameSchema) {
-    importCharacter(game.id, file.name, new Uint8Array(await file.arrayBuffer()));
+  /**
+   * A field has been edited. A byte record was written in place, so there is nothing to do but
+   * say so; a text record has no fixed offsets, so the file is written out again from its numbers
+   * and the character on the roster is given the new bytes.
+   */
+  function edited() {
+    if (doc?.record && doc.game.writeRecord) {
+      const bytes = doc.game.writeRecord(doc.record.values);
+      doc.bytes = bytes;
+      replaceCharacterBytes(bytes);
+      return;
+    }
+    characterEdited();
   }
 
   // The character can be made current somewhere else — rolled in the New Character tab, chosen
@@ -59,12 +77,17 @@
     if (game) open(game, current.bytes);
   });
 
-  /** The size of the file says which game it belongs to, and opening one of the other game's
-   *  saves is what moves the site to that game. A file that is neither size is read as the game
-   *  the switch is on. */
-  function receive(file: File) {
-    const game = pickGameByFileSize(file.size) ?? GAME_SCHEMAS[app.game];
-    if (game) load(file, game);
+  /**
+   * The file says which game it belongs to — its size for the two games whose record is a fixed
+   * run of bytes, and whether it reads as a character for the one whose record is text — and
+   * opening one of another game's saves is what moves the site to that game. A file that is none
+   * of theirs is read as the game the switch is on. It joins the roster and becomes the character
+   * being worked on, which is what opens it here.
+   */
+  async function receive(file: File) {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const game = pickGameForFile(bytes) ?? GAME_SCHEMAS[app.game];
+    if (game) importCharacter(game.id, file.name, bytes);
   }
 
   function onFileChosen() {
@@ -94,7 +117,8 @@
   function discard() {
     if (!doc) return;
     const bytes = doc.pristine.slice();
-    doc = { ...doc, bytes, view: new DataView(bytes.buffer) };
+    const values = doc.game.readRecord?.(bytes) ?? null;
+    doc = { ...doc, bytes, view: new DataView(bytes.buffer), record: values && { values } };
     version++;
     replaceCharacterBytes(bytes);
     showToast('Changes discarded');
@@ -108,7 +132,7 @@
 
 <div class="save-editor">
   <div class="page">
-    <p class="lead">Edit Moraff's World and Dungeons of the Unforgiven character files in your browser. Nothing is uploaded — all editing happens locally.</p>
+    <p class="lead">Edit Moraff's World, Moraff's Revenge and Dungeons of the Unforgiven character files in your browser. Nothing is uploaded — all editing happens locally.</p>
 
     {#if !doc}
       <div class="intro">
@@ -116,8 +140,9 @@
         <ol>
           <li>
             <strong>Upload your save file.</strong> These are plain, numbered files in your game directory — named <code>1</code>, <code>2</code>,
-            <code>3</code>, etc. in Moraff's World, and <code>21</code>, <code>22</code>, <code>23</code>, etc. in Dungeons of the Unforgiven (one
-            file per character).
+            <code>3</code>, etc. in Moraff's World, <code>21</code>, <code>22</code>, <code>23</code>, etc. in Dungeons of the Unforgiven, and
+            <code>1.EXE</code>, <code>2.EXE</code>, etc. in Moraff's Revenge, where they are text files despite the extension (one file per
+            character).
           </li>
           <li><strong>Make your changes</strong> using the editor that appears.</li>
           <li><strong>Download the new file</strong> and overwrite the original in your game directory.</li>
@@ -160,10 +185,10 @@
       </div>
       <!-- The field components write straight into the bytes without telling anyone. The events
            their inputs bubble are how the rest of the app hears that the character changed. -->
-      <div oninput={characterEdited} onchange={characterEdited}>
+      <div oninput={edited} onchange={edited}>
         {#key version}
           {#each doc.game.sections as section}
-            <SectionView view={doc.view} {section} />
+            <SectionView view={doc.view} record={doc.record} {section} />
           {/each}
         {/key}
       </div>

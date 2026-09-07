@@ -30,6 +30,10 @@ function lastByte(field: Field): number {
       return field.offset + field.stride * field.names.length - 1;
     case 'spell_list':
       return field.offset + 180 - 1;
+    case 'text_number':
+    case 'text_enum':
+      // A text record's fields have no bytes to stay inside.
+      return -1;
   }
 }
 
@@ -40,9 +44,9 @@ describe('game schemas', () => {
     expect(pickGameByFileSize(1000)).toBeNull();
   });
 
-  it.each(GAMES)('$displayName keeps every field inside the file', (game) => {
+  it.each(GAMES.filter((game) => game.fileSize !== undefined))('$displayName keeps every field inside the file', (game) => {
     for (const section of game.sections) {
-      for (const field of section.fields) expect(lastByte(field)).toBeLessThan(game.fileSize);
+      for (const field of section.fields) expect(lastByte(field)).toBeLessThan(game.fileSize!);
     }
   });
 
@@ -53,7 +57,7 @@ describe('game schemas', () => {
   });
 
   it('fixes the DotU checksum on save so parseSave accepts the file', () => {
-    const bytes = new Uint8Array(UNFORGIVEN.fileSize);
+    const bytes = new Uint8Array(UNFORGIVEN.fileSize!);
     bytes[0x7ac] = 12;
     expect(parseSave(bytes).checksumOk).toBe(false);
     UNFORGIVEN.onSave!(bytes);
@@ -68,7 +72,7 @@ describe('game schemas', () => {
 
 describe("the Moraff's World roller's own fields", () => {
   const offsets = MORAFFS_WORLD.sections.flatMap((section) =>
-    section.fields.map((field) => ('offset' in field ? field.offset : field.ownedOffset)),
+    section.fields.map((field) => ('offset' in field ? field.offset : 'ownedOffset' in field ? field.ownedOffset : -1)),
   );
 
   it.each([
@@ -103,7 +107,7 @@ describe("the Moraff's World dungeon number", () => {
   // at DS:c8a4 minus the record's own DS:c0f2. The world map (exe 3000:8235) makes the number
   // out of the map square the player goes in from, which can leave it negative.
   it('reads the signed word at 0x07b2', () => {
-    const bytes = new Uint8Array(MORAFFS_WORLD.fileSize);
+    const bytes = new Uint8Array(MORAFFS_WORLD.fileSize!);
     const view = new DataView(bytes.buffer);
     expect(field.kind).toBe('int16');
     expect(field.offset).toBe(0x07b2);
@@ -135,7 +139,7 @@ describe("the Moraff's World preparation-spell fields", () => {
     expect(field.label).toBe(label);
     expect(field.kind).toBe(kind);
 
-    const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize));
+    const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize!));
     writeScalar(view, field, value);
     expect(readScalar(view, field)).toBe(value);
   });
@@ -168,7 +172,7 @@ describe("the Moraff's World battle-spell timers", () => {
     expect(field.label).toBe(label);
     expect(field.kind).toBe(kind);
 
-    const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize));
+    const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize!));
     writeScalar(view, field, value);
     expect(readScalar(view, field)).toBe(value);
   });
@@ -195,7 +199,7 @@ describe("the Moraff's World battle-spell timers", () => {
       0x07e8, 0x07ea, 0x07ec, 0x07ee, 0x07f0, 0x07f2, 0x07f4, 0x07f6,
     ].map((offset, at) => [fieldAt(offset) as ScalarField, at + 1] as const);
 
-    const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize));
+    const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize!));
     for (const [field, value] of written) writeScalar(view, field, value);
     writeNumber(view, 'uint8', 0x07e7, 4);
 

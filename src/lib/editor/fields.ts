@@ -1,4 +1,4 @@
-import type { ScalarField, ScalarKind } from './schema';
+import type { ScalarField, ScalarKind, TextEnumField, TextNumberField, TextRecord } from './schema';
 
 export function readString(view: DataView, offset: number, maxLength: number): string {
   const bytes: number[] = [];
@@ -123,4 +123,26 @@ export function describeFieldType(field: Pick<ScalarField, 'kind' | 'length'>): 
 
 export function hex(offset: number): string {
   return '0x' + offset.toString(16).padStart(4, '0');
+}
+
+/** The number a text field holds, as the game shows it: the shift taken off and the scale undone. */
+export function readTextNumber(record: TextRecord, field: TextNumberField | TextEnumField): number {
+  const stored = record.values[field.value - 1] ?? 0;
+  if (field.kind === 'text_enum') return stored;
+  return (stored - (field.shift ?? 0)) / (field.scale ?? 1);
+}
+
+/** Put a number back the way the file holds it, which is the same arithmetic the other way. */
+export function writeTextNumber(record: TextRecord, field: TextNumberField | TextEnumField, value: number): void {
+  if (field.kind === 'text_enum') record.values[field.value - 1] = value;
+  else record.values[field.value - 1] = value * (field.scale ?? 1) + (field.shift ?? 0);
+}
+
+/** Short caption such as "value 14 · stored with 376 added". */
+export function describeTextField(field: TextNumberField): string {
+  const place = `value ${field.value}`;
+  const scale = field.scale && field.scale !== 1 ? `${field.scale} × the number` : 'the number';
+  if (!field.shift && (!field.scale || field.scale === 1)) return `${place} · stored as it is`;
+  const shift = field.shift ? ` plus ${NUMBER_FORMAT.format(field.shift)}` : '';
+  return `${place} · stored as ${scale}${shift}`;
 }

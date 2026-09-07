@@ -1,5 +1,7 @@
 import type { GameId } from '../app-state.svelte';
 import { fixSaveChecksum, SAVE_SIZE } from '../game/dotu-files.js';
+import { REV_CLASS_NAMES, REV_RACE_NAMES } from '../game/rev-port/character';
+import { formatRevRecord, parseRevRecord } from '../game/rev-port/record';
 import type { GameSchema } from './schema';
 
 const WEAPONS = ['Fists', 'Stick', 'Club', 'Mace', 'Knife', 'Short Sword', 'Long Sword', 'Great Sword'];
@@ -15,6 +17,9 @@ const PERMANENCE = [
 // Race/class lists per the game's own ROLL.TXT. The classes match DotU's, but the races
 // are MW's own. The byte layout is identical to DotU: race @0x28, gender @0x29, class @0x2a,
 // confirmed by diffing real save files.
+/** The six characteristics of Moraff's Revenge, in the order CHCHAR.EXE prints them. */
+const REV_STAT_LABELS = ['Strength', 'Intelligence', 'Wisdom', 'Health', 'Agility', 'Laziness'];
+
 const MORAFFS_WORLD_RACES = ['Human', 'Elf', 'Dwarf', 'Hobbit', 'Gnome', 'Ogre', 'Sprite', 'Imp'];
 const MORAFFS_WORLD_STONES = ['Copper', 'Silver', 'Ivory', 'Gold', 'Platinum', 'Jewel'];
 
@@ -508,14 +513,165 @@ export const UNFORGIVEN: GameSchema = {
   ],
 };
 
-export const GAMES: GameSchema[] = [MORAFFS_WORLD, UNFORGIVEN];
 
-/** The schema of each game that has a save editor. Moraff's Revenge has none yet. */
+/**
+ * Moraff's Revenge keeps a character in a text file, `<n>.EXE`, which BASIC's `WRITE #` wrote:
+ * 311 lines holding 340 numbers, and nine of the fields shifted by a fixed amount so that nothing
+ * a player would want to raise appears in the file as itself. Every offset quoted here is in
+ * DUNSMALL.EXE's code segment, the way `rev-tools/docs/SURVEY.md` quotes them, except CHCHAR's,
+ * which are offsets in CHCHAR.EXE.
+ */
+export const MORAFFS_REVENGE: GameSchema = {
+  id: 'revenge',
+  displayName: "Moraff's Revenge",
+  record: 'text',
+  readRecord: parseRevRecord,
+  writeRecord: formatRevRecord,
+  sections: [
+    {
+      title: 'Identity',
+      note: "The name is not in this file at all. It lives in F5.COM, one quoted name to a line with END on the last, and a character's number is its line.",
+      fields: [
+        {
+          kind: 'text_enum',
+          value: 161,
+          label: 'Race',
+          choices: REV_RACE_NAMES.map((name, index) => ({ value: index + 1, label: name })),
+          hint: 'CHCHAR.EXE writes the race into the last array and nothing reads it back that has been found. All it decides is the six numbers a roll starts from, and every race adds up to the same 24.',
+        },
+        {
+          kind: 'text_enum',
+          value: 10,
+          label: 'Class',
+          choices: REV_CLASS_NAMES.map((name, index) => ({ value: index + 1, label: name })),
+          hint: 'The statistics screen (1000:1A65) prints FIGHTER for 1 and WIZARD for anything else.',
+        },
+      ],
+    },
+    {
+      title: 'Characteristics',
+      note: 'Each one is stored as three times the number plus 237 (1000:B6BF), which is what stops anybody raising a characteristic in a text editor. A roll puts them between 6 and 22, and 22 is the top of the scale CHCHAR.EXE means when it tells the player to hold out for a high strength.',
+      fields: REV_STAT_LABELS.map((label, index) => ({
+        kind: 'text_number' as const,
+        value: index + 1,
+        label,
+        shift: 237,
+        scale: 3,
+      })),
+    },
+    {
+      title: 'Level & Experience',
+      fields: [
+        {
+          kind: 'text_number',
+          value: 13,
+          label: 'Player Level',
+          shift: 476,
+          hint: 'Counted from zero: a new character is level 0 (1000:3E39), the temple adds one for 500,000 jewel pieces (1000:2044), and reincarnation puts it back to 0 (1000:A172).',
+        },
+        { kind: 'text_number', value: 12, label: 'Experience', shift: 12316 },
+      ],
+    },
+    {
+      title: 'Vitals',
+      fields: [
+        { kind: 'text_number', value: 15, label: 'Current Health Points', shift: 176 },
+        { kind: 'text_number', value: 14, label: 'Maximum Health Points', shift: 376 },
+        {
+          kind: 'text_number',
+          value: 22,
+          label: 'Spell Points',
+          hint: 'A new character gets intelligence halved plus two fifths of wisdom, less 10.8 and rounded down, with two more for a wizard and four off for a fighter (CHCHAR 10E2). Fighters rarely have any.',
+        },
+        {
+          kind: 'text_number',
+          value: 17,
+          label: 'Player Weight',
+          shift: 71,
+          hint: 'Everybody starts at 150 pounds (CHCHAR 11CA).',
+        },
+      ],
+    },
+    {
+      title: 'Money',
+      fields: [
+        {
+          kind: 'text_number',
+          value: 19,
+          label: 'Pocket Money',
+          shift: 223,
+          hint: 'A new character is given a roll of 11 to 20 (CHCHAR 0D72).',
+        },
+        { kind: 'text_number', value: 20, label: 'Money in Bank' },
+      ],
+    },
+    {
+      title: 'Worked Out From the Characteristics',
+      note: 'CHCHAR.EXE sets these three from strength, health and agility when it makes the character, and the game rewrites them somewhere during play: the three characters on the shipped disk that have never been played hold exactly what the formulas give them and the two that have do not. What they are for is not settled, but a to-hit or a damage modifier is what would behave this way.',
+      fields: [
+        {
+          kind: 'text_number',
+          value: 7,
+          label: 'From Strength',
+          hint: 'Strength less 11, and half of that truncated when it comes out below one (CHCHAR 0D0F).',
+        },
+        {
+          kind: 'text_number',
+          value: 8,
+          label: 'From Health',
+          hint: 'Three times health less 39, and a third of that when it comes out below one (CHCHAR 0CCE).',
+        },
+        {
+          kind: 'text_number',
+          value: 9,
+          label: 'From Agility',
+          hint: 'Agility less 12, and nothing at all when that is below one (CHCHAR 0D48).',
+        },
+      ],
+    },
+    {
+      title: 'Not Identified',
+      note: 'The rest of the numbers the record has room for, with what a freshly rolled character holds in each. Changing one of these is a good way to find out what it does; back the file up first.',
+      fields: [
+        { kind: 'text_number', value: 11, label: 'Not Identified', hint: 'Zero on the four characters that have never been played and 3 on the one that has.' },
+        { kind: 'text_number', value: 16, label: 'Not Identified', hint: 'Zero on all five characters of the shipped disk.' },
+        { kind: 'text_number', value: 18, label: 'Not Identified', shift: 4434, hint: 'Zero on all five, played or not, so nothing in the game writes it.' },
+        { kind: 'text_number', value: 21, label: 'Not Identified', hint: 'Zero on all five characters of the shipped disk.' },
+        { kind: 'text_number', value: 23, label: 'Not Identified', hint: 'CHCHAR.EXE starts it at 10 (its offset 0363); the character who has played holds 11.' },
+        { kind: 'text_number', value: 24, label: 'Not Identified', hint: 'CHCHAR.EXE starts it at 10 (its offset 036C); the two characters that have been out of the town hold 9 and 3.' },
+        { kind: 'text_number', value: 25, label: 'Not Identified', hint: 'CHCHAR.EXE starts it at zero (its offset 0606) and all five characters still hold zero.' },
+        { kind: 'text_number', value: 26, label: 'Not Identified', hint: 'CHCHAR.EXE sets it to 1 on every roll (its offset 0D8F) and all five characters hold 1.' },
+        { kind: 'text_number', value: 141, label: 'Not Identified', hint: 'Set to 1 just after CHCHAR.EXE prints "Your weapon is a knife." (its offset 0EC4).' },
+        { kind: 'text_number', value: 150, label: 'Not Identified', hint: 'A roll of 2 to 16 a new character is given (CHCHAR 0DBA).' },
+        { kind: 'text_number', value: 151, label: 'Not Identified', hint: 'The second of the pair, rolled the same way (CHCHAR 0DDD).' },
+      ],
+    },
+  ],
+};
+
+export const GAMES: GameSchema[] = [MORAFFS_WORLD, UNFORGIVEN, MORAFFS_REVENGE];
+
+/** The schema of each game that has a save editor. */
 export const GAME_SCHEMAS: Partial<Record<GameId, GameSchema>> = {
   unforgiven: UNFORGIVEN,
   moraffsWorld: MORAFFS_WORLD,
+  revenge: MORAFFS_REVENGE,
 };
 
 export function pickGameByFileSize(size: number): GameSchema | null {
   return GAMES.find((game) => game.fileSize === size) ?? null;
+}
+
+/**
+ * Which game a file that has just been read belongs to, or null when it is none of theirs.
+ *
+ * The two C games write a record of a fixed size, so the size names the game. Moraff's Revenge
+ * writes text whose length depends on the numbers in it, so its own reader is asked instead.
+ */
+export function pickGameForFile(bytes: Uint8Array): GameSchema | null {
+  return (
+    GAMES.find((game) => game.fileSize === bytes.length) ??
+    GAMES.find((game) => game.readRecord?.(bytes) != null) ??
+    null
+  );
 }

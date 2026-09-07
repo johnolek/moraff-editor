@@ -15,7 +15,7 @@ import {
 
 /** A character file with a name and nothing else, which every test then writes its own fields into. */
 function file(game: typeof UNFORGIVEN, name: string): { character: CurrentCharacter; view: DataView } {
-  const bytes = new Uint8Array(game.fileSize);
+  const bytes = new Uint8Array(game.fileSize!);
   for (let i = 0; i < name.length; i++) bytes[i] = name.charCodeAt(i);
   return {
     character: { game: game.id, name, slot: 21, bytes },
@@ -146,7 +146,7 @@ describe('the status block of a Moraff’s World character', () => {
 });
 
 describe('the battle spells in effect', () => {
-  const empty = () => new DataView(new ArrayBuffer(UNFORGIVEN.fileSize));
+  const empty = () => new DataView(new ArrayBuffer(UNFORGIVEN.fileSize!));
 
   it('lists nothing for a character with no spell running', () => {
     expect(battleSpellsInEffect(empty())).toEqual([]);
