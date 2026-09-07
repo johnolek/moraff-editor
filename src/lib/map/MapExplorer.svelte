@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import { app, type GameId } from '../app-state.svelte';
+  import { readStored, writeStored } from '../character/storage';
   import { floorBounds, summarizeMapFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
   import { isAppHistoryState, type AppHistoryState } from '../history';
@@ -9,7 +10,7 @@
   import { describeMonster, describeNote, describeSquare, featureLine } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
-  import { floorsOf, MAP_GAMES, type MapGame } from './game';
+  import { floorsOf, hasDungeon, MAP_GAMES, type MapGame } from './game';
   import { jumpTarget, squareFeature, teleporterTargets, type Destination } from './floor-info';
   import { FLOOR_MAX, FLOOR_MIN, samePlace, type MapPlace } from './history';
   import { keyAction } from './keyboard';
@@ -27,8 +28,12 @@
   import { boundsIncluding, type Point } from './viewport';
   import { nearestOpenSquare, stepFrom } from './you';
 
+  /** Which Moraff's World dungeon the map was last pointed at. Dungeons of the Unforgiven has
+   *  five modules in a picker, so only this game's number is worth remembering. */
+  const MORAFFS_WORLD_DUNGEON_KEY = 'moraff-tools.mw-dungeon';
+
   let game = $state<MapGame>(MAP_GAMES[app.game]);
-  let dungeon = $state(0);
+  let dungeon = $state(rememberedDungeon(MAP_GAMES[app.game]));
   let floor = $state(0);
   /** Lets the map be pointed at floors the dungeon does not have, the way the game's own
    *  16-bit floor variable can be. */
@@ -127,7 +132,14 @@
   function showGame(chosen: GameId) {
     if (chosen === game.id) return;
     left.set(game.id, here(highlight));
-    applyPlace(left.get(chosen) ?? { game: chosen, dungeon: 0, floor: 0, square: null, you: null });
+    const start = { game: chosen, dungeon: rememberedDungeon(MAP_GAMES[chosen]), floor: 0, square: null, you: null };
+    applyPlace(left.get(chosen) ?? start);
+  }
+
+  function rememberedDungeon(forGame: MapGame): number {
+    if (forGame.id !== 'moraffsWorld') return 0;
+    const stored = Number(readStored(MORAFFS_WORLD_DUNGEON_KEY));
+    return hasDungeon(forGame, stored) ? stored : 0;
   }
 
   /** The browser structured-clones what it stores, and Svelte's state proxies cannot be cloned, so
@@ -155,6 +167,7 @@
 
   function applyPlace(place: MapPlace) {
     game = MAP_GAMES[place.game];
+    if (game.id === 'moraffsWorld') writeStored(MORAFFS_WORLD_DUNGEON_KEY, String(place.dungeon));
     // A place can name a floor the dungeon does not have, and only the override shows one.
     if (place.floor < 0 || place.floor > game.bottomFloor(place.dungeon)) anyFloor = true;
     dungeon = place.dungeon;
@@ -174,7 +187,7 @@
     if (!place) return;
     app.requestedPlace = null;
     const wanted = MAP_GAMES[place.game];
-    if (!wanted.hasDungeon(place.dungeon)) return;
+    if (!hasDungeon(wanted, place.dungeon)) return;
     const square = place.x >= 0 && place.y >= 0 && isOnMap(place, wanted.area) ? { x: place.x, y: place.y } : null;
     travel({ game: place.game, dungeon: place.dungeon, floor: place.floor, square, you: square }, cursor);
   });
@@ -190,7 +203,23 @@
   }
 
   function changeDungeon(event: Event) {
-    const chosen = Number((event.currentTarget as HTMLSelectElement).value);
+    showDungeon(Number((event.currentTarget as HTMLSelectElement).value));
+  }
+
+  /** Enter is how a typed dungeon number is expected to be taken; on its own the box waits to
+   *  lose focus. */
+  function takeDungeonOnEnter(event: KeyboardEvent) {
+    if (event.key === 'Enter') typeDungeon(event);
+  }
+
+  function typeDungeon(event: Event) {
+    const typed = Math.trunc(Number((event.currentTarget as HTMLInputElement).value));
+    if (!Number.isFinite(typed)) return;
+    const chosen = Math.max(game.dungeons.lowest, Math.min(game.dungeons.highest, typed));
+    if (chosen !== dungeon) showDungeon(chosen);
+  }
+
+  function showDungeon(chosen: number) {
     const level = anyFloor ? floor : Math.min(floor, game.bottomFloor(chosen));
     travel({ ...here(null), dungeon: chosen, floor: level, you: youOn(chosen, level) }, cursor);
   }
@@ -406,11 +435,23 @@
         <div class="pickers">
           <label>
             <span>{game.dungeonNoun}</span>
-            <select value={dungeon} onchange={changeDungeon}>
-              {#each MODULE_NUMERALS as numeral, index}
-                <option value={index}>{numeral}</option>
-              {/each}
-            </select>
+            {#if game.modules}
+              <select value={dungeon} onchange={changeDungeon}>
+                {#each MODULE_NUMERALS as numeral, index}
+                  <option value={index}>{numeral}</option>
+                {/each}
+              </select>
+            {:else}
+              <input
+                type="number"
+                min={game.dungeons.lowest}
+                max={game.dungeons.highest}
+                step="1"
+                value={dungeon}
+                onchange={typeDungeon}
+                onkeydown={takeDungeonOnEnter}
+              />
+            {/if}
           </label>
           <label>
             <span>Floor</span>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
-import { floorsOf, MAP_GAMES, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP, type MapGame } from './game';
+import { floorsOf, hasDungeon, MAP_GAMES, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP, type MapGame } from './game';
 
 describe('the area a game shows', () => {
   it('is 79 by 104 for Dungeons of the Unforgiven and 79 by 110 for Moraff’s World', () => {
@@ -34,18 +34,18 @@ describe('the floors a dungeon has', () => {
 
 describe('the dungeons a game has', () => {
   it('is the five modules of Dungeons of the Unforgiven', () => {
-    expect(UNFORGIVEN_MAP.hasDungeon(0)).toBe(true);
-    expect(UNFORGIVEN_MAP.hasDungeon(4)).toBe(true);
-    expect(UNFORGIVEN_MAP.hasDungeon(5)).toBe(false);
-    expect(UNFORGIVEN_MAP.hasDungeon(-1)).toBe(false);
+    expect(hasDungeon(UNFORGIVEN_MAP, 0)).toBe(true);
+    expect(hasDungeon(UNFORGIVEN_MAP, 4)).toBe(true);
+    expect(hasDungeon(UNFORGIVEN_MAP, 5)).toBe(false);
+    expect(hasDungeon(UNFORGIVEN_MAP, -1)).toBe(false);
   });
 
   it('is every value the Moraff’s World record can hold, negatives included', () => {
-    expect(MORAFFS_WORLD_MAP.hasDungeon(0)).toBe(true);
-    expect(MORAFFS_WORLD_MAP.hasDungeon(-3204)).toBe(true);
-    expect(MORAFFS_WORLD_MAP.hasDungeon(32767)).toBe(true);
-    expect(MORAFFS_WORLD_MAP.hasDungeon(-32769)).toBe(false);
-    expect(MORAFFS_WORLD_MAP.hasDungeon(1.5)).toBe(false);
+    expect(hasDungeon(MORAFFS_WORLD_MAP, 0)).toBe(true);
+    expect(hasDungeon(MORAFFS_WORLD_MAP, -3204)).toBe(true);
+    expect(hasDungeon(MORAFFS_WORLD_MAP, 32767)).toBe(true);
+    expect(hasDungeon(MORAFFS_WORLD_MAP, -32769)).toBe(false);
+    expect(hasDungeon(MORAFFS_WORLD_MAP, 1.5)).toBe(false);
   });
 });
 

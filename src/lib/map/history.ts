@@ -1,6 +1,6 @@
 import type { GameId } from '../app-state.svelte';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
-import { MAP_GAMES } from './game';
+import { hasDungeon, MAP_GAMES } from './game';
 import type { Point } from './viewport';
 
 /** The game keeps the party's floor in a signed 16-bit variable, and the map's "Any floor"
@@ -41,7 +41,7 @@ export function isMapPlace(value: unknown): value is MapPlace {
   if (typeof value !== 'object' || value === null) return false;
   const { game, dungeon, floor, square, you } = value as Partial<MapPlace>;
   if (typeof game !== 'string' || !(game in MAP_GAMES)) return false;
-  if (!MAP_GAMES[game as GameId].hasDungeon(dungeon!)) return false;
+  if (!hasDungeon(MAP_GAMES[game as GameId], dungeon!)) return false;
   if (!Number.isInteger(floor) || floor! < FLOOR_MIN || floor! > FLOOR_MAX) return false;
   if (you !== undefined && you !== null && !isPoint(you)) return false;
   return square === null || isPoint(square);

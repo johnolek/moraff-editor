@@ -64,8 +64,7 @@ export interface CharacterStatus {
   hard: boolean;
   /** The lines the game's own battle-spell box would print, in the order it prints them. */
   battleSpells: string[];
-  /** Null for a game the map explorer does not have. */
-  place: StatusPlace | null;
+  place: StatusPlace;
 }
 
 /** The labels the status block prints beside the six characteristics. */
@@ -116,7 +115,7 @@ function unforgivenStatus(view: DataView, bytes: Uint8Array): CharacterStatus {
 
 /**
  * The Moraff's World record, whose offsets `MORAFFS_WORLD` in `src/lib/editor/games.ts` has.
- * It has no battle spells, and the map explorer has no Moraff's World floors to stand on.
+ * It has no battle spells.
  */
 function moraffsWorldStatus(view: DataView, bytes: Uint8Array): CharacterStatus {
   return {
@@ -133,7 +132,13 @@ function moraffsWorldStatus(view: DataView, bytes: Uint8Array): CharacterStatus 
     stats: statsAt(view, [0x812, 0x814, 0x816, 0x818, 0x81a, 0x81c]),
     hard: false,
     battleSpells: [],
-    place: null,
+    place: {
+      game: 'moraffsWorld',
+      x: view.getInt16(0x7ac, true),
+      y: view.getInt16(0x7ae, true),
+      floor: view.getInt16(0x7b0, true),
+      dungeon: view.getInt16(0x7b2, true),
+    },
   };
 }
 

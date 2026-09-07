@@ -50,8 +50,8 @@ export interface MapGame {
   dungeonNoun: string;
   /** How that number reads in a heading: "Module I", "Dungeon 0". */
   dungeonName(dungeon: number): string;
-  /** Whether a number names a dungeon the map can be pointed at. */
-  hasDungeon(dungeon: number): boolean;
+  /** The numbers that name a dungeon of this game, inclusive. */
+  dungeons: { lowest: number; highest: number };
   /** The deepest floor one dungeon has. */
   bottomFloor(dungeon: number): number;
   floor(level: number, dungeon: number): MapSquare[][];
@@ -71,6 +71,11 @@ export interface MapGame {
    * Moraff's World numbers its dungeons instead and has none of those.
    */
   modules: boolean;
+}
+
+/** Whether a number names a dungeon the map can be pointed at. */
+export function hasDungeon(game: MapGame, dungeon: number): boolean {
+  return Number.isInteger(dungeon) && dungeon >= game.dungeons.lowest && dungeon <= game.dungeons.highest;
 }
 
 /** The floors of one dungeon, in the order the picker lists them. */
@@ -99,7 +104,7 @@ export const UNFORGIVEN_MAP: MapGame = {
   area: UNFORGIVEN_AREA,
   dungeonNoun: 'Module',
   dungeonName: (dungeon) => `Module ${MODULE_NUMERALS[dungeon]}`,
-  hasDungeon: (dungeon) => Number.isInteger(dungeon) && dungeon >= 0 && dungeon < BOTTOM_LEVEL.length,
+  dungeons: { lowest: 0, highest: BOTTOM_LEVEL.length - 1 },
   bottomFloor: (dungeon) => BOTTOM_LEVEL[dungeon],
   floor: (level, dungeon) => bundledDungeon.floor(level, dungeon),
   squareOn(x, y, level, dungeon) {
@@ -149,7 +154,11 @@ const MORAFFS_WORLD_BUILDINGS: Building[] = [
  */
 const MORAFFS_WORLD_BOTTOM_FLOOR = 202;
 
-/** The dungeon number is a signed 16-bit word in the character record, so the map takes any of them. */
+/**
+ * The dungeon number is a signed 16-bit word in the character record, so the map takes any value
+ * one can hold. Only about -3,204 to 3,528 are reachable by walking off the world map, but the
+ * generator answers for every one of them.
+ */
 const DUNGEON_MIN = -32768;
 const DUNGEON_MAX = 32767;
 
@@ -163,7 +172,7 @@ export const MORAFFS_WORLD_MAP: MapGame = {
   area: MORAFFS_WORLD_AREA,
   dungeonNoun: 'Dungeon',
   dungeonName: (dungeon) => `Dungeon ${dungeon}`,
-  hasDungeon: (dungeon) => Number.isInteger(dungeon) && dungeon >= DUNGEON_MIN && dungeon <= DUNGEON_MAX,
+  dungeons: { lowest: DUNGEON_MIN, highest: DUNGEON_MAX },
   bottomFloor: () => MORAFFS_WORLD_BOTTOM_FLOOR,
   floor: (level, dungeon) => bundledMwDungeon.floor(level, dungeon),
   squareOn(x, y, level, dungeon) {

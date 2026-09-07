@@ -131,9 +131,17 @@ describe('the status block of a Moraff’s World character', () => {
     expect(status.stats[5]).toEqual({ label: 'LUCK', value: 44 });
   });
 
-  it('has no battle spells and nowhere on the map to stand', () => {
+  it('has no battle spells', () => {
     expect(status.battleSpells).toEqual([]);
-    expect(status.place).toBeNull();
+  });
+
+  it('reads the square, floor and dungeon it stands in', () => {
+    const { character, view } = file(MORAFFS_WORLD, 'WANDERER');
+    view.setInt16(0x7ac, 41, true);
+    view.setInt16(0x7ae, 62, true);
+    view.setInt16(0x7b0, 17, true);
+    view.setInt16(0x7b2, -1500, true);
+    expect(characterStatus(character)!.place).toEqual({ game: 'moraffsWorld', x: 41, y: 62, floor: 17, dungeon: -1500 });
   });
 });
 

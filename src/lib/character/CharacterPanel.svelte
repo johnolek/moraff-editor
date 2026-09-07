@@ -43,7 +43,7 @@
   }
 
   function showOnMap() {
-    if (!status?.place) return;
+    if (!status) return;
     app.requestedPlace = { ...status.place };
     app.tab = 'map';
   }
@@ -160,7 +160,7 @@
       {#if character.slot !== null}<span>Character {character.slot}</span>{/if}
       <button type="button" class="link" onclick={() => show('editor')}>Edit in Save Editor</button>
       <button type="button" class="link" onclick={() => show('roller')}>Roll another</button>
-      {#if status.place}<button type="button" class="link" onclick={showOnMap}>Show on map</button>{/if}
+      <button type="button" class="link" onclick={showOnMap}>Show on map</button>
       {#if character.game === UNFORGIVEN.id}
         <button type="button" class="link" onclick={() => (showingExpNeeded = !showingExpNeeded)}>Exp needed</button>
       {/if}
