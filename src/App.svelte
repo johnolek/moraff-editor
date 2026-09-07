@@ -3,6 +3,7 @@
   import { app, restoreCharacter, type Tab } from './lib/app-state.svelte';
   import { isAppHistoryState, tabState, type AppHistoryState } from './lib/history';
   import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
+  import CharacterPanel from './lib/character/CharacterPanel.svelte';
   import Calculators from './lib/calculators/Calculators.svelte';
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import Formulas from './lib/formulas/Formulas.svelte';
@@ -66,6 +67,7 @@
       {/each}
     </nav>
   </header>
+  <CharacterPanel />
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
   <main class:hidden={app.tab !== 'map'}>
     <MapExplorer />
