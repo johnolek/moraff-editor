@@ -12,6 +12,7 @@ import {
   MW_MONSTER_VIEW_CORNERS,
   MW_NORTH_VIEW,
   MW_SPELL_CATEGORY_MENU,
+  MW_STATUS_BLOCK,
   applySpellCategory,
   drawHelpMenu,
   drawMonsterInfo,
@@ -22,11 +23,13 @@ import {
   drawWriteSpellLevelMenu,
   drawWriteSpellSlotMenu,
   helpMenuFile,
+  mwCharacteristicLines,
   mwHelpPages,
   mwLineMenuKey,
   mwMenuKey,
   mwMonsterViewLines,
   mwSpellTimers,
+  mwStatusLines,
   showHelp,
   showSpellDescription,
   spellGridKey,
@@ -260,6 +263,52 @@ describe('mwMonsterViewLines', () => {
   it('leaves the experience above the bottom of the view ahead', () => {
     const lines = mwMonsterViewLines(facing(), 0, MW_MONSTER_VIEW_CORNERS.north);
     expect(lines[2].y).toBeLessThan(MW_NORTH_VIEW.bottom);
+  });
+});
+
+describe('mwStatusLines', () => {
+  const flat = (lines: ReturnType<typeof mwStatusLines>) =>
+    lines.map((line) => (line.value === undefined ? line.text : line.text + line.value));
+
+  it('spells the labels out under level 41', () => {
+    const game = newMwGame({ pc: { lev: 12, exp: 4500, sp: 30.9, maxSp: 44.2, hp: 61, maxHp: 80 } });
+    expect(flat(mwStatusLines(game))).toEqual([
+      'LEVEL: 12',
+      `EXP:${'4500'.padEnd(20)}`,
+      'SPELL POINTS: 30 OF 44',
+      'HEALTH POINTS: 61 OF 80',
+    ]);
+  });
+
+  it('cuts them to a letter each from level 41, and slides the experience left', () => {
+    const game = newMwGame({ pc: { lev: 98, exp: 1704491842459932 } });
+    const lines = mwStatusLines(game);
+    expect(lines[0]).toMatchObject({ text: 'L:98', x: 0, y: 0x41a });
+    expect(lines[1]).toMatchObject({ text: 'X:', x: 0x96, value: '1704491842459932    ', valueX: 0xc8 });
+  });
+
+  it('draws the three lines 0x32 apart in colour 6', () => {
+    const lines = mwStatusLines(newMwGame());
+    expect(lines.map((line) => line.y)).toEqual([0x41a, 0x41a, 0x44c, 0x47e]);
+    expect(lines.every((line) => line.colour === 6)).toBe(true);
+  });
+});
+
+describe('mwCharacteristicLines', () => {
+  it('prints the six in two columns of three, in colour 3', () => {
+    const game = newMwGame({ pc: { str: 15, iq: 8, wis: 14, con: 16, dex: 11, luck: 9 } });
+    expect(mwCharacteristicLines(game)).toEqual([
+      { text: 'STR: 15', x: 0x49c, y: 0x41a, font: 0, colour: 3 },
+      { text: 'INT: 8', x: 0x49c, y: 0x44c, font: 0, colour: 3 },
+      { text: 'WIZ: 14', x: 0x49c, y: 0x47e, font: 0, colour: 3 },
+      { text: 'CON: 16', x: 0x578, y: 0x41a, font: 0, colour: 3 },
+      { text: 'DEX: 11', x: 0x578, y: 0x44c, font: 0, colour: 3 },
+      { text: 'LUCK:9', x: 0x578, y: 0x47e, font: 0, colour: 3 },
+    ]);
+  });
+
+  it('starts where the block of the character\'s own numbers leaves off', () => {
+    expect(mwCharacteristicLines(newMwGame())[0].x).toBe(MW_STATUS_BLOCK.right);
   });
 });
 

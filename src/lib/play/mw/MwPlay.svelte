@@ -15,7 +15,15 @@
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import { mwOnMessageLine } from '../../game/mw-port/state';
-  import { mwMonsterViewLines, MW_MONSTER_VIEW_CORNERS, MW_NORTH_VIEW } from '../../game/mw-port/screens';
+  import {
+    mwCharacteristicLines,
+    mwMonsterViewLines,
+    mwStatusLines,
+    MW_MONSTER_VIEW_CORNERS,
+    MW_NORTH_VIEW,
+    MW_SCREEN,
+    MW_STATUS_BLOCK,
+  } from '../../game/mw-port/screens';
   import { mwCorner, MW_CORNER_WIDTH, MW_MESSAGE_BOX } from './screens';
 
   /** How many pixels a square is drawn at when the map is centred on the character. */
@@ -56,6 +64,13 @@
       : mwMonsterViewLines(session.game, view.engaged.slot, MW_MONSTER_VIEW_CORNERS.north),
   );
 
+  /** The numbers along the bottom of the screen, which the game redraws after every action. The
+   *  record they are read out of changes under the session, so the view is what says when. */
+  const statusLines = $derived(view === null || session === null ? [] : mwStatusLines(session.game));
+  const characteristicLines = $derived(
+    view === null || session === null ? [] : mwCharacteristicLines(session.game),
+  );
+
   /** How tall a line of the body font is: the message box steps this far between its own. */
   const LINE_HEIGHT = MW_MESSAGE_BOX.step;
 
@@ -67,6 +82,22 @@
     height: LINE_HEIGHT,
   };
   const MONSTER_BOTTOM = { ...MONSTER_TOP, y: MW_NORTH_VIEW.bottom - LINE_HEIGHT };
+
+  /** The character's own numbers and the six characteristics, side by side along the bottom. */
+  const STATUS_HEIGHT = MW_STATUS_BLOCK.bottom - MW_STATUS_BLOCK.y;
+  const CHARACTERISTICS_WIDTH = MW_SCREEN.width - MW_STATUS_BLOCK.right;
+  const STATUS_WINDOW = {
+    x: MW_STATUS_BLOCK.x,
+    y: MW_STATUS_BLOCK.y,
+    width: MW_STATUS_BLOCK.right,
+    height: STATUS_HEIGHT,
+  };
+  const CHARACTERISTICS_WINDOW = {
+    x: MW_STATUS_BLOCK.right,
+    y: MW_STATUS_BLOCK.y,
+    width: CHARACTERISTICS_WIDTH,
+    height: STATUS_HEIGHT,
+  };
 
   function start() {
     const entry = currentEntry();
@@ -223,6 +254,14 @@
             <div class="status">{view.prompt}</div>
           {/if}
         </div>
+        <div class="bottom-blocks">
+          <div class="block" style:flex={MW_STATUS_BLOCK.right}>
+            <GameScreen lines={statusLines} window={STATUS_WINDOW} />
+          </div>
+          <div class="block" style:flex={CHARACTERISTICS_WIDTH}>
+            <GameScreen lines={characteristicLines} window={CHARACTERISTICS_WINDOW} />
+          </div>
+        </div>
         {#if screenTakesOver}
           <div class="overlay"><GameScreen lines={view.screen} /></div>
         {/if}
@@ -346,6 +385,20 @@
     left: 10px;
     top: 10px;
     width: clamp(240px, 34%, 460px);
+  }
+  /* The game keeps both blocks on one screen, so they are given the share of the map's width
+     they have of its 1600 and come out at the same size. */
+  .bottom-blocks {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .block {
+    min-width: 0;
   }
   .top-right {
     right: 10px;

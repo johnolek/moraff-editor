@@ -13,7 +13,7 @@ import {
   mwSpellHelp,
   mwSpellRecord,
 } from './spells';
-import type { MwGame } from './state';
+import type { MwCharacter, MwGame } from './state';
 import { mwOccupantAt } from './state';
 
 /**
@@ -476,6 +476,88 @@ export function drawMonsterInfo(game: MwGame, monsterX: number, monsterY: number
   if (slot === -1) return;
   const corner = mwMonsterViewCorner(game, monsterX, monsterY);
   for (const line of mwMonsterViewLines(game, slot, corner)) game.draw(line);
+}
+
+/**
+ * FUN_2000_f853 (WORLD.EXE 2000:f853): the numbers along the bottom of the play screen, which the
+ * loop redraws after every action and only where they have changed.
+ *
+ * The character's own three lines are in colour 6 (DS:142b) at the left, the six characteristics
+ * in colour 3 (DS:142d) at the right, and the three rows are 0x32 apart from y 0x41a. Every
+ * number is printed with ltoa, so a spell point count the record keeps as a float is truncated.
+ */
+const MW_STATUS_ROWS = [0x41a, 0x44c, 0x47e];
+const MW_STATUS_COLOUR = 6;
+const MW_CHARACTERISTIC_COLOUR = 3;
+
+/**
+ * The block along the bottom of the screen those numbers fill: the character's own from x 0 to
+ * 0x49c, where the characteristics start, and the characteristics on to the right-hand edge. The
+ * game divides x by 0x63f and y by 0x4af everywhere, so the screen is 0x640 by 0x4b0.
+ */
+export const MW_STATUS_BLOCK = { x: 0, y: 0x41a, right: 0x49c, bottom: 0x4b0 } as const;
+
+/** The whole screen, which those numbers are placed on. */
+export const MW_SCREEN = { width: 0x640, height: 0x4b0 } as const;
+
+/**
+ * The character's own three lines: the level and the experience, the spell points and the health
+ * points.
+ *
+ * At level 41 the labels give up their words — "L:" and "X:" for "LEVEL: " and "EXP:" — and the
+ * experience slides left with them, which is how a number that has run to sixteen digits still
+ * fits on the line. The pass that rubs the old experience label out names DS:2bd6, "EXP: ", and
+ * the pass that draws the new one DS:4340, "EXP:"; the second is what stands on the screen.
+ *
+ * The experience itself is printed with "%-20.0f", padded out to twenty characters with the
+ * spaces that rub out a longer number underneath it.
+ */
+export function mwStatusLines(game: MwGame): ScreenLine[] {
+  const pc = game.pc;
+  const short = pc.lev >= 0x29;
+  const line = (text: string, row: number): ScreenLine => ({
+    text,
+    x: 0,
+    y: MW_STATUS_ROWS[row],
+    font: 0,
+    colour: MW_STATUS_COLOUR,
+  });
+  return [
+    // DS:3685 / DS:26c7 with the level on the end
+    line(`${short ? 'L:' : 'LEVEL: '}${pc.lev}`, 0),
+    {
+      // DS:4340 / DS:2bd3
+      ...line(short ? 'X:' : 'EXP:', 0),
+      x: short ? 0x96 : 0x118,
+      value: pc.exp.toFixed(0).padEnd(20),
+      valueX: short ? 0xc8 : 0x186,
+    },
+    // DS:4345 and DS:4354
+    line(`SPELL POINTS: ${Math.trunc(pc.sp)} OF ${Math.trunc(pc.maxSp)}`, 1),
+    // DS:4359
+    line(`HEALTH POINTS: ${pc.hp} OF ${pc.maxHp}`, 2),
+  ];
+}
+
+/** The six characteristics, in the two columns of three FUN_2000_f853 prints them in. */
+const MW_CHARACTERISTICS = [
+  { label: 'STR: ', x: 0x49c, row: 0, of: (pc: MwCharacter) => pc.str }, // DS:4369
+  { label: 'INT: ', x: 0x49c, row: 1, of: (pc: MwCharacter) => pc.iq }, // DS:436f
+  { label: 'WIZ: ', x: 0x49c, row: 2, of: (pc: MwCharacter) => pc.wis }, // DS:4375
+  { label: 'CON: ', x: 0x578, row: 0, of: (pc: MwCharacter) => pc.con }, // DS:437b
+  { label: 'DEX: ', x: 0x578, row: 1, of: (pc: MwCharacter) => pc.dex }, // DS:4381
+  { label: 'LUCK:', x: 0x578, row: 2, of: (pc: MwCharacter) => pc.luck }, // DS:4387
+];
+
+/** The six characteristics, along the bottom right of the play screen. */
+export function mwCharacteristicLines(game: MwGame): ScreenLine[] {
+  return MW_CHARACTERISTICS.map((stat) => ({
+    text: stat.label + stat.of(game.pc),
+    x: stat.x,
+    y: MW_STATUS_ROWS[stat.row],
+    font: 0,
+    colour: MW_CHARACTERISTIC_COLOUR,
+  }));
 }
 
 /**
