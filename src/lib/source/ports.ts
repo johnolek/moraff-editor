@@ -67,7 +67,8 @@ export interface PortFunction {
 
 const CITATION = /\(exe ([0-9a-f]{4}:[0-9a-f]+), unf\.c "([^"]+)"\)/;
 const EXPORTED_FUNCTION = /^export (?:async )?function (\w+)\s*\(/;
-const EXPORTED_VALUE = /^export const (\w+)\s*=/;
+/** An exported value, with or without a type written on it: `export const TWINS: Twin[] = [`. */
+const EXPORTED_VALUE = /^export const (\w+)\s*(?::[^=\n]+)?=/;
 const CLASS_START = /^(?:export )?class \w/;
 /** A method of a class: two spaces of indentation, an argument list, and an opening brace. */
 const METHOD = /^ {2}(\w+)\s*\([^;]*\)\s*(?::[^{]+)?\{\s*$/;

@@ -139,7 +139,8 @@ export function snippet(source: string, name: string): string {
   const fn = matchInCode(source, mask, new RegExp(`^[ \\t]*(?:export\\s+)?function\\s+${name}\\s*\\(`, 'gm'));
   if (fn) return cut(source, fn.index, bodyEnd(source, mask, fn.index + fn[0].length));
 
-  const value = matchInCode(source, mask, new RegExp(`^[ \\t]*(?:export\\s+)?const\\s+${name}\\s*=`, 'gm'));
+  // A const may carry a type before its `=`, as in `export const TWINS: Twin[][] = [`.
+  const value = matchInCode(source, mask, new RegExp(`^[ \\t]*(?:export\\s+)?const\\s+${name}\\s*(?::[^=\\n]+)?=`, 'gm'));
   if (value) return cut(source, value.index, valueEnd(source, mask, value.index + value[0].length));
 
   const method = matchInCode(source, mask, new RegExp(`^[ \\t]*${name}\\s*\\(`, 'gm'));

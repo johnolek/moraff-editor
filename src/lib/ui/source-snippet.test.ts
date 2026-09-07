@@ -54,6 +54,11 @@ describe('snippet', () => {
     );
   });
 
+  it('takes a const that carries a type', () => {
+    const typed = ['/** Pairs. */', 'export const PAIRS: number[][] = [', '  [1, 2],', '];', 'const after = 1;'].join('\n');
+    expect(snippet(typed, 'PAIRS')).toBe(['/** Pairs. */', 'export const PAIRS: number[][] = [', '  [1, 2],', '];'].join('\n'));
+  });
+
   it('is not confused by a brace inside a template literal', () => {
     expect(snippet(SOURCE, 'greeting')).toBe('const greeting = (name) => `hello ${name}, welcome {`;');
   });

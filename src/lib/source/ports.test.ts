@@ -9,6 +9,8 @@ const FRAGMENT = [
   '',
   'export const LIMIT = 3;',
   '',
+  'export const PAIRS: number[][] = [[1, 2]];',
+  '',
   '/** sleep_monster (exe 3000:d904, unf.c "sleep_monster"): put the monster to sleep. */',
   'export function sleepMonster(game) {',
   '  if (game) {',
@@ -36,12 +38,12 @@ describe('declarations', () => {
   const found = declarations(FILE, FRAGMENT);
 
   it('finds the exported values, the exported functions and the methods of a class', () => {
-    expect(found.map((fn) => fn.name)).toEqual(['LIMIT', 'sleepMonster', 'solid']);
+    expect(found.map((fn) => fn.name)).toEqual(['LIMIT', 'PAIRS', 'sleepMonster', 'solid']);
   });
 
   it('reads the citation out of the comment above a declaration', () => {
-    expect(found[1].c).toEqual({ name: 'sleep_monster', address: '3000:d904' });
-    expect(found[2].c).toEqual({ name: 'solidcheck', address: '3000:86b5' });
+    expect(found[2].c).toEqual({ name: 'sleep_monster', address: '3000:d904' });
+    expect(found[3].c).toEqual({ name: 'solidcheck', address: '3000:86b5' });
   });
 
   it('does not hand a file-level comment to whatever is declared after it', () => {
