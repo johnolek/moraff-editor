@@ -437,6 +437,11 @@ that routine beside the map drawing and `H3.OVL`:
   that writes those three, and it is the end of the chute at `1000:3428`. So the
   "False floor." at `1000:567C` is a chute continuing: land at the bottom of one
   and the square you land on lets you go down again.
+* **A chute drops exactly one level, onto the same square.** Ghidra ends the
+  enclosing function at `340C`, so `dunsmall.c` has nothing for it; the listing
+  does: `1000:3428` prints "YOU FELL DOWN A CHUTE!", `1000:3491` adds 1 to the
+  level at `B48C` and leaves the column and row alone, and `1000:356F` remembers
+  the square. The site's map draws the false floor as that landing square.
 
 ## 9. What is not settled
 
