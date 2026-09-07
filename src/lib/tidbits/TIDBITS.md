@@ -288,14 +288,17 @@ up is not wasted.
 In the code: [resistPoison](source:ts/magic.ts/resistPoison),
 [resistDrain](source:ts/magic.ts/resistDrain) and [defend](source:ts/combat.ts/defend).
 
-### Pass Wall can find nowhere and charge you anyway
+### Pass Wall can find nowhere, and that one is free
 
 Pass Wall looks 2 to 19 squares along the direction you chose and takes the first square that is
 on the map, is not rock and has no monster standing on it. If there is no such square it does
-nothing whatsoever, and the spell points are gone. Pointing it at the edge of the map is the
-usual way to waste it.
+nothing, and it costs you nothing either. Spell points, and scroll, wand and paper charges, are
+taken only after the effect reports that it worked, so Pass Wall pointed at the edge of the map,
+or cancelled at the direction menu, is free. The spells that do charge you for failing are the
+ones that acted and then lost a roll, like Autokill.
 
-In the code: [passWall](source:ts/magic.ts/passWall) and [pass_wall](source:c/pass_wall).
+In the code: [passWall](source:ts/magic.ts/passWall), [pass_wall](source:c/pass_wall) and
+[cast_a_spell](source:c/cast_a_spell).
 
 ## Monsters
 
@@ -306,17 +309,36 @@ distance rather than a straight line, and even then only four times in five. Tha
 on floor 1 and twenty on floor 100. Anything further away stands exactly where it was placed,
 for as long as the floor stays in memory.
 
-When it does move it takes one step, along the x-axis first, with no path-finding at all, so a
-monster can pin itself against a wall and never reach you.
+When it does move it takes one step toward you, trying the x-axis first, left or right depending
+on which side of it you are on, and only if that step is blocked does it try the step up or down.
+It never steps away and never goes around anything, so it closes the horizontal gap first and the
+vertical one afterwards. Doors and secret doors do not stop it; only solid rock does. A monster
+already level with you whose sideways step is walled off has nothing left to try, and stands
+there forever.
 
-### A puffball that touches you turns into 18 experience
+In the code: [pass_moment](source:c/pass_moment).
 
-A puffball does not hit. It changes one of your statistics, up or down, and then becomes a
-level-0 Giant Garbage Can standing where it was. Killing that can pays 18 experience, every
-time, on every floor of the game.
+### Every monster you kill becomes the same garbage can
 
-In the code: [puffball in defend](source:c/defend) and
-[what a kill is worth](formula:exp-value).
+A dead monster is not removed. Its slot is rewritten in place as a Giant Garbage Can, type 0,
+level 0, no hit points at all, and moved to x 100, y 100, off the side of an 80-wide floor. The
+square it died on is cleared.
+
+But the occupancy grid is 80 by 110 kept as one run of bytes, indexed `y * 80 + x` with no range
+check, and two routines rebuild the whole grid from the monster list: resuming a saved game, and
+stepping back onto the floor you just left. A dead monster lands at byte 8100, which reads back as
+the square x 20, y 101. Every corpse on the floor piles onto that one square.
+
+The game kills whatever you are facing the moment its hit points drop below one, so a can with
+none dies before you swing. It pays 18 experience every time, on every floor, and still rolls the
+weapon, armour, money and "you find" drops, which scale with the floor rather than with the
+monster.
+
+A puffball is the same thing without the fight: it does not hit, it moves one of your statistics
+up or down, and then it runs exactly this code on itself.
+
+In the code: [kill_monster](source:c/kill_monster), [puffball in defend](source:c/defend),
+[the grid](source:c/set_monster_map) and [what a kill is worth](formula:exp-value).
 
 ### The monsters are laid out in diagonal stripes
 
@@ -873,7 +895,7 @@ it is a caster.
 In the code: [rollCharacteristics](source:ts/character.ts/rollCharacteristics) and
 [rollChar](source:ts/character.ts/rollChar).
 
-### The contest you cannot enter
+### The contest the menu will not let you enter
 
 `UROLL.TXT` describes three difficulties. The third is a contest: play Module I from beginning to
 end without ever saving, defeat the Shadow Demon Queen, and the first person in the world to ring
@@ -886,6 +908,11 @@ contest answer, and then rejects it for being out of range. Everything behind th
 finished: there is a contest flag, the routine that writes a character to disk returns without
 doing anything at all while it is set, so the no-saving rule is enforced rather than trusted, and
 the character sheet has a line calling you a contestant where an ordinary character is told they
-are still alive.
+are still alive. And the play loop has a hidden key that sets the flag anyway, right beside one
+that hands out ten hit points: byte 251, which is most likely Alt and 251 on the number pad.
 
-In the code: [rollChar](source:ts/character.ts/rollChar) and [roll_char](source:c/roll_char).
+The flag lives past the end of the character record, so it is never saved and is clear again on
+every launch.
+
+In the code: [rollChar](source:ts/character.ts/rollChar), [roll_char](source:c/roll_char) and
+[movecontrol](source:c/movecontrol).

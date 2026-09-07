@@ -57,16 +57,20 @@ teleporter rule — are in the FAQ and the RE notes; this list is the rest.
 
 * **Monsters outside a bubble are frozen.**  Each moment, a monster only moves if its
   Manhattan distance to you is under `floor/10 + 10` squares (10 on floor 1, 20 on floor
-  100), and then only with an 80% chance, one step, x-axis first, no pathfinding
+  100), and then only with an 80% chance: one step toward you, x-axis first, the y-axis
+  only when that step is blocked, no pathfinding, and doors and secret doors do not stop it
   (2000:a53c).  Everything farther away stands still forever.
 * **Fast Move and Invisibility are the same trick.**  Each gives the monsters a 1-in-4
   chance of losing the whole moment (`random(4) == 1` -> return before anyone moves).
 * **The monster cache is keyed by floor number only.**  `load_level_map` keeps three
   floors' monster arrays in memory keyed by floor number, not module, so walking floor 5
   of Module I and then floor 5 of Module II in one session can hand you the stale array.
-* **A puffball that touches you is worth 18 XP.**  When a puffball "hits" it changes a stat
-  and turns into a level-0 Giant Garbage Can, which you then kill for
-  `(2+1) * (0 + 1 + 5 * 1.23^0) = 18` experience.
+* **Every dead monster is the same garbage can.**  `kill_monster` (3000:b12d) and the
+  puffball branch of `defend` rewrite the slot as type 0 / level 0 / 0 HP at (100, 100);
+  the 80x110 occupancy grid is one unchecked byte run, so when `load_monster_map` or
+  `stock_level`'s come-back branch rebuilds it, byte 8100 aliases to square (20, 101),
+  and every corpse on the floor sits there.  Facing it kills it at once (HP < 1) for
+  `(2+1) * (0 + 1 + 5 * 1.23^0) = 18` experience plus floor-rate drops.
 * **Poison and disease are stat drains on a 450-move timer**: poison takes 1 STR and disease
   1 CON every 450 moments (each floored at 1), and Resist Poison / Resist Disease pause the
   counter rather than cure it (2000:a53c).
