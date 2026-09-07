@@ -7,7 +7,8 @@ import { KEY } from './keys';
 
 /**
  * movecontrol (exe 2000:c308, unf.c "movecontrol"), the keys that are one branch each: M, the
- * financial statement, and O and G, the two settings menus.
+ * financial statement; O and G, the two settings menus; and X and Z, which change how much of
+ * the dungeon is on the screen.
  *
  * The menus themselves are UH.BIN's own messages. Every setting behind them but one is the DOS
  * game's screen, its mouse or its 3-D views, none of which this port has, so the box says so
@@ -97,4 +98,38 @@ export async function openGraphics(turn: Turn): Promise<void> {
   if (chosen === KEY.escape) return;
   game.say(...NO_THREE_D_VIEWS);
   game.pressAnyKey();
+}
+
+/** The port's answer for the X key. */
+const MAP_ALREADY_DRAWN = [
+  'THE GAME WOULD FILL THE SCREEN',
+  'WITH THE FLOOR, A THIRD OF IT',
+  'AT A TIME. THE WHOLE FLOOR IS',
+  'ALREADY DRAWN HERE.',
+];
+
+/**
+ * movecontrol's 0x78 branch (exe 2000:d2fe): the X key, which draws the floor over the whole
+ * screen in three pieces and waits for a key on each of them.
+ */
+export function expandTheMap(turn: Turn): void {
+  turn.game.say(...MAP_ALREADY_DRAWN);
+  turn.game.pressAnyKey();
+}
+
+/** The port's answer for the Z key. */
+const NO_FORWARD_VIEW = [
+  'THE GAME WOULD SWAP THE MAP',
+  'FOR THE VIEW AHEAD. THIS PORT',
+  'IS PLAYED ON THE MAP AND HAS',
+  'NO OTHER VIEW TO SWAP TO.',
+];
+
+/**
+ * movecontrol's 0x7a branch (exe 2000:d69c): the Z key, which flips DS:c307 between the map and
+ * the 3-D view of what is in front of the character.
+ */
+export function zoomTheView(turn: Turn): void {
+  turn.game.say(...NO_FORWARD_VIEW);
+  turn.game.pressAnyKey();
 }

@@ -72,3 +72,15 @@ describe('the G key', () => {
     expect(session.box).toContain('THE GRAPHICS MENU SETS UP THE');
   });
 });
+
+describe('the X and Z keys', () => {
+  it('say what the game would do with a screen this port draws the map on', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.expandMap);
+    expect(session.box).toContain('THE GAME WOULD FILL THE SCREEN');
+    // The box waits for a key of its own, the way every print_menu_only does.
+    await press(session, KEY.escape);
+    await press(session, KEY.zoomView);
+    expect(session.box).toContain('THE GAME WOULD SWAP THE MAP');
+  });
+});

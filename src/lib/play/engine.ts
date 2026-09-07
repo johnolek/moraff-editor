@@ -20,7 +20,7 @@ import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { changeArmor, changeWeapon } from './gear';
 import { readTheMonsterManual } from './manual';
-import { countTheMoney, openGraphics, openOptions } from './misc';
+import { countTheMoney, expandTheMap, openGraphics, openOptions, zoomTheView } from './misc';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
 import { showHelp } from './help';
 import { dropSomething } from './items';
@@ -30,7 +30,7 @@ import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
-import { MESSAGE_BOX_LINES, messageBoxLines, notBuiltYet } from './screens';
+import { MESSAGE_BOX_LINES, messageBoxLines } from './screens';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
@@ -370,8 +370,8 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.monsterManual]: { c: 'monster_manual', run: readTheMonsterManual },
   [KEY.options]: { c: 'movecontrol, the 0x6f branch', run: openOptions },
   [KEY.graphics]: { c: 'movecontrol, the 0x67 branch', run: openGraphics },
-  [KEY.expandMap]: { c: 'movecontrol, the 0x78 branch', run: (turn) => notBuiltYet(turn.game, 'SHOW THE MAP A THIRD AT A TIME') },
-  [KEY.zoomView]: { c: 'movecontrol, the 0x7a branch', run: (turn) => notBuiltYet(turn.game, 'SWAP THE MAP FOR THE FORWARD VIEW') },
+  [KEY.expandMap]: { c: 'movecontrol, the 0x78 branch', run: expandTheMap },
+  [KEY.zoomView]: { c: 'movecontrol, the 0x7a branch', run: zoomTheView },
 };
 
 /**
