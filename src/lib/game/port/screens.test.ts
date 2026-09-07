@@ -7,13 +7,17 @@ import {
   drawHitAnyKey,
   drawMenu,
   getChoice,
+  drawHelpMenu,
   expNeededScreen,
   gmenuChoice,
+  HELP_GREETING,
+  helpMenuChoice,
   menuLine,
   viewBattleSpells,
   viewPrepSpells,
   viewStats,
 } from './screens';
+import { HELP_FILES, HELP_TOPICS } from './hints';
 import { newGame } from './state';
 
 describe('the menu lines', () => {
@@ -265,5 +269,61 @@ describe('the experience needed screen', () => {
     expNeededScreen(game);
     expect(game.messages[1]).toBe(`2) ${'170'.padEnd(20)}`);
     expect(game.messages[2]).toBe(`3) ${'270'.padEnd(20)}`);
+  });
+});
+
+describe('the F1 help menu', () => {
+  it('says the greeting into the log and paints it off the screen', () => {
+    const game = newGame();
+    drawHelpMenu(game);
+    expect(game.messages.slice(0, 4)).toEqual(HELP_GREETING);
+    expect(game.screen.map((line) => line.text)).not.toContain(HELP_GREETING[0]);
+  });
+
+  it('lays the 28 topics out in two columns of fourteen, each padded to 31 columns', () => {
+    const game = newGame();
+    drawHelpMenu(game);
+    const first = game.screen[0];
+    const lastLeft = game.screen[13];
+    const firstRight = game.screen[14];
+    expect(first).toEqual({
+      text: 'A-CHANGE (A)RMOR               ',
+      x: 0x6e,
+      y: 0x73,
+      spreadTo: 0x2b2,
+      font: 0,
+      colour: 6,
+    });
+    expect(lastLeft.text).toBe('U-CLIMB (U)P LADDER            ');
+    expect(lastLeft.y).toBe(13 * 0x4e + 0x73);
+    expect(firstRight.text).toBe('V-VIEW YOUR (V)ITAL STATS      ');
+    expect(firstRight.x).toBe(0x38e);
+    expect(firstRight.y).toBe(0x73);
+    expect(game.screen.every((line) => line.text.length === 31 || line.font === 1)).toBe(true);
+  });
+
+  it('ends with the line about getting out', () => {
+    const game = newGame();
+    drawHelpMenu(game);
+    expect(game.screen[game.screen.length - 1].text).toBe('HIT RIGHT BUTTON OR ESCAPE TO EXIT');
+  });
+
+  it('opens the file each topic key names', () => {
+    expect(helpMenuChoice('c')).toBe(13);
+    expect(helpMenuChoice('C')).toBe(13);
+    expect(helpMenuChoice('g')).toBe(0);
+    expect(helpMenuChoice('0')).toBe(20);
+    expect(helpMenuChoice('9')).toBe(29);
+    expect(helpMenuChoice('a')).toBe(4);
+  });
+
+  it('leaves the menu on any key that is not a topic, escape included', () => {
+    expect(helpMenuChoice('\x1b')).toBeNull();
+    expect(helpMenuChoice('b')).toBeNull();
+    expect(helpMenuChoice('y')).toBeNull();
+  });
+
+  it('names a file the game folder holds for every topic', () => {
+    expect(HELP_TOPICS.every((topic) => HELP_FILES.includes(topic.file))).toBe(true);
   });
 });
