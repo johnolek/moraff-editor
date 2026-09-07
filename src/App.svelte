@@ -75,7 +75,7 @@
   </header>
   {#if app.game === 'moraffsWorld'}
     <p class="game-note">
-      Moraff's World has the Save Editor and New Character so far — the map, the monsters and the rest are Dungeons of the Unforgiven only.
+      Moraff's World has the Save Editor and New Character so far. The map, the monsters and the rest are on the way.
     </p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
