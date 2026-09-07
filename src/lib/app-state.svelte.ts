@@ -1,6 +1,6 @@
 import { HistoryCursor } from './history';
 
-export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
+export type Tab = 'map' | 'play' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
 
 /** Which game the site is about. These are the ids of the schemas in `src/lib/editor/games.ts`. */
 export type GameId = 'unforgiven' | 'moraffsWorld';
@@ -31,6 +31,12 @@ export interface RosterEntry extends CurrentCharacter {
   importedBytes: Uint8Array<ArrayBuffer> | null;
   createdAt: string;
   editedAt: string;
+  /**
+   * Whether the character has died. The game itself keeps no such flag — it writes nothing on a
+   * death and leaves the file where the last save point left it — so this is the roster's own,
+   * and the bytes stay as they are so the character can still be edited or downloaded.
+   */
+  dead: boolean;
 }
 
 /** A square of the dungeon to send the map to, taken from where a character stands. */
