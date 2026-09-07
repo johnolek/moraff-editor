@@ -13,12 +13,17 @@ import {
   drawSpellCategoryMenu,
   drawSpellGrid,
   drawSpellsInForce,
+  drawWriteSpellCategoryMenu,
+  drawWriteSpellLevelMenu,
+  drawWriteSpellSlotMenu,
   mwLineMenuKey,
   mwMenuKey,
   mwSpellTimers,
   showSpellDescription,
   spellGridKey,
   viewStats,
+  writeSpellCategoryKey,
+  writeSpellLevelKey,
 } from './screens';
 import { MW_BOOK_SLOTS_PER_CATEGORY, mwSpellHelp, mwSpellRecord } from './spells';
 import { mwSetOccupant, newMwGame } from './state';
@@ -352,5 +357,69 @@ describe('showSpellDescription', () => {
     showSpellDescription(game, 6, 0, 0);
     expect(game.messages[0]).toBe(mwSpellHelp(mwSpellRecord(2, 1, 0))[0]);
     expect(game.messages[0]).toContain('SLEEP');
+  });
+});
+
+describe('the write scroll and enchant wand menus', () => {
+  it('dashes out the categories the class cannot cast', () => {
+    const priest = newMwGame({ pc: { cls: 4 } });
+    drawWriteSpellCategoryMenu(priest);
+    expect(priest.messages).toEqual([
+      'PLEASE SELECT A TYPE OF SPELL:',
+      '',
+      '1) PREPARATION SPELLS',
+      '2) -------------',
+      '3) PRIESTLY SPELLS',
+    ]);
+  });
+
+  it('takes the key of a dashed-out category all the same', () => {
+    expect(writeSpellCategoryKey(0x32)).toBe(2);
+    expect(writeSpellCategoryKey(0x33)).toBe(3);
+    expect(writeSpellCategoryKey(0x34)).toBe(-1);
+    expect(writeSpellCategoryKey(MW_ESCAPE)).toBe(-1);
+  });
+
+  it('offers the tenth level only when the spell reaches it', () => {
+    const three = newMwGame();
+    drawWriteSpellLevelMenu(three, 3);
+    expect(three.messages).toEqual([
+      'PLEASE SELECT A THE LEVEL',
+      '   SPELL YOU WISH ENCHANT.',
+      'MAXIMUM LEVEL: 3',
+      '',
+      '',
+      '',
+      'HIT ESC FOR PREVIOUS MENU',
+    ]);
+
+    const ten = newMwGame();
+    drawWriteSpellLevelMenu(ten, 10);
+    expect(ten.messages[4]).toBe("HIT 0 FOR 10'TH LEVEL");
+  });
+
+  it('keys the tenth level to 0 and nothing past the maximum', () => {
+    expect(writeSpellLevelKey(3, 0x31)).toBe(0);
+    expect(writeSpellLevelKey(3, 0x33)).toBe(2);
+    expect(writeSpellLevelKey(3, 0x34)).toBe(-1);
+    expect(writeSpellLevelKey(3, 0x30)).toBe(-1);
+    expect(writeSpellLevelKey(10, 0x30)).toBe(9);
+    expect(writeSpellLevelKey(10, MW_ESCAPE)).toBe(-1);
+  });
+
+  it('names the three spells and keeps the level hint under them', () => {
+    const game = newMwGame();
+    drawWriteSpellSlotMenu(game, 10, 2, 0);
+    expect(game.messages).toEqual([
+      '1) SLEEP',
+      '2) MAGIC ZAP',
+      '3) MINOR PROTECTION',
+      '4) PREVIOUS MENU',
+      "HIT 0 FOR 10'TH LEVEL",
+    ]);
+
+    const shallow = newMwGame();
+    drawWriteSpellSlotMenu(shallow, 3, 2, 0);
+    expect(shallow.messages).toHaveLength(4);
   });
 });

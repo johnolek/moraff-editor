@@ -1,6 +1,7 @@
 import { MW_CLASS_NAMES, MW_RACES } from './character';
 import { experienceForKill } from './combat';
 import { MW_FROM_PAPER, MW_FROM_SPELLBOOK, spellHeld as mwSpellHeld } from './magic';
+import type { MwSpellChoice } from './state';
 import {
   MW_SPELL_CATEGORY_LABELS,
   MW_SPELL_NAMES,
@@ -10,7 +11,6 @@ import {
 } from './spells';
 import type { MwGame } from './state';
 import { mwOccupantAt } from './state';
-
 
 /**
  * The screens Moraff's World puts up between one move and the next: the vital statistics, the
@@ -657,4 +657,101 @@ export function showSpellDescription(
   slot: number,
 ): void {
   game.say(...mwSpellHelp(mwSpellRecord(category - 4, level + 1, slot)));
+}
+
+/**
+ * cast_spell (WORLD.EXE 2000:c546, mw.c "cast_spell"): the first of the three menus the Write
+ * Scroll and Enchant Wand spells walk through, which asks what kind of spell to write.
+ *
+ * The two lines the character's class cannot cast are drawn as rows of dashes and their mouse
+ * regions are blanked, but the keys are not: FUN_2000_1fbd is asked for lines 2 to 4 whatever the
+ * class, so any class can write any scroll by typing the number.
+ */
+export function drawWriteSpellCategoryMenu(game: MwGame): void {
+  const cls = game.pc.cls;
+  // DS:35cd 1476 35ec, then DS:3602 / 3613 and DS:3624 / 3637
+  game.say(
+    'PLEASE SELECT A TYPE OF SPELL:',
+    '',
+    '1) PREPARATION SPELLS',
+    mwCanCast(cls, 2) ? '2) WIZARD SPELLS' : '2) -------------',
+    mwCanCast(cls, 3) ? '3) PRIESTLY SPELLS' : '3) -------------',
+  );
+}
+
+/**
+ * cast_spell (WORLD.EXE 2000:c546, mw.c "cast_spell"): which category the first menu's key picks.
+ *
+ * @returns 1 preparation, 2 wizard, 3 priestly — the numbering {@link MwSpellChoice} takes — or
+ *   -1 for the Escape that gives the spell up.
+ */
+export function writeSpellCategoryKey(key: number): number {
+  const answer = mwMenuKey(2, 4, key);
+  if (answer === -1) return -1;
+  const category = answer - 0x30;
+  return category < 1 || category > 3 ? -1 : category;
+}
+
+/**
+ * cast_spell (WORLD.EXE 2000:c546, mw.c "cast_spell"): the second menu, which asks for the level.
+ *
+ * `maxLevel` is the deepest level the spell being cast will write, and saying so is all the menu
+ * does with it besides bounding the keys. The tenth level is keyed 0, and the line saying so only
+ * appears when the tenth level is reachable.
+ *
+ * The original adds "(TYPE NUMBER ON KEYBOARD)" underneath when a mouse is attached, which the
+ * port does not model.
+ */
+export function drawWriteSpellLevelMenu(game: MwGame, maxLevel: number): void {
+  // DS:3648 3662 367d with the level on the end, 368d, 36a3
+  game.say(
+    'PLEASE SELECT A THE LEVEL',
+    '   SPELL YOU WISH ENCHANT.',
+    `MAXIMUM LEVEL: ${maxLevel}`,
+    '',
+    maxLevel > 9 ? "HIT 0 FOR 10'TH LEVEL" : '',
+    '',
+    'HIT ESC FOR PREVIOUS MENU',
+  );
+}
+
+/**
+ * cast_spell (WORLD.EXE 2000:c546, mw.c "cast_spell"): which level the second menu's key picks.
+ *
+ * @returns 0 to 9, one less than the level typed, or -1 for the Escape that goes back a menu.
+ *   A key outside the range is ignored and the original goes on waiting.
+ */
+export function writeSpellLevelKey(maxLevel: number, key: number): number {
+  if (key === MW_ESCAPE) return -1;
+  if (key === 0x30 && maxLevel >= 10) return 9;
+  if (key < 0x31 || key > 0x30 + maxLevel) return -1;
+  return key - 0x31;
+}
+
+/**
+ * cast_spell (WORLD.EXE 2000:c546, mw.c "cast_spell"): the third menu, the three spells of the
+ * chosen level and a way back.
+ *
+ * The line under the three is whatever the level menu left in the fifth buffer, which is the
+ * tenth-level hint when the spell reaches that far and nothing when it does not. "SELECT ONE OF
+ * THE ABOVE" (exe DS:36d7) is copied into the sixth buffer and then wiped by the loop that clears
+ * the last three, so it never reaches the screen.
+ *
+ * @param category 1 preparation, 2 wizard, 3 priestly.
+ * @param levelIndex 0 to 9.
+ */
+export function drawWriteSpellSlotMenu(
+  game: MwGame,
+  maxLevel: number,
+  category: number,
+  levelIndex: number,
+): void {
+  // DS:1ba5 1ba9 1bad, each with the spell's name on the end, then DS:36ef
+  game.say(
+    ...[0, 1, 2].map(
+      (slot) => `${slot + 1}) ${MW_SPELL_NAMES[mwSpellRecord(category, levelIndex + 1, slot)]}`,
+    ),
+    '4) PREVIOUS MENU',
+    maxLevel > 9 ? "HIT 0 FOR 10'TH LEVEL" : '',
+  );
 }
