@@ -13,6 +13,7 @@ import { newGame, sectionMonsterKinds } from '../game/port/state';
 import { UNFORGIVEN_AREA } from '../map/area';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
+import { boxesOf } from './boxes';
 import { castASpell, useAnItem } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
 import { digHole } from './dig';
@@ -398,8 +399,9 @@ export async function runMoveControl(session: GameSession): Promise<void> {
       pc.hp = pc.maxHp;
       pc.sp = pc.maxSp;
     }
-    if (checkDeath(game)) {
-      await died(session);
+    const dyingHere = deathBoxes(session);
+    if (dyingHere !== null) {
+      await died(session, dyingHere);
       return;
     }
     game.enemyDir = -1;
@@ -422,12 +424,15 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     await session.settle();
     if (session.over) return;
     await killTheDead(session);
-    await resolveStep(turn);
-    await session.settle();
-    if (checkDeath(game)) {
-      await died(session);
+    // movecontrol at 2000:dbe9 asks whether the character is dead between the kill and the step,
+    // and asks again at the top of the loop, which is where a step that killed them is caught.
+    const dying = deathBoxes(session);
+    if (dying !== null) {
+      await died(session, dying);
       return;
     }
+    await resolveStep(turn);
+    await session.settle();
     // FUN_2000_c28b (exe 2000:c28b): the map has scrolled off the character, so the view is
     // drawn again with them back in the middle of it.
     if (game.recenterMap) {
@@ -464,11 +469,26 @@ function beginTurn(session: GameSession): Turn {
  * answers: the snake says where the character has gone, and the loop hands back to what called
  * it, which is where the original puts the player back on the character select screen.
  *
+ * FUN_2000_9232 prints two of UH.BIN's messages, each of which ends "HIT ANY KEY" and waits for
+ * one, so both go up in turn.
+ *
  * Nothing is written to the character's file, here or in the original: what is on disk is
  * whatever the last save point left there. The roster marks the character dead and keeps them.
  */
-async function died(session: GameSession): Promise<void> {
-  await session.key();
+function deathBoxes(session: GameSession): string[][] | null {
+  let dead = false;
+  const boxes = boxesOf(session, () => {
+    dead = checkDeath(session.game);
+  });
+  return dead ? boxes : null;
+}
+
+/** The messages the death printed, in turn, and then the loop hands back. */
+async function died(session: GameSession, boxes: string[][]): Promise<void> {
+  for (const box of boxes) {
+    session.showBox(box);
+    await session.key();
+  }
   session.die();
   session.over = true;
   session.changed();

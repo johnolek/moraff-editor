@@ -6,7 +6,7 @@ import { BorlandRng, type Rng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
-import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
+import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
 
 /** A character file that lives in the test rather than in the roster. */
@@ -255,13 +255,40 @@ describe('the message box', () => {
 });
 
 describe('dying', () => {
+  it('is checked before the step the key asked for is resolved', async () => {
+    const start = townWalk();
+    const session = playing(characterFile({ level: 0, dir: 0, ...start }));
+    await settle();
+    // movecontrol asks whether the character is dead at 2000:dbe9, between the kill and the
+    // step, so a key that killed them never takes the step it asked for. There is no key of the
+    // game's that both kills and steps, so the test brings its own.
+    const fatalStep = 0x62;
+    KEY_HANDLERS[fatalStep] = {
+      c: 'a handler that exists only in this test',
+      run(turn) {
+        turn.game.pc.hp = -1;
+        turn.step = { dx: 0, dy: -1 };
+      },
+    };
+    try {
+      await press(session, fatalStep);
+    } finally {
+      delete KEY_HANDLERS[fatalStep];
+    }
+    expect(session.view().place).toMatchObject({ x: start.x, y: start.y });
+    expect(session.box[0]).toBe('EVERYTHING GOES BLACK...');
+  });
+
+
   it('marks the character dead and leaves the file alone', async () => {
     const start = townWalk();
     const file = characterFile({ level: 0, hp: -1, ...start });
     const before = file.bytes;
     const session = playing(file);
     await settle();
-    // The snake says where the character has gone and adds one of its five parting shots.
+    // The snake says where the character has gone, then adds one of its five parting shots.
+    expect(session.box[0]).toBe('EVERYTHING GOES BLACK...');
+    await press(session, KEY.escape);
     expect(session.box.some((line) => line.startsWith("I THINK YOU'RE"))).toBe(true);
     await press(session, KEY.escape);
     expect(file.dead).toBe(true);
