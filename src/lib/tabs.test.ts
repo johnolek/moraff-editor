@@ -6,14 +6,14 @@ describe('the tabs a game has', () => {
     expect(tabsFor('unforgiven')).toEqual(TABS);
   });
 
-  it('is the Map, the Save Editor, the Monsters, Spells, New Character and Source for Moraff’s World', () => {
-    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['map', 'editor', 'monsters', 'spells', 'roller', 'source']);
+  it('is the Map, Play, the Save Editor, the Monsters, Spells, New Character and Source for Moraff’s World', () => {
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['map', 'play', 'editor', 'monsters', 'spells', 'roller', 'source']);
   });
 
-  it('keeps the Play tab to Dungeons of the Unforgiven, which is the game that can be played', () => {
+  it('gives both games the Play tab, since both of them can be played', () => {
     expect(tabsFor('unforgiven').map((tab) => tab.id)).toContain('play');
-    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).not.toContain('play');
-    expect(tabFor('moraffsWorld', 'play')).toBe('editor');
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toContain('play');
+    expect(tabFor('moraffsWorld', 'play')).toBe('play');
   });
 
   it('calls the map tab DotU Map under one game and Map under the other', () => {

@@ -1,0 +1,236 @@
+import { mwSpellHoldings } from '../../game/mw-port/inventory';
+import { experienceForKill } from '../../game/mw-port/combat';
+import { experienceNeeded } from '../../game/mw-port/levels';
+import { mwSpellTimers } from '../../game/mw-port/screens';
+import type { MwCharacter, MwGame } from '../../game/mw-port/state';
+import { MONSTERS, WEAPONS, hpRange } from '../../mw-bestiary/monsters';
+import { monsterDefence, mwHitChance, toHitTotal } from '../../mw-bestiary/to-hit';
+import type { MapSquare } from '../../map/game';
+import type { StockedMonster } from '../../map/stocking';
+import { stepCost } from './moment';
+
+/**
+ * The numbers Moraff's World keeps and never prints: the moves left on every spell, the charges
+ * on every wand, scroll and piece of paper, the poison and disease clocks, what the monster being
+ * faced is made of and how often a swing lands on it, and what the square underfoot holds.
+ *
+ * Everything here reads the record and the ported tables and works nothing out of its own; each
+ * function names where the number comes from. Nothing in this file writes.
+ */
+
+/** One line of the panel: what it is, the number, and a quieter word about it. */
+export interface MwPanelLine {
+  label: string;
+  value: string;
+  note?: string;
+}
+
+/** "1 move", "2 moves": a timer counts one off per move of the game. */
+function moves(count: number): string {
+  return `${count} move${count === 1 ? '' : 's'}`;
+}
+
+/**
+ * Every spell in force, with the number behind the line FUN_2000_7421 draws for it.
+ *
+ * {@link mwSpellTimers} is that panel's own list in its own order; what this adds is what the
+ * number means. The battle spells count moves down to zero, Sleep and Hold Monster count the
+ * engaged monster's turns, and the preparation markers have no clock at all — the level or the
+ * flag stands there and only a night at the inn takes it off.
+ */
+export function mwSpellsInForce(game: MwGame): MwPanelLine[] {
+  return mwSpellTimers(game).map((timer) => ({
+    label: timer.label,
+    value: timerValue(timer.label, timer.turns),
+  }));
+}
+
+/** The spells whose number is a marker rather than a clock, by the label the panel gives them. */
+const MARKERS = [
+  'WEAPONS, PLUS',
+  'ARMOR, PLUS',
+  'FEATHER',
+  'INVISIBILITY',
+  'FAST - MOVE',
+  'STRENGTH (PREP)',
+  'AGILITY (PREP)',
+  'SUPER STRENGTH',
+  'SUPER AGILITY',
+  'PROTECT, LEVEL',
+  'POWER WEAPON',
+];
+
+function timerValue(label: string, turns: number): string {
+  if (MARKERS.some((marker) => label.startsWith(marker))) return 'until you sleep';
+  if (label === 'STOP MONSTER' || label === 'HOLD MONSTER') {
+    return `${turns} monster turn${turns === 1 ? '' : 's'}`;
+  }
+  return moves(turns);
+}
+
+/**
+ * The two clocks monsters_move (WORLD.EXE 2000:81cd) counts down: a poisoning takes a point of
+ * strength when its clock reaches one and starts again, and a disease takes constitution.
+ */
+export function mwAilments(pc: MwCharacter): MwPanelLine[] {
+  const lines: MwPanelLine[] = [];
+  if (pc.poisonTimer > 0) {
+    lines.push({ label: 'Poison bites in', value: moves(pc.poisonTimer - 1), note: 'A point of strength, and then it starts again.' });
+  }
+  if (pc.diseaseTimer > 0) {
+    lines.push({ label: 'Disease bites in', value: moves(pc.diseaseTimer - 1), note: 'A point of constitution, and then it starts again.' });
+  }
+  return lines;
+}
+
+/** One heading of the charges list, and its lines. */
+export interface MwChargeGroup {
+  title: string;
+  lines: MwPanelLine[];
+}
+
+/**
+ * Every scroll, wand and sheet of magic paper the character carries, with what is left on it.
+ *
+ * The spell screen shows a spell as held or NOT YET FOUND and never says how many are left;
+ * these are the counts behind those words, out of {@link mwSpellHoldings}.
+ */
+export function mwCharges(game: MwGame): MwChargeGroup[] {
+  const holdings = mwSpellHoldings(game);
+  const group = (title: string, count: (held: (typeof holdings)[number]) => number): MwChargeGroup => ({
+    title,
+    lines: holdings
+      .filter((held) => count(held) > 0)
+      .map((held) => ({ label: held.name, value: String(count(held)) })),
+  });
+  return [
+    group('Scrolls', (held) => held.scrolls),
+    group('Wands', (held) => held.wands),
+    group('Magic paper', (held) => held.paper),
+  ];
+}
+
+/**
+ * What a spell out of the spellbook costs before it is cast: its level off the spell points, and
+ * a permanent spell the same again off the maximum, for good.
+ */
+export function mwSpellbook(game: MwGame): MwPanelLine[] {
+  return mwSpellHoldings(game)
+    .filter((held) => held.inSpellbook)
+    .map((held) => ({
+      label: held.name,
+      value: held.maximumCost > 0 ? `${held.spellPointCost} SP, ${held.maximumCost} for good` : `${held.spellPointCost} SP`,
+    }));
+}
+
+/** The monster the character is fighting, as strike and experience_for_kill see it. */
+export interface MwEngagedMonster {
+  name: string;
+  /** The monster's own depth, which stands in for the floor number in both formulas. */
+  depth: number;
+  hp: number;
+  mostHp: number;
+  /** What killing it is worth (WORLD.EXE 3000:b8d4). */
+  experience: number;
+  /** The share of swings that land, out of `src/lib/mw-bestiary/to-hit.ts`. */
+  hitChance: number;
+}
+
+export function mwEngagedMonster(game: MwGame): MwEngagedMonster | null {
+  if (game.engaged === -1) return null;
+  const monster = game.monsters[game.engaged];
+  const kind = MONSTERS[monster.type];
+  if (!kind) return null;
+  const pc = game.pc;
+  const total = toHitTotal({
+    lev: pc.lev,
+    str: pc.str,
+    luck: pc.luck,
+    weapon: pc.weapon,
+    weaponPlus: pc.weaponPlus[pc.weapon] ?? 0,
+    gauntlet: pc.gauntlet,
+  });
+  return {
+    name: kind.name,
+    depth: monster.depth,
+    hp: monster.hp,
+    mostHp: hpRange(kind, monster.depth)[1],
+    experience: experienceForKill(game, game.engaged),
+    hitChance: mwHitChance(total, kind, monster.depth, WEAPONS[pc.weapon].damageDie),
+  };
+}
+
+/** What the monster takes off a swing, for anyone reading the chance beside it. */
+export function mwMonsterDefence(game: MwGame): number | null {
+  if (game.engaged === -1) return null;
+  const monster = game.monsters[game.engaged];
+  const kind = MONSTERS[monster.type];
+  return kind ? monsterDefence(kind, monster.depth) : null;
+}
+
+/** One of the monsters standing on the floor, by how far off it is. */
+export interface MwNearbyMonster {
+  name: string;
+  depth: number;
+  hp: number;
+  distance: number;
+}
+
+export function mwMonstersNearby(game: MwGame, monsters: StockedMonster[], most: number): MwNearbyMonster[] {
+  const pc = game.pc;
+  return monsters
+    .map((monster) => ({
+      name: MONSTERS[game.monsters[monster.slot].type]?.name ?? '',
+      depth: monster.level,
+      hp: monster.hp,
+      distance: Math.abs(pc.x - monster.x) + Math.abs(pc.y - monster.y),
+    }))
+    .sort((left, right) => left.distance - right.distance)
+    .slice(0, most);
+}
+
+/** How close a monster has to be before monsters_move walks it towards the character. */
+export function mwChaseDistance(floor: number): number {
+  return Math.trunc(floor / 10) + 10;
+}
+
+/** The five things a square of the surface can hold, in the order the generator numbers them. */
+const SURFACE = ['store', 'temple', 'bank', 'inn', 'gate out to the world map'];
+
+/**
+ * What the square underfoot holds. Moraff's World works every one of these out of the same hash
+ * the map is built from, so there is nothing to roll and nothing hidden about them but the fact
+ * that the game only tells you about one at a time.
+ */
+export function mwSquareFacts(game: MwGame, square: MapSquare): MwPanelLine[] {
+  const lines: MwPanelLine[] = [];
+  if (square.ladder < 0) lines.push({ label: 'Ladder up', value: `${-square.ladder} floor${square.ladder === -1 ? '' : 's'}` });
+  if (square.ladder > 0) lines.push({ label: 'Ladder down', value: `${square.ladder} floor${square.ladder === 1 ? '' : 's'}` });
+  if (square.trapdoor !== -1) {
+    const key = game.pc.trapdoorKeys[Math.trunc(square.trapdoor / 10) - 1] !== 0;
+    lines.push({
+      label: 'Trap door to floor',
+      value: String(square.trapdoor),
+      note: key ? undefined : 'A level drainer near that floor carries the key.',
+    });
+  }
+  if (square.chute !== 0) lines.push({ label: 'Chute down to floor', value: String(square.chute), note: 'Standing here is falling.' });
+  if (square.surface) lines.push({ label: 'Building', value: SURFACE[square.surface - 1] });
+  return lines;
+}
+
+/** What a step costs and what the next level takes, which no screen of the game puts together. */
+export function mwGoing(game: MwGame): MwPanelLine[] {
+  const pc = game.pc;
+  const needed = experienceNeeded(pc.lev + 1);
+  return [
+    { label: 'A step costs', value: moves(stepCost(game)), note: 'Half the time, and nothing at all the other half.' },
+    { label: 'Moves spent', value: String(Math.round(game.movesTaken)) },
+    { label: 'Experience', value: Math.round(pc.exp).toLocaleString() },
+    {
+      label: `To reach level ${pc.lev + 1}`,
+      value: Math.max(0, Math.ceil(needed - pc.exp)).toLocaleString(),
+      note: 'A level is gained by staying the night at an inn.',
+    },
+  ];
+}

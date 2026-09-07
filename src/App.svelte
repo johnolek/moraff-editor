@@ -12,6 +12,7 @@
   import Formulas from './lib/formulas/Formulas.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
   import Play from './lib/play/Play.svelte';
+  import MwPlay from './lib/play/mw/MwPlay.svelte';
   import MwMonsters from './lib/mw-bestiary/MwMonsters.svelte';
   import NewCharacter from './lib/roller/NewCharacter.svelte';
   import Snake from './lib/snake/Snake.svelte';
@@ -67,8 +68,8 @@
   </header>
   {#if app.game === 'moraffsWorld'}
     <p class="game-note">
-      Moraff's World has the Map, the Save Editor, the Monsters, Spells, New Character and Source so far. The rest is
-      on the way.
+      Moraff's World has the Map, Play, the Save Editor, the Monsters, Spells, New Character and Source so far. The
+      rest is on the way.
     </p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
@@ -76,7 +77,8 @@
     <MapExplorer />
   </main>
   <main class:hidden={app.tab !== 'play'}>
-    <Play />
+    <!-- The two games are two executables with two loops, so each brings its own. -->
+    {#if app.game === 'moraffsWorld'}<MwPlay />{:else}<Play />{/if}
   </main>
   <main class:hidden={app.tab !== 'editor'}>
     <SaveEditor />

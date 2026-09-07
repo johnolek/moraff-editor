@@ -22,7 +22,7 @@ export const TABS: TabEntry[] = [
 
 /** The tabs that know anything about Moraff's World. The calculators, the formulas, the tidbits
  *  and the snake are Dungeons of the Unforgiven's alone. */
-const MORAFFS_WORLD_TABS: Tab[] = ['map', 'editor', 'monsters', 'spells', 'roller', 'source'];
+const MORAFFS_WORLD_TABS: Tab[] = ['map', 'play', 'editor', 'monsters', 'spells', 'roller', 'source'];
 
 /** The one tab Moraff's World calls something else, since only one of the two games needs
  *  saying when the map is of that game's own dungeons. */
