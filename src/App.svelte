@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app, restoreCharacter, type Tab } from './lib/app-state.svelte';
+  import { app, type Tab } from './lib/app-state.svelte';
+  import { restoreRoster } from './lib/character/current';
   import { isAppHistoryState, tabState, type AppHistoryState } from './lib/history';
   import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
   import CharacterPanel from './lib/character/CharacterPanel.svelte';
@@ -27,7 +28,7 @@
   ];
 
   onMount(() => {
-    restoreCharacter();
+    restoreRoster();
     const state = history.state;
     if (isAppHistoryState(state)) {
       restore(state);

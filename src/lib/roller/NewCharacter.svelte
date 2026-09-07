@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { app, setCharacter } from '../app-state.svelte';
+  import { app } from '../app-state.svelte';
+  import { keepRolledCharacter } from '../character/current';
   import { MW_CLASS_NAMES, MW_RACES, MINUTES_PER_YEAR } from '../game/mw-port/character';
   import type { MwCharacter } from '../game/mw-port/state';
   import { CLASS_NAMES, RACES } from '../game/port/character';
@@ -133,7 +134,7 @@
 
   function openInEditor() {
     if (!view) return;
-    setCharacter({ game, name: view.pc.name || fileName, slot, bytes: characterFile(view.pc) });
+    keepRolledCharacter(game, view.pc.name || fileName, slot, characterFile(view.pc));
     app.tab = 'editor';
   }
 

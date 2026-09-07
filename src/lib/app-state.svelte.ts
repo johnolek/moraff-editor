@@ -1,4 +1,3 @@
-import { rememberCharacter, storedCharacter } from './character/storage';
 import { HistoryCursor } from './history';
 
 export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'roller' | 'source';
@@ -19,6 +18,16 @@ export interface CurrentCharacter {
   /** Which numbered character file it is, or null when the file it came from was not a number. */
   slot: number | null;
   bytes: Uint8Array<ArrayBuffer>;
+}
+
+/** One of the characters the browser keeps. */
+export interface RosterEntry extends CurrentCharacter {
+  id: string;
+  /** The file exactly as it came in, so the untouched original can always be had back. Null
+   *  for a character rolled here rather than imported. */
+  importedBytes: Uint8Array<ArrayBuffer> | null;
+  createdAt: string;
+  editedAt: string;
 }
 
 /** A square of the dungeon to send the map to, taken from where a character stands. */
@@ -43,7 +52,10 @@ export interface AppState {
   requestedFormula: string | null;
   /** Set to stand the party somewhere in the Map tab; the map clears it once it has. */
   requestedPlace: PlaceRequest | null;
-  character: CurrentCharacter | null;
+  /** Every character kept in the browser, oldest first. */
+  roster: RosterEntry[];
+  /** The one being worked on, which is one of the roster's own entries. */
+  character: RosterEntry | null;
   /** Bumped whenever the current character changes: a different one is chosen, or a field of
    *  the one in hand is edited. Everything that reads the record watches this. */
   characterVersion: number;
@@ -56,25 +68,7 @@ export const app = $state<AppState>({
   requestedSource: null,
   requestedFormula: null,
   requestedPlace: null,
+  roster: [],
   character: null,
   characterVersion: 0,
 });
-
-/** Make a character the current one, and let everything that reads it know. */
-export function setCharacter(character: CurrentCharacter | null): void {
-  app.character = character;
-  app.characterVersion++;
-  rememberCharacter(character);
-}
-
-/** A field of the current character has been edited in place. */
-export function characterEdited(): void {
-  app.characterVersion++;
-  rememberCharacter(app.character);
-}
-
-/** Bring back the character the last visit left behind. */
-export function restoreCharacter(): void {
-  const stored = storedCharacter();
-  if (stored) setCharacter(stored);
-}

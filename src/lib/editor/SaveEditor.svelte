@@ -1,16 +1,13 @@
 <script lang="ts">
   import './editor.css';
-  import { app, characterEdited, setCharacter, type CurrentCharacter } from '../app-state.svelte';
-  import { characterFileName, recordName, slotFromFileName } from '../character/record';
+  import { app } from '../app-state.svelte';
+  import { characterEdited, importCharacter, replaceCharacterBytes, unloadCharacter } from '../character/current';
+  import { characterFileName } from '../character/record';
   import { GAMES, pickGameByFileSize } from './games';
   import type { GameSchema } from './schema';
   import SectionView from './SectionView.svelte';
 
   interface Document {
-    /** What the app calls this character. */
-    label: string;
-    /** The numbered character file it came from, or null when its file was not a number. */
-    slot: number | null;
     game: GameSchema;
     bytes: Uint8Array<ArrayBuffer>;
     view: DataView;
@@ -28,29 +25,26 @@
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
   let fileInput = $state<HTMLInputElement>();
 
+  /** What the file this is editing is called, which is the character's number when it has one. */
+  const fileName = $derived(characterFileName(app.character?.slot ?? null, app.character?.name ?? ''));
+
   function showToast(message: string, warn = false) {
     toast = { message, warn };
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => (toast = null), 1800);
   }
 
-  /** Make what is open here the character the rest of the app works from. The field components
-   *  write into these same bytes, so a reader that looks again sees the edits. */
-  function share() {
-    setCharacter(doc && { game: doc.game.id, name: doc.label, slot: doc.slot, bytes: doc.bytes });
-  }
-
-  function open(label: string, slot: number | null, game: GameSchema, bytes: Uint8Array<ArrayBuffer>) {
-    doc = { label, slot, game, bytes, view: new DataView(bytes.buffer), pristine: bytes.slice() };
+  function open(game: GameSchema, bytes: Uint8Array<ArrayBuffer>) {
+    doc = { game, bytes, view: new DataView(bytes.buffer), pristine: bytes.slice() };
     unrecognised = null;
     version++;
   }
 
+  /** A file the user picked joins the roster and becomes the character being worked on, which
+   *  is what opens it here. */
   async function load(file: File, game: GameSchema) {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const slot = slotFromFileName(file.name);
-    open(recordName(bytes) || file.name, slot, game, bytes);
-    share();
+    importCharacter(game.id, file.name, new Uint8Array(await file.arrayBuffer()));
+    unrecognised = null;
   }
 
   // The character can be made current somewhere else — rolled in the New Character tab, chosen
@@ -63,7 +57,7 @@
     }
     if (doc && doc.bytes === current.bytes) return;
     const game = GAMES.find((entry) => entry.id === current.game);
-    if (game) open(current.name, current.slot, game, current.bytes);
+    if (game) open(game, current.bytes);
   });
 
   function receive(file: File) {
@@ -86,7 +80,6 @@
 
   function download() {
     if (!doc) return;
-    const fileName = characterFileName(doc.slot, doc.label);
     doc.game.onSave?.(doc.bytes);
     const url = URL.createObjectURL(new Blob([doc.bytes], { type: 'application/octet-stream' }));
     const link = document.createElement('a');
@@ -102,15 +95,14 @@
     const bytes = doc.pristine.slice();
     doc = { ...doc, bytes, view: new DataView(bytes.buffer) };
     version++;
-    share();
+    replaceCharacterBytes(bytes);
     showToast('Changes discarded');
   }
 
   function unload() {
-    doc = null;
     unrecognised = null;
     if (fileInput) fileInput.value = '';
-    share();
+    unloadCharacter();
   }
 </script>
 
@@ -175,7 +167,7 @@
         <button type="button" class="ghost" onclick={discard}>Discard changes</button>
         <button type="button" class="ghost" onclick={unload}>Load different file</button>
         <span class="game-badge">{doc.game.displayName}</span>
-        <span class="filename">{characterFileName(doc.slot, doc.label)}</span>
+        <span class="filename">{fileName}</span>
       </div>
       <!-- The field components write straight into the bytes without telling anyone. The events
            their inputs bubble are how the rest of the app hears that the character changed. -->

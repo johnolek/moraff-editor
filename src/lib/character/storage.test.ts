@@ -1,37 +1,19 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { fromBase64, rememberCharacter, storedCharacter, toBase64 } from './storage';
+import { fromBase64, readStored, toBase64, writeStored } from './storage';
 
-/** Enough of the browser's Storage to stand in for it, plus a switch for a store that throws. */
-class FakeStorage implements Storage {
-  private items = new Map<string, string>();
-
-  constructor(readonly broken = false) {}
-
-  get length(): number {
-    return this.items.size;
-  }
-
-  clear(): void {
-    this.items.clear();
-  }
-
-  getItem(key: string): string | null {
-    if (this.broken) throw new Error('access denied');
-    return this.items.get(key) ?? null;
-  }
-
-  key(index: number): string | null {
-    return [...this.items.keys()][index] ?? null;
-  }
-
-  removeItem(key: string): void {
-    this.items.delete(key);
-  }
-
-  setItem(key: string, value: string): void {
-    if (this.broken) throw new Error('access denied');
-    this.items.set(key, value);
-  }
+/** Enough of the browser's Storage to stand in for it. */
+export function fakeStorage(): Storage {
+  const items = new Map<string, string>();
+  return {
+    get length() {
+      return items.size;
+    },
+    clear: () => items.clear(),
+    getItem: (key: string) => items.get(key) ?? null,
+    key: (index: number) => [...items.keys()][index] ?? null,
+    removeItem: (key: string) => void items.delete(key),
+    setItem: (key: string, value: string) => void items.set(key, value),
+  };
 }
 
 function useStorage(storage: Storage | undefined): void {
@@ -39,8 +21,6 @@ function useStorage(storage: Storage | undefined): void {
 }
 
 afterEach(() => useStorage(undefined));
-
-const bytes = (values: number[]) => Uint8Array.from(values);
 
 describe('base64', () => {
   it('round trips every byte value', () => {
@@ -53,43 +33,35 @@ describe('base64', () => {
   });
 });
 
-describe('the stored character', () => {
-  it('comes back as it went in', () => {
-    useStorage(new FakeStorage());
-    rememberCharacter({ game: 'unforgiven', name: 'SAGEY', slot: 21, bytes: bytes([1, 2, 3, 255]) });
-    const restored = storedCharacter();
-    expect(restored).toEqual({ game: 'unforgiven', name: 'SAGEY', slot: 21, bytes: bytes([1, 2, 3, 255]) });
+describe('the store', () => {
+  it('gives back what was put in it', () => {
+    useStorage(fakeStorage());
+    writeStored('key', 'value');
+    expect(readStored('key')).toBe('value');
   });
 
-  it('keeps a character with no slot', () => {
-    useStorage(new FakeStorage());
-    rememberCharacter({ game: 'moraffsWorld', name: 'HERO', slot: null, bytes: bytes([7]) });
-    expect(storedCharacter()?.slot).toBeNull();
-  });
-
-  it('is null once the character is cleared', () => {
-    useStorage(new FakeStorage());
-    rememberCharacter({ game: 'unforgiven', name: 'SAGEY', slot: 21, bytes: bytes([1]) });
-    rememberCharacter(null);
-    expect(storedCharacter()).toBeNull();
-  });
-
-  it('is null when there is no storage at all', () => {
+  it('reads nothing when there is no storage at all', () => {
     useStorage(undefined);
-    rememberCharacter({ game: 'unforgiven', name: 'SAGEY', slot: 21, bytes: bytes([1]) });
-    expect(storedCharacter()).toBeNull();
+    writeStored('key', 'value');
+    expect(readStored('key')).toBeNull();
   });
 
-  it('is null when the store throws on every access', () => {
-    useStorage(new FakeStorage(true));
-    rememberCharacter({ game: 'unforgiven', name: 'SAGEY', slot: 21, bytes: bytes([1]) });
-    expect(storedCharacter()).toBeNull();
-  });
-
-  it('is null when what was stored is not a character', () => {
-    const storage = new FakeStorage();
-    useStorage(storage);
-    storage.setItem('moraff-tools.character', '{"game":"unforgiven"}');
-    expect(storedCharacter()).toBeNull();
+  it('swallows a store that throws on every access', () => {
+    useStorage({
+      get length(): number {
+        throw new Error('access denied');
+      },
+      clear: () => {},
+      getItem: () => {
+        throw new Error('access denied');
+      },
+      key: () => null,
+      removeItem: () => {},
+      setItem: () => {
+        throw new Error('access denied');
+      },
+    });
+    expect(() => writeStored('key', 'value')).not.toThrow();
+    expect(readStored('key')).toBeNull();
   });
 });
