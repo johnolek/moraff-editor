@@ -19,6 +19,7 @@ import { chuteUnder, fallDownChute } from './chute';
 import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { changeArmor, changeWeapon } from './gear';
+import { readTheMonsterManual } from './manual';
 import { countTheMoney } from './misc';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
 import { showHelp } from './help';
@@ -366,7 +367,7 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.pockets]: { c: 'FUN_3000_7545', run: lookInPockets },
   [KEY.money]: { c: 'show_money', run: countTheMoney },
   [KEY.loseItem]: { c: 'lose_item', run: dropSomething },
-  [KEY.monsterManual]: { c: 'monster_manual', run: (turn) => notBuiltYet(turn.game, 'READ ABOUT THE MONSTERS DOWN HERE') },
+  [KEY.monsterManual]: { c: 'monster_manual', run: readTheMonsterManual },
   [KEY.options]: { c: 'movecontrol, the 0x6f branch', run: (turn) => notBuiltYet(turn.game, 'OPEN THE OPTIONS MENU') },
   [KEY.graphics]: { c: 'movecontrol, the 0x67 branch', run: (turn) => notBuiltYet(turn.game, 'OPEN THE GRAPHICS MENU') },
   [KEY.expandMap]: { c: 'movecontrol, the 0x78 branch', run: (turn) => notBuiltYet(turn.game, 'SHOW THE MAP A THIRD AT A TIME') },
