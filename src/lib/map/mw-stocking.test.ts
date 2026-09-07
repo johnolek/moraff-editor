@@ -62,6 +62,17 @@ describe('what the panel says about them', () => {
     expect(group.counts[1].count).toBeGreaterThan(1);
   });
 
+  it('gives each row the depths and hit points its monsters were rolled with', () => {
+    const monsters: StockedMonster[] = [
+      { slot: 0, x: 1, y: 1, monsterId: '4', level: 28, hp: 61 },
+      { slot: 1, x: 2, y: 1, monsterId: '4', level: 31, hp: 12 },
+      { slot: 2, x: 3, y: 1, monsterId: '3', level: 30, hp: 9 },
+    ];
+    const [group] = stocking.groups(monsters);
+    expect(group.counts[0]).toEqual({ monsterId: '4', name: 'ORC', count: 2, detail: 'depth 28–31 · 12–61 HP' });
+    expect(group.counts[1].detail).toBe('depth 30 · 9 HP');
+  });
+
   it('has nothing to group when nothing has been stocked', () => {
     expect(stocking.groups([])).toEqual([]);
   });

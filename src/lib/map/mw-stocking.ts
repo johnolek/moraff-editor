@@ -43,9 +43,22 @@ function kind(monsterId: string): StockedKind {
   };
 }
 
-/** One row of the list: how many of this monster stand on the floor. */
+/** The lowest and highest of some numbers, as "3" or "3–11". */
+function spread(values: number[]): string {
+  const lowest = Math.min(...values);
+  const highest = Math.max(...values);
+  return lowest === highest ? String(lowest) : `${lowest}–${highest}`;
+}
+
+/** One row of the list: how many of this monster stand on the floor, and what depths and hit
+ *  points they were rolled with. */
 function countOf(monsterId: string, monsters: StockedMonster[]): MonsterCount {
-  return { monsterId, name: MONSTERS[Number(monsterId)].name, count: monsters.length, detail: null };
+  return {
+    monsterId,
+    name: MONSTERS[Number(monsterId)].name,
+    count: monsters.length,
+    detail: `depth ${spread(monsters.map((monster) => monster.level))} · ${spread(monsters.map((monster) => monster.hp))} HP`,
+  };
 }
 
 /** The floor's monster types, the quest boss first and the rest commonest first. */
@@ -61,6 +74,16 @@ function groups(monsters: StockedMonster[]): MonsterCountGroup[] {
     .sort((a, b) => Number(kind(b.monsterId).boss) - Number(kind(a.monsterId).boss) || b.count - a.count);
   return counts.length ? [{ label: null, counts }] : [];
 }
+
+/**
+ * The map keeps every floor it rolls for as long as the tab is open, where the game keeps only
+ * the three floors most recently visited.
+ */
+const STOCKING_NOTE =
+  'The game rolls a floor’s 145 monsters from the clock the first time you arrive and keeps the ' +
+  'three floors you were on last, so going up a ladder and back finds them where they were. This ' +
+  'roll is one of the countless floors you might have walked into; the map holds on to every ' +
+  'floor you roll, not just three.';
 
 export const MORAFFS_WORLD_STOCKING: MapStocking = {
   stocks: (_dungeon, floor) => anyMonsterOn(floor),
@@ -80,5 +103,5 @@ export const MORAFFS_WORLD_STOCKING: MapStocking = {
     count === 1
       ? '1 stands in column 79, which the game walls off, where nothing can reach it.'
       : `${count} stand in column 79, which the game walls off, where nothing can reach them.`,
-  note: null,
+  note: STOCKING_NOTE,
 };

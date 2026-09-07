@@ -35,12 +35,15 @@
   {:else}
     <div class="buttons">
       <button class="ghost" onclick={onstock} disabled={!canStock} title={canStock ? undefined : 'The game cannot stock this floor.'}>
-        {monsters.length ? 'Reroll' : 'Stock this floor'}
+        {monsters.length ? 'Roll again' : 'Stock this floor'}
       </button>
       {#if monsters.length}
         <button class="ghost" onclick={onclear}>Clear</button>
       {/if}
     </div>
+    {#if game.stocking.note}
+      <p class="hint note">{game.stocking.note}</p>
+    {/if}
     {#if monsters.length}
       <p>{monsters.length} monsters</p>
       {#if beyondMap}
@@ -51,7 +54,7 @@
           <h3>{group.label}</h3>
         {/if}
         <ul>
-          {#each group.counts as { monsterId, name, count }}
+          {#each group.counts as { monsterId, name, count, detail }}
             <li>
               <button
                 type="button"
@@ -65,6 +68,9 @@
                   <span>{name}</span>
                   <span class="count">{count}</span>
                 </span>
+                {#if detail}
+                  <span class="detail">{detail}</span>
+                {/if}
               </button>
             </li>
           {/each}
@@ -120,6 +126,10 @@
   .hint {
     color: var(--muted);
   }
+  .note {
+    font-size: 11px;
+    line-height: 1.4;
+  }
   h3 {
     margin: 12px 0 4px;
     font-size: 11px;
@@ -166,5 +176,9 @@
   }
   .count {
     color: var(--muted);
+  }
+  .detail {
+    color: var(--muted);
+    font-size: 11px;
   }
 </style>
