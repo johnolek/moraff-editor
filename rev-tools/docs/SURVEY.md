@@ -744,12 +744,14 @@ levels 1 to 70, which is exactly 2,800: the loop at `1000:79C3` opens with
 
 and runs to `40 * level`.
 
-A slot of `1.NUM` holds `32 * column + row`, or 0 for an empty slot. The same
+A slot of `1.NUM` holds `32 * row + column`, or 0 for an empty slot. The same
 loop divides the value by 32 (the constant at DGROUP `CF38` is 0.03125), keeps
-the quotient and the remainder, and writes the slot number into the occupancy
-grid at DGROUP `4E90` at `22 * row + column` — the same subscript order the "is
-there a monster on this square" test at `1000:56CC` uses, which is what says
-which half is which. If the square is already taken it rolls a fresh position
+the quotient as the row and the remainder as the column, and writes the slot
+number into the occupancy grid at DGROUP `4E90` at `22 * row + column` — the
+same subscript order the "is there a monster on this square" test at
+`1000:56CC` uses. The monster's own step at `1000:76CE` settles which half is
+which: it writes `32 * b6ac + b6ae` where the lines above index the grid as
+`22 * b6ac + b6ae`. If the square is already taken it rolls a fresh position
 from two `RND` draws, the constants 18 and 17 at `BD1E` and `BD22`, plus 66, and
 tries again; 66 is `2 * 32 + 2`, which keeps monsters off the outer ring. Every
 value in the shipped file agrees: the column comes out 2 to 18 and the row 2 to

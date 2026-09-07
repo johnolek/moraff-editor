@@ -9,7 +9,7 @@ for the second).  What each one is:
 
 * `1.NUM`  where every monster is.  An integer array of 2801 elements, 40 slots
   per dungeon level for levels 1 to 70, at DGROUP 2242.  A slot holds
-  `32 * column + row`, or 0 for an empty slot.
+  `32 * row + column`, or 0 for an empty slot.
 * `2.NUM`  how strong each of those monsters is, in the same 40-per-level shape
   at DGROUP 3824.
 * `3.NUM`  for each of the twenty-two monsters named in `F6.COM`, which of
@@ -44,12 +44,12 @@ import read_bsave
 SLOTS_PER_LEVEL = 40
 DEEPEST_LEVEL = 70
 
-# A slot of 1.NUM packs a square as 32 * column + row: the loop at 1000:79D4
-# takes INT(value / 32) for one coordinate (the constant at DGROUP CF38 is
-# 0.03125) and the remainder for the other, then indexes the occupancy grid at
-# DGROUP 4E90 as `22 * row + column`, the same order the "is there a monster
-# here" test at 1000:56CC uses.
-COLUMN_SCALE = 32
+# A slot of 1.NUM packs a square as 32 * row + column: the loop at 1000:79D4
+# takes INT(value / 32) for the row (the constant at DGROUP CF38 is 0.03125) and
+# the remainder for the column, and the monster's step at 1000:76CE writes
+# 32 * b6ac + b6ae where the lines above it index the occupancy grid at DGROUP
+# 4E90 as 22 * b6ac + b6ae, the grid's own `22 * row + column` order (1000:56CC).
+ROW_SCALE = 32
 
 # Each picture is a QuickBASIC GET image: a width in bits, a height in rows,
 # then the rows, each padded to a byte and two bits per pixel because the game
@@ -189,7 +189,7 @@ def show_monsters(values, strengths, only_level):
         for slot, packed in enumerate(slots, start=1):
             if not packed:
                 continue
-            column, row = divmod(packed, COLUMN_SCALE)
+            row, column = divmod(packed, ROW_SCALE)
             strength = ""
             if strengths:
                 strength = "  strength %4d" % strengths[start + slot - 1]
