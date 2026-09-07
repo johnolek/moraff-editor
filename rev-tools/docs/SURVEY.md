@@ -198,9 +198,9 @@ BRUN30 CS:00E9   mov  cs:[016D], bx        ; the INT 3Fh handler
 ```
 
 So a BASIC statement compiles to a couple of `mov`s and a three-byte thunk.
-`DUNSMALL.EXE` contains 3,924 of them calling 130 distinct run-time routines,
-one every eleven bytes of code. The routines themselves are small and blunt —
-INT 3Fh `$7B`, the commonest assignment, is four instructions:
+`DUNSMALL.EXE` contains 5,702 of them calling 136 distinct run-time routines,
+one every nine bytes of code. The routines themselves are small and blunt —
+INT 3Fh `$7B`, one of the four assignments, is four instructions:
 
 ```
 BRUN30 CS:1E30   movsw
@@ -212,15 +212,18 @@ BRUN30 CS:1E30   movsw
 
 which is `ES:DI <- DS:SI`, four bytes: a single-precision `LET`.
 
-Two details decide whether a disassembly stays in step. Some routines read
-further bytes of their own out of the stream — `$45`, array allocation, does
-`pop si; pop ds; lodsb` at BRUN30 CS:C237 to fetch a dimension count — and
-INT 3Fh `$B7`, the item list an `INPUT #` opens with, takes a count byte and
-then one type byte per item. Get one wrong and the disassembler swallows the
-next thunk within two instructions. `qbthunk.py` derives the table from the game
-itself by looking for exactly that failure.
+Three details decide whether a disassembly stays in step. Some routines read
+further bytes of their own out of the stream — `$45`, `DIM`, does
+`pop si; pop ds; lodsb` at BRUN30 CS:C237 to fetch a dimension count. INT 3Fh
+`$B7`, the item list an `INPUT #` opens with, takes a count byte and then one
+type byte per item. INT 3Fh `$5D` and `$5E`, `ON ... GOSUB` and `ON ... GOTO`,
+take a count byte and then that many jump targets, and are the only thunks that
+transfer control. Get one wrong and the disassembler swallows the next thunk
+within two instructions.
 
-Two run-time routines are worth naming now because a port will need them:
+**All 136 routines are now named**; `BRUN30.md` is the table, the evidence for
+each name and how sure it is. Two of them are worth repeating here because a
+port will need them:
 
 * **INT 3Dh `$34` is `RND`** (BRUN30 CS:B2C2). It is a 24-bit multiply-add:
   `seed[0234..0236] * mult[022C..022E] + add[0230..0232]`, kept to 24 bits and
@@ -237,7 +240,7 @@ Two run-time routines are worth naming now because a port will need them:
 `../decomp/README.md` has the recipe and the reasoning; in outline it is
 `relayout.py` (segments onto their own pages, DGROUP moved to its real load
 offset), `unthunk.py` (every thunk rewritten as a near call to a named stub),
-`build.py`, `export.py`. The result is `../decomp/dunsmall.c`: 264 functions,
+`build.py`, `export.py`. The result is `../decomp/dunsmall.c`: 384 functions,
 no decompiler failures.
 
 ### The verdict
@@ -272,7 +275,7 @@ from.
 #### Example 1: a menu (`1000:1350`, the "use an item" list)
 
 ```
-1352  cd 3f bc       QB3F $BC                      ; CLS / new screen
+1352  cd 3f bc       QB3F $BC                      ; PRINT, to the screen
 1357  bb 6a bd       mov  bx, 0BD6Ah  ; "WHICH ITEM?"
 135a  cd 3f 6e       QB3F $6E                      ; PRINT it
 135d  cd 3e 79       QB3E $79                      ; end of line
@@ -311,8 +314,8 @@ named because `build.py` labels the descriptors.
 9a96  cd 3d 34       QB3D $34                      ; <- RND
 9a99  bf 1e bc       mov  di, 0BC1Eh               ; the constant 20
 9a9c  cd 3f 91       QB3F $91                      ; multiply
-9a9f  bb 1a 00       mov  bx, 1Ah
-9aa2  cd 3d 03       QB3D $03
+9a9f  bb 1a 00       mov  bx, 1Ah                  ; the accumulator
+9aa2  cd 3d 03       QB3D $03                      ; INT
 9aa7  bf fc 52       mov  di, 052FCh
 9aaa  cd 3f 81       QB3F $81
       ...
@@ -343,8 +346,8 @@ b81d  81 c3 20 60    add  bx, 6020h                ;   into the array at 6020
 b821  cd 3f b8       QB3F $B8
       ...
 b93e  cd 3e 21       QB3E $21                      ; CLOSE #3
-b964  bb 06 9b       mov  bx, 9B06h
-b967  cd 3f 57       QB3F $57                      ; DEF SEG / the load address
+b964  bb 06 9b       mov  bx, 9B06h                ; the load address
+b967  cd 3f 57       QB3F $57                      ; as a single
 b970  bb 60 d3       mov  bx, 0D360h  ; ".BIN"
 b976  cd 3f 55       QB3F $55
 b97b  cd 3e 1a       QB3E $1A                      ; BLOAD name$+".BIN", &H9B06
@@ -370,13 +373,12 @@ per dungeon.
 
 ### What the pipeline does not reach
 
-The recursive-descent walk covers 74% of the code segment; Ghidra's own analysis
-picks up part of the rest, for 264 functions between them. The gap is code
-reached only through INT 3Dh, which is how a compiled QuickBASIC `GOSUB` or
-procedure call goes out — there is no instruction for a disassembler to follow.
-Nine dead ends remain where a thunk's inline-argument size is still wrong. None
-of the 130 run-time routines is named beyond the four identified above, and none
-of the game's own 134 functions has been given a name yet.
+The recursive-descent walk covers 99.9% of the code segment with no dead ends,
+which it does by following the `ON ... GOTO` jump tables — a seventh of the game
+is reachable no other way, because the compiler puts the branch targets in a word
+table behind the thunk rather than in an instruction. Ghidra's own analysis picks
+up the last few bytes, for 384 functions between them. Every run-time routine is
+named; none of the game's own 248 functions has been given a name yet.
 
 ## 3. The data
 
@@ -821,10 +823,9 @@ are 40 by 14 bits, 20 by 14 pixels. `read_dungeon.py` draws them.
 * **Reading the game's rules out of the disassembly.** Slower than for the other
   two games but not harder in kind, because compiled QuickBASIC 3.0 is close to
   a transcript of the source. The prices, the messages, the menu structure, the
-  inn and temple and store are all legible now. What is needed is a name for
-  each of the 130 run-time routines, which is a bounded piece of work — each one
-  is a few dozen instructions in `BRUN30.EXE`, and the common ones are already
-  obvious from their call sites.
+  inn and temple and store are all legible now, and with the run-time routines
+  named (`BRUN30.md`) so is the arithmetic:
+  `rev-tools/reference/list_basic.py` prints the game as annotated BASIC.
 * **The tables.** The spells, the magic items and the monster names are plain
   text in `F1.COM`, `F2.COM`, `F6.COM` and `F7.COM` and need no reverse
   engineering at all.
@@ -845,12 +846,9 @@ are 40 by 14 bits, 20 by 14 pixels. `read_dungeon.py` draws them.
 
 ### The first three items to file
 
-1. **Name the QuickBASIC run-time routines DUNSMALL uses.** All 130, from
-   `BRUN30.EXE`, into a table `build.py` applies the way `mw-tools`' `runtime.py`
-   names the Borland helpers. Nothing else in the reverse engineering gets much
-   easier until this is done, and everything gets easier afterwards. Includes
-   finishing the inline-argument table, which closes the nine dead ends and
-   should lift the walk's coverage well above 74%.
+1. **Name the QuickBASIC run-time routines DUNSMALL uses.** Done: `BRUN30.md`.
+   The inline-argument table went with it, which closed the nine dead ends and
+   took the walk's coverage from 74% to 99.9%.
 2. **Settle the two scaled fields in the character record** — the six
    characteristics and the player level cell — by reading `CHCHAR.EXE`'s roller,
    which is 12,992 bytes and writes the file in the first place. That completes

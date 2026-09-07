@@ -3,14 +3,16 @@
 Everything the reverse engineering of `DUNSMALL.EXE` — Moraff's Revenge
 Beginner v3.0 — is read from.
 
-- `dunsmall.c` — all 264 functions as Ghidra's decompiler produced them, one
+- `dunsmall.c` — all 384 functions as Ghidra's decompiler produced them, one
   after another, each preceded by a header line giving its name, address, size
-  and callers. 134 of them are the game's; the other 130 are the run-time
+  and callers. 248 of them are the game's; the other 136 are the run-time
   stubs described below.
 - `ghidra-scripts/` — the pipeline that produced it.
 
 `../docs/SURVEY.md` is the write-up: what every file in the game folder is, how
 much of the game a decompilation can actually show, and what a port would take.
+`../docs/BRUN30.md` says what every run-time routine is, and
+`../reference/brun30.py` is the table the scripts here read.
 
 ## What is different about this game
 
@@ -42,21 +44,23 @@ cd 3f 7b        INT  3Fh $7B      ; single-precision assignment: ES:DI <- DS:SI
 The handler at BRUN30 CS:00E9 does `pop bx; pop ds; inc bx; push bx; mov
 bl,[bx-1]; shl bx,1; push cs:[bx+038Dh]; ret` — bump the return address past the
 function byte, then dispatch through a word table. INT 3Eh uses the table at
-CS:0243 and INT 3Dh the one at CS:0171. DUNSMALL calls 130 distinct routines
-across the three tables, 3,924 times.
+CS:0243 and INT 3Dh the one at CS:0171. DUNSMALL calls 136 distinct routines
+across the three tables, 5,702 times.
 
 Ghidra decodes `CD 3F` as a two-byte INT and carries on into the function byte,
 so without help the instruction stream is out of step from the first BASIC
 statement onwards and nothing downstream is worth reading.
 
-**Some run-time routines read further bytes of their own.** `$45` (array
-allocation) does `pop si; pop ds; lodsb` at BRUN30 CS:C237 to fetch a dimension
-count. `$B7` — the item list an `INPUT #` or `READ` opens with — takes a count
-byte and then one type byte per item. `qbthunk.py` holds the table, and
-`qbthunk.learn_inline` re-derives it from the game: a thunk whose argument size
-is too small throws the disassembler out of step within a couple of
-instructions, and because thunks occur every eleven bytes or so the damage shows
-up immediately as a decoded instruction that has swallowed the next `CD 3x`.
+**Some run-time routines read further bytes of their own.** `$45` (`DIM`) does
+`pop si; pop ds; lodsb` at BRUN30 CS:C237 to fetch a dimension count. `$B7` — the
+item list an `INPUT #` opens with — takes a count byte and then one type byte per
+item. `$5D` and `$5E`, `ON ... GOSUB` and `ON ... GOTO`, take a count byte and
+then that many jump targets, and are the only thunks that transfer control.
+`../reference/brun30.py` holds all of that, and `qbthunk.learn_inline`
+cross-checks the fixed-size ones against the game: a thunk whose argument size is
+too small throws the disassembler out of step within a couple of instructions,
+and because thunks occur every nine bytes or so the damage shows up immediately
+as a decoded instruction that has swallowed the next `CD 3x`.
 
 ## Regenerating everything
 
@@ -81,7 +85,8 @@ The executable itself is not in this repository. You need your own copy.
 
 - `qbthunk.py` — the run-time call convention, a recursive-descent disassembler
   that follows it, and `learn_inline`, which re-derives the inline-argument
-  table from the game rather than trusting the one written down.
+  sizes from the game rather than trusting the ones written down. The names and
+  the argument shapes themselves come from `../reference/brun30.py`.
 - `relayout.py` — puts the code segment and DGROUP on 64 KB pages of their own,
   applies the 28 fixups by hand and writes no relocation table, so Ghidra's MZ
   loader cuts one block per page instead of one per segment value it finds at a
@@ -89,7 +94,9 @@ The executable itself is not in this repository. You need your own copy.
   where BRUN30 actually loads it — see below.
 - `unthunk.py` — rewrites every `CD 3x nn` into `E8 rel16`, a near call to a
   one-byte `C3` stub in the space `relayout.py` freed above the code, so the
-  decompiler sees a call rather than a software interrupt. This is what
+  decompiler sees a call rather than a software interrupt. Each stub is named
+  after the BASIC statement it stands for, so an assignment reads as `qb_LET_7b`
+  and a screen write as `qb_PRINT_6e`. This is what
   `unemu87.py` does for Borland's 80x87 emulator in `mw-tools`, with one
   difference worth being honest about: `unemu87.py`'s substitution is
   byte-for-byte what Borland's own startup code does, and this one is not. It
@@ -129,14 +136,13 @@ triples: in 386 of the 387 of them in the file, the offset field is exactly
 
 ## What the pipeline does not reach
 
-The recursive-descent walk covers 74% of the code segment. The rest is reached
-only through the run-time — a compiled QuickBASIC `GOSUB` or `CALL` goes out
-through INT 3Dh, so there is no instruction for a disassembler to follow — and
-nine dead ends remain where a thunk's argument size is still wrong. Ghidra's own
-analysis picks up some of the gap; between them they account for 264 functions.
-Closing the rest means reading the INT 3Dh dispatch table properly, which is
-the obvious next piece of work.
+The recursive-descent walk covers 99.9% of the code segment with no dead ends,
+which it does by following the `ON ... GOTO` jump tables: a seventh of the game
+is reachable no other way, because the compiler puts the branch targets in a word
+table behind the thunk rather than in an instruction. Ghidra's own analysis picks
+up the last few bytes; between them they account for 384 functions.
 
-Nothing here names a function. Every one is still `FUN_1000_xxxx`; the
-identifications in `../docs/SURVEY.md` were made by hand from the string
-literals and are not yet written back into the build.
+None of the game's own functions has a name. Every one is still `FUN_1000_xxxx`;
+the identifications in `../docs/SURVEY.md` were made by hand from the string
+literals and are not yet written back into the build. The run-time stubs are
+named, from `../reference/brun30.py`.
