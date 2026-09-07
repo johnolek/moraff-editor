@@ -6,6 +6,7 @@
   import { MORAFFS_WORLD } from '../editor/games';
   import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
+  import MwMonsterPicture from './MwMonsterPicture.svelte';
   import {
     HELD_WEAPONS,
     MONSTERS_PER_FLOOR,
@@ -132,9 +133,9 @@
   <div class="top">
     <div class="art">
       {#if entry.pictureDrawn}
-        <span>Picture {entry.picture}</span>
+        <MwMonsterPicture {entry} {floor} />
       {:else}
-        <span>No picture</span>
+        <p class="missing">No picture</p>
       {/if}
     </div>
     <div class="facts">
@@ -289,6 +290,11 @@
     gap: 24px;
   }
   .art {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .missing {
     display: flex;
     align-items: center;
     justify-content: center;
