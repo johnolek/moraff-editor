@@ -10,6 +10,7 @@ import { MORAFFS_WORLD_MAP, type MapSquare } from '../../map/game';
 import type { StockedMonster } from '../../map/stocking';
 import { adviseTheWalker, type MwLessons } from './advice';
 import { fallDownAChute, chuteUnder } from './chute';
+import { mwDie } from './death';
 import { digAHole } from './dig';
 import { castAtTheSpellScreen, useAnItem } from './cast';
 import { swingAtMonster } from './fight';
@@ -30,6 +31,7 @@ import {
 import { resolveStep, turnAndStep, waitAMoment } from './move';
 import { loadMwPlayer, saveMwPlayer } from './record';
 import { mwMessageBoxLines, mwNotBuiltYet, MW_MESSAGE_BOX } from './screens';
+import { quitAndSave } from './quit';
 import { buildingUnder } from './town';
 import { explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
@@ -408,8 +410,8 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.money]: { c: 'financial_statement', run: showMoney },
   [MW_KEY.weapon]: { c: 'movecontrol, the 0x77 branch', run: chooseWeapon },
   [MW_KEY.armor]: { c: 'movecontrol, the 0x61 branch', run: chooseArmor },
-  [MW_KEY.save]: { c: 'save_player', run: (turn) => mwNotBuiltYet(turn.game, 'SAVE AND CARRY ON PLAYING') },
-  [MW_KEY.quit]: { c: 'FUN_2000_7b86', run: (turn) => mwNotBuiltYet(turn.game, 'QUIT AND SAVE YOUR POSITION') },
+  [MW_KEY.save]: { c: 'save_player', run: (turn) => turn.session.save() },
+  [MW_KEY.quit]: { c: 'FUN_2000_7b86', run: quitAndSave },
   [MW_KEY.loseItem]: { c: 'FUN_2000_7756', run: (turn) => mwNotBuiltYet(turn.game, 'DROP A WEAPON, A SUIT OF ARMOR OR SOME MONEY') },
   [MW_KEY.brickSpeed]: { c: 'movecontrol, the 0x62 branch', run: (turn) => mwNotBuiltYet(turn.game, 'CHANGE HOW FAST THE WALLS ARE DRAWN') },
   [MW_KEY.sound]: { c: 'movecontrol, the 0x6f branch', run: (turn) => mwNotBuiltYet(turn.game, 'TURN THE SOUND ON AND OFF') },
@@ -431,10 +433,8 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
   for (;;) {
     if (pc.hp < 0) {
       session.flushKeys();
-      session.die();
-      session.over = true;
-      session.changed();
-      return;
+      await mwDie(session);
+      if (session.over) return;
     }
     const turn = await beginTurn(session);
     session.faceTheMonster();
@@ -451,6 +451,10 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     }
     await killTheDead(session);
     await session.settle();
+    if (pc.hp < 0) {
+      await mwDie(session);
+      if (session.over) return;
+    }
     await session.fighting(() => resolveStep(turn));
     await session.settle();
     recentreTheMap(session);
