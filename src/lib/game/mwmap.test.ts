@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { bundledMwDungeon, bundledMwTileset } from './mw-dungeon';
 import { HEIGHT, NUM_PATTERNS, PATTERN_BASE, WIDTH } from './mwmap.js';
@@ -141,6 +142,50 @@ describe('floor', () => {
     for (const square of dungeon.floor(7, 0).flat()) {
       if (!square.solid) continue;
       expect([square.ladder, square.chute, square.trapdoor, square.surface]).toEqual([0, 0, -1, 0]);
+    }
+  });
+});
+
+// The squares John's own characters walked, taken from four .DUN automap files that hold
+// nothing but dungeon 0 (mw-tools/reference/make_explored_fixture.mjs).  The game lets
+// nobody stand on rock, so a generator that calls one of these squares rock is wrong.
+const explored: { dungeon: number; floors: { level: number; complete: boolean; squares: [number, number][] }[] } =
+  JSON.parse(readFileSync('mw-tools/fixtures/explored.json', 'utf8'));
+
+describe('the squares a player really walked', () => {
+  it('covers 96 floors', () => {
+    expect(explored.floors.length).toBe(96);
+    expect(explored.floors.reduce((total, floor) => total + floor.squares.length, 0)).toBe(11709);
+  });
+
+  it('is never rock', () => {
+    const rock: string[] = [];
+    for (const floor of explored.floors) {
+      for (const [x, y] of floor.squares) {
+        if (dungeon.solid(x, y, floor.level, explored.dungeon)) rock.push(`floor ${floor.level} (${x}, ${y})`);
+      }
+    }
+    expect(rock).toEqual([]);
+  });
+
+  it('is rock all over in a dungeon these characters were never in', () => {
+    for (const wrong of [1, 2]) {
+      const rock = explored.floors.flatMap((floor) =>
+        floor.squares.filter(([x, y]) => dungeon.solid(x, y, floor.level, wrong)),
+      );
+      expect(rock.length).toBeGreaterThan(1000);
+    }
+  });
+
+  it('is every open square of the one floor explored end to end', () => {
+    const complete = explored.floors.filter((floor) => floor.complete);
+    expect(complete.length).toBe(1);
+    for (const floor of complete) {
+      const open: [number, number][] = [];
+      for (let y = 0; y < HEIGHT; y++) {
+        for (let x = 0; x < WIDTH; x++) if (!dungeon.solid(x, y, floor.level, explored.dungeon)) open.push([x, y]);
+      }
+      expect(open).toEqual(floor.squares);
     }
   });
 });
