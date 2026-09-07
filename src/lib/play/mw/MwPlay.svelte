@@ -238,11 +238,11 @@
           focus={{ x: view.place.x, y: view.place.y, cell: PLAY_CELL }}
         />
         {#if corner.lines.length > 0}
-          <div class="corner top-left">
+          <div class="corner top-left" style:--share={MW_CORNER_WIDTH / MW_SCREEN.width}>
             <GameScreen lines={corner.lines} window={cornerWindow} />
           </div>
         {/if}
-        <div class="corner top-right">
+        <div class="corner top-right" style:--share={MONSTER_TOP.width / MW_SCREEN.width}>
           {#if view.engaged}
             <div class="monster">
               <MwPortrait monster={view.engaged} floor={view.place.floor} />
@@ -357,7 +357,9 @@
   .map {
     position: relative;
     flex: 1;
-    min-width: 0;
+    /* Room for the game's own screen: below this the column of numbers goes under the map. */
+    min-width: 620px;
+    --inset: 10px;
   }
   .overlay {
     position: absolute;
@@ -373,38 +375,38 @@
   }
   /* The four corners of the game's own screen, laid over the map the way it lays them over the
      3-D views: the message box top left, the monster faced top right, the character's own block
-     bottom left and the characteristics bottom right. */
+     bottom left and the characteristics bottom right.
+
+     All four are one screen in the game, so each is given the share of the map's width it has of
+     that screen's 1600 and they all come out at the same size. */
   .corner {
     position: absolute;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: calc((100% - 2 * var(--inset)) * var(--share));
     pointer-events: none;
   }
   .top-left {
-    left: 10px;
-    top: 10px;
-    width: clamp(240px, 34%, 460px);
+    left: var(--inset);
+    top: var(--inset);
   }
-  /* The game keeps both blocks on one screen, so they are given the share of the map's width
-     they have of its 1600 and come out at the same size. */
+  .top-right {
+    right: var(--inset);
+    top: var(--inset);
+    align-items: flex-end;
+  }
   .bottom-blocks {
     position: absolute;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
+    left: var(--inset);
+    right: var(--inset);
+    bottom: var(--inset);
     display: flex;
     gap: 6px;
     pointer-events: none;
   }
   .block {
     min-width: 0;
-  }
-  .top-right {
-    right: 10px;
-    top: 10px;
-    align-items: flex-end;
-    width: clamp(180px, 26%, 330px);
   }
   .monster {
     position: relative;
@@ -484,7 +486,7 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    width: clamp(300px, 26vw, 380px);
+    width: clamp(280px, 22vw, 340px);
     flex-shrink: 0;
     padding: 12px;
     border-left: 1px solid var(--line);
@@ -492,13 +494,14 @@
   }
   /* Narrow enough that a column beside the map would leave the map the smaller of the two: the
      side goes under the map instead and the whole tab scrolls. */
-  @media (max-width: 900px) {
+  @media (max-width: 1000px) {
     .stage {
       flex-direction: column;
       overflow-y: auto;
     }
     .map {
       flex: none;
+      min-width: 0;
       height: min(70vh, 520px);
     }
     .side {
