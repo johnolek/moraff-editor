@@ -35,9 +35,18 @@ export function mwCharacterFile(overrides: Partial<MwCharacter> = {}): MwCharact
   };
 }
 
-/** A session with the loop running, waiting for its first key. */
-export function playingMw(file: MwCharacterFile, rng: Rng = new BorlandRng(3)): MwGameSession {
+/**
+ * A session with the loop running, waiting for its first key. `arrange` runs before the loop
+ * starts, which is where a test puts a monster on the floor: the loop works out what the
+ * character is facing before it reads its first key.
+ */
+export function playingMw(
+  file: MwCharacterFile,
+  rng: Rng = new BorlandRng(3),
+  arrange: (session: MwGameSession) => void = () => {},
+): MwGameSession {
   const session = startMwGame(file, rng);
+  arrange(session);
   void runMwMoveControl(session);
   return session;
 }
@@ -88,7 +97,8 @@ describe('walking', () => {
     const start = findMwSquare(0, (square) => square.n === 0 && square.s === 3);
     const session = playingMw(mwCharacterFile({ floor: 0, dir: 1, ...start }));
     await pressMw(session, MW_KEY.arrowUp);
-    expect(session.box).toEqual(['THE WALL REFUSES TO MOVE']);
+    // The line goes where the game draws it, over the top left of the map rather than in the box.
+    expect(session.banner).toEqual(['THE WALL REFUSES TO MOVE']);
     expect(session.view().place).toMatchObject({ x: start.x, y: start.y });
   });
 
@@ -122,9 +132,8 @@ describe('walking', () => {
 
 describe('the message box', () => {
   it('is cleared by the next key', async () => {
-    const start = findMwSquare(0, (square) => square.n === 0 && square.s === 3);
-    const session = playingMw(mwCharacterFile({ floor: 0, dir: 1, ...start }));
-    await pressMw(session, MW_KEY.arrowUp);
+    const session = playingMw(mwCharacterFile({ floor: 0, ...townWalk() }));
+    await pressMw(session, MW_KEY.zoomView);
     expect(session.box.length).toBeGreaterThan(0);
     await pressMw(session, MW_KEY.escape);
     expect(session.box).toEqual([]);

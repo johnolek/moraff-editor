@@ -11,7 +11,9 @@ import type { StockedMonster } from '../../map/stocking';
 import { bundledMwDungeon as townFeatures } from '../../game/mw-dungeon';
 import { fallDownAChute, chuteUnder } from './chute';
 import { digAHole } from './dig';
+import { swingAtMonster } from './fight';
 import { MwFloorMonsters, mwDrawnMonsters, mwEnterLevel } from './floor';
+import { killTheDead } from './kill';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { MW_KEY } from './keys';
 import { resolveStep, turnAndStep, waitAMoment } from './move';
@@ -80,6 +82,8 @@ export interface MwPlayView {
   screen: ScreenLine[];
   /** The line FUN_2000_a9bd puts under the map on a square with a way off the floor. */
   prompt: string | null;
+  /** attack_timing's lines about the monster being fought. */
+  banner: string[];
   /** Moves of game time the character has spent. */
   moves: number;
   /** The monster the character is facing, or null. */
@@ -100,6 +104,13 @@ export class MwGameSession {
   rows: MapSquare[][];
   /** The eight lines showing in the message box. */
   box: string[] = [];
+  /**
+   * What the fight draws at the top left of the screen — attack_timing's lines about the monster
+   * being faced, the swing, the monster's turn and the wall that refuses to move. Every one of
+   * those is a print_text at y 0 to 0x78 in colour 15, over the message box rather than in it,
+   * so they are kept apart here the way they are on the screen.
+   */
+  banner: string[] = [];
   /** movecontrol has come back: the character has quit or died. */
   over = false;
   dead = false;
@@ -114,6 +125,8 @@ export class MwGameSession {
   private waitOwed = false;
   /** Every box printed since the last one was shown, oldest first. */
   private pending: string[][] = [];
+  /** Where what the game says goes while a fight is being drawn. */
+  private bannerSink: string[][] | null = null;
 
   constructor(
     readonly file: MwCharacterFile,
@@ -127,24 +140,36 @@ export class MwGameSession {
       wallSide: (x, y, hv, floor, dungeon) => bundledMwDungeon.side(x, y, hv, floor, dungeon),
       pressAnyKey: () => {
         this.waitOwed = true;
+        // A fight stops for a key only where it printed a real message box — the notice a level
+        // drain, a poisoning or a disease brings. That is the last thing it said, so it comes
+        // out of the banner and into the box.
+        const said = this.bannerSink;
+        const box = said?.pop();
+        if (box) {
+          this.pending.push(box);
+          this.box = box.slice(0, MW_MESSAGE_BOX.lines);
+        }
       },
     });
     // The boxes go through say and the screens through draw, the way they are kept apart on the
     // screen itself.
     const said = this.game.say;
     this.game.say = (...lines: string[]) => {
-      this.pending.push(lines);
-      this.box = lines.slice(0, MW_MESSAGE_BOX.lines);
+      if (this.bannerSink) this.bannerSink.push(lines);
+      else {
+        this.pending.push(lines);
+        this.box = lines.slice(0, MW_MESSAGE_BOX.lines);
+      }
       said(...lines);
     };
     // movecontrol puts the character on the occupancy grid and the map cursor in the middle of
     // the view before its first pass.
+    this.rows = MORAFFS_WORLD_MAP.floor(pc.floor, pc.dungeon);
+    mwEnterLevel(this.game, this.floors, this.rows, pc.floor, this.game.rng);
     mwSetOccupant(this.game, pc.x, pc.y, MW_SQUARE_PLAYER);
     pc.mapCursorY = this.game.mapViewRows >> 1;
     pc.mapCursorX = this.game.mapViewColumns >> 1;
     recomputeWeight(this.game);
-    this.rows = MORAFFS_WORLD_MAP.floor(pc.floor, pc.dungeon);
-    mwEnterLevel(this.game, this.floors, this.rows, pc.floor, this.game.rng);
   }
 
   /** A key from the Play tab. */
@@ -195,6 +220,31 @@ export class MwGameSession {
     const from = this.pending.length;
     print();
     return this.pending.splice(from);
+  }
+
+  /**
+   * attack_timing (WORLD.EXE 2000:9ed9): which monster the character is fighting, and the three
+   * lines the game draws about it.
+   *
+   * Those lines go at y 0x28, 0x50 and 0x78, which is over the message box rather than in it, so
+   * they are kept apart here the way they are on the screen. They are drawn again only when the
+   * character turns, and go when there is nothing left to fight.
+   */
+  faceTheMonster(): number {
+    return this.fighting(() => attackTiming(this.game));
+  }
+
+  /** Run something whose lines belong at the top left of the screen rather than in the box. */
+  fighting<T>(run: () => T): T {
+    const said: string[][] = [];
+    const outer = this.bannerSink;
+    this.bannerSink = said;
+    try {
+      return run();
+    } finally {
+      this.bannerSink = outer;
+      if (said.length > 0) this.banner = said.flat();
+    }
   }
 
   /** Boxes shown one after another, each waiting for a key, with the last one left up. */
@@ -286,6 +336,7 @@ export class MwGameSession {
       box: mwMessageBoxLines(this.box),
       screen: game.screen,
       prompt: ladderPrompt(ladderUnder(game), buildingUnder(game), trapdoorHere(this)),
+      banner: this.banner,
       moves: game.movesTaken,
       engaged: game.engaged === -1 ? null : (drawn.find((monster) => monster.slot === game.engaged) ?? null),
       over: this.over,
@@ -334,7 +385,7 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.down]: { c: 'movecontrol, the 0x64 branch, and dig_hole', run: goDown },
   [MW_KEY.up]: { c: 'movecontrol, the 0x75 branch, and the town', run: goUp },
   [MW_KEY.trapDoor]: { c: 'movecontrol, the 0x6b branch, and FUN_2000_a6fa', run: goThroughTrapDoor },
-  [MW_KEY.fight]: { c: 'strike, and the two spend_time calls after it', run: (turn) => mwNotBuiltYet(turn.game, 'SWING AT THE MONSTER YOU ARE FIGHTING') },
+  [MW_KEY.fight]: { c: 'strike, and the two spend_time calls after it', run: swingAtMonster },
   [MW_KEY.cast]: { c: 'spell_screen', run: (turn) => mwNotBuiltYet(turn.game, 'CAST A SPELL') },
   [MW_KEY.useItem]: { c: 'movecontrol, case 0x69 of its letter switch', run: (turn) => mwNotBuiltYet(turn.game, 'USE A SCROLL, A WAND, A PAPER, A PILL OR ANOTHER ITEM') },
   [MW_KEY.viewStats]: { c: 'view_stats', run: (turn) => mwNotBuiltYet(turn.game, "SHOW YOUR VITAL STATISTICS") },
@@ -376,7 +427,7 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
       return;
     }
     const turn = await beginTurn(session);
-    attackTiming(game);
+    session.faceTheMonster();
     await session.settle();
     const key = await session.key();
     session.clearBox();
@@ -384,7 +435,9 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     if (handler) await handler.run(turn);
     await session.settle();
     if (session.over) return;
-    await resolveStep(turn);
+    await killTheDead(session);
+    await session.settle();
+    await session.fighting(() => resolveStep(turn));
     await session.settle();
     recentreTheMap(session);
   }

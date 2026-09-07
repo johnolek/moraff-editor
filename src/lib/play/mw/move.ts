@@ -4,6 +4,15 @@ import type { MwTurn } from './engine';
 import { arriveSquare, leaveSquare } from './moment';
 
 /**
+ * FUN_2000_a57e (WORLD.EXE 2000:a57e) wipes the top left of the screen before it takes the
+ * character off the grid, which is what takes the last fight's lines down.
+ */
+function leaveTheSquare(turn: MwTurn): void {
+  turn.session.banner = [];
+  leaveSquare(turn.game);
+}
+
+/**
  * Turning and stepping: the four arrow keys, and the step movecontrol resolves at the end of
  * every pass round its loop.
  *
@@ -35,9 +44,11 @@ export function turnAndStep(turn: MwTurn, dir: number): void {
  * again, which spends a moment without going anywhere.
  */
 export function waitAMoment(turn: MwTurn): void {
-  leaveSquare(turn.game);
-  turn.game.redrawView = true;
-  arriveSquare(turn.game);
+  turn.session.fighting(() => {
+    leaveTheSquare(turn);
+    turn.game.redrawView = true;
+    arriveSquare(turn.game);
+  });
 }
 
 /**
@@ -66,28 +77,28 @@ export async function resolveStep(turn: MwTurn): Promise<void> {
   }
   startEngagementTimer(game);
   if (step.dy < 0 && pc.y > 0) {
-    leaveSquare(game);
+    leaveTheSquare(turn);
     pc.y -= 1;
     pc.mapCursorY -= 1;
     arriveSquare(game);
     if (pc.mapCursorY < 1) game.recenterMap = true;
   }
   if (step.dy > 0 && pc.y < game.rows) {
-    leaveSquare(game);
+    leaveTheSquare(turn);
     pc.y += 1;
     pc.mapCursorY += 1;
     arriveSquare(game);
     if (pc.mapCursorY > game.mapViewRows - 2) game.recenterMap = true;
   }
   if (step.dx > 0 && pc.x < game.columns) {
-    leaveSquare(game);
+    leaveTheSquare(turn);
     pc.x += 1;
     pc.mapCursorX += 1;
     arriveSquare(game);
     if (pc.mapCursorX > game.mapViewColumns - 2) game.recenterMap = true;
   }
   if (step.dx < 0 && pc.x > 0) {
-    leaveSquare(game);
+    leaveTheSquare(turn);
     pc.x -= 1;
     pc.mapCursorX -= 1;
     arriveSquare(game);

@@ -1,4 +1,4 @@
-import { attackTiming, monstersMove } from '../../game/mw-port/combat';
+import { monstersMove } from '../../game/mw-port/combat';
 import { innClearPreparation } from '../../game/mw-port/town';
 import { MONSTER_SLOTS } from '../../game/mw-port/stocking';
 import type { MwTurn } from './engine';
@@ -70,9 +70,11 @@ export async function digAHole(turn: MwTurn): Promise<boolean> {
   if ((await session.menuKey(QUESTION_LINES.first, QUESTION_LINES.last)) !== DIG) return false;
   session.clearBox();
   for (let slot = 0; slot < MONSTER_SLOTS; slot++) game.monsterTimers[slot] = HELD_TIMER;
-  for (let moment = 0; moment < DIGGING_MOMENTS; moment++) monstersMove(game);
+  session.fighting(() => {
+    for (let moment = 0; moment < DIGGING_MOMENTS; moment++) monstersMove(game);
+  });
   for (let slot = 0; slot < MONSTER_SLOTS; slot++) game.monsterTimers[slot] = 0;
-  if (attackTiming(game) !== -1) {
+  if (session.faceTheMonster() !== -1) {
     game.redrawView = true;
     game.say('A MONSTER WANTS TO HELP'); // DS:3074
     return false;
