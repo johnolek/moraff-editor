@@ -111,9 +111,11 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
 
 * **Real random numbers.** `RealRng` in `src/lib/game/port/rng.ts`, per the port's third
   departure. A test hands the session a seeded one instead.
-* **No clock.** The game is turn based: a moment passes per action and nothing happens while the
-  player thinks. Where the original waits on the BIOS tick counter — the flashes while a hole is
-  dug — the port prints the line once and says so.
+* **No clock in the game.** The game is turn based: a moment passes per action and nothing
+  happens while the player thinks. The `delay` calls the original busy-waits in are about the
+  screen alone, so a kill's own messages are held for theirs by the Play tab's display timer
+  (`../timed.ts`); the flashes while a hole is dug, whose message the port shows as a box rather
+  than the strip the original draws it on, are still printed once.
 * **The map is drawn instead of the 3-D view**, and every monster on the floor is drawn, not only
   the ones a character has seen. The hit points the game draws in the four corners of that view
   go in the panel instead, along with everything else it keeps to itself.
