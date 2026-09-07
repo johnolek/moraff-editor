@@ -5,8 +5,9 @@ produces: `(name, one-line purpose)`.  `../decomp/rename_mw.py` substitutes the
 names into the decompilation, and the purposes become the trailing comment on
 each function's header line.
 
-The reverse engineering has only worked through character creation so far
-(`../docs/ROLLER.md`), so most of the 580 functions are still `FUN_`.
+The reverse engineering has covered character creation (`../docs/ROLLER.md`),
+the dungeon, the monsters and the spells (`../docs/DUNGEON.md`); the rest of
+the 580 functions are still `FUN_`.
 """
 
 KNOWN = {
