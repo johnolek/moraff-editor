@@ -82,8 +82,9 @@ export interface MwCharacter {
    */
   ageMinutes: number;
   /**
-   * 0x7f8, DS:c8ea: where the character stands on the 64 x 64 overworld map, in sixty-fourths
-   * of a tile, so 2146 is tile 33. The schema has no name for this field or the one after it.
+   * 0x7f8, DS:c8ea: where the character stands on the 64 x 64 overworld map, in 256ths of a
+   * tile across and 128ths down, so 2146 is column 8. The schema has no name for this field or
+   * the one after it.
    */
   worldX: number;
   /** 0x7fa, DS:c8ec. */

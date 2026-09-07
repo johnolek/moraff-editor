@@ -192,8 +192,8 @@ with none.
   owned, and the equipped-weapon and equipped-armour bytes stay 0, so those are
   what the character is using.
 * **Position**: floor 0, module 0, dungeon square (56, 60) on the 80 x 110
-  section map, and the overworld position 2146, 1431 — sixty-fourths of a tile
-  on the 64 x 64 world map, so tile (33, 22).
+  section map, and the overworld position 2146, 1431 — 256ths of a tile across
+  and 128ths down on the 64 x 64 world map, so tile (8, 11).
 * **Level and experience** are left at zero by the initial `memset`; the roller
   never touches them.
 
@@ -253,7 +253,7 @@ Six fields the roller writes are not in the schema:
 |---|---|---|
 | 0x07b4, 0x07b5 | `DAT_6000_c8a6/c8a7` | two bytes the map display uses as a cursor, set to half the scrolling view's width and height as `set_map_view(1)` leaves them (`DS:4489`/`448a`, 0x12 x 0x26 in the three biggest video modes), so 9 and 19; every real character file holds 9 and 19, and `movecontrol` recomputes them the same way whenever play starts |
 | 0x07d6 | `DAT_6000_c8c8` | age as a 32-bit count of minutes: years x 525600 |
-| 0x07f8, 0x07fa | `DAT_6000_c8ea/c8ec` | overworld position in sixty-fourths of a tile: 2146, 1431 |
+| 0x07f8, 0x07fa | `DAT_6000_c8ea/c8ec` | overworld position, 256ths of a tile across and 128ths down: 2146, 1431 |
 | 0x0804 | `DAT_6000_c8f6` | the module to come back to; 0 |
 | 0x0806, 0x0808 | `DAT_6000_c8f8/c8fa` | the square to come back to; 56, 60 |
 | 0x080a | `DAT_6000_c8fc` | a 32-bit counter set to 300 here, which the encounter code (`2000:3085`) recomputes as `level * 500 + random(20)` |
