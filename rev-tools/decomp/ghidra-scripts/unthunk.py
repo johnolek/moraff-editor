@@ -10,9 +10,9 @@ same length, so every address and every function size is unchanged.
 
 Each thunk becomes `E8 rel16` -- a near call to a one-byte `C3` stub in the space
 `relayout.py` freed above the code -- with any inline argument byte left as a
-`90` NOP behind the call.  The stubs are named `qb3f_7b` and so on by `build.py`,
-so a BASIC assignment reads as `qb3f_7b()` rather than as `swi(0x3f)` followed by
-a byte of garbage.
+`90` NOP behind the call.  The stub names come from `../../reference/brun30.py`,
+so a BASIC assignment reads as `qb_LET_7b()` rather than as `swi(0x3f)` followed
+by a byte of garbage, and a screen write reads as `qb_PRINT_6e()`.
 
 Unlike `unemu87.py` this is not a semantics-preserving substitution: a near call
 is not a software interrupt, and the argument byte really is read by the run-time
@@ -28,6 +28,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import qbthunk
+import brun30
 
 CODE_END = 0x0C8B0
 ENTRY = 0x30
@@ -75,14 +76,18 @@ def main():
     stem = os.path.splitext(dst)[0]
     with open(stem + ".stubs", "w") as f:
         for vector, function in sorted(used):
-            f.write("%04x qb%02x_%02x\n" % (stub_offset(vector, function), vector, function))
+            f.write("%04x %s\n" % (stub_offset(vector, function),
+                                   brun30.stub_name(vector, function)))
     # The call targets are recorded here because they can only be found before
     # the rewrite: once the thunks are near calls the walk cannot tell the
-    # game's own procedures from the run-time stubs.
+    # game's own procedures from the run-time stubs.  The `ON ... GOTO` and
+    # `ON ... GOSUB` targets go in too -- they are reached only through the word
+    # table behind the thunk, which nothing downstream can read.
+    seeds = {ENTRY} | found.calls | found.jumps
     with open(stem + ".seeds", "w") as f:
-        for offset in sorted({ENTRY} | found.calls):
+        for offset in sorted(seeds):
             f.write("%04x\n" % offset)
-    print("wrote %s, its stub list and %d disassembly seeds" % (dst, len(found.calls) + 1))
+    print("wrote %s, its stub list and %d disassembly seeds" % (dst, len(seeds)))
 
 
 if __name__ == "__main__":
