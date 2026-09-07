@@ -10,6 +10,7 @@ import {
   MESSAGE_LINE_Y,
   viewBattleSpells,
 } from './screens';
+import type { MenuChoice } from './screens';
 import type { Game, PlayerCharacter } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
@@ -631,4 +632,81 @@ export function drawMagicItems(game: Game): void {
     if (text === null) return;
     game.draw({ text, x: MAGIC_ITEM_X, y: row * MAGIC_ITEM_STEP, font: 0, colour: 4 });
   });
+}
+
+/** The line the type menu draws in place of a list the character's class cannot cast (DS:3716 373a). */
+const WRITE_SPELL_BARRED = ['2) -------------', '3) -------------'];
+
+/**
+ * write_scroll_or_wand (exe 3000:d384, unf.c "write_scroll_or_wand"), its first menu: which of
+ * the three lists a scroll or a wand is to be made for.
+ *
+ * The permanent list is not offered, so the numbers here are the same 1, 2 and 3 that index the
+ * scroll and wand arrays as `type * 45 + level * 3 + slot`. A class that cannot cast wizard
+ * spells gets dashes where the wizard line would be and a class that cannot cast priest spells
+ * gets dashes on the priest line — but the menu is read by get_choice, which takes the key
+ * whatever the line says, so a fighter can write a wizard scroll off a menu offering nothing.
+ * That is the note already on `writeScrollOrWand` in `magic.ts`, which is the rest of the spell.
+ */
+export function drawWriteSpellTypeMenu(game: Game): void {
+  const wizard = WIZARD_CLASSES.includes(game.pc.cls) ? '2) WIZARD SPELLS' : WRITE_SPELL_BARRED[0];
+  const priest = PRIEST_CLASSES.includes(game.pc.cls) ? '3) PRIESTLY SPELLS' : WRITE_SPELL_BARRED[1];
+  // DS:36d0 258b 36ef 3705 or 3716, 3727 or 373a
+  drawMenu(game, ['PLEASE SELECT A TYPE OF SPELL:', '', '1) PREPARATION SPELLS', wizard, priest]);
+}
+
+/**
+ * write_scroll_or_wand (exe 3000:d384), its second menu: which level of that list.
+ *
+ * `maxLevel` is how deep the spell doing the writing reaches — 3 for Write Scroll To Level 3 and
+ * 10 for Write Scroll - Level 10. Only a menu that reaches level 10 says so, because the tenth
+ * level is picked with '0'.
+ */
+export function drawWriteSpellLevelMenu(game: Game, maxLevel: number): void {
+  const tenth = maxLevel > 9 ? "HIT 0 FOR 10'TH LEVEL" : '';
+  // DS:374b 3765 3780 258b 3790 258b 37a6
+  drawMenu(game, [
+    'PLEASE SELECT A THE LEVEL',
+    '   SPELL YOU WISH ENCHANT.',
+    `MAXIMUM LEVEL: ${maxLevel}`,
+    '',
+    tenth,
+    '',
+    'HIT ESC FOR PREVIOUS MENU',
+  ]);
+}
+
+/**
+ * write_scroll_or_wand (exe 3000:d384), its third menu: which of the three spells on that line.
+ *
+ * The fifth line is whatever the level menu left in that buffer, so a menu that reached level 10
+ * still shows its "HIT 0 FOR 10'TH LEVEL" under the three spells. SELECT ONE OF THE ABOVE (exe
+ * DS:273e) is written into the sixth line and then wiped by the loop that blanks lines six to
+ * eight, so it never reaches the screen; the decompilation is what puts the two in that order.
+ */
+export function drawWriteSpellSlotMenu(
+  game: Game,
+  type: number,
+  level: number,
+  maxLevel: number,
+): void {
+  const spells = [0, 1, 2].map((slot) => `${slot + 1}) ${SPELL_MENU_NAMES[type][level * 3 + slot]}`);
+  const tenth = maxLevel > 9 ? "HIT 0 FOR 10'TH LEVEL" : '';
+  // DS:37da 37de 37e2 with the names, then 37e6
+  drawMenu(game, [...spells, '4) PREVIOUS MENU', tenth]);
+}
+
+/**
+ * write_scroll_or_wand (exe 3000:d384), the key its second menu takes: a level 1 to 9 by its own
+ * digit and level 10 by '0', neither past `maxLevel`. Escape goes back to the type menu.
+ *
+ * @returns the line of the book, 0 for the level 1 line, or 'escape', or null for a key the
+ * original goes on waiting past.
+ */
+export function writeSpellLevelChoice(maxLevel: number, key: string): MenuChoice {
+  if (key === '\x1b') return 'escape';
+  const digit = key.charCodeAt(0) - 0x30;
+  if (digit === 0) return maxLevel >= 10 ? 9 : null;
+  if (digit < 1 || digit > maxLevel) return null;
+  return digit - 1;
 }

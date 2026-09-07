@@ -12,6 +12,9 @@ import {
   drawPocketsMenu,
   drawSpellInventoryPage,
   drawSpellList,
+  drawWriteSpellLevelMenu,
+  drawWriteSpellSlotMenu,
+  drawWriteSpellTypeMenu,
   POCKETS_PAPERS,
   POCKETS_SPELLBOOKS,
   printSpellLine,
@@ -24,6 +27,7 @@ import {
   spellIndex,
   spellListChoice,
   showSpellHelp,
+  writeSpellLevelChoice,
   SPELL_MENU_KEYS,
   SPELL_MENU_NAMES,
   spellMenuIndex,
@@ -438,5 +442,68 @@ describe('the pockets screen', () => {
     expect(game.screen.map((line) => line.y)).toEqual(
       [0, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 24].map((row) => row * 0x28),
     );
+  });
+});
+
+describe('the write scroll or wand menus', () => {
+  it('offers a wizard their own list and dashes for the priest one', () => {
+    const game = newGame({ pc: { cls: 3 } });
+    drawWriteSpellTypeMenu(game);
+    expect(game.screen.map((line) => line.text)).toEqual([
+      'PLEASE SELECT A TYPE OF SPELL:',
+      '',
+      '1) PREPARATION SPELLS',
+      '2) WIZARD SPELLS',
+      '3) -------------',
+    ]);
+  });
+
+  it('offers a sage both lists and a fighter neither', () => {
+    const sage = newGame({ pc: { cls: 5 } });
+    drawWriteSpellTypeMenu(sage);
+    expect(sage.screen[3].text).toBe('2) WIZARD SPELLS');
+    expect(sage.screen[4].text).toBe('3) PRIESTLY SPELLS');
+    const fighter = newGame({ pc: { cls: 0 } });
+    drawWriteSpellTypeMenu(fighter);
+    expect(fighter.screen[3].text).toBe('2) -------------');
+    expect(fighter.screen[4].text).toBe('3) -------------');
+  });
+
+  it('says how deep the spell writes and only mentions 0 when it reaches ten', () => {
+    const shallow = newGame();
+    drawWriteSpellLevelMenu(shallow, 3);
+    expect(shallow.screen.map((line) => line.text)).toEqual([
+      'PLEASE SELECT A THE LEVEL',
+      '   SPELL YOU WISH ENCHANT.',
+      'MAXIMUM LEVEL: 3',
+      '',
+      '',
+      '',
+      'HIT ESC FOR PREVIOUS MENU',
+    ]);
+    const deep = newGame();
+    drawWriteSpellLevelMenu(deep, 10);
+    expect(deep.screen[4].text).toBe("HIT 0 FOR 10'TH LEVEL");
+  });
+
+  it('takes a level by its digit and the tenth by zero', () => {
+    expect(writeSpellLevelChoice(3, '1')).toBe(0);
+    expect(writeSpellLevelChoice(3, '3')).toBe(2);
+    expect(writeSpellLevelChoice(3, '4')).toBeNull();
+    expect(writeSpellLevelChoice(3, '0')).toBeNull();
+    expect(writeSpellLevelChoice(10, '0')).toBe(9);
+    expect(writeSpellLevelChoice(10, '\x1b')).toBe('escape');
+  });
+
+  it('names the three spells on the line and keeps the level menu leftover under them', () => {
+    const game = newGame();
+    drawWriteSpellSlotMenu(game, 2, 0, 10);
+    expect(game.screen.map((line) => line.text)).toEqual([
+      '1) SLEEP',
+      '2) MAGIC ZAP',
+      '3) MINOR PROTECTION',
+      '4) PREVIOUS MENU',
+      "HIT 0 FOR 10'TH LEVEL",
+    ]);
   });
 });
