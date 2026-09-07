@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { MORAFFS_WORLD_AREA } from './area';
 import {
-  addDunFloors,
+  addExploredFloors,
   DUN_COLUMNS,
   exploredCounts,
+  exploredFloorCount,
   isExplored,
   loadedSummary,
+  readBinFile,
   readDunFile,
   staleFloorWarning,
   type ExploredFloors,
@@ -47,7 +49,7 @@ function floorRows(rock: [number, number][] = []): MapSquare[][] {
 }
 
 function loaded(...files: Uint8Array[]): ExploredFloors {
-  return files.reduce<ExploredFloors>((floors, bytes, index) => addDunFloors(floors, readDunFile(`3${index}.DUN`, bytes)), new Map());
+  return files.reduce<ExploredFloors>((floors, bytes, index) => addExploredFloors(floors, readDunFile(`3${index}.DUN`, bytes)), new Map());
 }
 
 describe('readDunFile', () => {
@@ -109,7 +111,7 @@ describe('readDunFile', () => {
   });
 });
 
-describe('addDunFloors', () => {
+describe('addExploredFloors', () => {
   it('fills the explored map from several files', () => {
     const floors = loaded(oneFloorFile(0, [[1, 1]]), oneFloorFile(3, [[2, 2]]));
     expect([...floors.keys()]).toEqual([0, 35]);
@@ -120,7 +122,7 @@ describe('addDunFloors', () => {
   });
 
   it('keeps the newer squares for a floor loaded twice', () => {
-    const floors = addDunFloors(loaded(oneFloorFile(0, [[1, 1]])), readDunFile('30.DUN', oneFloorFile(0, [[2, 2]])));
+    const floors = addExploredFloors(loaded(oneFloorFile(0, [[1, 1]])), readDunFile('30.DUN', oneFloorFile(0, [[2, 2]])));
     expect(isExplored(floors.get(0)!, 2, 2)).toBe(true);
     expect(isExplored(floors.get(0)!, 1, 1)).toBe(false);
   });
@@ -164,5 +166,95 @@ describe('staleFloorWarning', () => {
 
   it('counts one square in the singular', () => {
     expect(staleFloorWarning(1, 7)).toBe('1 explored square of this floor is rock in dungeon 7 (drawn in red), so this file was mapped in another dungeon.');
+  });
+});
+
+/** A whole number as the four bytes a Microsoft Binary Format single holds. */
+function single(value: number): number[] {
+  if (value === 0) return [0, 0, 0, 0];
+  let fraction = value;
+  let exponent = 152;
+  while (fraction < 0x800000) {
+    fraction *= 2;
+    exponent--;
+  }
+  return [fraction & 0xff, (fraction >> 8) & 0xff, (fraction >> 16) & 0x7f, exponent];
+}
+
+/** The array is DIM M(20, 71), so it has room for 72 levels. */
+const BIN_ARRAY_LEVELS = 72;
+/** BSAVE stops one byte into the last of its 1,512 elements, so the last whole level is 70,
+ *  which is as deep as the dungeon goes. */
+const BIN_LEVELS = 71;
+const BIN_LEVEL_STRIDE = 21;
+
+/** A `<n>.BIN` holding `squares` as the game's own columns 1..20 and rows 1..19 per level. */
+function binFile(walked: Record<number, [number, number][]> = {}): Uint8Array {
+  const values = new Array(BIN_ARRAY_LEVELS * BIN_LEVEL_STRIDE).fill(0);
+  for (const [level, squares] of Object.entries(walked)) {
+    for (const [column, row] of squares) {
+      values[Number(level) * BIN_LEVEL_STRIDE + row] |= 1 << (20 - column);
+    }
+  }
+  // BSAVE writes FD, the segment and offset the array was at, and the length, then the bytes
+  // and a 1A terminator. The shipped files stop one byte into the last element.
+  const body = values.flatMap(single).slice(0, values.length * 4 - 3);
+  const bytes = new Uint8Array(7 + body.length + 1);
+  bytes.set([0xfd, 0x00, 0x40, 0x06, 0x9b, body.length & 0xff, body.length >> 8]);
+  bytes.set(body, 7);
+  bytes[bytes.length - 1] = 0x1a;
+  return bytes;
+}
+
+describe('readBinFile', () => {
+  it('refuses a name that is not <n>.BIN', () => {
+    expect(() => readBinFile('CHAR.BIN', binFile())).toThrow('CHAR.BIN is not named <n>.BIN, like 5.BIN.');
+  });
+
+  it('takes a lower case name', () => {
+    expect(readBinFile('5.bin', binFile()).name).toBe('5.bin');
+  });
+
+  it('refuses bytes that were not written by BSAVE', () => {
+    expect(() => readBinFile('5.BIN', new Uint8Array(6053))).toThrow('does not start with the FD marker');
+  });
+
+  it('refuses bytes that do not hold the whole numbers a map row holds', () => {
+    const wrong = binFile();
+    // The exponent alone makes this value 1.5, which no row of an explored map can be.
+    wrong.set([0, 0, 0x40, 0x81], 7 + 4);
+    expect(() => readBinFile('5.BIN', wrong)).toThrow('which is not the size of an explored map');
+  });
+
+  it('reads column 1 from the top bit and column 20 from the bottom one', () => {
+    const [town] = readBinFile('5.BIN', binFile({ 0: [[1, 1], [20, 19]] })).floors;
+    expect(town.floor).toBe(0);
+    expect(isExplored(town.squares, 0, 0)).toBe(true);
+    expect(isExplored(town.squares, 19, 18)).toBe(true);
+    expect(town.squares.size).toBe(2);
+  });
+
+  it('counts each level 21 elements on from the last, row 0 being unused', () => {
+    const floors = readBinFile('5.BIN', binFile({ 2: [[7, 16]] })).floors;
+    expect(floors.length).toBe(BIN_LEVELS);
+    expect(isExplored(floors[2].squares, 6, 15)).toBe(true);
+    expect(floors.filter((floor) => floor.squares.size).map((floor) => floor.floor)).toEqual([2]);
+  });
+
+  it('leaves out the row the game never walks on', () => {
+    const wide = binFile({ 1: [[3, 19]] });
+    // Row 20 is there in the array and the game's own row loop stops at 19.
+    wide.set(single(1 << 17), 7 + (BIN_LEVEL_STRIDE + 20) * 4);
+    const [, level] = readBinFile('5.BIN', wide).floors;
+    expect([...level.squares]).toEqual([18 * 80 + 2]);
+  });
+});
+
+describe('the loaded explored maps of a Moraff’s Revenge character', () => {
+  it('keeps the levels anything was seen on', () => {
+    const floors = addExploredFloors(new Map(), readBinFile('5.BIN', binFile({ 0: [[1, 1]], 3: [[2, 2]] })));
+    expect([...floors.keys()]).toEqual([0, 3]);
+    expect(exploredFloorCount(floors)).toBe('2 explored floors');
+    expect(exploredFloorCount(new Map([[0, new Set([1])]]))).toBe('1 explored floor');
   });
 });

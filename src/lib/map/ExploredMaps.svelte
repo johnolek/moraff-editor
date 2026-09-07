@@ -1,8 +1,10 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { loadedSummary, type ExploredFloors } from './explored';
+  import type { ExploredFloors, ExploredMapFiles } from './explored';
 
   interface Props {
+    /** What this game's explored maps are called and how they are read. */
+    files: ExploredMapFiles;
     /** The explored floors of every file loaded so far. */
     floors: ExploredFloors;
     /** Why the files last given could not be read, one line each. */
@@ -13,7 +15,7 @@
     onclear: () => void;
   }
 
-  let { floors, errors, warning, onfiles, onclear }: Props = $props();
+  let { files, floors, errors, warning, onfiles, onclear }: Props = $props();
 
   let dragover = $state(false);
   let fileInput = $state<HTMLInputElement>();
@@ -47,10 +49,7 @@
       <button class="clear" onclick={clear}>Clear</button>
     {/if}
   </SectionHeading>
-  <p class="hint">
-    Moraff's World saves the squares your character has seen beside the save, in files named
-    <code>&lt;slot&gt;&lt;block&gt;.DUN</code> — <code>30.DUN</code> is slot 3, floors 0 to 31.
-  </p>
+  <p class="hint">{files.hint}</p>
   <label
     class="drop-zone"
     class:dragover
@@ -68,11 +67,11 @@
     }}
     ondrop={onDrop}
   >
-    <strong>Click to choose</strong> or drop .DUN files
-    <input type="file" accept=".dun" multiple bind:this={fileInput} onchange={onFilesChosen} />
+    <strong>Click to choose</strong> or drop {files.extension} files
+    <input type="file" accept={files.extension} multiple bind:this={fileInput} onchange={onFilesChosen} />
   </label>
   {#if floors.size}
-    <p class="loaded">{loadedSummary(floors)}</p>
+    <p class="loaded">{files.summarize(floors)}</p>
   {/if}
   {#if warning}
     <p class="warning">{warning}</p>
@@ -100,9 +99,6 @@
     font-size: 11px;
     line-height: 1.4;
     color: var(--muted);
-  }
-  code {
-    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   }
   .drop-zone {
     display: block;

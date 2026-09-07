@@ -8,7 +8,7 @@
   import { forEachShownSquare, isOnMap } from './area';
   import { downloadFloorPng } from './export-png';
   import { describeExplored, describeNote, describeSquare, featureLine } from './describe';
-  import { addDunFloors, exploredCounts, isExplored, readDunFile, staleFloorWarning, type ExploredFloors } from './explored';
+  import { addExploredFloors, exploredCounts, isExplored, staleFloorWarning, type ExploredFloors } from './explored';
   import ExploredMaps from './ExploredMaps.svelte';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
@@ -55,11 +55,11 @@
   /** Stocked floors by "game:dungeon:floor", kept while other floors are browsed. The game
    *  keeps only the three floors most recently visited; nothing here is thrown away. */
   let stocked = $state(new Map<string, StockedMonster[]>());
-  /** Explored floors from the .DUN files dropped on the map. Nothing is stored, so a reload
-   *  starts with none. */
-  let dunFloors = $state<ExploredFloors>(new Map());
+  /** Explored floors from the files dropped on the map, kept per game: one game's files say
+   *  nothing about another's dungeons. Nothing is stored, so a reload starts with none. */
+  let exploredFiles = $state(new Map<GameId, ExploredFloors>());
   /** Why the files last dropped could not be read. */
-  let dunErrors = $state<string[]>([]);
+  let exploredErrors = $state<string[]>([]);
   let floorCanvas: FloorCanvas;
 
   const floors = $derived(floorsOf(game, dungeon));
@@ -77,7 +77,7 @@
   const beyondMapMonsters = $derived(monsters.filter((monster) => !isOnMap(monster, game.area)));
   /** Fit frames the floor the game shows plus whatever monsters were stocked beyond it. */
   const bounds = $derived(boundsIncluding(floorBounds(rows, game.area.rows), beyondMapMonsters));
-  const explored = $derived(game.modules ? NO_EXPLORED_FLOORS : dunFloors);
+  const explored = $derived(exploredFiles.get(game.id) ?? NO_EXPLORED_FLOORS);
   const exploredHere = $derived(explored.get(floor) ?? null);
   const exploredCount = $derived(exploredHere ? exploredCounts(rows, exploredHere, game.area) : { seen: 0, rock: 0 });
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
@@ -87,7 +87,9 @@
     cursor && cursorSquare && isOnMap(cursor, game.area) ? squareNotes(lookup, floor, cursorSquare, cursor.x, cursor.y).map(describeNote) : [],
   );
   const cursorExplored = $derived(
-    cursor && cursorSquare && exploredHere && isExplored(exploredHere, cursor.x, cursor.y) ? describeExplored(cursorSquare.solid, dungeon) : null,
+    cursor && cursorSquare && exploredHere && game.exploredMaps && isExplored(exploredHere, cursor.x, cursor.y)
+      ? describeExplored(cursorSquare.solid, dungeon, game.exploredMaps)
+      : null,
   );
   const cursorMonster = $derived(cursor ? monsterAt(monsters, cursor.x, cursor.y) : null);
   const selectedMonster = $derived(selected ? monsterAt(monsters, selected.x, selected.y) : null);
@@ -148,8 +150,10 @@
   function showGame(chosen: GameId) {
     if (chosen === game.id) return;
     left.set(game.id, here(highlight));
-    // A pinned monster type names one game's monster, so the other game cannot mark it.
+    // A pinned monster type names one game's monster, so the other game cannot mark it, and
+    // the errors belong to the files that were dropped on the game being left.
     monsterPinned = null;
+    exploredErrors = [];
     const start = { game: chosen, dungeon: rememberedDungeon(MAP_GAMES[chosen]), floor: 0, square: null, you: null };
     applyPlace(left.get(chosen) ?? start);
   }
@@ -303,24 +307,26 @@
     if (game.stocking) stocked = new Map(stocked).set(stockKey, game.stocking.stock(rows, dungeon, floor));
   }
 
-  /** Reads the .DUN files given onto the map, naming whichever of them cannot be read. */
-  async function loadDunFiles(files: File[]) {
-    let floors = dunFloors;
+  /** Reads the explored maps given onto the map, naming whichever of them cannot be read. */
+  async function loadExploredFiles(files: File[]) {
+    const maps = game.exploredMaps;
+    if (!maps) return;
+    let floors = explored;
     const errors: string[] = [];
     for (const file of files) {
       try {
-        floors = addDunFloors(floors, readDunFile(file.name, new Uint8Array(await file.arrayBuffer())));
+        floors = addExploredFloors(floors, maps.read(file.name, new Uint8Array(await file.arrayBuffer())));
       } catch (error) {
         errors.push(error instanceof Error ? error.message : String(error));
       }
     }
-    dunFloors = floors;
-    dunErrors = errors;
+    exploredFiles = new Map(exploredFiles).set(game.id, floors);
+    exploredErrors = errors;
   }
 
-  function clearDunFiles() {
-    dunFloors = new Map();
-    dunErrors = [];
+  function clearExploredFiles() {
+    exploredFiles = new Map(exploredFiles).set(game.id, new Map());
+    exploredErrors = [];
   }
 
   /** How the floor picker names a floor, marking the ones a loaded explored map has seen
@@ -579,13 +585,14 @@
         onpin={pinMonster}
       />
     {/if}
-    {#if !game.modules}
+    {#if game.exploredMaps}
       <ExploredMaps
+        files={game.exploredMaps}
         floors={explored}
-        errors={dunErrors}
+        errors={exploredErrors}
         warning={staleFloorWarning(exploredCount.rock, dungeon)}
-        onfiles={loadDunFiles}
-        onclear={clearDunFiles}
+        onfiles={loadExploredFiles}
+        onclear={clearExploredFiles}
       />
     {/if}
     <Legend

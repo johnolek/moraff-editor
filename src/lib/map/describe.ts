@@ -1,4 +1,5 @@
 import { isOnMap } from './area';
+import type { ExploredMapFiles } from './explored';
 import { teleporterTargets, type Feature } from './floor-info';
 import type { MapGame, MapSquare } from './game';
 import { GLYPH_LABELS, MODULE_NUMERALS } from './labels';
@@ -51,8 +52,8 @@ export function featureLine(description: SquareDescription): string | null {
 }
 
 /** What the panel says about a square a loaded explored map has seen. */
-export function describeExplored(rock: boolean, dungeon: number): string {
-  const seen = 'Explored in the .DUN file you loaded';
+export function describeExplored(rock: boolean, dungeon: number, files: ExploredMapFiles): string {
+  const seen = `Explored in the ${files.extension} file you loaded`;
   return rock ? `${seen}, but rock in dungeon ${dungeon}.` : `${seen}.`;
 }
 

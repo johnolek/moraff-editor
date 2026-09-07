@@ -1,13 +1,22 @@
 import { isOnMap, type MapArea } from './area';
+import { COLUMNS as REVENGE_COLUMNS, ROWS as REVENGE_ROWS, mbfSingle } from '../game/revmap.js';
 import type { MapSquare } from './game';
 
 /**
- * Moraff's World's explored maps. The game writes the squares a character has seen to
- * `<slot><block>.DUN` beside the save, one bit per square: save_dun (exe 2000:5298) writes a
- * file and load_dun (exe 2000:542b) reads it back. mw-tools/docs/DUNGEON.md has the layout.
+ * The explored maps two of the games save beside a character, and which of them a floor of the
+ * map shades. Moraff's World writes `<slot><block>.DUN` -- save_dun (exe 2000:5298) writes one
+ * and load_dun (exe 2000:542b) reads it back, and mw-tools/docs/DUNGEON.md has the layout.
+ * Moraff's Revenge writes `<n>.BIN`, which rev-tools/docs/SURVEY.md section 3 has.
  */
 
-/** Columns and rows of a floor in the file, which is the whole grid the generator fills. */
+/**
+ * The squares of a floor are indexed `y * EXPLORED_STRIDE + x`. The stride is the widest floor
+ * any of the games draws, so one index serves every game's explored map whatever the shape of
+ * the file it came out of.
+ */
+export const EXPLORED_STRIDE = 80;
+
+/** Columns and rows of a floor in a .DUN file, which is the whole grid the generator fills. */
 export const DUN_COLUMNS = 80;
 export const DUN_ROWS = 110;
 
@@ -28,12 +37,28 @@ export interface ExploredFloor {
   squares: ExploredSquares;
 }
 
-export interface DunFile {
+/** One explored-map file that has been read. */
+export interface ExploredFile {
   name: string;
+  floors: ExploredFloor[];
+}
+
+export interface DunFile extends ExploredFile {
   /** The save slot, which is also what the character's own file is called. */
   slot: number;
   block: number;
-  floors: ExploredFloor[];
+}
+
+/** How one game's explored maps are read, and what the map's panel says about them. */
+export interface ExploredMapFiles {
+  /** What the files are called, for the drop target and the square description. */
+  extension: string;
+  /** The paragraph above the drop target, saying what the game saves and where. */
+  hint: string;
+  /** Reads one file. Throws with a line to show the user when it is not one of these. */
+  read(name: string, bytes: Uint8Array): ExploredFile;
+  /** The line under the drop target once files are loaded. */
+  summarize(loaded: ExploredFloors): string;
 }
 
 /** The explored floors of every file loaded, by floor number. */
@@ -74,7 +99,7 @@ function readFloors(bytes: Uint8Array, block: number): ExploredFloor[] | null {
       if (!bitSet(bytes[rowBitmap + (y >> 3)], y)) continue;
       if (at + ROW_BYTES > bytes.length) return null;
       for (let x = 0; x < DUN_COLUMNS; x++) {
-        if (bitSet(bytes[at + (x >> 3)], x)) squares.add(y * DUN_COLUMNS + x);
+        if (bitSet(bytes[at + (x >> 3)], x)) squares.add(y * EXPLORED_STRIDE + x);
       }
       at += ROW_BYTES;
     }
@@ -89,7 +114,7 @@ function bitSet(byte: number, bit: number): boolean {
 
 /** Adds a file's floors to the explored map. A floor the file holds but nothing was seen on
  *  shades nothing, so it is left out; a floor loaded twice keeps the newer file's squares. */
-export function addDunFloors(loaded: ExploredFloors, file: DunFile): ExploredFloors {
+export function addExploredFloors(loaded: ExploredFloors, file: ExploredFile): ExploredFloors {
   const next = new Map(loaded);
   for (const { floor, squares } of file.floors) {
     if (squares.size) next.set(floor, squares);
@@ -98,7 +123,7 @@ export function addDunFloors(loaded: ExploredFloors, file: DunFile): ExploredFlo
 }
 
 export function isExplored(squares: ExploredSquares, x: number, y: number): boolean {
-  return squares.has(y * DUN_COLUMNS + x);
+  return squares.has(y * EXPLORED_STRIDE + x);
 }
 
 /** How many squares of a floor the file marks as seen, and how many of those this dungeon
@@ -108,8 +133,8 @@ export function exploredCounts(rows: MapSquare[][], squares: ExploredSquares, ar
   let seen = 0;
   let rock = 0;
   for (const index of squares) {
-    const x = index % DUN_COLUMNS;
-    const y = (index - x) / DUN_COLUMNS;
+    const x = index % EXPLORED_STRIDE;
+    const y = (index - x) / EXPLORED_STRIDE;
     if (!isOnMap({ x, y }, area)) continue;
     seen++;
     if (rows[y][x].solid) rock++;
@@ -117,11 +142,16 @@ export function exploredCounts(rows: MapSquare[][], squares: ExploredSquares, ar
   return { seen, rock };
 }
 
-/** The line under the drop target: "33 explored floors from blocks 0 and 1". */
+/** How many floors have been loaded: "33 explored floors". */
+export function exploredFloorCount(loaded: ExploredFloors): string {
+  return `${loaded.size} explored ${loaded.size === 1 ? 'floor' : 'floors'}`;
+}
+
+/** The line under the drop target for Moraff's World: "33 explored floors from blocks 0 and 1".
+ *  Its files hold one block of 32 floors each, so several of them make up a dungeon. */
 export function loadedSummary(loaded: ExploredFloors): string {
   const blocks = [...new Set([...loaded.keys()].map((floor) => Math.floor(floor / FLOORS_PER_BLOCK)))].sort((a, b) => a - b);
-  const floors = `${loaded.size} explored ${loaded.size === 1 ? 'floor' : 'floors'}`;
-  return `${floors} from ${blocks.length === 1 ? 'block' : 'blocks'} ${listOf(blocks)}`;
+  return `${exploredFloorCount(loaded)} from ${blocks.length === 1 ? 'block' : 'blocks'} ${listOf(blocks)}`;
 }
 
 function listOf(values: number[]): string {
@@ -135,4 +165,68 @@ export function staleFloorWarning(rock: number, dungeon: number): string | null 
   if (!rock) return null;
   const squares = rock === 1 ? '1 explored square of this floor is' : `${rock} explored squares of this floor are`;
   return `${squares} rock in dungeon ${dungeon} (drawn in red), so this file was mapped in another dungeon.`;
+}
+
+/**
+ * Moraff's Revenge's explored maps.
+ *
+ * A character's `<n>.BIN` is a BSAVE of its explored-map array (1000:B583): a seven-byte header
+ * -- FD, the segment and offset the array was at, and the length -- then the bytes and a 1A
+ * terminator. The array is `DIM M(20, 71)` of Microsoft Binary Format singles laid out column
+ * by column, so level L starts at element 21 * L with rows 0 to 20 after it and row 0 unused.
+ * Every row is a bitmask twenty columns wide read as
+ * `INT(M(row, level) / 2 ^ (20 - column)) MOD 2` (1000:5449), so column 1 is bit 19 and column
+ * 20 is bit 0. rev-tools/docs/SURVEY.md section 3 is the write-up.
+ *
+ * The game numbers its columns and rows from 1 and the map numbers both from 0.
+ */
+const BSAVE_MARKER = 0xfd;
+const BSAVE_HEADER_BYTES = 7;
+/** Level L's rows start at element 21 * L + 1, row 0 being unused. */
+const BIN_LEVEL_STRIDE = 21;
+const BIN_TOP_COLUMN_BIT = 20;
+
+/** The character a file name names, or null when it is not named `<n>.BIN`. */
+export function binFileName(name: string): { slot: number } | null {
+  const match = /^(\d+)\.bin$/i.exec(name);
+  return match ? { slot: Number(match[1]) } : null;
+}
+
+/** Reads one `<n>.BIN` file. Throws with a line to show the user when the name or the bytes
+ *  are not those of an explored map. */
+export function readBinFile(name: string, bytes: Uint8Array): ExploredFile {
+  if (!binFileName(name)) throw new Error(`${name} is not named <n>.BIN, like 5.BIN.`);
+  if (bytes[0] !== BSAVE_MARKER) throw new Error(`${name} does not start with the FD marker a BSAVEd file starts with.`);
+  const length = bytes[5] | (bytes[6] << 8);
+  const data = bytes.subarray(BSAVE_HEADER_BYTES, BSAVE_HEADER_BYTES + length);
+  const rows = binRows(data);
+  if (!rows) throw new Error(`${name} is ${bytes.length} bytes, which is not the size of an explored map.`);
+  const floors: ExploredFloor[] = [];
+  for (let floor = 0; (floor + 1) * BIN_LEVEL_STRIDE <= rows.length; floor++) {
+    const squares = new Set<number>();
+    for (let row = 1; row <= REVENGE_ROWS; row++) {
+      const mask = rows[floor * BIN_LEVEL_STRIDE + row];
+      for (let column = 1; column <= REVENGE_COLUMNS; column++) {
+        if (Math.trunc(mask / 2 ** (BIN_TOP_COLUMN_BIT - column)) % 2 === 1) {
+          squares.add((row - 1) * EXPLORED_STRIDE + (column - 1));
+        }
+      }
+    }
+    floors.push({ floor, squares });
+  }
+  return { name, floors };
+}
+
+/** The array's values, or null when they are not the whole numbers a row of the map holds.
+ *  Bit 20 is never set in a shipped file, which is what says the twenty columns run down from
+ *  bit 19 rather than up from bit 0. */
+function binRows(data: Uint8Array): number[] | null {
+  if (data.length < BIN_LEVEL_STRIDE * 4) return null;
+  const rows: number[] = [];
+  for (let at = 0; at + 4 <= data.length; at += 4) {
+    const value = mbfSingle(data, at);
+    if (!Number.isInteger(value) || value < 0 || value >= 2 ** BIN_TOP_COLUMN_BIT) return null;
+    rows.push(value);
+  }
+  return rows;
 }

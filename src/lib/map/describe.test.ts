@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { describeExplored, describeFeature, describeNote, describeSquare, describeTeleporter, featureLine } from './describe';
-import { UNFORGIVEN_MAP, type MapSquare } from './game';
+import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP, type MapSquare } from './game';
 
 function square(overrides: Partial<MapSquare> = {}): MapSquare {
   return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
@@ -55,11 +55,15 @@ describe('featureLine', () => {
 
 describe('describeExplored', () => {
   it('says the file has seen an open square', () => {
-    expect(describeExplored(false, 0)).toBe('Explored in the .DUN file you loaded.');
+    expect(describeExplored(false, 0, MORAFFS_WORLD_MAP.exploredMaps!)).toBe('Explored in the .DUN file you loaded.');
   });
 
   it('says which dungeon makes a seen square rock', () => {
-    expect(describeExplored(true, 7)).toBe('Explored in the .DUN file you loaded, but rock in dungeon 7.');
+    expect(describeExplored(true, 7, MORAFFS_WORLD_MAP.exploredMaps!)).toBe('Explored in the .DUN file you loaded, but rock in dungeon 7.');
+  });
+
+  it('names each game\u2019s own explored maps', () => {
+    expect(describeExplored(false, 1, MORAFFS_REVENGE_MAP.exploredMaps!)).toBe('Explored in the .BIN file you loaded.');
   });
 });
 

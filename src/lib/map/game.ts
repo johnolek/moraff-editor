@@ -5,6 +5,7 @@ import { bundledMwDungeon } from '../game/mw-dungeon';
 import { LEVELS as REVENGE_LEVELS, floor as revengeFloor, squareOn as revengeSquareOn } from '../game/revmap.js';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { MORAFFS_REVENGE_AREA, MORAFFS_WORLD_AREA, UNFORGIVEN_AREA, type MapArea } from './area';
+import { exploredFloorCount, loadedSummary, readBinFile, readDunFile, type ExploredMapFiles } from './explored';
 import { MODULE_NUMERALS } from './labels';
 import { MORAFFS_WORLD_STOCKING } from './mw-stocking';
 import { hasTeleporterSide } from './path';
@@ -120,6 +121,9 @@ export interface MapGame {
   /** How this game fills a floor with monsters, or null for a game whose monsters are not
    *  worked out. */
   stocking: MapStocking | null;
+  /** The explored maps this game saves beside a character, which the map can shade a floor
+   *  with, or null for a game that saves none. */
+  exploredMaps: ExploredMapFiles | null;
   /** What an exported PNG of a floor is called. */
   pngName(dungeon: number, floor: number): string;
   /**
@@ -193,6 +197,8 @@ export const UNFORGIVEN_MAP: MapGame = {
   buildingOn: (square) => square.town ?? 0,
   routeTo: { noun: 'teleporter', matches: hasTeleporterSide },
   stocking: UNFORGIVEN_STOCKING,
+  // Dungeons of the Unforgiven writes nothing about where a character has been.
+  exploredMaps: null,
   pngName: (dungeon, floor) => `dotu-module-${dungeon + 1}-${floor === 0 ? 'town' : `floor-${numberForFileName(floor)}`}.png`,
   modules: true,
 };
@@ -225,6 +231,13 @@ const DUNGEON_MAX = 32767;
 
 /** Which Moraff's World dungeon the map was last pointed at. */
 const MORAFFS_WORLD_DUNGEON_KEY = 'moraff-tools.mw-dungeon';
+
+const MORAFFS_WORLD_DUN_FILES: ExploredMapFiles = {
+  extension: '.DUN',
+  hint: "Moraff's World saves the squares your character has seen beside the save, in files named <slot><block>.DUN — 30.DUN is slot 3, floors 0 to 31.",
+  read: readDunFile,
+  summarize: loadedSummary,
+};
 
 /** Squares holding a ladder, which is all Moraff's World has worth walking to. */
 function hasLadder(square: MapSquare): boolean {
@@ -267,12 +280,20 @@ export const MORAFFS_WORLD_MAP: MapGame = {
   buildingOn: (square) => square.surface ?? 0,
   routeTo: { noun: 'ladder', matches: hasLadder },
   stocking: MORAFFS_WORLD_STOCKING,
+  exploredMaps: MORAFFS_WORLD_DUN_FILES,
   pngName: (dungeon, floor) => `mw-dungeon-${numberForFileName(dungeon)}-floor-${numberForFileName(floor)}.png`,
   modules: false,
 };
 
 /** Which generation of Moraff's Revenge the map was last pointed at. */
 const MORAFFS_REVENGE_GENERATION_KEY = 'moraff-tools.revenge-generation';
+
+const MORAFFS_REVENGE_BIN_FILES: ExploredMapFiles = {
+  extension: '.BIN',
+  hint: "Moraff's Revenge saves the squares your character has walked on in a file of its own beside the character, named <n>.BIN — 5.BIN is character 5, and holds every level at once.",
+  read: readBinFile,
+  summarize: exploredFloorCount,
+};
 
 /**
  * The generation is the character's own number, value 26 of its record: 1 until it drinks from
@@ -307,6 +328,7 @@ export const MORAFFS_REVENGE_MAP: MapGame = {
   buildingOn: () => 0,
   routeTo: { noun: 'ladder', matches: hasLadder },
   stocking: null,
+  exploredMaps: MORAFFS_REVENGE_BIN_FILES,
   pngName: (generation, floor) => `revenge-generation-${generation}-${floor === 0 ? 'town' : `floor-${floor}`}.png`,
   modules: false,
 };
