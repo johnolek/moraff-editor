@@ -126,6 +126,9 @@ those replace every character that is not a letter or a digit with an underscore
   its mirror, and what death does with and without a raise-dead contract.
 * `town.ts` — the store, the temple, the bank and the inn, the financial statement, the two
   routines a night at the inn clears the spells with, and the greeting a floor gives on arrival.
+* `items.ts` — `drop_item`'s three ways of putting something on the floor, `take_pill`'s six
+  vitamin pills, and `use_magic_item`'s floor slosher, potion of healing, stone of seeing, stone
+  of teleportation and holy hand grenade.
 
 * `screens.ts` — the two menu readers every choice goes through; `view_stats`; the spell screen's
   source heading, category menu, class gates and grid of thirty, and the SPELLS.HLP record a help
@@ -147,10 +150,8 @@ routine Dungeons of the Unforgiven reads its `.uhp` files with, so `screens.ts` 
 
 ## What is not ported
 
-The world map, `FUN_2000_7756`'s drop menu, `FUN_3000_9ac0`'s vitamin pills and
-`FUN_3000_e221`'s magic items. The dungeon generator is already ported, verbatim from the
-reference bundle, in `../mwmap.js`, and the play loop that ties all of this together is
-`src/lib/play/mw/`.
+The world map. The dungeon generator is already ported, verbatim from the reference bundle, in
+`../mwmap.js`, and the play loop that ties all of this together is `src/lib/play/mw/`.
 
 ## Where the code and ROLLER.md disagree
 

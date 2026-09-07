@@ -18,8 +18,9 @@ tab, the map canvas, the screen renderer and the roster.
   they come from. Moraff's World's arrows are compass directions rather than turns: the up arrow
   faces the character north and asks for a step north, whatever they were facing before.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `trapdoor.ts`, `chute.ts`,
-  `dig.ts`, `fight.ts`, `kill.ts`, `cast.ts`, `town.ts`, `letters.ts`, `quit.ts`, `death.ts` — so
-  that two people can add two keys without touching the same file.
+  `dig.ts`, `fight.ts`, `kill.ts`, `cast.ts`, `town.ts`, `letters.ts`, `drop.ts`, `pills.ts`,
+  `items.ts`, `display.ts`, `quit.ts`, `death.ts` — so that two people can add two keys without
+  touching the same file.
 * **`moment.ts`** — the two halves of a moment, which every step and the wait key go between.
 * **`floor.ts`** — `enter_level` and `generate_section`'s three monster tables: arriving on a
   floor and the memory that decides whether its monsters are rolled again.
@@ -97,15 +98,14 @@ DOS they survive quitting. A browser has no such file, so they last as long as t
 
 ## What is not built yet
 
-Every one of these keys says so in the message box.
+**The world map**, and nothing else. The gate on top of the town puts its own box up and takes
+its own key; the answer that would walk out into the wilderness says so in the message box,
+which is the one call left to `mwNotBuiltYet`.
 
-* **L**, `FUN_2000_7756`: dropping a weapon, a suit of armor or some money.
-* **The I key's fourth and fifth answers**: `FUN_3000_9ac0`, the vitamin pills, and
-  `FUN_3000_e221`, the rings, the grenades and the rest of the magic items.
-* **The world map**. The gate on top of the town puts its own box up and takes its own key; the
-  answer that would walk out into the wilderness says so instead.
-* **The display keys** — B the brick speed, O the sound, X the map a third at a time, Z the
-  zoomed-in monster, and the three that shade the palette.
+The keys that are about the screen rather than the game — B the brick speed, O the sound, X the
+floor a third at a time, Z the 3-D view close up, and the three that step one colour of the
+background on — are answered in `display.ts` with a box each saying what the game would have
+done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
 
 ## Where this leaves the original
 
