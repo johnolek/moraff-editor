@@ -71,23 +71,21 @@ const NAMED_KEYS: Record<string, number> = {
   ' ': MW_KEY.space,
 };
 
-const LETTER = /^[A-Za-z]$/;
-const DIGIT = /^[0-9]$/;
-
 /**
  * The byte the game would have read for a browser key event, or null for a key it reads nothing
  * for.
  *
- * A letter is handed over in lower case, which is what FUN_1000_1878 does to it before
- * movecontrol dispatches. A key held with a modifier is the browser's: Moraff's World reads no
- * control character of its own, unlike Dungeons of the Unforgiven's Ctrl-F.
+ * Any key that types one character is handed over as that character's code, in lower case, which
+ * is what getch gives movecontrol after FUN_1000_1878 has been through it — so the three palette
+ * keys, which are '(', ')' and '*', arrive the same way a letter does. A key held with a
+ * modifier is the browser's: Moraff's World reads no control character of its own, unlike
+ * Dungeons of the Unforgiven's Ctrl-F.
  */
 export function mwGameKey(event: KeyboardEvent): number | null {
   if (event.altKey || event.metaKey || event.ctrlKey) return null;
   const named = NAMED_KEYS[event.key];
   if (named !== undefined) return named;
-  if (LETTER.test(event.key)) return event.key.toLowerCase().charCodeAt(0);
-  if (DIGIT.test(event.key)) return event.key.charCodeAt(0);
+  if (event.key.length === 1) return event.key.toLowerCase().charCodeAt(0);
   return null;
 }
 
