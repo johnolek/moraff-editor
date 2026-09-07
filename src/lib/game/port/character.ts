@@ -84,8 +84,9 @@ export function openUroll(text: string = urollText): UrollFile {
  * read_uroll_line (exe 3000:4a24, unf.c "read_uroll_line"): read the next line of UROLL.TXT.
  *
  * It copies characters up to and including the newline into a buffer, dropping every '|' on the
- * way, and then writes a zero over the last character it copied, which is that newline. Nothing
- * in UROLL.TXT has a '|' in it; the tablets in UH2.BIN, which the same function reads, do.
+ * way, and then writes a zero over the last character it copied, which is that newline. None of
+ * the three files it is the reader for has a '|' anywhere in it — not UROLL.TXT, not the UH.BIN
+ * hints, not the UH2.BIN tablets — so the dropping never has anything to drop.
  *
  * Running off the end of the file hangs the original, because fgetc goes on handing back -1 and
  * only a newline ends the loop. Nothing in roll_char reads that far.
