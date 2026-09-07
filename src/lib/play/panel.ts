@@ -41,9 +41,9 @@ function moves(count: number): string {
 export function spellTimers(pc: PlayerCharacter): PanelLine[] {
   const lines: PanelLine[] = [];
   if (pc.protection !== 0) lines.push(timerLine(`Protection, level ${pc.protection}`, pc.protectionTime));
-  if (pc.strengthTimer > 0) lines.push(timerLine('Strength, +7 Strength', pc.strengthTimer));
+  if (pc.strengthTimer > 0) lines.push(lending('Strength', pc.strengthTimer, '+7 Strength'));
   if (pc.powerWeapon !== 0) lines.push(timerLine(`Power Weapon ${pc.powerWeapon}`, pc.powerWeaponTime));
-  if (pc.speedTimer > 0) lines.push(timerLine('Speed, +7 Agility', pc.speedTimer));
+  if (pc.speedTimer > 0) lines.push(lending('Speed', pc.speedTimer, '+7 Agility'));
   if (pc.slowEnemiesTimer > 0) lines.push(timerLine('Slow Enemies', pc.slowEnemiesTimer));
   if (pc.holdMonsterTimer > 0) lines.push(timerLine('Hold Monster', pc.holdMonsterTimer));
   if (pc.sleepTimer > 0) lines.push(timerLine('Sleep', pc.sleepTimer));
@@ -58,6 +58,11 @@ export function spellTimers(pc: PlayerCharacter): PanelLine[] {
 function timerLine(label: string, left: number): PanelLine {
   if (left > 0) return { label, value: moves(left) };
   return { label, value: 'out of moves', note: 'Only a night at the inn takes it off you.' };
+}
+
+/** A spell that hands a characteristic back the moment its timer runs out. */
+function lending(label: string, left: number, lent: string): PanelLine {
+  return { ...timerLine(label, left), note: `${lent} while it runs.` };
 }
 
 /** How long a disease or a poison waits between bites, which pass_moment starts it again at. */

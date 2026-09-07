@@ -48,7 +48,7 @@ describe('the spells with a timer', () => {
   it('gives each one the moves it has left', () => {
     const lines = spellTimers(character({ strengthTimer: 58, antiFireTimer: 1, resistDrainTimer: 240 }));
     expect(lines).toEqual([
-      { label: 'Strength, +7 Strength', value: '58 moves' },
+      { label: 'Strength', value: '58 moves', note: '+7 Strength while it runs.' },
       { label: 'Resist Level Drain', value: '240 moves' },
       { label: 'Anti-Fire', value: '1 move' },
     ]);

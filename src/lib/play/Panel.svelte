@@ -69,7 +69,7 @@
   {#if numbers.engaged}
     {@const engaged = numbers.engaged}
     <section>
-      <h3>What you are facing</h3>
+      <h3>What you are up against</h3>
       <p class="name">{engaged.name}</p>
       {@render rows([
         { label: 'Level', value: String(engaged.level) },
