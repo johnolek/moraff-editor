@@ -30,7 +30,7 @@
 1000:1141 FUN_1000_1141 size=26 ncallers=2 | 
 1000:115b ftol size=44 ncallers=12 | 
 1000:1187 FUN_1000_1187 size=45 ncallers=0 | 
-1000:11b4 FUN_1000_11b4 size=73 ncallers=4 | 
+1000:11b4 clock_ticks size=73 ncallers=4 | 
 1000:11fd FUN_1000_11fd size=29 ncallers=1 | 
 1000:121a FUN_1000_121a size=27 ncallers=0 | 
 1000:1235 FUN_1000_1235 size=1 ncallers=1 | 
@@ -266,7 +266,7 @@
 2000:27a5 FUN_2000_27a5 size=17 ncallers=3 | 
 2000:27b8 load_world_pic size=955 ncallers=1 | world_pic ; INSERT_THE_MORAFF_S_WORLD_DATA_DISKETTE_IN_THE_DRIVE_AND_HIT_ANY ; YOU_MIGHT_WANT_TO_GRAB_A_SANDWICH____THIS_WILL_TAKE_SOME_TIME_ ; I_CAN_NOT_FIND_THE_NEEDED_FILES__WHEN_INSTALLING_WORLD__ALL_FILE ; _____BE_COPIED_INTO_THE_SAME_SUBDIRECTORY_ ; PERHAPS_YOU_SHOULD_TRY_REINSTALLING_THE_GAME_ ; LOADING____PLEASE_BE_PATIENT ; out_of_memory___sorry ; I_DON_T_SEE_ANY_TRAP ; out_of_memory_in_wall_pic___sorry ; wall_pic ; programming_allocation_error
 2000:2b73 FUN_2000_2b73 size=451 ncallers=1 | WORLD__A_LITTLE_MOUSE_ASKS_YOU_ ; COST_10_JP_PER_NIGHT_ ; out_of_mem_in_do_allocs_1 ; out_of_mem_in_do_allocs_2 ; out_of_mem_in_do_allocs_3_ ; out_of_mem_in_do_allocs_4_
-2000:2d36 FUN_2000_2d36 size=84 ncallers=17 | 
+2000:2d36 random_n size=84 ncallers=17 | 
 2000:2d8e FUN_2000_2d8e size=222 ncallers=8 | 
 2000:2e6c FUN_2000_2e6c size=123 ncallers=1 | 
 2000:2ee7 store size=414 ncallers=1 | 3__EXIT_STORE__OR_ESC_ ; 2__ARMOR ; 1__WEAPONS ; WHAT_WOULD_YOU_LIKE_TO_BUY_ ; YOU_HAVE_ENTERED_A_STORE ; IN_THE_NORTH_ ; IN_THE_SOUTH_ ; MONEY_ON_HAND__ ; THE_FLOOR_SEEMS_TO_BE_MADE ; 6__LONG_SWORD___450_JP ; 5__SHORTSWORD___250_JP ; 4__KNIFE_________30_JP ; 3__MACE_________300_JP ; 2__CLUB__________15_JP ; 1__STICK__________1_JP ; PLEASE_SELECT_A_WEAPON_ ; __OF_SOLID_ROCK__IT_IS_NOT ; __POSSIBLE_TO_DIG_HERE_ ; IT_MAY_TAKE_SOME_TIME__BUT ; 6__FIELD_PLATE__9900_JP ; 5__PLATE________4000_JP ; 4__SCALE________1500_JP ; 3__CHAIN_________300_JP ; 2__LEATHER________50_JP ; 1__ROBES__USELESS__1_JP ; PLEASE_SELECT_ARMOR_ ; __IF_YOU_ARE_TRAPPED__THEN ; __YOU_HAVE_NO_CHOICE_ ; A_MONSTER_WANTS_TO_HELP
@@ -278,30 +278,30 @@
 2000:3c8f select_player size=832 ncallers=1 | PLEASE_SELECT_A_PLAYER_ ; NUMBER_____NAME____SEX___RACE_______CLASS ; __SELECT_TO_CREATE_A_NEW_CHARACTER ; __MALE_ ; _FEMALE ; COPPER_STONES____ ; HIT_ESCAPE_TO_QUIT ; ______________
 2000:3fcf FUN_2000_3fcf size=116 ncallers=2 | NJC_QC_BM_ ; LMR_BGQRPG_ ; SRC_RFGQ_E_KC
 2000:4043 game_disk_prompt size=232 ncallers=1 | INSERT_THE_GAME_DISK_IN ; __THE_DISKETTE_DRIVE_AND ; __HIT_ANY_KEY___ ; NOTE_THAT_YOU_CAN_ONLY ; __HAVE_ONE_CHARACTER_PER ; __GAME_DISK_ON_360K ; __DRIVES_ ; mw_exe
-2000:412b FUN_2000_412b size=295 ncallers=1 | 
+2000:412b check_v_file size=295 ncallers=1 | 
 2000:4252 load_worldmap_bin size=64 ncallers=3 | worldmap_bin
 2000:4292 main size=672 ncallers=1 | 
 2000:4538 FUN_2000_4538 size=59 ncallers=2 | 
 2000:4575 FUN_2000_4575 size=42 ncallers=7 | 
-2000:45a1 FUN_2000_45a1 size=28 ncallers=8 | 
-2000:45bd FUN_2000_45bd size=227 ncallers=1 | 
+2000:45a1 set_occupant size=28 ncallers=8 | 
+2000:45bd pick_monster size=227 ncallers=1 | 
 2000:46a4 generate_section size=2294 ncallers=3 | 
-2000:4fb4 FUN_2000_4fb4 size=198 ncallers=1 | _mon_map
-2000:507a FUN_2000_507a size=284 ncallers=1 | _mon_map
+2000:4fb4 save_mon_map size=198 ncallers=1 | _mon_map
+2000:507a load_mon_map size=284 ncallers=1 | _mon_map
 2000:5196 FUN_2000_5196 size=99 ncallers=3 | 
-2000:51fd FUN_2000_51fd size=98 ncallers=1 | 
+2000:51fd is_explored size=98 ncallers=1 | 
 2000:5263 FUN_2000_5263 size=53 ncallers=3 | 
 2000:5298 save_dun size=403 ncallers=3 | _dun
 2000:542b load_dun size=465 ncallers=1 | _dun
-2000:55fc FUN_2000_55fc size=268 ncallers=8 | 
-2000:5708 FUN_2000_5708 size=78 ncallers=0 | 
-2000:575a FUN_2000_575a size=47 ncallers=0 | 
-2000:578c FUN_2000_578c size=69 ncallers=0 | 
+2000:55fc enter_level size=268 ncallers=8 | 
+2000:5708 random_walk size=78 ncallers=0 | 
+2000:575a random_run size=47 ncallers=0 | 
+2000:578c roll_dice size=69 ncallers=0 | 
 2000:57d7 load_dung_bin size=55 ncallers=3 | dung_bin
 2000:580e load_player size=177 ncallers=1 | 
 2000:58bf save_player size=76 ncallers=9 | 
-2000:590b FUN_2000_590b size=45 ncallers=0 | spells_hlp
-2000:5938 FUN_2000_5938 size=197 ncallers=1 | spells_hlp
+2000:590b spells_hlp_probe size=45 ncallers=0 | spells_hlp
+2000:5938 load_spell_text size=197 ncallers=1 | spells_hlp
 2000:59fd FUN_2000_59fd size=65 ncallers=2 | 
 2000:5a42 experience_for_level size=160 ncallers=1 | CEXPERIENCE_NEEDED_FOR_LEVEL_ ; __20_0f
 2000:5ae2 FUN_2000_5ae2 size=91 ncallers=3 | 
@@ -320,7 +320,7 @@
 2000:7b20 FUN_2000_7b20 size=47 ncallers=1 | 
 2000:7b4f FUN_2000_7b4f size=55 ncallers=1 | 
 2000:7b86 FUN_2000_7b86 size=167 ncallers=1 | HIT_ANY_KEY
-2000:7c2d FUN_2000_7c2d size=87 ncallers=4 | 
+2000:7c2d surface_feature size=87 ncallers=4 | 
 2000:7c8a FUN_2000_7c8a size=116 ncallers=1 | 
 2000:7d00 FUN_2000_7d00 size=92 ncallers=1 | 
 2000:7d60 FUN_2000_7d60 size=233 ncallers=1 | 
@@ -333,7 +333,7 @@
 2000:8aab FUN_2000_8aab size=148 ncallers=1 | 
 2000:8b3f FUN_2000_8b3f size=1110 ncallers=2 | 
 2000:8f95 FUN_2000_8f95 size=67 ncallers=4 | 
-2000:8fd8 FUN_2000_8fd8 size=450 ncallers=2 | spells_hlp ; HELP_FILE_NOT_FOUND ; rgbynow
+2000:8fd8 show_help size=450 ncallers=2 | spells_hlp ; HELP_FILE_NOT_FOUND ; rgbynow
 2000:919a FUN_2000_919a size=324 ncallers=1 | 
 2000:933a view_stats size=1150 ncallers=1 | VIEW_STATS_FOR_ ; RACE__ ; CLASS__ ; MONEY_IN_POCKET__ ; MONEY_IN_BANK__ ; TOTAL_MONEY__ ; LOADED_WEIGHT__ ; NAKED_WEIGHT__ ; HEIGHT__INCHES___ ; STRENGTH__ ; INTELLIGENCE__ ; CONSTITUTION__ ; AGILITY__ ; WEAPON_IN_HAND__ ; CURRENT_ARMOR__ ; YOU_ARE_DISEASED_MOVES_LEFT_UNTIL ; __CONSTITUTION_DRAINED__ ; YOU_ARE_POISONED_MOVES_LEFT_UNTIL ; __STRENGTH_DRAINED__ ; BODY_ARMOR___PLUS_ ; NO_RAISE_DEAD_CONTRACT_IS_IN_EFFECT ; RAISE_DEAD_CONTRACT_IS_IN_EFFECT ; HIT_ANY_KEY_TO_RETURN_TO_GAME___ ; SEX__ ; WISDOM__ ; LUCK__
 2000:97b8 FUN_2000_97b8 size=424 ncallers=1 | 
@@ -341,12 +341,12 @@
 2000:9cb8 FUN_2000_9cb8 size=39 ncallers=1 | 
 2000:9ce1 FUN_2000_9ce1 size=34 ncallers=1 | 
 2000:9d03 chute size=327 ncallers=1 | UH_OH____A_SINKING_FEELING___ ; YOU_HAVE_FALLEN_DOWN_A_CHUTE_ ; __HIT_ANY_KEY_TO_CONTINUE___
-2000:9e4a FUN_2000_9e4a size=137 ncallers=2 | 
+2000:9e4a chute_target size=137 ncallers=2 | 
 2000:9ed9 FUN_2000_9ed9 size=703 ncallers=2 | YOU_ARE_FIGHTING_THE_MONSTER ; IN_THE_WEST_ ; IN_THE_EAST_ ; IN_THE_NORTH_ ; IN_THE_SOUTH_ ; ZOOM_IN_ON_A_VIEW_ ; MONSTER_TYPE__
 2000:a19d dig_hole size=987 ncallers=1 | THE_FLOOR_SEEMS_TO_BE_MADE ; __OF_SOLID_ROCK__IT_IS_NOT ; __POSSIBLE_TO_DIG_HERE_ ; A_LITTLE_MOUSE_SUGGESTS ; __YOU_USE_A_LADDER_OR_A ; __SPELL_ ; HIT_ANY_KEY___ ; DO_YOU_WISH_TO_DIG_A_HOLE ; __IN_THE_FLOOR_ ; IT_MAY_TAKE_SOME_TIME__BUT ; __IF_YOU_ARE_TRAPPED__THEN ; __YOU_HAVE_NO_CHOICE_ ; 1__DIG_A_HOLE_IN_THE_FLOOR ; 2__FORGET_THE_HOLE_IDEA ; A_MONSTER_WANTS_TO_HELP ; DIGGING____DIGGING___ ; BOY_THIS_IS_HARD_WORK_ ; YOUR_HANDS_ARE_RAW_FROM ; __DIGGING__BLISTERS_ARE ; __DEVELOPING_ON_YOUR_HANDS ; __MAKING_IT_A_LITTLE_MORE ; __DIFFICULT_TO_HOLD_YOUR ; __WEAPONS_
 2000:a57e FUN_2000_a57e size=205 ncallers=1 | 
 2000:a64b FUN_2000_a64b size=77 ncallers=1 | 
-2000:a698 FUN_2000_a698 size=94 ncallers=2 | 
+2000:a698 trapdoor_target size=94 ncallers=2 | 
 2000:a6fa FUN_2000_a6fa size=145 ncallers=1 | 
 2000:a791 FUN_2000_a791 size=320 ncallers=1 | __YOU_HAVE_FOUND_A_TRAP_DOOR ; WITH_A_KEYHOLE_LABELED_ ; INSERT_THE_MORAFF_S_WORLD_DATA_DISKETTE_IN_THE_DRIVE_AND_HIT_ANY ; __UNFORTUNATELY__YOU_DO ; NOT_HAVE_THE_CORRECT_KEY_ ; __THIS_KEY_CAN_ONLY_BE ; FOUND_BY_KILLING_A_LEVEL ; DRAINER_NEAR_THE_LEVEL ; THIS_TRAP_DOOR_LEADS_TO_ ; TO_USE_THE_KEY_YOU_FOUND ; EARLIER__HIT__K__TO_USE ; DOOR___
 2000:a8d7 FUN_2000_a8d7 size=230 ncallers=1 | GO_WEST ; GO_EAST ; GO_NORTH ; GO_SOUTH
@@ -430,15 +430,15 @@
 3000:9cd3 FUN_3000_9cd3 size=40 ncallers=1 | 
 3000:9cfb FUN_3000_9cfb size=844 ncallers=1 | LEVEL ; PERMANENT_SPELLS ; PREPARATION_SPELLS ; WIZARD_BATTLE_SPELLS ; PRIEST_BATTLE_SPELLS
 3000:a047 FUN_3000_a047 size=819 ncallers=1 | WHICH_DO_YOU_WISH_TO_SEE_ ; 1__SPELLBOOKS ; 2__SCROLLS ; 3__WANDS ; 4__PAPERS ; 5__MISC__MAGIC_ITEMS ; ANY_OTHER_KEY_TO_RETURNS___ ; MISC__MAGIC_ITEMS_ ; HIT__I__AND__5__TO_USE_THESE_ ; 1__HOLY_HAND_GRENADES__ ; 2__STONES_OF_TELEPORTATION__ ; 3__STONES_OF_SEEING__ ; 4__FLOOR_SLOSHERS__ ; 5__POTION_OF_HEALING__ ; HIT__I__AND__4__TO_USE_THESE_ ; 6__GREEN_PILLS__ ; 7__ORANGE_PILLS__ ; 8__YELLOW_PILLS__ ; 9__RED_PILLS__ ; 10__BLUE_PILLS__ ; 11__WHITE_PILLS__ ; THESE_ARE_AUTOMATICALLY_IN_USE_ ; 12__RINGS_OF_REGENERATION__ ; 13__RING_OF_PROTECTION__PLUS_ ; 14__ANTI_MAGIC_RING__PLUS_ ; 15__BODY_ARMOR__LEVEL_ ; 16__GAUNTLET__PLUS_ ; HIT_ANY_KEY___
-3000:a384 FUN_3000_a384 size=191 ncallers=5 | 
-3000:a449 FUN_3000_a449 size=215 ncallers=3 | 
-3000:a524 FUN_3000_a524 size=205 ncallers=11 | 
-3000:a5f7 FUN_3000_a5f7 size=605 ncallers=2 | 
-3000:a854 FUN_3000_a854 size=125 ncallers=11 | 
+3000:a384 myrand size=191 ncallers=5 | 
+3000:a449 ladder_delta size=215 ncallers=3 | 
+3000:a524 wall_side size=205 ncallers=11 | 
+3000:a5f7 draw_wall_side size=605 ncallers=2 | 
+3000:a854 is_solid size=125 ncallers=11 | 
 3000:a8d5 FUN_3000_a8d5 size=93 ncallers=0 | 
-3000:a932 FUN_3000_a932 size=75 ncallers=1 | 
-3000:a97d FUN_3000_a97d size=1522 ncallers=3 | 
-3000:af6f FUN_3000_af6f size=243 ncallers=0 | 
+3000:a932 draw_cell_corners size=75 ncallers=1 | 
+3000:a97d draw_map_square size=1522 ncallers=3 | 
+3000:af6f seeded_pick size=243 ncallers=0 | 
 3000:b066 FUN_3000_b066 size=368 ncallers=1 | 
 3000:b1d6 FUN_3000_b1d6 size=1564 ncallers=1 | MORAFF_S_WORLD ; VERSION_6_1__COPYRIGHT_1993_ ; ALL_RIGHTS_RESERVED ; HIT_ANY_KEY_TO_SKIP_INTRODUCTION ; HIT_ESCAPE_OR_A_MOUSE_BUTTON_TO_SKIP_INTRODUCTION ; WRITTEN_AND_PRODUCED_BY_STEVE_MORAFF ; ARTWORK_BY_RODNEY_PAGE ; ADDITIONAL_ARTWORK_AND_TESTING_BY ; ___MARTIN_AND_LAURIE_NOEL ; FINANCED_BY_OUR_REGISTERED_USERS ; ___THIS_SPELL_
 3000:b7fd FUN_3000_b7fd size=152 ncallers=5 | 
@@ -469,7 +469,7 @@
 4000:0884 FUN_4000_0884 size=56 ncallers=0 | 
 4000:08bc FUN_4000_08bc size=74 ncallers=1 | 
 4000:0906 FUN_4000_0906 size=282 ncallers=5 | 
-4000:0a20 FUN_4000_0a20 size=244 ncallers=1 | 
+4000:0a20 load_font size=244 ncallers=1 | 
 4000:0b14 print_text size=507 ncallers=41 | 
 4000:0d0f print_text_clipped size=412 ncallers=9 | 
 4000:0eab FUN_4000_0eab size=54 ncallers=1 | 
