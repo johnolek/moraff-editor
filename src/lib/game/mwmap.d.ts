@@ -28,7 +28,7 @@ export interface Square extends Sides {
   chute: number;
   /** Trap door destination floor (a multiple of ten), -1 when none. */
   trapdoor: number;
-  /** Floor 0 only: terrain 1..5, 0 for plain ground. The game names none of the five. */
+  /** Floor 0 only: 1 store, 2 temple, 3 bank, 4 inn, 5 world map gate, 0 nothing. */
   surface: number;
 }
 
@@ -44,6 +44,8 @@ export class MwDungeon {
   trapdoor(x: number, y: number, level: number, dungeon: number): number;
   chute(x: number, y: number, level: number, dungeon: number): number;
   surface(x: number, y: number, level: number, dungeon: number): number;
+  /** The (x, y) every trap door to `level` lands on. */
+  trapdoorDest(level: number, dungeon: number): [number, number];
   /** Whole floor as rows[y][x]. */
   floor(level: number, dungeon: number): Square[][];
 }

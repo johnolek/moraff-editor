@@ -115,6 +115,26 @@ describe('surface', () => {
   });
 });
 
+describe('trapdoorDest', () => {
+  it('lands inside the box the game draws its landing square from', () => {
+    for (const level of [10, 20, 150]) {
+      const [x, y] = dungeon.trapdoorDest(level, 0);
+      expect(x).toBeGreaterThanOrEqual(10);
+      expect(x).toBeLessThan(70);
+      expect(y).toBeGreaterThanOrEqual(10);
+      expect(y).toBeLessThan(100);
+      expect(dungeon.solid(x, y, level, 0)).toBe(false);
+    }
+  });
+
+  it('draws again from the next seed when the first square it picks is rock', () => {
+    // Seed 10 always picks (18, 93), which floor 10 has open and floor 30 does not.
+    expect(dungeon.trapdoorDest(10, 0)).toEqual([18, 93]);
+    expect(dungeon.solid(18, 93, 30, 0)).toBe(true);
+    expect(dungeon.trapdoorDest(30, 0)).toEqual([16, 94]);
+  });
+});
+
 describe('floor', () => {
   it('gives every square the same fields', () => {
     const square = dungeon.floor(0, 0)[10][20];

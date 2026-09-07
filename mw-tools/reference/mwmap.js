@@ -4,7 +4,7 @@
 // The hash itself is the one Dungeons of the Unforgiven uses, so it is imported from
 // unfmap.js rather than copied.  Plain ES module, no other dependencies.
 
-import { myrand } from './unfmap.js';
+import { BorlandRand, myrand } from './unfmap.js';
 
 /** Walls always close the map off at x = 0 and x = 79 (DAT_6000_448b). */
 export const DUNGEON_XMAX = 79;
@@ -88,12 +88,25 @@ export class MwDungeon {
     return level;
   }
 
-  /** surface_feature (exe 2000:7c2d): the terrain of a floor-0 square, 1..5, or 0 for none.
-   *  The game gives the five no names; draw_map_square (3000:a97d) only paints each a colour. */
+  /** surface_feature (exe 2000:7c2d): the building on a floor-0 square, 1..5, or 0 for none.
+   *  movecontrol opens one of five screens from it: 1 store, 2 temple, 3 bank, 4 inn, and
+   *  5 the gate back out to the world map.  draw_map_square (3000:a97d) paints the square
+   *  palette entry `building + 2`. */
   surface(x, y, level, dungeon) {
     if (x <= 0 || x >= DUNGEON_XMAX || y <= 0 || y >= DUNGEON_YMAX) return 0;
     const n = myrand(x, y, level, dungeon, 110);
     return n <= 5 ? n : 0;
+  }
+
+  /** trapdoor_landing (exe 2000:a6fa): the one square every trap door leading to a floor drops
+   *  you on.  It seeds the C library's generator with 10, then 11, and so on, drawing an x in
+   *  10..69 and a y in 10..99 from each seed until one of them is not rock. */
+  trapdoorDest(level, dungeon) {
+    for (let i = 10; ; i++) {
+      const r = new BorlandRand(i);
+      const a = r.random(60) + 10, b = r.random(90) + 10;
+      if (!this.solid(a, b, level, dungeon)) return [a, b];
+    }
   }
 
   /** Whole floor as rows[y][x] of {n,s,w,e,solid,ladder,chute,trapdoor,surface}. */
