@@ -21,7 +21,8 @@ from.
 `../../dotu-tools/docs/METHOD.md` — written for Dungeons of the Unforgiven, but
 the same executable format, the same compiler and the same techniques —
 explains how identifications are made.  `../docs/ROLLER.md` is the first piece
-of the game to have been read out in full.
+of the game to have been read out in full, and `../docs/DUNGEON.md` the second:
+the dungeon generator, the monsters and the files the game keeps them in.
 
 ## The two executables
 
