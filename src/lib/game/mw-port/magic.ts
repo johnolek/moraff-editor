@@ -1,4 +1,5 @@
 import data from '../mw-data.json';
+import { MW_BOOK_SLOTS_PER_CATEGORY } from './spells';
 import type { MwGame } from './state';
 import { MW_SQUARE_EMPTY, MW_SQUARE_PLAYER, mwOccupantAt, mwSetOccupant } from './state';
 
@@ -46,6 +47,12 @@ const MONSTER_MIND = [0x13, 0x14];
 
 /** The kind byte of the ten monsters that refuse every battle spell. */
 const SPELL_PROOF_KIND = 100;
+
+/** What the two permanent markers hold, where the preparation spells of the same name hold 1. */
+const PERMANENT_MARK = 100;
+
+/** Fifteen years in minutes, which is the youngest Youth will make a character. */
+const YOUNGEST_MINUTES = 0x3d80;
 
 /** What autokill writes over the hit points of a monster whose brain it explodes. */
 const AUTOKILL_HP = -100;
@@ -670,5 +677,722 @@ export function teleportDirection(game: MwGame, choice: number): boolean {
     // draws is ported.
     return true;
   }
+  return false;
+}
+
+/**
+ * cast_spell (WORLD.EXE 2000:c546, mw.c "cast_spell"): the Write Scroll and Enchant Wand spells,
+ * `kind` 1 for a scroll and 2 for five charges on a wand. The name in the decompilation is wrong
+ * — the function casts nothing, it walks three menus and adds to one of the two arrays.
+ *
+ * The first menu blanks out the categories the character's class cannot cast, but the key that
+ * picks them still works, so any class can write any scroll. `maxLevel` is the deepest level the
+ * level menu accepts, and nothing else looks at it.
+ */
+export function writeScrollOrWand(game: MwGame, maxLevel: number, kind: number): boolean {
+  const choice = game.chooseSpellToWrite(maxLevel);
+  if (choice === null) return false;
+  const index = choice.category * MW_BOOK_SLOTS_PER_CATEGORY + choice.level * 3 + choice.slot;
+  if (kind === 1) {
+    game.pc.scrolls[index] += 1;
+    // DS:3700 3714 1476 28ff
+    game.say('THE SCROLL HAS BEEN', '   SUCCESSFULLY WRITTEN!', '', 'HIT ANY KEY');
+    return true;
+  }
+  if (kind === 2) {
+    game.pc.wands[index] += 5;
+    // DS:372d 3745 1476 28ff
+    game.say('YOU NOW HOLD A GLOWING,', '   CHARGED WAND IN HAND!', '', 'HIT ANY KEY');
+    return true;
+  }
+  // Nothing passes a kind other than 1 or 2. The original would put the three menus up again and
+  // keep asking, for ever.
+  return false;
+}
+
+/**
+ * The roll the five floor-moving spells make once they have changed the floor (WORLD.EXE
+ * 2000:d358, mw.c "spell_effect"): a square of the whole floor over and over until one is not
+ * rock. Nothing asks whether a monster is standing there, and nothing writes the occupancy grid.
+ */
+function dropOnOpenSquare(game: MwGame): void {
+  const pc = game.pc;
+  do {
+    pc.x = game.rng.random(game.columns);
+    pc.y = game.rng.random(game.rows);
+  } while (game.isSolid(pc.x, pc.y, pc.floor, pc.dungeon));
+}
+
+/** The refusal the two downward spells and the three upward ones share below floor 65. */
+function sayNotBelowSixtyFour(game: MwGame): void {
+  // DS:3cdc 3d02 3d19 1476 20bd
+  game.say('THAT SPELL DOES NOT', "  WORK BELOW THE 64'TH", '  LEVEL.', '', 'HIT ANY KEY...');
+}
+
+/** The refusal the three upward spells share in the town. */
+function sayNotAboveTheTown(game: MwGame): void {
+  // DS:3d22 3d38 3d51 1476 20bd
+  game.say(
+    'THIS SPELL CAN NOT BE',
+    '  USED TO MAKE YOU FLOAT',
+    '  ABOVE THE TOWN.',
+    '',
+    'HIT ANY KEY...',
+  );
+}
+
+/** enter_level (WORLD.EXE 2000:55fc): the floor around the character is built afresh. */
+function enterLevel(game: MwGame): void {
+  game.events.push({ kind: 'levelEntered', floor: game.pc.floor });
+  game.recenterMap = true;
+}
+
+/** The four cures, which never heal past the maximum. */
+function heal(game: MwGame, amount: number): void {
+  const pc = game.pc;
+  pc.hp += amount;
+  if (pc.hp > pc.maxHp) pc.hp = pc.maxHp;
+}
+
+/**
+ * spell_effect (WORLD.EXE 2000:d358, mw.c "spell_effect"), the permanent list. These are the
+ * spells the screen refuses anywhere but the town, and the only ones that cost their level off
+ * the maximum spell points as well as off the pool.
+ *
+ * @param levelIndex 0 to 9, one less than the level printed on the menu.
+ * @param slot 0 to 2, the spell on that line.
+ */
+export function permanentList(game: MwGame, levelIndex: number, slot: number): boolean {
+  const pc = game.pc;
+  if (levelIndex === 0) {
+    if (slot === 0) return enchantWeapon(game, 1);
+    if (slot === 1) {
+      pc.maxHp += 1;
+      return true;
+    }
+    if (slot === 2) return writeScrollOrWand(game, 3, 1);
+  }
+  if (levelIndex === 1) {
+    if (slot === 0) return enchantArmour(game, 1);
+    if (slot === 1) {
+      pc.maxHp += 3;
+      return true;
+    }
+    if (slot === 2) return writeScrollOrWand(game, 3, 2);
+  }
+  if (levelIndex === 2) {
+    if (slot === 0) return enchantWeapon(game, 2);
+    if (slot === 1) {
+      pc.maxHp += 5;
+      return true;
+    }
+    if (slot === 2) return raiseRingProtection(game, 1) !== 0;
+  }
+  if (levelIndex === 3) {
+    if (slot === 0) return enchantArmour(game, 2);
+    if (slot === 1) return raiseRingAntimagic(game, 1) !== 0;
+    if (slot === 2) return writeScrollOrWand(game, 10, 1);
+  }
+  if (levelIndex === 4) {
+    if (slot === 0) return enchantWeapon(game, 3);
+    if (slot === 1) return raiseRingProtection(game, 2) !== 0;
+    if (slot === 2) return raiseBodyArmour(game, 1) !== 0;
+  }
+  if (levelIndex === 5) {
+    if (slot === 0) return enchantArmour(game, 3);
+    if (slot === 1) return raiseRingAntimagic(game, 2) !== 0;
+    if (slot === 2) return writeScrollOrWand(game, 8, 2);
+  }
+  if (levelIndex === 6) {
+    if (slot === 0) return raiseRingProtection(game, 3) !== 0;
+    if (slot === 1) return raiseRingAntimagic(game, 3) !== 0;
+    if (slot === 2) return raiseBodyArmour(game, 2) !== 0;
+  }
+  if (levelIndex === 7) {
+    if (slot === 0) return enchantWeapon(game, 4);
+    if (slot === 1) return enchantArmour(game, 4);
+    if (slot === 2) return writeScrollOrWand(game, 10, 2);
+  }
+  if (levelIndex === 8) {
+    // Permanent Feather, which the inn cannot clear: it only clears a feather marked 1.
+    if (slot === 0) {
+      if (pc.feather !== PERMANENT_MARK) {
+        pc.feather = PERMANENT_MARK;
+        recomputeWeight(game);
+        return true;
+      }
+      sayRedundant(game);
+      return false;
+    }
+    if (slot === 1) return raiseRingAntimagic(game, 5) !== 0;
+    if (slot === 2) {
+      pc.maxHp += 25;
+      return true;
+    }
+  }
+  if (levelIndex === 9) {
+    // Permanent Invisibility. Marked 100 it still stops a newly met monster's free first strike,
+    // but the one turn in four when the monsters do not move at all wants a marker of exactly 1,
+    // so the permanent version is the weaker of the two.
+    if (slot === 0) {
+      if (pc.invisibility !== PERMANENT_MARK) {
+        pc.invisibility = PERMANENT_MARK;
+        return true;
+      }
+      sayRedundant(game);
+      return false;
+    }
+    // Youth halves the character's age and puts it back up to fifteen years if that came out
+    // lower. It gives back none of the strength and constitution that ageing took.
+    if (slot === 1) {
+      pc.ageMinutes = pc.ageMinutes >>> 1;
+      if (pc.ageMinutes < YOUNGEST_MINUTES) pc.ageMinutes = YOUNGEST_MINUTES;
+      return true;
+    }
+    if (slot === 2) return raiseBodyArmour(game, 4) !== 0;
+  }
+  return false;
+}
+
+/**
+ * spell_effect (WORLD.EXE 2000:d358, mw.c "spell_effect"), the preparation list. The screen
+ * refuses every one of these during a battle.
+ */
+export function preparationList(game: MwGame, levelIndex: number, slot: number): boolean {
+  const pc = game.pc;
+  if (levelIndex === 0) {
+    if (slot === 0) return raisePrepArmour(game, 1) !== 0;
+    if (slot === 1) return raisePrepWeapon(game, 1) !== 0;
+    // Little Cure, which heals half the wisdom and has no random part at all.
+    if (slot === 2) {
+      heal(game, Math.trunc(pc.wis / 2));
+      sayFeelGood(game);
+      return true;
+    }
+  }
+  if (levelIndex === 1) {
+    if (slot === 0) return raisePrepWeapon(game, 2) !== 0;
+    if (slot === 1) {
+      // Relocate always works, and the spell reports success without looking at the answer.
+      teleportPlayer(game);
+      return true;
+    }
+    if (slot === 2) {
+      // DS:3cc9
+      game.say(`YOU ARE ON LEVEL: ${pc.floor}`);
+      return true;
+    }
+  }
+  if (levelIndex === 2) {
+    if (slot === 0) {
+      let healed = game.rng.random(pc.wis) + 10;
+      if (healed > 40) healed = 40;
+      heal(game, healed);
+      sayFeelGood(game);
+      return true;
+    }
+    if (slot === 1) return raisePrepArmour(game, 2) !== 0;
+    if (slot === 2) {
+      if (pc.prepStrength !== 5) {
+        pc.prepStrength = 5;
+        pc.str += 5;
+        sayFeelVeryGood(game);
+        return true;
+      }
+      sayAlreadyCast(game);
+      return false;
+    }
+  }
+  if (levelIndex === 3) {
+    if (slot === 0) return raisePrepWeapon(game, 3) !== 0;
+    if (slot === 1) {
+      if (pc.prepAgility !== 5) {
+        pc.prepAgility = 5;
+        pc.dex += 5;
+        sayFeelVeryGood(game);
+        return true;
+      }
+      sayAlreadyCast(game);
+      return false;
+    }
+    // Descend: one floor down, onto a random square that is not rock rather than the open space
+    // directly below the character.
+    if (slot === 2) {
+      if (pc.floor > 123) {
+        // DS:3cdc 3cf0 1476 20bd
+        game.say('THAT SPELL DOES NOT', '  WORK THIS DEEP.', '', 'HIT ANY KEY...');
+        return false;
+      }
+      pc.floor += 1;
+      dropOnOpenSquare(game);
+      enterLevel(game);
+      return true;
+    }
+  }
+  if (levelIndex === 4) {
+    // Ascend, refused from floor 66 down although the message says the 64th.
+    if (slot === 0) {
+      if (pc.floor > 65) {
+        sayNotBelowSixtyFour(game);
+        return false;
+      }
+      if (pc.floor < 1) {
+        sayNotAboveTheTown(game);
+        return false;
+      }
+      pc.floor -= 1;
+      dropOnOpenSquare(game);
+      enterLevel(game);
+      return true;
+    }
+    if (slot === 1) {
+      // DS:3cc9 3d63 3d7c 3d87
+      game.say(
+        `YOU ARE ON LEVEL: ${pc.floor}`,
+        'YOUR X AND Y COORDINATES',
+        `   ARE: X-${pc.x} Y-${pc.y}`,
+      );
+      return true;
+    }
+    if (slot === 2) {
+      if (pc.feather !== 0) {
+        sayRedundant(game);
+        return false;
+      }
+      pc.feather = 1;
+      recomputeWeight(game);
+      return true;
+    }
+  }
+  if (levelIndex === 5) {
+    if (slot === 0) {
+      let healed = game.rng.random(pc.wis * 4) + 20;
+      if (healed > 90) healed = 90;
+      heal(game, healed);
+      sayFeelVeryGood(game);
+      return true;
+    }
+    // Double Ascend, which is one floor from floor 1.
+    if (slot === 1) {
+      if (pc.floor > 65) {
+        sayNotBelowSixtyFour(game);
+        return false;
+      }
+      if (pc.floor < 1) {
+        sayNotAboveTheTown(game);
+        return false;
+      }
+      if (pc.floor < 2) pc.floor -= 1;
+      else pc.floor -= 2;
+      dropOnOpenSquare(game);
+      enterLevel(game);
+      return true;
+    }
+    if (slot === 2) return raisePrepWeapon(game, 4) !== 0;
+  }
+  if (levelIndex === 6) {
+    if (slot === 0) {
+      if (pc.invisibility !== 0) {
+        sayRedundant(game);
+        return false;
+      }
+      pc.invisibility = 1;
+      return true;
+    }
+    if (slot === 1) return raisePrepArmour(game, 3) !== 0;
+    if (slot === 2) {
+      if (pc.fastMove !== 0) {
+        sayRedundant(game);
+        return false;
+      }
+      pc.fastMove = 1;
+      return true;
+    }
+  }
+  if (levelIndex === 7) {
+    if (slot === 0) {
+      if (pc.superStrength !== 10) {
+        pc.superStrength = 10;
+        pc.str += 10;
+        sayFeelVeryGood(game);
+        return true;
+      }
+      sayAlreadyCast(game);
+      return false;
+    }
+    if (slot === 1) return raisePrepWeapon(game, 5) !== 0;
+    // Major Descend: exactly twenty-five floors, never past 75, and refused from floor 66 down —
+    // so it is only castable between floors 1 and 65 anyway.
+    if (slot === 2) {
+      if (pc.floor > 65) {
+        sayNotBelowSixtyFour(game);
+        return false;
+      }
+      pc.floor += 25;
+      if (pc.floor > 75) pc.floor = 75;
+      dropOnOpenSquare(game);
+      enterLevel(game);
+      return true;
+    }
+  }
+  if (levelIndex === 8) {
+    if (slot === 0) {
+      if (pc.superAgility !== 10) {
+        pc.superAgility = 10;
+        pc.dex += 10;
+        sayFeelVeryGood(game);
+        return true;
+      }
+      sayAlreadyCast(game);
+      return false;
+    }
+    // Cure Poison writes −1, which is what stops the timer counting down to the next point of
+    // strength; zero would still be counted.
+    if (slot === 1) {
+      pc.poisonTimer = -1;
+      return true;
+    }
+    if (slot === 2) {
+      pc.hp = pc.maxHp;
+      return true;
+    }
+  }
+  if (levelIndex === 9) {
+    // Major Ascend: exactly twenty-five floors up, never below the town.
+    if (slot === 0) {
+      if (pc.floor > 65) {
+        sayNotBelowSixtyFour(game);
+        return false;
+      }
+      if (pc.floor < 1) {
+        sayNotAboveTheTown(game);
+        return false;
+      }
+      pc.floor -= 25;
+      if (pc.floor < 0) pc.floor = 0;
+      dropOnOpenSquare(game);
+      enterLevel(game);
+      return true;
+    }
+    if (slot === 1) {
+      pc.diseaseTimer = -1;
+      return true;
+    }
+    if (slot === 2) return raisePrepArmour(game, 4) !== 0;
+  }
+  return false;
+}
+
+/** The straight damage the battle lists do, which want a monster engaged and print one screen. */
+function shockDamage(game: MwGame, damage: number, howMany: string): boolean {
+  if (game.engaged === -1) {
+    sayNoMonster(game);
+    return false;
+  }
+  game.monsters[game.engaged].hp -= damage;
+  // DS:3e25 3e3b 3e54 3e6b 3e85/3fb5/4039 1476 28ff
+  game.say(
+    'YOU TOUCH THE MONSTER',
+    '   AND ELECTRICITY FLOWS',
+    '   THROUGH YOUR HANDS,',
+    '   SHOCKING YOUR OPPONENT',
+    howMany,
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * Magic Zot and Magic Bolt, which roll `random(5) + base` once for every level the character has
+ * plus one — so the free level's worth on top of the per-level rolls.
+ */
+function missileVolley(game: MwGame, base: number, lead: string, headline: string[]): boolean {
+  if (game.engaged === -1) {
+    sayNoMonster(game);
+    return false;
+  }
+  let damage = 0;
+  for (let roll = 0; roll < game.pc.lev + 1; roll++) damage += game.rng.random(5) + base;
+  game.monsters[game.engaged].hp -= damage;
+  // DS:381f 1476 28ff after the four the caller names
+  game.say(...headline, `${lead}${damage}`, '   POINTS OF DAMAGE.', '', 'HIT ANY KEY');
+  return true;
+}
+
+/** Slow Enemies, which both battle lists cast: 60 moves, and the message overstates what it does. */
+function slowEnemies(game: MwGame): boolean {
+  game.pc.slowEnemiesTimer = SPELL_MOVES;
+  // DS:3de7 3dfd 3e16 1476 28ff
+  game.say(
+    'ALL YOUR ENEMIES SEEM',
+    '   TO SLOW DOWN TO ABOUT',
+    '   HALF SPEED.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * Hold Monster, which both battle lists cast: fifteen of the monster's own turns, with no roll to
+ * make.
+ *
+ * The spell-proof test comes before the test that a monster is engaged at all, which is the wrong
+ * way round: the original reads the six bytes in front of the monster list when nothing is.
+ */
+function holdMonster(game: MwGame): boolean {
+  if (spellProof(game)) return false;
+  if (game.engaged === -1) {
+    sayNoMonster(game);
+    return false;
+  }
+  // DS:4029
+  game.monsterStatusLine = 'MONSTER IS HELD';
+  game.pc.holdMonsterTimer = 15;
+  return true;
+}
+
+/**
+ * spell_effect (WORLD.EXE 2000:d358, mw.c "spell_effect"), the wizard battle list. Every spell
+ * that touches a monster answers "YOU ARE NOT CURRENTLY ENGAGING ANY MONSTER" and costs nothing
+ * when there is none.
+ */
+export function wizardBattle(game: MwGame, levelIndex: number, slot: number): boolean {
+  const pc = game.pc;
+  if (levelIndex === 0) {
+    if (slot === 0) return sleepMonster(game);
+    // Magic Zap, which is one level's worth more than the two points a level the help text says.
+    if (slot === 1) {
+      if (game.engaged === -1) {
+        sayNoMonster(game);
+        return false;
+      }
+      const damage = pc.lev * 2 + 2;
+      game.monsters[game.engaged].hp -= damage;
+      // DS:3d9f 3db7 3d8b 3dd2
+      game.say(
+        'WISPS OF COLORFUL LIGHT',
+        '   GATHER TOGETHER AND ZAP',
+        `   THE MONSTER FOR ${damage}`,
+        '   POINTS OF DAMAGE!',
+      );
+      return true;
+    }
+    if (slot === 2) return raiseProtection(game, 1);
+  }
+  if (levelIndex === 1) {
+    if (slot === 0) return slowEnemies(game);
+    if (slot === 1) return boostStrength(game);
+    // DS:3e85
+    if (slot === 2) return shockDamage(game, 25, '   FOR 25 POINTS OF DAMAGE.');
+  }
+  if (levelIndex === 2) {
+    if (slot === 0) {
+      if (game.engaged === -1) {
+        sayNoMonster(game);
+        return false;
+      }
+      const damage = pc.lev * 4 + 4;
+      game.monsters[game.engaged].hp -= damage;
+      // DS:3ea1 3ebb 3ed4 3d8b 381f 1476 28ff
+      game.say(
+        'YOU FORM A BALL WITH YOUR',
+        '   HANDS AND ELECTRICITY',
+        '   BOLTS FORWARD, BURNING',
+        `   THE MONSTER FOR ${damage}`,
+        '   POINTS OF DAMAGE.',
+        '',
+        'HIT ANY KEY',
+      );
+      return true;
+    }
+    if (slot === 1) {
+      if (game.engaged === -1) {
+        sayNoMonster(game);
+        return false;
+      }
+      game.monsters[game.engaged].hp -= 50;
+      // DS:3eee 3f05 3f1f 381f 1476 28ff
+      game.say(
+        'A MISSLE BOLTS FORWARD',
+        '   FROM YOUR FOREHEAD AND',
+        '   STABS THE ENEMY FOR 50',
+        '   POINTS OF DAMAGE.',
+        '',
+        'HIT ANY KEY',
+      );
+      return true;
+    }
+    if (slot === 2) return boostAgility(game);
+  }
+  if (levelIndex === 3) {
+    // Go Away reports success whatever teleport_monster answered, so a monster that refused it —
+    // or no monster at all — still costs the spell points.
+    if (slot === 0) {
+      teleportMonster(game);
+      return true;
+    }
+    if (slot === 1) {
+      teleportPlayer(game);
+      return true;
+    }
+    if (slot === 2) return raisePowerWeapon(game, 1);
+  }
+  if (levelIndex === 4) {
+    if (slot === 0) return explosion(game, 0);
+    if (slot === 1) return raiseProtection(game, 2);
+    if (slot === 2) return resistPoison(game);
+  }
+  if (levelIndex === 5) {
+    if (slot === 0) {
+      // DS:3f4c 3f66 3f84 3fa0 3f39
+      return missileVolley(game, 4, '   THE MISSLES DO ', [
+        'A GROUP OF MISSLES SPRING',
+        '   FORTH FROM YOUR FINGERTIPS',
+        '   AND PLUNGE DIRECTLY INTO',
+        "   THE ENEMY'S BODY.",
+      ]);
+    }
+    // DS:3fb5
+    if (slot === 1) return shockDamage(game, 125, '   FOR 125 POINTS OF DAMAGE.');
+    if (slot === 2) return antiCold(game);
+  }
+  if (levelIndex === 6) {
+    if (slot === 0) return explosion(game, 1);
+    if (slot === 1) return teleportDirection(game, game.chooseDirection());
+    if (slot === 2) return antiFire(game);
+  }
+  if (levelIndex === 7) {
+    if (slot === 0) {
+      // DS:3fe6 3f66 3fff 401d 3fd2
+      return missileVolley(game, 7, '   THE CHARGE DOES ', [
+        'AN ELECTRIC CHARGE LEAPS',
+        '   FORTH FROM YOUR FINGERTIPS',
+        '   INTO THE BODY OF THE ENEMY',
+        '   MONSTER.',
+      ]);
+    }
+    if (slot === 1) return raiseProtection(game, 3);
+    if (slot === 2) return raisePowerWeapon(game, 2);
+  }
+  if (levelIndex === 8) {
+    if (slot === 0) return holdMonster(game);
+    if (slot === 1) return drainMonster(game);
+    // DS:4039
+    if (slot === 2) return shockDamage(game, 300, '   FOR 300 POINTS OF DAMAGE.');
+  }
+  if (levelIndex === 9) {
+    if (slot === 0) return explosion(game, 2);
+    if (slot === 1) return autokill(game);
+    if (slot === 2) return raisePowerWeapon(game, 3);
+  }
+  return false;
+}
+
+/**
+ * spell_effect (WORLD.EXE 2000:d358, mw.c "spell_effect"), the priestly battle list. Nine of its
+ * thirty are the wizard list's spell exactly; the four cures and Ultra Protection are its own.
+ */
+export function priestBattle(game: MwGame, levelIndex: number, slot: number): boolean {
+  const pc = game.pc;
+  if (levelIndex === 0) {
+    if (slot === 0) return sleepMonster(game);
+    if (slot === 1) return raiseProtection(game, 1);
+    if (slot === 2) return boostStrength(game);
+  }
+  if (levelIndex === 1) {
+    if (slot === 0) return resistPoison(game);
+    if (slot === 1) return boostAgility(game);
+    if (slot === 2) {
+      heal(game, Math.trunc(pc.wis / 2));
+      sayFeelGood(game);
+      return true;
+    }
+  }
+  if (levelIndex === 2) {
+    if (slot === 0) return resistDisease(game);
+    if (slot === 1) {
+      teleportPlayer(game);
+      return true;
+    }
+    if (slot === 2) return slowEnemies(game);
+  }
+  if (levelIndex === 3) {
+    if (slot === 0) return antiCold(game);
+    if (slot === 1) {
+      teleportMonster(game);
+      return true;
+    }
+    if (slot === 2) return raisePowerWeapon(game, 1);
+  }
+  if (levelIndex === 4) {
+    // The priestly Protection asks for level 1, not 2, so it takes 2 off a monster's attack roll
+    // where the wizard's takes 8. Cast after Minor Protection it merely adds 60 more moves.
+    if (slot === 0) return raiseProtection(game, 1);
+    if (slot === 1) return antiFire(game);
+    if (slot === 2) return teleportDirection(game, game.chooseDirection());
+  }
+  if (levelIndex === 5) {
+    if (slot === 0) return resistDrain(game);
+    if (slot === 1) return drainMonster(game);
+    if (slot === 2) {
+      let healed = game.rng.random(pc.wis * 4) + 20;
+      if (healed > 90) healed = 90;
+      heal(game, healed);
+      sayFeelVeryGood(game);
+      return true;
+    }
+  }
+  if (levelIndex === 6) {
+    if (slot === 0) return holdMonster(game);
+    if (slot === 1) return raisePowerWeapon(game, 2);
+    // DS:3fb5
+    if (slot === 2) return shockDamage(game, 125, '   FOR 125 POINTS OF DAMAGE.');
+  }
+  if (levelIndex === 7) {
+    if (slot === 0) return raiseProtection(game, 3);
+    if (slot === 1) return explosion(game, 1);
+    if (slot === 2) {
+      // DS:3f4c 3f66 3f84 3fa0 3f39
+      return missileVolley(game, 4, '   THE MISSLES DO ', [
+        'A GROUP OF MISSLES SPRING',
+        '   FORTH FROM YOUR FINGERTIPS',
+        '   AND PLUNGE DIRECTLY INTO',
+        "   THE ENEMY'S BODY.",
+      ]);
+    }
+  }
+  if (levelIndex === 8) {
+    if (slot === 0) return autokill(game);
+    if (slot === 1) return raisePowerWeapon(game, 3);
+    if (slot === 2) return boostStrengthAndAgility(game);
+  }
+  if (levelIndex === 9) {
+    if (slot === 0) return raiseProtection(game, 4);
+    if (slot === 1) {
+      pc.hp = pc.maxHp;
+      return true;
+    }
+    // DS:4039
+    if (slot === 2) return shockDamage(game, 300, '   FOR 300 POINTS OF DAMAGE.');
+  }
+  return false;
+}
+
+/**
+ * spell_effect (WORLD.EXE 2000:d358, mw.c "spell_effect"): the switch on the category, the level
+ * and the slot that all 120 spells arrive at. It answers whether the spell did anything, which
+ * is what decides whether the screen charges for it.
+ *
+ * @param category 0 permanent, 1 preparation, 2 wizard, 3 priestly.
+ * @param levelIndex 0 to 9, one less than the level printed on the menu.
+ * @param slot 0 to 2, the spell on that line.
+ */
+export function spellEffect(game: MwGame, category: number, levelIndex: number, slot: number): boolean {
+  if (category === 0) return permanentList(game, levelIndex, slot);
+  if (category === 1) return preparationList(game, levelIndex, slot);
+  if (category === 2) return wizardBattle(game, levelIndex, slot);
+  if (category === 3) return priestBattle(game, levelIndex, slot);
   return false;
 }

@@ -317,6 +317,11 @@ export interface MwGame {
   /** The same menu over the eight armors, for enchant_armour. */
   chooseArmorSlot(): number;
   /**
+   * The direction menu Pass Wall prints, read back by the key loop at WORLD.EXE 2000:1fbd: 1
+   * north, 2 south, 3 east, 4 west, 5 cancel. {@link newMwGame} cancels by default.
+   */
+  chooseDirection(): number;
+  /**
    * The three menus the Write Scroll and Enchant Wand spells print, as one answer, or null for
    * the Escape that leaves them. `maxLevel` is the deepest level the spell being cast will
    * write, which is all the level menu does with it. {@link newMwGame} escapes by default.
@@ -512,6 +517,7 @@ export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
     isSolid: () => false,
     chooseWeaponSlot: () => -1,
     chooseArmorSlot: () => -1,
+    chooseDirection: () => 5,
     chooseSpellToWrite: () => null,
     ...rest,
     messages,

@@ -12,6 +12,8 @@ import {
   teleportDirection,
   teleportMonster,
   teleportPlayer,
+  spellEffect,
+  writeScrollOrWand,
   antiFire,
   boostAgility,
   boostStrength,
@@ -421,5 +423,124 @@ describe('teleportDirection', () => {
     teleportDirection(world, 3);
     expect(world.pc.mapCursorX).toBe(17);
     expect(world.recenterMap).toBe(true);
+  });
+});
+
+describe('spellEffect', () => {
+  it('reaches the record the spell menu names for it', () => {
+    // The eight names spot-checked here are MW_SPELL_NAMES[category * 30 + levelIndex * 3 + slot].
+    const worlds = {
+      extraHealth: game(),
+      writeScroll: game({ chooseSpellToWrite: () => ({ category: 2, level: 0, slot: 1 }) }),
+      youth: game({ pc: { ageMinutes: 40 * 525_600 } }),
+      detectLevel: game({ pc: { floor: 12 } }),
+      healAll: game({ pc: { hp: 3, maxHp: 90 } }),
+      magicZap: fight(1, {}, { pc: { lev: 7 } }),
+      curePoison: game({ pc: { poisonTimer: 40 } }),
+      ultraProtection: game(),
+    };
+    expect(spellEffect(worlds.extraHealth, 0, 0, 1)).toBe(true);
+    expect(worlds.extraHealth.pc.maxHp).toBe(1);
+    expect(spellEffect(worlds.writeScroll, 0, 0, 2)).toBe(true);
+    expect(worlds.writeScroll.pc.scrolls[2 * 45 + 1]).toBe(1);
+    expect(spellEffect(worlds.youth, 0, 9, 1)).toBe(true);
+    expect(worlds.youth.pc.ageMinutes).toBe(20 * 525_600);
+    expect(spellEffect(worlds.detectLevel, 1, 1, 2)).toBe(true);
+    expect(worlds.detectLevel.messages).toContain('YOU ARE ON LEVEL: 12');
+    expect(spellEffect(worlds.healAll, 1, 8, 2)).toBe(true);
+    expect(worlds.healAll.pc.hp).toBe(90);
+    expect(spellEffect(worlds.magicZap, 2, 0, 1)).toBe(true);
+    expect(worlds.magicZap.monsters[0].hp).toBe(500 - 16);
+    expect(spellEffect(worlds.curePoison, 1, 8, 1)).toBe(true);
+    expect(worlds.curePoison.pc.poisonTimer).toBe(-1);
+    expect(spellEffect(worlds.ultraProtection, 3, 9, 0)).toBe(true);
+    expect(worlds.ultraProtection.pc.protectionLevel).toBe(4);
+  });
+
+  it('answers no for a category the switch has no case for', () => {
+    expect(spellEffect(game(), 4, 0, 0)).toBe(false);
+  });
+
+  it('covers all 120 records without falling through the switch', () => {
+    for (let category = 0; category < 4; category++) {
+      for (let levelIndex = 0; levelIndex < 10; levelIndex++) {
+        for (let slot = 0; slot < 3; slot++) {
+          const world = fight(9, {}, {
+            pc: { floor: 20, x: 40, y: 50, wis: 20, lev: 5, maxHp: 200 },
+            isSolid: rocky(),
+            chooseWeaponSlot: () => 1,
+            chooseArmorSlot: () => 1,
+            chooseDirection: () => 1,
+            chooseSpellToWrite: () => ({ category: 1, level: 0, slot: 0 }),
+          });
+          world.pc.weaponsOwned[0] = 1;
+          world.pc.armorOwned[0] = 1;
+          const before = world.messages.length + world.events.length;
+          const worked = spellEffect(world, category, levelIndex, slot);
+          // Every record either does something or says why not; none is a silent no-op.
+          expect(worked || world.messages.length > before).toBe(true);
+        }
+      }
+    }
+  });
+});
+
+describe('the floor-moving spells', () => {
+  it('takes Descend one floor down onto an open square and builds the floor afresh', () => {
+    const world = game({ pc: { floor: 10, x: 1, y: 1 }, isSolid: rocky(), rng: new BorlandRng(3) });
+    expect(spellEffect(world, 1, 3, 2)).toBe(true);
+    expect(world.pc.floor).toBe(11);
+    expect(world.events).toEqual([{ kind: 'levelEntered', floor: 11 }]);
+  });
+
+  it('refuses Descend from floor 124 down', () => {
+    const world = game({ pc: { floor: 124 } });
+    expect(spellEffect(world, 1, 3, 2)).toBe(false);
+    expect(world.pc.floor).toBe(124);
+    expect(world.messages).toContain('  WORK THIS DEEP.');
+  });
+
+  it('refuses Ascend from floor 66 down and in the town', () => {
+    const deep = game({ pc: { floor: 66 } });
+    expect(spellEffect(deep, 1, 4, 0)).toBe(false);
+    expect(deep.messages).toContain("  WORK BELOW THE 64'TH");
+    const town = game({ pc: { floor: 0 } });
+    expect(spellEffect(town, 1, 4, 0)).toBe(false);
+    expect(town.messages).toContain('  ABOVE THE TOWN.');
+  });
+
+  it('takes Double Ascend one floor from floor 1 and two from anywhere deeper', () => {
+    const one = game({ pc: { floor: 1 }, isSolid: rocky() });
+    spellEffect(one, 1, 5, 1);
+    expect(one.pc.floor).toBe(0);
+    const five = game({ pc: { floor: 5 }, isSolid: rocky() });
+    spellEffect(five, 1, 5, 1);
+    expect(five.pc.floor).toBe(3);
+  });
+
+  it('caps Major Descend at floor 75 and Major Ascend at the town', () => {
+    const down = game({ pc: { floor: 60 }, isSolid: rocky() });
+    spellEffect(down, 1, 7, 2);
+    expect(down.pc.floor).toBe(75);
+    const up = game({ pc: { floor: 10 }, isSolid: rocky() });
+    spellEffect(up, 1, 9, 0);
+    expect(up.pc.floor).toBe(0);
+  });
+});
+
+describe('writeScrollOrWand', () => {
+  it('adds one scroll and five wand charges at the same index', () => {
+    const scroll = game({ chooseSpellToWrite: () => ({ category: 3, level: 9, slot: 2 }) });
+    expect(writeScrollOrWand(scroll, 10, 1)).toBe(true);
+    expect(scroll.pc.scrolls[3 * 45 + 29]).toBe(1);
+    const wand = game({ chooseSpellToWrite: () => ({ category: 3, level: 9, slot: 2 }) });
+    expect(writeScrollOrWand(wand, 10, 2)).toBe(true);
+    expect(wand.pc.wands[3 * 45 + 29]).toBe(5);
+  });
+
+  it('costs nothing when the menu is escaped', () => {
+    const world = game();
+    expect(writeScrollOrWand(world, 3, 1)).toBe(false);
+    expect(world.pc.scrolls.every((held) => held === 0)).toBe(true);
   });
 });
