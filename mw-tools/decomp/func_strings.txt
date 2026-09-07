@@ -247,7 +247,7 @@
 2000:1459 FUN_2000_1459 size=44 ncallers=1 | 
 2000:1485 FUN_2000_1485 size=1572 ncallers=1 | YOU_SHOULD_GO_FIND_A_BANK_ ; GET_A_CURE_DISEASE_AT_A ; DOESN_T_WORK_THIS_DEEP_ ; USEFUL_IN_THE_200_PLUS_LEVEL ; 4__KNIFE_________30_JP
 2000:1ac1 FUN_2000_1ac1 size=9 ncallers=1 | 
-2000:1aca FUN_2000_1aca size=95 ncallers=1 | 
+2000:1aca shade_palette_banks size=95 ncallers=1 | 
 2000:1b29 FUN_2000_1b29 size=250 ncallers=1 | 
 2000:1c23 FUN_2000_1c23 size=75 ncallers=1 | 
 2000:1c86 FUN_2000_1c86 size=133 ncallers=5 | 
@@ -281,7 +281,7 @@
 2000:412b check_v_file size=295 ncallers=1 | 
 2000:4252 load_worldmap_bin size=64 ncallers=3 | worldmap_bin
 2000:4292 main size=672 ncallers=1 | 
-2000:4538 FUN_2000_4538 size=59 ncallers=2 | 
+2000:4538 monster_type_at size=59 ncallers=2 | 
 2000:4575 occupant_at size=42 ncallers=7 | 
 2000:45a1 set_occupant size=28 ncallers=8 | 
 2000:45bd pick_monster size=227 ncallers=1 | 
@@ -390,8 +390,8 @@
 2000:ea27 spell_screen size=3620 ncallers=1 | FIGHTERS_CAN_ONLY_CAST ; __SPELLS_BY_USING_MAGIC ; __PAPER__KEEP_LOOKING_ ; HIT_ANY_KEY___ ; SELECT_THE_TYPE_OF_SPELL_ ; SELECT_THE_TYPE_OF_SCROLL_ ; SELECT_THE_TYPE_OF_WAND_ ; SELECT_THE_TYPE_OF_PAPER_ ; THESE_SPELLS_TAKE_ONE_MONTH ; ___TO_CAST_AND_CAN_NOT_BE ; ___USED_IN_THE_DUNGEON_ ; THESE_SPELLS_TAKE_3_MINUTES ; ___TO_CAST__THIS_CAN_NOT ; ___BE_DONE_DURING_BATTLE_ ; YOU_ARE_UNABLE_TO_CAST_THIS ; ___TYPE_OF_SPELLS_ ; SELECT_A_SPELL_SPELLS_USE_ONE_SPELL_POINT_PER_LEVEL_ ; PRESS_A_LETTER_OR_A_NUMBER_TO_GET_A_DESCRIPTION_ ; SELECT_A_SPELL_FROM_THE_FOLLOWING_ ; ESCAPE ; YOU_DO_NOT_HAVE_ENOUGH ; ___SPELL_POINTS_TO_CAST ; ___THIS_SPELL_ ; 1__A_ ; 2__D_ ; 3__G_ ; 4__J_ ; 5__M_ ; 6__P_ ; 7__S_ ; 8__V_ ; 9__Y_ ; 10_2_
 2000:f853 FUN_2000_f853 size=1578 ncallers=2 | MAXIMUM_LEVEL__ ; CEXPERIENCE_NEEDED_FOR_LEVEL_ ; SPELL_POINTS__ ; HEALTH_POINTS__ ; EXP__ ; EXP_ ; _OF_ ; STR__ ; INT__ ; WIZ__ ; CON__ ; DEX__ ; LUCK_
 3000:000d FUN_3000_000d size=248 ncallers=0 | 
-3000:0105 FUN_3000_0105 size=972 ncallers=3 | 
-3000:04d3 FUN_3000_04d3 size=1517 ncallers=1 | 
+3000:0105 draw_picture size=972 ncallers=3 | 
+3000:04d3 draw_wall_picture size=1517 ncallers=1 | 
 3000:0ace FUN_3000_0ace size=40 ncallers=2 | __SPELLS_BY_USING_MAGIC
 3000:0afa FUN_3000_0afa size=24 ncallers=2 | 
 3000:0b14 FUN_3000_0b14 size=35 ncallers=1 | 
@@ -477,9 +477,9 @@
 4000:0f0d FUN_4000_0f0d size=109 ncallers=6 | SHOULD_CURE_YOURSELF_WITH
 4000:0f7a FUN_4000_0f7a size=87 ncallers=3 | 
 4000:0fd1 FUN_4000_0fd1 size=62 ncallers=0 | 
-4000:100f FUN_4000_100f size=142 ncallers=3 | 
-4000:109d FUN_4000_109d size=81 ncallers=1 | 
-4000:10ee FUN_4000_10ee size=2985 ncallers=6 | 
+4000:100f load_palette size=142 ncallers=3 | 
+4000:109d palette_ramp size=81 ncallers=1 | 
+4000:10ee set_palette size=2985 ncallers=6 | 
 4000:1cbd FUN_4000_1cbd size=78 ncallers=2 | 
 4000:1d0b FUN_4000_1d0b size=64 ncallers=2 | 
 4000:1d4b FUN_4000_1d4b size=57 ncallers=2 | GET_A_CURE_DISEASE_AT_A
@@ -555,7 +555,7 @@
 5110:0000 FUN_5110_0000 size=62 ncallers=2 | 
 5110:003e FUN_5110_003e size=49 ncallers=0 | 
 5110:006f FUN_5110_006f size=45 ncallers=1 | 
-5110:009c FUN_5110_009c size=55 ncallers=1 | 
+5110:009c write_dac size=55 ncallers=1 | 
 5120:0012 FUN_5120_0012 size=132 ncallers=3 | 
 5120:00f3 FUN_5120_00f3 size=463 ncallers=1 | ___INTO_THE_BODY_OF_THE_ENEMY
 5120:02bd FUN_5120_02bd size=234 ncallers=2 | ___INTO_THE_BODY_OF_THE_ENEMY

@@ -49,6 +49,7 @@ KNOWN = {
 
     # ---- WORLD module (segment 2000)
     "2000:03cb": ("quit", "back to text mode and exit"),
+    "2000:1aca": ("shade_palette_banks", "eleven darkening copies of the first sixteen palette entries"),
     "2000:240c": ("load_h_bin", "reads H.BIN"),
     "2000:27b8": ("load_world_pic", "reads WORLD.PIC"),
     "2000:2d36": ("random_n", "reseeds from the clock, then returns rand() * n / 32768"),
@@ -63,6 +64,7 @@ KNOWN = {
     "2000:412b": ("check_v_file", "prints and checksums the file V; the registration check"),
     "2000:4252": ("load_worldmap_bin", "reads WORLDMAP.BIN"),
     "2000:4292": ("main", "argv handling, video setup, then the slot/roll/play loop"),
+    "2000:4538": ("monster_type_at", "the type of the monster standing on a square, or -1"),
     "2000:4575": ("occupant_at", "the monster index on a square of the occupancy grid, 0xff as -1"),
     "2000:45a1": ("set_occupant", "writes a monster index into the 80x110 occupancy grid"),
     "2000:45bd": ("pick_monster", "rolls a monster type the level and WORLD.PIC both allow"),
@@ -134,6 +136,8 @@ KNOWN = {
     "2000:ea27": ("spell_screen", "the spell, scroll, wand and paper menus: the class gate and the cost"),
 
     # ---- TOWN/CREATE module (segment 3000)
+    "3000:0105": ("draw_picture", "draws a WORLD.PIC image scaled into a rectangle"),
+    "3000:04d3": ("draw_wall_picture", "maps a WALL.PIC image across one face of the 3-D view"),
     "3000:4434": ("read_roll_line", "one line of ROLL.TXT into a buffer, dropping '|'"),
     "3000:4477": ("show_roll", "prints the six characteristics, height, weight, age and sex"),
     "3000:4695": ("roll_char", "character creation: race, stats, name, class, starting kit"),
@@ -153,6 +157,9 @@ KNOWN = {
     "4000:0a20": ("load_font", "reads .FNT file n into the three glyph buffers"),
     "4000:0b14": ("print_text", "one line of text at a scaled x,y in a colour"),
     "4000:0d0f": ("print_text_clipped", "print_text with a right-hand limit"),
+    "4000:100f": ("load_palette", "hands the 768-byte palette buffer to the BIOS"),
+    "4000:109d": ("palette_ramp", "the red and green ramp set_palette starts every entry from"),
+    "4000:10ee": ("set_palette", "builds the floor's 256-colour palette and loads it"),
     "4000:2020": ("fill_rect", "fills a rectangle with a colour"),
     "4000:2ef7": ("mouse_pick", "which entry of a screen-region table the mouse is on"),
     "4000:34d8": ("clear_screen", "blanks the screen and hides the mouse cursor"),
@@ -161,4 +168,7 @@ KNOWN = {
     "4000:3db9": ("read_string", "types a string: uppercased, letters, digits and space"),
     "4000:42d2": ("format_two_numbers", "builds \"<a><n><b><m>\" in the scratch string"),
     "4000:4147": ("draw_text_box", "prints text into a cleared rectangle"),
+
+    # ---- the 360x480 mode setup (segment 5110)
+    "5110:009c": ("write_dac", "writes n palette entries to the VGA colour registers"),
 }

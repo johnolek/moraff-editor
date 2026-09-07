@@ -297,13 +297,13 @@ These fields are certain — each one is named for what the code does with it:
 | 0x16 | 1 | subtracted from the character's attack score | `strike` |
 | 0x17 | 1 | subtracted from the character's attack score, and added to the monster's | `strike`, `monster_turn` |
 | 0x1f | 2 | one less than what a kill is worth is multiplied by | `experience_for_kill` |
+| 0x21 | 1 | the palette entry its picture is coloured in | `draw_picture` |
 | 0x22 | 1 | picture number, 0 to 47 | the picture table |
 
 The rest is guesswork and is printed raw by `dump_tables.py`: `0x19` and `0x1b`
-look like treasure ranges, `0x13` and `0x14` are added together and rolled
-against the character's mind by the spell at `2000:cdc5`, and `0x21` runs 1 to 15
-over the fifteen coloured balls, so it is probably the colour to draw the picture
-in.  `main` rewrites any maximum floor above 120 to 254 at startup — for the 104
+look like treasure ranges, and `0x13` and `0x14` are added together and rolled
+against the character's mind by the spell at `2000:cdc5`.
+`main` rewrites any maximum floor above 120 to 254 at startup — for the 104
 monsters it rolls, not for the eight bosses — so the 127s in the file mean "as
 deep as you like".
 
@@ -602,7 +602,107 @@ is slot `p + 2`, and it exists only if `PICFLAGS[p]` is set — which is the tes
 pictures are at DGROUP `0xca3a + slot * 4`.  `walk_pic.py --exe` prints the
 records with the monster that uses each one.
 
-The palette has not been checked; Moraff's World sets its own.
+### The colours
+
+`set_palette` (`4000:10ee`) builds the whole 256-entry palette from scratch every
+time it runs, and what it builds depends on the floor: `enter_level` copies the
+floor number to DGROUP `0xcd26` (`2000:5607`), and every caller works from that.
+In a 256-colour mode it
+
+1. zeroes entries 1 to 255 and fills them with a red and green ramp
+   (`palette_ramp`, `4000:109d`), which shows only where the writes below miss;
+2. writes entries 1 to 15 from constants — the fifteen colours;
+3. writes entries 16 to 31 from one of eleven wall colour sets, `floor % 11`;
+4. writes entries 48 to 63 from one of seven gradients, `floor % 7`;
+5. hands the 768 bytes to the BIOS (`load_palette`, `4000:100f`).
+
+`draw_picture` (`3000:0105`) is what puts a monster on the screen: the 3-D view
+(`3000:2796`), the overhead view (`3000:1a08`) and the attract screen
+(`3000:b1d6`) all call it, and all three write the monster's byte at 0x21 into
+DGROUP `0x43a0` first.  The rule it draws by, at `3000:03be`:
+
+```c
+if (v == 0)                 leave the pixel alone;
+if (v == 17 && tint == 32)  leave the pixel alone;
+if (v == 16)                v = 0;
+if (v == 17)                v = tint;
+plot(v + DS:43a2);          /* DS:43a2 is 0, and the one write to it writes 0 */
+```
+
+A pixel value *is* a palette entry, in other words, with two exceptions: 16 is
+always black, and 17 is the monster's own colour.  Nothing is added, and nothing
+depends on the depth.  Ghidra drops the colour argument of the indirect call the
+last line makes, so this one is read from the disassembly rather than `mw.c`.
+
+The fifteen colours are what byte 0x21 names, and the monsters' own names are the
+proof of it:
+
+| 0x21 | r, g, b out of 63 | what the monsters call it |
+|---|---|---|
+| 1 | 0, 0, 38 | DARK BLUE |
+| 2 | 0, 0, 63 | BLUE |
+| 3 | 20, 50, 63 | LIGHT BLUE |
+| 4 | 63, 63, 20 | YELLOW |
+| 5 | 53, 20, 10 | ORANGE |
+| 6 | 63, 0, 10 | LIGHT RED |
+| 7 | 63, 45, 0 | BROWN |
+| 8 | 0, 63, 0 | LIGHT GREEN |
+| 9 | 0, 50, 0 | GREEN |
+| 10 | 28, 0, 0 | RED |
+| 11 | 0, 28, 0 | DARK GREEN |
+| 12 | 16, 0, 0 | DARK RED |
+| 13 | 13, 13, 13 | DARK GRAY |
+| 14 | 42, 42, 42 | GRAY |
+| 15 | 63, 63, 63 | WHITE |
+
+The fifteen coloured balls are one picture, number 43, drawn fifteen times, and
+their colour bytes run 1 to 15 down that column in the order their names give.
+The twelve puffballs share a picture the same way, as do the three colours of
+bat, rat, ant, spider and scorpion and the seven colours of dragon: 78% of the
+ball picture is value 17, and every monster that comes in colours is drawn from
+a picture that leans on that value.
+
+Forty-eight of the 112 monsters have 0 in the byte, which paints their value-17
+pixels black — the same as the background, in the dungeon.  The four SHADOW
+dragons have 32, which is the value that leaves those pixels undrawn: a Shadow
+dragon is the ordinary dragon picture with its coloured regions cut out, exactly
+the trick Dungeons of the Unforgiven plays with its own Shadow bosses.
+
+The floor barely shows.  The pictures only ever use values 1 to 18, plus nine
+pixels of value 24 in ZEUS's, so of the eleven wall colour sets only entry 18 is
+ever reached: 1,683 pixels of the WALKING SWORD, 1,728 of the ZOMBIE, 1,279 of
+the balls and 322 of the puffballs.  In every one of the eleven sets that entry
+is nearly black.  It is the walls that change colour from floor to floor, not the
+monsters.
+
+`../reference/build_mw_palettes.py` writes the eleven palettes as the site's
+`src/lib/game/mw-palettes.json`.  The fifteen fixed colours and the first wall
+set are pulled out of the code as the immediate operands of the
+`mov byte ptr [palette + n], imm8` instructions that write them; the other ten
+wall sets are eight-step loops and are transcribed.  Fourteen of entries 0 to 15
+come out identical to the ones DotU's `EmuPalette.py` recovered from a different
+executable, which is a check on both readings; only the orange (53, 20, 10
+against 53, 20, 0) and the dark red (16, 0, 0 against 20, 0, 0) differ.
+
+The one thing `set_palette` writes and forgets is entry 29's blue: the run of
+constants for the first wall set writes `0xce2e` twice and never writes `0xce30`,
+so that byte keeps whatever the ramp left, and entry 29 comes out dark yellow
+where its neighbours are grey.  Nothing a monster draws reaches it.
+
+`WALL.PIC` is drawn by a different routine, `draw_wall_picture` (`3000:04d3`),
+which maps a picture across one face of the 3-D view and has its own rule: values
+1 to 15 take DGROUP `0x43a4`, which is 16 and is never written, so a wall is
+drawn in the floor's own colour set; 16 is black; 17 is the tint, which
+`3000:35f3` fixes at 12 before the walls go down; and 18 and 19 are gradients
+spread across the screen by x, into entries 64 to 191.  `set_palette` never
+writes those: `2000:1aca` fills them when the video mode is set, with eleven
+progressively darker copies of entries 0 to 15.  What they hold therefore depends
+on what the first sixteen entries were at that moment, which has not been
+followed through.
+
+Everything above is the 256-colour path.  A mode with fewer colours (DGROUP
+`0xcdd5` below 0x100) takes another road through both `set_palette` and both
+drawers, including a dithering step, and none of that has been read.
 
 ## The files the game reads
 
@@ -629,11 +729,12 @@ The palette has not been checked; Moraff's World sets its own.
   every save file in `~/games/mworld` holds 0, including level-200 characters, so
   nothing has ever confirmed it.  Until it is confirmed, a tool that reads a save
   file cannot know which dungeon its map belongs to.
-- **Monster fields 0x0a to 0x0c, 0x13 to 0x15, and 0x18 to 0x21.**  The two the
+- **Monster fields 0x0a to 0x0c, 0x13 to 0x15, and 0x18 to 0x20.**  The two the
   code does read, 0x13 and 0x14, are only ever added together.
 - **The surface.**  What terrain values 1 to 4 mean, and what pressing a key on
   one of them does, beyond 5 being where the world map puts you.
-- **The `.PIC` palette** for Moraff's World.
+- **The palette in the modes below 256 colours**, and the dithering both picture
+  drawers do in them.
 
 ## The scripts
 
@@ -646,6 +747,7 @@ executable they want is the unpacked one, `deark -opt execomp WORLD.EXE`.
 | `dump_dgroup.py` | the unpacked `WORLD.EXE` | the MZ header, and writes `image.bin` and `dgroup.bin` |
 | `dump_tables.py` | the unpacked `WORLD.EXE` | the monster, weapon and armour tables, and the picture flags |
 | `build_mw_data.py` | the unpacked `WORLD.EXE` | nothing; writes the site's `src/lib/game/mw-data.json` |
+| `build_mw_palettes.py` | the unpacked `WORLD.EXE` | nothing; writes the site's `src/lib/game/mw-palettes.json` |
 | `parse_dun.py` | `.DUN` files | one line per file, or a floor drawn as characters |
 | `walk_pic.py` | `.PIC` files, optionally the executable | the records, and which monster uses each |
 | `verify_dun.py` | `DUNG.BIN` and `.DUN` files | the check above, floor by floor |

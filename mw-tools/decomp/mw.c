@@ -1394,7 +1394,7 @@ void __cdecl16far FUN_1000_129c(undefined2 param_1)
 }
 
 
-// ==== N_LXMUL @ 1000:12c8 (size 23) callers: FUN_2000_04ee,FUN_2000_0837,FUN_2000_0ed9,FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_248e,random_n,FUN_2000_3085,financial_statement,inn,bank,set_map_view,main,pick_monster,generate_section,random_walk,roll_dice,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,FUN_2000_7756,monsters_move,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a6fa,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,FUN_3000_0105,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_2796,FUN_3000_31f3,roll_char,FUN_3000_5d06,FUN_3000_7e52,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,seeded_pick,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,FUN_3000_e221,FUN_3000_e5f5,FUN_3000_e8ee,FUN_4000_0034,FUN_4000_0699,print_text,print_text_clipped,FUN_4000_2dc1,FUN_4000_2dea,mouse_pick,FUN_4000_3a72,read_string,FUN_4000_4016,draw_text_box  // 32-bit multiply helper: DX:AX * CX:BX
+// ==== N_LXMUL @ 1000:12c8 (size 23) callers: FUN_2000_04ee,FUN_2000_0837,FUN_2000_0ed9,FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_248e,random_n,FUN_2000_3085,financial_statement,inn,bank,set_map_view,main,pick_monster,generate_section,random_walk,roll_dice,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,FUN_2000_7756,monsters_move,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a6fa,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,draw_picture,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_2796,FUN_3000_31f3,roll_char,FUN_3000_5d06,FUN_3000_7e52,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,seeded_pick,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,FUN_3000_e221,FUN_3000_e5f5,FUN_3000_e8ee,FUN_4000_0034,FUN_4000_0699,print_text,print_text_clipped,FUN_4000_2dc1,FUN_4000_2dea,mouse_pick,FUN_4000_3a72,read_string,FUN_4000_4016,draw_text_box  // 32-bit multiply helper: DX:AX * CX:BX
 
 long __cdecl16far N_LXMUL(long a,long b)
 
@@ -1489,7 +1489,7 @@ void FUN_1000_1325(void)
 }
 
 
-// ==== F_LDIV @ 1000:1328 (size 4) callers: FUN_2000_04ee,FUN_2000_0837,FUN_2000_0ed9,FUN_2000_1485,FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_248e,random_n,recompute_weight,FUN_2000_3085,financial_statement,inn,bank,set_map_view,main,pick_monster,generate_section,random_walk,random_run,roll_dice,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,FUN_2000_7756,FUN_2000_7fb1,monsters_move,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a64b,FUN_2000_a6fa,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,FUN_3000_0105,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_31f3,roll_char,FUN_3000_5d06,FUN_3000_7e52,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,seeded_pick,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,FUN_3000_e221,FUN_3000_e5f5,FUN_3000_e8ee,FUN_4000_0699,print_text,print_text_clipped,FUN_4000_100f,FUN_4000_2dc1,FUN_4000_2dea,mouse_pick,FUN_4000_3a72,read_string,FUN_4000_4016,draw_text_box  // signed 32-bit divide (far entry, retf 8)
+// ==== F_LDIV @ 1000:1328 (size 4) callers: FUN_2000_04ee,FUN_2000_0837,FUN_2000_0ed9,FUN_2000_1485,FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_248e,random_n,recompute_weight,FUN_2000_3085,financial_statement,inn,bank,set_map_view,main,pick_monster,generate_section,random_walk,random_run,roll_dice,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,FUN_2000_7756,FUN_2000_7fb1,monsters_move,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a64b,FUN_2000_a6fa,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,draw_picture,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_31f3,roll_char,FUN_3000_5d06,FUN_3000_7e52,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,seeded_pick,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,FUN_3000_e221,FUN_3000_e5f5,FUN_3000_e8ee,FUN_4000_0699,print_text,print_text_clipped,load_palette,FUN_4000_2dc1,FUN_4000_2dea,mouse_pick,FUN_4000_3a72,read_string,FUN_4000_4016,draw_text_box  // signed 32-bit divide (far entry, retf 8)
 
 long __stdcall16far F_LDIV(long a,long b)
 
@@ -1690,7 +1690,7 @@ long __cdecl16far N_LXLSH(long a,char n)
 }
 
 
-// ==== N_LXRSH @ 1000:13f7 (size 29) callers: FUN_2000_0ed9,FUN_2000_1485,FUN_3000_0105,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_2796,FUN_4000_0034  // 32-bit arithmetic shift right by CL
+// ==== N_LXRSH @ 1000:13f7 (size 29) callers: FUN_2000_0ed9,FUN_2000_1485,draw_picture,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_2796,FUN_4000_0034  // 32-bit arithmetic shift right by CL
 
 long __cdecl16far N_LXRSH(long a,char n)
 
@@ -3929,7 +3929,7 @@ void __cdecl16far FUN_1000_2a03(undefined2 param_1,undefined2 param_2,undefined2
 }
 
 
-// ==== FUN_1000_2a2b @ 1000:2a2b (size 156) callers: FUN_1000_2a03,FUN_4000_100f
+// ==== FUN_1000_2a2b @ 1000:2a2b (size 156) callers: FUN_1000_2a03,load_palette
 
 undefined2 __cdecl16far
 FUN_1000_2a2b(byte param_1,int param_2,undefined2 *param_3,undefined2 *param_4)
@@ -6757,7 +6757,7 @@ char __cdecl16far FUN_2000_01d5(undefined1 param_1)
 }
 
 
-// ==== FUN_2000_0269 @ 2000:0269 (size 104) callers: FUN_4000_100f,FUN_4000_2e29
+// ==== FUN_2000_0269 @ 2000:0269 (size 104) callers: load_palette,FUN_4000_2e29
 
 void __cdecl16far FUN_2000_0269(int param_1)
 
@@ -7312,7 +7312,7 @@ void __cdecl16far FUN_2000_0ad7(int param_1,int param_2,uint param_3,undefined2 
 }
 
 
-// ==== FUN_2000_0c97 @ 2000:0c97 (size 303) callers: FUN_2000_0dd6,FUN_3000_04d3
+// ==== FUN_2000_0c97 @ 2000:0c97 (size 303) callers: FUN_2000_0dd6,draw_wall_picture
 // recovered from the protected-mode build (build_pm.py)
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
@@ -7950,9 +7950,9 @@ void __cdecl16far FUN_2000_1ac1(void)
 }
 
 
-// ==== FUN_2000_1aca @ 2000:1aca (size 95) callers: FUN_2000_1b29
+// ==== shade_palette_banks @ 2000:1aca (size 95) callers: FUN_2000_1b29  // eleven darkening copies of the first sixteen palette entries
 
-void __cdecl16far FUN_2000_1aca(void)
+void __cdecl16far shade_palette_banks(void)
 
 {
   int iVar1;
@@ -7969,7 +7969,7 @@ void __cdecl16far FUN_2000_1aca(void)
       }
     }
   }
-  FUN_4000_100f();
+  load_palette();
   return;
 }
 
@@ -8003,7 +8003,7 @@ void __cdecl16far FUN_2000_1b29(void)
     return;
   }
   if (DAT_6000_cdd5 == 0x100) {
-    FUN_2000_1aca();
+    shade_palette_banks();
     bVar1 = extraout_AH;
   }
   FUN_4000_0f7a((uint)bVar1 << 8,(uint)bVar1 << 8);
@@ -9686,7 +9686,7 @@ void __cdecl16far game_disk_prompt(void)
   if (f == (void *)0x0) {
     DAT_6000_12f3 = 1;
     flush_keys();
-    FUN_4000_10ee();
+    set_palette();
     FUN_2000_22ff((char *)s_INSERT_THE_GAME_DISK_IN_6000_25b2,
                   (char *)s_THE_DISKETTE_DRIVE_AND_6000_25ca,(char *)s_HIT_ANY_KEY____6000_25e3,
                   (char *)s_Error__Can_t_open_the_AI__Do_you_6000_142f + 0x47,
@@ -9879,7 +9879,7 @@ void main(undefined2 param_1,undefined2 param_2,int param_3)
   lVar3 = N_LXMUL(2000,(long)sVar1);
   lVar3 = F_LDIV(lVar3,lVar4);
   DAT_6000_cd1a = (undefined2)lVar3;
-  FUN_4000_10ee();
+  set_palette();
   if (DAT_6000_12f5 == 0) {
     FUN_3000_b8cb();
   }
@@ -9915,7 +9915,7 @@ void main(undefined2 param_1,undefined2 param_2,int param_3)
     if (DAT_6000_cd94 == 1) {
       DAT_6000_4390 = 1;
     }
-    FUN_4000_10ee();
+    set_palette();
     clear_screen();
     FUN_2000_f853();
     movecontrol();
@@ -9924,9 +9924,9 @@ void main(undefined2 param_1,undefined2 param_2,int param_3)
 }
 
 
-// ==== FUN_2000_4538 @ 2000:4538 (size 59) callers: FUN_3000_1a08,FUN_3000_2796
+// ==== monster_type_at @ 2000:4538 (size 59) callers: FUN_3000_1a08,FUN_3000_2796  // the type of the monster standing on a square, or -1
 
-uint __cdecl16far FUN_2000_4538(int param_1,int param_2)
+uint __cdecl16far monster_type_at(int param_1,int param_2)
 
 {
   uint uVar1;
@@ -10538,7 +10538,7 @@ void __cdecl16far enter_level(int param_1)
   undefined2 uVar2;
   
   DAT_6000_cd26 = DAT_6000_c8a2;
-  FUN_4000_10ee();
+  set_palette();
   if ((param_1 == 0) || (DAT_6000_12fd != -1)) {
     generate_section(param_1);
   }
@@ -14059,7 +14059,7 @@ undefined2 __cdecl16far movecontrol(void)
     bVar1 = wall_side(DAT_6000_c89e,DAT_6000_c8a0,0,DAT_6000_c8a2,DAT_6000_c8a4);
     uVar7 = (uint)bVar1;
     if ((DAT_6000_cd94 == 9) && (DAT_6000_9636 == 3)) {
-      FUN_4000_10ee();
+      set_palette();
     }
     DAT_6000_1425 = 1;
     do {
@@ -14320,7 +14320,7 @@ undefined2 __cdecl16far movecontrol(void)
     else if (iVar2 < 0x67) {
       if (iVar2 == 0x29) {
         DAT_6000_cdd9 = DAT_6000_cdd9 + '\x10';
-        FUN_4000_10ee();
+        set_palette();
       }
       else if (iVar2 < 0x2a) {
         if (iVar2 == -0x3b) goto LAB_2000_b39b;
@@ -14360,7 +14360,7 @@ undefined2 __cdecl16far movecontrol(void)
           if (iVar2 == 0x20) goto LAB_2000_bd6c;
           if (iVar2 == 0x28) {
             DAT_6000_cdd8 = DAT_6000_cdd8 + '\x10';
-            FUN_4000_10ee();
+            set_palette();
           }
         }
       }
@@ -14385,7 +14385,7 @@ undefined2 __cdecl16far movecontrol(void)
         else if (iVar2 < 0x33) {
           if (iVar2 == 0x2a) {
             DAT_6000_cdd7 = DAT_6000_cdd7 + '\x10';
-            FUN_4000_10ee();
+            set_palette();
           }
           else if (iVar2 == 0x31) {
             FUN_4000_3435();
@@ -17428,10 +17428,10 @@ void __cdecl16far FUN_3000_000d(int param_1,int param_2)
 }
 
 
-// ==== FUN_3000_0105 @ 3000:0105 (size 972) callers: FUN_3000_1a08,FUN_3000_2796,FUN_3000_b1d6
+// ==== draw_picture @ 3000:0105 (size 972) callers: FUN_3000_1a08,FUN_3000_2796,FUN_3000_b1d6  // draws a WORLD.PIC image scaled into a rectangle
 
 void __cdecl16far
-FUN_3000_0105(int param_1,int param_2,int param_3,int param_4,undefined4 param_5,int param_6,
+draw_picture(int param_1,int param_2,int param_3,int param_4,undefined4 param_5,int param_6,
              int param_7)
 
 {
@@ -17557,13 +17557,13 @@ FUN_3000_0105(int param_1,int param_2,int param_3,int param_4,undefined4 param_5
 }
 
 
-// ==== FUN_3000_04d3 @ 3000:04d3 (size 1517) callers: FUN_3000_31f3
+// ==== draw_wall_picture @ 3000:04d3 (size 1517) callers: FUN_3000_31f3  // maps a WALL.PIC image across one face of the 3-D view
 
 /* WARNING: Removing unreachable block (ram,0x0003058e) */
 /* WARNING: Removing unreachable block (ram,0x00030593) */
 
 int __cdecl16far
-FUN_3000_04d3(int param_1,int param_2,int param_3,int param_4,int param_5,int param_6,
+draw_wall_picture(int param_1,int param_2,int param_3,int param_4,int param_5,int param_6,
              undefined4 param_7,int param_8,int param_9)
 
 {
@@ -18498,7 +18498,7 @@ code_r0x000324b2:
                                         CONCAT16((char)uVar6,
                                                  CONCAT24(unaff_SI,CONCAT22(unaff_DI,(int)lVar8)))))
           ;
-          local_1e = FUN_2000_4538((int)lVar8);
+          local_1e = monster_type_at((int)lVar8);
           DAT_6000_43a0 = (int)*(char *)(local_1e * 0x23 + 600);
           if (local_1e != -1) {
             iVar4 = *(char *)(local_1e * 0x23 + 0x259) * 4;
@@ -18509,7 +18509,7 @@ code_r0x000324b2:
             lVar8 = ftol((double)CONCAT26(uVar9,CONCAT24(iVar5,CONCAT22((int)lVar8,
                                                                         param_9 + param_7 * 7 >> 3))
                                          ));
-            FUN_3000_0105((int)lVar8);
+            draw_picture((int)lVar8);
           }
         }
         else {
@@ -19011,13 +19011,13 @@ FUN_3000_2796(float param_1,float param_2,float param_3,float param_4,undefined2
   local_22 = (int)lVar6;
   lVar6 = ftol((double)CONCAT26(uVar11,CONCAT24(uVar10,CONCAT22(unaff_SI,unaff_DI))));
   lVar6 = ftol((double)CONCAT26(uVar10,CONCAT24(unaff_SI,CONCAT22(unaff_DI,(int)lVar6))));
-  iVar1 = FUN_2000_4538((int)lVar6);
+  iVar1 = monster_type_at((int)lVar6);
   if ((iVar1 != -1) && ((param_1 != (float)DAT_6000_45f5 || (param_2 != DAT_6000_4611)))) {
     DAT_6000_43a0 = (int)*(char *)(iVar1 * 0x23 + 600);
     lVar6 = ftol((double)CONCAT26(uVar11,CONCAT24(uVar10,CONCAT22(unaff_SI,unaff_DI))));
     lVar6 = ftol((double)CONCAT26(uVar10,CONCAT24(unaff_SI,CONCAT22(unaff_DI,(int)lVar6))));
     iVar1 = *(char *)(iVar1 * 0x23 + 0x259) * 4;
-    FUN_3000_0105(param_5,local_20,param_6,local_22,*(undefined2 *)(iVar1 + -0x35be),
+    draw_picture(param_5,local_20,param_6,local_22,*(undefined2 *)(iVar1 + -0x35be),
                   *(undefined2 *)(iVar1 + -0x35bc),(int)lVar6);
   }
   lVar6 = ftol((double)CONCAT26(uVar11,CONCAT24(uVar10,CONCAT22(unaff_SI,unaff_DI))));
@@ -19050,7 +19050,7 @@ FUN_3000_2796(float param_1,float param_2,float param_3,float param_4,undefined2
     if (0 < local_2e) {
       lVar6 = ftol((double)CONCAT26(uVar11,CONCAT24(uVar10,CONCAT22(unaff_SI,unaff_DI))));
       lVar6 = ftol((double)CONCAT26(uVar10,CONCAT24(unaff_SI,CONCAT22(unaff_DI,(int)lVar6))));
-      FUN_3000_0105(param_5,(local_20 + local_22 * 2) / 3,param_6,local_22,DAT_6000_ca3e,
+      draw_picture(param_5,(local_20 + local_22 * 2) / 3,param_6,local_22,DAT_6000_ca3e,
                     DAT_6000_ca40,(int)lVar6);
     }
     if (DAT_6000_c8a2 == 0) {
@@ -19062,7 +19062,7 @@ FUN_3000_2796(float param_1,float param_2,float param_3,float param_4,undefined2
     if (local_2e < 0) {
       lVar6 = ftol((double)CONCAT26(uVar11,CONCAT24(uVar10,CONCAT22(unaff_SI,unaff_DI))));
       lVar6 = ftol((double)CONCAT26(uVar10,CONCAT24(unaff_SI,CONCAT22(unaff_DI,(int)lVar6))));
-      FUN_3000_0105(param_5,local_20,param_6,(local_20 * 2 + local_22) / 3,DAT_6000_ca3a,
+      draw_picture(param_5,local_20,param_6,(local_20 * 2 + local_22) / 3,DAT_6000_ca3a,
                     DAT_6000_ca3c,(int)lVar6);
     }
   }
@@ -19311,11 +19311,11 @@ FUN_3000_31f3(int param_1,int param_2,int param_3,int param_4,int param_5,int pa
       if (DAT_6000_4390 == 0) {
         DAT_6000_43a0 = 0xc;
         if (cVar1 == '\x01') {
-          FUN_3000_04d3(uVar3,in_FPUStatusWord,local_10,local_12,local_14,local_16,DAT_6000_ca32,
+          draw_wall_picture(uVar3,in_FPUStatusWord,local_10,local_12,local_14,local_16,DAT_6000_ca32,
                         DAT_6000_ca34,param_8 << 1,local_6 << 1);
         }
         else {
-          FUN_3000_04d3(uVar3,in_FPUStatusWord,local_10,local_12,local_14,local_16,DAT_6000_ca36,
+          draw_wall_picture(uVar3,in_FPUStatusWord,local_10,local_12,local_14,local_16,DAT_6000_ca36,
                         DAT_6000_ca38,param_8 << 2,local_6 << 2);
         }
       }
@@ -20631,7 +20631,7 @@ void __cdecl16far FUN_3000_6331(int param_1,int param_2)
 }
 
 
-// ==== FUN_3000_66b7 @ 3000:66b7 (size 50) callers: FUN_3000_66e9,FUN_4000_10ee
+// ==== FUN_3000_66b7 @ 3000:66b7 (size 50) callers: FUN_3000_66e9,set_palette
 
 void __cdecl16far FUN_3000_66b7(undefined1 param_1,undefined1 param_2)
 
@@ -20773,7 +20773,7 @@ void __cdecl16far FUN_3000_66e9(void)
   DAT_6000_d0d4 = 9;
   DAT_6000_d0d5 = 8;
   DAT_6000_d0d6 = 8;
-  FUN_4000_100f();
+  load_palette();
   return;
 }
 
@@ -21816,7 +21816,7 @@ void __cdecl16far FUN_3000_8235(void)
   }
   DAT_6000_12fd = 0xffff;
   enter_level(0);
-  FUN_4000_10ee();
+  set_palette();
   return;
 }
 
@@ -23120,7 +23120,7 @@ void __cdecl16far FUN_3000_b1d6(void)
         return;
       }
       iVar4 = *(char *)(iVar4 * 0x23 + 0x259) * 4;
-      FUN_3000_0105(iVar2,(0x230 - local_8) - (0x96 - local_8 / 2),iVar2 + local_8 * 2,
+      draw_picture(iVar2,(0x230 - local_8) - (0x96 - local_8 / 2),iVar2 + local_8 * 2,
                     (local_8 * 2 + 0x230) - (0x96 - local_8 / 2),*(undefined2 *)(iVar4 + -0x35be),
                     *(undefined2 *)(iVar4 + -0x35bc),0,0xff);
     }
@@ -25759,7 +25759,7 @@ void __cdecl16far FUN_4000_0f0d(char *param_1)
 }
 
 
-// ==== FUN_4000_0f7a @ 4000:0f7a (size 87) callers: FUN_2000_1b29,FUN_3000_6a84,FUN_4000_10ee
+// ==== FUN_4000_0f7a @ 4000:0f7a (size 87) callers: FUN_2000_1b29,FUN_3000_6a84,set_palette
 
 void __cdecl16far FUN_4000_0f7a(undefined1 param_1,undefined1 param_2)
 
@@ -25810,9 +25810,9 @@ FUN_4000_0fd1(undefined2 param_1,undefined1 param_2,undefined1 param_3,undefined
 }
 
 
-// ==== FUN_4000_100f @ 4000:100f (size 142) callers: FUN_2000_1aca,FUN_3000_66e9,FUN_4000_10ee
+// ==== load_palette @ 4000:100f (size 142) callers: shade_palette_banks,FUN_3000_66e9,set_palette  // hands the 768-byte palette buffer to the BIOS
 
-void __cdecl16far FUN_4000_100f(void)
+void __cdecl16far load_palette(void)
 
 {
   long lVar1;
@@ -25849,9 +25849,9 @@ void __cdecl16far FUN_4000_100f(void)
 }
 
 
-// ==== FUN_4000_109d @ 4000:109d (size 81) callers: FUN_4000_10ee
+// ==== palette_ramp @ 4000:109d (size 81) callers: set_palette  // the red and green ramp set_palette starts every entry from
 
-void __cdecl16far FUN_4000_109d(void)
+void __cdecl16far palette_ramp(void)
 
 {
   int iVar1;
@@ -25865,9 +25865,9 @@ void __cdecl16far FUN_4000_109d(void)
 }
 
 
-// ==== FUN_4000_10ee @ 4000:10ee (size 2985) callers: game_disk_prompt,main,enter_level,movecontrol,FUN_3000_8235,clear_screen
+// ==== set_palette @ 4000:10ee (size 2985) callers: game_disk_prompt,main,enter_level,movecontrol,FUN_3000_8235,clear_screen  // builds the floor's 256-colour palette and loads it
 
-int __cdecl16far FUN_4000_10ee(void)
+int __cdecl16far set_palette(void)
 
 {
   undefined1 extraout_AH;
@@ -25925,7 +25925,7 @@ int __cdecl16far FUN_4000_10ee(void)
     for (local_4 = 3; (int)local_4 < 0x300; local_4 = local_4 + 1) {
       ((undefined1 *)&DAT_6000_cdd7)[local_4] = 0;
     }
-    FUN_4000_109d();
+    palette_ramp();
     if (DAT_6000_00c5 == 1) {
       DAT_6000_cdda = 0x3f;
       DAT_6000_cddb = 0x3f;
@@ -26259,7 +26259,7 @@ int __cdecl16far FUN_4000_10ee(void)
     }
   }
   if ((5 < DAT_6000_cd94) || (DAT_6000_cdd5 == 0x100)) {
-    iVar1 = FUN_4000_100f();
+    iVar1 = load_palette();
   }
   return iVar1;
 }
@@ -26994,8 +26994,8 @@ void __cdecl16far FUN_4000_2e29(void)
     FUN_2000_0269((undefined1 *)&DAT_6000_cdd7);
   }
   else {
-    FUN_5110_009c(0,0x80,(undefined1 *)&DAT_6000_cdd7,0x6000);
-    FUN_5110_009c(0x80,0x80,(undefined1 *)&DAT_6000_cf57,0x6000);
+    write_dac(0,0x80,(undefined1 *)&DAT_6000_cdd7,0x6000);
+    write_dac(0x80,0x80,(undefined1 *)&DAT_6000_cf57,0x6000);
   }
   for (iVar1 = 0x100; 0x40 < iVar1; iVar1 = iVar1 + -1) {
     ((undefined1 *)&DAT_6000_cdd7)[iVar1 * 3] = *(undefined1 *)(iVar1 * 3 + -0x322c);
@@ -27250,7 +27250,7 @@ void __cdecl16far clear_screen(void)
   }
   if (DAT_6000_cd94 == 4) {
     FUN_5110_0000();
-    FUN_4000_10ee();
+    set_palette();
   }
   else {
     FUN_4000_0eab(0,0,DAT_6000_cd96,DAT_6000_cd9a,in_AX & 0xff00);
@@ -28996,11 +28996,11 @@ undefined1 __cdecl16far FUN_5110_006f(uint param_1,int param_2)
 }
 
 
-// ==== FUN_5110_009c @ 5110:009c (size 55) callers: FUN_4000_2e29
+// ==== write_dac @ 5110:009c (size 55) callers: FUN_4000_2e29  // writes n palette entries to the VGA colour registers
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-undefined1 __cdecl16far FUN_5110_009c(undefined1 param_1,int param_2,undefined1 *param_3)
+undefined1 __cdecl16far write_dac(undefined1 param_1,int param_2,undefined1 *param_3)
 
 {
   undefined1 *puVar1;
