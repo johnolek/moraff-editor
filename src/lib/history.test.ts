@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { HistoryCursor, isAppHistoryState, tabState } from './history';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { app } from './app-state.svelte';
+import { goToTab, HistoryCursor, isAppHistoryState, recordTab, tabState } from './history';
 
 function state(overrides: Record<string, unknown> = {}): unknown {
   return { kind: 'moraff-tools', tab: 'map', index: 0, ...overrides };
@@ -90,5 +91,81 @@ describe('HistoryCursor', () => {
     const cursor = new HistoryCursor().movedTo(3);
     expect(cursor.canGoBack).toBe(true);
     expect(cursor.canGoForward).toBe(false);
+  });
+});
+
+/** Enough of the browser's History to stand in for it, so a test can see what a jump left behind. */
+function fakeHistory() {
+  const entries: unknown[] = [null];
+  let at = 0;
+  return {
+    get length() {
+      return entries.length;
+    },
+    get state() {
+      return entries[at];
+    },
+    pushState(next: unknown) {
+      entries.length = at + 1;
+      entries.push(next);
+      at = entries.length - 1;
+    },
+    replaceState(next: unknown) {
+      entries[at] = next;
+    },
+    back() {
+      at = Math.max(0, at - 1);
+    },
+  };
+}
+
+describe('jumping between tabs', () => {
+  let browser: ReturnType<typeof fakeHistory>;
+
+  beforeEach(() => {
+    browser = fakeHistory();
+    vi.stubGlobal('history', browser);
+    app.tab = 'map';
+    app.mapHistory = new HistoryCursor();
+    recordTab(app);
+  });
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('leaves one entry behind, so Back returns to the tab being left', () => {
+    goToTab(app, 'formulas');
+    goToTab(app, 'source');
+    expect(app.tab).toBe('source');
+    expect(browser.length).toBe(3);
+    browser.back();
+    expect(browser.state).toMatchObject({ tab: 'formulas' });
+  });
+
+  it('stays put when the tab asked for is the one showing', () => {
+    goToTab(app, 'formulas');
+    goToTab(app, 'formulas');
+    expect(browser.length).toBe(2);
+  });
+
+  it('carries the floor the map is on into the entry it pushes', () => {
+    const map = { game: 'unforgiven', dungeon: 0, floor: 3, square: null };
+    browser.replaceState({ kind: 'moraff-tools', tab: 'map', index: 2, map });
+    goToTab(app, 'spells');
+    expect(browser.state).toEqual({ kind: 'moraff-tools', tab: 'spells', index: 2, map });
+  });
+
+  it('leaves the map nowhere to go forward to', () => {
+    app.mapHistory = new HistoryCursor(1, 3);
+    goToTab(app, 'spells');
+    expect(app.mapHistory.canGoForward).toBe(false);
+    expect(app.mapHistory.current).toBe(1);
+  });
+
+  it('rewrites the entry showing when the tab changed without a jump', () => {
+    goToTab(app, 'formulas');
+    app.tab = 'editor';
+    recordTab(app);
+    expect(browser.length).toBe(2);
+    expect(browser.state).toMatchObject({ tab: 'editor' });
   });
 });

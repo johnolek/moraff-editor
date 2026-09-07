@@ -1,4 +1,4 @@
-import type { Tab } from './app-state.svelte';
+import type { AppState, Tab } from './app-state.svelte';
 import { isMapPlace, type MapPlace } from './map/history';
 
 /** One shape for every browser history entry the app writes, whichever tab wrote it. */
@@ -28,6 +28,28 @@ export function isAppHistoryState(value: unknown): value is AppHistoryState {
 export function tabState(current: unknown, tab: Tab): AppHistoryState {
   const leaving = isAppHistoryState(current) ? current : null;
   return { kind: 'moraff-tools', tab, index: leaving?.index ?? 0, map: leaving?.map };
+}
+
+/**
+ * Show another tab. Every button and link that jumps between tabs goes through here, so a jump
+ * always leaves the browser exactly one new entry behind: Back returns to the tab being left,
+ * and Forward comes back to this one.
+ */
+export function goToTab(state: AppState, tab: Tab): void {
+  if (tab === state.tab) return;
+  state.tab = tab;
+  history.pushState(tabState(history.state, tab), '');
+  state.mapHistory = state.mapHistory.forwardDropped();
+}
+
+/**
+ * Say in the entry already showing which tab is on screen, for a tab that changed without anyone
+ * jumping to it: the site has just started up, or the game was switched and the game now showing
+ * has no such tab. There is nowhere new to go back to, so the entry is rewritten rather than
+ * added to, and the floor the map is on comes along untouched.
+ */
+export function recordTab(state: AppState): void {
+  history.replaceState(tabState(history.state, state.tab), '');
 }
 
 /** Position among the history entries the map pushed, so its own Back and Forward buttons know
