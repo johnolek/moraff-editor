@@ -574,6 +574,7 @@ executable they want is the unpacked one, `deark -opt execomp WORLD.EXE`.
 |---|---|---|
 | `dump_dgroup.py` | the unpacked `WORLD.EXE` | the MZ header, and writes `image.bin` and `dgroup.bin` |
 | `dump_tables.py` | the unpacked `WORLD.EXE` | the monster, weapon and armour tables, and the picture flags |
+| `build_mw_data.py` | the unpacked `WORLD.EXE` | nothing; writes the site's `src/lib/game/mw-data.json` |
 | `parse_dun.py` | `.DUN` files | one line per file, or a floor drawn as characters |
 | `walk_pic.py` | `.PIC` files, optionally the executable | the records, and which monster uses each |
 | `verify_dun.py` | `DUNG.BIN` and `.DUN` files | the check above, floor by floor |
