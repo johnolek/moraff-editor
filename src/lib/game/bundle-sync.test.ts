@@ -24,6 +24,18 @@ const pictureCopies: [string, string][] = pictureNames.map((name) => [
   `dotu-tools/data/pics/${name}`,
 ]);
 
+// The hint files are the game's own text, so the copies stay identical to the mirrored
+// originals apart from the DOS line endings, which both sides have as newlines.
+// The game folder has 0.uhp to 18.uhp and 20.uhp to 29.uhp; there is no 19.uhp.
+const helpNumbers = [...Array.from({ length: 19 }, (_, i) => i), ...Array.from({ length: 10 }, (_, i) => i + 20)];
+
+const hintNames = ['uh.bin', 'uh2.bin', ...helpNumbers.map((number) => `${number}.uhp`)];
+
+const hintCopies: [string, string][] = hintNames.map((name) => [
+  `src/lib/game/hints/${name}`,
+  `dotu-tools/data/hints/${name}`,
+]);
+
 describe('game modules copied from dotu-tools', () => {
   it.each(copies)('%s is identical to %s', (copy, original) => {
     expect(readFileSync(copy, 'utf8')).toBe(readFileSync(original, 'utf8'));
@@ -31,5 +43,9 @@ describe('game modules copied from dotu-tools', () => {
 
   it.each(pictureCopies)('%s is byte-identical to %s', (copy, original) => {
     expect(readFileSync(copy).equals(readFileSync(original))).toBe(true);
+  });
+
+  it.each(hintCopies)('%s is identical to %s', (copy, original) => {
+    expect(readFileSync(copy, 'utf8')).toBe(readFileSync(original, 'utf8'));
   });
 });
