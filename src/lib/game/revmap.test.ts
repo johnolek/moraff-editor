@@ -6,11 +6,15 @@ import {
   DOWN,
   LEVELS,
   ROWS,
+  TEN,
+  WALL,
+  blocked,
   falseFloor,
   feature,
   featureCode,
   floor,
   fold,
+  mbfAbsolute,
   mbfAdd,
   mbfDivide,
   mbfFix,
@@ -310,3 +314,111 @@ describe('floor', () => {
     expect(JSON.stringify(floor(2, 1))).toBe(first);
   });
 });
+
+/**
+ * The squares the five shipped characters walked, taken from their `<n>.BIN` explored maps
+ * (rev-tools/reference/make_explored_fixture.mjs). Coordinates are the game's own: columns 1
+ * to 20 and rows 1 to 19.
+ */
+const walked: { generation: number; characters: { name: string; floors: { level: number; squares: [number, number][] }[] }[] } =
+  JSON.parse(readFileSync('rev-tools/fixtures/explored.json', 'utf8'));
+
+/** Whether a side is a wall, so that a rule can be moved and replayed against the same maps. */
+type WallRule = (kind: number, column: number, row: number, level: number) => boolean;
+
+/** How the walked squares of one level hang together under a rule: how many adjacent pairs it
+ *  walls off, and how many pieces the walls cut the squares into. */
+function replay(squares: [number, number][], level: number, isWall: WallRule): { pairs: number; separated: number; pieces: number } {
+  const key = ([column, row]: [number, number]) => `${column},${row}`;
+  const parent = new Map(squares.map((square) => [key(square), key(square)]));
+  const root = (at: string): string => {
+    let current = at;
+    while (parent.get(current) !== current) {
+      parent.set(current, parent.get(parent.get(current)!)!);
+      current = parent.get(current)!;
+    }
+    return current;
+  };
+  let pairs = 0;
+  let separated = 0;
+  for (const [column, row] of squares) {
+    // Every square is asked about the square above it and the square to its left, so each
+    // adjacent pair is counted once: the wall between them belongs to this square.
+    for (const [kind, neighbour] of [
+      [ACROSS, [column, row - 1]],
+      [DOWN, [column - 1, row]],
+    ] as [number, [number, number]][]) {
+      if (!parent.has(key(neighbour))) continue;
+      pairs++;
+      if (isWall(kind, column, row, level)) {
+        separated++;
+        continue;
+      }
+      const one = root(key([column, row]));
+      const other = root(key(neighbour));
+      if (one !== other) parent.set(one, other);
+    }
+  }
+  return { pairs, separated, pieces: new Set(squares.map((square) => root(key(square)))).size };
+}
+
+function replayAll(isWall: WallRule) {
+  let pairs = 0;
+  let separated = 0;
+  let levels = 0;
+  let cut = 0;
+  for (const character of walked.characters) {
+    for (const floor of character.floors) {
+      const answer = replay(floor.squares, floor.level, isWall);
+      pairs += answer.pairs;
+      separated += answer.separated;
+      levels++;
+      if (answer.pieces > 1) cut++;
+    }
+  }
+  return { pairs, separated, levels, cut };
+}
+
+const asRead: WallRule = (kind, column, row, level) => blocked(kind, column, row, level, walked.generation);
+
+// A character got to every square of its map by walking onto it from a square beside it, so the
+// squares it has seen on one level cannot be cut into pieces by walls. That is the check
+// `revmap.py --check` makes, and it is what says the rule above is the game's own rule.
+describe('the squares the shipped characters really walked', () => {
+  it('is nine levels across five characters', () => {
+    expect(walked.characters.map((character) => character.floors.length)).toEqual([2, 1, 1, 1, 4]);
+    const squares = walked.characters.flatMap((character) => character.floors.map((floor) => floor.squares.length));
+    expect(squares).toEqual([32, 1, 33, 32, 32, 52, 100, 170, 36]);
+  });
+
+  it('hangs together on every level', () => {
+    const { levels, cut } = replayAll(asRead);
+    expect(levels).toBe(9);
+    expect(cut).toBe(0);
+  });
+
+  it('walls off a quarter of the adjacent pairs, where the whole dungeon walls off two fifths', () => {
+    const { pairs, separated } = replayAll(asRead);
+    expect([pairs, separated]).toEqual([706, 171]);
+    expect(separated / pairs).toBeLessThan(0.3);
+  });
+
+  // Each of these is one small change to the rule, replayed against the same nine levels. They
+  // are the four rev-tools/docs/DUNGEON.md tried, and each of them strands a character.
+  it.each([
+    ['a level term of level + 3', ((kind, column, row, level) => blocked(kind, column, row, level + 1, walked.generation)) as WallRule],
+    ['the two kinds swapped', ((kind, column, row, level) => blocked(kind === ACROSS ? DOWN : ACROSS, column, row, level, walked.generation)) as WallRule],
+    ['a generation of 3', ((kind, column, row, level) => blocked(kind, column, row, level, 3)) as WallRule],
+    ['no ten added before SIN', withoutTheTen],
+  ])('cuts eight of the nine levels into pieces with %s', (_name, rule) => {
+    const { levels, cut } = replayAll(rule);
+    expect([levels, cut]).toEqual([9, 8]);
+  });
+});
+
+/** The rule with the `+ 10` at 1000:54AF left out, which is the smallest change of the four. */
+function withoutTheTen(kind: number, column: number, row: number, level: number): boolean {
+  let value = mbfFromInt(level + 2);
+  for (const term of [kind, column, row]) value = mbfMultiply(value, mbfFromInt(term));
+  return mbfValue(mbfInteger(mbfAbsolute(mbfMultiply(mbfSin(value), TEN)))) >= WALL;
+}
