@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { app, type Tab } from './lib/app-state.svelte';
+  import { isAppHistoryState, tabState, type AppHistoryState } from './lib/history';
   import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
   import Calculators from './lib/calculators/Calculators.svelte';
   import SaveEditor from './lib/editor/SaveEditor.svelte';
@@ -18,14 +20,44 @@
     { id: 'formulas', label: 'Formulas' },
     { id: 'source', label: 'Source' },
   ];
+
+  onMount(() => {
+    const state = history.state;
+    if (isAppHistoryState(state)) {
+      restore(state);
+      return;
+    }
+    history.replaceState(tabState(null, app.tab), '');
+  });
+
+  /** Switching tabs is a step of its own in the browser's history, so Back and Forward move
+   *  between the tabs visited rather than only through the map. */
+  function show(tab: Tab) {
+    if (tab === app.tab) return;
+    app.tab = tab;
+    history.pushState(tabState(history.state, tab), '');
+    app.mapHistory = app.mapHistory.forwardDropped();
+  }
+
+  function onPopState(event: PopStateEvent) {
+    if (isAppHistoryState(event.state)) restore(event.state);
+  }
+
+  function restore(state: AppHistoryState) {
+    // An entry left by an older build of the site can name a tab this one no longer has.
+    if (tabs.some((entry) => entry.id === state.tab)) app.tab = state.tab;
+    app.mapHistory = app.mapHistory.movedTo(state.index);
+  }
 </script>
+
+<svelte:window onpopstate={onPopState} />
 
 <div class="app">
   <header>
     <h1><PixelText text="Moraff Tools" scale={2} /></h1>
     <nav>
       {#each tabs as entry}
-        <button type="button" class="tab" class:active={app.tab === entry.id} onclick={() => (app.tab = entry.id)}>{entry.label}</button>
+        <button type="button" class="tab" class:active={app.tab === entry.id} onclick={() => show(entry.id)}>{entry.label}</button>
       {/each}
     </nav>
   </header>

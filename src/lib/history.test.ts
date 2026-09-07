@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HistoryCursor, isAppHistoryState } from './history';
+import { HistoryCursor, isAppHistoryState, tabState } from './history';
 
 function state(overrides: Record<string, unknown> = {}): unknown {
   return { kind: 'moraff-tools', tab: 'map', index: 0, ...overrides };
@@ -33,6 +33,25 @@ describe('isAppHistoryState', () => {
   });
 });
 
+describe('tabState', () => {
+  it('names the tab being switched to', () => {
+    expect(tabState(state(), 'spells').tab).toBe('spells');
+  });
+
+  it('keeps the index and the map place of the entry being left', () => {
+    expect(tabState(state({ index: 2, map: place }), 'spells')).toEqual({
+      kind: 'moraff-tools',
+      tab: 'spells',
+      index: 2,
+      map: place,
+    });
+  });
+
+  it('starts from scratch when the entry being left is not ours', () => {
+    expect(tabState(null, 'spells')).toEqual({ kind: 'moraff-tools', tab: 'spells', index: 0, map: undefined });
+  });
+});
+
 describe('HistoryCursor', () => {
   it('starts with nowhere to go', () => {
     const cursor = new HistoryCursor();
@@ -57,6 +76,13 @@ describe('HistoryCursor', () => {
   it('drops the entries ahead when a new one is pushed', () => {
     const cursor = new HistoryCursor().pushed().pushed().movedTo(0).pushed();
     expect(cursor.current).toBe(1);
+    expect(cursor.canGoForward).toBe(false);
+  });
+
+  it('stays put but loses the entries ahead when someone else pushes', () => {
+    const cursor = new HistoryCursor().pushed().pushed().movedTo(1).forwardDropped();
+    expect(cursor.current).toBe(1);
+    expect(cursor.canGoBack).toBe(true);
     expect(cursor.canGoForward).toBe(false);
   });
 

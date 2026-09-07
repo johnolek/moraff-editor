@@ -5,7 +5,7 @@
   import { floorBounds, floorsOfModule, summarizeFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
-  import { HistoryCursor, isAppHistoryState, type AppHistoryState } from '../history';
+  import { isAppHistoryState, type AppHistoryState } from '../history';
   import { isOnMap, MAP_COLUMNS, MAP_ROWS } from './area';
   import { downloadFloorPng } from './export-png';
   import { describeMonster, describeNote, describeSquare, featureLine } from './describe';
@@ -45,7 +45,6 @@
   let selected = $state<Point | null>(null);
   /** undefined: not asked yet; null: asked, nothing reachable. */
   let route = $state<Route | null | undefined>(undefined);
-  let historyCursor = $state(new HistoryCursor());
   /** Stocked floors by "module:floor", kept while other floors are browsed. */
   let stocked = $state(new Map<string, StockedMonster[]>());
   let floorCanvas: FloorCanvas;
@@ -101,7 +100,6 @@
   onMount(() => {
     const state = history.state;
     if (isAppHistoryState(state) && state.map) {
-      historyCursor = historyCursor.movedTo(state.index);
       applyPlace(state.map);
       return;
     }
@@ -117,9 +115,9 @@
   /** Go to another floor and leave a history entry behind, so the browser's Back button returns to
    *  `fromSquare` on the floor being left. */
   function travel(place: MapPlace, fromSquare: Point | null) {
-    history.replaceState(entry(historyCursor.current, { module: moduleIndex, floor, square: fromSquare, you }), '');
-    history.pushState(entry(historyCursor.current + 1, place), '');
-    historyCursor = historyCursor.pushed();
+    history.replaceState(entry(app.mapHistory.current, { module: moduleIndex, floor, square: fromSquare, you }), '');
+    history.pushState(entry(app.mapHistory.current + 1, place), '');
+    app.mapHistory = app.mapHistory.pushed();
     applyPlace(place);
   }
 
@@ -139,7 +137,6 @@
 
   function onPopState(event: PopStateEvent) {
     if (!isAppHistoryState(event.state) || !event.state.map) return;
-    historyCursor = historyCursor.movedTo(event.state.index);
     applyPlace(event.state.map);
   }
 
@@ -187,7 +184,7 @@
    *  bring you back to this spot rather than to wherever the last travel left you. */
   function standAt(square: Point) {
     you = square;
-    history.replaceState(entry(historyCursor.current, { module: moduleIndex, floor, square: highlight, you }), '');
+    history.replaceState(entry(app.mapHistory.current, { module: moduleIndex, floor, square: highlight, you }), '');
   }
 
   function imHere() {
@@ -363,8 +360,8 @@
           </label>
           <button class="ghost" onclick={() => stepFloor(-1)} disabled={floor === floorRange.lowest}>▲ Floor up</button>
           <button class="ghost" onclick={() => stepFloor(1)} disabled={floor === floorRange.highest}>▼ Floor down</button>
-          <button class="ghost" onclick={() => history.back()} disabled={!historyCursor.canGoBack}>◀ Back</button>
-          <button class="ghost" onclick={() => history.forward()} disabled={!historyCursor.canGoForward}>Forward ▶</button>
+          <button class="ghost" onclick={() => history.back()} disabled={!app.mapHistory.canGoBack}>◀ Back</button>
+          <button class="ghost" onclick={() => history.forward()} disabled={!app.mapHistory.canGoForward}>Forward ▶</button>
         </div>
         <div class="zoom">
           <button class="ghost" onclick={() => floorCanvas.zoomOut()} title="Zoom out">−</button>

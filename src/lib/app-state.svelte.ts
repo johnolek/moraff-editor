@@ -1,3 +1,5 @@
+import { HistoryCursor } from './history';
+
 export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'source';
 
 /** A function to open in the Source tab: one of the port's, or one of the decompilation's. */
@@ -12,6 +14,10 @@ export interface LoadedSave {
 
 export interface AppState {
   tab: Tab;
+  /** How far the map has moved through the browser's history, so its own Back and Forward
+   *  buttons know whether there is anywhere to go. It is shared because switching tabs pushes
+   *  a history entry too, which drops whatever the map had ahead of it. */
+  mapHistory: HistoryCursor;
   /** Set to open a monster in the Monsters tab; the database clears it once it has. */
   requestedMonsterId: string | null;
   /** Set to open a function in the Source tab; the viewer clears it once it has. */
@@ -24,6 +30,7 @@ export interface AppState {
 
 export const app = $state<AppState>({
   tab: 'map',
+  mapHistory: new HistoryCursor(),
   requestedMonsterId: null,
   requestedSource: null,
   save: null,
