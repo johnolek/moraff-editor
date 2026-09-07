@@ -341,6 +341,23 @@ That is the wall the Module V bosses put up, and it is not your imagination.
 In the code: [rollHp](source:ts/roll.ts/rollHp) and
 [why a Shadow boss takes so long](formula:boss-hp).
 
+### Beat the bosses in order, or a reward takes one back
+
+Killing a section's Shadow boss pays a fixed reward, and ten of the twenty are written into a
+number rather than added to it. The fourth boss of Module I sets a suit of armour you own to +25
+and the fourth of Module IV sets one to +50. The fourth boss of Module II sets a weapon to +25 and
+the Great Shadow Ogeroth at the end of Module V sets one to +101. Module II's first three bosses
+set the Body Armor level, the gauntlets and the Ring of Protection to 9, 12 and 15, and Module
+IV's first three set the same three to 25, 50 and 50.
+
+Take them in order and every one is a step up. Take Module IV's bosses before Module II's and the
+25, 50 and 50 become 9, 12 and 15. The armour and weapon rewards ask which item to put the plus
+on and will not go on until you name one you own, so a character with a spare weapon or suit can
+park the weaker reward on that. A monk, who owns nothing but skin and a fist, gets no such choice:
+the +50 skin from Module IV is +25 skin the moment Module I's last boss dies.
+
+In the code: [kill_monster](source:c/kill_monster).
+
 ### The garbage cans float
 
 In the three water sections the built-in monsters are drawn 140 rows tall instead of 200, and
