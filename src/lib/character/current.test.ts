@@ -185,9 +185,16 @@ describe('switching games', () => {
 
   it('moves off a tab the other game does not have', () => {
     switchGame('unforgiven');
-    app.tab = 'map';
+    app.tab = 'monsters';
     switchGame('moraffsWorld');
     expect(app.tab).toBe('editor');
+  });
+
+  it('stays on a tab both games have', () => {
+    switchGame('unforgiven');
+    app.tab = 'map';
+    switchGame('moraffsWorld');
+    expect(app.tab).toBe('map');
   });
 
   it('follows the game of a save file that is opened', () => {

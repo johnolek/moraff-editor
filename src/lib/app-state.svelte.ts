@@ -35,6 +35,7 @@ export interface RosterEntry extends CurrentCharacter {
 
 /** A square of the dungeon to send the map to, taken from where a character stands. */
 export interface PlaceRequest {
+  game: GameId;
   dungeon: number;
   floor: number;
   x: number;

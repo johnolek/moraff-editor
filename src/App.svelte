@@ -77,8 +77,8 @@
   </header>
   {#if app.game === 'moraffsWorld'}
     <p class="game-note">
-      Moraff's World has the Save Editor, the Monsters, Spells and New Character so far. The map and the rest are on
-      the way.
+      Moraff's World has the Map, the Save Editor, the Monsters, Spells and New Character so far. The rest is on the
+      way.
     </p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->

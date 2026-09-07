@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { app } from '../app-state.svelte';
+  import { onMount, untrack } from 'svelte';
+  import { app, type GameId } from '../app-state.svelte';
   import { floorBounds, summarizeMapFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
   import { isAppHistoryState, type AppHistoryState } from '../history';
@@ -9,7 +9,7 @@
   import { describeMonster, describeNote, describeSquare, featureLine } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
-  import { floorsOf, UNFORGIVEN_MAP } from './game';
+  import { floorsOf, MAP_GAMES, type MapGame } from './game';
   import { jumpTarget, squareFeature, teleporterTargets, type Destination } from './floor-info';
   import { FLOOR_MAX, FLOOR_MIN, samePlace, type MapPlace } from './history';
   import { keyAction } from './keyboard';
@@ -27,7 +27,7 @@
   import { boundsIncluding, type Point } from './viewport';
   import { nearestOpenSquare, stepFrom } from './you';
 
-  const game = UNFORGIVEN_MAP;
+  let game = $state<MapGame>(MAP_GAMES[app.game]);
   let dungeon = $state(0);
   let floor = $state(0);
   /** Lets the map be pointed at floors the dungeon does not have, the way the game's own
@@ -107,10 +107,28 @@
     !marked ? [] : marked.from === 'legend' ? squaresOfKind(rows, floor, marked.kind, game.area) : squaresOfMonster(marked.monsterId),
   );
 
+  /** Where each game's map was left, so switching games comes back to it rather than to
+   *  whatever floor the other game was showing. */
+  const left = new Map<GameId, MapPlace>();
+
   onMount(() => {
     const state = history.state;
+    // The header has not chosen a game yet at this point, so the entry's own game is taken
+    // with it; whichever game the header settles on then switches the map if it has to.
     if (isAppHistoryState(state) && state.map) applyPlace(state.map);
   });
+
+  // The header switches games under the map. Each game's map keeps its own place.
+  $effect(() => {
+    const chosen = app.game;
+    untrack(() => showGame(chosen));
+  });
+
+  function showGame(chosen: GameId) {
+    if (chosen === game.id) return;
+    left.set(game.id, here(highlight));
+    applyPlace(left.get(chosen) ?? { game: chosen, dungeon: 0, floor: 0, square: null, you: null });
+  }
 
   /** The browser structured-clones what it stores, and Svelte's state proxies cannot be cloned, so
    *  the place is snapshotted into plain objects first. */
@@ -120,7 +138,7 @@
 
   /** Where the map is looking now, for a history entry that is being written or compared. */
   function here(square: Point | null): MapPlace {
-    return { dungeon, floor, square, you };
+    return { game: game.id, dungeon, floor, square, you };
   }
 
   /** Go to another floor and leave a history entry behind, so the browser's Back button returns to
@@ -136,7 +154,8 @@
   }
 
   function applyPlace(place: MapPlace) {
-    // A history entry can name a floor the dungeon does not have, and only the override shows one.
+    game = MAP_GAMES[place.game];
+    // A place can name a floor the dungeon does not have, and only the override shows one.
     if (place.floor < 0 || place.floor > game.bottomFloor(place.dungeon)) anyFloor = true;
     dungeon = place.dungeon;
     floor = place.floor;
@@ -154,28 +173,31 @@
     const place = app.requestedPlace;
     if (!place) return;
     app.requestedPlace = null;
-    if (!game.hasDungeon(place.dungeon)) return;
-    const square = place.x >= 0 && place.y >= 0 && isOnMap(place, game.area) ? { x: place.x, y: place.y } : null;
-    travel({ dungeon: place.dungeon, floor: place.floor, square, you: square }, cursor);
+    const wanted = MAP_GAMES[place.game];
+    if (!wanted.hasDungeon(place.dungeon)) return;
+    const square = place.x >= 0 && place.y >= 0 && isOnMap(place, wanted.area) ? { x: place.x, y: place.y } : null;
+    travel({ game: place.game, dungeon: place.dungeon, floor: place.floor, square, you: square }, cursor);
   });
 
   /** Only an entry naming somewhere else moves the map. Every entry carries the map's place,
    *  including the ones a tab switch pushed, and stepping through those must leave it alone. */
   function onPopState(event: PopStateEvent) {
     const place = isAppHistoryState(event.state) ? event.state.map : undefined;
-    if (!place || samePlace(place, here(highlight))) return;
+    // A place belonging to the other game is left alone: the header chooses which game is
+    // showing, and stepping through history is not allowed to change that under it.
+    if (!place || place.game !== game.id || samePlace(place, here(highlight))) return;
     applyPlace(place);
   }
 
   function changeDungeon(event: Event) {
     const chosen = Number((event.currentTarget as HTMLSelectElement).value);
     const level = anyFloor ? floor : Math.min(floor, game.bottomFloor(chosen));
-    travel({ dungeon: chosen, floor: level, square: null, you: youOn(chosen, level) }, cursor);
+    travel({ ...here(null), dungeon: chosen, floor: level, you: youOn(chosen, level) }, cursor);
   }
 
   /** A twin is always a floor its own module has, so the override is left alone. */
   function goToTwin(twin: TwinFloor) {
-    travel({ dungeon: twin.module, floor: twin.floor, square: null, you: youOn(twin.module, twin.floor) }, cursor);
+    travel({ ...here(null), dungeon: twin.module, floor: twin.floor, you: youOn(twin.module, twin.floor) }, cursor);
   }
 
   function changeFloor(event: Event) {
@@ -203,7 +225,7 @@
   }
 
   function showFloor(level: number) {
-    travel({ dungeon, floor: level, square: null, you: youOn(dungeon, level) }, cursor);
+    travel({ ...here(null), floor: level, you: youOn(dungeon, level) }, cursor);
   }
 
   /** Changing floor walks the party to the nearest square it can stand on. It stays nowhere
@@ -263,7 +285,7 @@
   /** Taking a teleporter lands the party somewhere random in the destination town. */
   function takeTeleporter(module: number) {
     const landing = randomOpenSquare(game.floor(0, module), Math.random);
-    travel({ dungeon: module, floor: 0, square: landing, you: landing }, selected);
+    travel({ ...here(landing), dungeon: module, floor: 0, you: landing }, selected);
   }
 
   function routeToTarget(passWall: boolean) {
@@ -345,7 +367,7 @@
   /** Going where a ladder, chute or trap door leads puts you on the landing square. */
   function jumpTo(target: Destination, from: Point) {
     const landing = { x: target.x, y: target.y };
-    travel({ dungeon, floor: target.floor, square: landing, you: landing }, from);
+    travel({ ...here(landing), floor: target.floor, you: landing }, from);
   }
 </script>
 

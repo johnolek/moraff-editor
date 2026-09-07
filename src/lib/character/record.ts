@@ -1,4 +1,4 @@
-import type { CurrentCharacter } from '../app-state.svelte';
+import type { CurrentCharacter, GameId } from '../app-state.svelte';
 import { readString } from '../editor/fields';
 import { MORAFFS_WORLD, UNFORGIVEN } from '../editor/games';
 import data from '../game/dotu-data.json';
@@ -35,6 +35,7 @@ export interface StatusStat {
 
 /** Where a character stands, for the map explorer. */
 export interface StatusPlace {
+  game: GameId;
   dungeon: number;
   floor: number;
   x: number;
@@ -104,6 +105,7 @@ function unforgivenStatus(view: DataView, bytes: Uint8Array): CharacterStatus {
     hard: view.getInt8(0x8f6) !== 0,
     battleSpells: battleSpellsInEffect(view),
     place: {
+      game: 'unforgiven',
       x: view.getInt16(0x7b0, true),
       y: view.getInt16(0x7b2, true),
       floor: view.getInt16(0x7b4, true),

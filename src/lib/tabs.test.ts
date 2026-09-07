@@ -6,8 +6,13 @@ describe('the tabs a game has', () => {
     expect(tabsFor('unforgiven')).toEqual(TABS);
   });
 
-  it('is the Save Editor, the Monsters, Spells, New Character and Source for Moraff’s World', () => {
-    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['editor', 'monsters', 'spells', 'roller', 'source']);
+  it('is the Map, the Save Editor, the Monsters, Spells, New Character and Source for Moraff’s World', () => {
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['map', 'editor', 'monsters', 'spells', 'roller', 'source']);
+  });
+
+  it('calls the map tab DotU Map under one game and Map under the other', () => {
+    expect(TABS.find((tab) => tab.id === 'map')?.label).toBe('DotU Map');
+    expect(tabsFor('moraffsWorld').find((tab) => tab.id === 'map')?.label).toBe('Map');
   });
 });
 
@@ -19,7 +24,7 @@ describe('the tab to show', () => {
   });
 
   it('falls back to the Save Editor when the game has no such tab', () => {
-    expect(tabFor('moraffsWorld', 'map')).toBe('editor');
+    expect(tabFor('moraffsWorld', 'monsters')).toBe('editor');
     expect(tabFor('moraffsWorld', 'snake')).toBe('editor');
   });
 });

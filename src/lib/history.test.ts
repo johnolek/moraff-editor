@@ -5,7 +5,7 @@ function state(overrides: Record<string, unknown> = {}): unknown {
   return { kind: 'moraff-tools', tab: 'map', index: 0, ...overrides };
 }
 
-const place = { dungeon: 0, floor: 3, square: { x: 10, y: 20 } };
+const place = { game: 'unforgiven', dungeon: 0, floor: 3, square: { x: 10, y: 20 } };
 
 describe('isAppHistoryState', () => {
   it('accepts an entry with or without a map place', () => {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isMapPlace, samePlace, type MapPlace } from './history';
 
 function place(overrides: Partial<MapPlace> = {}): unknown {
-  return { dungeon: 0, floor: 3, square: { x: 10, y: 20 }, ...overrides };
+  return { game: 'unforgiven', dungeon: 0, floor: 3, square: { x: 10, y: 20 }, ...overrides };
 }
 
 describe('isMapPlace', () => {
@@ -16,6 +16,7 @@ describe('isMapPlace', () => {
     expect(isMapPlace(undefined)).toBe(false);
     expect(isMapPlace('map-place')).toBe(false);
     expect(isMapPlace({ dungeon: 0, floor: 0 })).toBe(false);
+    expect(isMapPlace({ ...(place() as object), game: 'nonesuch' })).toBe(false);
   });
 
   it('accepts a place whether or not it says where you stand', () => {
@@ -50,13 +51,14 @@ describe('isMapPlace', () => {
 });
 
 describe('samePlace', () => {
-  const here: MapPlace = { dungeon: 1, floor: 3, square: { x: 10, y: 20 }, you: { x: 11, y: 20 } };
+  const here: MapPlace = { game: 'unforgiven', dungeon: 1, floor: 3, square: { x: 10, y: 20 }, you: { x: 11, y: 20 } };
 
   it('is true for a place naming the same floor, square and party', () => {
     expect(samePlace(here, { ...here, square: { x: 10, y: 20 }, you: { x: 11, y: 20 } })).toBe(true);
   });
 
-  it('is false once the module or the floor differs', () => {
+  it('is false once the game, the module or the floor differs', () => {
+    expect(samePlace(here, { ...here, game: 'moraffsWorld' })).toBe(false);
     expect(samePlace(here, { ...here, dungeon: 0 })).toBe(false);
     expect(samePlace(here, { ...here, floor: 4 })).toBe(false);
   });
@@ -72,7 +74,7 @@ describe('samePlace', () => {
   });
 
   it('treats a place from before the map tracked the party as one with nobody on it', () => {
-    const nobody: MapPlace = { dungeon: 1, floor: 3, square: null };
+    const nobody: MapPlace = { game: 'unforgiven', dungeon: 1, floor: 3, square: null };
     expect(samePlace(nobody, { ...nobody, you: null })).toBe(true);
     expect(samePlace(nobody, { ...nobody, you: { x: 1, y: 1 } })).toBe(false);
   });

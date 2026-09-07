@@ -102,7 +102,7 @@ describe('the status block of a Dungeons of the Unforgiven character', () => {
   });
 
   it('reads where the character stands', () => {
-    expect(status.place).toEqual({ x: 40, y: 50, floor: 25, dungeon: 2 });
+    expect(status.place).toEqual({ game: 'unforgiven', x: 40, y: 50, floor: 25, dungeon: 2 });
   });
 
   it('is on the normal curve until the record says otherwise', () => {
