@@ -58,6 +58,12 @@ export const MORAFFS_WORLD: GameSchema = {
         },
         { kind: 'int16', offset: 0x003f, label: 'Naked Weight' },
         { kind: 'int16', offset: 0x0041, label: 'Loaded Weight', hint: 'Game recalculates this on play.' },
+        {
+          kind: 'int32',
+          offset: 0x07d6,
+          label: 'Age (minutes)',
+          hint: 'Age in minutes, not years: 525,600 to the year, so a 65-year-old reads 34,164,000. The game ages the character as time passes, which is why a played character is rarely a whole number of years old.',
+        },
       ],
     },
     {
@@ -92,6 +98,34 @@ export const MORAFFS_WORLD: GameSchema = {
         { kind: 'int16', offset: 0x07ae, label: 'Position Y' },
         { kind: 'int16', offset: 0x07b0, label: 'Current Floor' },
         { kind: 'int16', offset: 0x07b2, label: 'Module' },
+        {
+          kind: 'uint8',
+          offset: 0x07b4,
+          label: 'Map Cursor X',
+          hint: 'Where the character sits in the scrolling map view, not on the floor. The game recomputes both of these from the video mode whenever play starts.',
+        },
+        { kind: 'uint8', offset: 0x07b5, label: 'Map Cursor Y' },
+        {
+          kind: 'int16',
+          offset: 0x07f8,
+          label: 'Overworld X',
+          hint: 'Position on the 64 × 64 world map, in sixty-fourths of a tile: a new character starts on 2146, which is tile 33.',
+        },
+        { kind: 'int16', offset: 0x07fa, label: 'Overworld Y' },
+        {
+          kind: 'int16',
+          offset: 0x0804,
+          label: 'Return Module',
+          hint: 'Where the game puts the character back when they leave a place they went into. A new character gets the square they start on; −1 in Return X means there is nowhere to go back to.',
+        },
+        { kind: 'int16', offset: 0x0806, label: 'Return X' },
+        { kind: 'int16', offset: 0x0808, label: 'Return Y' },
+        {
+          kind: 'int32',
+          offset: 0x080a,
+          label: 'Unused Counter',
+          hint: 'A new character starts on 300, and the temple screen resets it to the player level times 500 plus a small roll, capped at 500,000. Nothing in the game ever reads it back.',
+        },
       ],
     },
     {

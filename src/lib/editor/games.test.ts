@@ -64,3 +64,30 @@ describe('game schemas', () => {
     expect(MORAFFS_WORLD.onSave).toBeUndefined();
   });
 });
+
+describe("the Moraff's World roller's own fields", () => {
+  const offsets = MORAFFS_WORLD.sections.flatMap((section) =>
+    section.fields.map((field) => ('offset' in field ? field.offset : field.ownedOffset)),
+  );
+
+  it.each([
+    [0x07b4, 'Map Cursor X'],
+    [0x07b5, 'Map Cursor Y'],
+    [0x07d6, 'Age (minutes)'],
+    [0x07f8, 'Overworld X'],
+    [0x07fa, 'Overworld Y'],
+    [0x0804, 'Return Module'],
+    [0x0806, 'Return X'],
+    [0x0808, 'Return Y'],
+    [0x080a, 'Unused Counter'],
+  ])('names %s', (offset, label) => {
+    const field = MORAFFS_WORLD.sections
+      .flatMap((section) => section.fields)
+      .find((entry) => 'offset' in entry && entry.offset === offset);
+    expect(field && 'label' in field ? field.label : null).toBe(label);
+  });
+
+  it('gives each of them its own offset', () => {
+    expect(new Set(offsets).size).toBe(offsets.length);
+  });
+});
