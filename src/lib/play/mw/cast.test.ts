@@ -135,6 +135,23 @@ describe('a spell that stops for a menu', () => {
     expect(session.box[0]).toBe('EXPERIENCE NEEDED FOR LEVEL:');
   });
 
+  it('sends Write Scroll back to the level menu when its slot menu is escaped', async () => {
+    const spellbook = Array.from({ length: 180 }, () => 0);
+    // Permanent, level 1, the third of the three: WRITE SCROLL TO LEVEL 3.
+    spellbook[at(0, 1, 2)] = 1;
+    const session = playingMw(priest({ spellbook, sp: 20, maxSp: 20 }));
+    await pressMw(session, MW_KEY.cast);
+    await pressMw(session, 0x31);
+    // Level 1, the third of the three, is C.
+    await pressMw(session, 0x63);
+    await pressMw(session, 0x31);
+    await pressMw(session, 0x31);
+    expect(session.box).toContain('4) PREVIOUS MENU');
+    await pressMw(session, MW_KEY.escape);
+    expect(session.box).toContain('HIT ESC FOR PREVIOUS MENU');
+    expect(session.game.pc.scrolls.every((count) => count === 0)).toBe(true);
+  });
+
   it('gives Enchant Armor up when its slot menu is escaped', async () => {
     const spellbook = Array.from({ length: 180 }, () => 0);
     // Permanent, level 2, the first of the three: ENCHANT ARMOR LEVEL 1.

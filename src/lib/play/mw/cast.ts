@@ -219,12 +219,16 @@ async function askSpellMenu(
   return askWhichSpellToWrite(session, writeUpTo);
 }
 
+/** The line of the slot menu that goes back to the level menu, and the answer Escape brings. */
+const PREVIOUS_MENU = 4;
+const CANCELLED = -1;
+
 /**
  * cast_spell (WORLD.EXE 2000:c546, mw.c "cast_spell"): the three menus Write Scroll and Enchant
  * Wand walk through — the kind of spell, its level, and which of the three on that line.
  *
- * The fourth line of the last menu goes back to the one before it, and Escape at either of the
- * first two gives the spell up.
+ * The fourth line of the last menu goes back to the one before it, and so does Escape; Escape at
+ * either of the first two gives the spell up.
  */
 async function askWhichSpellToWrite(
   session: MwGameSession,
@@ -248,7 +252,9 @@ async function askWhichSpellToWrite(
       session.box =
         session.takeBoxes(() => drawWriteSpellSlotMenu(game, maxLevel, category, level))[0] ?? [];
       const slot = await session.lineMenuKey(1, 4);
-      if (slot === 4) continue;
+      // The original tests the reader's answer for its own fourth line and for the -1 Escape
+      // brings back together, so both go round to the level menu again.
+      if (slot === PREVIOUS_MENU || slot === CANCELLED) continue;
       return { category, level, slot: slot - 1 };
     }
   }
