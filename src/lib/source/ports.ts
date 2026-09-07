@@ -11,6 +11,7 @@ import toHitSource from '../bestiary/to-hit.ts?raw';
 import rollSource from '../bestiary/roll.ts?raw';
 import dropsSource from '../calculators/drops.ts?raw';
 import filesSource from '../game/dotu-files.js?raw';
+import characterSource from '../game/port/character.ts?raw';
 import combatSource from '../game/port/combat.ts?raw';
 import mechSource from '../game/dotu-mech.js?raw';
 import magicSource from '../game/port/magic.ts?raw';
@@ -28,6 +29,7 @@ import { snippet } from '../ui/source-snippet';
 export const SOURCES = {
   'src/lib/game/port/magic.ts': magicSource,
   'src/lib/game/port/combat.ts': combatSource,
+  'src/lib/game/port/character.ts': characterSource,
   'src/lib/game/port/state.ts': stateSource,
   'src/lib/game/port/rng.ts': rngSource,
   'src/lib/game/port/spell-index.ts': spellIndexSource,
