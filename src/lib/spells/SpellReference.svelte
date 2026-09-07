@@ -5,7 +5,7 @@
   import { portCode, portFunction } from '../source/ports';
   import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { LIST_NOTES, spellCorrection } from './mechanics';
+  import { LIST_NOTES, spellCorrection, spellKey } from './mechanics';
   import { allSpells, gridKey, spellGroups, type Spell } from './spells';
 
   /** The game's own wording, from the type menu and the spell menu of its spell screen. */
@@ -23,12 +23,17 @@
   const citedC = (name: string) => portFunction(MAGIC, name)?.c?.name;
 
   const lists = spellGroups(allSpells());
+  const byKey = new Map(allSpells().map((spell) => [spellKey(spell), spell]));
 
   let listIndex = $state(0);
-  let selected = $state<Spell | null>(null);
+  /** The spell being shown, by its key. A key rather than the spell itself because $state hands
+   *  back a proxy of whatever object is put in it, which never compares equal to the one the grid
+   *  is drawn from. */
+  let selectedKey = $state<string | null>(null);
   let grid: HTMLDivElement;
 
   const list = $derived(lists[listIndex]);
+  const selected = $derived(selectedKey === null ? null : (byKey.get(selectedKey) ?? null));
   const correction = $derived(selected ? spellCorrection(selected) : null);
 
   const code = $derived(selected ? portedSpell(selected.type, selected.level - 1, selected.slot - 1) : null);
@@ -43,7 +48,7 @@
 
   function pickList(index: number) {
     listIndex = index;
-    selected = null;
+    selectedKey = null;
   }
 
   function spellForKey(key: string): Spell | null {
@@ -75,7 +80,7 @@
     }
     const spell = spellForKey(key);
     if (!spell) return;
-    selected = spell;
+    selectedKey = spellKey(spell);
     event.preventDefault();
   }
 </script>
@@ -114,9 +119,9 @@
               <button
                 type="button"
                 class="cell"
-                class:current={selected === spell}
-                aria-pressed={selected === spell}
-                onclick={() => (selected = spell)}
+                class:current={selectedKey === spellKey(spell)}
+                aria-pressed={selectedKey === spellKey(spell)}
+                onclick={() => (selectedKey = spellKey(spell))}
               >
                 {cellLabel(spell, row, column)}
               </button>
