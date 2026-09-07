@@ -68,7 +68,6 @@
       {/each}
     </nav>
   </header>
-  <CharacterPanel />
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
   <main class:hidden={app.tab !== 'map'}>
     <MapExplorer />
@@ -97,6 +96,8 @@
   <main class:hidden={app.tab !== 'source'}>
     <SourceViewer />
   </main>
+  <!-- The game keeps its status block along the bottom of the screen, so the character does too. -->
+  <CharacterPanel />
 </div>
 
 <style>

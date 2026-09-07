@@ -84,69 +84,6 @@
 </script>
 
 <section class="character-panel">
-  {#if !character || !status}
-    <div class="status empty">
-      <span class="line">
-        NO CHARACTER.
-        <button type="button" class="dos-link" onclick={() => show('editor')}>LOAD A SAVE</button>
-        OR
-        <button type="button" class="dos-link" onclick={() => show('roller')}>ROLL ONE</button>.
-      </span>
-    </div>
-    {#if app.roster.length > 0}
-      <div class="identity">
-        <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({app.roster.length})</button>
-      </div>
-    {/if}
-  {:else if collapsed}
-    <div class="status">
-      <span class="line green">{collapsedLine(status, character.name)}</span>
-    </div>
-  {:else}
-    <div class="boxes">
-      <div class="status">
-        <div class="left">
-          <div class="line cyan">ARMOR:{status.armor} &nbsp; WEAPON:{status.weapon}</div>
-          <div class="line yellow">{levelLabel(status.lev)}{status.lev} &nbsp; {expLabel(status.lev)}{withSeparators(status.exp)}</div>
-          <div class="line green">SPELL POINTS:{points(status.sp)} OF {points(status.maxSp)}</div>
-          <div class="line green">HEALTH POINTS:{status.hp} OF {status.maxHp}</div>
-        </div>
-        <div class="stats">
-          {#each [0, 2, 4] as first}
-            <div class="line red">
-              {#each status.stats.slice(first, first + 2) as stat}
-                <span class="stat">{stat.label}:{stat.value}</span>
-              {/each}
-            </div>
-          {/each}
-        </div>
-      </div>
-      {#if status.battleSpells.length > 0}
-        <div class="spells">
-          <div class="line heading">CURRENT BATTLE SPELLS IN EFFECT</div>
-          <div class="spell-lines">
-            {#each status.battleSpells as spell}
-              <div class="line">{spell}</div>
-            {/each}
-          </div>
-        </div>
-      {/if}
-    </div>
-    <div class="identity">
-      <strong>{character.name}</strong>
-      <span>{status.cls}</span>
-      {#if game}<span>{game.displayName}</span>{/if}
-      {#if character.slot !== null}<span>Character {character.slot}</span>{/if}
-      <button type="button" class="link" onclick={() => show('editor')}>Edit in Save Editor</button>
-      <button type="button" class="link" onclick={() => show('roller')}>Roll another</button>
-      {#if status.place}<button type="button" class="link" onclick={showOnMap}>Show on map</button>{/if}
-      {#if character.game === UNFORGIVEN.id}
-        <button type="button" class="link" onclick={() => (showingExpNeeded = !showingExpNeeded)}>Exp needed</button>
-      {/if}
-      <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({app.roster.length})</button>
-    </div>
-  {/if}
-
   {#if expRows.length > 0}
     <!-- The game's own EXP NEEDED screen, on the black it prints its screens on. -->
     <div class="exp-needed">
@@ -189,10 +126,73 @@
       </tbody>
     </table>
   {/if}
+  {#if !character || !status}
+    {#if app.roster.length > 0}
+      <div class="identity">
+        <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({app.roster.length})</button>
+      </div>
+    {/if}
+    <div class="status empty">
+      <span class="line">
+        NO CHARACTER.
+        <button type="button" class="dos-link" onclick={() => show('editor')}>LOAD A SAVE</button>
+        OR
+        <button type="button" class="dos-link" onclick={() => show('roller')}>ROLL ONE</button>.
+      </span>
+    </div>
+  {:else if collapsed}
+    <div class="status">
+      <span class="line green">{collapsedLine(status, character.name)}</span>
+    </div>
+  {:else}
+    <div class="identity">
+      <strong>{character.name}</strong>
+      <span>{status.cls}</span>
+      {#if game}<span>{game.displayName}</span>{/if}
+      {#if character.slot !== null}<span>Character {character.slot}</span>{/if}
+      <button type="button" class="link" onclick={() => show('editor')}>Edit in Save Editor</button>
+      <button type="button" class="link" onclick={() => show('roller')}>Roll another</button>
+      {#if status.place}<button type="button" class="link" onclick={showOnMap}>Show on map</button>{/if}
+      {#if character.game === UNFORGIVEN.id}
+        <button type="button" class="link" onclick={() => (showingExpNeeded = !showingExpNeeded)}>Exp needed</button>
+      {/if}
+      <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({app.roster.length})</button>
+    </div>
+    <div class="boxes">
+      <div class="status">
+        <div class="left">
+          <div class="line cyan">ARMOR:{status.armor} &nbsp; WEAPON:{status.weapon}</div>
+          <div class="line yellow">{levelLabel(status.lev)}{status.lev} &nbsp; {expLabel(status.lev)}{withSeparators(status.exp)}</div>
+          <div class="line green">SPELL POINTS:{points(status.sp)} OF {points(status.maxSp)}</div>
+          <div class="line green">HEALTH POINTS:{status.hp} OF {status.maxHp}</div>
+        </div>
+        <div class="stats">
+          {#each [0, 2, 4] as first}
+            <div class="line red">
+              {#each status.stats.slice(first, first + 2) as stat}
+                <span class="stat">{stat.label}:{stat.value}</span>
+              {/each}
+            </div>
+          {/each}
+        </div>
+      </div>
+      {#if status.battleSpells.length > 0}
+        <div class="spells">
+          <div class="line heading">CURRENT BATTLE SPELLS IN EFFECT</div>
+          <div class="spell-lines">
+            {#each status.battleSpells as spell}
+              <div class="line">{spell}</div>
+            {/each}
+          </div>
+        </div>
+      {/if}
+    </div>
+  {/if}
+
 
   {#if character && status}
     <button type="button" class="chevron" aria-label={collapsed ? 'Show the whole character' : 'Fold the character away'} onclick={toggle}>
-      {collapsed ? '▸' : '▾'}
+      {collapsed ? '▴' : '▾'}
     </button>
   {/if}
 </section>
@@ -201,7 +201,7 @@
   .character-panel {
     position: relative;
     padding: 10px 44px 10px 24px;
-    border-bottom: 1px solid var(--line);
+    border-top: 1px solid var(--line);
   }
   .boxes {
     display: flex;
@@ -273,7 +273,7 @@
   }
   .identity {
     display: flex;
-    margin-top: 8px;
+    margin-bottom: 8px;
     align-items: baseline;
     gap: 14px;
     flex-wrap: wrap;
@@ -297,7 +297,7 @@
   }
   .exp-needed {
     display: inline-block;
-    margin-top: 10px;
+    margin-bottom: 10px;
     padding: 8px 16px 10px;
     border: 1px solid var(--line);
     border-radius: 6px;
@@ -308,7 +308,7 @@
     color: var(--mw-green);
   }
   .chooser {
-    margin-top: 10px;
+    margin-bottom: 10px;
     border-collapse: collapse;
     font-size: 12px;
     color: var(--muted);
