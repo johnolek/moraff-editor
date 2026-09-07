@@ -16,6 +16,9 @@ in some ways better than C, and in every way different from what the other two
 games needed.
 
 The game folder is at `~/games/rev2` and nothing from it is in this repository.
+`BRUN30.md` names every run-time routine the game calls, and `DUNGEON.md`
+answers the question this survey leaves open about the dungeon itself: where
+the walls are, which is nowhere — the game works each one out as it needs it.
 
 ## 1. Every file
 
@@ -679,14 +682,17 @@ against the constant.
 
 Two codes are not ladders. 50 means nothing is there, and `1000:9096` treats
 anything from 4 up as walk-on ground; 25 is what `1000:5549` uses for a negative
-code, which the shipped `7.NUM` never produces. A code of 0 jumps to
-`1000:3428`, which the recursive-descent walk does not reach.
+code, which the shipped `7.NUM` never produces. A code of 0 is a chute: it jumps
+to `1000:3428`, and the automap draws it as a circle, which is what `H3.OVL`'s
+map key calls a chute — `DUNGEON.md` section 8.
 
-The false floor is a separate test on the square you have just stepped onto:
-`1000:064D` asks for the code, and if it is over 3 — no ladder — and three
-coordinate comparisons and a level check all pass, it sets the code to 1 and
-calls `1000:567C`, which prints `"   False floor.   "` and the `D-GO DOWN`
-prompt. So you fall one level.
+The false floor is what a chute leaves behind. `1000:064D` asks for the code of
+the square just stepped onto, and if it is over 3 — no ladder — and the square
+is the one a chute dropped the player on, it sets the code to 1 and calls
+`1000:567C`, which prints `"   False floor.   "` and the `D-GO DOWN` prompt, so
+the fall goes on another level. The three coordinate comparisons it makes are
+against `B4CE`, `B4D6` and `B4DA`, and the only thing that writes those three is
+the end of the chute at `1000:356F`.
 
 On the automap the marked squares are drawn as their own symbol, in one of two
 shapes depending on the sign of the code (`1000:52BB`, `1000:52F2`,
@@ -803,11 +809,6 @@ are 40 by 14 bits, 20 by 14 pixels. `read_dungeon.py` draws them.
 
 ### What is still open
 
-* what `1000:552B` does with a code of 0 — 82 of the 1,632 marked squares. It
-  jumps to `1000:3428`, which the recursive-descent walk does not reach.
-* the three coordinate comparisons `1000:064D` makes before it calls the false
-  floor. They read as "the move did not happen", but the variables they use
-  (`B4CE`, `B4D6`, `B4DA`) have not been named from anywhere else.
 * what `2.NUM`'s number is in the game's own terms, and what its sign means.
 * what the town's ten `7.NUM` squares are. The formula does not produce them and
   `1000:552B` sends level 0 down a path of its own.

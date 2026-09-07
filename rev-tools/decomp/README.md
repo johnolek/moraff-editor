@@ -13,6 +13,8 @@ Beginner v3.0 — is read from.
 much of the game a decompilation can actually show, and what a port would take.
 `../docs/BRUN30.md` says what every run-time routine is, and
 `../reference/brun30.py` is the table the scripts here read.
+`../docs/DUNGEON.md` reads one game rule all the way out of the disassembly, the
+one that decides where the dungeon's walls are.
 
 ## What is different about this game
 
