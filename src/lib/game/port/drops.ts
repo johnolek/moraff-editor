@@ -1,0 +1,488 @@
+import { giveHint } from './hints';
+import { computeWeight } from './magic';
+import type { Game } from './state';
+
+// The message text is the exact bytes of the game's own strings, read out of the data segment of
+// the unpacked executable. The comment on each say call gives the address of every line it
+// prints, in order; dotu-tools/reference/scripts/exe_strings.py reads them back.
+
+/** The name column of the weapon table (exe DS:01a0, one every 7 bytes). */
+export const WEAPON_NAMES = [
+  'FIST',
+  'STICK',
+  'CLUB',
+  'MACE',
+  'KNIFE',
+  'SHORTSWORD',
+  'LONG SWORD',
+  'GREAT SWORD',
+];
+
+/** The name column of the armor table (exe DS:01f4, one every 5 bytes). */
+export const ARMOR_NAMES = [
+  'SKIN',
+  'LEATHER',
+  'CHAIN',
+  'SCALE',
+  'BREAST PLATE',
+  'FIELD PLATE',
+  'TITANIUM',
+];
+
+/**
+ * give_hint (exe 2000:313a, unf.c "give_hint") followed by the wait at 2000:4054: show one of
+ * UH.BIN's eight-line messages and keep it up until a key is pressed. `giveHint` in `hints.ts`
+ * reads the lines; `say` drops the blanks the message ends with.
+ */
+export function showHint(game: Game, index: number): void {
+  game.say(...giveHint(index));
+}
+
+/**
+ * FUN_3000_a1c4 (exe 3000:a1c4): the line every drop opens with. The original follows it with a
+ * 300 millisecond delay unless the high speed option is on.
+ */
+export function goodNews(game: Game): void {
+  game.say('GOOD NEWS...'); // DS:2f6c
+}
+
+/**
+ * drop_weapon (exe 3000:a1fc, unf.c "drop_weapon"): the weapon a kill may leave behind, which
+ * the player is offered and can refuse. `take` is what get_choice reads back from the two-line
+ * menu: true for "1) TAKE THE WEAPON".
+ *
+ * The weapon is one of the seven the table has past the fist, and the deeper into the table it
+ * is the less likely the roll lands, so a Great Sword needs a level 690 monster to be certain.
+ * A monk keeps nothing at all.
+ */
+export function dropWeapon(game: Game, take: boolean): void {
+  const pc = game.pc;
+  if (pc.cls === 2) return;
+  const which = game.rng.random(7) + 1;
+  if (game.rng.random(which * 100) > game.monsters[game.engaged].level + 10) return;
+  // The "(YOU ALREADY HAVE n OF THESE)" line below is written into the message box a few lines
+  // on, which this return makes unreachable. drop_armor, the same function for armor, has no
+  // such return and does print it.
+  if (pc.weaponsOwned[which] > 0) return;
+  if (game.highSpeed) {
+    for (let better = which; better < 8; better += 1) {
+      if (pc.weaponsOwned[better] > 0) return;
+    }
+  }
+  goodNews(game);
+  // DS:2f79 with the name written after it, 258b, 2fa3, 2fb6, 258b, 2fca, 2fe3, 2ffe
+  game.say(
+    `YOU FIND A ${WEAPON_NAMES[which]}`,
+    '',
+    '1) TAKE THE WEAPON',
+    '2) LEAVE THE WEAPON',
+    '',
+    'NOTE THAT YOU MAY END UP',
+    'WITH SEVERAL WEAPONS WHICH',
+    'WILL WEIGH YOU DOWN.',
+  );
+  if (take) {
+    pc.weaponsOwned[which] += 1;
+    computeWeight(game);
+  }
+}
+
+/**
+ * drop_armor (exe 3000:a3d7, unf.c "drop_armor"): the same for armor, one of the six suits past
+ * bare skin. `take` is get_choice's answer to "1) TAKE THE ARMOR".
+ *
+ * Unlike drop_weapon this one offers armor the character already owns, and counts it in the
+ * message. It also prints "GOOD NEWS..." before it works out whether the high speed option
+ * means the offer is going to be skipped, so a skipped offer still says that.
+ */
+export function dropArmor(game: Game, take: boolean): void {
+  const pc = game.pc;
+  if (pc.cls === 2) return;
+  const which = game.rng.random(6) + 1;
+  if (game.rng.random(which * 100) > game.monsters[game.engaged].level + 10) return;
+  goodNews(game);
+  if (game.highSpeed) {
+    for (let better = which; better < 8; better += 1) {
+      if (pc.armorOwned[better] > 0) return;
+    }
+  }
+  const owned = pc.armorOwned[which];
+  // DS:3013 with the name and 301d after it, 2f85 2f98 with the count between them, 3025, 3037,
+  // 258b, 2fca, 304a, 3060
+  game.say(
+    `YOU FIND ${ARMOR_NAMES[which]} ARMOR.`,
+    owned > 0 ? `(YOU ALREADY HAVE ${owned} OF THESE)` : '',
+    '1) TAKE THE ARMOR',
+    '2) LEAVE THE ARMOR',
+    '',
+    'NOTE THAT YOU MAY END UP',
+    'WITH SEVERAL SUITS OF',
+    'ARMOR WEIGHING YOU DOWN.',
+  );
+  if (take) {
+    pc.armorOwned[which] += 1;
+    computeWeight(game);
+  }
+}
+
+/**
+ * spell_name_to_menu (exe 3000:a5cc, unf.c "spell_name_to_menu"): the two lines that say what a
+ * dropped spell is. `level` is 0 to 9 and prints as one more; `type` is 0 permanent, 1
+ * preparation, 2 wizard, 3 priest.
+ *
+ * The priest line is the one line of the four with no full stop on the end.
+ */
+export function spellNameToMenu(level: number, type: number): string[] {
+  const names = [
+    '  PERMANENT SPELL.', // DS:3091
+    '  PREPARATION SPELL.', // DS:30a4
+    '  WIZARD SPELL.', // DS:30b9
+    '  PRIESTLY SPELL', // DS:30c9
+  ];
+  return [`  THE SPELL IS A LEVEL ${level + 1}`, names[type]]; // DS:3079
+}
+
+/**
+ * The rule drop_spellbook and drop_scroll share: a worshipper (1) and a priest (4) are never
+ * given a wizard spell, and a wizard (3) and a mage (6) are never given a priestly one. A drop
+ * that lands on the wrong list is thrown away rather than rolled again.
+ */
+function wrongListForClass(cls: number, type: number): boolean {
+  if (type === 2 && (cls === 1 || cls === 4)) return true;
+  return type === 3 && (cls === 3 || cls === 6);
+}
+
+/**
+ * drop_spellbook (exe 3000:a65d, unf.c "drop_spellbook"): the spell a kill may teach outright.
+ * Returns whether one was learned, which is what stops kill_monster rolling for a scroll, a wand
+ * or a paper as well.
+ *
+ * A fighter (0) and a monk (2) learn nothing. A sage (5) has two extra rolls to pass, both of
+ * which get easier the deeper the floor. A spell the character already has in their book is
+ * thrown away rather than rolled again.
+ */
+export function dropSpellbook(game: Game): boolean {
+  const pc = game.pc;
+  if (pc.cls === 0 || pc.cls === 2) return false;
+  if (pc.cls === 5) {
+    if (game.rng.random(300 - pc.level) > 175) return false;
+    if (game.rng.random(400 - pc.level) > 140) return false;
+  }
+  let level = game.rng.random(Math.trunc((pc.level * 2) / 3));
+  if (level > 9) level = game.rng.random(10);
+  const type = game.rng.random(4);
+  if (wrongListForClass(pc.cls, type)) return false;
+  const slot = game.rng.random(3);
+  const index = type * 45 + level * 3 + slot;
+  if (pc.spellbook[index] > 0) return false;
+  goodNews(game);
+  // DS:30da, the two lines of spell_name_to_menu, 30f6, 3114
+  game.say(
+    'YOU HAVE FOUND A SPELLBOOK.',
+    ...spellNameToMenu(level, type),
+    'HIT ANY KEY FOR A DESCRIPTION',
+    '  OF THE SPELL.',
+  );
+  pc.spellbook[index] = 1;
+  return true;
+}
+
+/**
+ * drop_scroll (exe 3000:a870, unf.c "drop_scroll"): a scroll of one spell. A fighter (0) and a
+ * monk (2) get none, and a sage (5) passes the gate on a roll thirty higher.
+ *
+ * The spell's level is rolled out of half the floor plus two, so a scroll found on floor 1 is a
+ * level 1 or 2 spell and one found on floor 20 can be anything up to level 10.
+ */
+export function dropScroll(game: Game): void {
+  const pc = game.pc;
+  if (pc.cls === 0 || pc.cls === 2) return;
+  const sageBonus = pc.cls === 5 ? 30 : 0;
+  if (game.rng.random(350 - pc.level) > sageBonus + 15) return;
+  let level = game.rng.random(Math.trunc((pc.level + 4) / 2));
+  if (level > 9) level = game.rng.random(10);
+  const type = game.rng.random(4);
+  if (wrongListForClass(pc.cls, type)) return;
+  goodNews(game);
+  const slot = game.rng.random(3);
+  // DS:3124, the two lines of spell_name_to_menu, 30f6, 313d
+  game.say(
+    'YOU HAVE FOUND A SCROLL.',
+    ...spellNameToMenu(level, type),
+    'HIT ANY KEY FOR A DESCRIPTION',
+    '  OF THE SCROLL.',
+  );
+  pc.scrolls[type * 45 + level * 3 + slot] += 1;
+}
+
+/**
+ * drop_wand (exe 3000:aa37, unf.c "drop_wand"): a wand of two to six charges. A fighter (0) and
+ * a monk (2) get none; a sage (5) gets a wand of twice the level anyone else would.
+ *
+ * The type is rolled 1 to 3, so a wand is never a permanent spell, and the class rule the
+ * spellbook and the scroll follow is not applied here at all: a wizard can be handed a priestly
+ * wand.
+ */
+export function dropWand(game: Game): void {
+  const pc = game.pc;
+  if (pc.cls === 0 || pc.cls === 2) return;
+  if (game.rng.random(350 - pc.level) > 15) return;
+  goodNews(game);
+  let level =
+    pc.cls === 5
+      ? game.rng.random(Math.trunc(pc.level / 2))
+      : game.rng.random(Math.trunc(pc.level / 4));
+  if (level > 9) level = game.rng.random(10);
+  const type = game.rng.random(3) + 1;
+  const slot = game.rng.random(3);
+  const charges = game.rng.random(5) + 2;
+  // DS:314e 3165 with the charges between them, the two lines of spell_name_to_menu, 30f6, 316f
+  game.say(
+    `YOU FOUND A WAND WITH ${charges} CHARGES.`,
+    ...spellNameToMenu(level, type),
+    'HIT ANY KEY FOR A DESCRIPTION',
+    '  OF THE WAND.',
+  );
+  pc.wands[type * 45 + level * 3 + slot] += charges;
+}
+
+/**
+ * drop_paper (exe 3000:ac6f, unf.c "drop_paper"): a spell paper, which only a monk (2) is
+ * refused. A fighter (0) and a sage (5) are given papers of twice the level everyone else gets,
+ * which is the one thing in the drops a fighter is good at.
+ */
+export function dropPaper(game: Game): void {
+  const pc = game.pc;
+  if (pc.cls === 2) return;
+  if (game.rng.random(350 - pc.level) > 15) return;
+  goodNews(game);
+  let level =
+    pc.cls === 5 || pc.cls === 0
+      ? game.rng.random(Math.trunc(pc.level / 2))
+      : game.rng.random(Math.trunc(pc.level / 6));
+  if (level > 9) level = game.rng.random(10);
+  const type = game.rng.random(4);
+  const slot = game.rng.random(3);
+  // DS:317e, the two lines of spell_name_to_menu, 30f6, 3196
+  game.say(
+    'YOU FIND A SPELL PAPER.',
+    ...spellNameToMenu(level, type),
+    'HIT ANY KEY FOR A DESCRIPTION',
+    '  OF THE SPELL ON THE PAPER.',
+  );
+  pc.papers[type * 45 + level * 3 + slot] += 1;
+}
+
+/**
+ * find_item (exe 3000:ae27, unf.c "find_item"): one of the twelve things a kill can turn up,
+ * picked with an even twelfth chance each. A monk (2) finds nothing.
+ *
+ * The floor slosher is the only one of the twelve the character cannot have two of; finding a
+ * second one prints a message saying so and hands over nothing.
+ */
+export function findItem(game: Game): void {
+  const pc = game.pc;
+  if (pc.cls === 2) return;
+  switch (game.rng.random(12)) {
+    case 0:
+      pc.grenades += 1;
+      showHint(game, 31);
+      return;
+    case 1:
+      pc.teleportStones += 1;
+      showHint(game, 32);
+      return;
+    case 2:
+      pc.seeingStones += 1;
+      showHint(game, 33);
+      return;
+    case 3:
+      if (pc.slosher < 1) {
+        pc.slosher += 1;
+        showHint(game, 35);
+      } else {
+        showHint(game, 34);
+      }
+      return;
+    case 4:
+      pc.healingPotions += 1;
+      showHint(game, 36);
+      return;
+    case 5:
+      pc.regenRings += 1;
+      showHint(game, 37);
+      return;
+    case 6:
+      pc.str += 2;
+      showHint(game, 38);
+      return;
+    case 7:
+      pc.iq += 2;
+      showHint(game, 39);
+      return;
+    case 8:
+      pc.wis += 2;
+      showHint(game, 40);
+      return;
+    case 9:
+      pc.con += 2;
+      showHint(game, 41);
+      return;
+    case 10:
+      pc.dex += 2;
+      showHint(game, 43);
+      return;
+    case 11:
+      pc.luck += 2;
+      showHint(game, 44);
+  }
+}
+
+/**
+ * post_kill_heal (exe 3000:afc5, unf.c "post_kill_heal"): the cup of health a kill turns up one
+ * time in four, worth four to fourteen hit points and a few more below floor 7.
+ *
+ * A character already at full health is not offered one.
+ */
+export function postKillHeal(game: Game): void {
+  const pc = game.pc;
+  if (game.rng.random(4) !== 0 || pc.hp === pc.maxHp) return;
+  pc.hp += game.rng.random(11) + 4;
+  if (pc.level > 6) pc.hp += game.rng.random(4);
+  showHint(game, 45);
+  if (pc.hp > pc.maxHp) pc.hp = pc.maxHp;
+}
+
+/**
+ * post_kill_sp (exe 3000:b063, unf.c "post_kill_sp"): the ball of thought a kill turns up one
+ * time in six, worth exactly one spell point. A fighter (0) gets none, and neither does a
+ * character already at full spell points.
+ */
+export function postKillSp(game: Game): void {
+  const pc = game.pc;
+  if (game.rng.random(6) !== 0) return;
+  if (pc.sp === pc.maxSp || pc.cls === 0) return;
+  pc.sp += 1;
+  showHint(game, 46);
+}
+
+/**
+ * The comment drop_money adds under the amount, four for each of the eight sizes of find. The
+ * pairs are the two lines of the message box, in order (exe DS:6807 onwards).
+ */
+const MONEY_COMMENTS: string[][][] = [
+  [
+    ['  THAT MIGHT EVEN BUY YOU', "LUNCH (AT MORDONALD'S)!"],
+    ['  YOU COULD FEED A HUNGRY', 'CHILD WITH THAT MONEY.'],
+    ['  A FEW MORE FINDS LIKE THIS', "AND YOU'LL STILL BE POOR!"],
+    ['  YOU SURE KNOW HOW TO PICK', 'RICH OPPONENTS (CHUCKLE)...'],
+  ],
+  [
+    ['  NOT TOO BAD A CATCH, MONEY', "ISN'T EVERYTHING ANYWAY!"],
+    ['  MAYBE YOU NEED TO GO DOWN', 'DEEPER AND GET SOME REAL CASH!'],
+    ["  OKAY, BUT IT WON'T PUT THE", 'KIDS THROUGH COLLEGE...'],
+    ['  SHOULD BUY A PIZZA OR TWO', 'ANYWAY...'],
+  ],
+  [
+    ["  HEY, YOU'RE MAKING PROGRESS.", 'MIGHT HAVE TO KILL YOU SOON!'],
+    ["  SO NOW YOU THINK YOU'RE BAD.", 'WAIT TIL THE NEXT DUNGEON!'],
+    ["  STILL CAN'T EDUCATE THE KIDS,", 'BUT YOU CAN TAKE AN EVE. CLASS.'],
+    ['  NOW YOU CAN GET SEVERAL', 'PIZZAS...'],
+  ],
+  [
+    ["  DON'T LET YOUR HEAD GET TOO", "BIG JUST BECAUSE OF SOME 0'S!"],
+    ['  A FEW MORE OF THESE AND YOU', 'CAN BUY SOME STOCK!'],
+    ['  WORD ON THE STREET: CULTURE', 'CORPORATION IS A SURE WINNER!'],
+    ['  THIS MIGHT BUY THE DOORKNOB', 'OF A NEW HOUSE!'],
+  ],
+  [
+    ['  THAT IS A LOT OF ZEROS! TOO', "BAD WE'RE NOT TALKING RUBLES"],
+    ['  TOO BAD THAT DUMB GOVERNMENT', 'RAN UP ALL THAT DEBT!'],
+    ['  YOU CAN EDUCATE YOUR KIDS', 'NOW.'],
+    ['  TIME TO HAVE A SERIOUS PIZZA', 'PARTY...'],
+  ],
+  [
+    ['  NOT QUITE A MILLION YET, SO', 'GET BACK TO WORK!'],
+    ['  COULD REGISTER A LOT OF COOL', 'MORAFF GAMES FOR LESS THAN THAT!'],
+    ['  NOW YOU CAN EDUCATE YOUR KIDS', 'AT MORVARD UNIVERSITY.'],
+    ['  MIGHT EVEN BUY A POLITICIAN', 'OR TWO WITH THAT MUCH!'],
+  ],
+  [
+    ["  CAN WE SAY 'MILLION DOLLARS'?", 'NICE RING, EH?'],
+    ['  COULD BUY MORAFFWARE FOR THAT', 'KIND OF MONEY. MAYBE.'],
+    ['  YOU MIGHT BE ABLE TO BUY A', 'UNIVERSITY NOW!'],
+    ["  PERHAPS YOU'D LIKE TO BUY A", 'WHOLE PIZZA RESTAURANT?'],
+  ],
+  [
+    ["  YOU'RE REALLY GETTING RICH!", 'WAY TO GO!'],
+    ["  DON'T FORGET TO BUY A HOUSE.", 'A NICE ONE.'],
+    ['  THIS MIGHT BE ENOUGH TO', 'REFORM THE WHOLE SCOOL SYSTEM!'],
+    ['  THIS MUCH MONEY COULD GET', 'YOU ELECTED!'],
+  ],
+];
+
+/** The largest find each of {@link MONEY_COMMENTS}' first seven rows covers; the last takes the rest. */
+const MONEY_COMMENT_TIERS = [20, 200, 2000, 20000, 200000, 1000000, 10000000];
+
+/** What a character can carry in Greater-American Dollars (exe DS:0470's own limit). */
+export const DOLLARS_CAP = 2000000000;
+
+/** The largest find drop_money will hand over in one go before it rolls a smaller one. */
+export const MONEY_FIND_CAP = 107000000;
+
+/**
+ * drop_money (exe 4000:6aca, unf.c "drop_money"): the Greater-American Dollars a kill leaves.
+ *
+ * Nothing is found above floor 4 unless three rolls against the floor all land, and below it
+ * there is a one in four chance of a small find instead. A worshipper (1) and a wizard (3) are
+ * given more, floors 5 to 14 are worth a third more and floors 17 down a third less, a normal
+ * difficulty character is given up to 7,000 on top, and a sage (5) gets three times the lot.
+ */
+export function dropMoney(game: Game): void {
+  const pc = game.pc;
+  if (pc.dollars >= DOLLARS_CAP) {
+    if (!game.dollarCapWarned) {
+      showHint(game, 124);
+      game.dollarCapWarned = true;
+    }
+    return;
+  }
+  game.dollarCapWarned = false;
+  // srand(clock()) at 4000:6b0a, deliberately not ported: see the README's third departure.
+  const deep = pc.level + 1;
+  let amount = 0;
+  if (pc.level > 4) {
+    amount =
+      game.rng.random(deep * deep) * game.rng.random(deep) * game.rng.random(deep * deep);
+  }
+  if (amount === 0 && game.rng.random(4) === 1) amount = game.rng.random(deep * 200);
+  if (amount !== 0) {
+    if (pc.cls === 1 || pc.cls === 3) amount += game.rng.random(pc.level * 200);
+    if (pc.level < 5) amount += game.rng.random(pc.level * 200);
+    else if (pc.level < 15) amount += Math.trunc(amount / 3);
+    else if (pc.level > 16) amount -= Math.trunc(amount / 3);
+    if (pc.hard === 0) amount += game.rng.random(7000);
+    if (pc.cls === 5) amount *= 3;
+  }
+  if (amount > MONEY_FIND_CAP) {
+    amount = MONEY_FIND_CAP - game.rng.random(32000) * game.rng.random(1000);
+  }
+  if (amount === 0) return;
+  if (amount > DOLLARS_CAP - pc.dollars) amount = DOLLARS_CAP - pc.dollars;
+  pc.dollars += amount;
+  if (game.highSpeed) return;
+  const tier = MONEY_COMMENT_TIERS.findIndex((limit) => amount < limit);
+  const comment = MONEY_COMMENTS[tier === -1 ? MONEY_COMMENTS.length - 1 : tier][
+    game.rng.random(4)
+  ];
+  // DS:6789 67a5 67c2 67db 67e1, then the amount and 67fd, then the two comment lines
+  game.say(
+    '  YOU FIND GREATER-AMERICAN',
+    'DOLLARS! THESE CAN BE TRADED',
+    'FOR REAL CURRENCY AT ANY',
+    'BANK!',
+    '  YOU HAVE FOUND A TOTAL OF',
+    `${amount} DOLLARS.`,
+    ...comment,
+  );
+}
