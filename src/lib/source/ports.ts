@@ -23,6 +23,7 @@ import areaSource from '../map/area.ts?raw';
 import pathSource from '../map/path.ts?raw';
 import relocateSource from '../map/relocate.ts?raw';
 import stockingSource from '../map/stocking.ts?raw';
+import twinsSource from '../map/twins.ts?raw';
 import { snippet } from '../ui/source-snippet';
 
 /** Every file the app shows the source of, keyed by the path it lives at in the repository. */
@@ -42,6 +43,7 @@ export const SOURCES = {
   'src/lib/map/path.ts': pathSource,
   'src/lib/map/area.ts': areaSource,
   'src/lib/map/relocate.ts': relocateSource,
+  'src/lib/map/twins.ts': twinsSource,
   'src/lib/calculators/drops.ts': dropsSource,
 };
 

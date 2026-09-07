@@ -415,6 +415,27 @@ In the code: [myrand](source:ts/unfmap.js/myrand),
 [why every dungeon is the same](formula:map-hash) and
 [where the buildings are](formula:town-buildings).
 
+### Seventeen floors are dealt the same walls twice
+
+The wall pattern of every sixteen-by-sixteen block is a remainder of 25 taken from the hash, and
+the module enters the hash through two terms that do not depend on the block. On a floor where
+those terms come out, for two modules, to numbers a multiple of 25 apart, every block draws the
+same pattern in both, and the two floors are identical wall for wall over the whole area the game
+shows. It happens on seventeen floor numbers, three of them in three modules at once:
+
+- Modules I and II: the towns. Modules I, II and V: floor 3. Modules I and III: floors 10 and 22.
+- Modules II and V: floor 8. Modules II, IV and V: floor 13. Modules II and III: floors 15 and 43.
+  Modules II and IV: floor 16.
+- Modules III and IV: floors 2 and 8. Modules III and V: floors 7, 33 and 53.
+- Modules IV and V: floors 22, 47 and 56.
+
+Everything laid on top of the walls, the ladders, chutes, trap doors and town buildings, is rolled
+from other remainders and differs between them. The map explorer says so under the floor's name
+and links across.
+
+In the code: [TWIN_FLOORS](source:ts/twins.ts/TWIN_FLOORS), [myrand](source:ts/unfmap.js/myrand)
+and [why every dungeon is the same](formula:map-hash).
+
 ## Town and money
 
 ### Two kills in the same second pay exactly the same
