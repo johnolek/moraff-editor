@@ -23,34 +23,58 @@ the variable sit next to each other:
     mov bx, 0B4F2h            ; the current health points
     INT 3Fh $67
 
+Nine of the fields are not stored as the number the player sees.  The game adds
+a fixed amount on the way out and takes the same amount off on the way in, so a
+character file opened in a text editor shows nothing worth changing.  The six
+characteristics are scaled as well as shifted.  Reading them back:
+
+    b6bf  mov di, 0D744h      ; -237
+    b6c2  INT 3Fh $7F         ; the value just read, plus -237
+    b6c5  mov di, 0BB60h      ; 3
+    b6c8  INT 3Fh $89         ; divided by three
+    b6cd  INT 3Fh $7D         ; into characteristic I
+
+so a characteristic is `(stored - 237) / 3`.  Writing them back, at 1000:B342,
+is the same arithmetic the other way round, and CHCHAR.EXE creates the file the
+same way at its own offset 127E.  Six to twenty-two is the range that produces,
+and CHCHAR tells the player to hold out for "a high strength (22 or more)".
+
+The other eight are shifted only.  `SHIFT` below gives the constant for each,
+and the address is where 1000:B674 subtracts it.
+
 The class is the tenth value: the statistics screen compares it with 1 and
 prints " FIGHTER" or " WIZARD".
 
-What the six characteristics on the first six lines mean is settled -- they are
-the six CHCHAR.EXE rolls, in its display order -- but not how they are stored:
-across the five shipped characters every one of the thirty values is a multiple
-of three between 255 and 303, so the file holds something like `3 * (stat + 81)`
-rather than the number the player is shown.  The same doubt covers the second
-field of line 8, which is 476 in four of the five characters.  Those are marked
-`scaled?` below.
+The player level is a plain count that starts at zero: a new character gets
+`level = 0` at 1000:3E39, reincarnation resets it to 0 at 1000:A172, buying a
+level at the temple adds 1 at 1000:2044, and the statistics screen prints the
+variable with nothing done to it at 1000:1BAF.  So the 476 four of the five
+shipped characters hold is level 0, and 5.EXE's 480 is level 4.
 """
 import argparse
-import sys
 
 import mbf
 import read_bsave
 
 CHARACTERISTICS = ["strength", "intelligence", "wisdom", "health", "agility", "laziness"]
 
-# (label, count) for each group of lines, in the order 1000:B674 reads them.
-# A label of None is a field whose meaning is not known yet.
-LAYOUT = [
-    ("characteristics (scaled?)", CHARACTERISTICS),
-    ("group 2", [None, None, None, "class (1 fighter, else wizard)", None]),
-    ("group 3", ["experience", "player level (scaled?)",
-                 "health points, maximum", "health points, current", None]),
-    ("group 4", ["player weight", None, "pocket money", "money in bank",
-                 None, "spell points", None, None, None, None]),
+# The first 26 values, in the order the load routine reads them, as
+# (label, shift, divisor).  A label of None is a field whose meaning is not
+# known yet.  The address on each shifted field is where 1000:B674 subtracts.
+FIELDS = [
+    ("characteristics", [(name, 237, 3) for name in CHARACTERISTICS]),          # b6bf
+    ("group 2", [(None, 0, 1), (None, 0, 1), (None, 0, 1),
+                 ("class (1 fighter, else wizard)", 0, 1), (None, 0, 1)]),
+    ("group 3", [("experience", 12316, 1),                                      # b74a
+                 ("player level", 476, 1),                                      # b757
+                 ("health points, maximum", 376, 1),                            # b764
+                 ("health points, current", 176, 1),                            # b76f
+                 (None, 0, 1)]),
+    ("group 4", [("player weight", 71, 1),                                      # b7d5
+                 (None, 4434, 1),                                               # b7e2
+                 ("pocket money", 223, 1),                                      # b7ef
+                 ("money in bank", 0, 1), (None, 0, 1), ("spell points", 0, 1),
+                 (None, 0, 1), (None, 0, 1), (None, 0, 1), (None, 0, 1)]),
 ]
 ARRAYS = [("array A", 10), ("array B", 10), ("array C", 70)]
 PAIRS = ("array D and E", 12)
@@ -70,15 +94,22 @@ def values(path):
     return out
 
 
+def decode(stored, shift, divisor):
+    return (stored - shift) / divisor
+
+
 def show(path):
     numbers = values(path)
     print("=" * 72)
     print("%s: %d values" % (path, len(numbers)))
     at = 0
-    for title, fields in LAYOUT:
+    for title, fields in FIELDS:
         print("  %s:" % title)
-        for name in fields:
-            print("    %-28s %s" % (name or "?", mbf.tidy(numbers[at])))
+        for name, shift, divisor in fields:
+            stored = numbers[at]
+            plain = decode(stored, shift, divisor)
+            scale = "" if plain == stored else "   (stored as %s)" % mbf.tidy(stored)
+            print("    %-30s %s%s" % (name or "?", mbf.tidy(plain), scale))
             at += 1
     for title, count in ARRAYS:
         print("  %-14s %s" % (title + ":", " ".join(mbf.tidy(v) for v in numbers[at:at + count])))
