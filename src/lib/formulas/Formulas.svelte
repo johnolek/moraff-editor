@@ -1,4 +1,5 @@
 <script lang="ts">
+  import SourceLink from '../source/SourceLink.svelte';
   import PixelText from '../ui/PixelText.svelte';
   import { formulaCode, searchFormulas } from './formulas';
 
@@ -43,7 +44,7 @@
               <dt>Inputs</dt>
               <dd>{formula.inputs}</dd>
               <dt>Where it comes from</dt>
-              <dd>{formula.origin}</dd>
+              <dd>{formula.origin}<SourceLink ts={formula.code ?? undefined} c={formula.c} /></dd>
             </dl>
             {#if code}
               <pre>{code}</pre>

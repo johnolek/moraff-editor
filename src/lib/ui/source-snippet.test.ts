@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { allFormulas, formulaCode } from '../formulas/formulas';
+import { decompSection } from '../source/decomp';
 import { snippet } from './source-snippet';
 
 const SOURCE = [
@@ -76,6 +77,12 @@ describe('the code every formula points at', () => {
   it('is still there under the name the entry gives', () => {
     for (const formula of allFormulas()) {
       expect(() => formulaCode(formula), formula.title).not.toThrow();
+    }
+  });
+
+  it('names a decompiled function the decompilation really holds', () => {
+    for (const formula of allFormulas()) {
+      if (formula.c) expect(decompSection(formula.c), formula.title).not.toBeNull();
     }
   });
 });
