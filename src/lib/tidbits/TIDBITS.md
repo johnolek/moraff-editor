@@ -704,12 +704,21 @@ and 5-bit colours, and the monster file starts with the two ladder pictures befo
 In the code: [where the teleporters are](formula:teleporter-sides) and
 [where a teleporter drops you](formula:teleporter-landing).
 
-### The hint files shipped with the game
+### The .uhp files are the help screens, not the hints
 
-`0.uhp` through `29.uhp` in the game folder are the plain-text originals of the snake's hints,
-colour codes and all, one letter per line. The game reads the compiled `UH.BIN` instead and
-never touches them. Whoever built the distribution copied the source files in by mistake, so
-every hint in the game has been sitting there in the open since 1993.
+`0.uhp` through `29.uhp` in the game folder read like the snake's material, and they are not it.
+They are the F1 help screens, and the game opens one every time you ask for help: the menu the
+snake called Smarty puts up turns the key you pressed into a topic number, and the reader builds
+the name `<n>.uhp` and prints the file a character at a time. A letter of `rgbynow` in the text
+is a colour code rather than a character, taken out and used to colour the line it sits in, which
+makes them the only one of the three files that comes in more than one colour.
+
+What the snake actually says is in `UH.BIN`, 138 messages of eight lines. What the stone tablet
+says is in `UH2.BIN`, 86 of four: the town greetings, the congratulations for a level, the
+bosses' taunts.
+
+In the code: [readHelpScreen](source:ts/hints.ts/readHelpScreen),
+[giveHint](source:ts/hints.ts/giveHint) and [tabletMessage](source:ts/hints.ts/tabletMessage).
 
 ### The intro demo has its own dungeon
 

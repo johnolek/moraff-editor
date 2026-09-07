@@ -88,10 +88,12 @@ teleporter rule — are in the FAQ and the RE notes; this list is the rest.
   menus stop at key 6, so they can only be found.
 * **The intro demo has maps.**  `010.DUN` / `011.DUN` are explored-map files for the
   attract-mode demo character; they are deliberately not valid game maps.
-* **The `.uhp` files are the hint sources.**  `0.uhp`..`29.uhp` in the game folder are the
-  plain-text originals of the snake's hints, with one-letter colour codes (`y`, `o`, `r`,
-  `e`) at the start of lines — the compiled `UH.BIN` is what the game reads.  Whoever built
-  the distribution copied the source files in with the game.
+* **The `.uhp` files are the F1 help screens.**  `0.uhp`..`29.uhp` in the game folder are not
+  the snake's hints: `read_spell_help` (3000:7c6d) builds the name `<n>.uhp` out of the topic
+  number the F1 menu picked and reads one every time help is asked for.  A letter of `rgbynow`
+  in the text is a colour code rather than a character, and `e` ends the page.  The snake's
+  spoken hints are `UH.BIN` (138 messages of eight lines, `give_hint` 2000:313a) and the stone
+  tablets `UH2.BIN` (86 of four, `tablet_message` 3000:931c).
 * **`f_bug.exe` and `fix.bat`.**  The README's "if the map keeps telling you to GO EAST,
   type FIX" deletes every `*.MAP` and runs `f_bug`, which "puts the special monster back".
   The boss position is remembered per section in the save (`bossX/bossY`); the homing

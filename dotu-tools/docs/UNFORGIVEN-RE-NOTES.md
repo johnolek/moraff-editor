@@ -645,8 +645,12 @@ description lines. `parse_mdbin.py` prints the whole thing. `ldrain` −30 means
 
 * `UNFDUNG.BIN` — `dwall[25][2][2][8][16]`, 12800 bytes of wall-drawing tiles.
 * `UH.BIN` — hint text, 8 lines per hint, `give_hint(n)` reads lines 8n..8n+7
-  (`hint.py`). `UH2.BIN` — the "message from the office of" text.
-* `*.UHP` — help screens; first byte is a colour code, `~` separates pages.
+  (`hint.py`), 138 hints. `UH2.BIN` — the stone-tablet text, 4 lines per message, 86 of them,
+  read the same way by `tablet_message` 3000:931c: town greetings, level-up congratulations,
+  the "message from the office of" taunts and the notes under a monster.
+* `*.UHP` — the F1 help screens, read by `read_spell_help` 3000:7c6d.  A letter of `rgbynow`
+  anywhere in the text is a colour code rather than a character; `e` ends a page, and a second
+  `e` ends the file where anything else (the files use `X`) starts the next page.
 * `USPELLS.HLP` — 120 `~`-terminated spell descriptions in type/level/slot order.
 * `UROLL.TXT` — character-creation text, fixed line counts per screen.
 * `*.PIC` — decoded: a sequence of 256x200 run-length images with a 201-entry row table and
