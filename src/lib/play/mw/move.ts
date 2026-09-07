@@ -58,7 +58,7 @@ export function waitAMoment(turn: MwTurn): void {
  * have a door between them. Anything else — an open side, a door, a secret door — is walked
  * through, and the step spends a moment.
  */
-export async function resolveStep(turn: MwTurn): Promise<void> {
+export function resolveStep(turn: MwTurn): void {
   const { game, step } = turn;
   const pc = game.pc;
   const side = sideStepped(turn);

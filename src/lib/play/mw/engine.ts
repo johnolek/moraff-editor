@@ -250,7 +250,10 @@ export class MwGameSession {
     return this.fighting(() => attackTiming(this.game));
   }
 
-  /** Run something whose lines belong at the top left of the screen rather than in the box. */
+  /**
+   * Run something whose lines belong at the top left of the screen rather than in the box. What
+   * it runs has to finish before it returns, so nothing asynchronous belongs here.
+   */
   fighting<T>(run: () => T): T {
     const said: string[][] = [];
     const outer = this.bannerSink;
@@ -421,7 +424,6 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.paletteBlue]: { c: 'movecontrol, the 0x2a branch', run: (turn) => mwNotBuiltYet(turn.game, 'DARKEN THE BLUE IN THE PALETTE') },
 };
 
-
 /**
  * movecontrol's 0x1b branch: Escape fills the top left of the screen with the background colour,
  * which takes down both the message box and the fight's banner.
@@ -463,7 +465,7 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
       await mwDie(session);
       if (session.over) return;
     }
-    await session.fighting(() => resolveStep(turn));
+    session.fighting(() => resolveStep(turn));
     await session.settle();
     recentreTheMap(session);
   }
