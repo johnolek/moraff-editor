@@ -35,9 +35,16 @@ export function distantOf(dungeon: RevDungeon, monster: RevMonster): RevPicture 
   return dungeon.distants.find((picture) => picture.index === monster.distant) ?? null;
 }
 
-/** The monsters of either dungeon that share a picture, the one asked about included. */
+/**
+ * The other monsters of the dungeon drawn with the same close-up picture.
+ *
+ * Both dungeons hold a name twice over in places, and two lines of the same name are the same
+ * monster to look at, so they are left out rather than listed as sharing with themselves.
+ */
 export function drawnAlike(dungeon: RevDungeon, monster: RevMonster): RevMonster[] {
-  return dungeon.monsters.filter((other) => other.closeUp === monster.closeUp);
+  return dungeon.monsters.filter(
+    (other) => other.closeUp === monster.closeUp && other.name !== monster.name,
+  );
 }
 
 /** Every dungeon, for a caller that wants to walk both sets. */

@@ -13,9 +13,11 @@ describe('which picture a monster is drawn with', () => {
   });
 
   it('finds the monsters that share a picture', () => {
-    // Five of the first dungeon's names are drawn with the same hooded figure.
+    // Five of the first dungeon's names share one hooded figure; the other four are these.
     const names = drawnAlike(DUNGEONS[0], named(0, 'WIGHT')).map((monster) => monster.name);
-    expect(names).toEqual(['ZOMBIE', 'TROLL', 'WIGHT', 'WRAITH', 'SPECTOR']);
+    expect(names).toEqual(['ZOMBIE', 'TROLL', 'WRAITH', 'SPECTOR']);
+    // The second dungeon holds VAMPIRE twice; the other line of it is not something else to see.
+    expect(drawnAlike(DUNGEONS[1], named(1, 'VAMPIRE'))).toEqual([]);
   });
 });
 

@@ -32,10 +32,9 @@
   /** How many screen pixels a picture pixel is drawn as. */
   const CLOSE_UP_SCALE = 8;
   const DISTANT_SCALE = 8;
-  /** The level a character is on in the worked line, when the monster reaches that deep. */
-  const EXAMPLE_PLAYER_LEVEL = 5;
-  /** A machine as fast as the one 1000:BF60's calibration was written for. */
-  const EXAMPLE_SPEED = 1;
+  /** A machine as fast as the one 1000:BF60's calibration was written for, at which the odds sit
+   *  on their floor whatever the two levels are. */
+  const FLOOR_ODDS = monsterTurnOdds(0, 0, 1);
 
   // The parent keys this card on the monster, so the controls start fresh for each one.
   let palette = $state(0);
@@ -43,21 +42,21 @@
 
   const closeUp = $derived(closeUpOf(dungeon, entry));
   const distant = $derived(distantOf(dungeon, entry));
-  const alike = $derived(drawnAlike(dungeon, entry).filter((other) => other.index !== entry.index));
+  const alike = $derived(drawnAlike(dungeon, entry));
   const never = $derived(neverMet(entry));
   const here = $derived(slotsOf(entry, level));
   const deepest = $derived(here.length > 0 ? Math.max(...here.map((slot) => slot.monsterLevel)) : monsterLevelOf(level));
-  const odds = $derived(monsterTurnOdds(deepest, EXAMPLE_PLAYER_LEVEL, EXAMPLE_SPEED));
   const kind = $derived(monsterKind(entry.index, dungeon.number));
   const kindNotes = $derived(describeKind(kind));
   const respawn = $derived(respawnHitPoints(level));
+  const slotsHere = $derived(dungeon.monsters.reduce((sum, monster) => sum + monster.count, 0));
 
   const percent = (value: number) => `${Math.round(value * 100)}%`;
 
   const numbers = $derived([
     ['Close-up picture', `${entry.closeUp} of ${dungeon.closeUps.length}`],
     ['Distant picture', `${entry.distant} of ${dungeon.distants.length}`],
-    ['Slots on the disk', never ? 'none' : `${entry.count} of the ${dungeon.monsters.reduce((sum, m) => sum + m.count, 0)}`],
+    ['Slots on the disk', never ? 'none' : `${entry.count} of the ${slotsHere.toLocaleString()}`],
     ['Its own level', entry.monsterLevel ? `${entry.monsterLevel.min}–${entry.monsterLevel.max}` : '—'],
     ['Hit points', entry.hitPoints ? `${entry.hitPoints.min}–${entry.hitPoints.max}` : '—'],
     ['Kind', String(kind)],
@@ -198,15 +197,17 @@
     <section>
       <SectionHeading title="How it moves" />
       <p>
-        Monsters walk while you stand still: the dungeon polls the keyboard instead of waiting on it, and each pass has
-        a one in {odds} chance of moving one. On its turn it comes straight at you {percent(chaseChance(deepest))} of the
-        time and wanders the rest. Once it is beside you the game stops polling and waits for your key, so the fight is
-        turn by turn.
+        Monsters walk while you stand still: the dungeon polls the keyboard instead of waiting on it, and every pass
+        rolls a one in <code>INT((165 - {deepest} + your level) * speed / 20)</code> chance of moving one, never better
+        than one in {FLOOR_ODDS}. On its turn it comes straight at you {percent(chaseChance(deepest))} of the time and
+        wanders the rest. Once it is beside you the game stops polling and waits for your key, so the fight is turn by
+        turn.
       </p>
       <p class="note">
-        The one in {odds} is for a level {EXAMPLE_PLAYER_LEVEL} character against the deepest of these on level {level},
-        on a machine as fast as the one the game calibrates itself against. The game measures the machine at startup and
-        divides by what it measures, so the monsters keep the same pace whatever it is running on.
+        The {deepest} is the level of the deepest of these on level {level}. Speed is how many times faster your machine
+        is than the one the game measures itself against at startup, so a faster machine polls proportionally more often
+        and the monsters keep the same pace whatever it is running on. On that reference machine the floor is what
+        decides it.
       </p>
     </section>
   {/if}
