@@ -42,11 +42,16 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: MapSquare[][], op
     const h = Math.round(originY + (y + 1) * cell) - y0;
     for (let x = firstX; x <= lastX; x++) {
       const square = rows[y][x];
-      if (square.solid) continue;
+      const seen = options.explored?.(x, y) ?? false;
+      if (square.solid && !seen) continue;
       const x0 = Math.round(originX + x * cell);
       const w = Math.round(originX + (x + 1) * cell) - x0;
+      if (square.solid) {
+        drawExploredRock(ctx, x0, y0, w, h);
+        continue;
+      }
       drawSquare(ctx, square, x0, y0, w, h, options.floor, options.teleporterHue, game);
-      if (options.explored?.(x, y)) drawExplored(ctx, x0, y0, w, h);
+      if (seen) drawExplored(ctx, x0, y0, w, h);
     }
   }
 }
@@ -76,6 +81,13 @@ export function drawSquare(
  *  drawn, so the sides and the glyph show through it. */
 export function drawExplored(ctx: CanvasRenderingContext2D, x0: number, y0: number, w: number, h: number): void {
   ctx.fillStyle = palette.explored;
+  ctx.fillRect(x0 + 1, y0 + 1, w, h);
+}
+
+/** A square a loaded explored map has seen that this dungeon makes rock. The game never walks
+ *  a character onto rock, so the square is drawn as a warning rather than left out. */
+export function drawExploredRock(ctx: CanvasRenderingContext2D, x0: number, y0: number, w: number, h: number): void {
+  ctx.fillStyle = palette.exploredRock;
   ctx.fillRect(x0 + 1, y0 + 1, w, h);
 }
 

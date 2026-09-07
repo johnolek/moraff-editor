@@ -5,9 +5,11 @@
   interface Props {
     description: SquareDescription | null;
     notes?: string[];
+    /** What a loaded explored map says about this square, when it has seen it. */
+    explored?: string | null;
   }
 
-  let { description, notes = [] }: Props = $props();
+  let { description, notes = [], explored = null }: Props = $props();
 
   const line = $derived(description && featureLine(description));
 </script>
@@ -17,6 +19,9 @@
     <SectionHeading title={description.title} />
     {#if line}
       <p class="feature">{line}</p>
+    {/if}
+    {#if explored}
+      <p class="explored">{explored}</p>
     {/if}
     {#if !description.rock && !description.beyondMap}
       {#each notes as note}
@@ -42,6 +47,11 @@
     margin: 0;
     font-size: 13px;
     color: var(--accent);
+  }
+  .explored {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--mw-green);
   }
   .note {
     margin: 4px 0 0;

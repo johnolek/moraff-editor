@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeFeature, describeMonster, describeNote, describeSquare, describeTeleporter, featureLine } from './describe';
+import { describeExplored, describeFeature, describeMonster, describeNote, describeSquare, describeTeleporter, featureLine } from './describe';
 import { UNFORGIVEN_MAP, type MapSquare } from './game';
 
 function square(overrides: Partial<MapSquare> = {}): MapSquare {
@@ -50,6 +50,16 @@ describe('featureLine', () => {
     expect(featureLine(describeSquare(square({ solid: true }), null, 5, 6, UNFORGIVEN_MAP, 0))).toBe('Rock');
     expect(featureLine(describeSquare(square(), { kind: 'town', building: 2 }, 5, 6, UNFORGIVEN_MAP, 0))).toBe('Temple');
     expect(featureLine(describeSquare(square({ solid: true }), null, 5, 105, UNFORGIVEN_MAP, 0))).toBe("Beyond the game's map: nothing can reach this square.");
+  });
+});
+
+describe('describeExplored', () => {
+  it('says the file has seen an open square', () => {
+    expect(describeExplored(false, 0)).toBe('Explored in the .DUN file you loaded.');
+  });
+
+  it('says which dungeon makes a seen square rock', () => {
+    expect(describeExplored(true, 7)).toBe('Explored in the .DUN file you loaded, but rock in dungeon 7.');
   });
 });
 

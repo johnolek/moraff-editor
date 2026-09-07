@@ -41,4 +41,16 @@ describe('drawFloor', () => {
     expect(fills.filter((fill) => fill.x === 3 && fill.y === 4)).toHaveLength(2);
     expect(fills.filter((fill) => fill.x === 4 && fill.y === 4)).toHaveLength(1);
   });
+
+  it('fills a seen square this dungeon makes rock, which nothing else draws', () => {
+    const rock = openFloor();
+    rock[3][2] = { ...rock[3][2], solid: true };
+    const options = { cell: 1, originX: 0, originY: 0, width: WIDTH, height: HEIGHT, floor: 1, teleporterHue: null, game: UNFORGIVEN_MAP };
+    const seen: { x: number; y: number }[] = [];
+    drawFloor(recordingContext(seen), rock, { ...options, explored: (x, y) => x === 2 && y === 3 });
+    expect(seen.filter((fill) => fill.x === 3 && fill.y === 4)).toHaveLength(1);
+    const unseen: { x: number; y: number }[] = [];
+    drawFloor(recordingContext(unseen), rock, options);
+    expect(unseen.filter((fill) => fill.x === 3 && fill.y === 4)).toHaveLength(0);
+  });
 });

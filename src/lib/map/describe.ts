@@ -56,6 +56,12 @@ export function featureLine(description: SquareDescription): string | null {
   return description.rock ? 'Rock' : description.feature;
 }
 
+/** What the panel says about a square a loaded explored map has seen. */
+export function describeExplored(rock: boolean, dungeon: number): string {
+  const seen = 'Explored in the .DUN file you loaded';
+  return rock ? `${seen}, but rock in dungeon ${dungeon}.` : `${seen}.`;
+}
+
 export function describeNote(note: Note): string {
   if (note.kind === 'oneWayUp') return `One way: no ladder back down from floor ${note.topFloor}.`;
   return `Lands on a chute to floor ${note.chuteFloor}.`;

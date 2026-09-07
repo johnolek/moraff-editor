@@ -7,8 +7,8 @@
   import { isAppHistoryState, type AppHistoryState } from '../history';
   import { forEachShownSquare, isOnMap } from './area';
   import { downloadFloorPng } from './export-png';
-  import { describeMonster, describeNote, describeSquare, featureLine } from './describe';
-  import { addDunFloors, exploredCounts, readDunFile, type ExploredFloors } from './explored';
+  import { describeExplored, describeMonster, describeNote, describeSquare, featureLine } from './describe';
+  import { addDunFloors, exploredCounts, isExplored, readDunFile, staleFloorWarning, type ExploredFloors } from './explored';
   import ExploredMaps from './ExploredMaps.svelte';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
@@ -89,6 +89,9 @@
   const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, game, dungeon) : null);
   const cursorNotes = $derived(
     cursor && cursorSquare && isOnMap(cursor, game.area) ? squareNotes(lookup, floor, cursorSquare, cursor.x, cursor.y).map(describeNote) : [],
+  );
+  const cursorExplored = $derived(
+    cursor && cursorSquare && exploredHere && isExplored(exploredHere, cursor.x, cursor.y) ? describeExplored(cursorSquare.solid, dungeon) : null,
   );
   const cursorMonster = $derived(cursor ? monsterAt(monsters, cursor.x, cursor.y) : null);
   const selectedMonster = $derived(selected ? monsterAt(monsters, selected.x, selected.y) : null);
@@ -548,7 +551,7 @@
       Drag to pan, scroll to zoom. Arrow keys walk you across the floor, U and D take the ladder, chute or trap
       door you stand on, PgUp/PgDn change floor.
     </p>
-    <SquareInfo description={cursorDescription} notes={cursorNotes} />
+    <SquareInfo description={cursorDescription} notes={cursorNotes} explored={cursorExplored} />
     <Selection
       {selected}
       {route}
@@ -573,7 +576,13 @@
         onpin={pinMonster}
       />
     {:else}
-      <ExploredMaps floors={explored} errors={dunErrors} onfiles={loadDunFiles} onclear={clearDunFiles} />
+      <ExploredMaps
+        floors={explored}
+        errors={dunErrors}
+        warning={staleFloorWarning(exploredCount.rock, dungeon)}
+        onfiles={loadDunFiles}
+        onclear={clearDunFiles}
+      />
     {/if}
     <Legend
       {game}

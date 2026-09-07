@@ -7,11 +7,13 @@
     floors: ExploredFloors;
     /** Why the files last given could not be read, one line each. */
     errors: string[];
+    /** What is wrong with the floor being shown, when a file has seen squares it makes rock. */
+    warning: string | null;
     onfiles: (files: File[]) => void;
     onclear: () => void;
   }
 
-  let { floors, errors, onfiles, onclear }: Props = $props();
+  let { floors, errors, warning, onfiles, onclear }: Props = $props();
 
   let dragover = $state(false);
   let fileInput = $state<HTMLInputElement>();
@@ -72,6 +74,9 @@
   {#if floors.size}
     <p class="loaded">{loadedSummary(floors)}</p>
   {/if}
+  {#if warning}
+    <p class="warning">{warning}</p>
+  {/if}
   {#each errors as error}
     <p class="error">{error}</p>
   {/each}
@@ -125,6 +130,12 @@
     margin: 8px 0 0;
     font-size: 12px;
     color: var(--ink);
+  }
+  .warning {
+    margin: 8px 0 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--warn);
   }
   .error {
     margin: 8px 0 0;
