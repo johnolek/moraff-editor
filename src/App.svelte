@@ -86,6 +86,7 @@
   </main>
   <main class:hidden={app.tab !== 'tidbits'}>
     <Tidbits />
+  </main>
   <main class:hidden={app.tab !== 'roller'}>
     <NewCharacter />
   </main>
