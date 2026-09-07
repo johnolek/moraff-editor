@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { bundledMwDungeon } from '../../game/mw-dungeon';
-import { blankMwCharacter, type MwCharacter } from '../../game/mw-port/state';
+import { blankMwCharacter, MW_SQUARE_PLAYER, mwOccupantAt, type MwCharacter } from '../../game/mw-port/state';
 import { BorlandRng, type Rng } from '../../game/port/rng';
 import { MORAFFS_WORLD_MAP, type MapSquare } from '../../map/game';
 import { MwGameSession, runMwMoveControl, startMwGame, type MwCharacterFile } from './engine';
 import { MW_KEY } from './keys';
-import { saveMwPlayer } from './record';
+import { loadMwPlayer, saveMwPlayer } from './record';
 
 /** A character file that lives in the test rather than on the roster. */
 export function mwCharacterFile(overrides: Partial<MwCharacter> = {}): MwCharacterFile & { dead: boolean } {
@@ -137,5 +137,78 @@ describe('the message box', () => {
     expect(session.box.length).toBeGreaterThan(0);
     await pressMw(session, MW_KEY.escape);
     expect(session.box).toEqual([]);
+  });
+});
+
+describe('an edit in the save editor', () => {
+  /** The record as the editor leaves it: the character the file holds, with fields changed. */
+  function edited(file: MwCharacterFile, overrides: Partial<MwCharacter>): Uint8Array<ArrayBuffer> {
+    return saveMwPlayer({ ...loadMwPlayer(file.bytes), ...overrides }, file.bytes);
+  }
+
+  /** Let the loop take an edit without pressing anything. */
+  const settle = () => new Promise((resolve) => setTimeout(resolve));
+
+  it('plays on with the character the editor wrote', async () => {
+    const file = mwCharacterFile({ floor: 0, dir: 0, ...townWalk(), str: 20 });
+    const session = playingMw(file);
+    await settle();
+    session.recordEdited(edited(file, { str: 99 }));
+    await settle();
+    expect(session.game.pc.str).toBe(99);
+  });
+
+  it('moves the character about the floor they are on', async () => {
+    const start = townWalk();
+    const file = mwCharacterFile({ floor: 0, dir: 0, ...start });
+    const session = playingMw(file);
+    await settle();
+    const moved = findMwSquare(0, (square, x, y) => square.ladder === 0 && (x !== start.x || y !== start.y));
+    session.recordEdited(edited(file, moved));
+    await settle();
+    expect(session.view().place).toMatchObject(moved);
+    expect(mwOccupantAt(session.game, start.x, start.y)).toBe(-1);
+    expect(mwOccupantAt(session.game, moved.x, moved.y)).toBe(MW_SQUARE_PLAYER);
+  });
+
+  it('enters the floor the record puts the character on', async () => {
+    const file = mwCharacterFile({ floor: 0, dir: 0, ...townWalk() });
+    const session = playingMw(file);
+    await settle();
+    const landing = findMwSquare(
+      3,
+      (square, x, y) =>
+        square.ladder === 0 &&
+        bundledMwDungeon.chute(x, y, 3, 0) === 3 &&
+        bundledMwDungeon.trapdoor(x, y, 3, 0) === -1,
+    );
+    session.recordEdited(edited(file, { floor: 3, ...landing }));
+    await settle();
+    expect(session.view().place).toMatchObject({ floor: 3, ...landing });
+    expect(session.floors.remembered[0]).toBe(3);
+  });
+
+  it('leaves the game alone when the record the game saved comes back', async () => {
+    const file = mwCharacterFile({ floor: 0, dir: 0, ...townWalk(), str: 20 });
+    const session = playingMw(file);
+    await settle();
+    session.save();
+    // Everything the game has done since its own save would be undone by reading the record
+    // again, which is what this asks about.
+    session.game.pc.str = 99;
+    session.recordEdited(file.bytes);
+    await settle();
+    expect(session.game.pc.str).toBe(99);
+  });
+
+  it('waits for the screen the game is showing to come down', async () => {
+    const file = mwCharacterFile({ floor: 0, dir: 0, ...townWalk(), str: 20 });
+    const session = playingMw(file);
+    await pressMw(session, MW_KEY.viewPrepSpells);
+    session.recordEdited(edited(file, { str: 99 }));
+    await settle();
+    expect(session.game.pc.str).toBe(20);
+    await pressMw(session, MW_KEY.escape);
+    expect(session.game.pc.str).toBe(99);
   });
 });

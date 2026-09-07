@@ -35,6 +35,7 @@ import {
   showSpellsInForce,
   showVitalStats,
 } from './letters';
+import { leaveSquare } from './moment';
 import { resolveStep, turnAndStep, waitAMoment } from './move';
 import { loadMwPlayer, saveMwPlayer } from './record';
 import { mwMessageBoxLines, MW_MESSAGE_BOX } from './screens';
@@ -54,6 +55,12 @@ import { explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
 /** How many keys are kept for a loop that is not waiting for one yet. */
 const KEY_QUEUE = 4;
+
+/**
+ * Not a key: what the loop's wait hands back when the save editor has written the record while
+ * the game was waiting for one, so the pass starts again with the character it now describes.
+ */
+export const MW_RECORD_EDITED = -1;
 
 /** Where the character record lives while it is being played. */
 export interface MwCharacterFile {
@@ -151,12 +158,20 @@ export class MwGameSession {
   private pending: string[][] = [];
   /** Where what the game says goes while a fight is being drawn. */
   private bannerSink: string[][] | null = null;
+  /** The record as the game last read it or wrote it back, which is how a record the save editor
+   *  has written is told from the game's own save. */
+  private known: Uint8Array;
+  /** A record the save editor has written, waiting for the loop to be between actions. */
+  private edited: Uint8Array | null = null;
+  /** The loop is waiting for the player's key with nothing of the game's own part-way through. */
+  private betweenActions = false;
 
   constructor(
     readonly file: MwCharacterFile,
     rng: Rng,
   ) {
     const pc = loadMwPlayer(file.bytes);
+    this.known = file.bytes.slice();
     this.game = newMwGame({
       pc,
       rng,
@@ -221,6 +236,22 @@ export class MwGameSession {
     return new Promise((resolve) => {
       this.waiting = resolve;
     });
+  }
+
+  /**
+   * The key movecontrol waits for at the top of a pass, or {@link MW_RECORD_EDITED} when the save
+   * editor writes the record while it waits.
+   *
+   * Nothing of the game's own is running while the loop waits here, which is what makes it the
+   * one place a record written outside the game is safe to take.
+   */
+  async keyOrEdit(): Promise<number> {
+    this.betweenActions = true;
+    try {
+      return await this.key();
+    } finally {
+      this.betweenActions = false;
+    }
   }
 
   /** FUN_2000_1fbd (WORLD.EXE 2000:1fbd): keys until one of the menu's own digits, or Escape. */
@@ -336,9 +367,62 @@ export class MwGameSession {
     mwEnterLevel(game, this.floors, this.rows, level, game.rng);
   }
 
+  /**
+   * The save editor has written the character's record while the game is being played, and the
+   * game follows it. The record is read again at the next point the loop is between actions; a
+   * loop already waiting for a key is woken so that it takes the edit at once.
+   *
+   * The bytes the game itself last read or saved are the ones it already has, so its own save
+   * writing the record back is not an edit.
+   */
+  recordEdited(bytes: Uint8Array): void {
+    if (sameBytes(bytes, this.known)) return;
+    this.edited = bytes;
+    if (!this.betweenActions) return;
+    const waiting = this.waiting;
+    if (!waiting) return;
+    this.waiting = null;
+    waiting(MW_RECORD_EDITED);
+  }
+
+  /**
+   * Read the record again, if the save editor has written one. The loop calls this at the top of
+   * a pass, where no ported function is part-way through.
+   *
+   * Everything the record holds becomes the character; everything it does not — the monsters
+   * standing on the floor, the monster being fought, the moves a step spends — is left exactly as
+   * it was. A record that puts the character on another floor arrives there the way a ladder
+   * would, and one that moves them about the floor they are on moves them on the occupancy grid
+   * with them.
+   */
+  takeEdits(): void {
+    const bytes = this.edited;
+    if (bytes === null) return;
+    this.edited = null;
+    this.known = bytes.slice();
+    this.file.bytes = bytes;
+    const game = this.game;
+    const pc = game.pc;
+    const floor = pc.floor;
+    const dungeon = pc.dungeon;
+    leaveSquare(game);
+    Object.assign(pc, loadMwPlayer(bytes));
+    // Starting a session works the carried weight out from what the character owns rather than
+    // trusting the figure the record holds, and a record read again is worked out the same way.
+    recomputeWeight(game);
+    if (pc.floor !== floor || pc.dungeon !== dungeon) {
+      game.engaged = -1;
+      this.enterFloor(pc.floor);
+    }
+    mwSetOccupant(game, pc.x, pc.y, MW_SQUARE_PLAYER);
+    game.recenterMap = true;
+  }
+
   /** save_player (WORLD.EXE 2000:58bf): the record back into the character it came from. */
   save(): void {
-    this.file.write(saveMwPlayer(this.game.pc, this.file.bytes));
+    const bytes = saveMwPlayer(this.game.pc, this.file.bytes);
+    this.known = bytes.slice();
+    this.file.write(bytes);
   }
 
   /** The character is dead: the roster is told, and nothing more is written. */
@@ -385,6 +469,15 @@ function trapdoorHere(session: MwGameSession): boolean {
   if (ladderUnder(game) !== 0) return false;
   const destination = trapdoorUnder(game);
   return destination !== -1 && game.pc.trapdoorKeys[Math.trunc(destination / 10) - 1] !== 0;
+}
+
+/** Whether two records hold the same bytes. */
+function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.length !== right.length) return false;
+  for (let at = 0; at < left.length; at++) {
+    if (left[at] !== right[at]) return false;
+  }
+  return true;
 }
 
 /** Start playing a character. */
@@ -449,6 +542,10 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
   const game = session.game;
   const pc = game.pc;
   for (;;) {
+    // The save editor can write the record while the game is being played, and the top of a pass
+    // is where the game takes it: nothing of the original's runs across it, and everything the
+    // pass works out about the character and the square is worked out afterwards.
+    session.takeEdits();
     if (pc.hp < 0) {
       session.flushKeys();
       await mwDie(session);
@@ -457,7 +554,10 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     const turn = await beginTurn(session);
     session.faceTheMonster();
     await session.settle();
-    const key = await session.key();
+    const key = await session.keyOrEdit();
+    // The square the pass was worked out from is the one the record has just replaced, so the
+    // pass starts again rather than answering a key with what the character used to be.
+    if (key === MW_RECORD_EDITED) continue;
     session.clearBox();
     const handler = MW_KEY_HANDLERS[key];
     if (handler) await handler.run(turn);

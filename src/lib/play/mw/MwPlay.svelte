@@ -27,6 +27,9 @@
   const PLAY_CELL = 22;
 
   let session = $state.raw<MwGameSession | null>(null);
+  /** Which character on the roster the session is playing, so an edit to another one is left to
+   *  the editor. */
+  let playingId = $state.raw<string | null>(null);
   let view = $state.raw<MwPlayView | null>(null);
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
@@ -52,14 +55,28 @@
     started.onChange = () => (view = started.view());
     centredFloor = null;
     session = started;
+    playingId = entry.id;
     view = started.view();
     void runMwMoveControl(started);
   }
 
   function leave() {
     session = null;
+    playingId = null;
     view = null;
   }
+
+  /** The Save Editor writes the roster entry's bytes and bumps the version; the game reads the
+   *  record again and follows the edit. */
+  $effect(() => {
+    void app.characterVersion;
+    const playing = session;
+    const id = playingId;
+    untrack(() => {
+      const entry = currentEntry();
+      if (playing && entry && entry.id === id) playing.recordEdited(entry.bytes);
+    });
+  });
 
   /**
    * The map follows the character: it is centred when they arrive on a floor, and scrolled when
