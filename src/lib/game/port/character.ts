@@ -394,12 +394,12 @@ export function resetViewCaches(game: Game): void {
  * roll_char (exe 3000:4c77, unf.c "roll_char"): create a character, from the difficulty menu to
  * the file the finished character is written out to.
  *
- * It shows five screens out of UROLL.TXT — the difficulty menu, the contest screen, the advice,
- * the race table and the class descriptions — asks six questions, and rolls the character
- * between the third and the fourth. Where the original writes the character to its file, the
- * port records a `characterCreated` event with the record and the file number instead; where it
- * stocks floor 1 with monsters, through stock_level (exe 2000:671e), the port does nothing,
- * which is the same place the rest of this port stops.
+ * It reads five screens out of UROLL.TXT — the difficulty menu, the contest screen it never
+ * shows, the advice, the race table and the class descriptions — asks six questions, and rolls
+ * the character once the race has been picked. Where the original writes the character to its
+ * file, the port records a `characterCreated` event with the record and the file number
+ * instead; where it stocks floor 1 with monsters, through stock_level (exe 2000:671e), it does
+ * nothing, which is the same place the rest of this port stops.
  *
  * A character comes out of here at level 0 with no experience: nothing in the roller writes the
  * level field the memset zeroed.
