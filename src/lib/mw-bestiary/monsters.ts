@@ -41,6 +41,8 @@ export interface MwMonster {
   picture: number;
   /** WORLD.PIC holds this picture. A monster whose picture is missing is never stocked. */
   pictureDrawn: boolean;
+  /** The palette entry the picture drawer paints this monster's pixel value 17 in. */
+  colour: number;
   /** The whole 35-byte record as hex, fields nobody has read included. */
   raw: string;
 }

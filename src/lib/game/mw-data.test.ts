@@ -38,12 +38,26 @@ describe('mw-data.json', () => {
       expMult: 2,
       picture: 0,
       pictureDrawn: true,
+      colour: 0,
     });
+    // The fifteen coloured balls share one picture and differ only in the colour byte.
+    expect(data.monsters[57]).toMatchObject({ name: 'DARK BLUE BALL', picture: 43, colour: 1 });
+    expect(data.monsters[71]).toMatchObject({ name: 'GIANT WHITE BALL', picture: 43, colour: 15 });
     // The four dragons of a colour breathe the same thing; the orange ones breathe fire.
     expect(data.monsters[84]).toMatchObject({ name: 'ORANGE DRAGONFLY', breath: 1 });
     // A puffball is kind 6, and drains or raises the characteristic its stat drain names.
     expect(data.monsters[72]).toMatchObject({ name: 'LT. BLUE PUFFBALL', kind: 6, statDrain: 1 });
     expect(data.monsters[83]).toMatchObject({ name: 'DK. GRAY PUFFBALL', kind: 6, statDrain: -6 });
+  });
+
+  it('knows which pictures WORLD.PIC holds', () => {
+    // 35 of the 48 flags at DGROUP 0x11ef are set, and with the two slots load_world_pic
+    // (exe 2000:27b8) fills first that is the 37 images the file holds.
+    expect(data.pictureFlags).toHaveLength(48);
+    expect(data.pictureFlags.filter(Boolean)).toHaveLength(35);
+    // The HOBBIT's picture is one of the missing ones, which is why it is never stocked.
+    expect(data.pictureFlags[6]).toBe(false);
+    expect(data.monsters[6]).toMatchObject({ name: 'HOBBIT', picture: 6, pictureDrawn: false });
   });
 
   it('takes main at its word about the deepest floor a monster reaches', () => {

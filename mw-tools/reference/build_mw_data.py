@@ -72,9 +72,18 @@ def monsters(data):
             "expMult": exp_mult + 1,
             "picture": picture,
             "pictureDrawn": bool(picture < flag_count and data[flags + picture]),
+            # The picture drawer (exe 3000:0105) swaps this in for pixel value 17, as a palette
+            # entry in its own right; 32 means "leave those pixels undrawn".
+            "colour": row[0x21],
             "raw": row.hex(),
         })
     return out
+
+
+def picture_flags(data):
+    """Which of the 48 picture numbers WORLD.PIC holds, from the table at DGROUP 0x11ef."""
+    flags, flag_count = PICTURE_FLAGS
+    return [bool(byte) for byte in data[flags:flags + flag_count]]
 
 
 def weapons(data):
@@ -134,7 +143,11 @@ def build(data):
             # the floor itself, from wall_side (exe 3000:a524)
             "width": 80,
             "height": 110,
+            # load_world_pic (exe 2000:27b8) fills two slots before it starts reading the flag
+            # table, so picture p is slot p + 2 and exists only where the flag is set.
+            "picturesBeforeFlags": 2,
         },
+        "pictureFlags": picture_flags(data),
         "monsters": table,
         "weapons": weapons(data),
         "armour": armour(data),
