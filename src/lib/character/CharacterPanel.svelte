@@ -23,6 +23,11 @@
   });
   const game = $derived(GAMES.find((entry) => entry.id === character?.game) ?? null);
   const expRows = $derived(status && showingExpNeeded ? expNeededRows(status.lev, status.hard) : []);
+  /** The characters of the game the site is showing; the others are only counted. */
+  const ours = $derived(app.roster.filter((entry) => entry.game === app.game));
+  const elsewhere = $derived(app.roster.length - ours.length);
+  const otherGameName = $derived(GAMES.find((entry) => entry.id !== app.game)?.displayName ?? '');
+  const elsewhereLine = $derived(`${elsewhere} more character${elsewhere === 1 ? '' : 's'} under ${otherGameName}.`);
 
   function toggle() {
     collapsed = !collapsed;
@@ -44,7 +49,6 @@
   }
 
   const points = (value: number) => String(Math.trunc(value));
-  const gameName = (id: string) => GAMES.find((entry) => entry.id === id)?.displayName ?? id;
   /** The level in the list is read out of the record, which changes under it as the current
    *  character is edited. */
   const levelOf = (entry: RosterEntry) => {
@@ -95,41 +99,45 @@
   {/if}
 
   {#if choosing}
-    <table class="chooser">
-      <thead>
-        <tr><th>Character</th><th>Game</th><th>Level</th><th>Number</th><th>From</th><th>Edited</th><th></th></tr>
-      </thead>
-      <tbody>
-        {#each app.roster as entry (entry.id)}
-          <tr class:current={entry.id === character?.id}>
-            <td>
-              {#if renaming === entry.id}
-                <input class="rename" bind:value={typedName} onkeydown={onRenameKey} onblur={commitRename} use:focusInput />
-              {:else}
-                <button type="button" class="link" onclick={() => choose(entry.id)}>{entry.name}</button>
-              {/if}
-            </td>
-            <td>{gameName(entry.game)}</td>
-            <td>{levelOf(entry)}</td>
-            <td>{entry.slot ?? '—'}</td>
-            <td>{entry.importedBytes ? 'imported' : 'rolled'}</td>
-            <td>{editedOn(entry.editedAt)}</td>
-            <td class="actions">
-              <button type="button" class="link" onclick={() => startRename(entry)}>Rename</button>
-              {#if entry.importedBytes}
-                <button type="button" class="link" onclick={() => restoreCharacterImport(entry.id)}>Restore the import</button>
-              {/if}
-              <button type="button" class="link" onclick={() => remove(entry)}>Remove</button>
-            </td>
-          </tr>
-        {/each}
-      </tbody>
-    </table>
+    {#if ours.length > 0}
+      <table class="chooser">
+        <thead>
+          <tr><th>Character</th><th>Level</th><th>Number</th><th>From</th><th>Edited</th><th></th></tr>
+        </thead>
+        <tbody>
+          {#each ours as entry (entry.id)}
+            <tr class:current={entry.id === character?.id}>
+              <td>
+                {#if renaming === entry.id}
+                  <input class="rename" bind:value={typedName} onkeydown={onRenameKey} onblur={commitRename} use:focusInput />
+                {:else}
+                  <button type="button" class="link" onclick={() => choose(entry.id)}>{entry.name}</button>
+                {/if}
+              </td>
+              <td>{levelOf(entry)}</td>
+              <td>{entry.slot ?? '—'}</td>
+              <td>{entry.importedBytes ? 'imported' : 'rolled'}</td>
+              <td>{editedOn(entry.editedAt)}</td>
+              <td class="actions">
+                <button type="button" class="link" onclick={() => startRename(entry)}>Rename</button>
+                {#if entry.importedBytes}
+                  <button type="button" class="link" onclick={() => restoreCharacterImport(entry.id)}>Restore the import</button>
+                {/if}
+                <button type="button" class="link" onclick={() => remove(entry)}>Remove</button>
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
+    {/if}
+    {#if elsewhere > 0}
+      <p class="elsewhere">{elsewhereLine}</p>
+    {/if}
   {/if}
   {#if !character || !status}
     {#if app.roster.length > 0}
       <div class="identity">
-        <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({app.roster.length})</button>
+        <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({ours.length})</button>
       </div>
     {/if}
     <div class="status empty">
@@ -156,7 +164,7 @@
       {#if character.game === UNFORGIVEN.id}
         <button type="button" class="link" onclick={() => (showingExpNeeded = !showingExpNeeded)}>Exp needed</button>
       {/if}
-      <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({app.roster.length})</button>
+      <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({ours.length})</button>
     </div>
     <div class="boxes">
       <div class="status">
@@ -326,6 +334,11 @@
   }
   .chooser tr.current td {
     color: var(--ink);
+  }
+  .elsewhere {
+    margin: 0 0 10px;
+    color: var(--muted);
+    font-size: 12px;
   }
   .chooser .actions {
     display: flex;
