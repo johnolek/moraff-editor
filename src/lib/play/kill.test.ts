@@ -16,13 +16,25 @@ describe('killing the monster being fought', () => {
     const worth = expValue(game, 0);
     const before = game.pc.exp;
     monster.hp = 0;
-    // A monk is refused every drop, so the kill asks nothing and finishes on this one key.
+    // A monk is refused every drop, so the kill has the one box to show.
     await press(session, 0x1b);
     expect(game.pc.exp).toBe(before + worth);
-    expect(session.box).toContain('YOU KILLED IT!');
+    expect(session.box).toEqual(['YOU KILLED IT!']);
     expect([monster.x, monster.y]).toEqual([GARBAGE_CAN, GARBAGE_CAN]);
     expect(session.view().engaged).toBeNull();
     expect(session.view().monsters).toEqual([]);
+  });
+
+  it('shows the boxes the kill prints one at a time, in the order it printed them', async () => {
+    const session = await facingAMonster(lowest, { cls: 0 });
+    const game = session.game;
+    game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    expect(session.box).toEqual(['YOU KILLED IT!']);
+    await press(session, 0x1b);
+    expect(session.box).toEqual(['GOOD NEWS...']);
+    await press(session, 0x1b);
+    expect(session.box).toContain(`YOU FIND A ${WEAPON_NAMES[1]}`);
   });
 
   it('offers what the monster dropped and takes what the player says to take', async () => {
@@ -30,10 +42,12 @@ describe('killing the monster being fought', () => {
     const game = session.game;
     game.monsters[0].hp = 0;
     await press(session, 0x1b);
-    expect(session.box).toContain(`YOU FIND A ${WEAPON_NAMES[1]}`);
+    await press(session, 0x1b);
+    await press(session, 0x1b);
     expect(session.box).toContain('1) TAKE THE WEAPON');
     await press(session, TAKE);
     expect(game.pc.weaponsOwned[1]).toBe(1);
+    await press(session, 0x1b);
     expect(session.box).toContain('1) TAKE THE ARMOR');
     await press(session, LEAVE);
     expect(game.pc.armorOwned[1]).toBe(0);
@@ -43,6 +57,7 @@ describe('killing the monster being fought', () => {
   it('sends a level 0 character who has earned a level to an inn', async () => {
     const session = await facingAMonster(lowest, { cls: 2, lev: 0, exp: 1000000 });
     session.game.monsters[0].hp = 0;
+    await press(session, 0x1b);
     await press(session, 0x1b);
     expect(session.box).toContain('GOOD NEWS!');
     expect(session.box).toContain('LEVEL! GO TO THE TOWN, FIND');

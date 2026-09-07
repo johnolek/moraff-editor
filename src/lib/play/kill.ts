@@ -1,4 +1,5 @@
 import { killMonster } from '../game/port/kills';
+import { printMenusWhile } from './boxes';
 import type { GameSession } from './engine';
 
 /**
@@ -11,11 +12,14 @@ import type { GameSession } from './engine';
  *
  * The original draws the monster's picture over the map one last time first, which this port has
  * no portraits for.
+ *
+ * Every box kill_monster prints stops for a key, and the drops ask menus in between, so the kill
+ * is run through {@link printMenusWhile} rather than straight through.
  */
 export async function killTheDead(session: GameSession): Promise<void> {
   const game = session.game;
   if (game.engaged === -1 || game.monsters[game.engaged].hp >= 1) return;
-  await killMonster(game);
+  await printMenusWhile(session, () => killMonster(game));
   // The repeat-fight flag comes down with the monster (exe 2000:dbe3), so Ctrl-F swings at one
   // monster rather than at whatever walks up next.
   session.repeatFight = false;

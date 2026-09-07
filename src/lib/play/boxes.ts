@@ -68,3 +68,55 @@ export async function printMenusEndingInAMenu(
   }
   session.showBox(boxes[boxes.length - 1] ?? []);
 }
+
+/**
+ * The boxes an asynchronous ported function prints, each waiting for a key of its own.
+ *
+ * kill_monster (exe 3000:b12d) prints several in a row and stops at every one of them, and it
+ * asks menus of its own in between, so it cannot be run to the end and unpacked afterwards the
+ * way {@link printMenus} runs a synchronous one. A box is queued as it is printed instead and
+ * the queue is emptied wherever the function next waits for a key: the boxes before that wait
+ * take a key each, and the box the wait itself belongs to is left standing for it.
+ */
+export async function printMenusWhile(
+  session: GameSession,
+  print: () => Promise<void>,
+): Promise<void> {
+  const game = session.game;
+  const said = game.say;
+  const askedKey = game.key;
+  const askedChoice = game.choice;
+  const queued: string[][] = [];
+  const showEach = async (): Promise<void> => {
+    for (let box = queued.shift(); box !== undefined; box = queued.shift()) {
+      session.showBox(box);
+      await askedKey();
+    }
+  };
+  const showBeforeAWait = async (): Promise<void> => {
+    const standing = queued.pop();
+    await showEach();
+    if (standing !== undefined) session.showBox(standing);
+  };
+  game.say = (...lines: string[]) => {
+    queued.push(lines);
+    said(...lines);
+  };
+  game.key = async () => {
+    await showBeforeAWait();
+    return askedKey();
+  };
+  game.choice = async (allowed: number[]) => {
+    await showBeforeAWait();
+    return askedChoice(allowed);
+  };
+  try {
+    await print();
+  } finally {
+    game.say = said;
+    game.key = askedKey;
+    game.choice = askedChoice;
+  }
+  await showEach();
+  session.box = [];
+}
