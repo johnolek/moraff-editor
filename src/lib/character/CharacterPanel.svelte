@@ -26,6 +26,10 @@
 
   function toggle() {
     collapsed = !collapsed;
+    if (collapsed) {
+      choosing = false;
+      showingExpNeeded = false;
+    }
     writeStored(COLLAPSED_KEY, collapsed ? 'yes' : 'no');
   }
 
