@@ -43,9 +43,9 @@ function castingGame(): Game {
 }
 
 /** Everything about a game two casts can be compared on: every field but the menu answers. */
+/** The game less its hooks: functions compare by identity, and each game has its own. */
 function stateOf(game: Game): Record<string, unknown> {
-  const answers = ['solid', 'chooseDirection', 'chooseWeapon', 'chooseArmor', 'chooseSpell', 'say'];
-  return Object.fromEntries(Object.entries(game).filter(([field]) => !answers.includes(field)));
+  return Object.fromEntries(Object.entries(game).filter(([, value]) => typeof value !== 'function'));
 }
 
 /**
