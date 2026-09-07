@@ -1,3 +1,6 @@
+import { CLASS_NAMES, RACES } from './character';
+import { expNeeded } from './combat';
+import { ARMOR_NAMES, WEAPON_NAMES } from './drops';
 import type { Game, ScreenLine } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
@@ -167,4 +170,303 @@ export function drawHitAnyKey(game: Game, x: number, y: number): void {
   // DS:0a69 0a71
   game.draw({ text: 'HIT ANY', x: x + 0x19, y: y + 0x14, spreadTo: x + 0xe1, font: 0, colour: 15 });
   game.draw({ text: 'KEY NOW', x: x + 0x19, y: y + 0x41, spreadTo: x + 0xe1, font: 0, colour: 15 });
+}
+
+/** One spell showing on a spells-in-effect screen, with the moves left on it where it has any. */
+export interface SpellInEffect {
+  /** The line the screen prints, exactly as the game builds it. */
+  text: string;
+  /** The moves left before it runs out, or null for the ones the game keeps no timer for. */
+  turns: number | null;
+}
+
+/** The y each of the nine preparation spells is drawn at, in the order view_prep_spells tests them. */
+const PREP_SPELL_Y = [0x334, 0x35c, 0x384, 0x3ac, 0x3d4, 0x3fc, 0x424, 0x44c, 0x474];
+
+/**
+ * The nine fields view_prep_spells (exe 2000:92b1) tests, in the order it tests them. Each is a
+ * flag rather than a countdown: the two enchantments hold the plus they put on whatever is in
+ * hand or worn, the two pairs that raise a characteristic hold 5 or 10, and the rest hold 1 from
+ * the preparation spell or 100 where a permanent spell set them.
+ */
+function prepSpellFields(game: Game): number[] {
+  const pc = game.pc;
+  return [
+    pc.tempWeaponPlus,
+    pc.tempArmorPlus,
+    pc.invisible,
+    pc.feather,
+    pc.fastMove,
+    pc.prepStrength,
+    pc.prepAgility,
+    pc.superStrength,
+    pc.superAgility,
+  ];
+}
+
+/**
+ * view_prep_spells (exe 2000:92b1, unf.c "view_prep_spells"): the lines it would print for the
+ * preparation spells standing on the character. None of them is on a timer.
+ */
+export function prepSpellsInEffect(game: Game): SpellInEffect[] {
+  const pc = game.pc;
+  const rows: SpellInEffect[] = [];
+  // DS:168a 1699 16a6 16b3 16bb 16c5 16dd 16f4 1703
+  if (pc.tempWeaponPlus !== 0) rows.push({ text: `WEAPONS, PLUS ${pc.tempWeaponPlus}`, turns: null });
+  if (pc.tempArmorPlus !== 0) rows.push({ text: `ARMOR, PLUS ${pc.tempArmorPlus}`, turns: null });
+  if (pc.invisible !== 0) rows.push({ text: 'INVISIBILITY', turns: null });
+  if (pc.feather !== 0) rows.push({ text: 'FEATHER', turns: null });
+  if (pc.fastMove !== 0) rows.push({ text: 'FAST-MOVE', turns: null });
+  if (pc.prepStrength !== 0) rows.push({ text: 'STRENGTH (PREP VERSION)', turns: null });
+  if (pc.prepAgility !== 0) rows.push({ text: 'AGILITY (PREP VERSION)', turns: null });
+  if (pc.superStrength !== 0) rows.push({ text: 'SUPER STRENGTH', turns: null });
+  if (pc.superAgility !== 0) rows.push({ text: 'SUPER AGILITY', turns: null });
+  return rows;
+}
+
+/**
+ * view_prep_spells (exe 2000:92b1, unf.c "view_prep_spells"): draw that list down the menu column.
+ *
+ * Each of the nine keeps the place it has in the list whether or not the ones above it are
+ * showing — the original tests each spell at its own y — so a screen with only Feather on it has
+ * a gap above it where the two enchantments would be.
+ */
+export function viewPrepSpells(game: Game): SpellInEffect[] {
+  clearMessageLine(game);
+  clearMenuBlock(game);
+  // DS:1674
+  game.draw({ text: 'PREP SPELLS IN EFFECT', x: MENU_X, y: MESSAGE_LINE_Y, font: 0, colour: 15 });
+  const rows = prepSpellsInEffect(game);
+  let next = 0;
+  prepSpellFields(game).forEach((value, index) => {
+    if (value === 0) return;
+    game.draw({ text: rows[next].text, x: MENU_X, y: PREP_SPELL_Y[index], font: 0, colour: 3 });
+    next += 1;
+  });
+  return rows;
+}
+
+/**
+ * Where each of the twelve battle spells is drawn, in the order view_battle_spells (exe 2000:9417)
+ * tests them: two columns of six, the left one in colour 6 and the right one in colour 5.
+ */
+const BATTLE_SPELL_PLACES = [
+  { x: 10, y: 0x32a, colour: 6 },
+  { x: 10, y: 0x350, colour: 6 },
+  { x: 0x1b8, y: 0x32a, colour: 5 },
+  { x: 0x1b8, y: 0x350, colour: 5 },
+  { x: 10, y: 0x376, colour: 6 },
+  { x: 0x172, y: 0x376, colour: 5 },
+  { x: 10, y: 0x39c, colour: 6 },
+  { x: 0x172, y: 0x39c, colour: 5 },
+  { x: 10, y: 0x3c2, colour: 6 },
+  { x: 0x172, y: 0x3c2, colour: 5 },
+  { x: 10, y: 0x3e8, colour: 6 },
+  { x: 0x172, y: 0x3e8, colour: 5 },
+];
+
+/**
+ * The twelve tests view_battle_spells (exe 2000:9417) makes, in the order it makes them.
+ * Protection and Power Weapon are the level the spell is at and are tested against zero; the
+ * other ten are countdowns and are tested for being above it.
+ */
+function battleSpellFlags(game: Game): boolean[] {
+  const pc = game.pc;
+  return [
+    pc.protection !== 0,
+    pc.powerWeapon !== 0,
+    pc.strengthTimer > 0,
+    pc.speedTimer > 0,
+    pc.slowEnemiesTimer > 0,
+    pc.holdMonsterTimer > 0,
+    pc.sleepTimer > 0,
+    pc.resistDrainTimer > 0,
+    pc.resistPoisonTimer > 0,
+    pc.resistDiseaseTimer > 0,
+    pc.antiColdTimer > 0,
+    pc.antiFireTimer > 0,
+  ];
+}
+
+/**
+ * view_battle_spells (exe 2000:9417, unf.c "view_battle_spells"): the lines it would print for
+ * the battle spells standing on the character.
+ *
+ * Protection and Power Weapon print the level they are at and run down `protectionTime` and
+ * `powerWeaponTime`; the other ten print a name and are their own countdowns. Sleep prints as
+ * STOP MONSTER.
+ */
+export function battleSpellsInEffect(game: Game): SpellInEffect[] {
+  const pc = game.pc;
+  const rows: SpellInEffect[] = [];
+  // DS:1731 1741 134e 174f 1755 1762 176f 177c 1789 1797 17a6 17b0
+  if (pc.protection !== 0) rows.push({ text: `PROTECT, LEVEL ${pc.protection}`, turns: pc.protectionTime });
+  if (pc.powerWeapon !== 0) rows.push({ text: `POWER WEAPON ${pc.powerWeapon}`, turns: pc.powerWeaponTime });
+  if (pc.strengthTimer > 0) rows.push({ text: 'STRENGTH', turns: pc.strengthTimer });
+  if (pc.speedTimer > 0) rows.push({ text: 'SPEED', turns: pc.speedTimer });
+  if (pc.slowEnemiesTimer > 0) rows.push({ text: 'SLOW MONSTER', turns: pc.slowEnemiesTimer });
+  if (pc.holdMonsterTimer > 0) rows.push({ text: 'HOLD MONSTER', turns: pc.holdMonsterTimer });
+  if (pc.sleepTimer > 0) rows.push({ text: 'STOP MONSTER', turns: pc.sleepTimer });
+  if (pc.resistDrainTimer > 0) rows.push({ text: 'RESIST DRAIN', turns: pc.resistDrainTimer });
+  if (pc.resistPoisonTimer > 0) rows.push({ text: 'RESIST POISON', turns: pc.resistPoisonTimer });
+  if (pc.resistDiseaseTimer > 0) rows.push({ text: 'RESIST DISEASE', turns: pc.resistDiseaseTimer });
+  if (pc.antiColdTimer > 0) rows.push({ text: 'ANTI-COLD', turns: pc.antiColdTimer });
+  if (pc.antiFireTimer > 0) rows.push({ text: 'ANTI-FIRE', turns: pc.antiFireTimer });
+  return rows;
+}
+
+/**
+ * view_battle_spells (exe 2000:9417, unf.c "view_battle_spells"): draw that panel under the map,
+ * but only when something on it has changed.
+ *
+ * The original keeps one flag per line at DS:034c and returns without drawing when all twelve
+ * still say what they said last time, which is what lets movecontrol call it every move. The port
+ * takes those twelve flags in and hands the new ones back rather than keeping globals, so the
+ * caller holds them; an empty array redraws.
+ */
+export function viewBattleSpells(game: Game, shown: boolean[] = []): boolean[] {
+  const now = battleSpellFlags(game);
+  if (now.every((value, index) => value === shown[index])) return now;
+  clearRect(game, 5, 0x2fe, 0x2ac, 0x40c);
+  // DS:1711
+  const heading = 'CURRENT BATTLE SPELLS IN EFFECT';
+  game.draw({ text: heading, x: 10, y: 0x302, spreadTo: 0x276, font: 0, colour: 8 });
+  const rows = battleSpellsInEffect(game);
+  let next = 0;
+  now.forEach((on, index) => {
+    if (!on) return;
+    const place = BATTLE_SPELL_PLACES[index];
+    game.draw({ text: rows[next].text, x: place.x, y: place.y, font: 0, colour: place.colour });
+    next += 1;
+  });
+  return now;
+}
+
+/** The two sex names (exe DS:2300, a table of near pointers), in the order the record stores. */
+export const SEX_NAMES = ['MALE', 'FEMALE'];
+
+/** The left edge of every line of the V screen and of the pockets screen's last page. */
+export const STATS_X = 0x2d0;
+
+/**
+ * Where each line of the V screen goes. Every one is drawn at {@link STATS_X} in the body font,
+ * and view_stats builds each as one string — the label and the number or name after it — before
+ * printing it, so the port draws each as one line too.
+ */
+const STATS_LINES = [
+  { y: 0, colour: 3 },
+  { y: 0x3c, colour: 4 },
+  { y: 0x64, colour: 4 },
+  { y: 0x8c, colour: 4 },
+  { y: 0xb4, colour: 4 },
+  { y: 0xe6, colour: 8 },
+  { y: 0x10e, colour: 8 },
+  { y: 0x140, colour: 5 },
+  { y: 0x168, colour: 5 },
+  { y: 0x190, colour: 5 },
+  { y: 0x1c2, colour: 6 },
+  { y: 0x1ea, colour: 6 },
+  { y: 0x212, colour: 6 },
+  { y: 0x23a, colour: 6 },
+  { y: 0x262, colour: 6 },
+  { y: 0x28a, colour: 6 },
+  { y: 0x2bc, colour: 4 },
+  { y: 0x2e4, colour: 4 },
+];
+
+/**
+ * FUN_3000_7508 (exe 3000:7508): wipe the right-hand two thirds of the screen, which is where the
+ * V screen and the pockets screen draw.
+ *
+ * The decompilation recovers only the one number it scales, 700, and loses the rest of the
+ * rectangle; every line the screens that call it draw afterwards starts at x 0x2d0, and they call
+ * it both before drawing and after, so what it clears is 700 to the right edge.
+ */
+export function clearStatsScreen(game: Game): void {
+  clearRect(game, 700, 0, 0x640, 0x4b0);
+}
+
+/**
+ * view_stats (exe 3000:77e2, unf.c "view_stats"): the V screen.
+ *
+ * Height is stored in quarter inches, so the line that prints it multiplies by four. The disease
+ * and poison lines are the moves left before the next bite, which is the one place the game shows
+ * either clock. The line at the bottom is the difficulty the character was rolled under; its
+ * middle case reads the contest flag at DS:c647, which nothing in the registered game can set —
+ * see the note on the difficulty menu in `character.ts` — so it can never be shown.
+ */
+export function viewStats(game: Game): void {
+  const pc = game.pc;
+  clearStatsScreen(game);
+  const lines = [
+    `VIEW STATS FOR ${pc.name}`, // DS:2b49
+    `RACE: ${RACES[pc.race].name}`, // DS:2b59 with the race table at DS:0130
+    `SEX: ${SEX_NAMES[pc.sex]}`, // DS:2b60
+    `CLASS: ${CLASS_NAMES[pc.cls]}`, // DS:2b66
+    `AGE: ${pc.age}`, // DS:2b6e
+    `MONEY IN POCKET: ${pc.money}`, // DS:2b74
+    `MONEY IN BANK: ${pc.bank}`, // DS:2b86
+    `LOADED WEIGHT: ${pc.loadedWeight}`, // DS:2b96
+    `NAKED WEIGHT: ${pc.weight}`, // DS:2ba6
+    `HEIGHT (INCHES): ${pc.height * 4}`, // DS:2bb5
+    `STRENGTH: ${pc.str}`, // DS:2bc7
+    `INTELLIGENCE: ${pc.iq}`, // DS:2bd2
+    `WISDOM: ${pc.wis}`, // DS:2be1
+    `CONSTITUTION: ${pc.con}`, // DS:2bea
+    `AGILITY: ${pc.dex}`, // DS:2bf9
+    `LUCK: ${pc.luck}`, // DS:2c03
+    `WEAPON IN HAND: ${WEAPON_NAMES[pc.weapon]}`, // DS:2c0a with the weapon table at DS:01a0
+    `CURRENT ARMOR: ${ARMOR_NAMES[pc.armor]}`, // DS:2c1b with the armor table at DS:01f4
+  ];
+  lines.forEach((text, index) => {
+    game.draw({ text, x: STATS_X, y: STATS_LINES[index].y, font: 0, colour: STATS_LINES[index].colour });
+  });
+  if (pc.disease > 0) {
+    // DS:2c2b 2c4d
+    const heading = 'YOU ARE DISEASED-MOVES LEFT UNTIL';
+    game.draw({ text: heading, x: STATS_X, y: 0x316, font: 0, colour: 8 });
+    game.draw({ text: `  CONSTITUTION DRAINED: ${pc.disease}`, x: STATS_X, y: 0x33e, font: 0, colour: 8 });
+  }
+  if (pc.poison > 0) {
+    // DS:2c66 2c88
+    const heading = 'YOU ARE POISONED-MOVES LEFT UNTIL';
+    game.draw({ text: heading, x: STATS_X, y: 0x370, font: 0, colour: 6 });
+    game.draw({ text: `  STRENGTH DRAINED: ${pc.poison}`, x: STATS_X, y: 0x398, font: 0, colour: 6 });
+  }
+  if (pc.bodyArmor !== 0) {
+    // DS:2c9d
+    game.draw({ text: `BODY ARMOR - PLUS ${pc.bodyArmor}`, x: STATS_X, y: 0x3ca, font: 0, colour: 6 });
+  }
+  if (pc.hard === 0) {
+    // DS:2cb0
+    const alive = 'BY THE WAY, YOU ARE STILL ALIVE!';
+    game.draw({ text: alive, x: STATS_X, y: 0x460, font: 0, colour: 6 });
+  } else {
+    // DS:2ce7
+    const boast = 'YOU THINK YOU CAN HANDLE ANYTHING';
+    game.draw({ text: boast, x: STATS_X, y: 0x460, spreadTo: 0x63f, font: 0, colour: 6 });
+  }
+  // DS:2d09
+  game.draw({ text: 'HIT ANY KEY TO RETURN TO GAME...', x: STATS_X, y: 0x488, font: 0, colour: 3 });
+}
+
+/** How many levels the E screen lists: the seven lines the message box has under its heading. */
+export const EXP_NEEDED_LEVELS = 7;
+
+/**
+ * FUN_2000_7bcd (exe 2000:7bcd, unf.c "FUN_2000_7bcd"): the screen the E key puts up, listing
+ * what the next seven levels cost.
+ *
+ * A line is the level's number, the ") " every menu line ends its number with (exe DS:080c), and
+ * the experience printed "%-20.0f" (exe DS:12fb) — rounded to whole points and padded out to
+ * twenty columns, which is why every line carries a tail of spaces. The experience beside level L
+ * is what `check_gain_level` asks for at level L - 1, the same as `src/lib/character/exp-needed.ts`.
+ */
+export function expNeededScreen(game: Game): void {
+  const lines = Array.from({ length: EXP_NEEDED_LEVELS }, (unused, index) => {
+    const needed = expNeeded(game, game.pc.lev + index).toFixed(0);
+    return `${game.pc.lev + index + 1}) ${needed.padEnd(20)}`;
+  });
+  // DS:12de, then the seven lines
+  game.say('EXPERIENCE NEEDED FOR LEVEL:', ...lines);
 }
