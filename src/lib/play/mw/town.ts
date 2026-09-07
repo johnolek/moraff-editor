@@ -1,5 +1,6 @@
 import { bundledMwDungeon } from '../../game/mw-dungeon';
 import { loadHBin } from '../../game/mw-port/hints';
+import { MW_ESCAPE } from '../../game/mw-port/screens';
 import type { MwGame } from '../../game/mw-port/state';
 import { bank, inn, store, temple } from '../../game/mw-port/town';
 import type { MwGameSession, MwTurn } from './engine';
@@ -138,6 +139,10 @@ const WORLD_MAP_HINT = 0x22;
  * read_string (WORLD.EXE 4000:3db9) as the bank calls it: digits typed until Enter, which the
  * game parses into a 16-bit word.
  *
+ * Enter finishes and Escape gives up, and the original ignores both until at least one character
+ * has been typed — the test at 4000:3df3 is on the count of characters. Escape leaves the buffer
+ * without its terminator, so what the bank reads back out of it is the digits typed either way.
+ *
  * The original draws each character as it is typed and takes letters and spaces too; this takes
  * the digits and shows what has been typed so far on the last line of the box.
  */
@@ -147,7 +152,10 @@ async function typeANumber(session: MwGameSession): Promise<number> {
   for (;;) {
     session.box = [...box.slice(0, 7), typed.join('')];
     const key = await session.key();
-    if (key === 0x0d) return Number(typed.join('')) & 0xffff;
+    const typedSomething = typed.length > 0;
+    if (typedSomething && (key === 0x0d || key === MW_ESCAPE)) {
+      return Number(typed.join('')) & 0xffff;
+    }
     if (key === 0x08) typed.pop();
     else if (key >= 0x30 && key <= 0x39 && typed.length < 9) typed.push(String.fromCharCode(key));
   }

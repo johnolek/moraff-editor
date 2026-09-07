@@ -59,6 +59,37 @@ describe('the inn', () => {
   });
 });
 
+describe('the bank', () => {
+  /** The bank, with a deposit chosen and the two boxes in front of the amount answered. */
+  async function askingForADeposit() {
+    const session = playingMw(mwCharacterFile({ floor: 0, money: 500, bank: 0, ...surface(3) }));
+    await pressMw(session, MW_KEY.up);
+    expect(session.box).toContain('2) DEPOSIT MONEY');
+    await pressMw(session, 0x32);
+    expect(session.box).toContain('PLEASE TYPE THE AMOUNT');
+    await pressMw(session, 0x20);
+    await pressMw(session, 0x20);
+    return session;
+  }
+
+  it('takes the amount typed when Escape ends it, the way Enter does', async () => {
+    const session = await askingForADeposit();
+    for (const digit of [0x31, 0x30, 0x30]) await pressMw(session, digit);
+    // read_string only looks at Escape once something has been typed, and takes what is there.
+    await pressMw(session, MW_KEY.escape);
+    expect(session.game.pc.bank).toBe(100);
+    expect(session.game.pc.money).toBe(400);
+  });
+
+  it('ignores an Escape typed before the first digit', async () => {
+    const session = await askingForADeposit();
+    await pressMw(session, MW_KEY.escape);
+    await pressMw(session, 0x37);
+    await pressMw(session, 0x0d);
+    expect(session.game.pc.bank).toBe(7);
+  });
+});
+
 describe('the gate out to the world map', () => {
   it('says the wilderness is not built', async () => {
     const session = playingMw(mwCharacterFile({ floor: 0, ...surface(5) }));
