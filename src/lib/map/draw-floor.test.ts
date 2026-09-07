@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
 import { MAP_COLUMNS, MAP_ROWS } from './area';
-import { drawFloor } from './draw-floor';
+import { drawFloor, drawYou } from './draw-floor';
 import { UNFORGIVEN_MAP, type MapSquare } from './game';
 
 function openFloor(): MapSquare[][] {
@@ -52,5 +52,43 @@ describe('drawFloor', () => {
     const unseen: { x: number; y: number }[] = [];
     drawFloor(recordingContext(unseen), rock, options);
     expect(unseen.filter((fill) => fill.x === 3 && fill.y === 4)).toHaveLength(0);
+  });
+});
+
+describe('drawYou', () => {
+  /** A canvas context that remembers the rectangle it filled and the corners of the path it was
+   *  given, which is the whole difference between the two markers. */
+  function recordMarker(): { ctx: CanvasRenderingContext2D; rects: number[][]; corners: number[][] } {
+    const rects: number[][] = [];
+    const corners: number[][] = [];
+    const calls: Record<string, (...args: number[]) => void> = {
+      fillRect: (...args) => void rects.push(args),
+      moveTo: (...args) => void corners.push(args),
+      lineTo: (...args) => void corners.push(args),
+    };
+    const ctx = new Proxy(
+      {},
+      { get: (_target, name) => calls[name as string] ?? (() => {}), set: () => true },
+    ) as unknown as CanvasRenderingContext2D;
+    return { ctx, rects, corners };
+  }
+
+  const view = { cell: 20, originX: 0, originY: 0 };
+
+  it('fills the square when nobody standing there is facing anywhere', () => {
+    const { ctx, rects, corners } = recordMarker();
+    drawYou(ctx, 1, 2, view, 0.5);
+    expect(rects).toEqual([[23, 43, 16, 16]]);
+    expect(corners).toEqual([]);
+  });
+
+  it('draws an arrowhead pointing the way the character faces', () => {
+    const { ctx, rects, corners } = recordMarker();
+    drawYou(ctx, 1, 2, view, 0.5, 0);
+    expect(rects).toEqual([]);
+    // The tip is on the middle of the square's north side, the back corners on its south ones.
+    expect(corners[0]).toEqual([31, 43]);
+    expect(corners[1]).toEqual([39, 59]);
+    expect(corners[3]).toEqual([23, 59]);
   });
 });

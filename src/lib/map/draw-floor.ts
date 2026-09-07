@@ -4,6 +4,7 @@ import type { Hop, Route } from './path';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
 import { teleporterColour, teleporterLineWidth } from './teleporters';
 import type { Point, Viewport } from './viewport';
+import { youArrow } from './you';
 
 export interface DrawOptions extends Viewport {
   /** The game whose area is drawn and whose buildings colour floor 0. */
@@ -209,13 +210,30 @@ export function drawOutline(ctx: CanvasRenderingContext2D, x: number, y: number,
   ctx.lineWidth = 1;
 }
 
-/** The square you stand on: a filled block inside it, drawn at whatever opacity the caller is
- *  pulsing through. */
-export function drawYou(ctx: CanvasRenderingContext2D, x: number, y: number, view: Viewport, alpha: number): void {
+/** The square you stand on, drawn at whatever opacity the caller is pulsing through: an
+ *  arrowhead pointing the way the character faces, or a filled block where nobody is facing
+ *  anywhere, which is the map explorer walking someone about the floor. */
+export function drawYou(ctx: CanvasRenderingContext2D, x: number, y: number, view: Viewport, alpha: number, dir: number | null = null): void {
   const { x0, y0, w, h } = squareRect(view, x, y);
   const inset = 2;
+  const left = x0 + 1 + inset;
+  const top = y0 + 1 + inset;
+  const width = Math.max(1, w - 2 * inset);
+  const height = Math.max(1, h - 2 * inset);
   ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-  ctx.fillRect(x0 + 1 + inset, y0 + 1 + inset, Math.max(1, w - 2 * inset), Math.max(1, h - 2 * inset));
+  if (dir === null) {
+    ctx.fillRect(left, top, width, height);
+    return;
+  }
+  ctx.beginPath();
+  youArrow(dir).forEach((corner, index) => {
+    const cx = left + corner.x * width;
+    const cy = top + corner.y * height;
+    if (index === 0) ctx.moveTo(cx, cy);
+    else ctx.lineTo(cx, cy);
+  });
+  ctx.closePath();
+  ctx.fill();
 }
 
 /** Emphasised squares: a bright outline each, plus the label beside those that have one. */

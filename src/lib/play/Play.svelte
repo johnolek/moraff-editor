@@ -161,7 +161,7 @@
           dungeon={view.place.module}
           monsters={view.monsters}
           bounds={FULL_FLOOR}
-          you={{ x: view.place.x, y: view.place.y }}
+          you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
           focus={{ x: view.place.x, y: view.place.y, cell: PLAY_CELL }}
         />
         {#if view.screen.length > 0}

@@ -43,3 +43,20 @@ export function youAlpha(timeMs: number): number {
   const phase = (1 + Math.sin((timeMs / PULSE_MS) * 2 * Math.PI)) / 2;
   return DIMMEST + (BRIGHTEST - DIMMEST) * phase;
 }
+
+/** How far into the arrowhead the notch in its back is cut, as a fraction of its length. */
+const NOTCH = 0.28;
+
+/** The corners of the arrowhead that shows which way the character faces, as fractions of the
+ *  square it is drawn in: the tip on the side faced, the two corners behind it, and the notch
+ *  between those. Facing is the games' own: 0 north, 1 south, 2 west, 3 east. */
+const ARROWS: Point[][] = [
+  [{ x: 0.5, y: 0 }, { x: 1, y: 1 }, { x: 0.5, y: 1 - NOTCH }, { x: 0, y: 1 }],
+  [{ x: 0.5, y: 1 }, { x: 0, y: 0 }, { x: 0.5, y: NOTCH }, { x: 1, y: 0 }],
+  [{ x: 0, y: 0.5 }, { x: 1, y: 0 }, { x: 1 - NOTCH, y: 0.5 }, { x: 1, y: 1 }],
+  [{ x: 1, y: 0.5 }, { x: 0, y: 1 }, { x: NOTCH, y: 0.5 }, { x: 0, y: 0 }],
+];
+
+export function youArrow(dir: number): Point[] {
+  return ARROWS[dir];
+}

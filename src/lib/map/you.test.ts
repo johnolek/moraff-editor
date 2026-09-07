@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Square } from '../game/unfmap.js';
 import { MAP_COLUMNS, MAP_ROWS, UNFORGIVEN_AREA } from './area';
-import { nearestOpenSquare, stepFrom, youAlpha } from './you';
+import { nearestOpenSquare, stepFrom, youAlpha, youArrow } from './you';
 
 /** A floor from a picture: '#' is rock, '.' is an open square. */
 function floorOf(picture: string[]): Square[][] {
@@ -90,5 +90,35 @@ describe('youAlpha', () => {
     expect(youAlpha(250)).toBeCloseTo(0.85);
     expect(youAlpha(750)).toBeCloseTo(0.3);
     expect(youAlpha(1250)).toBeCloseTo(youAlpha(250));
+  });
+});
+
+describe('youArrow', () => {
+  /** The middle of the side the arrowhead's tip should sit on, by the facing. */
+  const tips = [
+    { x: 0.5, y: 0 },
+    { x: 0.5, y: 1 },
+    { x: 0, y: 0.5 },
+    { x: 1, y: 0.5 },
+  ];
+
+  it('puts the tip on the side the character faces', () => {
+    tips.forEach((tip, dir) => expect(youArrow(dir)[0]).toEqual(tip));
+  });
+
+  it('fills the square it is drawn in without leaving it', () => {
+    for (let dir = 0; dir < 4; dir++) {
+      const corners = youArrow(dir);
+      expect(corners).toHaveLength(4);
+      expect(corners.every((corner) => corner.x >= 0 && corner.x <= 1 && corner.y >= 0 && corner.y <= 1)).toBe(true);
+      expect(Math.max(...corners.map((corner) => corner.x)) - Math.min(...corners.map((corner) => corner.x))).toBe(1);
+      expect(Math.max(...corners.map((corner) => corner.y)) - Math.min(...corners.map((corner) => corner.y))).toBe(1);
+    }
+  });
+
+  it('notches the back of the arrowhead behind the tip', () => {
+    // The third corner is the notch: on the line the tip is on, and short of the back.
+    expect(youArrow(0)[2]).toEqual({ x: 0.5, y: 0.72 });
+    expect(youArrow(3)[2]).toEqual({ x: 0.28, y: 0.5 });
   });
 });

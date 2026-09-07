@@ -12,6 +12,9 @@
   import { centerOn, ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
   import { youAlpha } from './you';
 
+  /** The marker's square, and the facing it is drawn pointing along where it has one. */
+  export type YouHere = Point & { dir?: number };
+
   export interface Tooltip {
     title: string;
     feature: string | null;
@@ -35,8 +38,10 @@
     cursor?: Point | null;
     /** Landing square after a jump. */
     highlight?: Point | null;
-    /** Where the party stands, when it stands on this floor. */
-    you?: Point | null;
+    /** Where the party stands, when it stands on this floor, and which way they face when
+     *  whoever is standing there has a facing: a game being played does, the map explorer's
+     *  walker does not. */
+    you?: YouHere | null;
     /** The square the map opens on, and how big to draw a square while it does. The map explorer
      *  opens on the whole floor; a game being played opens close in on the character. */
     focus?: (Point & { cell: number }) | null;
@@ -177,7 +182,7 @@
     explored?: ExploredSquares | null;
     cursor?: Point | null;
     highlight?: Point | null;
-    you?: Point | null;
+    you?: YouHere | null;
     marks?: Mark[];
     monsters?: StockedMonster[];
     selected?: Point | null;
@@ -219,7 +224,7 @@
     if (monsters?.length) drawMonsters(ctx, monsters, view, sprites);
     drawMarks(ctx, marks ?? [], view);
     if (route) drawRoute(ctx, route, view);
-    if (you) drawYou(ctx, you.x, you.y, view, youAlpha(performance.now()));
+    if (you) drawYou(ctx, you.x, you.y, view, youAlpha(performance.now()), you.dir ?? null);
     if (selected) drawOutline(ctx, selected.x, selected.y, view, 2, palette.selection);
     if (highlight) drawOutline(ctx, highlight.x, highlight.y, view, 2, '#ffffff');
     if (cursor) drawOutline(ctx, cursor.x, cursor.y, view, 1, 'rgba(255, 255, 255, 0.75)');
