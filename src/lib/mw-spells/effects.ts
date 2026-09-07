@@ -4,7 +4,7 @@
  * Every spell in the game arrives at spell_effect (WORLD.EXE 2000:d358), a switch on the
  * category, the level and the slot that either does the work itself or calls one of two dozen
  * small helpers. Each entry below says what that code does; `from` names the function the
- * sentence was read out of, and `notRead` says where the reading stopped short.
+ * sentence was read out of.
  *
  * Three rules from the screen around the dispatcher (spell_screen, WORLD.EXE 2000:ea27) hold
  * for whole categories rather than single spells, so they are not repeated on every entry:
@@ -18,8 +18,6 @@ export interface MwSpellEffect {
   effect: string;
   /** The decompiled function it was read out of, name and address. */
   from: string;
-  /** What could not be settled from the decompilation, where anything was left open. */
-  notRead?: string;
 }
 
 const REDUNDANT = 'Asking for a level it already has or better answers "CASTING THIS SPELL WOULD BE REDUNDANT" and costs nothing.';
@@ -307,16 +305,14 @@ export const MW_SPELL_EFFECTS: MwSpellEffect[] = [
   {
     from: 'drain_monster (2000:d0de), spell_proof (2000:cc66)',
     effect:
-      'Takes your wisdom off the monster\'s level. A monster whose level is below your wisdom has its level and its health set to zero outright, so the spell simply kills it; otherwise it also loses half of one of its own numbers times your wisdom in health. A monster whose special-attack byte is 100 refuses it.',
-    notRead: "Which of the monster's numbers the health loss is built on — the byte at DS:0248 of its 35-byte row.",
+      'Takes your wisdom off the monster\'s level. A monster whose level is below your wisdom has its level and its health set to zero outright, so the spell simply kills it; otherwise it also loses half its hit-points-per-floor number times your wisdom in health. A monster whose special-attack byte is 100 refuses it.',
   },
   { from: 'spell_effect (2000:d358)', effect: "Takes 300 off the monster's health." },
   { from: 'explosion (2000:c9d2)', effect: "Takes rand(301) + 200 — so 200 to 500 — off the monster's health." },
   {
     from: 'autokill (2000:cdc5), spell_proof (2000:cc66)',
     effect:
-      "The monster rolls rand(rand(two of its own bytes added together) + its level) and you roll rand(level + rand(intelligence + wisdom)) + rand(floor); if yours is the bigger the monster's health is set to −100 and it dies. Losing prints \"THE SPELL FAILS... TOUGH LUCK CHARLIE\" and the spell points are still spent. A monster whose special-attack byte is 100 refuses it.",
-    notRead: "Which two of the monster's bytes its roll is built on — DS:024a and DS:024b of its 35-byte row.",
+      "The monster rolls rand(rand(the sum of two numbers in its table row that nothing else reads) + its level) and you roll rand(level + rand(intelligence + wisdom)) + rand(floor); if yours is the bigger the monster's health is set to −100 and it dies. Losing prints \"THE SPELL FAILS... TOUGH LUCK CHARLIE\" and the spell points are still spent. A monster whose special-attack byte is 100 refuses it.",
   },
   {
     from: 'raise_power_weapon (2000:cf08)',
@@ -390,8 +386,7 @@ export const MW_SPELL_EFFECTS: MwSpellEffect[] = [
   {
     from: 'drain_monster (2000:d0de), spell_proof (2000:cc66)',
     effect:
-      "Takes your wisdom off the monster's level, and kills outright any monster whose level is below your wisdom. The same spell as the wizard's.",
-    notRead: "Which of the monster's numbers the health loss is built on — the byte at DS:0248 of its 35-byte row.",
+      "Takes your wisdom off the monster's level, and kills outright any monster whose level is below your wisdom; otherwise it loses half its hit-points-per-floor number times your wisdom in health. The same spell as the wizard's.",
   },
   {
     from: 'spell_effect (2000:d358)',
@@ -420,8 +415,7 @@ export const MW_SPELL_EFFECTS: MwSpellEffect[] = [
   {
     from: 'autokill (2000:cdc5), spell_proof (2000:cc66)',
     effect:
-      "Your roll of rand(level + rand(intelligence + wisdom)) + rand(floor) against the monster's of rand(rand(two of its own bytes) + its level); winning sets its health to −100 and kills it, losing spends the spell points anyway.",
-    notRead: "Which two of the monster's bytes its roll is built on — DS:024a and DS:024b of its 35-byte row.",
+      "Your roll of rand(level + rand(intelligence + wisdom)) + rand(floor) against the monster's of rand(rand(the sum of two numbers in its table row that nothing else reads) + its level); winning sets its health to −100 and kills it, losing spends the spell points anyway.",
   },
   {
     from: 'raise_power_weapon (2000:cf08)',

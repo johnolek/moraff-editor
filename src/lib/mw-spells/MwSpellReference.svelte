@@ -148,10 +148,6 @@
             {selected.effect.effect}
             <span class="from">Read from {selected.effect.from}.</span>
           </dd>
-          {#if selected.effect.notRead}
-            <dt>Not read</dt>
-            <dd class="open">{selected.effect.notRead}</dd>
-          {/if}
           <dt>Where it sits<SourceLink ts={{ file: PORT, name: 'mwSpellRecord' }} /></dt>
           <dd>
             Record {selected.record} of SPELLS.HLP, and byte {selected.bookSlot} of the spellbook, the scrolls, the
@@ -322,8 +318,5 @@
     margin-top: 4px;
     font-size: 12px;
     color: var(--muted);
-  }
-  .open {
-    color: var(--mw-red);
   }
 </style>

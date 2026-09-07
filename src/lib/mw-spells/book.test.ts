@@ -49,9 +49,4 @@ describe('what the spells do', () => {
     // The priest's Protection asks for level 1, where the wizard's asks for 2.
     expect(MW_SPELL_EFFECTS[102].effect).toContain('not 2');
   });
-
-  it('marks what the reading could not settle rather than guessing', () => {
-    const open = MW_SPELL_EFFECTS.filter((entry) => entry.notRead);
-    expect(open.map((entry) => MW_SPELL_EFFECTS.indexOf(entry))).toEqual([85, 88, 106, 114]);
-  });
 });
