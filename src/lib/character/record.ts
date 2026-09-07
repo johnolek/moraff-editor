@@ -58,6 +58,9 @@ export interface CharacterStatus {
   hp: number;
   maxHp: number;
   stats: StatusStat[];
+  /** Whether the character was rolled under I can handle anything, the hard mode, which every
+   *  curve the game works out for them is steeper for. */
+  hard: boolean;
   /** The lines the game's own battle-spell box would print, in the order it prints them. */
   battleSpells: string[];
   /** Null for a game the map explorer does not have. */
@@ -98,6 +101,7 @@ function unforgivenStatus(view: DataView, bytes: Uint8Array): CharacterStatus {
     hp: view.getInt16(0x31, true),
     maxHp: view.getInt16(0x33, true),
     stats: statsAt(view, [0x816, 0x818, 0x81a, 0x81c, 0x81e, 0x820]),
+    hard: view.getInt8(0x8f6) !== 0,
     battleSpells: battleSpellsInEffect(view),
     place: {
       x: view.getInt16(0x7b0, true),
@@ -125,6 +129,7 @@ function moraffsWorldStatus(view: DataView, bytes: Uint8Array): CharacterStatus 
     hp: view.getInt16(0x31, true),
     maxHp: view.getInt16(0x33, true),
     stats: statsAt(view, [0x812, 0x814, 0x816, 0x818, 0x81a, 0x81c]),
+    hard: false,
     battleSpells: [],
     place: null,
   };

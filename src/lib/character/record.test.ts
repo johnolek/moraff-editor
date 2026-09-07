@@ -104,6 +104,13 @@ describe('the status block of a Dungeons of the Unforgiven character', () => {
   it('reads where the character stands', () => {
     expect(status.place).toEqual({ x: 40, y: 50, floor: 25, module: 2 });
   });
+
+  it('is on the normal curve until the record says otherwise', () => {
+    expect(status.hard).toBe(false);
+    const harder = file(UNFORGIVEN, 'TOUGH');
+    harder.view.setInt8(0x8f6, 1);
+    expect(characterStatus(harder.character)!.hard).toBe(true);
+  });
 });
 
 describe('the status block of a Moraff’s World character', () => {

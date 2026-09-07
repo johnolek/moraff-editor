@@ -1,7 +1,8 @@
 <script lang="ts">
   import { app, type RosterEntry, type Tab } from '../app-state.svelte';
-  import { GAMES } from '../editor/games';
+  import { GAMES, UNFORGIVEN } from '../editor/games';
   import { chooseCharacter, forgetCharacter, renameCharacter, restoreCharacterImport } from './current';
+  import { EXP_NEEDED_HEADING, expNeededRows } from './exp-needed';
   import { characterStatus, collapsedLine, expLabel, levelLabel, withSeparators } from './record';
   import { readStored, writeStored } from './storage';
 
@@ -10,6 +11,7 @@
 
   let collapsed = $state(readStored(COLLAPSED_KEY) === 'yes');
   let choosing = $state(false);
+  let showingExpNeeded = $state(false);
   /** The character whose name is being typed over, if any. */
   let renaming = $state<string | null>(null);
   let typedName = $state('');
@@ -20,6 +22,7 @@
     return character ? characterStatus(character) : null;
   });
   const game = $derived(GAMES.find((entry) => entry.id === character?.game) ?? null);
+  const expRows = $derived(status && showingExpNeeded ? expNeededRows(status.lev, status.hard) : []);
 
   function toggle() {
     collapsed = !collapsed;
@@ -133,7 +136,20 @@
       <button type="button" class="link" onclick={() => show('editor')}>Edit in Save Editor</button>
       <button type="button" class="link" onclick={() => show('roller')}>Roll another</button>
       {#if status.place}<button type="button" class="link" onclick={showOnMap}>Show on map</button>{/if}
+      {#if character.game === UNFORGIVEN.id}
+        <button type="button" class="link" onclick={() => (showingExpNeeded = !showingExpNeeded)}>Exp needed</button>
+      {/if}
       <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({app.roster.length})</button>
+    </div>
+  {/if}
+
+  {#if expRows.length > 0}
+    <!-- The game's own EXP NEEDED screen, on the black it prints its screens on. -->
+    <div class="exp-needed">
+      <div class="line">{EXP_NEEDED_HEADING}</div>
+      {#each expRows as row}
+        <div class="line">{row.level}) {withSeparators(row.exp)}</div>
+      {/each}
     </div>
   {/if}
 
@@ -274,6 +290,18 @@
   }
   .link:hover {
     color: var(--accent);
+  }
+  .exp-needed {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 8px 16px 10px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: #000;
+    color: var(--mw-green);
+  }
+  .exp-needed .line {
+    color: var(--mw-green);
   }
   .chooser {
     margin-top: 10px;
