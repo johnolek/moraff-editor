@@ -1,4 +1,6 @@
-import { app, currentEntry } from '../app-state.svelte';
+import { app, currentEntry, type GameId } from '../app-state.svelte';
+import { isGameId, loadChosenGame, loadLastCharacter, saveChosenGame, saveLastCharacter } from '../game-choice';
+import { tabFor } from '../tabs';
 import { recordName, slotFromFileName } from './record';
 import { loadRoster, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
 
@@ -71,6 +73,25 @@ export function replaceCharacterBytes(bytes: Uint8Array<ArrayBuffer>): void {
   remember();
 }
 
+/** Show the other game. The character becomes the one last worked on under it; the rest of the
+ *  roster is left exactly where it is. */
+export function switchGame(game: GameId): void {
+  if (game === app.game) return;
+  setGame(game);
+  chooseEntry(lastCharacterOf(game));
+}
+
+/**
+ * Bring back the game the last visit was looking at. A visit from before the site had a switch
+ * has no game stored, so the character that was being worked on says which game it was.
+ */
+export function restoreGame(): void {
+  const current = currentEntry();
+  const stored = loadChosenGame() ?? (isGameId(current?.game) ? current.game : app.game);
+  setGame(stored);
+  if (current && current.game !== stored) chooseEntry(lastCharacterOf(stored));
+}
+
 /** Bring back the characters the last visit left behind. */
 export function restoreRoster(): void {
   const { entries, currentId } = loadRoster();
@@ -82,7 +103,28 @@ export function restoreRoster(): void {
 function chooseEntry(id: string | null): void {
   app.characterId = id;
   app.characterVersion++;
+  const entry = currentEntry();
+  if (entry && isGameId(entry.game)) {
+    // Which game a character belongs to is a fact about the file, so a save of the other game
+    // being opened is what moves the site to that game.
+    setGame(entry.game);
+    saveLastCharacter(entry.game, entry.id);
+  }
   remember();
+}
+
+function setGame(game: GameId): void {
+  app.game = game;
+  app.tab = tabFor(game, app.tab);
+  saveChosenGame(game);
+}
+
+/** The character to work on under a game: the one last worked on if it is still on the roster,
+ *  and the newest of that game's otherwise. */
+function lastCharacterOf(game: GameId): string | null {
+  const theirs = app.roster.filter((entry) => entry.game === game);
+  const remembered = loadLastCharacter(game);
+  return theirs.find((entry) => entry.id === remembered)?.id ?? theirs[theirs.length - 1]?.id ?? null;
 }
 
 function remember(): void {

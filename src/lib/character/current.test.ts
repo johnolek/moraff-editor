@@ -8,7 +8,9 @@ import {
   keepRolledCharacter,
   renameCharacter,
   restoreCharacterImport,
+  restoreGame,
   restoreRoster,
+  switchGame,
   unloadCharacter,
 } from './current';
 
@@ -42,6 +44,8 @@ beforeEach(() => {
   useStorage(fakeStorage());
   app.roster = [];
   app.characterId = null;
+  app.game = 'unforgiven';
+  app.tab = 'map';
 });
 
 afterEach(() => useStorage(undefined));
@@ -141,5 +145,70 @@ describe('editing the character', () => {
     restoreCharacterImport(currentEntry()!.id);
     expect(currentEntry()!.bytes[0x816]).toBe(0);
     expect(currentEntry()!.bytes).not.toBe(before);
+  });
+});
+
+describe('switching games', () => {
+  beforeEach(() => {
+    importCharacter('unforgiven', '21', saveFile('SAGEY'));
+    keepRolledCharacter('moraffsWorld', 'WANDA', 3, saveFile('WANDA'));
+  });
+
+  it('keeps the whole roster and works on the other game’s character', () => {
+    switchGame('unforgiven');
+    expect(app.game).toBe('unforgiven');
+    expect(app.roster).toHaveLength(2);
+    expect(currentEntry()?.name).toBe('SAGEY');
+  });
+
+  it('goes back to the character last worked on under each game', () => {
+    keepRolledCharacter('unforgiven', 'BRUISER', 22, saveFile('BRUISER'));
+    chooseCharacter(app.roster[0].id);
+    switchGame('moraffsWorld');
+    switchGame('unforgiven');
+    expect(currentEntry()?.name).toBe('SAGEY');
+  });
+
+  it('works on the newest of a game’s characters when none was worked on before', () => {
+    keepRolledCharacter('unforgiven', 'BRUISER', 22, saveFile('BRUISER'));
+    switchGame('moraffsWorld');
+    useStorage(fakeStorage());
+    switchGame('unforgiven');
+    expect(currentEntry()?.name).toBe('BRUISER');
+  });
+
+  it('leaves no character to work on when the game has none', () => {
+    forgetCharacter(app.roster[0].id);
+    switchGame('unforgiven');
+    expect(currentEntry()).toBeNull();
+  });
+
+  it('moves off a tab the other game does not have', () => {
+    switchGame('unforgiven');
+    app.tab = 'map';
+    switchGame('moraffsWorld');
+    expect(app.tab).toBe('editor');
+  });
+
+  it('follows the game of a save file that is opened', () => {
+    switchGame('unforgiven');
+    importCharacter('moraffsWorld', '3', saveFile('WANDA II'));
+    expect(app.game).toBe('moraffsWorld');
+  });
+
+  it('is the game a reload comes back to', () => {
+    switchGame('unforgiven');
+    app.game = 'moraffsWorld';
+    restoreGame();
+    expect(app.game).toBe('unforgiven');
+    expect(currentEntry()?.name).toBe('SAGEY');
+  });
+
+  it('takes the game from the character in hand when no game was stored', () => {
+    useStorage(fakeStorage());
+    app.game = 'unforgiven';
+    restoreGame();
+    expect(app.game).toBe('moraffsWorld');
+    expect(currentEntry()?.name).toBe('WANDA');
   });
 });

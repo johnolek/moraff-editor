@@ -2,6 +2,9 @@ import { HistoryCursor } from './history';
 
 export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
 
+/** Which game the site is about. These are the ids of the schemas in `src/lib/editor/games.ts`. */
+export type GameId = 'unforgiven' | 'moraffsWorld';
+
 /** A function to open in the Source tab: one of the port's, or one of the decompilation's. */
 export type SourceRequest = { kind: 'ts'; file: string; name: string } | { kind: 'c'; name: string };
 
@@ -39,6 +42,8 @@ export interface PlaceRequest {
 }
 
 export interface AppState {
+  /** The game the whole site is showing: its tabs, its editor, its characters. */
+  game: GameId;
   tab: Tab;
   /** How far the map has moved through the browser's history, so its own Back and Forward
    *  buttons know whether there is anywhere to go. It is shared because switching tabs pushes
@@ -63,6 +68,7 @@ export interface AppState {
 }
 
 export const app = $state<AppState>({
+  game: 'unforgiven',
   tab: 'map',
   mapHistory: new HistoryCursor(),
   requestedMonsterId: null,
