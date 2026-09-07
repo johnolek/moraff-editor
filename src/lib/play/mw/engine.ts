@@ -11,7 +11,6 @@ import type { StockedMonster } from '../../map/stocking';
 import { adviseTheWalker, type MwLessons } from './advice';
 import { fallDownAChute, chuteUnder } from './chute';
 import { mwDie } from './death';
-import { digAHole } from './dig';
 import { castAtTheSpellScreen, useAnItem } from './cast';
 import { swingAtMonster } from './fight';
 import { MwFloorMonsters, mwDrawnMonsters, mwEnterLevel } from './floor';

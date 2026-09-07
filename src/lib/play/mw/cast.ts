@@ -21,7 +21,6 @@ import {
 } from '../../game/mw-port/screens';
 import type { MwGame, MwSpellChoice } from '../../game/mw-port/state';
 import type { MwGameSession, MwTurn } from './engine';
-import { MW_KEY } from './keys';
 import { drawArmorSlotMenu, drawDirectionMenu, drawWeaponSlotMenu } from './menus';
 import { runAsking } from './replay';
 import { mwNotBuiltYet, MW_TEXT_COLOUR } from './screens';
