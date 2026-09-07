@@ -1,3 +1,4 @@
+import type { GameId } from '../app-state.svelte';
 import { fixSaveChecksum, SAVE_SIZE } from '../game/dotu-files.js';
 import type { GameSchema } from './schema';
 
@@ -417,6 +418,12 @@ export const UNFORGIVEN: GameSchema = {
 };
 
 export const GAMES: GameSchema[] = [MORAFFS_WORLD, UNFORGIVEN];
+
+/** The schema of each game the site can be switched to. */
+export const GAME_SCHEMAS: Record<GameId, GameSchema> = {
+  unforgiven: UNFORGIVEN,
+  moraffsWorld: MORAFFS_WORLD,
+};
 
 export function pickGameByFileSize(size: number): GameSchema | null {
   return GAMES.find((game) => game.fileSize === size) ?? null;

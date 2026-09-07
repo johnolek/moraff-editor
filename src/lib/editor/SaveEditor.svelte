@@ -1,9 +1,9 @@
 <script lang="ts">
   import './editor.css';
-  import { currentEntry } from '../app-state.svelte';
+  import { app, currentEntry } from '../app-state.svelte';
   import { characterEdited, importCharacter, replaceCharacterBytes, unloadCharacter } from '../character/current';
   import { characterFileName } from '../character/record';
-  import { GAMES, pickGameByFileSize } from './games';
+  import { GAME_SCHEMAS, GAMES, pickGameByFileSize } from './games';
   import type { GameSchema } from './schema';
   import SectionView from './SectionView.svelte';
 
@@ -16,8 +16,6 @@
   }
 
   let doc = $state.raw<Document | null>(null);
-  /** File whose game could not be told from its size; waiting for the user to pick one. */
-  let unrecognised = $state.raw<File | null>(null);
   /** Bumped to remount every field after the bytes are replaced. */
   let version = $state(0);
   let dragover = $state(false);
@@ -39,7 +37,6 @@
 
   function open(game: GameSchema, bytes: Uint8Array<ArrayBuffer>) {
     doc = { game, bytes, view: new DataView(bytes.buffer), pristine: bytes.slice() };
-    unrecognised = null;
     version++;
   }
 
@@ -47,7 +44,6 @@
    *  is what opens it here. */
   async function load(file: File, game: GameSchema) {
     importCharacter(game.id, file.name, new Uint8Array(await file.arrayBuffer()));
-    unrecognised = null;
   }
 
   // The character can be made current somewhere else — rolled in the New Character tab, chosen
@@ -63,10 +59,11 @@
     if (game) open(game, current.bytes);
   });
 
+  /** The size of the file says which game it belongs to, and opening one of the other game's
+   *  saves is what moves the site to that game. A file that is neither size is read as the game
+   *  the switch is on. */
   function receive(file: File) {
-    const game = pickGameByFileSize(file.size);
-    if (game) load(file, game);
-    else unrecognised = file;
+    load(file, pickGameByFileSize(file.size) ?? GAME_SCHEMAS[app.game]);
   }
 
   function onFileChosen() {
@@ -103,7 +100,6 @@
   }
 
   function unload() {
-    unrecognised = null;
     if (fileInput) fileInput.value = '';
     unloadCharacter();
   }
@@ -130,18 +126,7 @@
           copy of the original so you can restore it if something goes wrong.
         </p>
       </div>
-    {/if}
 
-    {#if unrecognised}
-      <div class="picker">
-        <p>Couldn't identify this file by size. Pick a game:</p>
-        <div class="game-picker">
-          {#each GAMES as game}
-            <button type="button" onclick={() => load(unrecognised!, game)}>{game.displayName} ({game.fileSize}b)</button>
-          {/each}
-        </div>
-      </div>
-    {:else if !doc}
       <label
         class="drop-zone"
         class:dragover
@@ -281,23 +266,6 @@
   }
   .drop-zone input {
     display: none;
-  }
-  .picker p {
-    margin: 0 0 8px;
-  }
-  .game-picker {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .game-picker button {
-    background: var(--panel);
-    color: var(--ink);
-    border: 1px solid var(--line);
-  }
-  .game-picker button:hover {
-    border-color: var(--accent);
-    color: var(--accent);
   }
   .toolbar {
     display: flex;

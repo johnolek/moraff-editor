@@ -34,18 +34,15 @@
     },
   };
 
-  type GameId = keyof typeof GAMES;
-
-  let game = $state<GameId>('unforgiven');
-  let slot = $state(20);
+  let slot = $state(SLOTS[0]);
   let session = $state.raw<RollerSession | MwRollerSession | null>(null);
   let view = $state.raw<ReturnType<RollerSession['view']> | ReturnType<MwRollerSession['view']> | null>(null);
   let typed = $state('');
   let note = $state('');
   let screenWidth = $state(0);
 
-  const chosen = $derived(GAMES[game]);
-  const fileName = $derived(game === 'unforgiven' ? slotFileName(slot) : mwSlotFileName(slot));
+  const chosen = $derived(GAMES[app.game]);
+  const fileName = $derived(app.game === 'unforgiven' ? slotFileName(slot) : mwSlotFileName(slot));
   const sheet = $derived(view === null ? [] : sheetRows(view.pc));
   const showing = $derived(
     view === null ? [] : view.question === 'name' ? [...view.screen, nameBeingTyped()] : view.screen,
@@ -103,13 +100,16 @@
     return 'ageMinutes' in pc ? newMwCharacterFile(pc) : newCharacterFile(pc);
   }
 
-  function pickGame(id: GameId) {
-    game = id;
-    slot = GAMES[id].slots[0];
-  }
+  // A roll is one game's questions and one game's dice, so the switch in the header starts over.
+  $effect(() => {
+    slot = GAMES[app.game].slots[0];
+    session = null;
+    view = null;
+    note = '';
+  });
 
   function start() {
-    const started = game === 'unforgiven' ? new RollerSession(slot) : new MwRollerSession(slot);
+    const started = app.game === 'unforgiven' ? new RollerSession(slot) : new MwRollerSession(slot);
     session = started;
     view = started.view();
     typed = '';
@@ -143,7 +143,7 @@
 
   function openInEditor() {
     if (!view) return;
-    keepRolledCharacter(game, view.pc.name || fileName, slot, characterFile(view.pc));
+    keepRolledCharacter(app.game, view.pc.name || fileName, slot, characterFile(view.pc));
     app.tab = 'editor';
   }
 
@@ -167,18 +167,6 @@
         Roll up a character the way the game does: the same questions, the same dice, the same starting kit. The finished
         character opens in the Save Editor and downloads as a character file you can drop into your game folder.
       </p>
-
-      <section>
-        <h3><PixelText text="Game" /></h3>
-        <div class="row">
-          <button type="button" class:picked={game === 'unforgiven'} onclick={() => pickGame('unforgiven')}>
-            Dungeons of the Unforgiven
-          </button>
-          <button type="button" class:picked={game === 'moraffsWorld'} onclick={() => pickGame('moraffsWorld')}>
-            Moraff's World
-          </button>
-        </div>
-      </section>
 
       <section>
         <h3><PixelText text="Character Number" /></h3>
