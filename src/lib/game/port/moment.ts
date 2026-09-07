@@ -217,3 +217,35 @@ export function relocate(game: Game): void {
   game.recenterMap = true;
   game.redrawView = true;
 }
+
+/**
+ * FUN_2000_aa26 (exe 2000:aa26, unf.c "FUN_2000_aa26"): every battle spell ends at once, which
+ * is what a night at the inn and a hole dug through the floor both do.
+ *
+ * Strength and Speed hand their seven points back the way they would have when their timers ran
+ * out. Power Weapon and Protection lose both their level and their timer here, which is the one
+ * place a level left standing over a spent timer is cleared.
+ */
+export function endBattleSpells(game: Game): void {
+  const pc = game.pc;
+  if (pc.strengthTimer > 0) {
+    pc.strengthTimer = 0;
+    pc.str -= 7;
+  }
+  if (pc.speedTimer > 0) {
+    pc.speedTimer = 0;
+    pc.dex -= 7;
+  }
+  pc.slowEnemiesTimer = 0;
+  pc.sleepTimer = 0;
+  pc.holdMonsterTimer = 0;
+  pc.powerWeaponTime = 0;
+  pc.powerWeapon = 0;
+  pc.protectionTime = 0;
+  pc.protection = 0;
+  pc.resistDiseaseTimer = 0;
+  pc.resistPoisonTimer = 0;
+  pc.antiColdTimer = 0;
+  pc.antiFireTimer = 0;
+  pc.resistDrainTimer = 0;
+}
