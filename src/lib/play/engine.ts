@@ -18,15 +18,15 @@ import { castASpell, useAnItem } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
 import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
-import { changeArmor, changeWeapon } from './gear';
-import { readTheMonsterManual } from './manual';
-import { countTheMoney, expandTheMap, openGraphics, openOptions, zoomTheView } from './misc';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
+import { changeArmor, changeWeapon } from './gear';
 import { showHelp } from './help';
 import { dropSomething } from './items';
 import { killTheDead } from './kill';
 import { KEY } from './keys';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
+import { readTheMonsterManual } from './manual';
+import { countTheMoney, expandTheMap, openGraphics, openOptions, zoomTheView } from './misc';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
@@ -402,9 +402,9 @@ export async function runMoveControl(session: GameSession): Promise<void> {
       pc.hp = pc.maxHp;
       pc.sp = pc.maxSp;
     }
-    const dyingHere = deathBoxes(session);
-    if (dyingHere !== null) {
-      await died(session, dyingHere);
+    const deathBeforeTheKey = deathBoxes(session);
+    if (deathBeforeTheKey !== null) {
+      await died(session, deathBeforeTheKey);
       return;
     }
     game.enemyDir = -1;
@@ -429,9 +429,9 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     await killTheDead(session);
     // movecontrol at 2000:dbe9 asks whether the character is dead between the kill and the step,
     // and asks again at the top of the loop, which is where a step that killed them is caught.
-    const dying = deathBoxes(session);
-    if (dying !== null) {
-      await died(session, dying);
+    const deathAfterTheKill = deathBoxes(session);
+    if (deathAfterTheKill !== null) {
+      await died(session, deathAfterTheKill);
       return;
     }
     await resolveStep(turn);
