@@ -1,10 +1,13 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { app } from '../app-state.svelte';
+  import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { currentCharacter } from './character';
+  import { changedFields, currentCharacter } from './character';
+  import FieldLabel from './FieldLabel.svelte';
   import { drainCost, killRows, levelProgress, type Stats } from './experience';
   import FloorPicker from './FloorPicker.svelte';
 
@@ -20,30 +23,46 @@
   const progress = $derived(levelProgress(character, whole(target, 1)));
   const kills = $derived(killRows(module, floor, progress));
   const drain = $derived(drainCost(character, stats));
-  const canUseLoaded = $derived(Boolean(currentCharacter()));
-
-  // Start from whatever character is current, and follow it when another one is picked.
-  $effect(() => {
+  /** The character's own values, as the calculator holds them, kept up with its edits. */
+  const seed = $derived.by(() => {
     void app.characterVersion;
-    useLoadedCharacter();
+    const record = currentCharacter();
+    return record ? plannerFrom(record) : null;
+  });
+  const differs = $derived(changedFields({ level, exp, hard, target, module, floor, ...stats }, seed));
+
+  // Picking a different character starts the calculator from it. Editing the one in hand does
+  // not, so an override survives an edit and is marked as changed instead.
+  $effect(() => {
+    void app.character;
+    untrack(useCharacter);
   });
 
-  function useLoadedCharacter() {
-    const record = currentCharacter();
-    if (!record) return;
-    level = record.lev;
-    exp = record.exp;
-    hard = record.hard !== 0;
-    target = record.lev + 1;
-    module = record.module;
-    floor = Math.min(Math.max(1, record.level), BOTTOM_LEVEL[record.module]);
-    stats = {
+  function plannerFrom(record: SaveRecord) {
+    return {
+      level: record.lev,
+      exp: record.exp,
+      hard: record.hard !== 0,
+      target: record.lev + 1,
+      module: record.module,
+      floor: Math.min(Math.max(1, record.level), BOTTOM_LEVEL[record.module]),
       cls: Math.min(6, Math.max(0, record.cls)),
       con: record.con,
       luck: record.luck,
       wis: record.wis,
       iq: record.iq,
     };
+  }
+
+  function useCharacter() {
+    if (!seed) return;
+    level = seed.level;
+    exp = seed.exp;
+    hard = seed.hard;
+    target = seed.target;
+    module = seed.module;
+    floor = seed.floor;
+    stats = { cls: seed.cls, con: seed.con, luck: seed.luck, wis: seed.wis, iq: seed.iq };
   }
 
   /** An empty number input reads as NaN, which would spread through every table. */
@@ -60,22 +79,22 @@
     <SectionHeading title="Character" />
     <div class="fields">
       <label>
-        <span>Level</span>
+        <FieldLabel text="Level" changed={differs.level} />
         <input type="number" min="1" bind:value={level} />
       </label>
       <label>
-        <span>Experience</span>
+        <FieldLabel text="Experience" changed={differs.exp} />
         <input type="number" min="0" step="any" bind:value={exp} />
       </label>
       <label>
-        <span>Difficulty</span>
+        <FieldLabel text="Difficulty" changed={differs.hard} />
         <select bind:value={hard}>
           <option value={false}>Normal</option>
           <option value={true}>I can handle anything!</option>
         </select>
       </label>
       <label>
-        <span>Class</span>
+        <FieldLabel text="Class" changed={differs.cls} />
         <select bind:value={stats.cls}>
           {#each data.classes as entry}
             <option value={entry.id}>{entry.name}</option>
@@ -83,25 +102,25 @@
         </select>
       </label>
       <label>
-        <span>Constitution</span>
+        <FieldLabel text="Constitution" changed={differs.con} />
         <input type="number" bind:value={stats.con} />
       </label>
       <label>
-        <span>Intelligence</span>
+        <FieldLabel text="Intelligence" changed={differs.iq} />
         <input type="number" bind:value={stats.iq} />
       </label>
       <label>
-        <span>Wisdom</span>
+        <FieldLabel text="Wisdom" changed={differs.wis} />
         <input type="number" bind:value={stats.wis} />
       </label>
       <label>
-        <span>Luck</span>
+        <FieldLabel text="Luck" changed={differs.luck} />
         <input type="number" bind:value={stats.luck} />
       </label>
     </div>
     <div class="load">
-      <button type="button" class="ghost" disabled={!canUseLoaded} onclick={useLoadedCharacter}>Use loaded character</button>
-      {#if !canUseLoaded}
+      <button type="button" class="ghost" disabled={!seed} onclick={useCharacter}>Use the character's values</button>
+      {#if !seed}
         <span class="note">Load a Dungeons of the Unforgiven save in the Save Editor to fill these in.</span>
       {/if}
     </div>
@@ -113,7 +132,7 @@
     </SectionHeading>
     <div class="fields">
       <label>
-        <span>Target level</span>
+        <FieldLabel text="Target level" changed={differs.target} />
         <input type="number" min="1" bind:value={target} />
       </label>
     </div>
@@ -139,7 +158,7 @@
       <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'expValue' }} c="exp_value" />
     </SectionHeading>
     <div class="fields">
-      <FloorPicker bind:module bind:floor />
+      <FloorPicker bind:module bind:floor changedModule={differs.module} changedFloor={differs.floor} />
     </div>
     <table>
       <thead>

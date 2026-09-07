@@ -1,12 +1,15 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { app } from '../app-state.svelte';
+  import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import BarChart from '../ui/BarChart.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { currentCharacter } from './character';
+  import { changedFields, currentCharacter } from './character';
   import DropTable from './DropTable.svelte';
+  import FieldLabel from './FieldLabel.svelte';
   import { dropTables, WEAPON_NAMES } from './drops';
   import FloorPicker from './FloorPicker.svelte';
 
@@ -23,21 +26,36 @@
 
   const tables = $derived(dropTables({ module, floor, cls, ownedWeapons }));
   const levels = $derived(tables.levels.filter(([, chance]) => chance >= RARE_LEVEL));
-  const canUseLoaded = $derived(Boolean(currentCharacter()));
-
-  // Start from whatever character is current, and follow it when another one is picked.
-  $effect(() => {
+  /** The character's own values, as the calculator holds them, kept up with its edits. */
+  const seed = $derived.by(() => {
     void app.characterVersion;
-    useLoadedCharacter();
+    const record = currentCharacter();
+    return record ? hunterFrom(record) : null;
+  });
+  const differs = $derived(changedFields({ cls, module, floor, ownedWeapons }, seed));
+
+  // Picking a different character starts the calculator from it. Editing the one in hand does
+  // not, so an override survives an edit and is marked as changed instead.
+  $effect(() => {
+    void app.character;
+    untrack(useCharacter);
   });
 
-  function useLoadedCharacter() {
-    const record = currentCharacter();
-    if (!record) return;
-    cls = Math.min(6, Math.max(0, record.cls));
-    module = record.module;
-    floor = Math.min(Math.max(1, record.level), BOTTOM_LEVEL[record.module]);
-    ownedWeapons = WEAPON_NAMES.map((_, index) => index + 1).filter((id) => record.weaponsOwned[id] > 0);
+  function hunterFrom(record: SaveRecord) {
+    return {
+      cls: Math.min(6, Math.max(0, record.cls)),
+      module: record.module,
+      floor: Math.min(Math.max(1, record.level), BOTTOM_LEVEL[record.module]),
+      ownedWeapons: WEAPON_NAMES.map((_, index) => index + 1).filter((id) => record.weaponsOwned[id] > 0),
+    };
+  }
+
+  function useCharacter() {
+    if (!seed) return;
+    cls = seed.cls;
+    module = seed.module;
+    floor = seed.floor;
+    ownedWeapons = [...seed.ownedWeapons];
   }
 
   function toggleWeapon(id: number, owned: boolean) {
@@ -51,7 +69,7 @@
   <section>
     <SectionHeading title="Where" />
     <div class="fields">
-      <FloorPicker bind:module bind:floor />
+      <FloorPicker bind:module bind:floor changedModule={differs.module} changedFloor={differs.floor} />
     </div>
     <BarChart
       labels={levels.map(([level]) => String(level))}
@@ -66,7 +84,7 @@
     <SectionHeading title="Character" />
     <div class="fields">
       <label>
-        <span>Class</span>
+        <FieldLabel text="Class" changed={differs.cls} />
         <select bind:value={cls}>
           {#each data.classes as entry}
             <option value={entry.id}>{entry.name}</option>
@@ -79,8 +97,8 @@
       </label>
     </div>
     <div class="load">
-      <button type="button" class="ghost" disabled={!canUseLoaded} onclick={useLoadedCharacter}>Use loaded character</button>
-      {#if !canUseLoaded}
+      <button type="button" class="ghost" disabled={!seed} onclick={useCharacter}>Use the character's values</button>
+      {#if !seed}
         <span class="note">Load a Dungeons of the Unforgiven save in the Save Editor to fill these in.</span>
       {/if}
     </div>
@@ -91,7 +109,7 @@
       <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' }} c="drop_weapon" />
     </SectionHeading>
     <div class="owned">
-      <span class="owned-label">Already owned</span>
+      <span class="owned-label"><FieldLabel text="Already owned" changed={differs.ownedWeapons} /></span>
       {#each WEAPON_NAMES as name, index}
         <label>
           <input

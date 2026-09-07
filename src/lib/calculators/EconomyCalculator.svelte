@@ -1,12 +1,15 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { app } from '../app-state.svelte';
+  import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import { TEMPLE } from '../game/dotu-mech.js';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import BarChart from '../ui/BarChart.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { currentCharacter } from './character';
+  import { changedFields, currentCharacter } from './character';
+  import FieldLabel from './FieldLabel.svelte';
   import {
     innBreakEvenChildren,
     moneyPerKill,
@@ -32,24 +35,42 @@
   const byLevel = $derived(restCostByLevel(rest, tableLevels(rest.lev)));
   const innBreakEven = $derived(innBreakEvenChildren(rest.lev));
   const money = $derived(moneyPerKill(floor, cls, hard));
-  const canUseLoaded = $derived(Boolean(currentCharacter()));
-
-  // Start from whatever character is current, and follow it when another one is picked.
-  $effect(() => {
+  /** The character's own values, as the calculator holds them, kept up with its edits. */
+  const seed = $derived.by(() => {
     void app.characterVersion;
-    useLoadedCharacter();
+    const record = currentCharacter();
+    return record ? spenderFrom(record) : null;
+  });
+  const differs = $derived(changedFields({ level, children, spMissing, hard, cls, module, floor }, seed));
+
+  // Picking a different character starts the calculator from it. Editing the one in hand does
+  // not, so an override survives an edit and is marked as changed instead.
+  $effect(() => {
+    void app.character;
+    untrack(useCharacter);
   });
 
-  function useLoadedCharacter() {
-    const record = currentCharacter();
-    if (!record) return;
-    level = record.lev;
-    children = record.children;
-    spMissing = Math.max(0, record.maxSp - record.sp);
-    hard = record.hard !== 0;
-    cls = Math.min(6, Math.max(0, record.cls));
-    module = record.module;
-    floor = Math.min(Math.max(1, record.level), BOTTOM_LEVEL[record.module]);
+  function spenderFrom(record: SaveRecord) {
+    return {
+      level: record.lev,
+      children: record.children,
+      spMissing: Math.max(0, record.maxSp - record.sp),
+      hard: record.hard !== 0,
+      cls: Math.min(6, Math.max(0, record.cls)),
+      module: record.module,
+      floor: Math.min(Math.max(1, record.level), BOTTOM_LEVEL[record.module]),
+    };
+  }
+
+  function useCharacter() {
+    if (!seed) return;
+    level = seed.level;
+    children = seed.children;
+    spMissing = seed.spMissing;
+    hard = seed.hard;
+    cls = seed.cls;
+    module = seed.module;
+    floor = seed.floor;
   }
 
   /** An empty number input reads as NaN, which would spread through every table. */
@@ -79,26 +100,26 @@
     <SectionHeading title="Character" />
     <div class="fields">
       <label>
-        <span>Level</span>
+        <FieldLabel text="Level" changed={differs.level} />
         <input type="number" min="1" bind:value={level} />
       </label>
       <label>
-        <span>Children helped</span>
+        <FieldLabel text="Children helped" changed={differs.children} />
         <input type="number" min="0" bind:value={children} />
       </label>
       <label>
-        <span>Spell points missing</span>
+        <FieldLabel text="Spell points missing" changed={differs.spMissing} />
         <input type="number" min="0" bind:value={spMissing} />
       </label>
       <label>
-        <span>Difficulty</span>
+        <FieldLabel text="Difficulty" changed={differs.hard} />
         <select bind:value={hard}>
           <option value={false}>Normal</option>
           <option value={true}>I can handle anything!</option>
         </select>
       </label>
       <label>
-        <span>Class</span>
+        <FieldLabel text="Class" changed={differs.cls} />
         <select bind:value={cls}>
           {#each data.classes as entry}
             <option value={entry.id}>{entry.name}</option>
@@ -107,8 +128,8 @@
       </label>
     </div>
     <div class="load">
-      <button type="button" class="ghost" disabled={!canUseLoaded} onclick={useLoadedCharacter}>Use loaded character</button>
-      {#if !canUseLoaded}
+      <button type="button" class="ghost" disabled={!seed} onclick={useCharacter}>Use the character's values</button>
+      {#if !seed}
         <span class="note">Load a Dungeons of the Unforgiven save in the Save Editor to fill these in.</span>
       {/if}
     </div>
@@ -195,7 +216,7 @@
       <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'rollMoney' }} c="drop_money" />
     </SectionHeading>
     <div class="fields">
-      <FloorPicker bind:module bind:floor />
+      <FloorPicker bind:module bind:floor changedModule={differs.module} changedFloor={differs.floor} />
     </div>
     <table>
       <tbody>

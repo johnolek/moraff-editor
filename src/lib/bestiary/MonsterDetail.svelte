@@ -1,5 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
+  import { app } from '../app-state.svelte';
   import { currentCharacter } from '../calculators/character';
   import { weaponById } from '../calculators/combat';
   import {
@@ -78,8 +79,9 @@
   const halfTheTime = $derived(totalNeededToBeatDefense(0.5, baseLevel, entry.type.defense, entry.type.speed));
   const nineSwingsInTen = $derived(totalNeededToBeatDefense(0.9, baseLevel, entry.type.defense, entry.type.speed));
 
-  /** The character open in the save editor, as the pieces of a swing and its die, or null for none. */
+  /** The current character, as the pieces of a swing and its die, or null when there is none. */
   const yours = $derived.by(() => {
+    void app.characterVersion;
     const record = currentCharacter();
     if (!record) return null;
     const fighter: ToHitFighter = {

@@ -1,14 +1,17 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { app } from '../app-state.svelte';
   import LevelControl from '../bestiary/LevelControl.svelte';
   import { allMonsters, homeFloor, monsterGroups, type Monster } from '../bestiary/monsters';
+  import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import { monsterLevelBase } from '../game/dotu-mech.js';
   import BarChart from '../ui/BarChart.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { currentCharacter } from './character';
+  import { changedFields, currentCharacter } from './character';
   import { ARMORS, combatReport, WEAPONS, type Fighter } from './combat';
+  import FieldLabel from './FieldLabel.svelte';
 
   const PROTECTIONS = ['None', 'Minor Protection', 'Protection', 'Major Protection', 'Ultra Protection'];
   const POWER_WEAPONS = [1, 2, 3];
@@ -65,18 +68,23 @@
     protRing: whole(character.protRing, 0),
   });
   const report = $derived(combatReport(fighter, { monster, level, module, floor }));
-  const canUseLoaded = $derived(Boolean(currentCharacter()));
-
-  // Start from whatever character is current, and follow it when another one is picked.
-  $effect(() => {
+  /** The character's own values, as the calculator holds them, kept up with its edits. */
+  const seed = $derived.by(() => {
     void app.characterVersion;
-    useLoadedCharacter();
+    const record = currentCharacter();
+    return record ? fighterFrom(record) : null;
+  });
+  const differs = $derived(changedFields(character, seed));
+
+  // Picking a different character starts the calculator from it. Editing the one in hand does
+  // not, so an override survives an edit and is marked as changed instead.
+  $effect(() => {
+    void app.character;
+    untrack(useCharacter);
   });
 
-  function useLoadedCharacter() {
-    const record = currentCharacter();
-    if (!record) return;
-    character = {
+  function fighterFrom(record: SaveRecord): Fighter {
+    return {
       lev: record.lev,
       cls: Math.min(6, Math.max(0, record.cls)),
       str: record.str,
@@ -99,6 +107,10 @@
       powerWeapon: Math.min(3, Math.max(0, record.powerWeapon)),
       hard: record.hard !== 0,
     };
+  }
+
+  function useCharacter() {
+    if (seed) character = { ...seed };
   }
 
   function pickMonster(event: Event) {
@@ -139,11 +151,11 @@
     <SectionHeading title="Character" />
     <div class="fields">
       <label>
-        <span>Level</span>
+        <FieldLabel text="Level" changed={differs.lev} />
         <input type="number" min="0" bind:value={character.lev} />
       </label>
       <label>
-        <span>Class</span>
+        <FieldLabel text="Class" changed={differs.cls} />
         <select bind:value={character.cls}>
           {#each data.classes as entry}
             <option value={entry.id}>{entry.name}</option>
@@ -151,35 +163,35 @@
         </select>
       </label>
       <label>
-        <span>Strength</span>
+        <FieldLabel text="Strength" changed={differs.str} />
         <input type="number" bind:value={character.str} />
       </label>
       <label>
-        <span>Intelligence</span>
+        <FieldLabel text="Intelligence" changed={differs.iq} />
         <input type="number" bind:value={character.iq} />
       </label>
       <label>
-        <span>Wisdom</span>
+        <FieldLabel text="Wisdom" changed={differs.wis} />
         <input type="number" bind:value={character.wis} />
       </label>
       <label>
-        <span>Constitution</span>
+        <FieldLabel text="Constitution" changed={differs.con} />
         <input type="number" bind:value={character.con} />
       </label>
       <label>
-        <span>Agility</span>
+        <FieldLabel text="Agility" changed={differs.dex} />
         <input type="number" bind:value={character.dex} />
       </label>
       <label>
-        <span>Luck</span>
+        <FieldLabel text="Luck" changed={differs.luck} />
         <input type="number" bind:value={character.luck} />
       </label>
       <label>
-        <span>Lucky charms</span>
+        <FieldLabel text="Lucky charms" changed={differs.luckyCharms} />
         <input type="number" min="0" bind:value={character.luckyCharms} />
       </label>
       <label>
-        <span>Difficulty</span>
+        <FieldLabel text="Difficulty" changed={differs.hard} />
         <select bind:value={character.hard}>
           <option value={false}>Normal</option>
           <option value={true}>I can handle anything!</option>
@@ -187,8 +199,8 @@
       </label>
     </div>
     <div class="load">
-      <button type="button" class="ghost" disabled={!canUseLoaded} onclick={useLoadedCharacter}>Use loaded character</button>
-      {#if !canUseLoaded}
+      <button type="button" class="ghost" disabled={!seed} onclick={useCharacter}>Use the character's values</button>
+      {#if !seed}
         <span class="note">Load a Dungeons of the Unforgiven save in the Save Editor to fill these in.</span>
       {/if}
     </div>
@@ -198,7 +210,7 @@
     <SectionHeading title="Weapon and armor" />
     <div class="fields">
       <label>
-        <span>Weapon</span>
+        <FieldLabel text="Weapon" changed={differs.weapon} />
         <select bind:value={character.weapon}>
           {#each WEAPONS as weapon}
             <option value={weapon.id}>{weapon.name}</option>
@@ -206,19 +218,19 @@
         </select>
       </label>
       <label>
-        <span>Plus</span>
+        <FieldLabel text="Plus" changed={differs.weaponPlus} />
         <input type="number" min="0" bind:value={character.weaponPlus} />
       </label>
       <label>
-        <span>Temporary plus</span>
+        <FieldLabel text="Temporary plus" changed={differs.tempWeaponPlus} />
         <input type="number" min="0" bind:value={character.tempWeaponPlus} />
       </label>
       <label>
-        <span>Gauntlet</span>
+        <FieldLabel text="Gauntlet" changed={differs.gauntlet} />
         <input type="number" min="0" bind:value={character.gauntlet} />
       </label>
       <label>
-        <span>Armor</span>
+        <FieldLabel text="Armor" changed={differs.armor} />
         <select bind:value={character.armor}>
           {#each ARMORS as armor}
             <option value={armor.id}>{armor.name}</option>
@@ -226,19 +238,19 @@
         </select>
       </label>
       <label>
-        <span>Plus</span>
+        <FieldLabel text="Plus" changed={differs.armorPlus} />
         <input type="number" min="0" bind:value={character.armorPlus} />
       </label>
       <label>
-        <span>Temporary plus</span>
+        <FieldLabel text="Temporary plus" changed={differs.tempArmorPlus} />
         <input type="number" min="0" bind:value={character.tempArmorPlus} />
       </label>
       <label>
-        <span>Body armor</span>
+        <FieldLabel text="Body armor" changed={differs.bodyArmor} />
         <input type="number" min="0" bind:value={character.bodyArmor} />
       </label>
       <label>
-        <span>Ring of protection</span>
+        <FieldLabel text="Ring of protection" changed={differs.protRing} />
         <input type="number" min="0" bind:value={character.protRing} />
       </label>
     </div>
@@ -252,7 +264,7 @@
     <SectionHeading title="Spells" />
     <div class="fields">
       <label>
-        <span>Protection spell</span>
+        <FieldLabel text="Protection spell" changed={differs.protection} />
         <select bind:value={character.protection}>
           {#each PROTECTIONS as name, index}
             <option value={index}>{name}</option>
@@ -260,7 +272,7 @@
         </select>
       </label>
       <label>
-        <span>Power weapon</span>
+        <FieldLabel text="Power weapon" changed={differs.powerWeapon} />
         <select bind:value={character.powerWeapon}>
           <option value={0}>None</option>
           {#each POWER_WEAPONS as spell}

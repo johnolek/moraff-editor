@@ -1,13 +1,17 @@
 <script lang="ts">
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import { MODULE_NUMERALS } from '../map/labels';
+  import FieldLabel from './FieldLabel.svelte';
 
   interface Props {
     module: number;
     floor: number;
+    /** Whether the module and the floor are still the ones the current character is on. */
+    changedModule?: boolean;
+    changedFloor?: boolean;
   }
 
-  let { module = $bindable(), floor = $bindable() }: Props = $props();
+  let { module = $bindable(), floor = $bindable(), changedModule = false, changedFloor = false }: Props = $props();
 
   const floors = $derived(Array.from({ length: BOTTOM_LEVEL[module] }, (_, index) => index + 1));
 
@@ -18,7 +22,7 @@
 </script>
 
 <label>
-  <span>Module</span>
+  <FieldLabel text="Module" changed={changedModule} />
   <select value={module} onchange={changeModule}>
     {#each MODULE_NUMERALS as numeral, index}
       <option value={index}>{numeral}</option>
@@ -26,7 +30,7 @@
   </select>
 </label>
 <label>
-  <span>Floor</span>
+  <FieldLabel text="Floor" changed={changedFloor} />
   <select bind:value={floor}>
     {#each floors as level}
       <option value={level}>{level}</option>

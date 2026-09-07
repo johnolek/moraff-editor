@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { app } from '../app-state.svelte';
+  import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { currentCharacter } from './character';
+  import { changedFields, currentCharacter } from './character';
+  import FieldLabel from './FieldLabel.svelte';
   import { allClassRolls, levelUpRoll, type LevelUpStats } from './levelup';
 
   let stats = $state<LevelUpStats>({ cls: 0, con: 10, luck: 10, wis: 10, iq: 10 });
@@ -17,24 +20,33 @@
   });
   const roll = $derived(levelUpRoll(rolled));
   const everyClass = $derived(allClassRolls(rolled));
-  const canUseLoaded = $derived(Boolean(currentCharacter()));
-
-  // Start from whatever character is current, and follow it when another one is picked.
-  $effect(() => {
+  /** The character's own values, as the calculator holds them, kept up with its edits. */
+  const seed = $derived.by(() => {
     void app.characterVersion;
-    useLoadedCharacter();
+    const record = currentCharacter();
+    return record ? statsFrom(record) : null;
+  });
+  const differs = $derived(changedFields(stats, seed));
+
+  // Picking a different character starts the calculator from it. Editing the one in hand does
+  // not, so an override survives an edit and is marked as changed instead.
+  $effect(() => {
+    void app.character;
+    untrack(useCharacter);
   });
 
-  function useLoadedCharacter() {
-    const record = currentCharacter();
-    if (!record) return;
-    stats = {
+  function statsFrom(record: SaveRecord): LevelUpStats {
+    return {
       cls: Math.min(6, Math.max(0, record.cls)),
       con: record.con,
       luck: record.luck,
       wis: record.wis,
       iq: record.iq,
     };
+  }
+
+  function useCharacter() {
+    if (seed) stats = { ...seed };
   }
 
   /** An empty number input reads as NaN, which would spread through both tables. */
@@ -50,7 +62,7 @@
     <SectionHeading title="Character" />
     <div class="fields">
       <label>
-        <span>Class</span>
+        <FieldLabel text="Class" changed={differs.cls} />
         <select bind:value={stats.cls}>
           {#each data.classes as entry}
             <option value={entry.id}>{entry.name}</option>
@@ -58,25 +70,25 @@
         </select>
       </label>
       <label>
-        <span>Constitution</span>
+        <FieldLabel text="Constitution" changed={differs.con} />
         <input type="number" bind:value={stats.con} />
       </label>
       <label>
-        <span>Luck</span>
+        <FieldLabel text="Luck" changed={differs.luck} />
         <input type="number" bind:value={stats.luck} />
       </label>
       <label>
-        <span>Wisdom</span>
+        <FieldLabel text="Wisdom" changed={differs.wis} />
         <input type="number" bind:value={stats.wis} />
       </label>
       <label>
-        <span>Intelligence</span>
+        <FieldLabel text="Intelligence" changed={differs.iq} />
         <input type="number" bind:value={stats.iq} />
       </label>
     </div>
     <div class="load">
-      <button type="button" class="ghost" disabled={!canUseLoaded} onclick={useLoadedCharacter}>Use loaded character</button>
-      {#if !canUseLoaded}
+      <button type="button" class="ghost" disabled={!seed} onclick={useCharacter}>Use the character's values</button>
+      {#if !seed}
         <span class="note">Load a Dungeons of the Unforgiven save in the Save Editor to fill these in.</span>
       {/if}
     </div>
