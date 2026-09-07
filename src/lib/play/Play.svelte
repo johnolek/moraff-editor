@@ -318,11 +318,38 @@
     display: flex;
     flex-direction: column;
     gap: 12px;
-    width: 340px;
+    width: clamp(300px, 26vw, 380px);
     flex-shrink: 0;
     padding: 12px;
     border-left: 1px solid var(--line);
     overflow-y: auto;
+  }
+  /* The message box is as tall as it is wide times its aspect ratio and holds nothing that takes
+     up room of its own, so a column with more in it than fits would otherwise squash it to
+     nothing. */
+  .side :global(.screen) {
+    flex-shrink: 0;
+  }
+  /* Narrow enough that a column beside the map would leave the map the smaller of the two: the
+     side goes under the map instead and the whole tab scrolls. */
+  @media (max-width: 900px) {
+    .stage {
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .map {
+      flex: none;
+      height: min(70vh, 520px);
+    }
+    /* The message box is drawn to fill whatever it is given, so the column keeps roughly the
+       width it has beside the map rather than stretching it across the screen. */
+    .side {
+      width: 100%;
+      max-width: 460px;
+      border-left: none;
+      border-top: 1px solid var(--line);
+      overflow-y: visible;
+    }
   }
   .place {
     display: flex;

@@ -32,6 +32,8 @@
   .portrait {
     position: relative;
     width: 100%;
+    /* The picture is 256 pixels across, and past about a third again it is only bigger. */
+    max-width: 340px;
   }
   .portrait :global(canvas) {
     width: 100%;
