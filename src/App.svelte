@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app, type Tab } from './lib/app-state.svelte';
+  import { app } from './lib/app-state.svelte';
   import { restoreGame, restoreRoster, switchGame } from './lib/character/current';
   import { GAME_CHOICES } from './lib/game-choice';
-  import { isAppHistoryState, tabState, type AppHistoryState } from './lib/history';
+  import { goToTab, isAppHistoryState, recordTab, type AppHistoryState } from './lib/history';
   import { tabsFor } from './lib/tabs';
   import Monsters from './lib/bestiary/Monsters.svelte';
   import CharacterPanel from './lib/character/CharacterPanel.svelte';
@@ -23,24 +23,13 @@
   const tabs = $derived(tabsFor(app.game));
 
   onMount(() => {
+    // Read the entry first: restoring the game rewrites it to say which tab that game is showing.
+    const state = history.state;
     restoreRoster();
     restoreGame();
-    const state = history.state;
-    if (isAppHistoryState(state)) {
-      restore(state);
-      return;
-    }
-    history.replaceState(tabState(null, app.tab), '');
+    if (isAppHistoryState(state)) restore(state);
+    recordTab(app);
   });
-
-  /** Switching tabs is a step of its own in the browser's history, so Back and Forward move
-   *  between the tabs visited rather than only through the map. */
-  function show(tab: Tab) {
-    if (tab === app.tab) return;
-    app.tab = tab;
-    history.pushState(tabState(history.state, tab), '');
-    app.mapHistory = app.mapHistory.forwardDropped();
-  }
 
   function onPopState(event: PopStateEvent) {
     if (isAppHistoryState(event.state)) restore(event.state);
@@ -61,7 +50,7 @@
     <h1><PixelText text="Moraff Tools" scale={2} /></h1>
     <nav>
       {#each tabs as entry}
-        <button type="button" class="tab" class:active={app.tab === entry.id} onclick={() => show(entry.id)}>{entry.label}</button>
+        <button type="button" class="tab" class:active={app.tab === entry.id} onclick={() => goToTab(app, entry.id)}>{entry.label}</button>
       {/each}
     </nav>
     <div class="games" role="group" aria-label="Game">

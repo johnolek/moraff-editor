@@ -1,5 +1,6 @@
 <script lang="ts">
   import { app } from '../app-state.svelte';
+  import { goToTab } from '../history';
   import { sourceFiles, type SourceFile } from '../source/ports';
   import PixelText from '../ui/PixelText.svelte';
   import source from './TIDBITS.md?raw';
@@ -23,19 +24,19 @@
   function open(target: LinkTarget): void {
     if (target.kind === 'formula') {
       app.requestedFormula = target.id;
-      app.tab = 'formulas';
+      goToTab(app, 'formulas');
       return;
     }
     if (target.kind === 'decompiled') {
       app.requestedSource = { kind: 'c', name: target.name };
-      app.tab = 'source';
+      goToTab(app, 'source');
       return;
     }
     if (target.kind === 'port') {
       const file = sourceFile(target.file);
       if (!file) return;
       app.requestedSource = { kind: 'ts', file, name: target.name };
-      app.tab = 'source';
+      goToTab(app, 'source');
     }
   }
 </script>

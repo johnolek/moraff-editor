@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { app, currentEntry } from '../app-state.svelte';
 import {
   characterEdited,
@@ -33,6 +33,17 @@ function useStorage(storage: Storage | undefined): void {
   Object.defineProperty(globalThis, 'localStorage', { value: storage, configurable: true, writable: true });
 }
 
+/** Enough of the browser's History for the one entry that says which tab is showing. */
+function fakeHistory(): Pick<History, 'state' | 'replaceState'> {
+  let entry: unknown = null;
+  return {
+    get state() {
+      return entry;
+    },
+    replaceState: (next: unknown) => void (entry = next),
+  };
+}
+
 /** A save file with a name in it and room for the rest of the record. */
 function saveFile(name: string): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(2697);
@@ -42,13 +53,17 @@ function saveFile(name: string): Uint8Array<ArrayBuffer> {
 
 beforeEach(() => {
   useStorage(fakeStorage());
+  vi.stubGlobal('history', fakeHistory());
   app.roster = [];
   app.characterId = null;
   app.game = 'unforgiven';
   app.tab = 'map';
 });
 
-afterEach(() => useStorage(undefined));
+afterEach(() => {
+  useStorage(undefined);
+  vi.unstubAllGlobals();
+});
 
 describe('importing a save file', () => {
   it('puts it on the roster under the name in the record and starts working on it', () => {

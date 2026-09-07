@@ -1,6 +1,7 @@
 <script lang="ts">
   import { app, currentEntry, type RosterEntry, type Tab } from '../app-state.svelte';
   import { GAMES, UNFORGIVEN } from '../editor/games';
+  import { goToTab } from '../history';
   import { chooseCharacter, forgetCharacter, renameCharacter, restoreCharacterImport } from './current';
   import { EXP_NEEDED_HEADING, expNeededRows } from './exp-needed';
   import { characterStatus, collapsedLine, expLabel, levelLabel, withSeparators } from './record';
@@ -39,13 +40,13 @@
   }
 
   function show(tab: Tab) {
-    app.tab = tab;
+    goToTab(app, tab);
   }
 
   function showOnMap() {
     if (!status) return;
     app.requestedPlace = { ...status.place };
-    app.tab = 'map';
+    goToTab(app, 'map');
   }
 
   const points = (value: number) => String(Math.trunc(value));

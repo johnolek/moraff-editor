@@ -1,5 +1,6 @@
 <script lang="ts">
   import { app } from '../app-state.svelte';
+  import { goToTab } from '../history';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { describeMonster } from './describe';
   import { MODULE_NUMERALS } from './labels';
@@ -31,7 +32,7 @@
   function openInMonsters() {
     if (!monster) return;
     app.requestedMonsterId = monster.monsterId;
-    app.tab = 'monsters';
+    goToTab(app, 'monsters');
   }
 
   function describeRoute(route: Route): string {

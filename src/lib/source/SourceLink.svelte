@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
   import { app } from '../app-state.svelte';
+  import { goToTab } from '../history';
   import type { SourceFile } from './ports';
 
   interface Props {
@@ -17,7 +18,7 @@
 
   function open(request: NonNullable<typeof app.requestedSource>): void {
     app.requestedSource = request;
-    app.tab = 'source';
+    goToTab(app, 'source');
   }
 </script>
 

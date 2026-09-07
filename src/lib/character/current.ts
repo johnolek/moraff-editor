@@ -1,5 +1,6 @@
 import { app, currentEntry, type GameId } from '../app-state.svelte';
 import { isGameId, loadChosenGame, loadLastCharacter, saveChosenGame, saveLastCharacter } from '../game-choice';
+import { recordTab } from '../history';
 import { tabFor } from '../tabs';
 import { recordName, slotFromFileName } from './record';
 import { loadRoster, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
@@ -117,6 +118,9 @@ function setGame(game: GameId): void {
   app.game = game;
   app.tab = tabFor(game, app.tab);
   saveChosenGame(game);
+  // Being moved off a tab the new game does not have is not a jump, so the entry showing is
+  // rewritten to name the tab that is now on screen rather than another one being added.
+  recordTab(app);
 }
 
 /** The character to work on under a game: the one last worked on if it is still on the roster,
