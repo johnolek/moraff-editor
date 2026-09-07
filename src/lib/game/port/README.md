@@ -39,6 +39,11 @@ one `newGame` supplies cancels the spell. The character roller asks its six ques
 way, through `askDifficulty`, `askRace`, `askKeepRerollDesign`, `askDesignStat`, `askName` and
 `askClass`.
 
+A function that is not in the middle of arithmetic when it asks does not need a question of its
+own: `kill_monster` and the two drops it offers wait on `game.choice`, which is `get_choice` (exe
+2000:2d93) itself, at the line the original reads the keyboard on. That makes them `async`, which
+is what `src/lib/play/`'s loop is built to wait on.
+
 **The second departure is that a spell here stops at the character record.** Ascend, Descend
 and the three like them change the floor the character is on and drop them somewhere open on
 it; the original then reloads the game around them, and this port does not. Where the original

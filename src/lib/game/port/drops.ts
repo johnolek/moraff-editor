@@ -39,6 +39,13 @@ export function showHint(game: Game, index: number): void {
 }
 
 /**
+ * get_choice (exe 2000:2d93) under the two-line menu drop_weapon and drop_armor put up: '1' takes
+ * what was found and '2' leaves it. Escape leaves it too, since the original only tests for '1'.
+ */
+const TAKE = 0x31;
+const LEAVE = 0x32;
+
+/**
  * FUN_3000_a1c4 (exe 3000:a1c4): the line every drop opens with. The original follows it with a
  * 300 millisecond delay unless the high speed option is on.
  */
@@ -48,14 +55,13 @@ export function goodNews(game: Game): void {
 
 /**
  * drop_weapon (exe 3000:a1fc, unf.c "drop_weapon"): the weapon a kill may leave behind, which
- * the player is offered and can refuse. `take` is what get_choice reads back from the two-line
- * menu: true for "1) TAKE THE WEAPON".
+ * the player is offered and can refuse.
  *
  * The weapon is one of the seven the table has past the fist, and the deeper into the table it
  * is the less likely the roll lands, so a Great Sword needs a level 690 monster to be certain.
  * A monk keeps nothing at all.
  */
-export function dropWeapon(game: Game, take: boolean): void {
+export async function dropWeapon(game: Game): Promise<void> {
   const pc = game.pc;
   if (pc.cls === 2) return;
   const which = game.rng.random(7) + 1;
@@ -81,7 +87,7 @@ export function dropWeapon(game: Game, take: boolean): void {
     'WITH SEVERAL WEAPONS WHICH',
     'WILL WEIGH YOU DOWN.',
   );
-  if (take) {
+  if ((await game.choice([TAKE, LEAVE])) === TAKE) {
     pc.weaponsOwned[which] += 1;
     computeWeight(game);
   }
@@ -89,13 +95,13 @@ export function dropWeapon(game: Game, take: boolean): void {
 
 /**
  * drop_armor (exe 3000:a3d7, unf.c "drop_armor"): the same for armor, one of the six suits past
- * bare skin. `take` is get_choice's answer to "1) TAKE THE ARMOR".
+ * bare skin.
  *
  * Unlike drop_weapon this one offers armor the character already owns, and counts it in the
  * message. It also prints "GOOD NEWS..." before it works out whether the high speed option
  * means the offer is going to be skipped, so a skipped offer still says that.
  */
-export function dropArmor(game: Game, take: boolean): void {
+export async function dropArmor(game: Game): Promise<void> {
   const pc = game.pc;
   if (pc.cls === 2) return;
   const which = game.rng.random(6) + 1;
@@ -119,7 +125,7 @@ export function dropArmor(game: Game, take: boolean): void {
     'WITH SEVERAL SUITS OF',
     'ARMOR WEIGHING YOU DOWN.',
   );
-  if (take) {
+  if ((await game.choice([TAKE, LEAVE])) === TAKE) {
     pc.armorOwned[which] += 1;
     computeWeight(game);
   }

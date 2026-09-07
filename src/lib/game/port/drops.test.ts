@@ -23,6 +23,9 @@ import type { Rng } from './rng';
 import type { Game, PlayerCharacter } from './state';
 import { newGame } from './state';
 
+/** get_choice's answer to the two-line menu a dropped weapon or suit of armor puts up. */
+const LEAVE = 0x32;
+
 /**
  * An {@link Rng} that hands back the numbers it is given, in order, and 0 once they run out.
  * Every roll in these functions is a `Random(n)`, so a list of answers pins a whole routine down.
@@ -47,89 +50,92 @@ function saidHint(index: number): string[] {
   return lines;
 }
 
-/** A game with one level 40 monster engaged, which is what a drop rolls against. */
-function killing(rng: Rng, pc: Partial<PlayerCharacter> = {}, monsterLevel = 40): Game {
-  const game = newGame({ rng, pc });
+/**
+ * A game with one level 40 monster engaged, which is what a drop rolls against. `answer` is the
+ * key the two-line menu of a dropped weapon or suit of armor is answered with.
+ */
+function killing(rng: Rng, pc: Partial<PlayerCharacter> = {}, monsterLevel = 40, answer = 0x31): Game {
+  const game = newGame({ rng, pc, choice: async () => answer });
   game.monsters[0].level = monsterLevel;
   game.engaged = 0;
   return game;
 }
 
 describe('dropWeapon', () => {
-  it('gives a monk nothing at all', () => {
+  it('gives a monk nothing at all', async () => {
     const game = killing(rolls(0, 0), { cls: 2 });
-    dropWeapon(game, true);
+    await dropWeapon(game);
     expect(game.messages).toEqual([]);
     expect(game.pc.weaponsOwned[1]).toBe(0);
   });
 
-  it('offers the weapon the first roll picks, one past the fist', () => {
-    const game = killing(rolls(4, 0), { weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 0] });
-    dropWeapon(game, false);
+  it('offers the weapon the first roll picks, one past the fist', async () => {
+    const game = killing(rolls(4, 0), { weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 0] }, 40, LEAVE);
+    await dropWeapon(game);
     expect(game.messages[1]).toBe(`YOU FIND A ${WEAPON_NAMES[5]}`);
     expect(game.pc.weaponsOwned[5]).toBe(0);
   });
 
-  it('takes the weapon and works the carried weight out again', () => {
+  it('takes the weapon and works the carried weight out again', async () => {
     const game = killing(rolls(0, 0), { weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 0] });
-    dropWeapon(game, true);
+    await dropWeapon(game);
     expect(game.pc.weaponsOwned[1]).toBe(1);
     expect(game.pc.loadedWeight).toBe(game.pc.weight + 4);
   });
 
-  it('drops nothing when the roll lands above the monster level plus ten', () => {
+  it('drops nothing when the roll lands above the monster level plus ten', async () => {
     const game = killing(rolls(0, 51));
-    dropWeapon(game, true);
+    await dropWeapon(game);
     expect(game.messages).toEqual([]);
   });
 
-  it('drops one the monster is just deep enough for', () => {
+  it('drops one the monster is just deep enough for', async () => {
     const game = killing(rolls(0, 50));
-    dropWeapon(game, true);
+    await dropWeapon(game);
     expect(game.messages[0]).toBe('GOOD NEWS...');
   });
 
-  it('says nothing about a weapon the character already owns', () => {
+  it('says nothing about a weapon the character already owns', async () => {
     const game = killing(rolls(0, 0), { weaponsOwned: [1, 1, 0, 0, 0, 0, 0, 0] });
-    dropWeapon(game, true);
+    await dropWeapon(game);
     expect(game.messages).toEqual([]);
     expect(game.pc.weaponsOwned[1]).toBe(1);
   });
 
-  it('skips a weapon no better than one already carried in high speed mode', () => {
+  it('skips a weapon no better than one already carried in high speed mode', async () => {
     const game = killing(rolls(0, 0), { weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 1] });
     game.highSpeed = true;
-    dropWeapon(game, true);
+    await dropWeapon(game);
     expect(game.messages).toEqual([]);
     expect(game.pc.weaponsOwned[1]).toBe(0);
   });
 });
 
 describe('dropArmor', () => {
-  it('gives a monk nothing at all', () => {
+  it('gives a monk nothing at all', async () => {
     const game = killing(rolls(0, 0), { cls: 2 });
-    dropArmor(game, true);
+    await dropArmor(game);
     expect(game.messages).toEqual([]);
   });
 
-  it('counts armor the character already has, which drop_weapon never does', () => {
+  it('counts armor the character already has, which drop_weapon never does', async () => {
     const game = killing(rolls(2, 0), { armorOwned: [1, 0, 0, 2, 0, 0, 0, 0] });
-    dropArmor(game, true);
+    await dropArmor(game);
     expect(game.messages[1]).toBe(`YOU FIND ${ARMOR_NAMES[3]} ARMOR.`);
     expect(game.messages[2]).toBe('(YOU ALREADY HAVE 2 OF THESE)');
     expect(game.pc.armorOwned[3]).toBe(3);
   });
 
-  it('leaves the armor where it is when the answer is no', () => {
-    const game = killing(rolls(0, 0));
-    dropArmor(game, false);
+  it('leaves the armor where it is when the answer is no', async () => {
+    const game = killing(rolls(0, 0), {}, 40, LEAVE);
+    await dropArmor(game);
     expect(game.pc.armorOwned[1]).toBe(0);
   });
 
-  it('says GOOD NEWS before high speed mode throws the offer away', () => {
+  it('says GOOD NEWS before high speed mode throws the offer away', async () => {
     const game = killing(rolls(0, 0), { armorOwned: [1, 0, 0, 0, 0, 1, 0, 0] });
     game.highSpeed = true;
-    dropArmor(game, true);
+    await dropArmor(game);
     expect(game.messages).toEqual(['GOOD NEWS...']);
   });
 });

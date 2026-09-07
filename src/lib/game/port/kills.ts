@@ -1,5 +1,7 @@
 import { expValue } from './combat';
 import {
+  ARMOR_NAMES,
+  WEAPON_NAMES,
   dropArmor,
   dropMoney,
   dropPaper,
@@ -21,25 +23,79 @@ import { MAP_EMPTY, setMonsterMap } from './state';
 // the unpacked executable. The comment on each say call gives the address of every line it
 // prints, in order; dotu-tools/reference/scripts/exe_strings.py reads them back.
 
-/**
- * The answers kill_monster's menus would read from the keyboard. The original stops and asks in
- * the middle of the kill; the port is told up front, the way the ported spells take their menus.
- */
-export interface KillChoices {
-  /** get_choice's answer to drop_weapon's "1) TAKE THE WEAPON". */
-  takeWeapon: boolean;
-  /** get_choice's answer to drop_armor's "1) TAKE THE ARMOR". */
-  takeArmor: boolean;
-  /**
-   * 0 to 7: which weapon or suit of armor a section boss's orb is used on. The original puts up
-   * a menu of what the character owns and asks again until one of those is picked, so a slot
-   * holding nothing is not something the original can be given.
-   */
-  enhanceSlot: number;
-}
-
 /** The square a dead monster's slot is parked on, off the 80 x 110 floor and out of the way. */
 export const GARBAGE_CAN = 100;
+
+/** The eight rows of the orb menu, as get_choice (exe 2000:2d93) reads them back. */
+const MENU_ROWS = [0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38];
+
+/**
+ * Where kill_monster draws the orb menu's heading (exe 3000:b72b): one line above the message
+ * box the eight rows go in, in colour 5.
+ */
+const ENHANCE_HEADING = { x: 0x3a2, y: 0x301, font: 0, colour: 5 } as const;
+
+/**
+ * kill_monster (exe 3000:b12d, unf.c "kill_monster"), the eight lines a section boss's orb menu
+ * is built from: the name of each weapon or suit of armor the character owns and the plus it
+ * already carries, and a row of dashes for one they do not own.
+ *
+ * The loop runs over eight rows though the armor table has seven, so the last row of the armor
+ * menu reads the bytes that follow the table; the port leaves it empty, and since nothing owns
+ * that row it always comes out as the dashes anyway.
+ */
+function ownedMenu(names: string[], owned: number[], plus: number[]): string[] {
+  return MENU_ROWS.map((_, row) => {
+    if (!(owned[row] > 0)) return '--------'; // DS:326e
+    const name = names[row] ?? '';
+    // DS:2aec, with the plus written after it
+    return plus[row] === 0 ? name : `${name}, PLUS ${plus[row]}`;
+  });
+}
+
+/**
+ * kill_monster (exe 3000:b12d, unf.c "kill_monster"): the menu a section boss's orb puts up, and
+ * the row of the weapon or armor table it comes back with.
+ *
+ * It asks again until the answer is a row the character actually owns, so there is no way out of
+ * it: Escape is one of the answers it throws away.
+ */
+async function chooseEnhanced(
+  game: Game,
+  heading: string,
+  names: string[],
+  owned: number[],
+  plus: number[],
+): Promise<number> {
+  for (;;) {
+    game.say(...ownedMenu(names, owned, plus));
+    game.draw({ ...ENHANCE_HEADING, text: heading });
+    const row = (await game.choice(MENU_ROWS)) - 0x31;
+    if (row >= 0 && row < MENU_ROWS.length && owned[row] > 0) {
+      // erase_message_block (exe 4000:430e) takes the heading back off the screen.
+      game.eraseScreen(ENHANCE_HEADING.y);
+      return row;
+    }
+  }
+}
+
+/** The heading over the orb menu for each of the two things an orb can be used on. */
+const ENHANCE_ARMOR = 'SELECT THE ARMOR TO ENHANCE:'; // DS:3277
+const ENHANCE_WEAPON = 'SELECT A WEAPON TO ENHANCE:'; // DS:3294
+
+/** kill_monster (exe 3000:b12d): the orb menu of armor, and the plus it leaves behind. */
+async function enhanceArmor(game: Game, plus: number): Promise<void> {
+  const pc = game.pc;
+  const row = await chooseEnhanced(game, ENHANCE_ARMOR, ARMOR_NAMES, pc.armorOwned, pc.armorPlus);
+  pc.armorPlus[row] = plus;
+}
+
+/** kill_monster (exe 3000:b12d): the same menu of weapons. */
+async function enhanceWeapon(game: Game, plus: number): Promise<void> {
+  const pc = game.pc;
+  const row = await chooseEnhanced(game, ENHANCE_WEAPON, WEAPON_NAMES, pc.weaponsOwned, pc.weaponPlus);
+  pc.weaponPlus[row] = plus;
+}
 
 /**
  * kill_monster (exe 3000:b12d, unf.c "kill_monster"), the flag and the message every section
@@ -56,10 +112,10 @@ function bossBeaten(game: Game, bit: number, hint: number): void {
  * of a section, which is that section's Shadow boss. `section` is 0 to 19.
  *
  * Four of the twenty hand over an orb that puts a plus on one weapon or one suit of armor, which
- * is what `slot` picks. The last of them, the Shadow Ogeroth on floor 100 of module V, is the end
- * of the game and says so at length.
+ * the character picks off a menu of what they own. The last of them, the Shadow Ogeroth on floor
+ * 100 of module V, is the end of the game and says so at length.
  */
-export function bossReward(game: Game, section: number, slot: number): void {
+export async function bossReward(game: Game, section: number): Promise<void> {
   const pc = game.pc;
   switch (section) {
     case 0:
@@ -77,8 +133,7 @@ export function bossReward(game: Game, section: number, slot: number): void {
       return;
     case 3:
       bossBeaten(game, 8, 63);
-      game.say('SELECT THE ARMOR TO ENHANCE:'); // DS:3277
-      pc.armorPlus[slot] = 25;
+      await enhanceArmor(game, 25);
       return;
     case 4:
       bossBeaten(game, 1, 64);
@@ -94,8 +149,7 @@ export function bossReward(game: Game, section: number, slot: number): void {
       return;
     case 7:
       bossBeaten(game, 8, 67);
-      game.say('SELECT A WEAPON TO ENHANCE:'); // DS:3294
-      pc.weaponPlus[slot] = 25;
+      await enhanceWeapon(game, 25);
       return;
     case 8:
       bossBeaten(game, 1, 68);
@@ -127,8 +181,7 @@ export function bossReward(game: Game, section: number, slot: number): void {
       return;
     case 15:
       bossBeaten(game, 8, 75);
-      game.say('SELECT THE ARMOR TO ENHANCE:'); // DS:3277
-      pc.armorPlus[slot] = 50;
+      await enhanceArmor(game, 50);
       return;
     case 16:
       bossBeaten(game, 1, 76);
@@ -167,8 +220,7 @@ export function bossReward(game: Game, section: number, slot: number): void {
         'TO BE USED FOR WHATEVER YOU',
         'WANT TO USE IT FOR!',
       );
-      game.say('SELECT A WEAPON TO ENHANCE:'); // DS:3294
-      pc.weaponPlus[slot] = 101;
+      await enhanceWeapon(game, 101);
       // DS:3458 3474 348c 34a7 34c1 34db 34f8 3511
       game.say(
         '  YOU HAVE BEATEN THE GREAT',
@@ -228,7 +280,7 @@ export function drainerBonus(game: Game): void {
  * The two messages at the end — that the character is hurt, and that they have earned a level —
  * are only given while the character is still level 0, which is the level a new one starts at.
  */
-export function killMonster(game: Game, choices: KillChoices): void {
+export async function killMonster(game: Game): Promise<void> {
   const pc = game.pc;
   const slot = game.engaged;
   const monster = game.monsters[slot];
@@ -244,8 +296,8 @@ export function killMonster(game: Game, choices: KillChoices): void {
   monster.type = 0;
   monster.level = 0;
   game.redrawView = true;
-  dropWeapon(game, choices.takeWeapon);
-  dropArmor(game, choices.takeArmor);
+  await dropWeapon(game);
+  await dropArmor(game);
   dropMoney(game);
   postKillHeal(game);
   postKillSp(game);
@@ -277,7 +329,7 @@ export function killMonster(game: Game, choices: KillChoices): void {
   }
   if (kindIndex === 22) {
     const section = sectionNumber(pc.module, pc.level);
-    if (section < 20) bossReward(game, section, choices.enhanceSlot);
+    if (section < 20) await bossReward(game, section);
   }
   game.engaged = -1;
   if (game.highSpeed || pc.lev !== 0) return;

@@ -3,7 +3,6 @@ import { expValue } from './combat';
 import { giveHint } from './hints';
 import { sectionNumber } from './hints';
 import { GARBAGE_CAN, bossReward, checkDeath, drainerBonus, killMonster, playerDies } from './kills';
-import type { KillChoices } from './kills';
 import type { Rng } from './rng';
 import type { Game, PlayerCharacter } from './state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, newGame, setMonsterMap } from './state';
@@ -41,14 +40,19 @@ const REGULAR = 23;
 /** Monster kind 22 is whichever Shadow boss the section belongs to. */
 const BOSS = 22;
 
-const NOTHING_CHOSEN: KillChoices = { takeWeapon: false, takeArmor: false, enhanceSlot: 0 };
+/** get_choice's answer to the two-line menu a dropped weapon or suit of armor puts up. */
+const LEAVE = 0x32;
 
 /**
  * A monk standing over a dead monster. A monk is refused every drop that rolls dice of its own,
  * which leaves the kill itself to be checked without a scripted roll for each drop.
  */
 function killing(rng: Rng, pc: Partial<PlayerCharacter> = {}, type = REGULAR): Game {
-  const game = newGame({ rng, pc: { cls: 2, hp: 100, maxHp: 100, sp: 0, maxSp: 0, ...pc } });
+  const game = newGame({
+    rng,
+    pc: { cls: 2, hp: 100, maxHp: 100, sp: 0, maxSp: 0, ...pc },
+    choice: async () => LEAVE,
+  });
   Object.assign(game.monsters[3], { x: 11, y: 12, hp: 0, type, level: 40 });
   setMonsterMap(game, 11, 12, 3);
   setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
@@ -57,31 +61,31 @@ function killing(rng: Rng, pc: Partial<PlayerCharacter> = {}, type = REGULAR): G
 }
 
 describe('killMonster', () => {
-  it('adds what the monster was worth to the experience', () => {
+  it('adds what the monster was worth to the experience', async () => {
     const game = killing(always(0));
     const worth = expValue(game, 3);
     const before = game.pc.exp;
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(worth).toBeGreaterThan(0);
     expect(game.pc.exp).toBe(before + worth);
   });
 
-  it('says the monster is dead', () => {
+  it('says the monster is dead', async () => {
     const game = killing(always(0));
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.messages[0]).toBe('YOU KILLED IT!');
   });
 
-  it('says nothing when the monster was a puffball, which splits rather than dies', () => {
+  it('says nothing when the monster was a puffball, which splits rather than dies', async () => {
     const game = killing(always(0));
     game.monsterKinds[REGULAR] = { ...game.monsterKinds[REGULAR], special: 6 };
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.messages).toEqual([]);
   });
 
-  it('empties the square and parks the slot in the garbage can', () => {
+  it('empties the square and parks the slot in the garbage can', async () => {
     const game = killing(always(0));
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.monsterMap[12 * 80 + 11]).toBe(MAP_EMPTY);
     expect(monsterAt(game, 11, 12)).toBe(-1);
     expect(game.monsters[3]).toEqual({ x: GARBAGE_CAN, y: GARBAGE_CAN, hp: 0, type: 0, level: 0 });
@@ -89,67 +93,67 @@ describe('killMonster', () => {
     expect(game.engaged).toBe(-1);
   });
 
-  it('leaves the player where they were standing', () => {
+  it('leaves the player where they were standing', async () => {
     const game = killing(always(0));
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.monsterMap[game.pc.y * 80 + game.pc.x]).toBe(MAP_PLAYER);
   });
 
-  it('hands a section boss its reward', () => {
+  it('hands a section boss its reward', async () => {
     const game = killing(always(0), { module: 0, level: 5 }, BOSS);
     expect(sectionNumber(0, 5)).toBe(0);
     const before = game.pc.maxHp;
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.pc.maxHp).toBe(before + 30);
     expect(game.pc.objective[0]).toBe(1);
   });
 
-  it('nags a level 0 character who is hurt and has earned a level', () => {
+  it('nags a level 0 character who is hurt and has earned a level', async () => {
     const game = killing(always(0), { lev: 0, exp: 1000000, hp: 50, maxHp: 100 });
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.messages).toContain('SHOULD CAST A CURE SPELL TO');
     expect(game.messages).toContain('GOOD NEWS!');
   });
 
-  it('sends a fighter to the temple for the cure rather than casting it', () => {
+  it('sends a fighter to the temple for the cure rather than casting it', async () => {
     const game = killing(always(0), { cls: 0, lev: 0, hp: 50, maxHp: 100 });
     // A fighter is offered every drop, so the rolls below are all refusals.
     game.rng = rolls(6, 999, 5, 999, 0, 0, 0, 0, 1, 1, 999, 0, 0);
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.messages).toContain('SHOULD GO TO THE TEMPLE IN');
   });
 
-  it('says neither of those once the character is past level 0', () => {
+  it('says neither of those once the character is past level 0', async () => {
     const game = killing(always(0), { lev: 1, exp: 1000000, hp: 50, maxHp: 100 });
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.messages).not.toContain('GOOD NEWS!');
   });
 
-  it('finds nothing one time in three once the find rolls have landed', () => {
+  it('finds nothing one time in three once the find rolls have landed', async () => {
     const spellbook = Array.from({ length: 180 }, () => 0);
     spellbook[0] = 1;
     const game = killing(always(0), { cls: 3, lev: 10, level: 5, spellbook });
     game.rng = rolls(6, 11, 5, 11, 0, 0, 0, 0, 1, 1, 44, 4, 1, 0, 0, 0, 2, 16);
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.messages).toContain('YOU FIND...');
     expect(game.messages).toContain('NOTHING! (HIT ANY KEY)');
   });
 
-  it('finds nothing at all when the gate roll misses the floor plus forty', () => {
+  it('finds nothing at all when the gate roll misses the floor plus forty', async () => {
     const spellbook = Array.from({ length: 180 }, () => 0);
     spellbook[0] = 1;
     const game = killing(always(0), { cls: 3, lev: 10, level: 5, spellbook });
     game.rng = rolls(6, 11, 5, 11, 0, 0, 0, 0, 1, 1, 45, 4, 1, 0, 0, 0, 2, 16);
-    killMonster(game, NOTHING_CHOSEN);
+    await killMonster(game);
     expect(game.messages).not.toContain('YOU FIND...');
   });
 
-  it('gives a fighter and a sage a gate four hundred points easier', () => {
+  it('gives a fighter and a sage a gate four hundred points easier', async () => {
     for (const [cls, gate] of [[0, 550], [5, 550], [3, 950], [1, 950]]) {
       const game = killing(always(0), { cls, lev: 10, level: 5 });
       const scripted = rolls(6, 999, 5, 999, 0, 0, 0, 0, 1, 1, 999, 0, 0);
       game.rng = scripted;
-      killMonster(game, NOTHING_CHOSEN);
+      await killMonster(game);
       expect(scripted.asked[10]).toBe(gate);
     }
   });
@@ -206,18 +210,21 @@ describe('bossReward', () => {
     [18, 'str', 45],
   ];
 
-  it.each(REWARDS)('section %i sets %s to %i', (section, field, value) => {
+  /** A character owning the fifth suit of armor and the seventh weapon, to pick off the menu. */
+  const armed = { armorOwned: [1, 0, 0, 0, 1, 0, 0, 0], weaponsOwned: [1, 0, 0, 0, 0, 0, 1, 0] };
+
+  it.each(REWARDS)('section %i sets %s to %i', async (section, field, value) => {
     const game = newGame({ rng: always(0) });
-    bossReward(game, section, 0);
+    await bossReward(game, section);
     expect(game.pc[field]).toBe(value);
   });
 
   it.each([
     [3, 25],
     [15, 50],
-  ])('section %i puts a plus %i on the armor it is given', (section, plus) => {
-    const game = newGame({ rng: always(0) });
-    bossReward(game, section, 4);
+  ])('section %i puts a plus %i on the armor it is given', async (section, plus) => {
+    const game = newGame({ rng: always(0), pc: armed, choice: async () => 0x35 });
+    await bossReward(game, section);
     expect(game.pc.armorPlus).toEqual([0, 0, 0, 0, plus, 0, 0, 0]);
     expect(game.messages).toContain('SELECT THE ARMOR TO ENHANCE:');
   });
@@ -225,36 +232,60 @@ describe('bossReward', () => {
   it.each([
     [7, 25],
     [19, 101],
-  ])('section %i puts a plus %i on the weapon it is given', (section, plus) => {
-    const game = newGame({ rng: always(0) });
-    bossReward(game, section, 6);
+  ])('section %i puts a plus %i on the weapon it is given', async (section, plus) => {
+    const game = newGame({ rng: always(0), pc: armed, choice: async () => 0x37 });
+    await bossReward(game, section);
     expect(game.pc.weaponPlus).toEqual([0, 0, 0, 0, 0, 0, plus, 0]);
     expect(game.messages).toContain('SELECT A WEAPON TO ENHANCE:');
   });
 
-  it('adds the health a section 0 kill gives to the current points as well', () => {
+  it('names what the character owns on the orb menu and dashes the rest', async () => {
+    const answers = [0x1b, 0x32, 0x35];
+    const game = newGame({
+      rng: always(0),
+      pc: { ...armed, armorPlus: [0, 0, 0, 0, 3, 0, 0, 0] },
+      choice: async () => answers.shift() ?? 0x35,
+    });
+    await bossReward(game, 3);
+    // The snake's eight lines about the orb come first; the menu is asked three times over,
+    // since Escape and a row the character does not own are both asked again.
+    expect(game.messages.slice(8, 16)).toEqual([
+      'SKIN',
+      '--------',
+      '--------',
+      '--------',
+      'BREAST PLATE, PLUS 3',
+      '--------',
+      '--------',
+      '--------',
+    ]);
+    expect(game.pc.armorPlus[4]).toBe(25);
+    expect(game.messages.filter((line) => line === 'SELECT THE ARMOR TO ENHANCE:')).toHaveLength(3);
+  });
+
+  it('adds the health a section 0 kill gives to the current points as well', async () => {
     const game = newGame({ rng: always(0), pc: { hp: 40, maxHp: 100 } });
-    bossReward(game, 0, 0);
+    await bossReward(game, 0);
     expect(game.pc.hp).toBe(70);
     expect(game.pc.maxHp).toBe(130);
   });
 
-  it('marks the right bit of the module the character is in', () => {
+  it('marks the right bit of the module the character is in', async () => {
     for (const [section, bit] of [
       [0, 1],
       [1, 2],
       [2, 4],
       [3, 8],
     ]) {
-      const game = newGame({ rng: always(0), pc: { module: 2 } });
-      bossReward(game, section, 0);
+      const game = newGame({ rng: always(0), pc: { module: 2, ...armed }, choice: async () => 0x35 });
+      await bossReward(game, section);
       expect(game.pc.objective).toEqual([0, 0, bit, 0, 0]);
     }
   });
 
-  it('ends the game when the Shadow Ogeroth falls', () => {
-    const game = newGame({ rng: always(0) });
-    bossReward(game, 19, 0);
+  it('ends the game when the Shadow Ogeroth falls', async () => {
+    const game = newGame({ rng: always(0), pc: armed, choice: async () => 0x37 });
+    await bossReward(game, 19);
     expect(game.pc.objective[0]).toBe(8);
     expect(game.messages[0]).toBe('THE GROUND BEGINS TO RUMBLE,');
     expect(game.messages).toContain('AND DIFFERENT CHARACTERS.');
