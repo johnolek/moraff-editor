@@ -5,6 +5,7 @@
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import Formulas from './lib/formulas/Formulas.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
+  import SourceViewer from './lib/source/SourceViewer.svelte';
   import SpellReference from './lib/spells/SpellReference.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
 
@@ -15,6 +16,7 @@
     { id: 'spells', label: 'Spells' },
     { id: 'calculators', label: 'Calculators' },
     { id: 'formulas', label: 'Formulas' },
+    { id: 'source', label: 'Source' },
   ];
 </script>
 
@@ -45,6 +47,9 @@
   </main>
   <main class:hidden={app.tab !== 'formulas'}>
     <Formulas />
+  </main>
+  <main class:hidden={app.tab !== 'source'}>
+    <SourceViewer />
   </main>
 </div>
 
