@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { dropOdds, monsterLevelDistribution } from '../game/dotu-mech.js';
-import { drainerShare, dropTables, expectedKills, floorOdds, perHour, type DropRow } from './drops';
+import { drainerShare, dropTables, expectedKills, floorOdds, type DropRow } from './drops';
 
 const FIGHTER = 0;
 const MONK = 2;
@@ -119,11 +119,5 @@ describe('expectedKills', () => {
 
   it('is unreachable when the item cannot drop', () => {
     expect(expectedKills(0)).toBeNull();
-  });
-});
-
-describe('perHour', () => {
-  it('is the chance times the kills an hour holds', () => {
-    expect(perHour(0.25, 2)).toBe(30);
   });
 });

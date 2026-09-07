@@ -21,7 +21,6 @@
   let module = $state(0);
   let floor = $state(1);
   let cls = $state(FIGHTER);
-  let killsPerMinute = $state(2);
   let ownedWeapons = $state<number[]>([]);
 
   const tables = $derived(dropTables({ module, floor, cls, ownedWeapons }));
@@ -91,10 +90,6 @@
           {/each}
         </select>
       </label>
-      <label>
-        <span>Kills per minute</span>
-        <input type="number" min="0" step="0.5" bind:value={killsPerMinute} />
-      </label>
     </div>
     <div class="load">
       <button type="button" class="ghost" disabled={!seed} onclick={useCharacter}>Use the character's values</button>
@@ -121,7 +116,7 @@
         </label>
       {/each}
     </div>
-    <DropTable rows={tables.weapons} {killsPerMinute} />
+    <DropTable rows={tables.weapons} />
     {#if cls === MONK}
       <p class="note">Monks never find gear.</p>
     {/if}
@@ -131,7 +126,7 @@
     <SectionHeading title="Armor">
       <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' }} c="drop_armor" />
     </SectionHeading>
-    <DropTable rows={tables.armors} {killsPerMinute} />
+    <DropTable rows={tables.armors} />
     {#if cls === MONK}
       <p class="note">Monks never find gear.</p>
     {:else}
@@ -143,7 +138,7 @@
     <SectionHeading title="Items">
       <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' }} c="find_item" />
     </SectionHeading>
-    <DropTable rows={tables.items} {killsPerMinute} />
+    <DropTable rows={tables.items} />
     <p class="note">
       YOU FIND check passes {percent(tables.findGate)} of the time on this floor. One check in three finds nothing, and the rest is shared
       equally between the twelve items.
@@ -157,7 +152,7 @@
     <SectionHeading title="Level drainer kills">
       <SourceLink ts={{ file: 'src/lib/calculators/drops.ts', name: 'drainerShare' }} c="kill_monster" />
     </SectionHeading>
-    <DropTable rows={tables.drainer} {killsPerMinute} />
+    <DropTable rows={tables.drainer} />
     {#if tables.drainerShare > 0}
       <p class="note">
         Only the section's level drainer leaves these, and about one monster in {Math.round(1 / tables.drainerShare)} is one. The key is
@@ -172,7 +167,7 @@
     <SectionHeading title="Spells">
       <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' }} c="drop_spellbook" />
     </SectionHeading>
-    <DropTable rows={tables.spells} {killsPerMinute} />
+    <DropTable rows={tables.spells} />
     <p class="note">A spell book only teaches you a spell you do not know yet, and scrolls, wands and papers are only rolled when no book was learned.</p>
     {#if cls === FIGHTER}
       <p class="note">Fighters can only read papers.</p>

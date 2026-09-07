@@ -103,7 +103,3 @@ export function dropTables(hunt: Hunt): DropTables {
 export function expectedKills(chance: number): number | null {
   return chance > 0 ? 1 / chance : null;
 }
-
-export function perHour(chance: number, killsPerMinute: number): number {
-  return chance * killsPerMinute * 60;
-}
