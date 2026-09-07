@@ -105,7 +105,8 @@
   }
 
   // Another tab can ask for a function; the search box is cleared and the file opened so the
-  // list is sure to show it.
+  // list is sure to show it. A decompiled function is asked for by name alone, and the name is
+  // that of a function of the game the page asking is about, which is the game showing.
   $effect(() => {
     const request = app.requestedSource;
     if (!request) return;
@@ -117,7 +118,7 @@
       selected = { kind: 'ts', file: fn.file, name: fn.name };
       expanded[fn.file] = true;
     } else {
-      if (!decompSection(request.name)) return;
+      if (!decompSection(request.name, app.game)) return;
       selected = { kind: 'c', name: request.name };
     }
     revealSelected();

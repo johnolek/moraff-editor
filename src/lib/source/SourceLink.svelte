@@ -9,7 +9,7 @@
   interface Props {
     /** The declaration in the app's own source, when the page names one. */
     ts?: { file: SourceFile; name: string };
-    /** The function in dotu-tools/decomp/unf.c, when the page names one. */
+    /** The function in the decompilation of the game the page is about, when it names one. */
     c?: string;
   }
 
