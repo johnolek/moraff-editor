@@ -51,7 +51,7 @@ globals are touched.  Matching went by:
   exactly one function;
 * **call-graph shape**: `movecontrol` is the one enormous function that calls almost
   everything; `pass_moment` is called from it and from `dig_hole`; `save_player` is the
-  file writer called from `defend`, `pass_moment`, `chute`, `kill_player`, `quit` and
+  file writer called from `defend`, `pass_moment`, `chute`, `change_module`, `quit` and
   `roll_char` — no other function has that caller set;
 * **the `pc` struct**: the character record lives at `DS:b880`.  Once that was pinned
   (its size and the checksum loop matched the save files), every `DAT_6000_xxxx` between

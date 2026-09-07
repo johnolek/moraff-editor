@@ -61,7 +61,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 1000:1558 | N_LDIV | 4 | signed 32-bit divide (stack args, retf 8) | Borland runtime / libc | FUN_2000_041b, FUN_2000_05da, FUN_2000_0923, FUN_2000_0fc5, FUN_2000_1598, FUN_2000_1d4f … |
 | 1000:155f | N_LUDIV | 5 | unsigned 32-bit divide | Borland runtime / libc | drop_money |
 | 1000:1564 | FUN_1000_1564 | 3 |  | Borland runtime / libc | FUN_1000_520a |
-| 1000:1567 | N_LMOD | 5 | signed 32-bit modulo | Borland runtime / libc | bank, death_screen |
+| 1000:1567 | N_LMOD | 5 | signed 32-bit modulo | Borland runtime / libc | bank, module_transition_screen |
 | 1000:156f | N_LUMOD | 1 | unsigned 32-bit modulo | Borland runtime / libc |  |
 | 1000:1572 | FUN_1000_1572 | 145 |  | Borland runtime / libc | N_LDIV, N_LMOD, N_LUDIV |
 | 1000:1603 | FUN_1000_1603 | 3 |  | Borland runtime / libc | FUN_1000_3070 |
@@ -82,7 +82,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 1000:18a5 | srand | 17 | seed = value (32-bit) | Borland runtime / libc | Random, main, stock_level, strike, defend, trapdoor_dest … |
 | 1000:18b6 | rand | 38 | seed = seed*0x015A4E35+1; return (seed>>16)&0x7fff | Borland runtime / libc | FUN_2000_31bc, Random, temple, main, get_mtype, stock_level … |
 | 1000:18dc | FUN_1000_18dc | 45 |  | Borland runtime / libc | FUN_1000_415b, FUN_1000_4bbb |
-| 1000:1909 | FUN_1000_1909 | 22 |  | Borland runtime / libc | null_check, load_level_screen, kill_player |
+| 1000:1909 | FUN_1000_1909 | 22 |  | Borland runtime / libc | null_check, load_level_screen, change_module |
 | 1000:191f | FUN_1000_191f | 38 |  | Borland runtime / libc | FUN_1000_195e |
 | 1000:1945 | FUN_1000_1945 | 25 |  | Borland runtime / libc | FUN_1000_195e |
 | 1000:195e | FUN_1000_195e | 193 |  | Borland runtime / libc | FUN_1000_1a1f |
@@ -308,9 +308,9 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:3654 | load_overlay_pic | 216 | loads OVERLAY.PIC (the water overlay) into the picture table | WORLD (UNF.CPP) | allocate_buffers, load_picture_seq, load_building_picture |
 | 2000:372c | load_section_pictures | 1179 | loads UFMON<n>.PIC / UFWALL<n>.PIC for a section (name tables DS:02c5 / DS:02ef); sets the water flag for sections 4, 8, 20 | WORLD (UNF.CPP) | load_level_map |
 | 2000:3bc7 | allocate_buffers | 468 | farmalloc all the big arrays (monster map, menus) | WORLD (UNF.CPP) | main |
-| 2000:3d9b | FUN_2000_3d9b | 146 |  | WORLD (UNF.CPP) | dig_hole, kill_player, movecontrol, roll_char, boss_office_message, FUN_3000_71e6 … |
+| 2000:3d9b | FUN_2000_3d9b | 146 |  | WORLD (UNF.CPP) | dig_hole, change_module, movecontrol, roll_char, boss_office_message, FUN_3000_71e6 … |
 | 2000:3e2d | FUN_2000_3e2d | 70 |  | WORLD (UNF.CPP) |  |
-| 2000:3e73 | FUN_2000_3e73 | 481 |  | WORLD (UNF.CPP) | FUN_2000_4054, FUN_2000_412a, death_screen |
+| 2000:3e73 | FUN_2000_3e73 | 481 |  | WORLD (UNF.CPP) | FUN_2000_4054, FUN_2000_412a, module_transition_screen |
 | 2000:4054 | FUN_2000_4054 | 208 |  | WORLD (UNF.CPP) | print_menu_only, show_money, FUN_2000_44f2, g_store, temple, flea_inn … |
 | 2000:412a | FUN_2000_412a | 40 |  | WORLD (UNF.CPP) | defend, FUN_3000_9026 |
 | 2000:4156 | Random | 84 | srand(clock()) then random(n) | WORLD (UNF.CPP) | get_mtype, stock_level, defend, FUN_2000_9232, use_magic_item, attack_timing … |
@@ -332,7 +332,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:60e8 | show_registration_notice | 295 | prints the file 'v' in yellow text mode, waits for a key, 5-way checksum vs constants; mismatch sets the tamper flag -> main exits | WORLD (UNF.CPP) | main |
 | 2000:620f | main | 863 | game main loop | WORLD (UNF.CPP) | entry |
 | 2000:6573 | which_monster | 59 | monster index at (x, y) | WORLD (UNF.CPP) | draw_3d_view, draw_map_square |
-| 2000:65b0 | FUN_2000_65b0 | 42 |  | WORLD (UNF.CPP) | check_engagement, pass_moment, movecontrol, title_screen, relocate_spell, pass_wall |
+| 2000:65b0 | FUN_2000_65b0 | 42 |  | WORLD (UNF.CPP) | check_engagement, pass_moment, movecontrol, title_screen, relocate, pass_wall |
 | 2000:65dc | set_monster_map | 28 | write the 80x110 occupancy map | WORLD (UNF.CPP) | stock_level, load_monster_map, pass_moment, FUN_2000_bcb6, FUN_2000_bce5, movecontrol … |
 | 2000:65f8 | get_mtype | 291 | random monster type for stocking | WORLD (UNF.CPP) | stock_level |
 | 2000:671e | stock_level | 2320 | populate a floor with 145 monsters (boss placement) | WORLD (UNF.CPP) | load_monster_map, load_level_map, roll_char, title_screen |
@@ -341,7 +341,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:7210 | FUN_2000_7210 | 99 |  | WORLD (UNF.CPP) | movecontrol, draw_map_square, FUN_3000_8e75 |
 | 2000:7277 | FUN_2000_7277 | 99 |  | WORLD (UNF.CPP) | drawsquare |
 | 2000:72de | FUN_2000_72de | 53 |  | WORLD (UNF.CPP) | use_magic_item, movecontrol, draw_map_square |
-| 2000:7313 | save_maps | 411 | writes <letter><module><n>.DUN ('wb'); called on floor change, quit and death | WORLD (UNF.CPP) | load_level_map, quit_game, kill_player |
+| 2000:7313 | save_maps | 411 | writes <letter><module><n>.DUN ('wb'); called on floor change, quit and death | WORLD (UNF.CPP) | load_level_map, quit_game, change_module |
 | 2000:74ae | load_maps | 473 | reads <letter><module><n>.DUN ('rb') | WORLD (UNF.CPP) | load_level_map |
 | 2000:7687 | load_level_map | 295 | load/stock the monster array for a floor | WORLD (UNF.CPP) | main, use_magic_item, chute, dig_hole, movecontrol, title_screen … |
 | 2000:77ae | FUN_2000_77ae | 78 |  | WORLD (UNF.CPP) |  |
@@ -349,7 +349,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:7832 | FUN_2000_7832 | 69 |  | WORLD (UNF.CPP) |  |
 | 2000:787d | load_unfdung_bin | 55 | fread(25 x 512 bytes) of the wall patterns into DS:8680 | WORLD (UNF.CPP) | main |
 | 2000:78b4 | load_player | 249 | itoa(slot) file name, fread 0xa87 bytes into pc (DS:b880); 'Corrupted Character! Sorry!' on bad checksum | WORLD (UNF.CPP) | main |
-| 2000:79ad | save_player | 203 | itoa(slot) file name, fwrite 0xa87 bytes; called by defend, pass_moment, chute, kill_player, quit, roll_char | WORLD (UNF.CPP) | defend, quit_game, pass_moment, chute, kill_player, roll_char |
+| 2000:79ad | save_player | 203 | itoa(slot) file name, fwrite 0xa87 bytes; called by defend, pass_moment, chute, change_module, quit, roll_char | WORLD (UNF.CPP) | defend, quit_game, pass_moment, chute, change_module, roll_char |
 | 2000:7a78 | read_spell_help | 208 | reads entry n from USPELLS.HLP | WORLD (UNF.CPP) | show_spell_help |
 | 2000:7b48 | exp_needed | 126 | 250*1.4^(l-1)-80 / 250*2^(l-1) | WORLD (UNF.CPP) | FUN_2000_7bcd, defend |
 | 2000:7bcd | FUN_2000_7bcd | 164 |  | WORLD (UNF.CPP) | movecontrol |
@@ -369,7 +369,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:9417 | view_battle_spells | 1184 | lists active battle spells | WORLD (UNF.CPP) | movecontrol, cast_a_spell, FUN_3000_caac |
 | 2000:98b7 | lose_item | 860 | an item is destroyed/lost message | WORLD (UNF.CPP) | movecontrol |
 | 2000:9c13 | quit_game | 167 | Q: save monster map, maps, player; prints the decoded 'PLEASE DO NOT DISTRIBUTE' line; exit | WORLD (UNF.CPP) | movecontrol |
-| 2000:9cba | town_features | 87 | store/temple/bank/inn at (x, y) | WORLD (UNF.CPP) | movecontrol, draw_map_square, drawsquare |
+| 2000:9cba | trapdoor | 87 | trap door destination for a square | WORLD (UNF.CPP) | movecontrol, draw_map_square, drawsquare |
 | 2000:9d17 | FUN_2000_9d17 | 843 |  | WORLD (UNF.CPP) | movecontrol |
 | 2000:a068 | FUN_2000_a068 | 92 |  | WORLD (UNF.CPP) | movecontrol |
 | 2000:a0c8 | check_engagement | 233 | monster in front of the player? | WORLD (UNF.CPP) | engagement_timing, attack_timing |
@@ -390,12 +390,12 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:ba3f | dig_hole | 624 | 'DIGGING... DIGGING...': dig through a wall/floor | WORLD (UNF.CPP) | movecontrol |
 | 2000:bcb6 | FUN_2000_bcb6 | 47 |  | WORLD (UNF.CPP) | movecontrol |
 | 2000:bce5 | FUN_2000_bce5 | 77 |  | WORLD (UNF.CPP) | movecontrol |
-| 2000:bd32 | trapdoor | 112 | trap door destination for a square | WORLD (UNF.CPP) | movecontrol, drawsquare |
+| 2000:bd32 | town_features | 112 | store/temple/bank/inn at (x, y) | WORLD (UNF.CPP) | movecontrol, drawsquare |
 | 2000:bda6 | trapdoor_dest | 145 | landing square of a trap door | WORLD (UNF.CPP) | movecontrol |
 | 2000:be3d | explain_trapdoor | 334 | the trap door explanation box | WORLD (UNF.CPP) | movecontrol |
 | 2000:bf91 | FUN_2000_bf91 | 216 |  | WORLD (UNF.CPP) | movecontrol |
-| 2000:c069 | delete_character_files | 56 | probable: removes a dead character's files | WORLD (UNF.CPP) | kill_player |
-| 2000:c0a5 | kill_player | 343 | death: saves maps/monster map, death screen (4000:771b) | WORLD (UNF.CPP) | movecontrol |
+| 2000:c069 | module_installed | 56 | fopen() test on the module's first UFMON picture file | WORLD (UNF.CPP) | change_module |
+| 2000:c0a5 | change_module | 343 | the module teleporter: next/previous module menu (normal difficulty may not enter Module V), saves maps, floor = 0, relocate() into the new town, saves the player | WORLD (UNF.CPP) | movecontrol |
 | 2000:c200 | FUN_2000_c200 | 43 |  | WORLD (UNF.CPP) | movecontrol |
 | 2000:c22d | retdwall2 | 90 | retdwall + module teleporters | WORLD (UNF.CPP) | movecontrol |
 | 2000:c28b | FUN_2000_c28b | 125 |  | WORLD (UNF.CPP) | movecontrol |
@@ -495,7 +495,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 3000:d990 | FUN_3000_d990 | 38 |  | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:d9ba | FUN_3000_d9ba | 38 |  | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:d9e4 | FUN_3000_d9e4 | 68 |  | TOWN / MAGICFNC / CAT | spell_effect |
-| 3000:da2c | relocate_spell | 137 | relocate/teleport the player | TOWN / MAGICFNC / CAT | dig_hole, kill_player, spell_effect |
+| 3000:da2c | relocate | 137 | random non-rock, unoccupied square (x 0..78, y 0..103); also used by change_module and by Fighters digging too deep | TOWN / MAGICFNC / CAT | dig_hole, change_module, spell_effect |
 | 3000:dab7 | boss_immune_check | 99 | 'NO, THAT SILLY SPELL DOESN'T WORK ON ME' | TOWN / MAGICFNC / CAT | go_away, autokill, drain_monster, spell_effect |
 | 3000:db1e | go_away | 247 | teleports the monster | TOWN / MAGICFNC / CAT | spell_effect |
 | 3000:dc18 | autokill | 283 | the autokill roll | TOWN / MAGICFNC / CAT | spell_effect |
@@ -564,9 +564,9 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 4000:415e | FUN_4000_415e | 29 |  | DISP (graphics) | mset_gmenu, get_choice, select_player, movecontrol, cast_a_spell, roll_char … |
 | 4000:417b | FUN_4000_417b | 16 |  | DISP (graphics) | FUN_2000_2a2e, mset_gmenu, get_choice, select_player, strike, movecontrol … |
 | 4000:418d | mgetch_message | 83 | wait for a key in the message box | DISP (graphics) | g_store, show_registration_notice, quit_game, movecontrol, roll_char, boss_office_message … |
-| 4000:41e5 | FUN_4000_41e5 | 62 |  | DISP (graphics) | movecontrol, title_screen, death_screen |
+| 4000:41e5 | FUN_4000_41e5 | 62 |  | DISP (graphics) | movecontrol, title_screen, module_transition_screen |
 | 4000:4225 | FUN_4000_4225 | 143 |  | DISP (graphics) | FUN_2000_03d4, mset_gmenu, get_choice, main, movecontrol |
-| 4000:42b4 | erase_menu_block | 90 | clears the menu area | DISP (graphics) | FUN_2000_1598, main, quit_game, kill_player, movecontrol, roll_char … |
+| 4000:42b4 | erase_menu_block | 90 | clears the menu area | DISP (graphics) | FUN_2000_1598, main, quit_game, change_module, movecontrol, roll_char … |
 | 4000:430e | erase_message_block | 48 | clears the message line | DISP (graphics) | mset_gmenu, FUN_2000_2f5d, FUN_2000_4054, FUN_2000_412a, show_money, g_store … |
 | 4000:433e | FUN_4000_433e | 1240 |  | DISP (graphics) | FUN_2000_4506, draw_map_square, boss_office_message, FUN_3000_9026, title_screen |
 | 4000:4818 | scale_image2 | 1909 | draws a .PIC image scaled into a rectangle | DISP (graphics) | FUN_2000_3e73, select_player, draw_ladder_prompt, movecontrol, draw_3d_view, draw_map_square … |
@@ -589,7 +589,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 4000:6aca | drop_money | 2396 | Greater American Dollars on a kill | DISP (graphics) | kill_monster |
 | 4000:7426 | FUN_4000_7426 | 245 |  | DISP (graphics) | select_player |
 | 4000:751b | shareware_plea_screen | 512 | the 'DELETE THE FILE INTRO.TXT' shareware screen; no callers in the registered build (dead code) | DISP (graphics) |  |
-| 4000:771b | death_screen | 2302 | called by kill_player | DISP (graphics) | kill_player |
+| 4000:771b | module_transition_screen | 2302 | shown by change_module | DISP (graphics) | change_module |
 | 5000:0006 | FUN_5000_0006 | 326 |  | DISP low-level | FUN_5000_0176, FUN_5000_01d2, FUN_5000_0522, FUN_5000_0cc2, FUN_5000_0d73 |
 | 5000:0153 | FUN_5000_0153 | 35 |  | DISP low-level | FUN_5000_01d2, FUN_5000_037e, FUN_5000_0cc2, FUN_5000_0d73 |
 | 5000:0176 | FUN_5000_0176 | 92 |  | DISP low-level |  |

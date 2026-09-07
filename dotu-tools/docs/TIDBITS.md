@@ -111,10 +111,10 @@ BIOS tick counter, 18.2 per second, counted from program start and truncated to 
   it climbs 0, 1, 2 ... 79 at 0.85 per tick and wraps every 5.2 seconds of real time, for
   as long as the game runs.  Swing at the right moment and you always roll high.  Only the
   later rolls in the swing (damage dice, strength bonus) move fast enough to look random.
-* **The monster's roll is your roll plus four.**  `defend()` (2000:82b7) seeds with
-  `srand(clock() + 100)`.  100 ticks shifts the first output by 100 x 346 mod 32768, which
-  is about +4.5 on a `random(80)` — so at any instant the monster's base attack roll is
-  your base roll plus four or five, modulo 80.
+* **The monster's roll is not the sawtooth.**  `defend()` (2000:82b7) does seed with
+  `srand(clock() + 100)`, but its first roll is the capital-R `Random(80)`, which reseeds
+  again with the accumulator scheme below, so that seed is dead code; only the player's
+  to-hit roll is the pure clock.
 * **Monsters are stocked in diagonal stripes.**  `stock_level()` (2000:671e) seeds every
   placement with `srand(clock() + slot + counter)` — consecutive seeds — and then takes
   `x = random(80)`, `y = random(110)` as the first two outputs.  Slot after slot, x rises
@@ -185,3 +185,22 @@ BIOS tick counter, 18.2 per second, counted from program start and truncated to 
   DS:0000 (the Borland copyright string), and the loop runs until it meets a `~` byte.
 * **A power weapon spell** replaces only the damage die; the held weapon's hit bonus,
   plus and speed still apply, so the best play is to keep your best weapon in hand.
+
+## How much time a spell costs, and why it matters against a boss
+
+`cast_a_spell` (2000:e017) returns a casting time and `movecontrol` turns it into monster
+attack opportunities (`call_check_eng` 2000:a319, which runs every adjacent monster's
+attack timer down by that many seconds and lets it strike while the timer is negative,
+`(85 - speed)/3 + 10` seconds per strike, at most three strikes per check):
+
+* battle spells, and any scroll/wand/paper of one: **10 seconds** -> one check of 10 s.
+  Against Shadow Ogeroth (20-second interval) that is exactly one attack per two zaps.
+* preparation spells (cures, protections, resists, Descend): **100 seconds** -> one check
+  of 60 s -> up to three attacks from an adjacent boss.  Cast them before stepping in.
+* permanent spells (wand and scroll making, Extra HP): **36,096 seconds**, and any time of
+  30,000 or more skips the engagement check entirely -> making a wand next to a boss is
+  free.
+* a spell that changes floors returns 1 second.
+
+On a new engagement the monster's timer starts at `random(AGI)` (2000:b8f7), so a
+high-agility character gets a few free zaps; a level-32 monk with AGI 5 gets none.
