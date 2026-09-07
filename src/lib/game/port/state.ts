@@ -16,6 +16,12 @@ export const MAP_PLAYER = 0xfe;
  * offset `xxxx - 0xb880`.
  */
 export interface PlayerCharacter {
+  /** 0x00, DS:b880: upper case, at most the 18 characters the name field takes. */
+  name: string;
+  /** 0x28, DS:b8a8: which of the eight rows of the race table the character was rolled from. */
+  race: number;
+  /** 0x29, DS:b8a9: 0 male, 1 female. */
+  sex: number;
   /** 0x2a, DS:b8aa: 0 Fighter, 1 Worshipper, 2 Monk, 3 Wizard, 4 Priest, 5 Sage, 6 Mage. */
   cls: number;
   /** 0x31, DS:b8b1. */
@@ -26,6 +32,11 @@ export interface PlayerCharacter {
   sp: number;
   /** 0x39, DS:b8b9. */
   maxSp: number;
+  /**
+   * 0x3d, DS:b8bd: the character's height in quarter-inches, so the screens that print it
+   * multiply by four. The save editor labels this field "Height (/ 4)".
+   */
+  height: number;
   /** 0x3f, DS:b8bf: what the character weighs with nothing carried. */
   weight: number;
   /** 0x41, DS:b8c1: what the character weighs carrying everything they own. */
@@ -47,10 +58,21 @@ export interface PlayerCharacter {
    * name for this byte; the recovered source calls it `shield`. Nothing in the game writes it.
    */
   shield: number;
+  /**
+   * 0x177, DS:b9f7: 180 flags for the spells the character can cast out of their own head,
+   * indexed `type * 45 + level * 3 + slot` the same way the scrolls are.
+   */
+  spellbook: number[];
   /** 0x22b, DS:baab: 180 scroll counts, indexed `type * 45 + level * 3 + slot`. */
   scrolls: number[];
   /** 0x2df, DS:bb5f: 180 wand charge counts, indexed the same way. */
   wands: number[];
+  /** 0x454, DS:bcd4: rubles in the character's pocket. */
+  money: number;
+  /** 0x458, DS:bcd8: rubles in the bank. */
+  bank: number;
+  /** 0x46c, DS:bcec: magic crystals. */
+  crystals: number;
   /** 0x7a4, DS:c024: experience, the one field of the record the game keeps as a double. */
   exp: number;
   /** 0x7ac, DS:c02c: the character's experience level. */
@@ -129,6 +151,23 @@ export interface PlayerCharacter {
   sleepTimer: number;
   /** 0x7fa, DS:c07a: moves the engaged monster stays held. */
   holdMonsterTimer: number;
+  /**
+   * 0x7fc, DS:c07c. roll_char writes 2146 here and nothing in the game reads it back;
+   * every real save file holds that number. The save layout has no name for it.
+   */
+  unread7fc: number;
+  /** 0x7fe, DS:c07e: 1431 on every character, and read nowhere. */
+  unread7fe: number;
+  /** 0x808, DS:c088: zero on every character, and read nowhere. */
+  unread808: number;
+  /** 0x80a, DS:c08a: 56 on every character, and read nowhere. */
+  unread80a: number;
+  /** 0x80c, DS:c08c: 60 on every character, and read nowhere. */
+  unread80c: number;
+  /** 0x80e, DS:c08e: 300 on every character, and read nowhere. */
+  unread80e: number;
+  /** 0x810, DS:c090: zero on every character, and read nowhere. */
+  unread810: number;
   /** 0x816, DS:c096. */
   str: number;
   /** 0x818, DS:c098. */
@@ -212,8 +251,16 @@ export type GameEvent =
   | { kind: 'levelChanged'; from: number; to: number }
   /** give_hint (exe 2000:313a) prints one of the hints in `UH.BIN`. */
   | { kind: 'hintShown'; hint: number }
+  /** tablet_message (exe 3000:931c) prints one of the stone tablets in `UH2.BIN`. */
+  | { kind: 'tabletShown'; entry: number }
   /** save_player (exe 2000:79ad) writes the character record back out to its file. */
-  | { kind: 'playerSaved' };
+  | { kind: 'playerSaved' }
+  /**
+   * save_player (exe 2000:79ad) again, at the end of roll_char, where the file it writes is a
+   * character that did not exist before. The record is the live one, which nothing writes to
+   * after this.
+   */
+  | { kind: 'characterCreated'; slot: number; pc: PlayerCharacter };
 
 /** The columns of the type table `mstats` (exe DS:5402) that the ported functions read. */
 export interface MonsterStats {
@@ -270,6 +317,11 @@ export interface Game {
   monsterMap: Uint8Array;
   /** DS:c4df: one seconds-until-its-next-attack timer per monster slot. */
   monsterTimers: Int16Array;
+  /**
+   * DS:035a: which of the ten character files, 20 to 29, the game has open. select_player (exe
+   * 2000:5c0d) sets it from the digit the player picks, and save_player names the file after it.
+   */
+  slot: number;
   /** DS:2517: the slot of the monster the player is fighting, or -1 for none. */
   engaged: number;
   /** DS:c655: the monster standing in the direction the player faces, or -1 for none. */
@@ -336,6 +388,28 @@ export interface Game {
    */
   chooseSpell(maxLevel: number): SpellChoice | null;
   /**
+   * The difficulty menu roll_char puts up first: 0 for normal, 1 for I can handle anything.
+   * The original reads a digit and loops until it is 1 or 2; {@link newGame} answers 0.
+   */
+  askDifficulty(): number;
+  /** The race menu: 0 to 7, one of the eight rows of the race table. */
+  askRace(): number;
+  /**
+   * What to do with the character that has just been rolled: 0 keep it, 1 roll another, 2 design
+   * one. The original reads Y, N or D. {@link newGame} keeps, so a roll finishes on its own.
+   */
+  askKeepRerollDesign(): number;
+  /**
+   * Which characteristic the next of the 24 design points goes on: 0 strength, 1 intelligence,
+   * 2 wisdom, 3 constitution, 4 agility, 5 luck, or 6 for the Escape that throws the character
+   * away and rolls another. {@link newGame} escapes.
+   */
+  askDesignStat(): number;
+  /** The typed name. roll_char keeps the first 18 characters of it, in upper case. */
+  askName(): string;
+  /** The class menu: 0 to 6, Fighter through Mage. */
+  askClass(): number;
+  /**
    * print_menu_only (exe 2000:309e): show a screen of up to eight lines and wait for a key.
    * The game fills the slots it does not use with the empty string at DS:258b; those trailing
    * blanks are dropped here, blank lines between two printed ones are kept.
@@ -369,11 +443,15 @@ export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say'>> {
 /** A character to run a ported function against. Fresh each call, arrays and all. */
 function defaultPc(): PlayerCharacter {
   return {
+    name: '',
+    race: 0,
+    sex: 0,
     cls: 0,
     hp: 100,
     maxHp: 100,
     sp: 0,
     maxSp: 0,
+    height: 18,
     weight: 150,
     loadedWeight: 150,
     weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 0],
@@ -383,8 +461,12 @@ function defaultPc(): PlayerCharacter {
     armorPlus: [0, 0, 0, 0, 0, 0, 0, 0],
     armor: 0,
     shield: 0,
+    spellbook: Array.from({ length: 180 }, () => 0),
     scrolls: Array.from({ length: 180 }, () => 0),
     wands: Array.from({ length: 180 }, () => 0),
+    money: 0,
+    bank: 0,
+    crystals: 0,
     exp: 100000,
     lev: 10,
     dir: 0,
@@ -424,6 +506,13 @@ function defaultPc(): PlayerCharacter {
     resistDrainTimer: 0,
     sleepTimer: 0,
     holdMonsterTimer: 0,
+    unread7fc: 0,
+    unread7fe: 0,
+    unread808: 0,
+    unread80a: 0,
+    unread80c: 0,
+    unread80e: 0,
+    unread810: 0,
     str: 20,
     iq: 20,
     wis: 20,
@@ -478,6 +567,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     bottomLevel: data.constants.bottomLevel,
     monsterMap: new Uint8Array(WIDTH * HEIGHT).fill(MAP_EMPTY),
     monsterTimers: new Int16Array(145),
+    slot: 20,
     engaged: -1,
     engagedAhead: -1,
     enemyDir: -1,
@@ -499,6 +589,12 @@ export function newGame(overrides: GameOverrides = {}): Game {
     chooseWeapon: () => null,
     chooseArmor: () => null,
     chooseSpell: () => null,
+    askDifficulty: () => 0,
+    askRace: () => 0,
+    askKeepRerollDesign: () => 0,
+    askDesignStat: () => 6,
+    askName: () => '',
+    askClass: () => 0,
     ...rest,
     messages,
     say(...lines: string[]): void {
