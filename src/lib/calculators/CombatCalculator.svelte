@@ -358,7 +358,7 @@
     <SectionHeading title="Spells against it" />
     <table>
       <tbody>
-        <tr><td>Sleep</td><td>{report.spells.sleep === null ? '—' : percent(report.spells.sleep)}</td></tr>
+        <tr><td>Sleep</td><td>{percent(report.spells.sleep)}</td></tr>
         <tr>
           <td>Drain Monster</td>
           <td>
@@ -372,7 +372,7 @@
         <tr><td>Autokill</td><td>{report.spells.autokill === null ? '—' : percent(report.spells.autokill)}</td></tr>
       </tbody>
     </table>
-    <p class="note">Shadow bosses shrug off Sleep, Go Away, Autokill and Drain Monster.</p>
+    <p class="note">Shadow bosses shrug off Go Away, Autokill and Drain Monster. Sleep never checks for one, so it works.</p>
   </section>
 </div>
 

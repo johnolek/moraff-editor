@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { allMonsters, homeFloor, type Monster } from '../bestiary/monsters';
+import { sleepChance } from '../game/dotu-mech.js';
 import { breathProfile, combatReport, swingsFor, type Fight, type Fighter } from './combat';
 
 /** A repeatable stand-in for Math.random, so a failing sample can be reproduced. */
@@ -111,10 +112,10 @@ describe('the power weapon', () => {
 });
 
 describe('spell odds', () => {
-  it('gives a Shadow boss none of them', () => {
+  it('leaves a Shadow boss only Sleep, which never asks whether it is one', () => {
     const boss = fightWith('Shadow Gargalon');
     const report = combatReport(fighter(), boss, { trials, rnd: seeded(11) });
-    expect(report.spells).toEqual({ sleep: null, drainMonster: null, autokill: null });
+    expect(report.spells).toEqual({ sleep: sleepChance(boss.level), drainMonster: null, autokill: null });
   });
 
   it('reports Sleep, Drain Monster and Autokill against anything else', () => {

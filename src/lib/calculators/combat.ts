@@ -88,8 +88,8 @@ export interface Breath {
 }
 
 export interface SpellOdds {
-  /** Null for a Shadow boss, which every one of these fails on. */
-  sleep: number | null;
+  sleep: number;
+  /** Null for a Shadow boss, which both of these refuse to touch. */
   drainMonster: boolean | null;
   autokill: number | null;
 }
@@ -247,20 +247,23 @@ export function combatReport(fighter: Fighter, fight: Fight, { trials = 20000, r
 }
 
 export function spellOdds(fighter: Fighter, fight: Fight, { trials = 20000, rnd = Math.random }: CombatOptions = {}): SpellOdds {
-  if (fight.monster.isBoss) return { sleep: null, drainMonster: null, autokill: null };
+  const boss = fight.monster.isBoss;
   return {
+    // Sleep is the one spell aimed at a monster that never asks whether it is a Shadow boss.
     sleep: sleepChance(fight.level),
-    drainMonster: drainMonsterKills(fight.level, fighter.wis),
-    autokill: autokillChance(
-      fight.level,
-      fight.monster.type.speed,
-      fighter.lev,
-      fighter.iq,
-      fighter.wis,
-      fight.floor,
-      trials,
-      rnd,
-    ),
+    drainMonster: boss ? null : drainMonsterKills(fight.level, fighter.wis),
+    autokill: boss
+      ? null
+      : autokillChance(
+          fight.level,
+          fight.monster.type.speed,
+          fighter.lev,
+          fighter.iq,
+          fighter.wis,
+          fight.floor,
+          trials,
+          rnd,
+        ),
   };
 }
 
