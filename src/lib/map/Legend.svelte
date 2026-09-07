@@ -29,8 +29,10 @@
     return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: building, surface: building, ...overrides };
   }
 
+  /** Whether the entry is the trap door one, and this floor is a floor that can have them:
+   *  Dungeons of the Unforgiven puts none in a town, Moraff's World does. */
   function isTrapdoor(kind: LegendKind): boolean {
-    return kind.kind === 'glyph' && kind.glyph === 'trapdoor';
+    return kind.kind === 'glyph' && kind.glyph === 'trapdoor' && (summary.floor > 0 || summary.trapdoors > 0);
   }
 
   const entries = $derived<{ label: string; square: MapSquare; kind: LegendKind; count: number }[]>([
@@ -65,7 +67,7 @@
   </SectionHeading>
   <ul class="entries">
     {#each entries as { label, square, kind, count }}
-      <li class:wide={isTrapdoor(kind) && summary.floor > 0}>
+      <li class:wide={isTrapdoor(kind)}>
         <button
           type="button"
           class="entry"
@@ -80,7 +82,7 @@
             <span class="count">{count}</span>
           </span>
         </button>
-        {#if isTrapdoor(kind) && summary.floor > 0}
+        {#if isTrapdoor(kind)}
           <ul class="destinations">
             {#each trapdoorDestinations as { floor, label }}
               <li>
