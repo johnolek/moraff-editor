@@ -119,7 +119,7 @@ Everything else: the play loop, combat, the town, the world map, the dungeon.
 
 `mw-tools/docs/ROLLER.md` says the two map-cursor bytes at 0x7b4 come out as 40 and 55, half of
 the section's 80 x 110. They are half of the *map view*, not the section: `roll_char` halves
-`DS:4489` and `DS:448a`, which `FUN_2000_3ae1` (exe 2000:3ae1) sets from the video mode.
+`DS:4489` and `DS:448a`, which `set_map_view` (exe 2000:3ae1) sets from the video mode.
 `main` (exe 2000:4292) calls that function with 1 — `mov ax, 1; push ax; call 0x3ae1` at
 2000:43f8 — which is the scrolling view, 0x12 by 0x26 in the three biggest modes, so a rolled
 character gets 9 and 19. Every character file in `~/games/mworld` holds 9 and 19, the one that

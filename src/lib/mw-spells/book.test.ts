@@ -45,7 +45,7 @@ describe('what the spells do', () => {
 
   it('names the function every sentence was read out of', () => {
     const sleep = MW_SPELL_EFFECTS[60];
-    expect(sleep.from).toBe('FUN_2000_caba (2000:caba)');
+    expect(sleep.from).toBe('sleep_monster (2000:caba)');
     // The priest's Protection asks for level 1, where the wizard's asks for 2.
     expect(MW_SPELL_EFFECTS[102].effect).toContain('not 2');
   });

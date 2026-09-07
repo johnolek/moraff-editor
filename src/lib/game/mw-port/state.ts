@@ -152,7 +152,7 @@ export interface MwGame {
    */
   slot: number;
   /**
-   * DS:4489: how many columns of a floor the map view shows. FUN_2000_3ae1 (exe 2000:3ae1) sets
+   * DS:4489: how many columns of a floor the map view shows. set_map_view (exe 2000:3ae1) sets
    * it from the video mode, and roll_char halves it into the map cursor.
    */
   mapViewColumns: number;
@@ -273,7 +273,7 @@ export function blankMwCharacter(): MwCharacter {
  * A game to run the ported roller against. The character starts blank, the way the memset at the
  * top of roll_char leaves it, and every question answers itself so a roll finishes on its own.
  *
- * The map view is 0x12 by 0x26, which is what FUN_2000_3ae1 (exe 2000:3ae1) sets it to for the
+ * The map view is 0x12 by 0x26, which is what set_map_view (exe 2000:3ae1) sets it to for the
  * three biggest video modes — the ones the game is played in. `main` (exe 2000:4292) calls that
  * function with 1 before it ever reaches the roller.
  */

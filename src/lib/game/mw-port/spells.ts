@@ -4,9 +4,6 @@ import spellsHelp from '../mw-spells.hlp?raw';
 // menu come from a table of near pointers in the data segment (exe DS:4493, 120 entries two
 // bytes apart); the paragraph the game shows when a spell is asked about comes out of
 // SPELLS.HLP. Both are indexed the same way, worked out below.
-//
-// The reverse engineering has not named these functions yet, so they are cited by the
-// FUN_ names mw.c still carries. The survey calls 2000:5938 load_spell_text.
 
 /** The four spell categories, in the order the game numbers them. */
 export const MW_SPELL_CATEGORIES = ['permanent', 'preparation', 'wizard', 'priest'] as const;
@@ -45,7 +42,7 @@ export const MW_BOOK_SLOTS_PER_CATEGORY = 45;
 
 /**
  * Which record of SPELLS.HLP a spell's description is (WORLD.EXE 3000:b7fd, mw.c
- * "FUN_3000_b7fd"). That function is handed the category, the level and the slot exactly as the
+ * "load_spell_lines"). That function is handed the category, the level and the slot exactly as the
  * menu holds them and asks for record `category * 30 + level * 3 + slot`, so the records run in
  * menu order: 0 to 29 permanent, 30 to 59 preparation, 60 to 89 wizard, 90 to 119 priestly.
  *
@@ -71,7 +68,7 @@ export function mwSpellBookSlot(category: number, level: number, slot: number): 
 }
 
 /**
- * What a spell costs to cast out of the spellbook (WORLD.EXE 2000:ea27, mw.c "FUN_2000_ea27"):
+ * What a spell costs to cast out of the spellbook (WORLD.EXE 2000:ea27, mw.c "spell_screen"):
  * one spell point per level, which is what the heading over the menu says as well — "SELECT A
  * SPELL-SPELLS USE ONE SPELL POINT PER LEVEL:" (exe DS:4201).
  *
@@ -84,7 +81,7 @@ export function mwSpellPointCost(level: number): number {
 }
 
 /**
- * What a permanent spell costs on top of that (WORLD.EXE 2000:ea27, mw.c "FUN_2000_ea27"): the
+ * What a permanent spell costs on top of that (WORLD.EXE 2000:ea27, mw.c "spell_screen"): the
  * same number again, off the maximum. Casting Youth out of the book therefore takes ten spell
  * points away from the character for good.
  *
@@ -96,7 +93,7 @@ export function mwMaximumSpellPointCost(category: number, level: number): number
 }
 
 /**
- * The keys the menu answers to (WORLD.EXE 2000:ea27, mw.c "FUN_2000_ea27"): A to Z and then 1 to
+ * The keys the menu answers to (WORLD.EXE 2000:ea27, mw.c "spell_screen"): A to Z and then 1 to
  * 4, three to a line and ten lines down, so the bottom line is keyed 2, 3 and 4.
  *
  * The game reads a key, upper-cases it, turns '1' to '4' into the four characters above 'Z' by
@@ -118,12 +115,12 @@ export function mwSpellKey(level: number, slot: number): string {
 /**
  * One record of SPELLS.HLP as the game holds it, split into the screen lines it draws.
  *
- * load_spell_text (WORLD.EXE 2000:5938, mw.c "FUN_2000_5938") opens the file in text mode, reads
+ * load_spell_text (WORLD.EXE 2000:5938, mw.c "load_spell_text") opens the file in text mode, reads
  * characters into a buffer until it meets a '~', and turns every newline on the way into a '@'.
  * It does that once per record, counting from 0, and stops at record 119. Text mode is what
  * drops the carriage returns of the file's DOS line endings, so the mirrored copy has newlines.
  *
- * FUN_3000_b7fd (WORLD.EXE 3000:b7fd) then copies the buffer into eight line buffers, starting
+ * load_spell_lines (WORLD.EXE 3000:b7fd) then copies the buffer into eight line buffers, starting
  * at the buffer's second character and breaking a line at every '@'. That second character is
  * why every record but the first begins with the newline that ended the record before, and why
  * record 0 begins with a space instead: the file is written so that the character being skipped
@@ -144,7 +141,7 @@ export function mwSpellHeading(record: number, text: string = spellsHelp): strin
 
 /**
  * The classes that may cast a category out of the spellbook (WORLD.EXE 2000:ea27, mw.c
- * "FUN_2000_ea27", and the same two tests again in cast_spell at 2000:c546). Classes are the
+ * "spell_screen", and the same two tests again in cast_spell at 2000:c546). Classes are the
  * numbers the character record holds at offset 0x2a: 0 fighter, 1 worshipper, 2 monk, 3 wizard,
  * 4 priest, 5 sage, 6 mage.
  *
@@ -155,7 +152,7 @@ export function mwSpellHeading(record: number, text: string = spellsHelp): strin
  */
 export const MW_WIZARD_CLASSES = [2, 3, 5, 6];
 
-/** The classes that may cast the priestly category (WORLD.EXE 2000:ea27, mw.c "FUN_2000_ea27"). */
+/** The classes that may cast the priestly category (WORLD.EXE 2000:ea27, mw.c "spell_screen"). */
 export const MW_PRIESTLY_CLASSES = [1, 2, 4, 5];
 
 /**
