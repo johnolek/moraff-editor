@@ -111,12 +111,12 @@ program, names ` F9.EXE` and ` NAME` in its strings.
 | file | size | what |
 |---|---|---|
 | `1.BIN` .. `5.BIN` | 6,053 each | the five characters' explored maps, BSAVE images |
-| `1.NUM`, `2.NUM` | 5,609 each | BSAVE images, BLOADed to DGROUP 2242 and 3824 |
-| `3.NUM`, `3A.NUM` | 100 each | 22 numbers per monster, one file per dungeon |
-| `4.NUM`, `4A.NUM` | 8,007 each | BSAVE images, contents not identified |
-| `5.NUM`, `5A.NUM` | 100 each | 22 numbers per monster, one file per dungeon |
-| `6.NUM`, `6A.NUM` | 5,137 each | BSAVE images, contents not identified |
-| `7.NUM` | 6,053 | a map-shaped array shared by every character |
+| `1.NUM`, `2.NUM` | 5,609 each | where every monster is, and how strong it is |
+| `3.NUM`, `3A.NUM` | 100 each | the close-up picture each monster is drawn with |
+| `4.NUM`, `4A.NUM` | 8,007 each | fifteen monster pictures, 36 x 24 pixels |
+| `5.NUM`, `5A.NUM` | 100 each | the distant picture each monster is drawn with |
+| `6.NUM`, `6A.NUM` | 5,137 each | eighteen monster pictures, 20 x 14 pixels |
+| `7.NUM` | 6,053 | which squares hold a ladder or a false floor |
 | `H1.OVL` .. `H8.OVL` | 1,009–2,527 | the help pages, plain CP437 text |
 | `NAME` | 5 | the current character hand-off |
 | `REVIEW.1` .. `REVIEW.6` | 122 each | the "Now loading" screen, plain text |
@@ -524,10 +524,21 @@ game rewrites them during play — which is what a to-hit or damage modifier
 would do. Settling those two means naming the arithmetic routines their
 branches go through, which is the run-time naming work.
 
-**`<n>.BIN`** is a `BSAVE` of the explored-map array: 1,511 singles, laid out as
-BASIC lays out `DIM M(20, 70)` — column by column, so dungeon level *L* starts
-at element 21*L* with rows 1 to 20 after it and element 0 of each level unused.
-Every row is a bitmask, one bit per column, twenty columns wide.
+**`<n>.BIN`** is a `BSAVE` of the explored-map array. The array is
+`DIM M(20, 71)`, and BASIC lays a two-dimensional array out column by column, so
+dungeon level *L* starts at element 21*L* with rows 0 to 20 after it and row 0
+unused. The shape comes from the `BSAVE` statement itself, at `1000:B583`, which
+gives the length as `VARPTR(last) - VARPTR(first) + 1`: DGROUP `9B06` to `B2A2`
+is 1,511 singles, and element 1,511 is `M(20, 71)`. That is also why the file
+size is odd — 1,511 singles is 6,044 bytes and the `+ 1` makes 6,045, so the
+last element is cut in half on the way out. `7.NUM`'s array sits immediately
+below at `8366`, exactly 6,048 bytes lower, and 6,048 bytes is 21 x 72 singles.
+
+Every row is a bitmask, twenty columns wide, and the columns run from the top
+bit down: the game reads a square with `INT(M(row, level) / 2 ^ (20 - column))
+MOD 2`, the routine at `1000:5449`, so column 1 is bit 19 and column 20 is
+bit 0. Bit 20 is never set in any shipped `.BIN` or in `7.NUM`, which is the
+cross-check that the twenty columns start at bit 19 and not at bit 0.
 
 The proof is a data statement in `CHCHAR.EXE`:
 
@@ -541,52 +552,242 @@ map. `5.BIN`, the one shipped character who went anywhere, draws as:
 
 ```
 level 0:                          level 1:
-  .....######.........              ....................
-  ....#######.........              ....................
-  ..###.#####.##......              ....................
-  ..############......              ##..................
-  ....###..#..........              ##......##..........
-  .........#..........              ...
+  .........######.....              ....................
+  .........#######....              ....................
+  ......##.#####.###..              ....................
+  ......############..              ..................##
+  ..........#..###....              ..........##......##
+  ..........#.........              ...
 ```
 
-### `7.NUM`: the shared map-shaped array
+### `7.NUM`: where the ladders and the false floors are
 
-Same shape as a `.BIN` — 1,511 singles, 21-element level stride, element 0 of
-each level zero, highest non-zero element 1489 (level 70, row 19) — but loaded
-once for everybody rather than per character, and sparse where a `.BIN` is
-dense: a handful of scattered bits per row rather than runs of adjacent ones.
-A `.BIN` row of `2016` is six adjacent explored squares; a `7.NUM` row of
-`524288` is a single square nineteen columns in. Sparse, fixed, per level, in
-the same coordinate space as the map: this is where the dungeon's fixed features
-are — the ladders, the chutes, the fountain of youth — though which bit means
-what is not yet established.
+Same array as a `.BIN` — `DIM AT(20, 71)`, 21-element level stride, the same
+twenty columns from bit 19 down to bit 0 — but loaded once for everybody rather
+than per character, and sparse where a `.BIN` is dense: a handful of scattered
+bits per row rather than runs of adjacent ones. A `.BIN` row of `2016` is six
+adjacent explored squares; a `7.NUM` row of `524288` is the single square in
+column 1.
+
+A cell is not a bag of feature flags. It is a column mask exactly like the
+explored map's, one bit per square, and a set bit means only that the square
+holds a fixed feature. Two places read it, `1000:527B` and `1000:54E8`, both the
+same way:
+
+```
+54cb  be 8c b4       mov  si, 0B48Ch               ; the dungeon level
+54ce  cd 3f 75       QB3F $75                      ; as an integer, in BX
+54d3  be 15 00       mov  si, 15h                  ; 21
+54d6  f7 ee          imul si
+54da  be d2 b4       mov  si, 0B4D2h               ; the row
+54dd  cd 3f 75       QB3F $75
+54e0  03 d8          add  bx, ax                   ; 21 * level + row
+54e4  d1 e6          shl  si, 1                    ; four bytes to a single
+54e6  d1 e6          shl  si, 1
+54e8  81 c6 66 83    add  si, 8366h                ; -> AT(row, level)
+54ec  bf 4e b6       mov  di, 0B64Eh
+54ef  cd 3f 7b       QB3F $7B                      ; keep the cell
+54f2  e8 54 ff       call 5449h                    ; and pick the column's bit
+```
+
+and `1000:5449` is the bit test, `INT(AT(row, level) / 2 ^ (20 - column)) MOD 2`,
+which is what settles the column order for both map arrays.
+
+**Which** feature is on the square is not in the file. When the bit is clear the
+caller at `1000:5500` sets the feature code to 50, meaning nothing is there;
+when it is set, `1000:552B` works the code out from the square's own
+coordinates, at `1000:5793`:
+
+```
+5793  8b 1e 0c b6    mov  bx, [0B60Ch]             ; the column
+5797  83 c3 07       add  bx, 7
+57a0  cd 3f 25       QB3F $25   di = 0CF24h        ; ^ 1.3
+57a3  8b 1e 0a b6    mov  bx, [0B60Ah]             ; the row
+57a7  83 c3 06       add  bx, 6
+57b4  cd 3f 25       QB3F $25   di = 0BB74h        ; ^ 1.2
+57b7  cd 3f 95 80    QB3F $95                      ; times the first
+57bb  a1 5c b6       mov  ax, [0B65Ch]             ; the step, 0 to 3
+57be  03 06 de b5    add  ax, [0B5DEh]             ;   plus the level
+57c2  40             inc  ax                       ;   plus one
+57cf  cd 3f 25       QB3F $25   di = 0BB70h        ; ^ 1.1
+57d2  cd 3f 95 81    QB3F $95                      ; times the other two
+57e1  cd 3f 87       QB3F $87   di = 0CF28h        ; / 300
+57eb  cd 3d 03       QB3D $03                      ; INT of that
+57f2  cd 3f 9d 82    QB3F $9D                      ; taken off the quotient
+57f8  cd 3f 91       QB3F $91                      ; times 300 again
+57fe  cd 3f 81       QB3F $81   di = 0C2D8h        ; less 3
+5806  cd 3d 03       QB3D $03                      ; INT of the lot
+```
+
+`INT 3F $25` is `^`: BRUN30 CS:B89E gives itself away by returning 1.0 when the
+right operand's exponent is zero and 0 when the left one's is, and `$87` is a
+divide, subtracting exponents at CS:B541. So the code is
+
+```
+INT( ((column + 7) ^ 1.3 * (row + 6) ^ 1.2 * (level + step + 1) ^ 1.1) MOD 300 ) - 3
+```
+
+with `step` 0 for the square you are on and 1, 2 and 3 for the three levels
+below it. `1000:552B` asks for step 0, and then, if that says nothing, walks the
+steps looking for a level whose code folds down to the distance — which is what
+a ladder going down is, and why the loop stops at three.
+
+That accounts for `7.NUM` itself. Recomputing the formula for all 28,000 squares
+of levels 1 to 70 puts a feature on 1,597 of the 1,632 squares the file marks
+and on 100 squares it does not — 135 disagreements in 28,000, which is what a
+24-bit mantissa costs when the product reaches 400,000 and the remainder has
+less than a unit of room left. **`7.NUM` is an index of that expression, not a
+description of the dungeon.** `read_dungeon.py --formula` marks the squares the
+two disagree about. The town is its own case: `1000:552B` sends level 0 straight
+to the ladder-down loop, and the formula does not describe its ten squares.
+
+So a square carries a ladder up when its own code is 1 to 9, and a ladder down
+when one of the three levels below has a code of 1 to 9 that folds to the
+distance. `1000:5649` does the folding — it takes 3 off twice while the code is
+over 3 — so what reaches the caller is 1, 2 or 3, the number of levels the
+ladder spans, and `1000:5594` negates it on the ladder-up branch while the
+ladder-down loop leaves it positive. That is the sign `1000:570A` tests before
+printing `" Ladder going "` and then `"up.  "` or `"down."` with the `U-GO UP`
+or `D-GO DOWN` prompt. `INT 3F $AF` is the negation — BRUN30 CS:ABE0 is
+`xor byte ptr [1Ch], 80h`, the sign bit of the floating accumulator — and
+`INT 3F $9F`, the comparison every one of these branches reads, leaves the flags
+of `cmp [si], [di]` (CS:A858), which for these call sites is the variable
+against the constant.
+
+Two codes are not ladders. 50 means nothing is there, and `1000:9096` treats
+anything from 4 up as walk-on ground; 25 is what `1000:5549` uses for a negative
+code, which the shipped `7.NUM` never produces. A code of 0 jumps to
+`1000:3428`, which the recursive-descent walk does not reach.
+
+The false floor is a separate test on the square you have just stepped onto:
+`1000:064D` asks for the code, and if it is over 3 — no ladder — and three
+coordinate comparisons and a level check all pass, it sets the code to 1 and
+calls `1000:567C`, which prints `"   False floor.   "` and the `D-GO DOWN`
+prompt. So you fall one level.
+
+On the automap the marked squares are drawn as their own symbol, in one of two
+shapes depending on the sign of the code (`1000:52BB`, `1000:52F2`,
+`1000:5346`). Here is level 2 with `5.BIN`'s explored squares under it — `X` is
+a `7.NUM` square, `#` is somewhere that character walked:
+
+```
+X........####X......
+X......#######......
+.......##.#####.....
+.......##X#.####X...
+....X.########XX#XX.
+........#X########..
+.........##########.
+.....X...###X######.
+..........#########.
+...X......#######X#.
+..........#####X####
+..........####..####
+..........##########
+....X...X.##########
+..........###.X#.##X
+..........##########
+...X......##########
+..........##########
+..........######..##
+....................
+```
 
 That the array covers 71 levels while the beginner build stops at 17 fits
 `NCD.EXE`'s sales pitch: "the advanced version will take you all the way to the
 70'th level".
 
-### `3.NUM` and `5.NUM`: the monster tables
+### `1.NUM` and `2.NUM`: where every monster is, and how strong
 
-23 singles each, of which 22 are used — and `F6.COM` and `F7.COM` hold exactly
-22 monster names each.
+Two integer arrays, `DIM ?%(2800)`, at DGROUP `2242` and `3824`. They are 5,602
+bytes apart, which is 2,801 integers, and each `BSAVE` — `1000:B637` and
+`1000:B670` — asks for `VARPTR(A%(2800)) - VARPTR(A%(0)) + 1`, the 5,601 bytes
+the files hold. Element 0 is unused. Forty slots belong to each dungeon level,
+levels 1 to 70, which is exactly 2,800: the loop at `1000:79C3` opens with
+
+```
+79c3  b8 28 00       mov  ax, 28h                  ; 40
+79c6  f7 2e de b5    imul word ptr [0B5DEh]        ; times the dungeon level
+79cd  05 d9 ff       add  ax, 0FFD9h               ; back up 39
+```
+
+and runs to `40 * level`.
+
+A slot of `1.NUM` holds `32 * column + row`, or 0 for an empty slot. The same
+loop divides the value by 32 (the constant at DGROUP `CF38` is 0.03125), keeps
+the quotient and the remainder, and writes the slot number into the occupancy
+grid at DGROUP `4E90` at `22 * row + column` — the same subscript order the "is
+there a monster on this square" test at `1000:56CC` uses, which is what says
+which half is which. If the square is already taken it rolls a fresh position
+from two `RND` draws, the constants 18 and 17 at `BD1E` and `BD22`, plus 66, and
+tries again; 66 is `2 * 32 + 2`, which keeps monsters off the outer ring. Every
+value in the shipped file agrees: the column comes out 2 to 18 and the row 2 to
+19.
+
+`2.NUM` is the same forty-slots-per-level shape and holds how strong the monster
+in each slot is. Its values grow with depth — 3 to 16 on level 1, 9 to 39 on
+level 3, 37 to 183 on level 17, 163 to 699 on level 70 — the combat code at
+`1000:8223` reads a slot, works on it with the constant 10 at `BE6E` and writes
+the result back at `1000:825A`, and several sites take its absolute value
+(`1000:6C4E`, `6D94`, `81F7`, `826C`), so its sign carries a flag as well.
+Whether the number is hit points, an experience value or something else is not
+settled.
+
+Both files are saved as well as loaded, on the way out of the game: `1000:B5C8`
+prints `"Why don't you go grab a sandwich?"` or `"   Better luck next time!"` and
+then `BSAVE`s them. The dungeon's monsters are shared by every character on the
+disk and survive between sessions.
+
+### `3.NUM` and `5.NUM`: which picture each monster is drawn with
+
+23 singles each, of which elements 1 to 22 are used — one per monster, matching
+the 22 names in `F6.COM` and `F7.COM`, which `1000:C7D1` reads into elements 1
+to 22 of its own array just before it `BLOAD`s these.
 
 ```
 3.NUM:  6 15  5 13  5  9 10  3 12  7  7 14  8  2  4  1  2  4  5  5  5 11
 5.NUM:  6 18  7 16 15 11 12  5 14  9  9 17 10  1  8  2  1  8  7  7  7 13
 ```
 
-One number per monster, 1 to 18 — a difficulty or a dungeon level. `3A.NUM` and
-`5A.NUM` are the second dungeon's, matching the `s$+"3"+".NUM"` filename the
-`BLOAD` builds.
+`3.NUM`'s values never exceed 15 and `5.NUM`'s never exceed 18, which are the
+number of pictures in `4.NUM` and in `6.NUM`. They are picture numbers: `3.NUM`
+for the close-up view and `5.NUM` for the distant one. The first monster in
+`F6.COM` is `SKELETON`, `3.NUM` sends it to picture 6 of `4.NUM`, and picture 6
+is a skull, a ribcage and a scythe.
 
-### Not yet identified
+### `4.NUM` and `6.NUM`: the monster pictures
 
-`1.NUM` and `2.NUM` (5,609 bytes, loaded to adjacent DGROUP addresses 2242 and
-3824, exactly 5,602 apart) decode as 2,800 16-bit integers each, ranging 0–595
-and 0–699. `4.NUM`/`4A.NUM` (8,007) and `6.NUM`/`6A.NUM` (5,137) are neither
-clean single arrays nor clean integer arrays. All four need the code that reads
-them — the loops around the `BLOAD` sites listed above — rather than more
-guessing at the bytes.
+Integer arrays holding QuickBASIC `GET` images: a width in bits, a height in
+rows, then the rows, each padded to a byte, two bits to a pixel because the game
+draws in `SCREEN 1`. The arrays are dimensioned at startup, `1000:0060` and
+`1000:00BD`:
+
+```
+0059  b8 10 00       mov  ax, 10h                  ; 16
+005d  bb 16 4e       mov  bx, 4E16h                ; the array descriptor
+0060  cd 3f 45 03    QB3F $45  3 dimensions        ; DIM p%(124, 1, 15)
+```
+
+with the other two bounds pushed in front of it — 125 and 2, the 125 coming from
+the variable at `4E28`, which `1000:0043` sets to 124. That is 4,000 integers,
+which is what `4.NUM` holds. The third subscript is the picture, so one picture
+is 125 x 2 = 250 integers apart from the next, and there are 16 slots of which
+1 to 15 are used. `6.NUM` is `DIM p%(44, 2, 18)` — the same variable holds 2 by
+then — 2,565 integers, 135 apart, 19 slots of which 1 to 18 are used.
+
+`4.NUM`'s pictures are 72 bits by 24 rows, which is 36 by 24 pixels; `6.NUM`'s
+are 40 by 14 bits, 20 by 14 pixels. `read_dungeon.py` draws them.
+
+### What is still open
+
+* what `1000:552B` does with a code of 0 — 82 of the 1,632 marked squares. It
+  jumps to `1000:3428`, which the recursive-descent walk does not reach.
+* the three coordinate comparisons `1000:064D` makes before it calls the false
+  floor. They read as "the move did not happen", but the variables they use
+  (`B4CE`, `B4D6`, `B4DA`) have not been named from anywhere else.
+* what `2.NUM`'s number is in the game's own terms, and what its sign means.
+* what the town's ten `7.NUM` squares are. The formula does not produce them and
+  `1000:552B` sends level 0 down a path of its own.
 
 ## 4. The plan
 
