@@ -60,10 +60,12 @@
   const summary = $derived(summarizeMapFloor(game, rows, floor, dungeon));
   const lookup = $derived(dungeonLookup(game, dungeon));
   const notable = $derived(notableSquares(lookup, floor, rows, game.area));
-  const section = $derived(sectionInfo(dungeon, floor));
-  const twins = $derived(twinsOf(dungeon, floor));
+  // The sections, the twin floors and the monsters all belong to Dungeons of the Unforgiven's
+  // five modules, and mean nothing about a numbered Moraff's World dungeon.
+  const section = $derived(game.modules ? sectionInfo(dungeon, floor) : null);
+  const twins = $derived(game.modules ? twinsOf(dungeon, floor) : []);
   const stockKey = $derived(`${dungeon}:${floor}`);
-  const canStock = $derived(stockingSection(dungeon, floor) !== null);
+  const canStock = $derived(game.modules && stockingSection(dungeon, floor) !== null);
   const monsters = $derived(stocked.get(stockKey) ?? []);
   const beyondMapMonsters = $derived(monsters.filter((monster) => !isOnMap(monster, game.area)));
   /** Fit frames the floor the game shows plus whatever monsters were stocked beyond it. */

@@ -29,7 +29,8 @@ pnpm dev
   re-derive a formula.
 - `src/lib/game/*.js` are verbatim copies of `dotu-tools/reference/`; a test diffs
   them. Edit the bundle first, then copy. Types live in the sibling `.d.ts` files.
-- The map explorer is DotU only. Moraff's World support exists only in the save
-  editor.
+- The map explorer covers both games. Moraff's World also has the save editor and
+  the character roller; the monsters, the spells and the rest of the site are DotU's
+  alone.
 - Real save files live in `~/games/4unf for claude/`; never modify them and never
   commit copies. Tests use synthetic buffers.
