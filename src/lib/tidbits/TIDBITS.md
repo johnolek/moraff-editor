@@ -239,8 +239,15 @@ Enchant Weapon writes its plus over whatever the weapon already had. Casting the
 worth +1, on a weapon already carrying +4 takes it back down to +1. The same goes for Enchant
 Armor. Cast the deepest one you have and never a shallower one afterwards.
 
-In the code: [enchantWeaponPerm](source:ts/magic.ts/enchantWeaponPerm) and
-[enchantArmorPerm](source:ts/magic.ts/enchantArmorPerm).
+The Shadow bosses' rewards write the same number, so the +101 the Great Shadow Ogeroth puts on a
+weapon is one permanent Enchant Weapon away from being +5 again. The preparation-list Enchant
+Weapon and Enchant Armor are safe. They keep their plus in a slot of their own, which is added on
+top of the item's when you swing or are hit and wiped when the spell wears off, and they never
+touch the item's own number.
+
+In the code: [enchantWeaponPerm](source:ts/magic.ts/enchantWeaponPerm),
+[enchantArmorPerm](source:ts/magic.ts/enchantArmorPerm),
+[setTempWeaponPlus](source:ts/magic.ts/setTempWeaponPlus) and [strike](source:ts/combat.ts/strike).
 
 ### Fast Big Cure has a hidden 20
 
