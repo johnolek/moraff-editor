@@ -1,4 +1,5 @@
-import { giveHint, hintOnArrival } from '../game/port/hints';
+import { showHint } from '../game/port/drops';
+import { hintOnArrival } from '../game/port/hints';
 import type { Game } from '../game/port/state';
 
 /**
@@ -12,6 +13,6 @@ import type { Game } from '../game/port/state';
 export function hintOnFloor(game: Game): void {
   const hint = hintOnArrival(game.pc.module, game.pc.level, game.pc.objective[game.pc.module], game.rng);
   if (hint === null) return;
-  game.say(...giveHint(hint));
+  showHint(game, hint);
   game.pressAnyKey();
 }

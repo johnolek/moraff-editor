@@ -248,7 +248,8 @@ describe('dying', () => {
     const before = file.bytes;
     const session = playing(file);
     await settle();
-    expect(session.box[0]).toBe('EVERYTHING GOES BLACK...');
+    // The snake says where the character has gone and adds one of its five parting shots.
+    expect(session.box.some((line) => line.startsWith("I THINK YOU'RE"))).toBe(true);
     await press(session, KEY.escape);
     expect(file.dead).toBe(true);
     expect(session.view().dead).toBe(true);

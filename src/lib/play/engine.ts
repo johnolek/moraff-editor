@@ -1,7 +1,8 @@
 import { sectionOf } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
 import { attackTiming, engagementTiming } from '../game/port/combat';
-import { giveHint, tabletMessage, townTablet } from '../game/port/hints';
+import { tabletMessage, townTablet } from '../game/port/hints';
+import { checkDeath } from '../game/port/kills';
 import { arriveSquare, leaveSquare } from '../game/port/moment';
 import { loadPlayer, savePlayer } from '../game/port/record';
 import type { Rng } from '../game/port/rng';
@@ -41,10 +42,6 @@ const MAP_VIEW_ROWS = 0x21;
 
 /** How many keys are kept for a loop that is not waiting for one yet. */
 const KEY_QUEUE = 4;
-
-/** The hint the snake brings when a character dies, and the five it picks a parting one from. */
-const DEATH_HINT = 0x1a;
-const DEATH_PARTING = [0x75, 0x76, 0x77, 0x78, 0x79];
 
 /** Where the character record lives while it is being played. */
 export interface CharacterFile {
@@ -354,8 +351,8 @@ export async function runMoveControl(session: GameSession): Promise<void> {
       pc.hp = pc.maxHp;
       pc.sp = pc.maxSp;
     }
-    if (pc.hp < 0) {
-      await playerDied(session);
+    if (checkDeath(game)) {
+      await died(session);
       return;
     }
     game.enemyDir = -1;
@@ -379,8 +376,8 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     if (session.over) return;
     await resolveStep(turn);
     await session.settle();
-    if (pc.hp < 0) {
-      await playerDied(session);
+    if (checkDeath(game)) {
+      await died(session);
       return;
     }
     // FUN_2000_c28b (exe 2000:c28b): the map has scrolled off the character, so the view is
@@ -415,22 +412,15 @@ function beginTurn(session: GameSession): Turn {
 }
 
 /**
- * FUN_2000_9232 (exe 2000:9232, unf.c "FUN_2000_9232"): the character has died. The snake says
- * so and adds one of its five parting words, the hit points go to -100, and movecontrol comes
- * back, which is where the original puts the player back on the character select screen.
+ * The check movecontrol makes after every hit and every kill, which `checkDeath` (exe 2000:c474)
+ * answers: the snake says where the character has gone, and the loop hands back to what called
+ * it, which is where the original puts the player back on the character select screen.
  *
  * Nothing is written to the character's file, here or in the original: what is on disk is
- * whatever the last save point left there. The roster marks the character dead and keeps it.
- * The original also reloads the floor around the dead character, which is of no use to anyone.
+ * whatever the last save point left there. The roster marks the character dead and keeps them.
  */
-async function playerDied(session: GameSession): Promise<void> {
-  const game = session.game;
-  game.pc.hp = -100;
-  session.box = [];
-  game.say(...giveHint(DEATH_HINT));
+async function died(session: GameSession): Promise<void> {
   await session.key();
-  session.box = [];
-  game.say(...giveHint(DEATH_PARTING[game.rng.random(DEATH_PARTING.length)]));
   session.die();
   session.over = true;
   session.changed();

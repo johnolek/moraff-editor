@@ -110,10 +110,28 @@ those replace every character that is not a letter or a digit with an underscore
 * `character.ts` — `roll_char`: the three screens it reads out of `ROLL.TXT`, the questions it
   asks, the race table, the roll, the keep/reroll/design loop, the starting spells, health,
   spell points, kit and money, and the record a new character starts play with.
+* `hints.ts` — `H.BIN`, the eight-line box everything the game says out loud comes out of, and
+  the record numbers its callers name. Ghidra drops the argument on most of the `load_h_bin`
+  calls, so those numbers are read out of the `mov ax, imm16` in front of each one.
+* `combat.ts` — `strike` and `monster_turn`, with the puffball, the five breath weapons, the
+  drains, the poison and the disease; `monsters_move` and the spell timers that run down with
+  it; the engagement check, `attack_timing` and the clock that decides how many turns an
+  adjacent monster gets while the character acts; and `monster_killed`, with the experience,
+  the trap door keys and the eight quest bosses' flags and rewards.
+* `drops.ts` — the ten routines `monster_killed` calls for loot: the weapon, the armor, the six
+  piles of stones, the cup of health, the ball of thought, the spellbook, the scroll, the wand,
+  the spell paper and the twelve special items.
+* `levels.ts` — `experience_needed`, `can_level_up`, `level_from_experience`, the level-up and
+  its mirror, and what death does with and without a raise-dead contract.
+* `town.ts` — the store, the temple, the bank and the inn, the financial statement, the two
+  routines a night at the inn clears the spells with, and the greeting a floor gives on arrival.
+
+`stocking.ts`, `spells.ts` and `magic.ts` are here too, and are their own author's to describe.
 
 ## What is not ported
 
-Everything else: the play loop, combat, the town, the world map, the dungeon.
+The play loop that ties all of this together, the world map and the screens. The dungeon
+generator is already ported, verbatim from the reference bundle, in `../mwmap.js`.
 
 ## Where the code and ROLLER.md disagree
 

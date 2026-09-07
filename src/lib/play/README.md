@@ -74,7 +74,7 @@ line lands exactly where the game's own `pfont` call puts it.
 A menu is a screen and a `choice`:
 
 ```ts
-game.say(...giveHint(TELEPORTER_MENU));         // the lines the menu prints
+showHint(game, TELEPORTER_MENU);                // the lines the menu prints
 const chosen = await session.choice([0x31, 0x32, 0x33]);
 ```
 
@@ -127,12 +127,15 @@ clocks, the wand and scroll counts are all fields of `session.game.pc`.
 
 ## What is not built yet
 
-* **Fights** — `strike` and `defend` are ported, `kill_monster` (exe 3000:b12d) is not, so F and
-  Ctrl-F say so. The experience, the drops and the levels come with it.
-* **The town** — U on a building square says so. `g_store`, `temple`, `bank` and `flea_inn` are
-  the four functions, and the inn is where a character ages and gains levels.
+Every one of these keys says so in the message box today. The game functions behind them are
+mostly ported already; what is missing is the key that reaches them.
+
+* **Fights** — F and Ctrl-F. `strike` and `defend` are in `combat.ts` and `killMonster` in
+  `kills.ts`, with the drops and the levels beside them.
+* **The town** — U on a building square. `town.ts` has the store, the temple, the bank and the
+  inn, and the inn is where a character ages and gains levels.
 * **The spell and item screens** — C, I, P, L, W, A, 1 and 2. `cast_a_spell` (exe 2000:e017) is
-  the big one; `magic.ts` already has every spell it dispatches to.
+  the one big function still to port; `magic.ts` already has every spell it dispatches to.
 * **The hidden numbers and the monster's portrait** — V, E, M, S and the panel beside the map.
 
 ## Where this leaves the original

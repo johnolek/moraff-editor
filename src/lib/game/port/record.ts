@@ -20,9 +20,15 @@ const KEY_COUNT = 36;
 /** How many modules the record keeps a beaten-boss byte for. */
 const MODULE_COUNT = 5;
 
-/** How many spells each of the three lists holds: 4 types of 10 levels of 3 spells, less the
+/** How many spells each of the four lists holds: 4 types of 10 levels of 3 spells, less the
  *  60 the fourth type would have. */
 const SPELL_COUNT = 180;
+
+/** How many potions the store sells, one of each colour. */
+const POTION_COUNT = 6;
+
+/** How many sections the game has, which is how many boss taunt counts the record holds. */
+const SECTION_COUNT = 20;
 
 const WEAPON_COUNT = 8;
 const ARMOR_COUNT = 8;
@@ -74,12 +80,17 @@ export function loadPlayer(bytes: Uint8Array): PlayerCharacter {
     armorPlus: readBytes(view, 0xb8, ARMOR_COUNT),
     armor: int8(0xc0),
     shield: int8(0xdd),
+    potions: readBytes(view, 0x15d, POTION_COUNT),
     spellbook: readBytes(view, 0x177, SPELL_COUNT),
     scrolls: readBytes(view, 0x22b, SPELL_COUNT),
     wands: readBytes(view, 0x2df, SPELL_COUNT),
+    papers: readBytes(view, 0x393, SPELL_COUNT),
     money: int32(0x454),
     bank: int32(0x458),
+    cultureStock: int32(0x464),
+    children: int32(0x468),
     crystals: int32(0x46c),
+    dollars: int32(0x470),
     exp: view.getFloat64(0x7a4, true),
     lev: int16(0x7ac),
     dir: int16(0x7ae),
@@ -89,8 +100,11 @@ export function loadPlayer(bytes: Uint8Array): PlayerCharacter {
     module: int16(0x7b6),
     mapCursorX: view.getUint8(0x7b8),
     mapCursorY: view.getUint8(0x7b9),
+    realtime: int32(0x7c4),
     regenRings: int8(0x7ca),
     luckyCharms: int8(0x7cb),
+    grenades: int8(0x7cc),
+    seeingStones: int8(0x7cd),
     disease: int16(0x7ce),
     poison: int16(0x7d0),
     tempWeaponPlus: int8(0x7d2),
@@ -122,11 +136,14 @@ export function loadPlayer(bytes: Uint8Array): PlayerCharacter {
     holdMonsterTimer: int16(0x7fa),
     unread7fc: int16(0x7fc),
     unread7fe: int16(0x7fe),
+    slosher: int8(0x802),
     unread808: int16(0x808),
     unread80a: int16(0x80a),
     unread80c: int16(0x80c),
     unread80e: int16(0x80e),
     unread810: int16(0x810),
+    healingPotions: int16(0x812),
+    teleportStones: int16(0x814),
     str: int16(0x816),
     iq: int16(0x818),
     wis: int16(0x81a),
@@ -139,6 +156,7 @@ export function loadPlayer(bytes: Uint8Array): PlayerCharacter {
     fillOnLoad: int8(0x854),
     hard: int8(0x8f6),
     deepestFloor: int16(0x8f9),
+    bossTaunts: readBytes(view, 0x8fb, SECTION_COUNT),
   };
 }
 
@@ -149,8 +167,8 @@ export function loadPlayer(bytes: Uint8Array): PlayerCharacter {
  * The original writes the whole data segment from DS:b880 out, so every byte of the file is
  * whatever the game had in memory. Here the fields the port names are written back over the
  * bytes the character came in with and the rest are left exactly as they were, which is the
- * same file for everything the port reads and keeps the fields it does not touch — the potions,
- * the papers, the Shadow bosses' squares — as the character had them.
+ * same file for everything the port reads and keeps the fields it does not touch — the Shadow
+ * bosses' squares, the two the save parser has no name for — as the character had them.
  *
  * The checksum is not optional: without it the game reads the file back, decides it has been
  * tampered with, and puts the player out to DOS with "Corrupted Character! Sorry!".
@@ -183,12 +201,17 @@ export function savePlayer(pc: PlayerCharacter, record: Uint8Array): Uint8Array<
   writeBytes(view, 0xb8, pc.armorPlus);
   int8(0xc0, pc.armor);
   int8(0xdd, pc.shield);
+  writeBytes(view, 0x15d, pc.potions);
   writeBytes(view, 0x177, pc.spellbook);
   writeBytes(view, 0x22b, pc.scrolls);
   writeBytes(view, 0x2df, pc.wands);
+  writeBytes(view, 0x393, pc.papers);
   int32(0x454, pc.money);
   int32(0x458, pc.bank);
+  int32(0x464, pc.cultureStock);
+  int32(0x468, pc.children);
   int32(0x46c, pc.crystals);
+  int32(0x470, pc.dollars);
   view.setFloat64(0x7a4, pc.exp, true);
   int16(0x7ac, pc.lev);
   int16(0x7ae, pc.dir);
@@ -198,8 +221,11 @@ export function savePlayer(pc: PlayerCharacter, record: Uint8Array): Uint8Array<
   int16(0x7b6, pc.module);
   view.setUint8(0x7b8, pc.mapCursorX);
   view.setUint8(0x7b9, pc.mapCursorY);
+  int32(0x7c4, pc.realtime);
   int8(0x7ca, pc.regenRings);
   int8(0x7cb, pc.luckyCharms);
+  int8(0x7cc, pc.grenades);
+  int8(0x7cd, pc.seeingStones);
   int16(0x7ce, pc.disease);
   int16(0x7d0, pc.poison);
   int8(0x7d2, pc.tempWeaponPlus);
@@ -231,11 +257,14 @@ export function savePlayer(pc: PlayerCharacter, record: Uint8Array): Uint8Array<
   int16(0x7fa, pc.holdMonsterTimer);
   int16(0x7fc, pc.unread7fc);
   int16(0x7fe, pc.unread7fe);
+  int8(0x802, pc.slosher);
   int16(0x808, pc.unread808);
   int16(0x80a, pc.unread80a);
   int16(0x80c, pc.unread80c);
   int16(0x80e, pc.unread80e);
   int16(0x810, pc.unread810);
+  int16(0x812, pc.healingPotions);
+  int16(0x814, pc.teleportStones);
   int16(0x816, pc.str);
   int16(0x818, pc.iq);
   int16(0x81a, pc.wis);
@@ -248,6 +277,7 @@ export function savePlayer(pc: PlayerCharacter, record: Uint8Array): Uint8Array<
   int8(0x854, pc.fillOnLoad);
   int8(0x8f6, pc.hard);
   int16(0x8f9, pc.deepestFloor);
+  writeBytes(view, 0x8fb, pc.bossTaunts);
   fixSaveChecksum(bytes);
   return bytes;
 }

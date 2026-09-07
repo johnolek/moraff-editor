@@ -1,5 +1,5 @@
 import { attackTiming } from '../game/port/combat';
-import { giveHint } from '../game/port/hints';
+import { showHint } from '../game/port/drops';
 import { endBattleSpells, passMoment, relocate } from '../game/port/moment';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import type { Turn } from './engine';
@@ -37,16 +37,16 @@ export async function digHole(turn: Turn): Promise<void> {
   const bottom = BOTTOM_LEVEL[pc.module];
   if (Math.trunc((bottom * 3) / 4) < pc.level) {
     if (pc.cls === 0) {
-      game.say(...giveHint(FIGHTER_MOVED));
+      showHint(game, FIGHTER_MOVED);
       game.pressAnyKey();
       relocate(game);
       return;
     }
-    game.say(...giveHint(TOO_DEEP));
+    showHint(game, TOO_DEEP);
     game.pressAnyKey();
     return;
   }
-  game.say(...giveHint(DIG_QUESTION));
+  showHint(game, DIG_QUESTION);
   if ((await session.choice([DIG, 0x32])) !== DIG) return;
   session.box = [];
   game.monsterTimers.fill(HELD_TIMER);

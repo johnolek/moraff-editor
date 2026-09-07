@@ -1,5 +1,5 @@
 import { callCheckEng, moveSeconds } from './combat';
-import { giveHint } from './hints';
+import { showHint } from './drops';
 import type { Game } from './state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
 
@@ -128,7 +128,7 @@ export function passMoment(game: Game): void {
       pc.con -= 1;
       if (pc.con < 2) pc.con = 1;
       game.events.push({ kind: 'playerSaved' });
-      game.say(...giveHint(DISEASE_HINT));
+      showHint(game, DISEASE_HINT);
       game.pressAnyKey();
     }
   }
@@ -139,7 +139,7 @@ export function passMoment(game: Game): void {
       pc.str -= 1;
       if (pc.str < 2) pc.str = 1;
       game.events.push({ kind: 'playerSaved' });
-      game.say(...giveHint(POISON_HINT));
+      showHint(game, POISON_HINT);
       game.pressAnyKey();
     }
   }

@@ -1,5 +1,5 @@
 import { bundledDungeon } from '../game/dungeon';
-import { giveHint } from '../game/port/hints';
+import { showHint } from '../game/port/drops';
 import type { Game } from '../game/port/state';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { hintOnFloor } from './arrival';
@@ -53,7 +53,7 @@ export async function goUp(turn: Turn): Promise<void> {
     notBuiltYet(game, `GO INTO THE ${BUILDINGS[turn.building - 1]}`);
     return;
   }
-  game.say(...giveHint(NO_LADDER));
+  showHint(game, NO_LADDER);
   game.pressAnyKey();
 }
 
@@ -65,7 +65,7 @@ export async function goUp(turn: Turn): Promise<void> {
 export async function goDown(turn: Turn): Promise<void> {
   const { game, session } = turn;
   if (turn.ladder < 1) {
-    game.say(...giveHint(NO_LADDER));
+    showHint(game, NO_LADDER);
     game.pressAnyKey();
     return;
   }

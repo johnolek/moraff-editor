@@ -122,11 +122,6 @@ export interface PlayerCharacter {
   mapCursorX: number;
   /** 0x7b9, DS:c039. */
   mapCursorY: number;
-  /**
-   * 0x7ca, DS:c04a: how many Rings of Regeneration the character wears, which is the hit
-   * points every step gives back.
-   */
-  regenRings: number;
   /** 0x7cb, DS:c04b: how many lucky charms the character carries. */
   luckyCharms: number;
   /** 0x7ce, DS:c04e: moves until the disease bites again; -1 once it is cured. */
@@ -208,17 +203,6 @@ export interface PlayerCharacter {
   /** 0x810, DS:c090: zero on every character, and read nowhere. */
   unread810: number;
   /**
-   * 0x822, DS:c0a2: one trap door key per floor a trap door can lead to, indexed by that floor
-   * divided by five. explain_trapdoor (exe 2000:be3d) reads the one for the door being stood on
-   * and will not open the door without it.
-   */
-  keys: number[];
-  /**
-   * 0x849, DS:c0c9: one byte per module, whose low four bits say which of that module's four
-   * section bosses have been killed.
-   */
-  objective: number[];
-  /**
    * 0x854, DS:c0d4: refill hit points and spell points to the maximum. movecontrol reads it on
    * its next pass round the loop, fills the character up and writes zero back.
    */
@@ -245,6 +229,54 @@ export interface PlayerCharacter {
   gauntlet: number;
   /** 0x8f6, DS:c176: 1 on a character rolled under I Care How Awful, the hard mode. */
   hard: number;
+
+  // kills and town
+  /**
+   * 0x15d, DS:b9dd: how many of each of the six potions the character carries, in the order the
+   * save parser lists them — orange, green, blue, red, white, yellow. Killing a level drainer
+   * hands one over.
+   */
+  potions: number[];
+  /** 0x393, DS:bc13: 180 spell-paper counts, indexed `type * 45 + level * 3 + slot`. */
+  papers: number[];
+  /** 0x464, DS:bce4: culture stock, the units a night at the inn spends instead of ageing you. */
+  cultureStock: number;
+  /** 0x468, DS:bce8: children helped, which is what the store's refund is worked out from. */
+  children: number;
+  /** 0x470, DS:bcf0: Greater-American Dollars, which the bank turns into rubles a hundred at a time. */
+  dollars: number;
+  /**
+   * 0x7c4, DS:c044: seconds of game time, which is what a night at the inn adds 28,800 to.
+   * The save parser calls this field `realtime`.
+   */
+  realtime: number;
+  /** 0x7ca, DS:c04a: rings of regeneration. */
+  regenRings: number;
+  /** 0x7cc, DS:c04c: nuclear hand grenades. */
+  grenades: number;
+  /** 0x7cd, DS:c04d: stones of seeing. */
+  seeingStones: number;
+  /** 0x802, DS:c082: floor sloshers; the game only ever lets the character have one. */
+  slosher: number;
+  /** 0x812, DS:c092: potions of healing. */
+  healingPotions: number;
+  /** 0x814, DS:c094: stones of teleportation. */
+  teleportStones: number;
+  /**
+   * 0x822, DS:c0a2: one flag per trap door label, indexed by the floor divided by five. The save
+   * parser reads 36 of them; only the first 22 can ever be reached, the deepest floor being 105.
+   */
+  keys: number[];
+  /**
+   * 0x849, DS:c0c9: one byte per module, bits 1, 2, 4 and 8 for the four sections of it whose
+   * boss is dead. The save parser calls this field `objective`.
+   */
+  objective: number[];
+  /**
+   * 0x8fb, DS:c17b: one byte per section, how many of that section's boss's taunts have been
+   * read. Neither the save parser nor the editor names this field.
+   */
+  bossTaunts: number[];
 }
 
 /**
@@ -525,6 +557,18 @@ export interface Game {
    * keyboard and throws.
    */
   choice(allowed: number[]): Promise<number>;
+
+  // kills and town
+  /**
+   * DS:00c3: the high speed option, which the O menu turns on. It stops the game printing that
+   * money was found, skips the drops the character has no use for, and skips most of its delays.
+   */
+  highSpeed: boolean;
+  /**
+   * DS:5400: drop_money has already said the character cannot carry any more dollars, so it does
+   * not say it again until a find succeeds.
+   */
+  dollarCapWarned: boolean;
 }
 
 /**
@@ -595,7 +639,6 @@ function defaultPc(): PlayerCharacter {
     module: 0,
     mapCursorX: 40,
     mapCursorY: 55,
-    regenRings: 0,
     luckyCharms: 0,
     disease: 0,
     poison: 0,
@@ -633,8 +676,6 @@ function defaultPc(): PlayerCharacter {
     unread80c: 0,
     unread80e: 0,
     unread810: 0,
-    keys: Array.from({ length: 36 }, () => 0),
-    objective: [0, 0, 0, 0, 0],
     fillOnLoad: 0,
     deepestFloor: 0,
     str: 20,
@@ -645,6 +686,23 @@ function defaultPc(): PlayerCharacter {
     luck: 20,
     gauntlet: 0,
     hard: 0,
+
+    // kills and town
+    potions: [0, 0, 0, 0, 0, 0],
+    papers: Array.from({ length: 180 }, () => 0),
+    cultureStock: 0,
+    children: 0,
+    dollars: 0,
+    realtime: 0,
+    regenRings: 0,
+    grenades: 0,
+    seeingStones: 0,
+    slosher: 0,
+    healingPotions: 0,
+    teleportStones: 0,
+    keys: Array.from({ length: 36 }, () => 0),
+    objective: [0, 0, 0, 0, 0],
+    bossTaunts: Array.from({ length: 20 }, () => 0),
   };
 }
 
@@ -728,6 +786,10 @@ export function newGame(overrides: GameOverrides = {}): Game {
     pressAnyKey: () => {},
     key: noKeyboard,
     choice: noKeyboard,
+
+    // kills and town
+    highSpeed: false,
+    dollarCapWarned: false,
     ...rest,
     messages,
     screen,

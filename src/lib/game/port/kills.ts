@@ -1,0 +1,314 @@
+import { expValue } from './combat';
+import {
+  dropArmor,
+  dropMoney,
+  dropPaper,
+  dropScroll,
+  dropSpellbook,
+  dropWand,
+  dropWeapon,
+  findItem,
+  postKillHeal,
+  postKillSp,
+  showHint,
+} from './drops';
+import { sectionNumber } from './hints';
+import { checkGainLevel } from './levels';
+import type { Game } from './state';
+import { MAP_EMPTY, setMonsterMap } from './state';
+
+// The message text is the exact bytes of the game's own strings, read out of the data segment of
+// the unpacked executable. The comment on each say call gives the address of every line it
+// prints, in order; dotu-tools/reference/scripts/exe_strings.py reads them back.
+
+/**
+ * The answers kill_monster's menus would read from the keyboard. The original stops and asks in
+ * the middle of the kill; the port is told up front, the way the ported spells take their menus.
+ */
+export interface KillChoices {
+  /** get_choice's answer to drop_weapon's "1) TAKE THE WEAPON". */
+  takeWeapon: boolean;
+  /** get_choice's answer to drop_armor's "1) TAKE THE ARMOR". */
+  takeArmor: boolean;
+  /**
+   * 0 to 7: which weapon or suit of armor a section boss's orb is used on. The original puts up
+   * a menu of what the character owns and asks again until one of those is picked, so a slot
+   * holding nothing is not something the original can be given.
+   */
+  enhanceSlot: number;
+}
+
+/** The square a dead monster's slot is parked on, off the 80 x 110 floor and out of the way. */
+export const GARBAGE_CAN = 100;
+
+/**
+ * kill_monster (exe 3000:b12d, unf.c "kill_monster"), the flag and the message every section
+ * boss shares: the module's byte gains the bit for this section, and the snake explains what was
+ * won.
+ */
+function bossBeaten(game: Game, bit: number, hint: number): void {
+  game.pc.objective[game.pc.module] |= bit;
+  showHint(game, hint);
+}
+
+/**
+ * kill_monster (exe 3000:b12d, unf.c "kill_monster"): the reward for the twenty-second monster
+ * of a section, which is that section's Shadow boss. `section` is 0 to 19.
+ *
+ * Four of the twenty hand over an orb that puts a plus on one weapon or one suit of armor, which
+ * is what `slot` picks. The last of them, the Shadow Ogeroth on floor 100 of module V, is the end
+ * of the game and says so at length.
+ */
+export function bossReward(game: Game, section: number, slot: number): void {
+  const pc = game.pc;
+  switch (section) {
+    case 0:
+      bossBeaten(game, 1, 60);
+      pc.maxHp += 30;
+      pc.hp += 30;
+      return;
+    case 1:
+      bossBeaten(game, 2, 61);
+      pc.wis += 12;
+      return;
+    case 2:
+      bossBeaten(game, 4, 62);
+      pc.str += 12;
+      return;
+    case 3:
+      bossBeaten(game, 8, 63);
+      game.say('SELECT THE ARMOR TO ENHANCE:'); // DS:3277
+      pc.armorPlus[slot] = 25;
+      return;
+    case 4:
+      bossBeaten(game, 1, 64);
+      pc.bodyArmor = 9;
+      return;
+    case 5:
+      bossBeaten(game, 2, 65);
+      pc.gauntlet = 12;
+      return;
+    case 6:
+      bossBeaten(game, 4, 66);
+      pc.protRing = 15;
+      return;
+    case 7:
+      bossBeaten(game, 8, 67);
+      game.say('SELECT A WEAPON TO ENHANCE:'); // DS:3294
+      pc.weaponPlus[slot] = 25;
+      return;
+    case 8:
+      bossBeaten(game, 1, 68);
+      pc.luck += 10;
+      return;
+    case 9:
+      bossBeaten(game, 2, 69);
+      pc.con += 10;
+      return;
+    case 10:
+      bossBeaten(game, 4, 70);
+      pc.iq += 10;
+      return;
+    case 11:
+      bossBeaten(game, 8, 71);
+      pc.seeingStones += 10;
+      return;
+    case 12:
+      bossBeaten(game, 1, 72);
+      pc.bodyArmor = 25;
+      return;
+    case 13:
+      bossBeaten(game, 2, 73);
+      pc.gauntlet = 50;
+      return;
+    case 14:
+      bossBeaten(game, 4, 74);
+      pc.protRing = 50;
+      return;
+    case 15:
+      bossBeaten(game, 8, 75);
+      game.say('SELECT THE ARMOR TO ENHANCE:'); // DS:3277
+      pc.armorPlus[slot] = 50;
+      return;
+    case 16:
+      bossBeaten(game, 1, 76);
+      pc.maxHp += 300;
+      pc.hp += 300;
+      return;
+    case 17:
+      bossBeaten(game, 2, 77);
+      pc.dex += 20;
+      return;
+    case 18:
+      bossBeaten(game, 4, 78);
+      pc.str += 25;
+      return;
+    case 19:
+      pc.objective[pc.module] |= 8;
+      // DS:32b0 32cd 32ea 3305 3324 3342 335d 337a
+      game.say(
+        'THE GROUND BEGINS TO RUMBLE,',
+        'AND SUDDENLY THE BODY OF THE',
+        'GREAT SHADOW OGEROTH TURNS',
+        'INTO A TINY CAT WHICH SCURRIES',
+        "AWAY, MEOWING 'I'LL BE BACK!'",
+        'YOU HAVE DEFEATED THE MOST',
+        'POWERFUL MONSTER IN DUNGEONS',
+        'OF THE UNFORGIVEN!',
+      );
+      // DS:338d 33a9 33c1 33dd 33f9 340c 3428 3444
+      game.say(
+        '  FINALLY! YOU NOW HAVE THE',
+        'MIGHTY ORB OF EXPLOSIVE',
+        'WEAPON ENHANCEMENT. IT WILL',
+        'TURN ANY WEAPON INTO A PLUS',
+        '101 ATTACK WEAPON!',
+        '  THIS GREAT WEAPON IS ONLY',
+        'TO BE USED FOR WHATEVER YOU',
+        'WANT TO USE IT FOR!',
+      );
+      game.say('SELECT A WEAPON TO ENHANCE:'); // DS:3294
+      pc.weaponPlus[slot] = 101;
+      // DS:3458 3474 348c 34a7 34c1 34db 34f8 3511
+      game.say(
+        '  YOU HAVE BEATEN THE GREAT',
+        'SHADOW OGEROTH. YOU MAY',
+        'CONTINUE TO WANDER THROUGH',
+        'THE DUNGEONS IN SEARCH OF',
+        'LOOT AND TREASURE, OR YOU',
+        'MAY ATTEMPT TO COMPLETE THIS',
+        'GREAT ADVENTURE WITH NEW',
+        'AND DIFFERENT CHARACTERS.',
+      );
+  }
+}
+
+/**
+ * kill_monster (exe 3000:b12d, unf.c "kill_monster"), what killing a level drainer is worth on
+ * top of the experience: a potion most of the time, and otherwise the trap door key for this
+ * stretch of five floors if the character has not got it yet.
+ *
+ * The roll is against 375 and the floor plus 175, so the key becomes likelier the shallower the
+ * floor: on floor 1 a drainer carries a key almost half the time and by floor 200 never. Keys
+ * only exist for floors 4 to 178, which is well past the deepest floor the game has.
+ */
+export function drainerBonus(game: Game): void {
+  const pc = game.pc;
+  if (game.rng.random(375) < pc.level + 175) {
+    const potion = game.rng.random(6);
+    pc.potions[potion] += 1;
+    showHint(game, 47 + potion);
+    return;
+  }
+  const key = Math.trunc(pc.level / 5);
+  if (pc.keys[key] === 1 || pc.level <= 3 || pc.level >= 179) return;
+  // DS:31c2, 31dd 2668 with the number between them, 258b, 31f0, 320a, 3224, 258b, 3236
+  game.say(
+    '  YOU HAVE FOUND A KEY! IT',
+    `IS LABELED NUMBER ${key * 5}.`,
+    '',
+    '  THIS KEY WILL ALLOW YOU',
+    'TO USE TRAP DOORS LABELED',
+    'WITH THIS NUMBER.',
+    '',
+    '      HIT ANY KEY...',
+  );
+  pc.keys[key] = 1;
+}
+
+/**
+ * kill_monster (exe 3000:b12d, unf.c "kill_monster"): everything that happens the moment the
+ * engaged monster's hit points run out — the experience, the level drainer's potion or key, the
+ * monster's slot being emptied, the seven drop rolls, and a section boss's reward.
+ *
+ * The slot is emptied before any of the drops are rolled, and drop_weapon and drop_armor roll
+ * against the level of the monster in that slot, so both of them are always rolling against the
+ * empty slot's level of zero rather than against the monster that was just killed.
+ *
+ * The two messages at the end — that the character is hurt, and that they have earned a level —
+ * are only given while the character is still level 0, which is the level a new one starts at.
+ */
+export function killMonster(game: Game, choices: KillChoices): void {
+  const pc = game.pc;
+  const slot = game.engaged;
+  const monster = game.monsters[slot];
+  const kind = game.monsterKinds[monster.type];
+  const kindIndex = monster.type;
+  if (kind.special !== 6) game.say('YOU KILLED IT!'); // DS:31b3
+  pc.exp += expValue(game, slot);
+  if (kind.levelDrain > 0) drainerBonus(game);
+  setMonsterMap(game, monster.x, monster.y, MAP_EMPTY);
+  monster.x = GARBAGE_CAN;
+  monster.y = GARBAGE_CAN;
+  monster.hp = 0;
+  monster.type = 0;
+  monster.level = 0;
+  game.redrawView = true;
+  dropWeapon(game, choices.takeWeapon);
+  dropArmor(game, choices.takeArmor);
+  dropMoney(game);
+  postKillHeal(game);
+  postKillSp(game);
+  if (pc.cls !== 2) {
+    const easier = pc.cls === 0 || pc.cls === 5 ? 400 : 0;
+    if (game.rng.random(950 - easier) < pc.level + 40) {
+      if (game.rng.random(20) < pc.level) {
+        game.say('YOU FIND...'); // DS:324b
+        if (game.rng.random(3) === 1) {
+          game.say('NOTHING! (HIT ANY KEY)'); // DS:3257
+        } else {
+          findItem(game);
+        }
+      }
+    }
+  }
+  if (!dropSpellbook(game)) {
+    switch (game.rng.random(3)) {
+      case 0:
+        dropScroll(game);
+        break;
+      case 1:
+        dropWand(game);
+        break;
+      case 2:
+        dropPaper(game);
+        break;
+    }
+  }
+  if (kindIndex === 22) {
+    const section = sectionNumber(pc.module, pc.level);
+    if (section < 20) bossReward(game, section, choices.enhanceSlot);
+  }
+  game.engaged = -1;
+  if (game.highSpeed || pc.lev !== 0) return;
+  if (pc.hp + 15 < pc.maxHp) showHint(game, pc.cls === 0 ? 79 : 80);
+  if (checkGainLevel(game)) showHint(game, 81);
+}
+
+/**
+ * FUN_2000_9232 (exe 2000:9232): the character dies. The hit points go to -100, the snake says
+ * where the character has gone, and one of five parting shots is picked at random.
+ *
+ * The original then reloads the floor around the body; the port records nothing, the way the
+ * ported spells that change floor do.
+ */
+export function playerDies(game: Game): void {
+  game.pc.hp = -100;
+  showHint(game, 26);
+  showHint(game, 117 + game.rng.random(5));
+}
+
+/**
+ * movecontrol (exe 2000:c308, unf.c "movecontrol") at 2000:c474 and 2000:dbe9: the check it makes
+ * after being hit and after a kill. Answers whether the character is dead, which is what makes
+ * movecontrol hand 0xff back to main and end the game.
+ *
+ * The test is against zero rather than against one, so a character sitting on exactly zero hit
+ * points is alive. The original asks the same question again after {@link playerDies} has run,
+ * which by then has written -100.
+ */
+export function checkDeath(game: Game): boolean {
+  if (game.pc.hp >= 0) return false;
+  playerDies(game);
+  return game.pc.hp < 0;
+}

@@ -1,4 +1,4 @@
-import { giveHint } from '../game/port/hints';
+import { showHint } from '../game/port/drops';
 import { relocate } from '../game/port/moment';
 import type { Turn } from './engine';
 import { KEY } from './keys';
@@ -36,14 +36,14 @@ export async function changeModule(turn: Turn): Promise<boolean> {
   if (pc.module === 0) direction = 1;
   else if (pc.module === LAST_MODULE) direction = -1;
   else {
-    game.say(...giveHint(TELEPORTER_MENU));
+    showHint(game, TELEPORTER_MENU);
     const chosen = await session.choice([ONWARD, RETREAT, STAY]);
     if (chosen === ONWARD) direction = 1;
     else if (chosen === RETREAT) direction = -1;
     else return false;
   }
   if (pc.hard === 0 && pc.module === LAST_MODULE - 1 && direction === 1) {
-    game.say(...giveHint(TOO_EASY));
+    showHint(game, TOO_EASY);
     game.pressAnyKey();
     return false;
   }
@@ -52,7 +52,7 @@ export async function changeModule(turn: Turn): Promise<boolean> {
   relocate(game);
   session.save();
   session.enterFloor(0);
-  game.say(...giveHint(ARRIVED));
+  showHint(game, ARRIVED);
   game.pressAnyKey();
   return true;
 }

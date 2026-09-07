@@ -90,7 +90,7 @@ export const MW_SPELL_EFFECTS: MwSpellEffect[] = [
   {
     from: 'spell_effect (2000:d358), recompute_weight (2000:2d8e)',
     effect:
-      'Sets the feather marker to 100 and recomputes the weight you are carrying, which then leaves your own body weight out of the total. The inn only clears a feather marked 1, so this one survives a rest.',
+      'Sets the feather marker to 100 and recomputes the weight you are carrying, which then leaves your own body weight out of the total. The inn only clears a feather marked 1, so this one survives a rest, and a second cast is refused as redundant.',
   },
   {
     from: 'raise_ring_antimagic (2000:c524)',
@@ -100,7 +100,7 @@ export const MW_SPELL_EFFECTS: MwSpellEffect[] = [
   {
     from: 'spell_effect (2000:d358), monsters_move (2000:81cd)',
     effect:
-      'Sets the invisibility marker to 100. That still saves you from a monster\'s free first strike when rand(floor + floor / 2) comes out above your level, but the 1-in-4 chance of the monsters not moving at all only applies to a marker of exactly 1, so the permanent version is the weaker of the two.',
+      'Sets the invisibility marker to 100, and a second cast is refused as redundant. That still saves you from a monster\'s free first strike when rand(floor + floor / 2) comes out above your level, but the 1-in-4 chance of the monsters not moving at all only applies to a marker of exactly 1, so the permanent version is the weaker of the two.',
   },
   {
     from: 'spell_effect (2000:d358), N_LXURSH (1000:1417)',
@@ -217,7 +217,7 @@ export const MW_SPELL_EFFECTS: MwSpellEffect[] = [
   {
     from: 'sleep_monster (2000:caba)',
     effect:
-      "Rolls rand(the monster's level) and puts it to sleep for 10 of its turns only on a 0, so the chance is one in its level; anything else prints \"THE SPELL FAILS.\" and the spell points are still spent. Each of its turns the sleep also ends outright when rand(500) comes out below the floor number.",
+      "Rolls rand(the monster's level) and puts it to sleep for 10 of its turns only on a 0, so the chance is one in its level; anything else prints \"THE SPELL FAILS.\" and the spell points are still spent. It is refused as redundant only when a sleep already running has exactly one turn left; at any other count it simply rolls again. Each of its turns the sleep also ends outright when rand(500) comes out below the floor number.",
   },
   { from: 'spell_effect (2000:d358)', effect: "Takes your level × 2 + 2 off the monster's health, which is one level's worth more than the 2 points per level the help text promises." },
   {
@@ -245,7 +245,7 @@ export const MW_SPELL_EFFECTS: MwSpellEffect[] = [
   {
     from: 'teleport_monster (2000:cccc), spell_proof (2000:cc66)',
     effect:
-      'Teleports the monster to a random square that is not rock, every single time — there is no ratio between the player and monster levels anywhere in the code, whatever the help text says. A monster whose special-attack byte is 100 laughs it off and costs you nothing.',
+      'Teleports the monster to a random square, every single time — there is no ratio between the player and monster levels anywhere in the code, whatever the help text says. The square is drawn until one is found that is not rock, but the test looks at your own square rather than the monster\'s new one, so the monster can land inside a wall. A monster whose special-attack byte is 100 refuses it, and the spell points are spent either way, even with nothing engaged.',
   },
   {
     from: 'teleport_player (2000:cbdf)',
@@ -359,7 +359,7 @@ export const MW_SPELL_EFFECTS: MwSpellEffect[] = [
   {
     from: 'teleport_monster (2000:cccc), spell_proof (2000:cc66)',
     effect:
-      'Teleports the monster to a random square that is not rock, every single time; only a monster whose special-attack byte is 100 is unmoved.',
+      'Teleports the monster to a random square, every single time, and the landing test looks at your square rather than the monster\'s, so it can land inside a wall; only a monster whose special-attack byte is 100 is unmoved, and the points are spent either way. The same spell as the wizard\'s.',
   },
   {
     from: 'raise_power_weapon (2000:cf08)',

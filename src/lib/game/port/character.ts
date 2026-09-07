@@ -447,7 +447,6 @@ export function blankPlayerCharacter(): PlayerCharacter {
     module: 0,
     mapCursorX: 0,
     mapCursorY: 0,
-    regenRings: 0,
     luckyCharms: 0,
     disease: 0,
     poison: 0,
@@ -485,8 +484,6 @@ export function blankPlayerCharacter(): PlayerCharacter {
     unread80c: 0,
     unread80e: 0,
     unread810: 0,
-    keys: Array.from({ length: 36 }, () => 0),
-    objective: [0, 0, 0, 0, 0],
     fillOnLoad: 0,
     deepestFloor: 0,
     str: 0,
@@ -497,6 +494,23 @@ export function blankPlayerCharacter(): PlayerCharacter {
     luck: 0,
     gauntlet: 0,
     hard: 0,
+
+    // kills and town
+    potions: [0, 0, 0, 0, 0, 0],
+    papers: Array.from({ length: 180 }, () => 0),
+    cultureStock: 0,
+    children: 0,
+    dollars: 0,
+    realtime: 0,
+    regenRings: 0,
+    grenades: 0,
+    seeingStones: 0,
+    slosher: 0,
+    healingPotions: 0,
+    teleportStones: 0,
+    keys: Array.from({ length: 36 }, () => 0),
+    objective: [0, 0, 0, 0, 0],
+    bossTaunts: Array.from({ length: 20 }, () => 0),
   };
 }
 
