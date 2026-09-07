@@ -1,3 +1,4 @@
+import spellsHelp from '../uspells.hlp?raw';
 import { spellEffect } from './magic';
 import {
   clearMessageLine,
@@ -455,4 +456,59 @@ export function castSpell(
     return { seconds: 0x8d00, battleSpellsShown: shown };
   }
   return { seconds: type === 1 ? 100 : 10, battleSpellsShown: shown };
+}
+
+/** Records in USPELLS.HLP: one for every spell in the game, in the same order as the menus. */
+export const SPELL_HELP_RECORDS = 120;
+
+/** The eight lines the message box has room for, which is all show_spell_help fills. */
+export const SPELL_HELP_LINES = 8;
+
+/**
+ * read_spell_help (exe 2000:7a78, unf.c "read_spell_help") and show_spell_help (exe 3000:a023,
+ * unf.c "show_spell_help"): the description of one spell, split into the lines the message box
+ * prints.
+ *
+ * read_spell_help opens USPELLS.HLP in text mode and reads characters into a buffer until it
+ * meets a '~', turning every newline on the way into a '@'; it does that once per record from the
+ * beginning of the file and stops at record 119. Text mode is what drops the carriage returns of
+ * the file's DOS line endings, so the mirrored copy has newlines.
+ *
+ * show_spell_help then copies that buffer into the eight line buffers, starting at its *second*
+ * character and breaking a line at every '@'. That second character is why every record but the
+ * first begins with the newline that ended the record before it, and why record 0 begins with a
+ * space: the file is written so that the character being skipped is never part of the text.
+ * Moraff's World does the same thing with the same file, which `mwSpellHelp` in `mw-port` ports.
+ *
+ * Nothing stops a record of more than eight lines from running off the end of the buffers; no
+ * record in the file has more than four.
+ */
+export function spellHelp(record: number, text: string = spellsHelp): string[] {
+  if (record < 0 || record >= SPELL_HELP_RECORDS) throw new Error(`no spell record ${record}`);
+  return text.split('~')[record].slice(1).split('\n');
+}
+
+/**
+ * Which record of USPELLS.HLP a spell's description is: `type * 30 + level * 3 + slot`, which is
+ * how show_spell_help (exe 3000:a023) is called with the three numbers the menu holds.
+ */
+export function spellHelpRecord(type: number, level: number, slot: number): number {
+  return type * 30 + level * 3 + slot;
+}
+
+/**
+ * cast_a_spell (exe 2000:e017, unf.c "cast_a_spell"), what the four help lists do with the spell
+ * that was picked: put its description down the menu column and wait for a key.
+ *
+ * `type` is 0 to 3 — the original works it out as the menu line less five, so the help list for
+ * wizard spells shows a wizard spell's description. The caller reads the key and hands it to
+ * `anyKeyChoice`, which takes whatever it is.
+ */
+export function showSpellHelp(game: Game, type: number, level: number, slot: number): void {
+  const lines = spellHelp(spellHelpRecord(type, level, slot));
+  clearMessageLine(game);
+  // DS:22e7
+  const prompt = 'HIT A KEY WHEN FINISHED';
+  game.draw({ text: prompt, x: MENU_X, y: MESSAGE_LINE_Y, font: 0, colour: 8 });
+  drawMenu(game, lines);
 }

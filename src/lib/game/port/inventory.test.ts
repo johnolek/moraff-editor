@@ -12,8 +12,13 @@ import {
   printSpellLine,
   spellCharges,
   spellCost,
+  spellHelp,
+  SPELL_HELP_LINES,
+  SPELL_HELP_RECORDS,
+  spellHelpRecord,
   spellIndex,
   spellListChoice,
+  showSpellHelp,
   SPELL_MENU_KEYS,
   SPELL_MENU_NAMES,
   spellMenuIndex,
@@ -292,5 +297,42 @@ describe('what a spell costs before it is cast', () => {
     expect(spellCharges(game.pc, CAST_WAND, 3, 2, 1)).toBe(5);
     expect(spellCharges(game.pc, CAST_PAPER, 0, 0, 0)).toBe(2);
     expect(spellCharges(game.pc, CAST_SCROLL, 0, 0, 0)).toBe(0);
+  });
+});
+
+describe("a spell's description", () => {
+  it('reads the first record without the space the file opens with', () => {
+    expect(spellHelp(0)).toEqual([
+      'ENCHANT WEAPON LEVEL 1:',
+      '  TURN NORMAL WEAPON INTO',
+      'PLUS 1 MAGICAL WEAPON.',
+    ]);
+  });
+
+  it('reads a later record without the newline that ended the one before', () => {
+    expect(spellHelp(1)[0]).toBe('EXTRA HEALTH POINT:');
+    expect(spellHelp(119)[0]).toBe('MAJOR SHOCK: DOES 300');
+  });
+
+  it('has a record for all 120 spells and none past them', () => {
+    for (let record = 0; record < SPELL_HELP_RECORDS; record += 1) {
+      expect(spellHelp(record).length).toBeGreaterThan(0);
+      expect(spellHelp(record).length).toBeLessThanOrEqual(SPELL_HELP_LINES);
+    }
+    expect(() => spellHelp(SPELL_HELP_RECORDS)).toThrow();
+  });
+
+  it('numbers its records the way the four menus do', () => {
+    expect(spellHelpRecord(0, 0, 0)).toBe(0);
+    expect(spellHelpRecord(2, 0, 1)).toBe(61);
+    expect(spellHelpRecord(3, 9, 2)).toBe(119);
+  });
+
+  it('puts the description down the menu column under the prompt', () => {
+    const game = newGame({ pc: { cls: 3 } });
+    showSpellHelp(game, 2, 0, 1);
+    expect(game.screen[0].text).toBe('HIT A KEY WHEN FINISHED');
+    expect(game.screen.slice(1).map((line) => line.text)).toEqual(spellHelp(61));
+    expect(game.screen[1].text).toBe('MAGIC ZAP: ZAPS ANY');
   });
 });
