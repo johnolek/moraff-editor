@@ -251,7 +251,7 @@ Six fields the roller writes are not in the schema:
 
 | offset | global | what it is |
 |---|---|---|
-| 0x07b4, 0x07b5 | `DAT_6000_c8a6/c8a7` | two bytes the map display uses as a cursor, set to half the scrolling view's width and height as `FUN_2000_3ae1(1)` leaves them (`DS:4489`/`448a`, 0x12 x 0x26 in the three biggest video modes), so 9 and 19; every real character file holds 9 and 19, and `movecontrol` recomputes them the same way whenever play starts |
+| 0x07b4, 0x07b5 | `DAT_6000_c8a6/c8a7` | two bytes the map display uses as a cursor, set to half the scrolling view's width and height as `set_map_view(1)` leaves them (`DS:4489`/`448a`, 0x12 x 0x26 in the three biggest video modes), so 9 and 19; every real character file holds 9 and 19, and `movecontrol` recomputes them the same way whenever play starts |
 | 0x07d6 | `DAT_6000_c8c8` | age as a 32-bit count of minutes: years x 525600 |
 | 0x07f8, 0x07fa | `DAT_6000_c8ea/c8ec` | overworld position in sixty-fourths of a tile: 2146, 1431 |
 | 0x0804 | `DAT_6000_c8f6` | the module to come back to; 0 |

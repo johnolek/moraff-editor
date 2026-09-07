@@ -296,7 +296,7 @@ These fields are certain — each one is named for what the code does with it:
 | 0x12 | 1 | added to the monster's attack score | `monster_turn` |
 | 0x16 | 1 | subtracted from the character's attack score | `strike` |
 | 0x17 | 1 | subtracted from the character's attack score, and added to the monster's | `strike`, `monster_turn` |
-| 0x1f | 2 | one less than what a kill is worth is multiplied by | `FUN_3000_b8d4` |
+| 0x1f | 2 | one less than what a kill is worth is multiplied by | `experience_for_kill` |
 | 0x22 | 1 | picture number, 0 to 47 | the picture table |
 
 The rest is guesswork and is printed raw by `dump_tables.py`: `0x19` and `0x1b`
@@ -313,8 +313,9 @@ the matching resistance spell; acid destroys the armour the character is wearing
 phlegm gives them a disease and slime poisons them.
 
 The kind at 0x10 is 99 for an ordinary monster.  A 100 is the one that shows on
-the screen: the four battle spells at `2000:cccc`, `2000:cdc5`, `2000:d0de` and
-`2000:d195` all ask `FUN_2000_cc66` first, and a monster of kind 100 answers them
+the screen: `teleport_monster` (`2000:cccc`), `autokill` (`2000:cdc5`),
+`drain_monster` (`2000:d0de`) and the two Hold cases inside `spell_effect` all ask
+`spell_proof` (`2000:cc66`) first, and a monster of kind 100 answers them
 with "NO, THAT SILLY SPELL DOESTN'T WORK ON ME" and catches a thrown grenade.
 ZEUS, the DEVIL and the eight quest bosses are the ten that do.
 
@@ -442,7 +443,7 @@ its own number, so every puffball moves its characteristic by exactly one point.
 
 ### What a kill is worth
 
-`FUN_3000_b8d4` (`3000:b8d4`), which `FUN_3000_d51c` adds to the character's
+`experience_for_kill` (`3000:b8d4`), which `monster_killed` adds to the character's
 experience whenever a monster dies:
 
 ```
@@ -457,7 +458,7 @@ kill.  Nothing in the table holds -1, so every monster in the game is worth
 something; the word at 0x1f runs from 0 for the weakest to 127 for the RED DRAGON
 KING, which is worth 128 times the base.
 
-The other side of it is `FUN_2000_59fd` (`2000:59fd`), which the inn and
+The other side of it is `experience_needed` (`2000:59fd`), which the inn and
 `experience_for_level` (`2000:5a42`) work from: reaching level *n* takes
 `pow(1.36, n - 1) * 250 - 130` experience, where `1.36` is the double at
 `0x269d`, and `250` and `130` are the floats at `0x26a5` and `0x26a9`.
@@ -504,6 +505,80 @@ Seven records of 5 bytes at DGROUP `0x214`.
 
 Armour class is subtracted from every monster's attack score.  Nothing in the
 executable reads byte 3.
+
+## Spells
+
+120 spells, in four categories of ten levels of three.  `spell_screen`
+(`2000:ea27`) is the menu, and everything it casts ends in `spell_effect`
+(`2000:d358`), a 5,474-byte switch on the category, the level and the slot that
+either does the work itself or calls one of two dozen small routines —
+`teleport_player` (`2000:cbdf`), `raise_protection` (`2000:cf6c`),
+`drain_monster` (`2000:d0de`) and the rest, all in `../reference/known.py`.
+
+### Which record is which spell
+
+`load_spell_lines` (`3000:b7fd`) asks `load_spell_text` (`2000:5938`) for
+
+```c
+record = category * 30 + level * 3 + slot;   /* 0..3, 0..9, 0..2 */
+```
+
+so the 120 records of `SPELLS.HLP` run in menu order: 0 to 29 permanent, 30 to 59
+preparation, 60 to 89 wizard, 90 to 119 priestly.  It then breaks the record into
+eight screen lines, starting at the record's second character and cutting at
+every `@`.
+
+The character record indexes the same three numbers with a stride of 45 rather
+than 30 (`cast_spell`, `2000:c546`):
+
+```c
+slot_in_array = category * 45 + level * 3 + slot;
+```
+
+Only the first 30 bytes of each 45 hold a spell, so an array is 180 bytes with
+fifteen unused after every category.  There are four arrays of that shape and one
+number indexes all four: the spellbook at record offset 0x0177, the scrolls at
+0x022b, the wands at 0x02df and the magic paper at 0x0393.
+
+### What a spell costs
+
+Out of the spellbook, one spell point per level (`spell_screen`, `2000:ea27`):
+the screen refuses the spell when the current points are below the cost and takes
+them off once the spell has returned something other than 0.  A permanent spell
+takes the same number off the maximum as well, for good.  Off a scroll, a wand or
+a piece of magic paper the spell costs no points at all — one charge comes off the
+item instead — and a case of the dispatcher that returns 0, which is what an
+escaped menu, a "redundant" and a missing target all do, costs nothing either.
+
+### Who may cast what
+
+The class byte is at record offset 0x2a: 0 fighter, 1 worshipper, 2 monk,
+3 wizard, 4 priest, 5 sage, 6 mage.
+
+| category | classes |
+|---|---|
+| permanent | everyone but the fighter |
+| preparation | everyone but the fighter |
+| wizard battle | monk, wizard, sage, mage (2, 3, 5, 6) |
+| priest battle | worshipper, monk, priest, sage (1, 2, 4, 5) |
+
+The fighter is turned away from the spellbook, scroll and wand screens outright —
+"FIGHTERS CAN ONLY CAST SPELLS BY USING MAGIC PAPER.  KEEP LOOKING." — but not
+from the magic paper.  The two category gates are tested only when `spell_screen`
+is called for the spellbook, so a scroll, a wand or a piece of magic paper lets
+any class cast anything.  They do cover the four "HELP-" entries of the menu,
+though, so a class cannot even read about a category it cannot cast.
+
+### The tables
+
+| DGROUP | what it is |
+|---|---|
+| `0x4493` | the 120 spell names, near pointers two bytes apart, in record order; the code indexes them `category * 0x3c + level * 6 + slot * 2` |
+| `0x4583` | the eight lines of the first menu, handed straight to the menu picker: the four categories, then the same four again as "5) HELP-PERMANENT SPELLS" and so on, which print the `SPELLS.HLP` paragraph instead of casting |
+
+What each of the 120 spells does, record by record, is in
+`../../src/lib/mw-spells/effects.ts`, with the function every sentence was read
+out of.
 
 ## Pictures
 
@@ -556,10 +631,6 @@ The palette has not been checked; Moraff's World sets its own.
   file cannot know which dungeon its map belongs to.
 - **Monster fields 0x0a to 0x0c, 0x13 to 0x15, and 0x18 to 0x21.**  The two the
   code does read, 0x13 and 0x14, are only ever added together.
-- **The spells.**  `SPELLS.HLP` is 120 text records and `cast_spell` offers
-  three categories of ten levels of four spells, but the arithmetic from
-  (category, level, slot) to a record number, and where the point costs live, are
-  unread.  The effects are all in `FUN_2000_d358`, 5,474 bytes of dispatcher.
 - **The surface.**  What terrain values 1 to 4 mean, and what pressing a key on
   one of them does, beyond 5 being where the world map puts you.
 - **The `.PIC` palette** for Moraff's World.
