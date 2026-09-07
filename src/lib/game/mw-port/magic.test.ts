@@ -14,6 +14,13 @@ import {
   teleportPlayer,
   spellEffect,
   writeScrollOrWand,
+  castSpell,
+  spellHeld,
+  MW_FROM_PAPER,
+  MW_FROM_SCROLL,
+  MW_FROM_SPELLBOOK,
+  MW_FROM_WAND,
+  MW_SPELL_MOVED_FLOOR,
   antiFire,
   boostAgility,
   boostStrength,
@@ -542,5 +549,109 @@ describe('writeScrollOrWand', () => {
     const world = game();
     expect(writeScrollOrWand(world, 3, 1)).toBe(false);
     expect(world.pc.scrolls.every((held) => held === 0)).toBe(true);
+  });
+});
+
+describe('castSpell', () => {
+  const wizard = (overrides: MwGameOverrides = {}) =>
+    game({ ...overrides, pc: { cls: 3, sp: 20, maxSp: 20, ...overrides.pc } });
+
+  it('takes the level in spell points off the pool and hands back the battle time', () => {
+    const world = wizard({ monsters: [monster()], engaged: 0 });
+    expect(castSpell(world, MW_FROM_SPELLBOOK, 2, 4, 2)).toBe(10);
+    expect(world.pc.sp).toBe(15);
+    expect(world.pc.maxSp).toBe(20);
+  });
+
+  it('takes a permanent spell off the maximum as well, and charges a month of game time', () => {
+    const world = wizard();
+    expect(castSpell(world, MW_FROM_SPELLBOOK, 0, 2, 1)).toBe(0x8d00);
+    expect(world.pc.sp).toBe(17);
+    expect(world.pc.maxSp).toBe(17);
+  });
+
+  it('leaves the maximum alone for a permanent spell cast off a piece of paper', () => {
+    const world = wizard({ pc: { paper: (() => { const held = Array.from({ length: 180 }, () => 0); held[7] = 2; return held; })() } });
+    expect(castSpell(world, MW_FROM_PAPER, 0, 2, 1)).toBe(0x8d00);
+    expect(world.pc.sp).toBe(20);
+    expect(world.pc.maxSp).toBe(20);
+    expect(world.pc.paper[7]).toBe(1);
+  });
+
+  it('takes one charge off the scroll, the wand and the paper', () => {
+    for (const source of [MW_FROM_SCROLL, MW_FROM_WAND, MW_FROM_PAPER]) {
+      const world = wizard({ monsters: [monster()], engaged: 0 });
+      const held = source === MW_FROM_SCROLL ? world.pc.scrolls : source === MW_FROM_WAND ? world.pc.wands : world.pc.paper;
+      held[2 * 45 + 4 * 3 + 2] = 3;
+      expect(castSpell(world, source, 2, 4, 2)).toBe(10);
+      expect(held[2 * 45 + 4 * 3 + 2]).toBe(2);
+      expect(world.pc.sp).toBe(20);
+    }
+  });
+
+  it('charges nothing for a spell whose effect answered no', () => {
+    const world = wizard({ pc: { protectionLevel: 3, protectionTimer: 10 } });
+    expect(castSpell(world, MW_FROM_SPELLBOOK, 2, 0, 2)).toBe(0);
+    expect(world.pc.sp).toBe(20);
+    expect(world.messages).toContain('CASTING THIS SPELL WOULD');
+  });
+
+  it('answers 1 for a spell that moved the character to another floor', () => {
+    const world = wizard({ pc: { floor: 10 }, isSolid: rocky() });
+    expect(castSpell(world, MW_FROM_SPELLBOOK, 1, 3, 2)).toBe(MW_SPELL_MOVED_FLOOR);
+    expect(world.pc.floor).toBe(11);
+    expect(world.pc.sp).toBe(16);
+  });
+
+  it('turns a fighter away from everything but magic paper', () => {
+    for (const source of [MW_FROM_SPELLBOOK, MW_FROM_SCROLL, MW_FROM_WAND]) {
+      const world = game({ pc: { cls: 0, sp: 20 } });
+      expect(castSpell(world, source, 1, 0, 2)).toBe(0);
+      expect(world.messages).toContain('FIGHTERS CAN ONLY CAST');
+    }
+    const paper = game({ pc: { cls: 0, sp: 20, wis: 10, maxHp: 50 } });
+    paper.pc.paper[45 + 2] = 1;
+    expect(castSpell(paper, MW_FROM_PAPER, 1, 0, 2)).toBe(100);
+  });
+
+  it('refuses a permanent spell anywhere but the town', () => {
+    const world = wizard({ pc: { floor: 1 } });
+    expect(castSpell(world, MW_FROM_SPELLBOOK, 0, 2, 1)).toBe(0);
+    expect(world.messages).toContain('THESE SPELLS TAKE ONE MONTH');
+  });
+
+  it('refuses a preparation spell during a battle', () => {
+    const world = wizard({ monsters: [monster()], engaged: 0 });
+    expect(castSpell(world, MW_FROM_SPELLBOOK, 1, 0, 2)).toBe(0);
+    expect(world.messages).toContain('THESE SPELLS TAKE 3 MINUTES');
+  });
+
+  it('gates the wizard and priestly lists on the class, but only out of the spellbook', () => {
+    const priest = game({ pc: { cls: 4, sp: 20 }, monsters: [monster()], engaged: 0 });
+    expect(castSpell(priest, MW_FROM_SPELLBOOK, 2, 4, 2)).toBe(0);
+    expect(priest.messages).toContain('YOU ARE UNABLE TO CAST THIS');
+    const offAWand = game({ pc: { cls: 4, sp: 20 }, monsters: [monster()], engaged: 0 });
+    offAWand.pc.wands[2 * 45 + 4 * 3 + 2] = 1;
+    expect(castSpell(offAWand, MW_FROM_WAND, 2, 4, 2)).toBe(10);
+  });
+
+  it('refuses a spell the pool cannot pay for, and only out of the spellbook', () => {
+    const world = wizard({ pc: { sp: 4 }, monsters: [monster()], engaged: 0 });
+    expect(castSpell(world, MW_FROM_SPELLBOOK, 2, 4, 2)).toBe(0);
+    expect(world.messages).toContain('YOU DO NOT HAVE ENOUGH');
+    const wand = wizard({ pc: { sp: 0 }, monsters: [monster()], engaged: 0 });
+    wand.pc.wands[2 * 45 + 4 * 3 + 2] = 1;
+    expect(castSpell(wand, MW_FROM_WAND, 2, 4, 2)).toBe(10);
+  });
+});
+
+describe('spellHeld', () => {
+  it('reads the flag out of the book and the count off an item', () => {
+    const world = game();
+    world.pc.spellbook[45 + 3] = 1;
+    world.pc.wands[45 + 3] = 2;
+    expect(spellHeld(world, MW_FROM_SPELLBOOK, 1, 1, 0)).toBe(true);
+    expect(spellHeld(world, MW_FROM_SCROLL, 1, 1, 0)).toBe(false);
+    expect(spellHeld(world, MW_FROM_WAND, 1, 1, 0)).toBe(true);
   });
 });

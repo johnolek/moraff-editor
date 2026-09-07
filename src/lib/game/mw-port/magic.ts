@@ -1,5 +1,5 @@
 import data from '../mw-data.json';
-import { MW_BOOK_SLOTS_PER_CATEGORY } from './spells';
+import { MW_BOOK_SLOTS_PER_CATEGORY, MW_PRIESTLY_CLASSES, MW_WIZARD_CLASSES } from './spells';
 import type { MwGame } from './state';
 import { MW_SQUARE_EMPTY, MW_SQUARE_PLAYER, mwOccupantAt, mwSetOccupant } from './state';
 
@@ -1395,4 +1395,140 @@ export function spellEffect(game: MwGame, category: number, levelIndex: number, 
   if (category === 2) return wizardBattle(game, levelIndex, slot);
   if (category === 3) return priestBattle(game, levelIndex, slot);
   return false;
+}
+
+/** Where a spell is being cast from, which is what spell_screen is called with. */
+export const MW_FROM_SPELLBOOK = 1;
+export const MW_FROM_SCROLL = 2;
+export const MW_FROM_WAND = 3;
+export const MW_FROM_PAPER = 4;
+
+/**
+ * The game time spell_screen hands its caller for a spell that worked: ten for a battle spell,
+ * a hundred for a preparation spell, and 36,096 for a permanent one.
+ *
+ * movecontrol (WORLD.EXE 2000:aad5) spends anything under 60 in one go and anything under 30,000
+ * sixty at a time, so the permanent list's number falls through both tests and no time passes at
+ * all — whatever "THESE SPELLS TAKE ONE MONTH TO CAST" says.
+ */
+export const MW_SPELL_TIME = { battle: 10, preparation: 100, permanent: 0x8d00 };
+
+/** What spell_screen hands back for a spell that moved the character to another floor. */
+export const MW_SPELL_MOVED_FLOOR = 1;
+
+/**
+ * Which of the four arrays a source is held in. The spellbook holds a flag, the other three hold
+ * a count that casting takes one off.
+ */
+function heldIn(game: MwGame, source: number): number[] {
+  if (source === MW_FROM_SCROLL) return game.pc.scrolls;
+  if (source === MW_FROM_WAND) return game.pc.wands;
+  if (source === MW_FROM_PAPER) return game.pc.paper;
+  return game.pc.spellbook;
+}
+
+/**
+ * The test the spell menu applies to each of its thirty lines (WORLD.EXE 2000:ea27, mw.c
+ * "spell_screen"): a spell whose byte in the array is zero cannot be picked, and the key that
+ * would pick it is thrown away. {@link castSpell} does not apply it, because the original applies
+ * it in the menu rather than in the cast.
+ */
+export function spellHeld(game: MwGame, source: number, category: number, levelIndex: number, slot: number): boolean {
+  return heldIn(game, source)[category * MW_BOOK_SLOTS_PER_CATEGORY + levelIndex * 3 + slot] !== 0;
+}
+
+/**
+ * spell_screen (WORLD.EXE 2000:ea27, mw.c "spell_screen"): the gates the four spell menus apply
+ * and the price they charge. The original is the menu as well; this is everything it does once
+ * the player has picked a spell.
+ *
+ * A fighter is turned away from the spellbook, the scrolls and the wands, so magic paper is the
+ * only magic they have. Permanent spells are refused anywhere but the town and preparation spells
+ * during a battle. The wizard and priestly categories are gated on the class, but only out of the
+ * spellbook: a scroll, a wand or a piece of paper is never checked against it.
+ *
+ * A spell out of the spellbook costs its level in spell points, and a permanent one costs the
+ * same again off the maximum, for good. A spell off an item costs one charge. Nothing at all is
+ * charged for a spell whose effect answered no.
+ *
+ * @param source {@link MW_FROM_SPELLBOOK}, {@link MW_FROM_SCROLL}, {@link MW_FROM_WAND} or
+ *   {@link MW_FROM_PAPER}.
+ * @param category 0 permanent, 1 preparation, 2 wizard, 3 priestly.
+ * @param levelIndex 0 to 9, one less than the level printed on the menu.
+ * @returns 0 when nothing happened, and otherwise the game time the caller charges for it.
+ */
+export function castSpell(
+  game: MwGame,
+  source: number,
+  category: number,
+  levelIndex: number,
+  slot: number,
+): number {
+  const pc = game.pc;
+  const floorAtEntry = pc.floor;
+  if (source !== MW_FROM_PAPER && pc.cls === 0) {
+    // DS:4064 407b 4093 1476 20bd
+    game.say(
+      'FIGHTERS CAN ONLY CAST',
+      '  SPELLS BY USING MAGIC',
+      '  PAPER. KEEP LOOKING.',
+      '',
+      'HIT ANY KEY...',
+    );
+    return 0;
+  }
+  if (category === 0 && pc.floor !== 0) {
+    // DS:4112 412e 4148 1476 20bd
+    game.say(
+      'THESE SPELLS TAKE ONE MONTH',
+      '   TO CAST AND CAN NOT BE',
+      '   USED IN THE DUNGEON.',
+      '',
+      'HIT ANY KEY...',
+    );
+    return 0;
+  }
+  if (category === 1 && game.engaged !== -1) {
+    // DS:4160 417c 4195 1476 20bd
+    game.say(
+      'THESE SPELLS TAKE 3 MINUTES',
+      '   TO CAST. THIS CAN NOT',
+      '   BE DONE DURING BATTLE.',
+      '',
+      'HIT ANY KEY...',
+    );
+    return 0;
+  }
+  const gated =
+    (category === 2 && !MW_WIZARD_CLASSES.includes(pc.cls)) ||
+    (category === 3 && !MW_PRIESTLY_CLASSES.includes(pc.cls));
+  if (source === MW_FROM_SPELLBOOK && gated) {
+    // DS:41af 41cb 1476 20bd
+    game.say('YOU ARE UNABLE TO CAST THIS', '   TYPE OF SPELLS.', '', 'HIT ANY KEY...');
+    return 0;
+  }
+  const cost = levelIndex + 1;
+  if (source === MW_FROM_SPELLBOOK && cost > pc.sp) {
+    // DS:42fa 4311 4329 1476 20bd
+    game.say(
+      'YOU DO NOT HAVE ENOUGH',
+      '   SPELL POINTS TO CAST',
+      '   THIS SPELL.',
+      '',
+      'HIT ANY KEY...',
+    );
+    return 0;
+  }
+  if (!spellEffect(game, category, levelIndex, slot)) return 0;
+  if (source === MW_FROM_SPELLBOOK) pc.sp -= cost;
+  else heldIn(game, source)[category * MW_BOOK_SLOTS_PER_CATEGORY + levelIndex * 3 + slot] -= 1;
+  // A spell that moved the character to another floor stops here, so a permanent spell cast in
+  // the town could never reach the maximum spell points either way.
+  if (pc.floor !== floorAtEntry) return MW_SPELL_MOVED_FLOOR;
+  if (category === 0) {
+    if (source === MW_FROM_SPELLBOOK) pc.maxSp -= cost;
+    return MW_SPELL_TIME.permanent;
+  }
+  if (category !== 1) return MW_SPELL_TIME.battle;
+  return MW_SPELL_TIME.preparation;
 }
