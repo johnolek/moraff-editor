@@ -704,6 +704,45 @@ Everything above is the 256-colour path.  A mode with fewer colours (DGROUP
 `0xcdd5` below 0x100) takes another road through both `set_palette` and both
 drawers, including a dithering step, and none of that has been read.
 
+## Money
+
+The record holds eight 32-bit counters (`src/lib/editor/games.ts`, the `moraffsWorld`
+schema): jewels in the pocket at 0x0454 and in the bank at 0x0458, then six kinds of
+stone at 0x045c..0x0470 in steps of four: copper, silver, ivory, gold, platinum and jewel
+stones. `financial_statement` (2000:342d) prints each against its label, which is how the
+fields were pinned to their globals.
+
+Jewels are the only money the game spends. `store` (2000:2ee7; weapons 1..450, armour
+1..9900), `inn` (2000:35b1; a flat 10, and under 10 you are thrown out and charged
+nothing), the temple (`FUN_2000_3085`) and the boat on the world map (`FUN_3000_8235`,
+`(floor / 2 + 1) * (floor + 1)^2`, paid in jewels although the message says jewel
+stones) all take pocket jewels, and none of them converts. The only net-worth figure in
+the game, TOTAL MONEY on the stats screen (`view_stats` 2000:933a), is pocket plus bank;
+stones are not counted anywhere.
+
+There is exactly one exchange, option 1 of `bank` (2000:3716), and it is one way:
+
+| From | To | Rate |
+|---|---|---|
+| copper stones | jewels | 200 to 1 |
+| silver stones | jewels | 12 to 1 |
+| ivory stones | jewels | 4 to 1 |
+| gold stones | jewels | 2 to 1 |
+| platinum stones | jewels | 1 to 5 |
+| jewel stones | jewels | 1 to 1 |
+| pocket and bank | | 1 to 1, either way |
+
+Each kind is divided on its own with the signed 32-bit divide, so the quotient is rounded
+toward zero, and then all six counters are zeroed whatever the quotient was. 199 copper
+stones convert to no jewels and are gone. Converting small piles often is strictly worse
+than hoarding and converting once; the worst case burns just under four jewels' worth per
+visit. Platinum and jewel stones never lose anything. The "YOU FIND ... STONES" preview in
+`FUN_3000_bdb5` uses the same constants and the same truncation, so a pile advertises
+exactly what the bank will pay for it. Nothing turns jewels back into stones. The multiply
+and the running sum are plain 32-bit arithmetic with no cap, so they can wrap negative;
+deposit and withdraw do clamp. The metal stones weigh a pound per sixteen
+(`recompute_weight` 2000:2d8e).
+
 ## The files the game reads
 
 | file | read by | what it is |

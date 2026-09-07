@@ -80,6 +80,7 @@ export const MORAFFS_WORLD: GameSchema = {
     },
     {
       title: 'Money',
+      note: 'Jewels are the only money the game spends: the store, the inn, the temple and the boat all take jewels from the pocket, and the stats screen\u2019s TOTAL MONEY is pocket plus bank. Stones are not counted there and nothing takes them as payment.',
       fields: [
         { kind: 'int32', offset: 0x0454, label: 'Jewels in Pocket' },
         { kind: 'int32', offset: 0x0458, label: 'Jewels in Bank' },
@@ -87,7 +88,7 @@ export const MORAFFS_WORLD: GameSchema = {
     },
     {
       title: 'Stones',
-      note: 'Stone currencies — 4-byte counters starting at 0x045C.',
+      note: 'Only the bank turns stones into jewels, all at once and one way: 200 copper, 12 silver, 4 ivory or 2 gold stones make one jewel, a platinum stone makes five and a jewel stone makes one. Each kind is divided on its own, rounded down, and every counter is then set to zero, so the remainder is lost: 199 copper stones become nothing. Save up and convert once.',
       fields: [{ kind: 'counter_list', offset: 0x045c, stride: 4, itemKind: 'int32', names: MORAFFS_WORLD_STONES }],
     },
     {
