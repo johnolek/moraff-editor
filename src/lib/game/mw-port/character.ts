@@ -138,3 +138,166 @@ export function showRoll(game: MwGame, on: number): void {
   // columns, 900 for the male one and 750 for the female one.
   game.say(pc.sex === 0 ? 'SEX: MALE' : 'SEX: FEMALE');
 }
+
+/**
+ * The roll at the top of roll_char's loop (WORLD.EXE 3000:4695, mw.c "roll_char"): everything
+ * about a character that comes out of the race table and the dice — the age, the weight, the
+ * height, the sex and the six characteristics, in that order.
+ *
+ * The age is a quarter to a third of the race's typical age, so a human comes out 16 to 22 and
+ * an imp 57 to 78. It is not kept in years: the record holds the count of minutes those years
+ * are, and every screen that prints an age divides by 525,600 again.
+ *
+ * The weight and the height are each spread a fifth of the race's number wide, starting a tenth
+ * of it below, so a human weighs 117 to 142 pounds and stands 63 to 76 inches.
+ *
+ * Each characteristic starts at its race's number and then sixty points are handed out one at a
+ * time, each to whichever of the six a d6 picks, which is why a race's average is its number
+ * plus ten and why the six always add up to the race's total plus sixty.
+ */
+export function rollCharacteristics(game: MwGame): void {
+  const pc = game.pc;
+  const race = MW_RACES[pc.race];
+  pc.ageMinutes = Math.trunc((race.age * (game.rng.random(10) + 25)) / 100) * MINUTES_PER_YEAR;
+  pc.weight = race.weight;
+  pc.weight = pc.weight + (game.rng.random(Math.trunc(pc.weight / 5)) - Math.trunc(pc.weight / 10));
+  pc.height = race.height;
+  pc.height = pc.height + (game.rng.random(Math.trunc(pc.height / 5)) - Math.trunc(pc.height / 10));
+  pc.sex = game.rng.random(2);
+  pc.str = race.str;
+  pc.iq = race.iq;
+  pc.wis = race.wis;
+  pc.con = race.con;
+  pc.dex = race.dex;
+  pc.luck = race.luck;
+  for (let point = 0; point < 60; point++) {
+    switch (game.rng.random(6)) {
+      case 0:
+        pc.str += 1;
+        break;
+      case 1:
+        pc.iq += 1;
+        break;
+      case 2:
+        pc.wis += 1;
+        break;
+      case 3:
+        pc.con += 1;
+        break;
+      case 4:
+        pc.dex += 1;
+        break;
+      case 5:
+        pc.luck += 1;
+        break;
+    }
+  }
+}
+
+/**
+ * The D of roll_char's keep, reroll and design menu (WORLD.EXE 3000:4695, mw.c "roll_char"):
+ * four points come off every characteristic and the player puts twenty-four back wherever they
+ * like, which leaves the six adding up to exactly what the roll gave them.
+ *
+ * Returns false for the Escape the screen calls "cancel this character". It does not leave
+ * character creation and it does not put the four points back: roll_char goes round again and
+ * rolls a whole new character from the race's own numbers.
+ *
+ * The prompt tells the player to press D for agility and the code reads A. The line under it
+ * says AGILITY in the right place, so the letter in the first line is simply wrong; D does
+ * nothing at all here.
+ */
+export function designYourOwn(game: MwGame): boolean {
+  const pc = game.pc;
+  showRoll(game, 0);
+  pc.str -= 4;
+  pc.iq -= 4;
+  pc.wis -= 4;
+  pc.con -= 4;
+  pc.dex -= 4;
+  pc.luck -= 4;
+  showRoll(game, 1);
+  // DS:4771 478b 47af 47cd 47ea 4814 4833, then DS:4851, which the original only prints when a
+  // mouse is attached. The port has no mouse flag and prints it either way. WIZDOM is the
+  // executable's own spelling.
+  game.say(
+    'ESC-CANCEL THIS CHARACTER',
+    'YOU MAY ASSIGN 24 ADDITIONAL POINTS',
+    'TO THE ABOVE CHARACTERISTICS.',
+    'CHARACTERISTIC POINTS LEFT: ',
+    "PRESS 'S', 'I', 'W', 'C', 'D', OR 'L' FOR",
+    'STRENGTH, INTELLIGENCE, WIZDOM',
+    'CONSTITUTION, AGILITY OR LUCK',
+    'OR POINT THE MOUSE TO A CHARACTERISTIC AND PRESS THE BUTTON',
+  );
+  for (let left = 24; left > 0; left--) {
+    // The original rubs out the last count and draws this one on the end of the label above.
+    game.say(String(left));
+    const stat = game.askDesignStat();
+    if (stat === 6) return false;
+    switch (stat) {
+      case 0:
+        pc.str += 1;
+        break;
+      case 1:
+        pc.iq += 1;
+        break;
+      case 2:
+        pc.wis += 1;
+        break;
+      case 3:
+        pc.con += 1;
+        break;
+      case 4:
+        pc.dex += 1;
+        break;
+      case 5:
+        pc.luck += 1;
+        break;
+    }
+  }
+  return true;
+}
+
+/**
+ * read_string (WORLD.EXE 4000:3db9, mw.c "read_string") as roll_char calls it: the name the
+ * player types, cut to the 18 characters roll_char asks for.
+ *
+ * The original reads the keyboard a key at a time. Every key goes through toupper and only
+ * letters, digits and the space bar are taken, so a name is upper case with nothing else in it.
+ * Enter finishes and Escape gives up, but both are ignored until at least one character has been
+ * typed, so a character cannot end up with no name at all. The port takes what the hook answers
+ * as final and only filters it.
+ */
+export function typedName(typed: string): string {
+  let name = '';
+  for (const character of typed.toUpperCase()) {
+    if (name.length === 18) break;
+    if (/[A-Z0-9 ]/.test(character)) name += character;
+  }
+  return name;
+}
+
+/**
+ * The spells a class starts with, in roll_char (WORLD.EXE 3000:4695, mw.c "roll_char") straight
+ * after the class menu. The spell book is 180 flags indexed `type * 45 + level * 3 + slot`, four
+ * sub-categories of 45: permanent, preparation, wizard and priest.
+ *
+ * A monk has every one of the 180 set, the fifteen unused slots on the end of each of the four
+ * lists included: that is the class ROLL.TXT says "has ability to cast spells without
+ * spellbooks". Everyone but a fighter starts with the preparation Little Cure, the wizard, sage
+ * and mage with the wizard Magic Zap, and the worshipper, priest and sage with priest Strength.
+ */
+export function startingSpells(game: MwGame): void {
+  const pc = game.pc;
+  if (pc.cls === 2) {
+    for (let slot = 0; slot < 3; slot++) {
+      for (let level = 0; level < 15; level++) {
+        for (let type = 0; type < 4; type++) pc.spellbook[type * 45 + level * 3 + slot] = 1;
+      }
+    }
+  }
+  if (pc.cls !== 0) pc.spellbook[1 * 45 + 0 * 3 + 2] = 1;
+  if (pc.cls === 3 || pc.cls === 5 || pc.cls === 6) pc.spellbook[2 * 45 + 0 * 3 + 1] = 1;
+  if (pc.cls === 1 || pc.cls === 4 || pc.cls === 5) pc.spellbook[3 * 45 + 0 * 3 + 2] = 1;
+}
