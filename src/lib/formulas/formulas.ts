@@ -95,7 +95,7 @@ const TELEPORTERS: Topic = {
       id: 'teleporter-landing',
       title: 'Where a teleporter drops you',
       explanation:
-        'Walking into a teleporter moves you to the town of the module next door: up from Module I, down from Module V, and your choice of the two in between. Where in that town you appear is decided by drawing a column and a row at random over the area the game shows and drawing again until the square is not rock, so any of the three thousand or so open squares is as likely as any other. The same routine places you after Relocate, after Descend and Ascend, and after digging a hole, which is why none of those ever put you somewhere convenient.',
+        'Walking into a teleporter moves you to the town of the module next door: up from Module I, down from Module V, and your choice of the two in between. Where in that town you appear is decided by drawing a column and a row at random over the area the game shows and drawing again until the square is not rock, so any of the three thousand or so open squares is as likely as any other. The same drawing places you after Relocate and after Descend and Ascend, which is why none of those ever put you somewhere convenient. Digging a hole is different: it drops you straight down to the first of the next five floors on which this square is open, and only draws at random when there is no such floor, or when a Fighter digs in the deepest quarter of a module and is relocated instead.',
       inputs: 'Which squares of the destination floor are rock. Not the square you left, and nothing about your character.',
       origin: 'exe relocate 3000:da2c, relocate in dotu-tools/decomp/unf.c. Handoff section 4.',
       c: 'relocate',
