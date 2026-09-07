@@ -1,23 +1,37 @@
 <script lang="ts">
   import { tick } from 'svelte';
-  import { app } from '../app-state.svelte';
-  import { decompSection, sectionsByName, type DecompSection } from './decomp';
-  import { portCode, portFiles, portFunction, portsOfC, type PortFunction, type SourceFile } from './ports';
+  import { app, type GameId } from '../app-state.svelte';
+  import { decompilation, decompSection, sectionsByName, type DecompSection } from './decomp';
+  import {
+    portCode,
+    portFiles,
+    portFunction,
+    portsOfC,
+    sourceFiles,
+    type PortFunction,
+    type SourceFile,
+  } from './ports';
 
   /** What the main pane is showing: a declaration of the port, or a decompiled function. */
   type Selection = { kind: 'ts'; file: SourceFile; name: string } | { kind: 'c'; name: string };
 
-  const DECOMPILED = sectionsByName();
+  /** The function each game's tab opens on, and the file it opens the index at. */
+  const START: Record<GameId, { file: SourceFile; name: string }> = {
+    unforgiven: { file: 'src/lib/game/port/magic.ts', name: 'spellEffect' },
+    moraffsWorld: { file: 'src/lib/game/mw-port/character.ts', name: 'rollChar' },
+  };
 
   let search = $state('');
-  let selected = $state<Selection>({ kind: 'ts', file: 'src/lib/game/port/magic.ts', name: 'spellEffect' });
-  let expanded = $state<Record<string, boolean>>({ 'src/lib/game/port/magic.ts': true });
+  let selected = $state<Selection>({ kind: 'ts', ...START.unforgiven });
+  let expanded = $state<Record<string, boolean>>({});
   let list: HTMLDivElement;
 
   const query = $derived(search.trim().toLowerCase());
+  const start = $derived(START[app.game]);
+  const decomp = $derived(decompilation(app.game));
 
   const files = $derived(
-    portFiles().map((entry) => ({
+    portFiles(app.game).map((entry) => ({
       ...entry,
       functions: entry.functions.filter(
         (fn) => !query || fn.name.toLowerCase().includes(query) || entry.file.toLowerCase().includes(query),
@@ -25,26 +39,38 @@
     })).filter((entry) => entry.functions.length > 0),
   );
 
+  const decompiled = $derived(sectionsByName(app.game));
+
   const sections = $derived(
-    DECOMPILED.filter(
+    decompiled.filter(
       (section) =>
         !query || section.name.toLowerCase().includes(query) || (section.description ?? '').toLowerCase().includes(query),
     ),
   );
 
-  /** The port function on show, with the decompiled function its comment cites. */
-  const ported = $derived<PortFunction | null>(
-    selected.kind === 'ts' ? portFunction(selected.file, selected.name) : null,
-  );
-  const portedCode = $derived(selected.kind === 'ts' ? portCode(selected.file, selected.name) : null);
+  /** True for a function the game showing has: one of its port's files, or one of the functions
+   *  of its decompilation. */
+  function listed(selection: Selection): boolean {
+    return selection.kind === 'ts'
+      ? sourceFiles(app.game).includes(selection.file)
+      : decompSection(selection.name, app.game) !== null;
+  }
 
-  const section = $derived<DecompSection | null>(selected.kind === 'c' ? decompSection(selected.name) : null);
+  /** What the pane shows. The two games share the tab, so switching to one whose index does not
+   *  list what was chosen shows that game's own starting function instead. */
+  const shown = $derived<Selection>(listed(selected) ? selected : { kind: 'ts', ...start });
+
+  /** The port function on show, with the decompiled function its comment cites. */
+  const ported = $derived<PortFunction | null>(shown.kind === 'ts' ? portFunction(shown.file, shown.name) : null);
+  const portedCode = $derived(shown.kind === 'ts' ? portCode(shown.file, shown.name) : null);
+
+  const section = $derived<DecompSection | null>(shown.kind === 'c' ? decompSection(shown.name, app.game) : null);
 
   // spell_effect alone is ported as forty-two functions, so the file is named once for all of
   // the functions that came out of it rather than after each one.
   const portedFrom = $derived.by(() => {
     const byFile = new Map<SourceFile, PortFunction[]>();
-    for (const fn of section ? portsOfC(section.name) : []) {
+    for (const fn of section ? portsOfC(section.name, app.game) : []) {
       const already = byFile.get(fn.file);
       if (already) already.push(fn);
       else byFile.set(fn.file, [fn]);
@@ -52,13 +78,14 @@
     return [...byFile].map(([file, functions]) => ({ file, functions }));
   });
 
-  /** A search hides every file but the ones it matched, so those open whether or not they were. */
-  const isOpen = (file: SourceFile) => query !== '' || expanded[file] === true;
+  /** A search hides every file but the ones it matched, so those open whether or not they were.
+   *  A file nobody has opened or closed is open only if it is the one the tab starts at. */
+  const isOpen = (file: SourceFile) => query !== '' || (expanded[file] ?? file === start.file);
 
   const isSelected = (candidate: Selection) =>
-    selected.kind === candidate.kind &&
-    selected.name === candidate.name &&
-    (selected.kind !== 'ts' || candidate.kind !== 'ts' || selected.file === candidate.file);
+    shown.kind === candidate.kind &&
+    shown.name === candidate.name &&
+    (shown.kind !== 'ts' || candidate.kind !== 'ts' || shown.file === candidate.file);
 
   function toggle(file: SourceFile): void {
     expanded[file] = !isOpen(file);
@@ -69,7 +96,7 @@
   }
 
   function showDecompiled(name: string): void {
-    if (decompSection(name)) selected = { kind: 'c', name };
+    if (decompSection(name, app.game)) selected = { kind: 'c', name };
   }
 
   /** Brings whatever is selected into view, for a jump that came from another tab. */
@@ -125,7 +152,7 @@
         <p class="empty">No functions match.</p>
       {/if}
 
-      <h3>Decompiled C</h3>
+      <h3>Decompiled C ({decomp.executable})</h3>
       <ul>
         {#each sections as entry}
           <li>
@@ -145,9 +172,9 @@
   </div>
 
   <div class="pane">
-    {#if selected.kind === 'ts'}
-      <h2>{selected.name}</h2>
-      <p class="where">{selected.file}</p>
+    {#if shown.kind === 'ts'}
+      <h2>{shown.name}</h2>
+      <p class="where">{shown.file}</p>
       {#if ported?.c}
         <p class="where">
           Decompiled:
@@ -185,7 +212,7 @@
         {#if section.callers.length > 0}
           <dt>Called by</dt>
           <dd>
-            {#each section.callers as caller, index}{index > 0 ? ', ' : ''}{#if decompSection(caller)}<button
+            {#each section.callers as caller, index}{index > 0 ? ', ' : ''}{#if decompSection(caller, app.game)}<button
                   type="button"
                   class="link"
                   onclick={() => showDecompiled(caller)}>{caller}</button
