@@ -9,8 +9,7 @@ import type { ScreenLine } from '../port/state';
  * here is what the roller reads or writes. Each field's comment gives the save offset and the
  * global the original reaches it through: the record sits at `DS:c0f2`, so `DAT_6000_xxxx` is
  * save offset `xxxx - 0xc0f2`. The names are the labels the Moraff's World schema in
- * `src/lib/editor/games.ts` gives those offsets; the six the schema had no name for are named
- * after what the game does with them.
+ * `src/lib/editor/games.ts` gives those offsets.
  */
 export interface MwCharacter {
   /** 0x00, DS:c0f2: upper case, at most the 18 characters read_string takes. */
@@ -69,22 +68,18 @@ export interface MwCharacter {
    * leaves 0 as the only dungeon whose floors have no wall where the character has walked.
    */
   dungeon: number;
-  /**
-   * 0x7b4, DS:c8a6: where the character sits in the scrolling map view, not on the floor. The
-   * schema has no name for this byte or the one after it.
-   */
+  /** 0x7b4, DS:c8a6: where the character sits in the scrolling map view, not on the floor. */
   mapCursorX: number;
   /** 0x7b5, DS:c8a7. */
   mapCursorY: number;
   /**
    * 0x7d6, DS:c8c8: the character's age as a 32-bit count of minutes — years times 525,600.
-   * Every screen that prints an age divides by 525,600 again. The schema has no name for it.
+   * Every screen that prints an age divides by 525,600 again.
    */
   ageMinutes: number;
   /**
    * 0x7f8, DS:c8ea: where the character stands on the 64 x 64 overworld map, in 256ths of a
-   * tile across and 128ths down, so 2146 is column 8. The schema has no name for this field or
-   * the one after it.
+   * tile across and 128ths down, so 2146 is column 8.
    */
   worldX: number;
   /** 0x7fa, DS:c8ec. */
@@ -95,16 +90,13 @@ export interface MwCharacter {
    * every explored floor if it is not the dungeon they died in.
    */
   returnDungeon: number;
-  /**
-   * 0x806, DS:c8f8: the square to come back to. The schema has no name for it or the one after
-   * it.
-   */
+  /** 0x806, DS:c8f8: the square to come back to. */
   returnX: number;
   /** 0x808, DS:c8fa. */
   returnY: number;
   /**
    * 0x80a, DS:c8fc: a 32-bit counter the encounter code (exe 2000:3085) recomputes as
-   * `level * 500 + random(20)`. The schema has no name for it.
+   * `level * 500 + random(20)`.
    */
   encounterCounter: number;
   /** 0x812, DS:c904. */
