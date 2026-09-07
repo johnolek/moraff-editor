@@ -232,7 +232,7 @@ export const MORAFFS_WORLD: GameSchema = {
       // dispatcher FUN_2000_d358 (2000:d358) writes Slow Enemies and Hold Monster itself.
       // FUN_2000_7421 (2000:7421) is the screen that lists them, and supplied the labels.
       title: 'Battle Spell Timers',
-      note: 'Moves left on each battle-spell effect; a spell cast again while it runs adds 60 more moves. Set a timer to 0 to clear it. Beware: Power Weapon and Protection each keep a level beside their timer, and the game only clears that level when the timer counts down from above zero — a level left standing over a zero timer stays until a night at the inn.',
+      note: 'Moves left on each battle-spell effect; a spell cast again while it runs adds 60 more moves. Set a timer to 0 to clear it. Beware: Power Weapon and Protection each keep a level beside their timer, and the game only clears that level when the timer counts down from above zero — a level left standing over a zero timer stays until a night at the inn or a hole dug through the floor.',
       fields: [
         {
           kind: 'int16',
