@@ -5,14 +5,17 @@
  * toString(); each file is imported with Vite's ?raw suffix instead and scanned for its
  * declarations. The port's documentation comments cite the function they came from, as in
  * `(exe 3000:d904, unf.c "sleep_monster")`, and that citation is what ties a function here to a
- * function in `dotu-tools/decomp/unf.c`, in both directions.
+ * function in `dotu-tools/decomp/unf.c` or `mw-tools/decomp/mw.c`, in both directions.
+ *
+ * Each file belongs to the game it is a port of, which is the game whose decompilation its
+ * citations name and the game whose Source tab lists it.
  */
+import type { GameId } from '../app-state.svelte';
 import toHitSource from '../bestiary/to-hit.ts?raw';
 import rollSource from '../bestiary/roll.ts?raw';
 import dropsSource from '../calculators/drops.ts?raw';
 import filesSource from '../game/dotu-files.js?raw';
 import characterSource from '../game/port/character.ts?raw';
-import mwSpellsSource from '../game/mw-port/spells.ts?raw';
 import combatSource from '../game/port/combat.ts?raw';
 import hintsSource from '../game/port/hints.ts?raw';
 import mechSource from '../game/dotu-mech.js?raw';
@@ -26,10 +29,18 @@ import pathSource from '../map/path.ts?raw';
 import relocateSource from '../map/relocate.ts?raw';
 import stockingSource from '../map/stocking.ts?raw';
 import twinsSource from '../map/twins.ts?raw';
+import mwCharacterSource from '../game/mw-port/character.ts?raw';
+import mwSpellsSource from '../game/mw-port/spells.ts?raw';
+import mwStateSource from '../game/mw-port/state.ts?raw';
+import mwmapSource from '../game/mwmap.js?raw';
+import mwDungeonSource from '../game/mw-dungeon.ts?raw';
+import mwMonstersSource from '../mw-bestiary/monsters.ts?raw';
+import mwToHitSource from '../mw-bestiary/to-hit.ts?raw';
+import mwEffectsSource from '../mw-spells/effects.ts?raw';
 import { snippet } from '../ui/source-snippet';
 
-/** Every file the app shows the source of, keyed by the path it lives at in the repository. */
-export const SOURCES = {
+/** The Dungeons of the Unforgiven files, keyed by the path they live at in the repository. */
+const UNFORGIVEN_SOURCES = {
   'src/lib/game/port/magic.ts': magicSource,
   'src/lib/game/port/combat.ts': combatSource,
   'src/lib/game/port/character.ts': characterSource,
@@ -37,7 +48,6 @@ export const SOURCES = {
   'src/lib/game/port/state.ts': stateSource,
   'src/lib/game/port/rng.ts': rngSource,
   'src/lib/game/port/spell-index.ts': spellIndexSource,
-  'src/lib/game/mw-port/spells.ts': mwSpellsSource,
   'src/lib/game/unfmap.js': unfmapSource,
   'src/lib/game/dotu-mech.js': mechSource,
   'src/lib/game/dotu-files.js': filesSource,
@@ -51,16 +61,46 @@ export const SOURCES = {
   'src/lib/calculators/drops.ts': dropsSource,
 };
 
+/** The Moraff's World files, keyed the same way. */
+const MORAFFS_WORLD_SOURCES = {
+  'src/lib/game/mw-port/character.ts': mwCharacterSource,
+  'src/lib/game/mw-port/spells.ts': mwSpellsSource,
+  'src/lib/game/mw-port/state.ts': mwStateSource,
+  'src/lib/game/mwmap.js': mwmapSource,
+  'src/lib/game/mw-dungeon.ts': mwDungeonSource,
+  'src/lib/mw-bestiary/monsters.ts': mwMonstersSource,
+  'src/lib/mw-bestiary/to-hit.ts': mwToHitSource,
+  'src/lib/mw-spells/effects.ts': mwEffectsSource,
+};
+
+/** Every file the app shows the source of, keyed by the path it lives at in the repository. */
+export const SOURCES = { ...UNFORGIVEN_SOURCES, ...MORAFFS_WORLD_SOURCES };
+
 export type SourceFile = keyof typeof SOURCES;
 
-/** The files in the order the Source tab lists them: the port first, then what reads it. */
-export const SOURCE_FILES = Object.keys(SOURCES) as SourceFile[];
+const FILES: Record<GameId, SourceFile[]> = {
+  unforgiven: Object.keys(UNFORGIVEN_SOURCES) as SourceFile[],
+  moraffsWorld: Object.keys(MORAFFS_WORLD_SOURCES) as SourceFile[],
+};
+
+/**
+ * One game's files, in the order the Source tab lists them: the port first, then what reads it.
+ *
+ * A caller that names no game means Dungeons of the Unforgiven, which is the game most of the
+ * site is about.
+ */
+export function sourceFiles(game: GameId = 'unforgiven'): SourceFile[] {
+  return FILES[game];
+}
 
 /** Where in the executable, and under what name, a decompiled function sits. */
 export interface Citation {
   name: string;
   /** Segment and offset, as `3000:d904`. */
   address: string;
+  /** The game whose decompilation holds the function: `unf.c` names Dungeons of the
+   *  Unforgiven's, `mw.c` names Moraff's World's. */
+  game: GameId;
 }
 
 /** One declaration of one file, with the decompiled function its comment cites. */
@@ -71,7 +111,19 @@ export interface PortFunction {
   c: Citation | null;
 }
 
-const CITATION = /\(exe ([0-9a-f]{4}:[0-9a-f]+), unf\.c "([^"]+)"\)/;
+/** One file with the declarations it holds. */
+export interface PortFile {
+  file: SourceFile;
+  functions: PortFunction[];
+}
+
+/**
+ * A citation: `(exe 3000:d904, unf.c "sleep_monster")`, or the Moraff's World port's
+ * `(WORLD.EXE 3000:4477, mw.c "show_roll")` — that game ships two executables, so its port names
+ * the one it means.
+ */
+const CITATION = /\((?:exe|WORLD\.EXE)\s+([0-9a-f]{4}:[0-9a-f]+),\s+(unf|mw)\.c\s+"([^"]+)"\)/;
+const CITED_GAME: Record<string, GameId> = { unf: 'unforgiven', mw: 'moraffsWorld' };
 const EXPORTED_FUNCTION = /^export (?:async )?function (\w+)\s*\(/;
 /** An exported value, with or without a type written on it: `export const TWINS: Twin[] = [`. */
 const EXPORTED_VALUE = /^export const (\w+)\s*(?::[^=\n]+)?=/;
@@ -86,6 +138,19 @@ function isComment(line: string): boolean {
   return text.startsWith('//') || text.startsWith('/*') || text.startsWith('*');
 }
 
+/** One line of a comment with the `//`, `/**` or `*` that marks it as one taken off. */
+function commentText(line: string): string {
+  return line.trim().replace(/^(?:\/\/+|\/\*+|\*+)/, '').replace(/\*\/$/, '').trim();
+}
+
+/** The function a comment cites, read across the whole comment so that a citation the line
+ *  wrapping happens to split in two is still found. */
+function citation(comment: string[]): Citation | null {
+  const cited = CITATION.exec(comment.map(commentText).join(' '));
+  if (!cited) return null;
+  return { address: cited[1], name: cited[3], game: CITED_GAME[cited[2]] };
+}
+
 /**
  * The declarations of one file, in the order it declares them: every exported function and
  * value, and every method of a class.
@@ -96,16 +161,15 @@ function isComment(line: string): boolean {
  */
 export function declarations(file: SourceFile, source: string): PortFunction[] {
   const found: PortFunction[] = [];
-  let pending: Citation | null = null;
+  let comment: string[] = [];
   let inClass = false;
   for (const line of source.split('\n')) {
     if (line.trim() === '') {
-      pending = null;
+      comment = [];
       continue;
     }
     if (isComment(line)) {
-      const cited = CITATION.exec(line);
-      if (cited) pending = { address: cited[1], name: cited[2] };
+      comment.push(line);
       continue;
     }
     if (CLASS_START.test(line)) inClass = true;
@@ -115,29 +179,37 @@ export function declarations(file: SourceFile, source: string): PortFunction[] {
       EXPORTED_FUNCTION.exec(line)?.[1] ??
       EXPORTED_VALUE.exec(line)?.[1] ??
       (method && method[1] !== 'constructor' && !BLOCK_WORDS.includes(method[1]) ? method[1] : null);
-    if (name) found.push({ file, name, c: pending });
-    pending = null;
+    if (name) found.push({ file, name, c: citation(comment) });
+    comment = [];
   }
   return found;
 }
 
-/** Every file with the declarations it holds, in the order the Source tab lists them. */
-export const PORT_FILES: { file: SourceFile; functions: PortFunction[] }[] = SOURCE_FILES.map((file) => ({
-  file,
-  functions: declarations(file, SOURCES[file]),
-}));
+const PORT_FILES: Record<GameId, PortFile[]> = {
+  unforgiven: FILES.unforgiven.map((file) => ({ file, functions: declarations(file, SOURCES[file]) })),
+  moraffsWorld: FILES.moraffsWorld.map((file) => ({ file, functions: declarations(file, SOURCES[file]) })),
+};
 
-const ALL = PORT_FILES.flatMap((entry) => entry.functions);
-
-const BY_C_NAME = new Map<string, PortFunction[]>();
-for (const fn of ALL) {
-  if (!fn.c) continue;
-  const ported = BY_C_NAME.get(fn.c.name);
-  if (ported) ported.push(fn);
-  else BY_C_NAME.set(fn.c.name, [fn]);
+/** One game's files with the declarations they hold, in the order the Source tab lists them. */
+export function portFiles(game: GameId = 'unforgiven'): PortFile[] {
+  return PORT_FILES[game];
 }
 
-/** Every declaration of every file, which is what the Source tab searches. */
+const ALL = [...PORT_FILES.unforgiven, ...PORT_FILES.moraffsWorld].flatMap((entry) => entry.functions);
+
+const BY_C_NAME: Record<GameId, Map<string, PortFunction[]>> = {
+  unforgiven: new Map(),
+  moraffsWorld: new Map(),
+};
+for (const fn of ALL) {
+  if (!fn.c) continue;
+  const byName = BY_C_NAME[fn.c.game];
+  const ported = byName.get(fn.c.name);
+  if (ported) ported.push(fn);
+  else byName.set(fn.c.name, [fn]);
+}
+
+/** Every declaration of every file of both games, which is what the Source tab searches. */
 export function allPortFunctions(): PortFunction[] {
   return ALL;
 }
@@ -148,8 +220,8 @@ export function portFunction(file: SourceFile, name: string): PortFunction | nul
 }
 
 /** The functions ported from one decompiled function, which is the citation read backwards. */
-export function portsOfC(name: string): PortFunction[] {
-  return BY_C_NAME.get(name) ?? [];
+export function portsOfC(name: string, game: GameId = 'unforgiven'): PortFunction[] {
+  return BY_C_NAME[game].get(name) ?? [];
 }
 
 /** The source text of one declaration, documentation comment included. */

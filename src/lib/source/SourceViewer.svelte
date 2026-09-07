@@ -2,7 +2,7 @@
   import { tick } from 'svelte';
   import { app } from '../app-state.svelte';
   import { decompSection, sectionsByName, type DecompSection } from './decomp';
-  import { PORT_FILES, portCode, portFunction, portsOfC, type PortFunction, type SourceFile } from './ports';
+  import { portCode, portFiles, portFunction, portsOfC, type PortFunction, type SourceFile } from './ports';
 
   /** What the main pane is showing: a declaration of the port, or a decompiled function. */
   type Selection = { kind: 'ts'; file: SourceFile; name: string } | { kind: 'c'; name: string };
@@ -17,7 +17,7 @@
   const query = $derived(search.trim().toLowerCase());
 
   const files = $derived(
-    PORT_FILES.map((entry) => ({
+    portFiles().map((entry) => ({
       ...entry,
       functions: entry.functions.filter(
         (fn) => !query || fn.name.toLowerCase().includes(query) || entry.file.toLowerCase().includes(query),

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { allFormulas } from '../formulas/formulas';
 import { decompSection } from '../source/decomp';
-import { allPortFunctions, SOURCE_FILES } from '../source/ports';
+import { allPortFunctions, sourceFiles } from '../source/ports';
 import source from './TIDBITS.md?raw';
 import { parseTidbits, type Inline, type LinkTarget } from './markdown';
 
@@ -47,7 +47,7 @@ describe('TIDBITS.md', () => {
     const declared = allPortFunctions();
     for (const target of targets) {
       if (target.kind !== 'port') continue;
-      const file = SOURCE_FILES.find((path) => path.endsWith(`/${target.file}`));
+      const file = sourceFiles().find((path) => path.endsWith(`/${target.file}`));
       expect(file, `no file ${target.file}`).toBeDefined();
       const found = declared.some((fn) => fn.file === file && fn.name === target.name);
       expect(found, `${target.file} declares no ${target.name}`).toBe(true);

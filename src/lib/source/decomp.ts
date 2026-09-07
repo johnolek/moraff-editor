@@ -1,16 +1,19 @@
 /**
- * Ghidra's decompilation of the game, cut into one section per function.
+ * Ghidra's decompilation of each game, cut into one section per function.
  *
- * `dotu-tools/decomp/unf.c` is one megabyte of C with a header line above every function:
+ * `dotu-tools/decomp/unf.c` and `mw-tools/decomp/mw.c` are a megabyte apiece of C with a header
+ * line above every function:
  *
  *     // ==== sleep_monster @ 3000:d904 (size 288) callers: spell_effect  // the Sleep spell
  *
  * The header carries the name the reverse engineering gave the function, where it sits in the
- * executable, how many bytes of machine code it was, what calls it, and sometimes a note. The
- * whole file is imported as text and split here, so the Source tab can show any of the 647
- * functions without fetching anything.
+ * executable, how many bytes of machine code it was, what calls it, and sometimes a note. Both
+ * files are imported as text and split here, so the Source tab can show any of Dungeons of the
+ * Unforgiven's 647 functions or Moraff's World's 580 without fetching anything.
  */
+import type { GameId } from '../app-state.svelte';
 import unfSource from '../../../dotu-tools/decomp/unf.c?raw';
+import mwSource from '../../../mw-tools/decomp/mw.c?raw';
 
 /** One function of the decompilation, header facts and code. */
 export interface DecompSection {
@@ -26,6 +29,15 @@ export interface DecompSection {
   description: string | null;
   /** The C the header sits above, with the blank lines around it trimmed off. */
   body: string;
+}
+
+/** One game's decompilation: the executable it was read out of and every function of it. */
+export interface Decompilation {
+  /** The executable Ghidra read, as `UNF.EXE`. */
+  executable: string;
+  /** Every function, in the order the file lists them. */
+  sections: DecompSection[];
+  byName: Map<string, DecompSection>;
 }
 
 const HEADER = /^\/\/ ==== (\S+) @ ([0-9a-f]{4}:[0-9a-f]+) \(size (\d+)\) callers:(.*)$/;
@@ -75,29 +87,47 @@ export function parseSections(source: string): DecompSection[] {
   return sections;
 }
 
-export const SECTIONS: DecompSection[] = parseSections(unfSource);
-
-const BY_NAME = new Map(SECTIONS.map((section) => [section.name, section]));
-
-/** The decompilation of one function, or null for a name the file does not carry. */
-export function decompSection(name: string): DecompSection | null {
-  return BY_NAME.get(name) ?? null;
+function decompilationOf(executable: string, source: string): Decompilation {
+  const sections = parseSections(source);
+  return { executable, sections, byName: new Map(sections.map((section) => [section.name, section])) };
 }
 
-/** True for the 461 functions the reverse engineering never worked out a name for. */
+const DECOMPILATIONS: Record<GameId, Decompilation> = {
+  unforgiven: decompilationOf('UNF.EXE', unfSource),
+  moraffsWorld: decompilationOf('WORLD.EXE', mwSource),
+};
+
+/**
+ * One game's decompilation. Moraff's World ships two executables and `WORLD.EXE` is the game;
+ * Dungeons of the Unforgiven has only `UNF.EXE`.
+ *
+ * A caller that names no game means Dungeons of the Unforgiven, which is the game most of the
+ * site is about.
+ */
+export function decompilation(game: GameId = 'unforgiven'): Decompilation {
+  return DECOMPILATIONS[game];
+}
+
+/** The decompilation of one function, or null for a name that game's file does not carry. */
+export function decompSection(name: string, game: GameId = 'unforgiven'): DecompSection | null {
+  return DECOMPILATIONS[game].byName.get(name) ?? null;
+}
+
+/** True for the functions the reverse engineering never worked out a name for. */
 function isUnnamed(section: DecompSection): boolean {
   return section.name.startsWith('FUN_');
 }
 
 /**
- * Every function, the ones with a real name first and each half alphabetical, which is the
- * order the Source tab lists them in: a reader is looking for `sleep_monster`, not for the
- * four hundred odd `FUN_` addresses.
+ * Every function of one game, the ones with a real name first and each half alphabetical, which
+ * is the order the Source tab lists them in: a reader is looking for `sleep_monster`, not for
+ * the hundreds of `FUN_` addresses.
  */
-export function sectionsByName(): DecompSection[] {
+export function sectionsByName(game: GameId = 'unforgiven'): DecompSection[] {
   const byName = (a: DecompSection, b: DecompSection) => a.name.localeCompare(b.name);
+  const { sections } = DECOMPILATIONS[game];
   return [
-    ...SECTIONS.filter((section) => !isUnnamed(section)).sort(byName),
-    ...SECTIONS.filter(isUnnamed).sort(byName),
+    ...sections.filter((section) => !isUnnamed(section)).sort(byName),
+    ...sections.filter(isUnnamed).sort(byName),
   ];
 }

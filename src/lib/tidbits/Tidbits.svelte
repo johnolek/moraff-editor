@@ -1,6 +1,6 @@
 <script lang="ts">
   import { app } from '../app-state.svelte';
-  import { SOURCE_FILES, type SourceFile } from '../source/ports';
+  import { sourceFiles, type SourceFile } from '../source/ports';
   import PixelText from '../ui/PixelText.svelte';
   import source from './TIDBITS.md?raw';
   import { parseTidbits, searchTidbits, type Inline, type LinkTarget } from './markdown';
@@ -17,7 +17,7 @@
 
   /** The file an entry names by its bare name, as the Source tab keys it: by its whole path. */
   function sourceFile(name: string): SourceFile | null {
-    return SOURCE_FILES.find((file) => file.endsWith(`/${name}`)) ?? null;
+    return sourceFiles().find((file) => file.endsWith(`/${name}`)) ?? null;
   }
 
   function open(target: LinkTarget): void {

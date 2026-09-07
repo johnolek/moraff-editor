@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decompSection, parseSections, SECTIONS, sectionsByName } from './decomp';
+import { decompilation, decompSection, parseSections, sectionsByName } from './decomp';
 
 const FRAGMENT = [
   '// ==== entry @ 1000:0000 (size 355) callers:   // runtime entry: sets up DS/SS',
@@ -45,16 +45,34 @@ describe('parseSections', () => {
   });
 });
 
-describe('the decompilation the app ships', () => {
-  it('holds every function of the executable', () => {
-    expect(SECTIONS.length).toBe(647);
+describe('the decompilations the app ships', () => {
+  it('holds every function of both executables', () => {
+    expect(decompilation('unforgiven').sections.length).toBe(647);
+    expect(decompilation('moraffsWorld').sections.length).toBe(580);
   });
 
-  it('carries the code of a function the port cites', () => {
+  it('names the executable each one was read out of', () => {
+    expect(decompilation('unforgiven').executable).toBe('UNF.EXE');
+    expect(decompilation('moraffsWorld').executable).toBe('WORLD.EXE');
+  });
+
+  it('carries the code of a function the Dungeons of the Unforgiven port cites', () => {
     const sleep = decompSection('sleep_monster');
     expect(sleep).not.toBeNull();
     expect(sleep!.address).toBe('3000:d904');
     expect(sleep!.body).toContain('sleep_monster');
+  });
+
+  it('carries the code of a function the Moraff\'s World port cites', () => {
+    const roll = decompSection('roll_char', 'moraffsWorld');
+    expect(roll).not.toBeNull();
+    expect(roll!.address).toBe('3000:4695');
+    expect(roll!.body).toContain('roll_char');
+  });
+
+  it('looks in the game\'s own decompilation for a name', () => {
+    expect(decompSection('sleep_monster', 'moraffsWorld')).toBeNull();
+    expect(decompSection('read_roll_line')).toBeNull();
   });
 
   it('has nothing for a name it does not hold', () => {
@@ -63,8 +81,15 @@ describe('the decompilation the app ships', () => {
 
   it('lists the named functions before the ones only known by their address', () => {
     const names = sectionsByName().map((section) => section.name);
-    expect(names.length).toBe(SECTIONS.length);
+    expect(names.length).toBe(decompilation('unforgiven').sections.length);
     expect(names.filter((name) => name.startsWith('FUN_')).length).toBe(447);
     expect(names.findIndex((name) => name.startsWith('FUN_'))).toBe(200);
+  });
+
+  it('lists Moraff\'s World the same way', () => {
+    const names = sectionsByName('moraffsWorld').map((section) => section.name);
+    expect(names.length).toBe(decompilation('moraffsWorld').sections.length);
+    expect(names[0].startsWith('FUN_')).toBe(false);
+    expect(names[names.length - 1].startsWith('FUN_')).toBe(true);
   });
 });
