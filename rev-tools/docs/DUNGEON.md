@@ -443,14 +443,177 @@ that routine beside the map drawing and `H3.OVL`:
   level at `B48C` and leaves the column and row alone, and `1000:356F` remembers
   the square. The site's map draws the false floor as that landing square.
 
-## 9. What is not settled
+## 9. The town
 
-* **The town's own features.** `1000:552B` sends level 0 straight to the
-  ladder-down loop, and inside that loop there is a branch only level 0 takes
-  (`1000:55DD` to `561C`) which assigns the feature code from the variable at
-  `B7B8` rather than from a constant. `B7B8` has not been named from anywhere
-  else. The town's *walls* are the ordinary rule with `level = 0`, and the
-  seeded town map every new character starts with agrees with it.
+Level 0 is a floor of twenty by nineteen squares like any other, and its walls
+are the ordinary rule with `level = 0` — the town map seeded into every new
+character agrees with them, `SURVEY.md` section 3. Two things are its own: ten
+of its squares hold a building, and its ladders down are chosen by a looser test
+than the rest of the dungeon's.
+
+### The ten buildings
+
+`1000:10FD` is ten `IF column = c AND row = r THEN building = n` tests one after
+another, against the player's column at `B4CA` and row at `B4D2`. The number it
+leaves in `B53E` is what `1000:132A` hands to `ON building GOTO`:
+
+| square | code | building | routine | the line it opens with |
+|---|---|---|---|---|
+| 7, 3 | 1 | Flea Bag Inn | `1000:1E0A` | "Flea Bag Inn.  A room will cost 10 jewel pieces." (`C11C`) |
+| 3, 2 | 2 | Yuppydom Inn | `1000:1F3D` | "Yuppydom Inn.  A suite will cost 200 jewel pieces." (`C1EC`) |
+| 18, 17 | 3 | Kings Inn | `1000:1FCD` | "Kings Inn.  A grand suite will cost 6000 jewel pieces." (`C250`) |
+| 13, 3 | 4 | bank | `1000:22F7` | "You are in the bank. Your treasure has been exchanged for jewelry." (`C322`) |
+| 7, 15 and 14, 12 | 5 | temple | `1000:2522` | "A man in robes says, `Welcome to the temple." (`C494`) |
+| 18, 3 and 13, 18 and 2, 8 | 6 | store | `1000:281E` | "You are in the store." (`C742`) |
+| 6, 14 | 7 | wizard's guild | `1000:2BB8` | "You are in the wizard's guild." (`C958`) |
+
+Three of the ten squares are stores and two are temples, which is why ten
+squares hold seven kinds of building.
+
+**A building is up a rope.** Walking onto one of the ten squares reaches
+`1000:12C6`, which calls `10FD` and, where it comes back with something in
+`B53E`, prints "There's a rope above. Hit U to climb it." (`BD36`) and the
+`ROPE` prompt (`BD62`). `U` is the go-up key, and `1000:0DAF` sends it to
+`0DBD`, which calls `10FD` again and takes `1000:0DD7`'s `ON building GOTO`
+only when `B53E` is over zero *and* the level is zero. Both entrances test the
+level first (`1000:0642` and `0DD7`), so no square of any level below holds a
+building.
+
+The game's own automap draws none of this: `1000:527B` marks a square only when
+`7.NUM` has its bit, and none of the ten is in `7.NUM`. The buildings are on the
+site's map and were never on the game's.
+
+The town map seeded into every new character — the data statement in
+`CHCHAR.EXE`, `SURVEY.md` section 3 — has walked over four of the ten, and only
+those four: the Flea Bag Inn, the bank and one of the three stores, all on
+row 3, and the temple at 14, 12, where the seeded path stops.
+
+**The three inns** are the same routine three times over, and the money is a
+double at `B588`. The Flea Bag charges 10 (`C156`, deducted as `C15E`) and adds
+one health point to `B4F2` (`1000:1E4E`); the Yuppydom charges 200 (`C228`,
+`C230`) and adds three (`1F84`); the Kings charges 6000 (`C28C`, `C294`) and
+sets `B4F2` to the maximum at `B4EE` (`1000:2014`), which is the "A hotel staff
+cleric heals all of your wounds." at `C29C`. All three print "You are
+sleeping..." (`C238`) through `1000:1FBD`. The two cheaper ones heal in full
+anyway when the character owns rings of health — `CINT(B558) AND 1` at
+`1000:1E5C` and `1F92`, the same bit `1000:3B3C` prints "RINGS OF HEALTH" for —
+and both roll `1000:1EE2` afterwards, which one time in ten sets the money to
+zero and prints "I think
+that you were robbed." (`C1CA`). The Flea Bag rolls once more against being
+sick (`1000:1E7B`). Answering `N` leaves through `1000:1D96`; answering `Y`
+without the money reaches `1000:1DEF` and "A gaurd throws you out because you
+don't have enough money."
+
+**The bank** exchanges the treasure carried for jewel pieces, prints what is in
+the bank (`B590`) and what is in the pocket (`B588`), and takes `D`, `W` or `L`.
+Its sign at `1000:236C` offers the bank itself for "5,000,000 JP.  Heh heh heh."
+and nothing in the routine sells it.
+
+**The temple** is a menu of five, `1000:2663`'s `ON spell GOTO 2671 26C5 26FF
+2744 2789`, and every price is a double the branch subtracts, agreeing with the
+menu line above it: cure wounds 75 (`C608`), heal all wounds 1000 (`C618`), cure
+disease 400 (`C63E`), remove poison 20000 (`C672`), gain a level 500000
+(`C69E`). Cure wounds adds `INT(RND * 8) + 4` health (`1000:268D`).
+
+**The store** lists seven weapons and armours from a 10 JP knife to 10000 JP
+field plate armor, and its `ON GOTO` at `1000:29BF` has seven targets. Its
+eighth line, "8) The Town: 1000000 JP" (`C83A`), falls past the table to
+`1000:2B67` and "I'm also selling the Brooklyn bridge,      want to it, too?".
+
+**The wizard's guild** says what things do rather than selling them: 800 JP for
+the magic item list (`C9FE`), and for one level of spells, 1 to 6,
+`INT(level ^ 1.75 * 220)` — the two constants at `CA9E` and `CAA2`, computed at
+`1000:2DAE` and paid from `B588`.
+
+### The ladders down, and the branch only the town takes
+
+`1000:552B` opens with `cmp word ptr [B5DE], 0; jne`, which sends level 0 past
+the branch that reads the square's own code and straight into the ladder-down
+loop. That is why the town has no ladder up and no chute. Inside the loop,
+`1000:55DD` is a second branch only level 0 takes:
+
+```
+55da  e8 6c 00       call 5649           ; fold the code below to 1, 2 or 3
+55dd  83 3e de b5 00 cmp  word ptr [b5de], 0
+55e2  74 03          je   55e7           ;   the town
+55e4  e9 36 00       jmp  561d           ;   everything else: the exact test
+55e7  8b 1e de b5    mov  bx, [b5de]     ; the level
+55eb  cd 3f 57       CSNG
+55ee  8b 1e 5c b6    mov  bx, [b65c]     ; the step, 1 to 3
+55f2  cd 3f 71 80    STORE 80            ; the spill slot at B7B0 <- the level
+55f6  cd 3f 57       CSNG
+55f9  cd 3f 71 81    STORE 81            ; the one at B7B8 <- the step
+55fd  cd 3f 85 80    +    slot 80        ; level + step
+5601  bf c6 b4       mov  di, 0b4c6
+5604  cd 3f 99       -    acc, ES:DI     ;   less the folded code
+5609  bf f6 b7       mov  di, 0b7f6      ; 1
+560c  cd 3f a1       CMP  acc, ES:DI
+560f  72 03          jb   5614           ;   under one?
+5614  8b fb          mov  di, bx         ; the code
+5616  be b8 b7       mov  si, 0b7b8      ;   <- the step
+5619  cd 3f 7b       LET
+561c  c3             ret
+```
+
+`B7B8` is not a variable of the program at all. `B7B0`, `B7B8`, `B7C0` and
+`B7C8` are the four spill slots the compiler keeps eight bytes apart just below
+the constant pool, and `INT 3F $71` — `STORE`, with an inline slot byte of `80`
+to `83` — is what writes them. `1000:6FC7` gives it away, where a packed monster
+slot is split into its two halves: `STORE 80` keeps the whole number and
+`STORE 81` at `6FDB` keeps it divided by 32, the accumulator goes on to `INT`
+that, multiply it back by 32 and take the result off slot 80 for one half, and
+`1000:6FF2` then wants the divided number again and reads it by the address
+`B7B8`. Nothing in the module assigns `B7B8`, so were it an ordinary variable it
+would be zero for the whole run, and the other half of every monster's position
+with it. So `STORE 81` at `55F9` is what puts the step in `B7B8`, and `5616`
+reads it straight back out. The line is
+
+```
+IF level = 0 AND (level + step) - code < 1 THEN code = step
+```
+
+with the level zero, which is `step <= code`. The ordinary test at `1000:561D`
+compares the step against the folded code for equality; the town takes any level
+below that folds to *at least* the distance, and the ladder spans the distance
+asked for.
+
+That is the difference between three ladders down out of the town and ten:
+
+| square | spans | the exact test would give |
+|---|---|---|
+| 1, 2 | 2 | nothing |
+| 15, 5 | 2 | 2 |
+| 18, 5 | 2 | nothing |
+| 11, 6 | 1 | nothing |
+| 4, 10 | 2 | nothing |
+| 5, 10 | 1 | 1 |
+| 13, 13 | 1 | nothing |
+| 7, 14 | 1 | nothing |
+| 20, 15 | 1 | nothing |
+| 16, 19 | 1 | nothing |
+
+and **ten is exactly what `7.NUM` marks on level 0** — those ten squares and no
+others. That is the check on the reading: `read_dungeon.py --formula --level 0`
+finds nothing to disagree about in the nineteen rows the game uses, where the
+exact test misses seven of the ten. It is a cleaner agreement than the rest of
+the dungeon manages, where recomputing the formula disagrees with the file about
+135 squares in 28,000 (section 8). The two `?` the printout does put in row 20
+are in the row `FOR row = 1 TO 19` never reaches; 74 of the dungeon's own 135
+are in that row as well, leaving 61 in the nineteen rows that matter.
+
+The `7.NUM` bit is a gate in front of all of this — with it clear, `1000:5500`
+sets the code to 50 and nothing is on the square whatever the formula says — and
+in the town the gate and the formula pick the same ten squares, so it never has
+to decide anything.
+
+Seven of the ten land beside a ladder up that climbs further than the ladder
+down came, which is what taking a ladder that reaches further than you asked for
+costs: (11, 6) of the town is a ladder down one level, and (11, 6) of level 1 is
+a ladder up two, which is a level above the town. Elsewhere in the dungeon the
+two always pair.
+
+## 10. What is not settled
+
 * **`SIN` beyond the four digits that matter.** `mbf.py`'s `sin` reproduces
   BRUN30's routine step for step, and its wall values match every replay above,
   but the last bit of the polynomial has not been checked against the run-time

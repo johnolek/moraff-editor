@@ -118,9 +118,14 @@ def has_feature(column, row, level):
     It asks for the square's own code first, and then, for each of the three
     levels below, whether that level's code folds down to the distance -- the
     loop at 1000:55A6, which is what a ladder going down is.
+
+    The town is two branches of its own.  1000:552B sends level 0 past the
+    square's own code and straight into the loop, and 1000:55DD takes the ladder
+    there when the level below folds to at least the distance rather than
+    exactly it.  `../docs/DUNGEON.md` section 9 reads both out.
     """
     low, high = FEATURE_RANGE
-    if low <= feature_code(column, row, level) <= high:
+    if level > 0 and low <= feature_code(column, row, level) <= high:
         return True
     for step in (1, 2, 3):
         if level + step > DEEPEST_LEVEL:
@@ -132,7 +137,7 @@ def has_feature(column, row, level):
         for _ in range(2):
             if code > 3:
                 code -= 3
-        if code == step:
+        if step <= code if level == 0 else step == code:
             return True
     return False
 

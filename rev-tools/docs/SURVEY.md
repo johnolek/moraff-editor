@@ -664,8 +664,10 @@ and on 100 squares it does not — 135 disagreements in 28,000, which is what a
 24-bit mantissa costs when the product reaches 400,000 and the remainder has
 less than a unit of room left. **`7.NUM` is an index of that expression, not a
 description of the dungeon.** `read_dungeon.py --formula` marks the squares the
-two disagree about. The town is its own case: `1000:552B` sends level 0 straight
-to the ladder-down loop, and the formula does not describe its ten squares.
+two disagree about. The town is its own case, and a cleaner one: `1000:552B`
+sends level 0 straight to the ladder-down loop and `1000:55DD` loosens the test
+inside it, and the formula then produces exactly the ten squares the file marks
+on level 0 — `DUNGEON.md` section 9.
 
 So a square carries a ladder up when its own code is 1 to 9, and a ladder down
 when one of the three levels below has a code of 1 to 9 that folds to the
@@ -810,8 +812,6 @@ are 40 by 14 bits, 20 by 14 pixels. `read_dungeon.py` draws them.
 ### What is still open
 
 * what `2.NUM`'s number is in the game's own terms, and what its sign means.
-* what the town's ten `7.NUM` squares are. The formula does not produce them and
-  `1000:552B` sends level 0 down a path of its own.
 
 ## 4. The plan
 
