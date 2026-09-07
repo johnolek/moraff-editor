@@ -5,13 +5,14 @@
   import { floorBounds, floorsOfModule, summarizeFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
+  import { HistoryCursor, isAppHistoryState, type AppHistoryState } from '../history';
   import { isOnMap, MAP_COLUMNS, MAP_ROWS } from './area';
   import { downloadFloorPng } from './export-png';
   import { describeMonster, describeNote, describeSquare, featureLine } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
   import { jumpTarget, squareFeature, teleporterTargets, type Destination } from './floor-info';
-  import { FLOOR_MAX, FLOOR_MIN, HistoryCursor, isMapHistoryState, type MapHistoryState, type MapPlace } from './history';
+  import { FLOOR_MAX, FLOOR_MIN, type MapPlace } from './history';
   import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
   import Legend from './Legend.svelte';
@@ -99,9 +100,9 @@
 
   onMount(() => {
     const state = history.state;
-    if (isMapHistoryState(state)) {
+    if (isAppHistoryState(state) && state.map) {
       historyCursor = historyCursor.movedTo(state.index);
-      applyPlace(state.place);
+      applyPlace(state.map);
       return;
     }
     history.replaceState(entry(0, { module: moduleIndex, floor, square: null, you }), '');
@@ -109,8 +110,8 @@
 
   /** The browser structured-clones what it stores, and Svelte's state proxies cannot be cloned, so
    *  the place is snapshotted into plain objects first. */
-  function entry(index: number, place: MapPlace): MapHistoryState {
-    return $state.snapshot({ kind: 'map-place', index, place });
+  function entry(index: number, place: MapPlace): AppHistoryState {
+    return $state.snapshot({ kind: 'moraff-tools', tab: app.tab, index, map: place });
   }
 
   /** Go to another floor and leave a history entry behind, so the browser's Back button returns to
@@ -137,9 +138,9 @@
   }
 
   function onPopState(event: PopStateEvent) {
-    if (!isMapHistoryState(event.state)) return;
+    if (!isAppHistoryState(event.state) || !event.state.map) return;
     historyCursor = historyCursor.movedTo(event.state.index);
-    applyPlace(event.state.place);
+    applyPlace(event.state.map);
   }
 
   function changeModule(event: Event) {
