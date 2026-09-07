@@ -394,10 +394,10 @@ DGROUP address in BX.
 
 | values | fields | what |
 |---|---|---|
-| 1–6 | 6 singles | the six characteristics, scaled — see below |
+| 1–6 | 6 singles | the six characteristics, each stored as `3 × stat + 237` |
 | 7–11 | 5 singles | four not identified, and the class: value 10 is 1 for a fighter and 2 for a wizard |
-| 12–16 | double, 4 singles | experience; then the cells the statistics screen prints as player level, maximum health points and current health points; then one more |
-| 17–26 | 2 singles, 2 doubles, 6 singles | player weight; ?; pocket money; money in bank; ?; spell points; four more |
+| 12–16 | double, 4 singles | experience `+ 12316`; player level `+ 476`; maximum health points `+ 376`; current health points `+ 176`; one more |
+| 17–26 | 2 singles, 2 doubles, 6 singles | player weight `+ 71`; one not identified, `+ 4434`; pocket money `+ 223`; money in bank; ?; spell points; four more |
 | 27–36 | 10 singles | an array |
 | 37–46 | 10 singles | an array |
 | 47–116 | 70 singles | an array |
@@ -435,22 +435,94 @@ The class is value 10, the variable at `B57E`, and the same screen settles it:
 characters: `1.EXE`, `2.EXE` and `5.EXE` have a 1 there and no spell points,
 `3.EXE` and `4.EXE` have a 2.
 
-Two fields are stored in some form other than the number the player sees, and
-neither transform has been worked out:
+Nine of the twenty-six scalar fields are stored shifted. The game adds a fixed
+amount on the way out and takes the same amount off on the way in, which is
+enough to stop anybody editing a character in a text editor — nothing a player
+would want to raise appears in the file as itself. The load routine subtracts
+at `1000:B674`, the save routine at `1000:B308` adds the same constants back,
+and `CHCHAR.EXE` writes the file that way in the first place.
 
-* **the six characteristics.** Across the five shipped characters all thirty
-  values are multiples of three between 255 and 303, so the file holds something
-  like `3 * (stat + 81)` rather than a stat. Divided that way they come out as
-  4 to 20 with totals of 66 to 73, which is the right shape for six rolls out of
-  a fixed pool, and consistent with `CHCHAR.EXE` telling the player to hold out
-  for a strength of 22 or more.
-* **the player level cell**, which is 476 in four of the five characters and 480
-  in the fifth. Either it is scaled the same way, or the level is recomputed
-  from experience at load and the stored value is something else.
+The six characteristics are the only field scaled as well as shifted. Reading
+one back:
 
-Everything else reads straight. `1.EXE` is a fighter with 12,316 experience,
-398 maximum and 198 current health points, weight 221, 239 jewel pieces in
-pocket and none in the bank, no spell points.
+```
+b6bf  bf 44 d7       mov  di, 0D744h               ; -237
+b6c2  cd 3f 7f       QB3F $7F                      ; the value just read, plus that
+b6c5  bf 60 bb       mov  di, 0BB60h               ; 3
+b6c8  cd 3f 89       QB3F $89                      ; divided by three
+b6cd  cd 3f 7d       QB3F $7D                      ; into characteristic I
+```
+
+so a characteristic is `(stored - 237) / 3`. `1000:B342` writes it back as
+`3 × stat + 237`, and `CHCHAR.EXE` builds the file the same way at its own code
+offset `127E`. That puts the shipped range of 255 to 303 at 6 to 22, which is
+what `CHCHAR.EXE` means when it tells the player to hold out for "a high
+strength (22 or more)": 22 is the top of the scale. The order is the one
+`CHCHAR.EXE` prints — strength, intelligence, wisdom, health, agility,
+laziness — confirmed from the other end by `STRENGTH DRAINED!` at `1000:9EFA`
+taking one off element 1 and `AGILITY IS DRAINED!` at `1000:9F52` taking one
+off element 5.
+
+The other eight fields are shifted only:
+
+| field | shift | subtracted at |
+|---|---|---|
+| experience | 12,316 | `1000:B74A` |
+| player level | 476 | `1000:B757` |
+| health points, maximum | 376 | `1000:B764` |
+| health points, current | 176 | `1000:B76F` |
+| player weight | 71 | `1000:B7D5` |
+| value 18, not identified | 4,434 | `1000:B7E2` |
+| pocket money | 223 | `1000:B7EF` |
+
+Money in bank, spell points and everything from value 21 onwards are stored
+plain.
+
+The player level is an ordinary count that starts at zero, so the 476 four of
+the five shipped characters hold is level 0. A new character is given
+`level = 0` at `1000:3E39`, reincarnation resets it to 0 at `1000:A172`, buying
+a level at the temple for 500,000 jewel pieces adds 1 at `1000:2044`, and the
+statistics screen prints the variable with nothing done to it at `1000:1BAF`.
+The characteristics never reach that screen at all; `CHCHAR.EXE` is the only
+program that shows them, and only while the player is deciding whether to keep
+the roll.
+
+Decoded, the five characters on this disk are:
+
+| | 1.EXE | 2.EXE | 3.EXE | 4.EXE | 5.EXE |
+|---|---|---|---|---|---|
+| name in `F5.COM` | THE FIRST CHARACTER | FIGHTY | — | — | — |
+| class | fighter | fighter | wizard | wizard | fighter |
+| strength | 20 | 10 | 6 | 13 | 20 |
+| intelligence | 14 | 17 | 18 | 22 | 9 |
+| wisdom | 11 | 9 | 17 | 10 | 8 |
+| health | 15 | 18 | 13 | 10 | 15 |
+| agility | 11 | 10 | 12 | 14 | 15 |
+| laziness | 14 | 14 | 15 | 14 | 14 |
+| player level | 0 | 0 | 0 | 0 | 4 |
+| experience | 0 | 0 | 0 | 0 | 4,273 |
+| health points | 22 of 22 | 32 of 32 | 19 of 19 | 16 of 16 | 57 of 72 |
+| spell points | 0 | 0 | 7 | 6 | 0 |
+| player weight | 150 | 150 | 150 | 150 | 225 |
+| pocket money | 16 | 11 | 13 | 12 | 0 |
+| money in bank | 0 | 0 | 0 | 0 | 971 |
+
+Four of the five have never been anywhere: level 0, no experience, full health,
+the weight of 150 `CHCHAR.EXE` starts everybody with, and a purse holding the
+same 11-to-20 roll `CHCHAR.EXE` uses for starting health points, which is how
+the pocket money shift was checked. The two wizards are the two with spell
+points. Only `5.EXE` has played.
+
+What the record still does not explain is values 7, 8, 9, 11 and 16, values 18
+and 21, values 23 to 26, and the five arrays. Values 7, 8 and 9 are set from
+strength, health and agility when the character is created — `CHCHAR.EXE`
+computes them at its offsets `0D0F`, `0CCE` and `0D48`, as `strength - 11`,
+`health × 3 - 39` and `agility - 12`, each with a second branch taken when the
+result comes out below one. Value 9 matches all five shipped characters (it is
+zero below one); the other two match only three of them, so something in the
+game rewrites them during play — which is what a to-hit or damage modifier
+would do. Settling those two means naming the arithmetic routines their
+branches go through, which is the run-time naming work.
 
 **`<n>.BIN`** is a `BSAVE` of the explored-map array: 1,511 singles, laid out as
 BASIC lays out `DIM M(20, 70)` — column by column, so dungeon level *L* starts
@@ -520,9 +592,10 @@ guessing at the bytes.
 
 ### What is feasible
 
-* **Reading the save format.** Most of the way there already; a save editor for
-  Moraff's Revenge is a small job once the two scaled fields are settled. The
-  explored map is fully understood and can be drawn today.
+* **Reading the save format.** Done, apart from ten values of the character
+  record that nothing yet explains; the scaling is off it, so a save editor for
+  Moraff's Revenge is a small job. The explored map is fully understood and can
+  be drawn today.
 * **Reading the game's rules out of the disassembly.** Slower than for the other
   two games but not harder in kind, because compiled QuickBASIC 3.0 is close to
   a transcript of the source. The prices, the messages, the menu structure, the
