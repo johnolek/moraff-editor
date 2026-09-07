@@ -43,7 +43,7 @@ export function gainOrDrain(game: Game, amount: number): string {
 
 /**
  * strike (exe 2000:7e36, unf.c "strike"): one swing at the monster the player is engaging.
- * Returns the damage it did; zero is a miss.
+ * Returns the damage it did; zero is a miss. The caller only reaches it with something engaged.
  *
  * The roll is a d80 plus everything the character brings, less twice the monster's level and its
  * type's to-hit armor and speed. Every full 40 points the roll ends up above 40 rolls the
@@ -324,8 +324,8 @@ export function defend(game: Game, slot: number): number {
   const monster = game.monsters[slot];
   const kind = game.monsterKinds[monster.type];
   if (kind.special === 6) return puffball(game, slot);
-  // The two spells that stop a monster are shaken off early by the deep floors: every attack the
-  // monster does not make is another roll at waking it up.
+  // Every attack the monster does not make is another roll at shaking the spell off, and the
+  // deeper the floor the likelier that roll is to land.
   if (pc.sleepTimer >= 1) {
     pc.sleepTimer -= 1;
     if (game.rng.random(500) < pc.level) pc.sleepTimer = 0;
@@ -355,8 +355,8 @@ export function defend(game: Game, slot: number): number {
   // The original sets a flag at DS:c64f here that nothing in the game ever reads back.
   let damage = 0;
   if (pc.level > 75) chance += Math.trunc((pc.level - 75) / 2);
-  // The roll has to clear 32 to do any damage at all but 40 comes off for each die rolled, so a
-  // roll of 33 rolls the die once and the swing after it starts 7 points in hand.
+  // The roll has to clear 32 for the first die but 40 comes off for each one, so 33 rolls the
+  // die once, 73 rolls it twice, and every 40 points after that rolls it again.
   while (chance > 32) {
     damage += game.rng.random(stats.damageDie);
     chance -= 40;
