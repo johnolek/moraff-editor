@@ -22,6 +22,7 @@ import {
 import type { MwGame, MwSpellChoice } from '../../game/mw-port/state';
 import type { MwGameSession, MwTurn } from './engine';
 import { drawArmorSlotMenu, drawDirectionMenu, drawWeaponSlotMenu } from './menus';
+import { swallowAPill } from './pills';
 import { runAsking } from './replay';
 import { mwNotBuiltYet, MW_TEXT_COLOUR } from './screens';
 
@@ -69,9 +70,9 @@ export async function castAtTheSpellScreen(turn: MwTurn): Promise<void> {
  * movecontrol, case 0x69 of the same switch: the I key asks what kind of thing is being used
  * before it does anything with it.
  *
- * The first three answers open the spell screen on the scrolls, the wands and the magic paper.
- * The fourth is the vitamin pills and the fifth the six things a kill turns up; neither is
- * ported. Unlike the C key, none of this lets the monsters move.
+ * The first three answers open the spell screen on the scrolls, the wands and the magic paper,
+ * the fourth is the vitamin pills and the fifth the six magic items a kill turns up. Unlike the
+ * C key, none of this lets the monsters move.
  */
 export async function useAnItem(turn: MwTurn): Promise<void> {
   const { game, session } = turn;
@@ -97,7 +98,7 @@ export async function useAnItem(turn: MwTurn): Promise<void> {
     if (cost !== 0) session.fighting(() => spendTheSpellsTime(game, cost));
     return;
   }
-  if (answer === 4) mwNotBuiltYet(game, 'SWALLOW A MAGIC VITAMIN PILL');
+  if (answer === 4) await swallowAPill(session);
   if (answer === 5) mwNotBuiltYet(game, 'USE A RING, A GRENADE OR ANOTHER MAGIC ITEM');
 }
 

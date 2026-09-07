@@ -71,13 +71,6 @@ describe('the I key', () => {
     expect(session.game.pc.wands[at(3, 1, 1)]).toBe(3);
     expect(session.game.pc.protectionLevel).toBe(1);
   });
-
-  it('says what a vitamin pill would have done', async () => {
-    const session = playingMw(priest());
-    await pressMw(session, MW_KEY.useItem);
-    await pressMw(session, 0x34);
-    expect(session.box).toEqual(['NOT BUILT YET: SWALLOW A MAGIC VITAMIN PILL']);
-  });
 });
 
 describe('a spell that stops for a menu', () => {

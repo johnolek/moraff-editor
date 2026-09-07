@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { drawDropCoinsMenu, drawDropMenu, dropArmor, dropCoins, dropWeapon } from './items';
+import {
+  drawDropCoinsMenu,
+  drawDropMenu,
+  drawPillMenu,
+  dropArmor,
+  dropCoins,
+  dropWeapon,
+  takeAPill,
+} from './items';
 import { newMwGame } from './state';
 
 describe('drawDropMenu', () => {
@@ -92,5 +100,75 @@ describe('dropCoins', () => {
     const game = newMwGame({ pc: { stones: [10, 20, 30, 40, 50, 60] } });
     dropCoins(game, 6);
     expect(game.pc.stones[5]).toBe(60);
+  });
+});
+
+describe('drawPillMenu', () => {
+  it('lists the six pills in the order the menu prints them', () => {
+    const game = newMwGame();
+    drawPillMenu(game);
+    expect(game.messages).toEqual([
+      'PRESS 1-6 TO TAKE A PILL:',
+      '1) GREEN PILL',
+      '2) ORANGE PILL',
+      '3) YELLOW PILL',
+      '4) RED PILL',
+      '5) BLUE PILL',
+      '6) WHITE PILL',
+      'HIT ESCAPE TO RETURN TO GAME',
+    ]);
+  });
+});
+
+describe('takeAPill', () => {
+  it('trades two points of agility for four of intelligence', () => {
+    const game = newMwGame({ pc: { pills: [0, 1, 0, 0, 0, 0], iq: 20, dex: 20 } });
+    takeAPill(game, 1);
+    expect(game.pc.iq).toBe(24);
+    expect(game.pc.dex).toBe(18);
+    expect(game.pc.pills[1]).toBe(0);
+    expect(game.messages[0]).toBe('YOUR INTELLIGENCE HAS BEEN');
+  });
+
+  it('reads a different byte for every line of the menu', () => {
+    const held = [
+      { choice: 1, byte: 1, raised: 'iq' },
+      { choice: 2, byte: 0, raised: 'str' },
+      { choice: 3, byte: 5, raised: 'luck' },
+      { choice: 4, byte: 3, raised: 'con' },
+      { choice: 5, byte: 2, raised: 'wis' },
+      { choice: 6, byte: 4, raised: 'dex' },
+    ] as const;
+    for (const pill of held) {
+      const pills = [0, 0, 0, 0, 0, 0];
+      pills[pill.byte] = 1;
+      const game = newMwGame({ pc: { pills } });
+      const before = game.pc[pill.raised];
+      takeAPill(game, pill.choice);
+      expect(game.pc[pill.raised]).toBe(before + 4);
+      expect(game.pc.pills[pill.byte]).toBe(0);
+    }
+  });
+
+  it('sends the character off to kill a level drainer for a pill they have none of', () => {
+    const game = newMwGame({ pc: { pills: [0, 0, 0, 0, 0, 0], iq: 20, dex: 20 } });
+    takeAPill(game, 1);
+    expect(game.pc.iq).toBe(20);
+    expect(game.pc.dex).toBe(20);
+    expect(game.messages).toEqual([
+      "DON'T YOU THINK YOU'D BETTER",
+      '  FIND ONE FIRST? TRY KILLING',
+      '  LEVEL DRAINERS.',
+      '',
+      'HIT ANY KEY...',
+    ]);
+  });
+
+  it('takes nothing for a key off the menu', () => {
+    const game = newMwGame({ pc: { pills: [1, 1, 1, 1, 1, 1] } });
+    takeAPill(game, 7);
+    takeAPill(game, 0);
+    expect(game.pc.pills).toEqual([1, 1, 1, 1, 1, 1]);
+    expect(game.messages).toEqual([]);
   });
 });
