@@ -116,19 +116,6 @@ export function mwCharges(game: MwGame): MwChargeGroup[] {
   ];
 }
 
-/**
- * What a spell out of the spellbook costs before it is cast: its level off the spell points, and
- * a permanent spell the same again off the maximum, for good.
- */
-export function mwSpellbook(game: MwGame): MwPanelLine[] {
-  return mwSpellHoldings(game)
-    .filter((held) => held.inSpellbook)
-    .map((held) => ({
-      label: held.name,
-      value: held.maximumCost > 0 ? `${held.spellPointCost} SP, ${held.maximumCost} for good` : `${held.spellPointCost} SP`,
-    }));
-}
-
 /** The monster the character is fighting, as strike and experience_for_kill see it. */
 export interface MwEngagedMonster {
   name: string;

@@ -9,7 +9,6 @@
     mwEngagedMonster,
     mwGoing,
     mwMonstersNearby,
-    mwSpellbook,
     mwSpellsInForce,
     mwSquareFacts,
     type MwPanelLine,
@@ -38,7 +37,6 @@
       ailing: mwAilments(game.pc),
       spells: mwSpellsInForce(game),
       charges: mwCharges(game).filter((group) => group.lines.length > 0),
-      spellbook: mwSpellbook(game),
       going: mwGoing(game),
     };
   });
@@ -137,15 +135,6 @@
       {/each}
     {:else}
       <p class="empty">No scroll, wand or paper with a charge on it.</p>
-    {/if}
-  </section>
-
-  <section>
-    <h3>What your spells cost</h3>
-    {#if numbers.spellbook.length > 0}
-      {@render rows(numbers.spellbook)}
-    {:else}
-      <p class="empty">Nothing in the spellbook yet.</p>
     {/if}
   </section>
 
