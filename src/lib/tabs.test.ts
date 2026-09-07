@@ -24,7 +24,7 @@ describe('the tab to show', () => {
   });
 
   it('falls back to the Save Editor when the game has no such tab', () => {
-    expect(tabFor('moraffsWorld', 'monsters')).toBe('editor');
+    expect(tabFor('moraffsWorld', 'calculators')).toBe('editor');
     expect(tabFor('moraffsWorld', 'snake')).toBe('editor');
   });
 });

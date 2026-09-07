@@ -185,7 +185,7 @@ describe('switching games', () => {
 
   it('moves off a tab the other game does not have', () => {
     switchGame('unforgiven');
-    app.tab = 'monsters';
+    app.tab = 'calculators';
     switchGame('moraffsWorld');
     expect(app.tab).toBe('editor');
   });
