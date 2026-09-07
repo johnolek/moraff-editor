@@ -140,10 +140,9 @@ def has_feature(column, row, level):
 def show_features(values, explored, only_level, formula=False):
     """Draw the squares that hold a fixed feature, one level at a time.
 
-    A set bit means the square has a ladder or a false floor on it; which of
-    them it is comes from the routine at 1000:5793, which multiplies the column,
-    the row and the level together rather than reading anything out of the file,
-    so it cannot be shown here.
+    A set bit means the square has a ladder or a false floor on it.  Which of
+    them it is comes out of `feature_code` below rather than out of the file,
+    so it cannot be drawn here.
     """
     for level in range(len(values) // read_bsave.LEVEL_STRIDE):
         if only_level is not None and level != only_level:
@@ -169,7 +168,7 @@ def show_features(values, explored, only_level, formula=False):
                     line += "."
             print("  " + line)
         if formula and disagreed:
-            print("  (%d squares where the formula and the file disagree)" % disagreed)
+            print("  (%d squares the formula disagrees about)" % disagreed)
 
 
 def show_monsters(values, strengths, only_level):
@@ -239,9 +238,10 @@ def main():
     parser.add_argument("files", nargs="+")
     parser.add_argument("--explored", help="a character's <n>.BIN, drawn under 7.NUM")
     parser.add_argument("--level", type=int, help="only this dungeon level")
-    parser.add_argument("--picture", type=int, help="only this picture of 4.NUM or 6.NUM")
+    parser.add_argument("--picture", type=int,
+                        help="only this picture of 4.NUM or 6.NUM")
     parser.add_argument("--formula", action="store_true",
-                        help="mark the 7.NUM squares the feature routine disagrees about")
+                        help="mark the 7.NUM squares the formula disagrees about")
     args = parser.parse_args()
     explored = None
     if args.explored:

@@ -643,7 +643,9 @@ right operand's exponent is zero and 0 when the left one's is, and `$87` is a
 divide, subtracting exponents at CS:B541. So the code is
 
 ```
-INT( ((column + 7) ^ 1.3 * (row + 6) ^ 1.2 * (level + step + 1) ^ 1.1) MOD 300 ) - 3
+INT( ( (column + 7) ^ 1.3
+     * (row + 6) ^ 1.2
+     * (level + step + 1) ^ 1.1 ) MOD 300 ) - 3
 ```
 
 with `step` 0 for the square you are on and 1, 2 and 3 for the three levels
