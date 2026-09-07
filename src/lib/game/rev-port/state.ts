@@ -86,11 +86,8 @@ export interface RevGame extends RevGameOptions {
   /** The foreground COLOR was last set to, and the background. */
   colour: number;
   background: number;
-  /**
-   * The subscript `nextColour` (CHCHAR 16E8) is on. It counts 1 to 6 and then wraps to 0, and
-   * element 0 of the colour table is never filled in, so every seventh paragraph is printed in
-   * colour 0 — black on black.
-   */
+  /** The subscript `nextColour` (CHCHAR 16E8) is on: it counts 1 to 6 and then wraps to 0, the
+   *  blue entry of the colour table. */
   colourStep: number;
   pc: RevCharacter;
 }
