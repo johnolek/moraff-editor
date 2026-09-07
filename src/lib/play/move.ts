@@ -12,10 +12,11 @@ import { drawMonsterView } from './office';
  * four comparisons rather than working it out, and the tables here are those comparisons.
  */
 
-/** Which way the character ends up facing after each of the three turns. */
+/** Which way the character ends up facing after each of the three turns. Two of them are
+ *  exported because `keys.ts` works out which turn a compass direction wants from them. */
 const AROUND = [1, 0, 3, 2];
-const LEFT = [2, 3, 1, 0];
-const RIGHT = [3, 2, 0, 1];
+export const LEFT = [2, 3, 1, 0];
+export const RIGHT = [3, 2, 0, 1];
 
 /** What a square's side reads when a module teleporter stands in it (exe 2000:c22d). */
 const MODULE_TELEPORTER = 4;

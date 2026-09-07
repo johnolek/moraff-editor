@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { gameKey, INTERCEPTED_KEYS, KEY, KEY_BUTTONS } from './keys';
+import { BorlandRng } from '../game/port/rng';
+import { inTheTown, settle } from './battle.test-support';
+import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY, KEY_BUTTONS } from './keys';
 
 /** A key event as a browser would hand one over. */
 const press = (key: string, modifiers: Partial<KeyboardEvent> = {}) => ({ key, altKey: false, ctrlKey: false, metaKey: false, ...modifiers }) as KeyboardEvent;
@@ -63,5 +65,37 @@ describe('the buttons under the game', () => {
 
   it('starts with the four the game’s own button bar starts with', () => {
     expect(KEY_BUTTONS.slice(0, 4).map((button) => button.label)).toEqual(['MOVE FORWARD', 'TURN LEFT', 'TURN AROUND', 'TURN RIGHT']);
+  });
+});
+
+describe("Moraff's World's arrows in Dungeons of the Unforgiven", () => {
+  it('steps without turning when the arrow points the way the character faces', () => {
+    expect(compassKeys(KEY.arrowUp, 0)).toEqual([KEY.arrowUp]);
+    expect(compassKeys(KEY.arrowLeft, 2)).toEqual([KEY.arrowUp]);
+    expect(compassKeys(KEY.arrowDown, 1)).toEqual([KEY.arrowUp]);
+  });
+
+  it('takes the fewest turns and then steps', () => {
+    // Facing north, west is the turn to the left, east the turn to the right, south the way back.
+    expect(compassKeys(KEY.arrowLeft, 0)).toEqual([KEY.arrowLeft, KEY.arrowUp]);
+    expect(compassKeys(KEY.arrowRight, 0)).toEqual([KEY.arrowRight, KEY.arrowUp]);
+    expect(compassKeys(KEY.arrowDown, 0)).toEqual([KEY.arrowDown, KEY.arrowUp]);
+    // Facing east, north is the turn to the left, south the turn to the right, west the way back.
+    expect(compassKeys(KEY.arrowUp, 3)).toEqual([KEY.arrowLeft, KEY.arrowUp]);
+    expect(compassKeys(KEY.arrowDown, 3)).toEqual([KEY.arrowRight, KEY.arrowUp]);
+    expect(compassKeys(KEY.arrowLeft, 3)).toEqual([KEY.arrowDown, KEY.arrowUp]);
+  });
+
+  it('leaves every key that is not one of the four arrows alone', () => {
+    expect(compassKeys(KEY.fight, 0)).toEqual([KEY.fight]);
+    expect(compassKeys(KEY.homeTurnLeft, 0)).toEqual([KEY.homeTurnLeft]);
+  });
+
+  it('walks a character north who was facing east, both keys through movecontrol', async () => {
+    const session = inTheTown(new BorlandRng(3), { dir: 3 });
+    const start = session.view().place;
+    for (const key of compassKeys(KEY.arrowUp, session.game.pc.dir)) session.press(key);
+    await settle();
+    expect(session.view().place).toMatchObject({ x: start.x, y: start.y - 1, dir: 0 });
   });
 });

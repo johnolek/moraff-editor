@@ -10,6 +10,8 @@
  * one turns saving off and the other hands out ten hit points.
  */
 
+import { LEFT, RIGHT } from './move';
+
 /** Every key movecontrol reads, by the byte it dispatches on. */
 export const KEY = {
   /** Ctrl-F: keep fighting without another key until something stops it. */
@@ -98,6 +100,34 @@ export function gameKey(event: KeyboardEvent): number | null {
   if (LETTER.test(event.key)) return event.key.toLowerCase().charCodeAt(0);
   if (DIGIT.test(event.key)) return event.key.charCodeAt(0);
   return null;
+}
+
+/** Which way each arrow points for a player who has asked for Moraff's World's arrows, as the
+ *  facing both games keep: 0 north, 1 south, 2 west, 3 east. */
+const ARROW_DIRECTIONS: Record<number, number> = {
+  [KEY.arrowUp]: 0,
+  [KEY.arrowDown]: 1,
+  [KEY.arrowLeft]: 2,
+  [KEY.arrowRight]: 3,
+};
+
+/**
+ * The keys that step a character facing `facing` the way an arrow points, for a game being
+ * played with Moraff's World's arrows: the turn that leaves them facing that way, unless they
+ * face it already, and then the up arrow.
+ *
+ * Both are keys of this game's own, so movecontrol reads them one after the other and each of
+ * them costs what it costs. Anything but the four arrows is itself, since the rest of the
+ * keyboard is the same either way.
+ */
+export function compassKeys(key: number, facing: number): number[] {
+  const dir = ARROW_DIRECTIONS[key];
+  if (dir === undefined) return [key];
+  if (dir === facing) return [KEY.arrowUp];
+  if (dir === LEFT[facing]) return [KEY.arrowLeft, KEY.arrowUp];
+  if (dir === RIGHT[facing]) return [KEY.arrowRight, KEY.arrowUp];
+  // What is left is the way behind the character, which the down arrow turns them to in one key.
+  return [KEY.arrowDown, KEY.arrowUp];
 }
 
 /** One key on the row of buttons under the game. */

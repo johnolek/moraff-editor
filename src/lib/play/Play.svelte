@@ -11,7 +11,8 @@
   import Panel from './Panel.svelte';
   import Portrait from './Portrait.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
-  import { gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
+  import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
+  import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
   import { MENU_LINE_STEP, MENU_SPREAD_TO, MENU_TOP, MENU_X } from '../game/port/screens';
   import { MESSAGE_BOX_LINES } from './screens';
 
@@ -33,6 +34,7 @@
   let view = $state.raw<PlayView | null>(null);
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
+  let style = $state<MovementStyle>(readMovementStyle(UNFORGIVEN_MAP.id));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -113,13 +115,28 @@
   });
 
   function onKeyDown(event: KeyboardEvent) {
-    const playing = session;
-    if (app.tab !== 'play' || !playing || playing.over) return;
+    if (app.tab !== 'play' || !session || session.over) return;
     if (isTyping(event.target)) return;
     const key = gameKey(event);
     if (key === null) return;
     event.preventDefault();
-    playing.press(key);
+    press(key);
+  }
+
+  /** The style is picked with the mouse, and the arrow keys belong to the game rather than to a
+   *  radio button, so the control hands the keyboard back as soon as it has been answered. */
+  function chooseStyle(input: HTMLInputElement) {
+    writeMovementStyle(UNFORGIVEN_MAP.id, style);
+    input.blur();
+  }
+
+  /** A key on its way to the game. Under Moraff's World's arrows an arrow becomes the turn and
+   *  the step that come to the same thing here, and the loop reads them one after the other. */
+  function press(key: number) {
+    const playing = session;
+    if (!playing) return;
+    const keys = style === UNFORGIVEN_MAP.id ? [key] : compassKeys(key, playing.game.pc.dir);
+    for (const one of keys) playing.press(one);
   }
 
   function isTyping(target: EventTarget | null): boolean {
@@ -193,16 +210,26 @@
           </div>
         {/if}
         <div class="keys">
+          <div class="key-note">Arrow keys:</div>
+          <div class="styles">
+            {#each MOVEMENT_STYLES as choice}
+              <label>
+                <input type="radio" value={choice.id} bind:group={style} onchange={(event) => chooseStyle(event.currentTarget)} />
+                <span>{choice.label}</span>
+                <span class="how">{choice.how}</span>
+              </label>
+            {/each}
+          </div>
           <div class="key-note">The browser takes these, so here they are as buttons:</div>
           <div class="key-row">
             {#each INTERCEPTED_KEYS as button}
-              <button type="button" title={button.label} onclick={() => session?.press(button.key)}>{button.cap}</button>
+              <button type="button" title={button.label} onclick={() => press(button.key)}>{button.cap}</button>
             {/each}
           </div>
           <div class="key-note">Every key the game reads:</div>
           <div class="key-row">
             {#each KEY_BUTTONS as button}
-              <button type="button" title={button.label} onclick={() => session?.press(button.key)}>{button.cap}</button>
+              <button type="button" title={arrowLabel(style, button.key) ?? button.label} onclick={() => press(button.key)}>{button.cap}</button>
             {/each}
           </div>
         </div>
@@ -396,5 +423,30 @@
     flex-wrap: wrap;
     gap: 4px;
     margin-bottom: 10px;
+  }
+  .styles {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .styles label {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0 6px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .styles input {
+    grid-row: span 2;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+  .styles .how {
+    grid-column: 2;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
   }
 </style>
