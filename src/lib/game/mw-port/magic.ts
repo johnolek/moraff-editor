@@ -18,6 +18,37 @@ const ARMOUR_WEIGHTS = data.armour.map((armour) => armour.worth);
 /** How many moves a battle spell runs for, and how many more a second cast adds. */
 const SPELL_MOVES = 60;
 
+/**
+ * The monster table (exe DS:0237, 112 rows of 35 bytes), as the bytes of each row. Every byte a
+ * spell reads out of a row it reads as a signed char, which is what the Int8Array is for: the
+ * two bytes autokill adds together run past 127 on several monsters.
+ */
+const MONSTER_ROWS = data.monsters.map((monster) => {
+  const bytes = new Int8Array(monster.raw.length / 2);
+  for (let at = 0; at < bytes.length; at++) {
+    bytes[at] = parseInt(monster.raw.slice(at * 2, at * 2 + 2), 16);
+  }
+  return bytes;
+});
+
+/** Row offset 0x10, the kind, which spell_proof compares against 100. */
+const MONSTER_KIND = 0x10;
+
+/** Row offset 0x11, the hit points per floor of depth, which Drain Monster halves. */
+const MONSTER_HP_PER_FLOOR = 0x11;
+
+/**
+ * Row offsets 0x13 and 0x14, which autokill adds together and rolls against the character's
+ * mind. Nothing else in the game reads either byte, so neither has a name in `mw-data.json`.
+ */
+const MONSTER_MIND = [0x13, 0x14];
+
+/** The kind byte of the ten monsters that refuse every battle spell. */
+const SPELL_PROOF_KIND = 100;
+
+/** What autokill writes over the hit points of a monster whose brain it explodes. */
+const AUTOKILL_HP = -100;
+
 /** say_no_monster (WORLD.EXE 2000:c28a, mw.c "say_no_monster"). */
 export function sayNoMonster(game: MwGame): void {
   // DS:354f 3565 1476 20bd
@@ -378,5 +409,167 @@ export function resistDrain(game: MwGame): boolean {
     '',
     'HIT ANY KEY',
   );
+  return true;
+}
+
+/**
+ * explosion (WORLD.EXE 2000:c9d2, mw.c "explosion"): the three explosion spells, `size` 0 for
+ * Minor, 1 for Explosion and 2 for Major, doing 75 to 175, 125 to 225 and 200 to 500.
+ *
+ * The original reuses its own argument as the damage, testing it against 0, 1 and 2 in three
+ * separate ifs after the roll has already overwritten it. Every roll lands well above 2, so no
+ * spell is rolled twice, and this port keeps the cascade as it stands.
+ */
+export function explosion(game: MwGame, size: number): boolean {
+  if (game.engaged === -1) {
+    sayNoMonster(game);
+    return false;
+  }
+  let headline = '';
+  // DS:378e 37a7 37c0
+  if (size === 0) headline = 'A SMALL EXPLOSION OCCURS';
+  if (size === 1) headline = 'A LARGE EXPLOSION OCCURS';
+  if (size === 2) headline = 'A HUGE EXPLOSION OCCURS';
+  // The engaged check stands here a second time, unchanged.
+  if (game.engaged === -1) {
+    sayNoMonster(game);
+    return false;
+  }
+  let damage = size;
+  if (damage === 0) damage = game.rng.random(101) + 75;
+  if (damage === 1) damage = game.rng.random(101) + 125;
+  if (damage === 2) damage = game.rng.random(301) + 200;
+  game.monsters[game.engaged].hp -= damage;
+  // DS:37ef 3809 37d8 381f 1476 28ff
+  game.say(
+    headline,
+    '   ON THE GROUND DIRECTLY',
+    '   BELOW THE MONSTER.',
+    `   THE EXPLOSION DOES ${damage}`,
+    '   POINTS OF DAMAGE.',
+    '',
+    'HIT ANY KEY',
+  );
+  return true;
+}
+
+/**
+ * sleep_monster (WORLD.EXE 2000:caba, mw.c "sleep_monster"): Sleep, which puts the engaged
+ * monster out for ten of its own turns when `random(its depth)` comes out 0 — so the chance is
+ * one in its depth. Anything else prints "THE SPELL FAILS." and the spell still costs.
+ *
+ * The redundancy test asks whether the sleep timer is exactly 1, which is only true on the last
+ * turn of a sleep already running, so re-casting it at any other point rolls again.
+ */
+export function sleepMonster(game: MwGame): boolean {
+  if (game.engaged === -1) {
+    sayNoMonster(game);
+    return false;
+  }
+  if (game.pc.sleepTimer === 1) {
+    sayRedundant(game);
+    return false;
+  }
+  if (game.rng.random(game.monsters[game.engaged].depth) === 0) {
+    game.pc.sleepTimer = 10;
+    // DS:3834
+    game.monsterStatusLine = 'MONSTER IS SLEEPING';
+  } else {
+    // DS:3848 1476 28ff
+    game.say('THE SPELL FAILS.', '', 'HIT ANY KEY');
+  }
+  return true;
+}
+
+/**
+ * spell_proof (WORLD.EXE 2000:cc66, mw.c "spell_proof"): whether the engaged monster is one of
+ * the ten whose kind byte is 100 — ZEUS, the DEVIL and the eight quest bosses — which no battle
+ * spell that singles a monster out will touch.
+ *
+ * The two Hold Monster cases ask this before they check that a monster is engaged at all, and
+ * the original then reads the six bytes in front of the monster list. There is nothing in front
+ * of the list here, so the port answers no and the Hold goes on to its own engaged check.
+ */
+export function spellProof(game: MwGame): boolean {
+  if (game.engaged === -1) return false;
+  const kind = MONSTER_ROWS[game.monsters[game.engaged].type][MONSTER_KIND];
+  if (kind === SPELL_PROOF_KIND) {
+    // DS:3859 3876 3892 38ac 38c7 38e2 38fb 28ff
+    game.say(
+      '  WHEN YOU BEGIN TO CAST THE',
+      'SPELL THE MONSTER STOPS YOU',
+      "AND SAYS, 'NO. THAT SILLY",
+      "SPELL DOESTN'T WORK ON ME.",
+      'TRY SOMETHING ELSE WHILE I',
+      'TEAR YOUR LIMBS FROM ONE',
+      'ANOTHER. HEE HEE HEE.',
+      'HIT ANY KEY',
+    );
+    return true;
+  }
+  return false;
+}
+
+/**
+ * autokill (WORLD.EXE 2000:cdc5, mw.c "autokill"): the brain explosion. The monster rolls
+ * `random(random(the two unnamed bytes of its table row added) + its depth)`, the character rolls
+ * `random(level + random(intelligence + wisdom)) + random(the floor)`, and the bigger roll wins.
+ * A win writes −100 over the monster's hit points; a loss prints and still costs the points.
+ */
+export function autokill(game: MwGame): boolean {
+  if (game.engaged === -1) {
+    sayNoMonster(game);
+    return false;
+  }
+  if (spellProof(game)) return false;
+  const monster = game.monsters[game.engaged];
+  const row = MONSTER_ROWS[monster.type];
+  let theirs = game.rng.random(row[MONSTER_MIND[0]] + row[MONSTER_MIND[1]]);
+  theirs = game.rng.random(monster.depth + theirs);
+  let mine = game.rng.random(game.pc.iq + game.pc.wis);
+  mine = game.rng.random(game.pc.lev + mine);
+  const luck = game.rng.random(game.pc.floor);
+  if (theirs < mine + luck) {
+    monster.hp = AUTOKILL_HP;
+    // DS:3911 392e 394a 3966 1476 28ff
+    game.say(
+      "THE MONSTER'S BRAIN EXPLODES",
+      '   FROM ULTRA-INTENSE BRAIN',
+      '   WAVES WHICH EMINATE FROM',
+      '   YOUR MIND.',
+      '',
+      'HIT ANY KEY',
+    );
+    return true;
+  }
+  // DS:3974 3992 1476 20bd
+  game.say('THE SPELL FAILS... TOUGH LUCK', '   CHARLIE.', '', 'HIT ANY KEY...');
+  return true;
+}
+
+/**
+ * drain_monster (WORLD.EXE 2000:d0de, mw.c "drain_monster"): Drain Monster, which takes the
+ * character's wisdom off the engaged monster's depth. A monster shallower than that wisdom has
+ * both its depth and its hit points set to zero, so the spell simply kills it; a deeper one also
+ * loses half its hit points per floor, times the wisdom, in health.
+ *
+ * It prints nothing at all: the only sign it worked is the monster's own line changing.
+ */
+export function drainMonster(game: MwGame): boolean {
+  if (game.engaged === -1) {
+    sayNoMonster(game);
+    return false;
+  }
+  if (spellProof(game)) return false;
+  const monster = game.monsters[game.engaged];
+  if (monster.depth < game.pc.wis) {
+    monster.depth = 0;
+    monster.hp = 0;
+  } else {
+    // The depth is one byte of the monster's record.
+    monster.depth = (monster.depth - game.pc.wis) & 0xff;
+    const perFloor = MONSTER_ROWS[monster.type][MONSTER_HP_PER_FLOOR];
+    monster.hp -= Math.trunc(perFloor / 2) * game.pc.wis;
+  }
   return true;
 }

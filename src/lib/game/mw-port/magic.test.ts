@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
+import data from '../mw-data.json';
+import { BorlandRng } from '../port/rng';
+import type { MwStockedMonster } from './stocking';
 import {
   antiCold,
+  autokill,
+  drainMonster,
+  explosion,
+  sleepMonster,
+  spellProof,
   antiFire,
   boostAgility,
   boostStrength,
@@ -22,6 +30,25 @@ import {
 import { newMwGame, type MwGameOverrides } from './state';
 
 const game = (overrides: MwGameOverrides = {}) => newMwGame(overrides);
+
+/** An ordinary monster: an OGRE, whose kind is 99, ten hit points a floor and a mind of 10 + 9. */
+const OGRE = 0;
+
+/** ZEUS, the first of the ten monsters whose kind byte is 100. */
+const ZEUS = data.monsters.findIndex((monster) => monster.kind === 100);
+
+const monster = (overrides: Partial<MwStockedMonster> = {}): MwStockedMonster => ({
+  x: 10,
+  y: 10,
+  hp: 500,
+  type: OGRE,
+  depth: 20,
+  ...overrides,
+});
+
+/** A game with one monster engaged, and a generator a test can predict. */
+const fight = (seed: number, first: Partial<MwStockedMonster> = {}, overrides: MwGameOverrides = {}) =>
+  game({ monsters: [monster(first)], engaged: 0, rng: new BorlandRng(seed), ...overrides });
 
 describe('the permanent enchantments', () => {
   it('sets the plus of the weapon picked, taking a better one back down', () => {
@@ -176,5 +203,116 @@ describe('recomputeWeight', () => {
     const world = game({ pc: { stones: [0, 0, 0, 0, 0, 1600], armorOwned: [0, 0, 0, 0, 0, 0, 0, 9] } });
     recomputeWeight(world);
     expect(world.pc.loadedWeight).toBe(0);
+  });
+});
+
+describe('explosion', () => {
+  it('rolls 75 to 175 off the monster for the small one', () => {
+    const world = fight(5);
+    const before = world.monsters[0].hp;
+    expect(explosion(world, 0)).toBe(true);
+    const damage = before - world.monsters[0].hp;
+    expect(damage).toBeGreaterThanOrEqual(75);
+    expect(damage).toBeLessThanOrEqual(175);
+    expect(world.messages).toContain('A SMALL EXPLOSION OCCURS');
+    expect(world.messages).toContain(`   THE EXPLOSION DOES ${damage}`);
+  });
+
+  it('rolls 125 to 225 for the large one and 200 to 500 for the huge one', () => {
+    for (let seed = 1; seed < 40; seed++) {
+      const large = fight(seed);
+      explosion(large, 1);
+      expect(500 - large.monsters[0].hp).toBeGreaterThanOrEqual(125);
+      expect(500 - large.monsters[0].hp).toBeLessThanOrEqual(225);
+      const huge = fight(seed);
+      explosion(huge, 2);
+      expect(500 - huge.monsters[0].hp).toBeGreaterThanOrEqual(200);
+      expect(500 - huge.monsters[0].hp).toBeLessThanOrEqual(500);
+    }
+  });
+
+  it('costs nothing with no monster engaged', () => {
+    const world = game();
+    expect(explosion(world, 0)).toBe(false);
+    expect(world.messages).toContain('YOU ARE NOT CURRENTLY');
+  });
+});
+
+describe('sleepMonster', () => {
+  it('sleeps the monster for ten of its turns on a roll of 0', () => {
+    const world = fight(1, { depth: 1 });
+    expect(sleepMonster(world)).toBe(true);
+    expect(world.pc.sleepTimer).toBe(10);
+    expect(world.monsterStatusLine).toBe('MONSTER IS SLEEPING');
+  });
+
+  it('fails on any other roll and still costs the points', () => {
+    const world = fight(1, { depth: 200 });
+    expect(sleepMonster(world)).toBe(true);
+    expect(world.pc.sleepTimer).toBe(0);
+    expect(world.messages).toContain('THE SPELL FAILS.');
+  });
+
+  it('refuses only on the last turn of a sleep already running', () => {
+    const refused = fight(1, { depth: 1 }, { pc: { sleepTimer: 1 } });
+    expect(sleepMonster(refused)).toBe(false);
+    const rolled = fight(1, { depth: 1 }, { pc: { sleepTimer: 2 } });
+    expect(sleepMonster(rolled)).toBe(true);
+    expect(rolled.pc.sleepTimer).toBe(10);
+  });
+});
+
+describe('spellProof', () => {
+  it('is the ten monsters whose kind byte is 100 and no others', () => {
+    const proof = data.monsters
+      .map((_, type) => type)
+      .filter((type) => spellProof(fight(1, { type })));
+    expect(proof).toHaveLength(10);
+    expect(proof.map((type) => data.monsters[type].name)).toContain('ZEUS');
+    expect(proof.map((type) => data.monsters[type].name)).toContain('DEVIL');
+  });
+
+  it('prints the monster laughing the spell off', () => {
+    const world = fight(1, { type: ZEUS });
+    expect(spellProof(world)).toBe(true);
+    expect(world.messages).toContain('  WHEN YOU BEGIN TO CAST THE');
+  });
+});
+
+describe('autokill', () => {
+  it('writes minus 100 over the hit points of a monster it beats', () => {
+    const world = fight(3, { depth: 1 }, { pc: { lev: 200, iq: 200, wis: 200, floor: 200 } });
+    expect(autokill(world)).toBe(true);
+    expect(world.monsters[0].hp).toBe(-100);
+    expect(world.messages).toContain("THE MONSTER'S BRAIN EXPLODES");
+  });
+
+  it('still costs the points when the monster wins', () => {
+    const world = fight(3, { depth: 250 }, { pc: { lev: 0, iq: 0, wis: 0, floor: 0 } });
+    expect(autokill(world)).toBe(true);
+    expect(world.monsters[0].hp).toBe(500);
+    expect(world.messages).toContain('THE SPELL FAILS... TOUGH LUCK');
+  });
+
+  it('costs nothing against a spell-proof monster', () => {
+    const world = fight(3, { type: ZEUS }, { pc: { lev: 200, iq: 200, wis: 200, floor: 200 } });
+    expect(autokill(world)).toBe(false);
+    expect(world.monsters[0].hp).toBe(500);
+  });
+});
+
+describe('drainMonster', () => {
+  it('kills a monster shallower than the wisdom outright', () => {
+    const world = fight(1, { depth: 9 }, { pc: { wis: 10 } });
+    expect(drainMonster(world)).toBe(true);
+    expect(world.monsters[0].depth).toBe(0);
+    expect(world.monsters[0].hp).toBe(0);
+  });
+
+  it('takes the wisdom off a deeper monster and half its hit points per floor times over', () => {
+    const world = fight(1, { depth: 30 }, { pc: { wis: 10 } });
+    expect(drainMonster(world)).toBe(true);
+    expect(world.monsters[0].depth).toBe(20);
+    expect(world.monsters[0].hp).toBe(450);
   });
 });
