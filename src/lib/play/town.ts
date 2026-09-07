@@ -9,16 +9,17 @@ import {
   convertDollars,
   cultureStockPrice,
   enterBank,
+  enterInn,
   enterStore,
   enterTemple,
   magicCrystalPrice,
   robBank,
+  stayTheNight,
   temple,
 } from '../game/port/town';
-import { printMenus, showBox } from './boxes';
+import { printMenus, printMenusEndingInAMenu, showBox } from './boxes';
 import type { GameSession, Turn } from './engine';
 import { KEY } from './keys';
-import { notBuiltYet } from './screens';
 
 /**
  * movecontrol's 0x75 branch on one of the town's building squares: the store, the temple, the
@@ -58,8 +59,8 @@ const TEMPLE_MENU = menuKeys(7);
 /** The bank's menu: the money changer, a deposit, a withdrawal, a robbery and the way out. */
 const BANK_MENU = menuKeys(5);
 
-/** What the town's four buildings are called, in the order the generator numbers them from 1. */
-const BUILDINGS = ['STORE', 'TEMPLE', 'BANK', 'INN'];
+/** The inn's offer: stay the night, or run for your life. */
+const INN_MENU = menuKeys(2);
 
 /** The six weapons the store sells (exe DS:0ca6), priced in JP rather than in the rubles the
  *  armor menu next to them is priced in. */
@@ -106,11 +107,11 @@ export async function enterBuilding(turn: Turn): Promise<void> {
   if (turn.building === 1) await store(session);
   if (turn.building === 2) await visitTheTemple(session);
   if (turn.building === 3) await visitTheBank(session);
+  if (turn.building === 4) await stayAtTheInn(session);
   // erase_menu_block (exe 4000:42b4) and erase_message_block (exe 4000:430e), which movecontrol
   // runs on the way back out to the map.
   session.game.eraseScreen();
   session.box = [];
-  if (turn.building > 3) notBuiltYet(session.game, `GO INTO THE ${BUILDINGS[turn.building - 1]}`);
 }
 
 /** g_store (exe 2000:45ab, unf.c "g_store"): the store, until the player leaves it. */
@@ -284,6 +285,22 @@ function bankPrompt(available: number): PromptLine[] {
     'PLEASE TYPE THE AMOUNT',
     '  AND HIT ENTER:',
   ].map((text, line) => ({ text, y: BANK_PROMPT_Y[line] }));
+}
+
+/**
+ * flea_inn (exe 2000:4fe7, unf.c "flea_inn"): the inn, which is one visit and not a loop. The
+ * sign, what the night will cost in culture stock and crystals, the room and its price, and then
+ * back out to the map whichever way the offer is answered.
+ *
+ * The night is where a character ages, fills their spell points back up and gains the levels
+ * their experience has earned. Nothing is written to the character's file here, which is what
+ * the original does too: the inn is not one of its save points.
+ */
+async function stayAtTheInn(session: GameSession): Promise<void> {
+  const game = session.game;
+  await printMenusEndingInAMenu(session, () => enterInn(game));
+  const chosen = await session.choice(INN_MENU);
+  if (menuEntry(chosen) === 1) await printMenus(session, () => stayTheNight(game));
 }
 
 /** One of the lines a typed amount is asked for under, at the y the game draws it at. */

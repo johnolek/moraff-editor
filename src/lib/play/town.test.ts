@@ -198,3 +198,66 @@ describe('the bank', () => {
     expect(session.box).toEqual([]);
   });
 });
+
+describe('the inn', () => {
+  it('shows the sign, the bill and the offer of a room', async () => {
+    const session = standingOn(4, { lev: 2, money: 100, cultureStock: 7 });
+    await press(session, KEY.up);
+    expect(session.box[0]).toBe('WELCOME TO THE HELL HOLE INN');
+    await press(session, KEY.escape);
+    expect(session.box[0]).toBe('  WHEN YOU STAY AT AN INN, YOU');
+    await press(session, KEY.escape);
+    expect(session.box).toContain('AGING: 4');
+    expect(session.box).toContain('YOU HAVE (UNITS): 7');
+    await press(session, KEY.escape);
+    expect(session.box).toContain('COST 26 RUBLES.');
+    expect(session.box).toContain('1) STAY AND REST FOR A WHILE');
+  });
+
+  it('ends a preparation spell and hands over the level the experience has earned', async () => {
+    const session = standingOn(4, {
+      lev: 1,
+      money: 100,
+      str: 15,
+      prepStrength: 1,
+      exp: 100000,
+      cultureStock: 10,
+      crystals: 10,
+      sp: 0,
+      maxSp: 5,
+    });
+    await press(session, KEY.up);
+    await press(session, KEY.escape);
+    await press(session, KEY.escape);
+    await press(session, KEY.escape);
+    await press(session, 0x31);
+    expect(session.game.pc.prepStrength).toBe(0);
+    expect(session.game.pc.str).toBe(10);
+    expect(session.game.pc.lev).toBeGreaterThan(1);
+    expect(session.game.pc.sp).toBe(5);
+    expect(session.game.pc.crystals).toBe(5);
+    expect(session.game.pc.money).toBe(89);
+  });
+
+  it('throws out a character who cannot pay', async () => {
+    const session = standingOn(4, { lev: 1, money: 3 });
+    await press(session, KEY.up);
+    await press(session, KEY.escape);
+    await press(session, KEY.escape);
+    await press(session, KEY.escape);
+    await press(session, 0x31);
+    expect(session.box[0]).toBe('THREE BIG THUGS BEAT YOU');
+    expect(session.game.pc.money).toBe(3);
+  });
+
+  it('runs for your life on the second entry', async () => {
+    const session = standingOn(4, { lev: 1, money: 100 });
+    await press(session, KEY.up);
+    await press(session, KEY.escape);
+    await press(session, KEY.escape);
+    await press(session, KEY.escape);
+    await press(session, 0x32);
+    expect(session.box).toEqual([]);
+    expect(session.game.pc.money).toBe(100);
+  });
+});
