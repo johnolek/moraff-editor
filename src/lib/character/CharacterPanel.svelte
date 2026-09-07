@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { app, type Tab } from '../app-state.svelte';
+  import { app, type RosterEntry, type Tab } from '../app-state.svelte';
   import { GAMES } from '../editor/games';
+  import { chooseCharacter, forgetCharacter, renameCharacter, restoreCharacterImport } from './current';
   import { characterStatus, collapsedLine, expLabel, levelLabel, withSeparators } from './record';
   import { readStored, writeStored } from './storage';
 
@@ -8,6 +9,10 @@
   const COLLAPSED_KEY = 'moraff-tools.character-panel-collapsed';
 
   let collapsed = $state(readStored(COLLAPSED_KEY) === 'yes');
+  let choosing = $state(false);
+  /** The character whose name is being typed over, if any. */
+  let renaming = $state<string | null>(null);
+  let typedName = $state('');
 
   const character = $derived(app.character);
   const status = $derived.by(() => {
@@ -32,6 +37,43 @@
   }
 
   const points = (value: number) => String(Math.trunc(value));
+  const gameName = (id: string) => GAMES.find((entry) => entry.id === id)?.displayName ?? id;
+  /** The level in the list is read out of the record, which changes under it as the current
+   *  character is edited. */
+  const levelOf = (entry: RosterEntry) => {
+    void app.characterVersion;
+    return characterStatus(entry)?.lev ?? 0;
+  };
+  const editedOn = (when: string) => new Date(when).toLocaleDateString();
+
+  function choose(id: string) {
+    chooseCharacter(id);
+    choosing = false;
+  }
+
+  function startRename(entry: RosterEntry) {
+    renaming = entry.id;
+    typedName = entry.name;
+  }
+
+  function commitRename() {
+    if (renaming) renameCharacter(renaming, typedName);
+    renaming = null;
+  }
+
+  function onRenameKey(event: KeyboardEvent) {
+    if (event.key === 'Enter') commitRename();
+    if (event.key === 'Escape') renaming = null;
+  }
+
+  function remove(entry: RosterEntry) {
+    if (confirm(`Remove ${entry.name} from this browser?`)) forgetCharacter(entry.id);
+  }
+
+  function focusInput(node: HTMLInputElement) {
+    node.focus();
+    node.select();
+  }
 </script>
 
 <section class="character-panel">
@@ -44,6 +86,11 @@
         <button type="button" class="dos-link" onclick={() => show('roller')}>ROLL ONE</button>.
       </span>
     </div>
+    {#if app.roster.length > 0}
+      <div class="identity">
+        <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({app.roster.length})</button>
+      </div>
+    {/if}
   {:else if collapsed}
     <div class="status">
       <span class="line green">{collapsedLine(status, character.name)}</span>
@@ -86,7 +133,41 @@
       <button type="button" class="link" onclick={() => show('editor')}>Edit in Save Editor</button>
       <button type="button" class="link" onclick={() => show('roller')}>Roll another</button>
       {#if status.place}<button type="button" class="link" onclick={showOnMap}>Show on map</button>{/if}
+      <button type="button" class="link" onclick={() => (choosing = !choosing)}>Characters ({app.roster.length})</button>
     </div>
+  {/if}
+
+  {#if choosing}
+    <table class="chooser">
+      <thead>
+        <tr><th>Character</th><th>Game</th><th>Level</th><th>Number</th><th>From</th><th>Edited</th><th></th></tr>
+      </thead>
+      <tbody>
+        {#each app.roster as entry (entry.id)}
+          <tr class:current={entry.id === character?.id}>
+            <td>
+              {#if renaming === entry.id}
+                <input class="rename" bind:value={typedName} onkeydown={onRenameKey} onblur={commitRename} use:focusInput />
+              {:else}
+                <button type="button" class="link" onclick={() => choose(entry.id)}>{entry.name}</button>
+              {/if}
+            </td>
+            <td>{gameName(entry.game)}</td>
+            <td>{levelOf(entry)}</td>
+            <td>{entry.slot ?? '—'}</td>
+            <td>{entry.importedBytes ? 'imported' : 'rolled'}</td>
+            <td>{editedOn(entry.editedAt)}</td>
+            <td class="actions">
+              <button type="button" class="link" onclick={() => startRename(entry)}>Rename</button>
+              {#if entry.importedBytes}
+                <button type="button" class="link" onclick={() => restoreCharacterImport(entry.id)}>Restore the import</button>
+              {/if}
+              <button type="button" class="link" onclick={() => remove(entry)}>Remove</button>
+            </td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
   {/if}
 
   {#if character && status}
@@ -193,6 +274,38 @@
   }
   .link:hover {
     color: var(--accent);
+  }
+  .chooser {
+    margin-top: 10px;
+    border-collapse: collapse;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .chooser th {
+    text-align: left;
+    font-weight: 600;
+    padding: 3px 16px 3px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .chooser td {
+    padding: 4px 16px 4px 0;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .chooser tr.current td {
+    color: var(--ink);
+  }
+  .chooser .actions {
+    display: flex;
+    gap: 12px;
+  }
+  .rename {
+    background: var(--panel-2);
+    color: var(--ink);
+    border: 1px solid var(--accent-dim);
+    border-radius: 4px;
+    padding: 2px 6px;
+    font: inherit;
   }
   .chevron {
     position: absolute;
