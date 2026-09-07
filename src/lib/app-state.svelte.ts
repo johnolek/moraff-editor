@@ -1,6 +1,6 @@
 import { HistoryCursor } from './history';
 
-export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'source';
+export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'source';
 
 /** A function to open in the Source tab: one of the port's, or one of the decompilation's. */
 export type SourceRequest = { kind: 'ts'; file: string; name: string } | { kind: 'c'; name: string };
@@ -22,6 +22,8 @@ export interface AppState {
   requestedMonsterId: string | null;
   /** Set to open a function in the Source tab; the viewer clears it once it has. */
   requestedSource: SourceRequest | null;
+  /** Set to the id of a formula to open in the Formulas tab; that tab clears it once it has. */
+  requestedFormula: string | null;
   save: LoadedSave | null;
   /** Bumped whenever the editor swaps in a different set of bytes. Field edits write into the
    *  bytes that are already there, so they do not bump it. */
@@ -33,6 +35,7 @@ export const app = $state<AppState>({
   mapHistory: new HistoryCursor(),
   requestedMonsterId: null,
   requestedSource: null,
+  requestedFormula: null,
   save: null,
   saveVersion: 0,
 });

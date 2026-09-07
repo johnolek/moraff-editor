@@ -9,6 +9,7 @@
   import MapExplorer from './lib/map/MapExplorer.svelte';
   import SourceViewer from './lib/source/SourceViewer.svelte';
   import SpellReference from './lib/spells/SpellReference.svelte';
+  import Tidbits from './lib/tidbits/Tidbits.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
 
   const tabs: { id: Tab; label: string }[] = [
@@ -18,6 +19,7 @@
     { id: 'spells', label: 'Spells' },
     { id: 'calculators', label: 'Calculators' },
     { id: 'formulas', label: 'Formulas' },
+    { id: 'tidbits', label: 'Tidbits' },
     { id: 'source', label: 'Source' },
   ];
 
@@ -79,6 +81,9 @@
   </main>
   <main class:hidden={app.tab !== 'formulas'}>
     <Formulas />
+  </main>
+  <main class:hidden={app.tab !== 'tidbits'}>
+    <Tidbits />
   </main>
   <main class:hidden={app.tab !== 'source'}>
     <SourceViewer />

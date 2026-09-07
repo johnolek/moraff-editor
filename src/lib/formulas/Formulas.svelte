@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { tick } from 'svelte';
+  import { app } from '../app-state.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import PixelText from '../ui/PixelText.svelte';
   import { formulaCode, searchFormulas } from './formulas';
@@ -12,6 +14,16 @@
   function jumpTo(id: string): void {
     document.getElementById(anchor(id))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+
+  // Another tab can ask for a formula; the search box is cleared so the entry is sure to be on
+  // the page, and the jump waits for it to be drawn.
+  $effect(() => {
+    const id = app.requestedFormula;
+    if (!id) return;
+    app.requestedFormula = null;
+    search = '';
+    tick().then(() => jumpTo(id));
+  });
 </script>
 
 <div class="formulas">
