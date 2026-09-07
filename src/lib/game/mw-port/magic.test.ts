@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import data from '../mw-data.json';
 import { BorlandRng } from '../port/rng';
+import { MW_SPELL_NAMES } from './spells';
 import type { MwStockedMonster } from './stocking';
 import {
   antiCold,
@@ -740,4 +741,235 @@ describe('tickSpellTimers', () => {
     expect(world.pc.poisonTimer).toBe(-1);
     expect(world.pc.diseaseTimer).toBe(-1);
   });
+});
+
+/**
+ * Twenty-one of the 120 sentences in `src/lib/mw-spells/effects.ts` checked against the code they
+ * were read out of. The record number is `category * 30 + levelIndex * 3 + slot`, which is what
+ * that file is keyed by.
+ */
+describe('the sentences in effects.ts', () => {
+  const checks: { record: number; says: string; run: () => void }[] = [
+    {
+      record: 0,
+      says: 'sets the plus of the weapon picked to exactly 1, taking a plus 4 down to 1',
+      run: () => {
+        const world = game({
+          pc: { weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 0], weaponPlus: [4, 0, 0, 0, 0, 0, 0, 0] },
+          chooseWeaponSlot: () => 1,
+        });
+        expect(spellEffect(world, 0, 0, 0)).toBe(true);
+        expect(world.pc.weaponPlus[0]).toBe(1);
+      },
+    },
+    {
+      record: 1,
+      says: 'adds 1 to maximum health and leaves current health where it was',
+      run: () => {
+        const world = game({ pc: { hp: 5, maxHp: 10 } });
+        spellEffect(world, 0, 0, 1);
+        expect([world.pc.hp, world.pc.maxHp]).toEqual([5, 11]);
+      },
+    },
+    {
+      record: 8,
+      says: 'sets the ring of protection to 1, and is redundant when it is already there',
+      run: () => {
+        const world = game();
+        expect(spellEffect(world, 0, 2, 2)).toBe(true);
+        expect(world.pc.ringOfProtection).toBe(1);
+        expect(spellEffect(world, 0, 2, 2)).toBe(false);
+      },
+    },
+    {
+      record: 24,
+      says: 'sets the feather marker to 100 and leaves the body out of the carried weight',
+      run: () => {
+        const world = game({ pc: { weight: 150 } });
+        expect(spellEffect(world, 0, 8, 0)).toBe(true);
+        expect(world.pc.feather).toBe(100);
+        expect(world.pc.loadedWeight).toBe(0);
+      },
+    },
+    {
+      record: 26,
+      says: 'adds 25 to maximum health',
+      run: () => {
+        const world = game({ pc: { maxHp: 10 } });
+        spellEffect(world, 0, 8, 2);
+        expect(world.pc.maxHp).toBe(35);
+      },
+    },
+    {
+      record: 28,
+      says: 'halves the age and raises it back to 15,744 minutes if that came out lower',
+      run: () => {
+        const old = game({ pc: { ageMinutes: 1_000_000 } });
+        spellEffect(old, 0, 9, 1);
+        expect(old.pc.ageMinutes).toBe(500_000);
+        const young = game({ pc: { ageMinutes: 20_000 } });
+        spellEffect(young, 0, 9, 1);
+        expect(young.pc.ageMinutes).toBe(15_744);
+      },
+    },
+    {
+      record: 32,
+      says: 'heals half the wisdom with no random part, never past maximum health',
+      run: () => {
+        const world = game({ pc: { wis: 21, hp: 1, maxHp: 100 } });
+        spellEffect(world, 1, 0, 2);
+        expect(world.pc.hp).toBe(11);
+        const full = game({ pc: { wis: 21, hp: 99, maxHp: 100 } });
+        spellEffect(full, 1, 0, 2);
+        expect(full.pc.hp).toBe(100);
+      },
+    },
+    {
+      record: 36,
+      says: 'heals random(wisdom) + 10, capped at 40',
+      run: () => {
+        for (let seed = 1; seed < 20; seed++) {
+          const world = game({ pc: { wis: 200, hp: 0, maxHp: 500 }, rng: new BorlandRng(seed) });
+          spellEffect(world, 1, 2, 0);
+          expect(world.pc.hp).toBeGreaterThanOrEqual(10);
+          expect(world.pc.hp).toBeLessThanOrEqual(40);
+        }
+      },
+    },
+    {
+      record: 38,
+      says: 'adds 5 to strength and marks it, and refuses a second cast',
+      run: () => {
+        const world = game({ pc: { str: 20 } });
+        expect(spellEffect(world, 1, 2, 2)).toBe(true);
+        expect([world.pc.str, world.pc.prepStrength]).toEqual([25, 5]);
+        expect(spellEffect(world, 1, 2, 2)).toBe(false);
+        expect(world.pc.str).toBe(25);
+      },
+    },
+    {
+      record: 41,
+      says: 'refuses Descend on floor 124 or deeper',
+      run: () => {
+        const world = game({ pc: { floor: 124 } });
+        expect(spellEffect(world, 1, 3, 2)).toBe(false);
+        expect(world.messages).toContain('  WORK THIS DEEP.');
+      },
+    },
+    {
+      record: 45,
+      says: 'heals random(wisdom × 4) + 20, capped at 90',
+      run: () => {
+        for (let seed = 1; seed < 20; seed++) {
+          const world = game({ pc: { wis: 200, hp: 0, maxHp: 500 }, rng: new BorlandRng(seed) });
+          spellEffect(world, 1, 5, 0);
+          expect(world.pc.hp).toBeGreaterThanOrEqual(20);
+          expect(world.pc.hp).toBeLessThanOrEqual(90);
+        }
+      },
+    },
+    {
+      record: 53,
+      says: 'goes exactly twenty-five floors down and never past floor 75',
+      run: () => {
+        const shallow = game({ pc: { floor: 10 }, isSolid: rocky() });
+        spellEffect(shallow, 1, 7, 2);
+        expect(shallow.pc.floor).toBe(35);
+        const deep = game({ pc: { floor: 65 }, isSolid: rocky() });
+        spellEffect(deep, 1, 7, 2);
+        expect(deep.pc.floor).toBe(75);
+      },
+    },
+    {
+      record: 55,
+      says: 'sets the poison timer to minus one',
+      run: () => {
+        const world = game({ pc: { poisonTimer: 30 } });
+        spellEffect(world, 1, 8, 1);
+        expect(world.pc.poisonTimer).toBe(-1);
+      },
+    },
+    {
+      record: 61,
+      says: "takes the character's level times two plus two off the monster",
+      run: () => {
+        const world = fight(1, {}, { pc: { lev: 10 } });
+        spellEffect(world, 2, 0, 1);
+        expect(world.monsters[0].hp).toBe(500 - 22);
+      },
+    },
+    {
+      record: 63,
+      says: 'sets the slow timer to 60 moves',
+      run: () => {
+        const world = fight(1);
+        spellEffect(world, 2, 1, 0);
+        expect(world.pc.slowEnemiesTimer).toBe(60);
+      },
+    },
+    {
+      record: 69,
+      says: 'costs nothing when a kind-100 monster laughs Go Away off — which it does not',
+      run: () => {
+        const world = fight(1, { x: 3, y: 3, type: ZEUS });
+        // The prose is wrong: spell_effect discards teleport_monster's answer and reports
+        // success, so the spell points go whether the monster moved or not.
+        expect(spellEffect(world, 2, 3, 0)).toBe(true);
+        expect([world.monsters[0].x, world.monsters[0].y]).toEqual([3, 3]);
+      },
+    },
+    {
+      record: 71,
+      says: 'puts Power Weapon level 1 up for 60 moves',
+      run: () => {
+        const world = fight(1);
+        spellEffect(world, 2, 3, 2);
+        expect([world.pc.powerWeaponLevel, world.pc.powerWeaponTimer]).toEqual([1, 60]);
+      },
+    },
+    {
+      record: 84,
+      says: 'holds the monster for 15 of its turns, and a kind-100 monster refuses it',
+      run: () => {
+        const world = fight(1);
+        expect(spellEffect(world, 2, 8, 0)).toBe(true);
+        expect(world.pc.holdMonsterTimer).toBe(15);
+        const proof = fight(1, { type: ZEUS });
+        expect(spellEffect(proof, 2, 8, 0)).toBe(false);
+        expect(proof.pc.holdMonsterTimer).toBe(0);
+      },
+    },
+    {
+      record: 86,
+      says: 'takes 300 off the monster',
+      run: () => {
+        const world = fight(1);
+        spellEffect(world, 2, 8, 2);
+        expect(world.monsters[0].hp).toBe(200);
+      },
+    },
+    {
+      record: 102,
+      says: "the priestly Protection asks for level 1, not 2",
+      run: () => {
+        const world = fight(1);
+        spellEffect(world, 3, 4, 0);
+        expect(world.pc.protectionLevel).toBe(1);
+      },
+    },
+    {
+      record: 116,
+      says: 'adds 60 moves to both timers and the +7 only where one was not running',
+      run: () => {
+        const world = fight(1, {}, { pc: { str: 20, dex: 15, speedTimer: 30 } });
+        expect(spellEffect(world, 3, 8, 2)).toBe(true);
+        expect([world.pc.strengthTimer, world.pc.speedTimer]).toEqual([60, 90]);
+        expect([world.pc.str, world.pc.dex]).toEqual([27, 15]);
+      },
+    },
+  ];
+
+  for (const check of checks) {
+    it(`record ${check.record}, ${MW_SPELL_NAMES[check.record]}, ${check.says}`, check.run);
+  }
 });
