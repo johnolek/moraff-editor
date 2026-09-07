@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { spellBook } from './book';
-import { cellForKey } from './grid';
+import { cellForKey, stepCell } from './grid';
 
 const book = spellBook();
 
@@ -43,5 +43,24 @@ describe('cellForKey', () => {
   it('gives nothing for a key the menu does not answer to', () => {
     expect(cellForKey(book[2], '5')).toBe(null);
     expect(cellForKey(book[2], 'ENTER')).toBe(null);
+  });
+});
+
+describe('stepCell', () => {
+  const wizard = book[2];
+
+  it('moves along the line, and off its end onto the next', () => {
+    expect(stepCell(wizard, 'Wizard battle/Sleep', 1)?.key).toBe('B');
+    expect(stepCell(wizard, 'Wizard battle/Minor Protection', 1)?.key).toBe('D');
+  });
+
+  it('moves a whole line at a time down and up', () => {
+    expect(stepCell(wizard, 'Wizard battle/Sleep', 3)?.key).toBe('D');
+    expect(stepCell(wizard, 'Wizard battle/Slow Enemies', -3)?.key).toBe('A');
+  });
+
+  it('stops at the two ends of the list', () => {
+    expect(stepCell(wizard, wizard.cells[0].id, -1)).toBe(null);
+    expect(stepCell(wizard, wizard.cells[29].id, 3)).toBe(null);
   });
 });

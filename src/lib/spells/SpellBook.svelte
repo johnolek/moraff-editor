@@ -4,9 +4,9 @@
   its own lists and its own description.
 -->
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import { tick, type Snippet } from 'svelte';
   import { app } from '../app-state.svelte';
-  import { cellForKey, type SpellCategory } from './grid';
+  import { cellForKey, stepCell, type SpellCategory } from './grid';
 
   interface Props {
     /** The four lists of the game's type menu. */
@@ -25,18 +25,66 @@
 
   let { categories, typeHeading, gridHeading, gridFooter, intro, detail }: Props = $props();
 
+  const CLOSE_LABEL = 'Close (Esc)';
+
+  /** How far along the grid each arrow key moves, the grid being three spells wide. */
+  const ARROW_STEPS: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -3, ArrowDown: 3 };
+
   let categoryIndex = $state(0);
   /** The spell being shown, by the id of its cell. An id rather than the spell itself because
    *  $state hands back a proxy of whatever object is put in it, which never compares equal to
    *  the record the grid is drawn from. */
   let selectedId = $state<string | null>(null);
   let grid: HTMLDivElement;
+  let closeButton = $state<HTMLButtonElement | undefined>();
 
   const category = $derived(categories[categoryIndex]);
+  const openCell = $derived(category.cells.find((cell) => cell.id === selectedId) ?? null);
+
+  // The description is read straight away, so the keyboard goes to it as it opens.
+  $effect(() => {
+    if (selectedId === null) return;
+    closeButton?.focus();
+  });
 
   function pickCategory(index: number) {
     categoryIndex = index;
     selectedId = null;
+  }
+
+  /** Shuts the description and puts the keyboard back on the spell it was showing. */
+  function close() {
+    const id = selectedId;
+    selectedId = null;
+    tick().then(() => {
+      const cell = Array.from(grid.querySelectorAll<HTMLButtonElement>('button')).find(
+        (button) => button.dataset.cell === id,
+      );
+      cell?.focus();
+    });
+  }
+
+  /**
+   * With a description open the keyboard belongs to it: a menu key or an arrow moves to another
+   * spell of the same list, and Escape shuts it.
+   */
+  function onDescriptionKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      close();
+      event.preventDefault();
+      return;
+    }
+    const step = ARROW_STEPS[event.key];
+    if (step !== undefined) {
+      const stepped = stepCell(category, selectedId!, step);
+      if (stepped) selectedId = stepped.id;
+      event.preventDefault();
+      return;
+    }
+    const cell = cellForKey(category, event.key.toUpperCase());
+    if (!cell) return;
+    selectedId = cell.id;
+    event.preventDefault();
   }
 
   /**
@@ -50,6 +98,10 @@
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const target = event.target as HTMLElement | null;
     if (target && ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)) return;
+    if (selectedId !== null) {
+      onDescriptionKeydown(event);
+      return;
+    }
     const key = event.key.toUpperCase();
     const onGrid = target !== null && grid.contains(target);
     const type = ['1', '2', '3', '4'].indexOf(key);
@@ -104,6 +156,7 @@
               class="cell"
               class:current={selectedId === cell.id}
               aria-pressed={selectedId === cell.id}
+              data-cell={cell.id}
               onclick={() => (selectedId = cell.id)}
             >
               {cell.key}){cell.name}
@@ -113,17 +166,33 @@
         <p class="book-footer">{gridFooter}</p>
       </div>
     </div>
-
-    {#if selectedId}
-      <section class="detail">
-        {@render detail(selectedId)}
-      </section>
-    {/if}
   </div>
+
+  {#if openCell}
+    <div class="overlay">
+      <button type="button" class="dismiss" tabindex="-1" aria-hidden="true" onclick={close}></button>
+      <div class="detail" role="dialog" aria-label={openCell.name}>
+        <button
+          type="button"
+          class="close"
+          aria-label={CLOSE_LABEL}
+          title={CLOSE_LABEL}
+          bind:this={closeButton}
+          onclick={close}
+        >
+          X
+        </button>
+        <div class="detail-scroll">
+          {@render detail(openCell.id)}
+        </div>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
   .reference {
+    position: relative;
     display: flex;
     flex: 1;
     min-width: 0;
@@ -234,12 +303,61 @@
     font-size: 22px;
     color: var(--mw-red);
   }
+  /* The description is read over the grid rather than under it, so that a spell picked from the
+     bottom line does not have to be scrolled to. */
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.75);
+  }
+  /* The whole backdrop shuts the description, so a click anywhere off it gets out. */
+  .dismiss {
+    position: absolute;
+    inset: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
   .detail {
-    margin-top: 18px;
-    max-width: 88ch;
-    padding: 14px 16px 16px;
-    border: 1px solid var(--line);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: min(900px, 100%);
+    max-height: 100%;
+    border: 1px solid var(--mw-green);
     border-radius: 6px;
     background: var(--panel);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+  }
+  .detail-scroll {
+    overflow-y: auto;
+    padding: 16px 20px 20px;
+  }
+  /* A DOS menu marks what it is on by swapping its colours over, and so does this. */
+  .close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    padding: 0 6px;
+    border: none;
+    border-radius: 3px;
+    background: none;
+    font-family: var(--font-dos);
+    font-size: 24px;
+    line-height: 1.1;
+    color: var(--mw-red);
+    cursor: pointer;
+  }
+  .close:hover,
+  .close:focus-visible {
+    background: var(--mw-red);
+    color: #000;
+  }
+  .close:focus-visible {
+    outline: 2px solid var(--accent);
   }
 </style>

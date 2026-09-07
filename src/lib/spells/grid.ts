@@ -24,3 +24,14 @@ export interface SpellCategory {
 export function cellForKey(category: SpellCategory, key: string): SpellCell | null {
   return category.cells.find((cell) => cell.key === key) ?? null;
 }
+
+/**
+ * The spell `step` cells along the grid from the one showing, or null at the two ends. The grid
+ * is three spells wide, so a step of 3 is the slot straight down; left and right run along the
+ * whole list, so the end of a line leads onto the next.
+ */
+export function stepCell(category: SpellCategory, id: string, step: number): SpellCell | null {
+  const index = category.cells.findIndex((cell) => cell.id === id);
+  if (index < 0) return null;
+  return category.cells[index + step] ?? null;
+}
