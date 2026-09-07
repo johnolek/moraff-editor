@@ -169,7 +169,9 @@ function puffball(game: Game, slot: number): number {
   game.say(stat + (amount < 0 ? ' DRAINED BY PUFFBALL!' : ' RAISED BY PUFFBALL!'));
   setMonsterMap(game, monster.x, monster.y, MAP_EMPTY);
   // The slot is not freed. It is left holding a level 0 monster of kind 0 — a Giant Garbage Can
-  // — standing at (100, 100), which is off the bottom of every floor.
+  // — at (100, 100), off the right edge of an 80-wide floor. The occupancy grid is one unchecked
+  // run of 80 * 110 bytes, so whenever it is rebuilt from the monster list (load_monster_map,
+  // stock_level's come-back branch) that can lands at byte 8100, the square (20, 101).
   monster.x = 100;
   monster.y = 100;
   monster.hp = 0;
