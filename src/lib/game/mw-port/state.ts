@@ -2,6 +2,7 @@ import type { Rng } from '../port/rng';
 import { BorlandRng } from '../port/rng';
 import type { ScreenLine } from '../port/state';
 import type { MwStockedMonster } from './stocking';
+import { MONSTER_SLOTS } from './stocking';
 
 /**
  * The character record Moraff's World writes, as far as `roll_char` fills it in.
@@ -202,6 +203,58 @@ export interface MwCharacter {
   sleepTimer: number;
   /** 0x7f6, DS:c8e8: the same count of the monster's turns for Hold Monster. */
   holdMonsterTimer: number;
+  // combat and town
+
+  /** 0x9b, DS:c18d: which of the twelve weapons is in hand. */
+  weapon: number;
+  /** 0xc0, DS:c1b2: which of the eight suits of armor is worn. */
+  armor: number;
+  /**
+   * 0xdd, DS:c1cf: a word monster_turn (exe 2000:615c) takes off the monster's attack roll.
+   * Nothing in the executable ever writes it, so it is zero on every character; Dungeons of
+   * the Unforgiven subtracts the shield in the same place.
+   */
+  unread0dd: number;
+  /** 0x15d, DS:c24f: the six vitamin pills, orange through yellow. */
+  pills: number[];
+  /** 0x458, DS:c54a: jewels in the bank. */
+  bank: number;
+  /** 0x7aa, DS:c89c: which way the character faces, 0 north, 1 south, 2 west, 3 east. */
+  dir: number;
+  /**
+   * 0x7c0, DS:c8b2: a 32-bit counter the inn (exe 2000:35b1) adds eight hours' worth of
+   * seconds to for a night's stay. It is not the age at 0x7d6, and nothing reads it back.
+   */
+  unread7c0: number;
+  /** 0x7c6, DS:c8b8: rings of regeneration. */
+  regenRings: number;
+  /**
+   * 0x7c7, DS:c8b9: a byte strike (exe 2000:5bef) adds to the swing and monster_turn (exe
+   * 2000:615c) takes off the monster's attack. Nothing in the executable writes it, so it is
+   * zero on every character; Dungeons of the Unforgiven counts lucky charms in the same place.
+   */
+  unread7c7: number;
+  /** 0x7c8, DS:c8ba: holy hand grenades. */
+  grenades: number;
+  /** 0x7c9, DS:c8bb: stones of seeing. */
+  seeingStones: number;
+  /** 0x7fe, DS:c8f0: floor sloshers, which the game never lets go above one. */
+  floorSloshers: number;
+  /** 0x80e, DS:c900: potions of healing. */
+  healingPotions: number;
+  /** 0x810, DS:c902: stones of teleportation. */
+  teleportStones: number;
+  /** 0x81f, DS:c911: one flag per trap door floor, 10 through 200. */
+  trapdoorKeys: number[];
+  /**
+   * 0x845, DS:c937: one bit per quest boss, in the order `mw-data.json` lists them. A set bit
+   * means that boss is dead, which is what keeps generate_section from placing it again.
+   */
+  killedBosses: number;
+  /** 0x846, DS:c938: the plus on the gauntlets. */
+  gauntlet: number;
+  /** 0x858, DS:c94a: experience, the one field of the record the game keeps as a double. */
+  exp: number;
 }
 
 /**
@@ -224,7 +277,28 @@ export type MwEvent =
    * them afresh, and redraws. The five spells that move between floors leave the character
    * record holding the new floor and a square on it; nothing of the world around them is ported.
    */
-  | { kind: 'levelEntered'; floor: number };
+  | { kind: 'levelEntered'; floor: number }
+  /**
+   * save_player (WORLD.EXE 2000:58bf, mw.c "save_player") writes the character record out
+   * mid-play. Combat and the drops do it after anything that cannot be undone.
+   */
+  | { kind: 'playerSaved' }
+  /**
+   * load_h_bin (WORLD.EXE 2000:240c, mw.c "load_h_bin") shows one eight-line record of H.BIN.
+   * The port prints the record's own lines through {@link MwGame.say} as well.
+   */
+  | { kind: 'hintShown'; record: number }
+  /**
+   * recompute_weight (WORLD.EXE 2000:2d8e, mw.c "recompute_weight") adds up what the character
+   * carries. Nothing ported here reads the weight back.
+   */
+  | { kind: 'weightRecomputed' }
+  /**
+   * The eight files death deletes when there is no raise-dead contract: the character record,
+   * its monster cache and its six explored-map blocks. MORF-66 says a dead character keeps its
+   * bytes and the roster entry is marked instead, so the port deletes nothing.
+   */
+  | { kind: 'characterFilesDeleted'; slot: number };
 
 /**
  * One answer to the three menus that the Write Scroll and Enchant Wand spells walk through: the
@@ -375,6 +449,31 @@ export interface MwGame {
    * is what keeps a screen up until the player has read it. {@link newMwGame} returns at once.
    */
   pressAnyKey(): void;
+
+  // combat and town
+
+  /**
+   * DS:cbf0: one countdown per monster slot. It runs down with the moves the character spends
+   * and every pass below zero buys that monster a turn.
+   */
+  monsterTimers: number[];
+  /**
+   * DS:cd40: the direction the "YOU ARE FIGHTING THE MONSTER" banner was last drawn for, so it
+   * is drawn again only when the character turns.
+   */
+  engagedBanner: number;
+  /** DS:1301: what the last swing did. */
+  lastStrikeDamage: number;
+  /** DS:12ff: what the last monster's turn did. */
+  lastMonsterDamage: number;
+  /** DS:1305: the moves the character has spent, which the game keeps as a float. */
+  movesTaken: number;
+  /**
+   * wall_side (WORLD.EXE 3000:a524, mw.c "wall_side"): the wall between two squares, 0 wall,
+   * 1 door, 2 secret door, 3 open. `hv` 0 is the side west of (x, y) and 1 the side north of
+   * it, which is what `MwDungeon.side` in `../mwmap.js` already computes.
+   */
+  wallSide(x: number, y: number, hv: 0 | 1, floor: number, dungeon: number): number;
 }
 
 /**
@@ -446,6 +545,17 @@ export function blankMwCharacter(): MwCharacter {
     feather: 0,
     fastMove: 0,
     invisibility: 0,
+    weapon: 0,
+    armor: 0,
+    unread0dd: 0,
+    pills: [0, 0, 0, 0, 0, 0],
+    bank: 0,
+    dir: 0,
+    unread7c0: 0,
+    regenRings: 0,
+    unread7c7: 0,
+    grenades: 0,
+    seeingStones: 0,
     prepStrength: 0,
     prepAgility: 0,
     superStrength: 0,
@@ -464,6 +574,13 @@ export function blankMwCharacter(): MwCharacter {
     resistDrainTimer: 0,
     sleepTimer: 0,
     holdMonsterTimer: 0,
+    floorSloshers: 0,
+    healingPotions: 0,
+    teleportStones: 0,
+    trapdoorKeys: Array.from({ length: 20 }, () => 0),
+    killedBosses: 0,
+    gauntlet: 0,
+    exp: 0,
   };
 }
 
@@ -519,6 +636,12 @@ export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
     chooseArmorSlot: () => -1,
     chooseDirection: () => 5,
     chooseSpellToWrite: () => null,
+    monsterTimers: Array.from({ length: MONSTER_SLOTS }, () => 0),
+    engagedBanner: -1,
+    lastStrikeDamage: 0,
+    lastMonsterDamage: 0,
+    movesTaken: 0,
+    wallSide: () => 3,
     ...rest,
     messages,
     screen,
