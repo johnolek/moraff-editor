@@ -16,4 +16,7 @@ export async function killTheDead(session: GameSession): Promise<void> {
   const game = session.game;
   if (game.engaged === -1 || game.monsters[game.engaged].hp >= 1) return;
   await killMonster(game);
+  // The repeat-fight flag comes down with the monster (exe 2000:dbe3), so Ctrl-F swings at one
+  // monster rather than at whatever walks up next.
+  session.repeatFight = false;
 }

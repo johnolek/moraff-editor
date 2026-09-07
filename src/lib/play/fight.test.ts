@@ -41,3 +41,27 @@ describe('swinging at a monster', () => {
     expect(session.view().engaged).toBeNull();
   });
 });
+
+describe('keeping the swings up with Ctrl-F', () => {
+  it('swings until the monster is dead without another key', async () => {
+    const session = await facingAMonster(highest, { cls: 2 }, { hp: 400 });
+    const monster = session.game.monsters[0];
+    await press(session, KEY.repeatFight);
+    expect(session.repeatFight).toBe(true);
+    for (let waited = 0; waited < 200 && session.repeatFight; waited++) await settle();
+    expect(monster.hp).toBe(0);
+    expect(session.box).toContain('YOU KILLED IT!');
+    expect(session.repeatFight).toBe(false);
+  });
+
+  it('stops the moment the player touches a key', async () => {
+    const session = await facingAMonster(highest, { cls: 2 }, { hp: 100000 });
+    await press(session, KEY.repeatFight);
+    await settle();
+    session.press(KEY.escape);
+    await settle();
+    await settle();
+    expect(session.repeatFight).toBe(false);
+    expect(session.game.monsters[0].hp).toBeGreaterThan(0);
+  });
+});

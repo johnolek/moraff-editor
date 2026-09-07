@@ -13,7 +13,7 @@ import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
 import { chuteUnder, fallDownChute } from './chute';
 import { digHole } from './dig';
-import { swingAtMonster } from './fight';
+import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
 import { showHelp } from './help';
 import { killTheDead } from './kill';
@@ -120,6 +120,11 @@ export class GameSession {
   /** movecontrol has come back: the character has quit or died. */
   over = false;
   dead = false;
+  /**
+   * DS:0437, which Ctrl-F puts up (exe 2000:d285): the loop takes F rather than reading a key,
+   * so the character keeps swinging. `fight.ts` is what reads it.
+   */
+  repeatFight = false;
   /** Called whenever the game is about to wait for a key, so the tab can draw what it is
    *  waiting with. */
   onChange: (() => void) | null = null;
@@ -184,11 +189,16 @@ export class GameSession {
    * while the swing was on the screen is thrown away rather than answering the next turn.
    */
   flushKeys(): void {
+    if (this.queued.length === 0) return;
     this.queued = [];
+    this.repeatFight = false;
   }
 
   /** getch (exe 4000:417b): the next key, once there is one. */
   key(): Promise<number> {
+    // getch raises DS:4ec3, which movecontrol reads at 2000:c80a to put the repeat-fight flag
+    // down: anything that reads the keyboard stops the character swinging on its own.
+    this.repeatFight = false;
     const queued = this.queued.shift();
     if (queued !== undefined) return Promise.resolve(queued);
     this.changed();
@@ -314,7 +324,7 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.help]: { c: 'FUN_3000_7dfc', run: (turn) => showHelp(turn.session) },
   [KEY.f1]: { c: 'FUN_3000_7dfc', run: (turn) => showHelp(turn.session) },
   [KEY.fight]: { c: 'strike', run: swingAtMonster },
-  [KEY.repeatFight]: { c: 'movecontrol, the DS:0437 repeat flag', run: (turn) => notBuiltYet(turn.game, 'KEEP SWINGING WITHOUT ANOTHER KEY') },
+  [KEY.repeatFight]: { c: 'movecontrol, the DS:0437 repeat flag', run: keepSwinging },
   [KEY.cast]: { c: 'cast_a_spell', run: (turn) => notBuiltYet(turn.game, 'CAST A SPELL') },
   [KEY.useItem]: { c: 'use_magic_item', run: (turn) => notBuiltYet(turn.game, 'USE A SCROLL, WAND, PAPER OR POTION') },
   [KEY.viewPrepSpells]: { c: 'view_prep_spells', run: (turn) => notBuiltYet(turn.game, 'LIST THE PREPARATION SPELLS IN EFFECT') },
@@ -378,7 +388,7 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     if (game.engaged === -1) pc.sleepTimer = 0;
     session.showBanner();
     if (pc.deepestFloor < pc.level) pc.deepestFloor = pc.level;
-    const key = await session.key();
+    const key = await readKey(session);
     session.box = [];
     const handler = KEY_HANDLERS[key];
     if (handler) await handler.run(turn);
