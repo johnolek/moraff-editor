@@ -1,4 +1,5 @@
 import { DUNGEON_XMAX as MW_DUNGEON_XMAX, DUNGEON_YMAX as MW_DUNGEON_YMAX } from '../game/mwmap.js';
+import { COLUMNS as REVENGE_COLUMNS, ROWS as REVENGE_ROWS } from '../game/revmap.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX } from '../game/unfmap.js';
 import type { Point } from './viewport';
 
@@ -28,6 +29,14 @@ export const UNFORGIVEN_AREA: MapArea = { columns: MAP_COLUMNS, rows: MAP_ROWS }
  * while every row it makes is walked on.
  */
 export const MORAFFS_WORLD_AREA: MapArea = { columns: MW_DUNGEON_XMAX, rows: MW_DUNGEON_YMAX };
+
+/**
+ * How much of a floor Moraff's Revenge shows: all of it. The move code stops the player at
+ * column 1 (1000:33A3) and column 20 (1000:3223), at row 1 (1000:3167) and at row 19
+ * (1000:32E5), and the map's own row loop is FOR row = 1 TO 19. The generator makes exactly
+ * that, so every square it makes is one the game draws and walks on.
+ */
+export const MORAFFS_REVENGE_AREA: MapArea = { columns: REVENGE_COLUMNS, rows: REVENGE_ROWS };
 
 /** Whether a square is one of the squares the game shows. */
 export function isOnMap(point: Point, area: MapArea): boolean {

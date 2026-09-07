@@ -5,7 +5,7 @@ import { MORAFFS_WORLD_AREA } from './area';
 import { MORAFFS_WORLD_MAP } from './game';
 import { beyondMapCount, monsterAt, type StockedMonster } from './stocking';
 
-const stocking = MORAFFS_WORLD_MAP.stocking;
+const stocking = MORAFFS_WORLD_MAP.stocking!;
 const floorOf = (dungeon: number, level: number) => MORAFFS_WORLD_MAP.floor(level, dungeon);
 
 describe('which floors can be stocked', () => {

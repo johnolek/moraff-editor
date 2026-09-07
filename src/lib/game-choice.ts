@@ -10,6 +10,7 @@ const LAST_CHARACTER_PREFIX = 'moraff-tools.last-character.';
 export const GAME_CHOICES: { id: GameId; label: string }[] = [
   { id: 'unforgiven', label: 'Dungeons of the Unforgiven' },
   { id: 'moraffsWorld', label: "Moraff's World" },
+  { id: 'revenge', label: "Moraff's Revenge" },
 ];
 
 export function isGameId(value: unknown): value is GameId {

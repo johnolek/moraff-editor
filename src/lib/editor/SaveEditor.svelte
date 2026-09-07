@@ -63,7 +63,8 @@
    *  saves is what moves the site to that game. A file that is neither size is read as the game
    *  the switch is on. */
   function receive(file: File) {
-    load(file, pickGameByFileSize(file.size) ?? GAME_SCHEMAS[app.game]);
+    const game = pickGameByFileSize(file.size) ?? GAME_SCHEMAS[app.game];
+    if (game) load(file, game);
   }
 
   function onFileChosen() {

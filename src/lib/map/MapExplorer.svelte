@@ -34,10 +34,6 @@
    *  about where a character has been. */
   const NO_EXPLORED_FLOORS: ExploredFloors = new Map();
 
-  /** Which Moraff's World dungeon the map was last pointed at. Dungeons of the Unforgiven has
-   *  five modules in a picker, so only this game's number is worth remembering. */
-  const MORAFFS_WORLD_DUNGEON_KEY = 'moraff-tools.mw-dungeon';
-
   let game = $state<MapGame>(MAP_GAMES[app.game]);
   let dungeon = $state(rememberedDungeon(MAP_GAMES[app.game]));
   let floor = $state(0);
@@ -95,13 +91,13 @@
   );
   const cursorMonster = $derived(cursor ? monsterAt(monsters, cursor.x, cursor.y) : null);
   const selectedMonster = $derived(selected ? monsterAt(monsters, selected.x, selected.y) : null);
-  const selectedMonsterLine = $derived(selectedMonster && game.stocking.describe(selectedMonster));
+  const selectedMonsterLine = $derived(selectedMonster && game.stocking ? game.stocking.describe(selectedMonster) : null);
   const tooltip = $derived<Tooltip | null>(
     cursorDescription
       ? {
           title: `${cursor!.x}, ${cursor!.y}`,
           feature: featureLine(cursorDescription),
-          monster: cursorMonster && game.stocking.describe(cursorMonster),
+          monster: cursorMonster && game.stocking ? game.stocking.describe(cursorMonster) : null,
           notes: cursorNotes,
         }
       : null,
@@ -158,10 +154,11 @@
     applyPlace(left.get(chosen) ?? start);
   }
 
+  /** The number a game's map comes back to. Dungeons of the Unforgiven picks its five modules
+   *  from a list, so only a game whose number is typed has one worth remembering. */
   function rememberedDungeon(forGame: MapGame): number {
-    if (forGame.id !== 'moraffsWorld') return 0;
-    const stored = Number(readStored(MORAFFS_WORLD_DUNGEON_KEY));
-    return hasDungeon(forGame, stored) ? stored : 0;
+    const stored = forGame.dungeonStorageKey ? Number(readStored(forGame.dungeonStorageKey)) : NaN;
+    return hasDungeon(forGame, stored) ? stored : forGame.defaultDungeon;
   }
 
   /** The browser structured-clones what it stores, and Svelte's state proxies cannot be cloned, so
@@ -189,7 +186,7 @@
 
   function applyPlace(place: MapPlace) {
     game = MAP_GAMES[place.game];
-    if (game.id === 'moraffsWorld') writeStored(MORAFFS_WORLD_DUNGEON_KEY, String(place.dungeon));
+    if (game.dungeonStorageKey) writeStored(game.dungeonStorageKey, String(place.dungeon));
     // A place can name a floor the dungeon does not have, and only the override shows one.
     if (place.floor < 0 || place.floor > game.bottomFloor(place.dungeon)) anyFloor = true;
     dungeon = place.dungeon;
@@ -303,7 +300,7 @@
   }
 
   function stockThisFloor() {
-    stocked = new Map(stocked).set(stockKey, game.stocking.stock(rows, dungeon, floor));
+    if (game.stocking) stocked = new Map(stocked).set(stockKey, game.stocking.stock(rows, dungeon, floor));
   }
 
   /** Reads the .DUN files given onto the map, naming whichever of them cannot be read. */
@@ -568,17 +565,20 @@
       onclear={clearSelection}
       ontake={takeTeleporter}
     />
-    <FloorMonsters
-      {game}
-      {dungeon}
-      {floor}
-      {monsters}
-      pinned={monsterPinned}
-      onstock={stockThisFloor}
-      onclear={clearMonsters}
-      onhover={(monsterId) => (monsterHover = monsterId)}
-      onpin={pinMonster}
-    />
+    {#if game.stocking}
+      <FloorMonsters
+        {game}
+        stocking={game.stocking}
+        {dungeon}
+        {floor}
+        {monsters}
+        pinned={monsterPinned}
+        onstock={stockThisFloor}
+        onclear={clearMonsters}
+        onhover={(monsterId) => (monsterHover = monsterId)}
+        onpin={pinMonster}
+      />
+    {/if}
     {#if !game.modules}
       <ExploredMaps
         floors={explored}

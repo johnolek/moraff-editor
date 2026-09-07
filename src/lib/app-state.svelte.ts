@@ -2,8 +2,13 @@ import { HistoryCursor } from './history';
 
 export type Tab = 'map' | 'play' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
 
-/** Which game the site is about. These are the ids of the schemas in `src/lib/editor/games.ts`. */
-export type GameId = 'unforgiven' | 'moraffsWorld';
+/** Which game the site is about. The first two are the ids of the schemas in
+ *  `src/lib/editor/games.ts`; Moraff's Revenge has no save editor yet. */
+export type GameId = 'unforgiven' | 'moraffsWorld' | 'revenge';
+
+/** The games the site has a port of, which are the ones with a save editor, a character roller
+ *  and a Play tab. Moraff's Revenge has only its map so far. */
+export type PortedGameId = 'unforgiven' | 'moraffsWorld';
 
 /** A function to open in the Source tab: one of the port's, or one of the decompilation's. */
 export type SourceRequest = { kind: 'ts'; file: string; name: string } | { kind: 'c'; name: string };

@@ -27,7 +27,7 @@ describe('squareFeature', () => {
   });
 
   it('sends trap doors to the fixed landing square of the destination floor', () => {
-    const [landingX, landingY] = UNFORGIVEN_MAP.trapdoorLanding(10, 0);
+    const [landingX, landingY] = UNFORGIVEN_MAP.trapdoorLanding!(10, 0);
     expect(squareFeature(UNFORGIVEN_MAP, 0, 3, square({ trapdoor: 10 }), 10, 11)).toEqual({
       kind: 'trapdoor',
       destination: { floor: 10, x: landingX, y: landingY },

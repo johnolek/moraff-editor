@@ -7,4 +7,5 @@ export const GLYPH_LABELS: Record<Glyph, string> = {
   up: 'Up ladder',
   trapdoor: 'Trap door',
   chute: 'Chute',
+  falseFloor: 'False floor',
 };

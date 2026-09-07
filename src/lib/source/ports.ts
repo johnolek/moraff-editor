@@ -53,6 +53,7 @@ import mwDungeonSource from '../game/mw-dungeon.ts?raw';
 import mwMonstersSource from '../mw-bestiary/monsters.ts?raw';
 import mwToHitSource from '../mw-bestiary/to-hit.ts?raw';
 import mwEffectsSource from '../mw-spells/effects.ts?raw';
+import revmapSource from '../game/revmap.js?raw';
 import { snippet } from '../ui/source-snippet';
 
 /** The Dungeons of the Unforgiven files, keyed by the path they live at in the repository. */
@@ -105,14 +106,20 @@ const MORAFFS_WORLD_SOURCES = {
   'src/lib/mw-spells/effects.ts': mwEffectsSource,
 };
 
+/** The Moraff's Revenge files. Its dungeon is all the site has of that game so far. */
+const MORAFFS_REVENGE_SOURCES = {
+  'src/lib/game/revmap.js': revmapSource,
+};
+
 /** Every file the app shows the source of, keyed by the path it lives at in the repository. */
-export const SOURCES = { ...UNFORGIVEN_SOURCES, ...MORAFFS_WORLD_SOURCES };
+export const SOURCES = { ...UNFORGIVEN_SOURCES, ...MORAFFS_WORLD_SOURCES, ...MORAFFS_REVENGE_SOURCES };
 
 export type SourceFile = keyof typeof SOURCES;
 
 const FILES: Record<GameId, SourceFile[]> = {
   unforgiven: Object.keys(UNFORGIVEN_SOURCES) as SourceFile[],
   moraffsWorld: Object.keys(MORAFFS_WORLD_SOURCES) as SourceFile[],
+  revenge: Object.keys(MORAFFS_REVENGE_SOURCES) as SourceFile[],
 };
 
 /**
@@ -220,6 +227,7 @@ export function declarations(file: SourceFile, source: string): PortFunction[] {
 const PORT_FILES: Record<GameId, PortFile[]> = {
   unforgiven: FILES.unforgiven.map((file) => ({ file, functions: declarations(file, SOURCES[file]) })),
   moraffsWorld: FILES.moraffsWorld.map((file) => ({ file, functions: declarations(file, SOURCES[file]) })),
+  revenge: FILES.revenge.map((file) => ({ file, functions: declarations(file, SOURCES[file]) })),
 };
 
 /** One game's files with the declarations they hold, in the order the Source tab lists them. */
@@ -227,11 +235,12 @@ export function portFiles(game: GameId = 'unforgiven'): PortFile[] {
   return PORT_FILES[game];
 }
 
-const ALL = [...PORT_FILES.unforgiven, ...PORT_FILES.moraffsWorld].flatMap((entry) => entry.functions);
+const ALL = [...PORT_FILES.unforgiven, ...PORT_FILES.moraffsWorld, ...PORT_FILES.revenge].flatMap((entry) => entry.functions);
 
 const BY_C_NAME: Record<GameId, Map<string, PortFunction[]>> = {
   unforgiven: new Map(),
   moraffsWorld: new Map(),
+  revenge: new Map(),
 };
 for (const fn of ALL) {
   if (!fn.c) continue;

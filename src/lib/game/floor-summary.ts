@@ -20,14 +20,20 @@ export interface FloorCounts {
 /** What the map's legend says about one floor. */
 export interface MapFloorSummary extends FloorCounts {
   floor: number;
-  /** Where trap doors leading to this floor land; absent on floor 0 and on solid floors. */
+  /** Where trap doors leading to this floor land; absent on floor 0, on solid floors, and in a
+   *  game with no trap doors. */
   trapdoorLanding?: [number, number];
+  /** Squares a chute drops you on where the fall can go on, which only Moraff's Revenge has. */
+  falseFloors: number;
 }
 
-/** Feature counts for one floor, the same shape as dotu-tools/fixtures/floor-summary.json. */
-export interface FloorSummary extends MapFloorSummary {
+/** Feature counts for one floor, the same shape as dotu-tools/fixtures/floor-summary.json, which
+ *  is Dungeons of the Unforgiven's alone and so carries none of the later games' counts. */
+export interface FloorSummary extends FloorCounts {
   /** 1-based, as shown to the player. */
   module: number;
+  floor: number;
+  trapdoorLanding?: [number, number];
 }
 
 /**
@@ -47,9 +53,17 @@ export function summarizeFloor(dungeon: Dungeon, level: number, moduleIndex: num
 /** The same counts for whichever game the map is showing, over the rows that game shows. */
 export function summarizeMapFloor(game: MapGame, rows: MapSquare[][], level: number, dungeon: number): MapFloorSummary {
   const counts = countFloor(rows, game.area.rows, game.buildingOn, game.buildings.length);
-  const summary: MapFloorSummary = { floor: level, ...counts };
-  if (level > 0 && counts.open > 0) summary.trapdoorLanding = game.trapdoorLanding(level, dungeon);
+  const summary: MapFloorSummary = { floor: level, ...counts, falseFloors: countFalseFloors(rows, game.area.rows) };
+  if (level > 0 && counts.open > 0 && game.trapdoorLanding) summary.trapdoorLanding = game.trapdoorLanding(level, dungeon);
   return summary;
+}
+
+function countFalseFloors(rows: MapSquare[][], rowCount: number): number {
+  let count = 0;
+  for (const row of rows.slice(0, rowCount)) {
+    for (const square of row) if (square.falseFloor) count++;
+  }
+  return count;
 }
 
 function countFloor(rows: MapSquare[][], rowCount: number, buildingOn: (square: MapSquare) => number, buildings: number): FloorCounts {

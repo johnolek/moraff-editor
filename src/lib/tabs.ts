@@ -20,23 +20,30 @@ export const TABS: TabEntry[] = [
   { id: 'source', label: 'Source' },
 ];
 
-/** The tabs that know anything about Moraff's World. The calculators, the formulas, the tidbits
- *  and the snake are Dungeons of the Unforgiven's alone. */
-const MORAFFS_WORLD_TABS: Tab[] = ['map', 'play', 'editor', 'monsters', 'spells', 'roller', 'source'];
+/** The tabs each game other than Dungeons of the Unforgiven has, which has them all: the
+ *  calculators, the formulas, the tidbits and the snake are that game's alone. */
+const GAME_TABS: Partial<Record<GameId, Tab[]>> = {
+  moraffsWorld: ['map', 'play', 'editor', 'monsters', 'spells', 'roller', 'source'],
+  revenge: ['map', 'source'],
+};
 
-/** The one tab Moraff's World calls something else, since only one of the two games needs
- *  saying when the map is of that game's own dungeons. */
-const MORAFFS_WORLD_LABELS: Partial<Record<Tab, string>> = { map: 'Map' };
+/** The one tab the other games call something else, since only Dungeons of the Unforgiven needs
+ *  naming when the map is of another game's own dungeons. */
+const OTHER_GAME_LABELS: Partial<Record<Tab, string>> = { map: 'Map' };
 
 /** Where a game goes when the tab that was showing is not one of its own. */
 const FALLBACK_TAB: Tab = 'editor';
 
 export function tabsFor(game: GameId): TabEntry[] {
-  if (game !== 'moraffsWorld') return TABS;
-  return TABS.filter((tab) => MORAFFS_WORLD_TABS.includes(tab.id)).map((tab) => ({ ...tab, label: MORAFFS_WORLD_LABELS[tab.id] ?? tab.label }));
+  const theirs = GAME_TABS[game];
+  if (!theirs) return TABS;
+  return TABS.filter((tab) => theirs.includes(tab.id)).map((tab) => ({ ...tab, label: OTHER_GAME_LABELS[tab.id] ?? tab.label }));
 }
 
-/** The tab to show under a game, which is the one asked for unless that game has no such tab. */
+/** The tab to show under a game, which is the one asked for unless that game has no such tab.
+ *  A game without a save editor to fall back on goes to the first tab it does have. */
 export function tabFor(game: GameId, tab: Tab): Tab {
-  return tabsFor(game).some((entry) => entry.id === tab) ? tab : FALLBACK_TAB;
+  const theirs = tabsFor(game);
+  if (theirs.some((entry) => entry.id === tab)) return tab;
+  return theirs.some((entry) => entry.id === FALLBACK_TAB) ? FALLBACK_TAB : theirs[0].id;
 }

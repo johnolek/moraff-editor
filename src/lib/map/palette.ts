@@ -28,14 +28,16 @@ export const palette = {
   boss: '#ff0028',
 } as const;
 
-export type Glyph = 'down' | 'up' | 'trapdoor' | 'chute';
+export type Glyph = 'down' | 'up' | 'trapdoor' | 'chute' | 'falseFloor';
 
-/** The one glyph drawn inside a square, in the game's priority order. */
+/** The one glyph drawn inside a square, in the game's priority order. A false floor is last
+ *  because it is what is left of a square that holds nothing of its own. */
 export function squareGlyph(square: MapSquare): Glyph | null {
   if (square.ladder > 0) return 'down';
   if (square.ladder < 0) return 'up';
   if (square.trapdoor >= 0) return 'trapdoor';
   if (square.chute) return 'chute';
+  if (square.falseFloor) return 'falseFloor';
   return null;
 }
 

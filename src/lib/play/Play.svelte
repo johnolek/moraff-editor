@@ -34,7 +34,7 @@
   let view = $state.raw<PlayView | null>(null);
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
-  let style = $state<MovementStyle>(readMovementStyle(UNFORGIVEN_MAP.id));
+  let style = $state<MovementStyle>(readMovementStyle('unforgiven'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -126,7 +126,7 @@
   /** The style is picked with the mouse, and the arrow keys belong to the game rather than to a
    *  radio button, so the control hands the keyboard back as soon as it has been answered. */
   function chooseStyle(input: HTMLInputElement) {
-    writeMovementStyle(UNFORGIVEN_MAP.id, style);
+    writeMovementStyle('unforgiven', style);
     input.blur();
   }
 

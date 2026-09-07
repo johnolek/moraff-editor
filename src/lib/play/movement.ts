@@ -1,6 +1,6 @@
-import type { GameId } from '../app-state.svelte';
+import type { PortedGameId } from '../app-state.svelte';
 import { readStored, writeStored } from '../character/storage';
-import { GAME_CHOICES, isGameId } from '../game-choice';
+import { GAME_CHOICES } from '../game-choice';
 import { KEY } from './keys';
 
 /**
@@ -11,7 +11,7 @@ import { KEY } from './keys';
  * left and right turn them, and down turns them around. Moraff's World's are compass
  * directions: each arrow faces the character the way it points and steps that way.
  */
-export type MovementStyle = GameId;
+export type MovementStyle = PortedGameId;
 
 /** Where the choice is kept, one key per game. */
 const PREFIX = 'moraff-tools.play.';
@@ -23,12 +23,11 @@ const HOW: Record<MovementStyle, string> = {
   moraffsWorld: 'Each arrow faces the way it points and steps that way.',
 };
 
-/** The two styles the control offers, named after the game whose arrows they are. */
-export const MOVEMENT_STYLES: { id: MovementStyle; label: string; how: string }[] = GAME_CHOICES.map((choice) => ({
-  id: choice.id,
-  label: choice.label,
-  how: HOW[choice.id],
-}));
+/** The two styles the control offers, named after the game whose arrows they are. Only a game
+ *  the site can play has arrows to offer. */
+export const MOVEMENT_STYLES: { id: MovementStyle; label: string; how: string }[] = GAME_CHOICES.filter(
+  (choice): choice is { id: MovementStyle; label: string } => choice.id in HOW,
+).map((choice) => ({ id: choice.id, label: choice.label, how: HOW[choice.id] }));
 
 /** What each arrow does under each style, for the buttons under the map. The words are each
  *  game's own for its own arrows, from the button bar (exe 4000:667b) and the help menu
@@ -53,12 +52,16 @@ export function arrowLabel(style: MovementStyle, key: number): string | null {
   return ARROW_LABELS[style][key] ?? null;
 }
 
-/** Whose arrows this game is played with: the player's choice, or the game's own. */
-export function readMovementStyle(game: GameId): MovementStyle {
-  const stored = readStored(PREFIX + game + SUFFIX);
-  return isGameId(stored) ? stored : game;
+function isMovementStyle(value: unknown): value is MovementStyle {
+  return MOVEMENT_STYLES.some((style) => style.id === value);
 }
 
-export function writeMovementStyle(game: GameId, style: MovementStyle): void {
+/** Whose arrows this game is played with: the player's choice, or the game's own. */
+export function readMovementStyle(game: MovementStyle): MovementStyle {
+  const stored = readStored(PREFIX + game + SUFFIX);
+  return isMovementStyle(stored) ? stored : game;
+}
+
+export function writeMovementStyle(game: MovementStyle, style: MovementStyle): void {
   writeStored(PREFIX + game + SUFFIX, style);
 }

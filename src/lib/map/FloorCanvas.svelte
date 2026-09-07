@@ -118,9 +118,10 @@
   const pictures = new Map<string, HTMLCanvasElement>();
 
   const sprites: MonsterSprites = {
-    isBoss: (id) => game.stocking.kind(id).boss,
+    isBoss: (id) => game.stocking?.kind(id).boss ?? false,
     picture: (id) => {
-      const entry = game.stocking.kind(id);
+      const entry = game.stocking?.kind(id);
+      if (!entry) return null;
       const key = `${game.id}:${id}:${entry.pictureKey(dungeon, floor)}`;
       const cached = pictures.get(key);
       if (cached) return cached;

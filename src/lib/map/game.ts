@@ -2,8 +2,9 @@ import type { GameId } from '../app-state.svelte';
 import type { RenderedImage } from '../bestiary/pictures';
 import { bundledDungeon } from '../game/dungeon';
 import { bundledMwDungeon } from '../game/mw-dungeon';
+import { LEVELS as REVENGE_LEVELS, floor as revengeFloor, squareOn as revengeSquareOn } from '../game/revmap.js';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
-import { MORAFFS_WORLD_AREA, UNFORGIVEN_AREA, type MapArea } from './area';
+import { MORAFFS_REVENGE_AREA, MORAFFS_WORLD_AREA, UNFORGIVEN_AREA, type MapArea } from './area';
 import { MODULE_NUMERALS } from './labels';
 import { MORAFFS_WORLD_STOCKING } from './mw-stocking';
 import { hasTeleporterSide } from './path';
@@ -27,6 +28,8 @@ export interface MapSquare {
   chute: number;
   /** Trap door destination floor, -1 when none. */
   trapdoor: number;
+  /** Moraff's Revenge only: whether a chute drops you here and the fall can go on. */
+  falseFloor?: boolean;
   town?: number;
   surface?: number;
 }
@@ -77,6 +80,14 @@ export interface MapStocking {
   note: string | null;
 }
 
+/** Which of the things the map can draw a game's floors ever hold, which is what its legend
+ *  lists: an entry a game never has is left out rather than shown as a count of nothing. */
+export interface MapFeatures {
+  secretDoors: boolean;
+  trapdoors: boolean;
+  falseFloors: boolean;
+}
+
 /** Where a floor is: which numbered dungeon it belongs to and how deep it is. */
 export interface MapGame {
   id: GameId;
@@ -88,19 +99,27 @@ export interface MapGame {
   dungeonName(dungeon: number): string;
   /** The numbers that name a dungeon of this game, inclusive. */
   dungeons: { lowest: number; highest: number };
+  /** The number the map starts at with nothing remembered. */
+  defaultDungeon: number;
+  /** Where the number last looked at is kept between visits, or null for a game whose number
+   *  is chosen from a list rather than typed. */
+  dungeonStorageKey: string | null;
   /** The deepest floor one dungeon has. */
   bottomFloor(dungeon: number): number;
   floor(level: number, dungeon: number): MapSquare[][];
   /** One square of any floor, without generating the rest of it. */
   squareOn(x: number, y: number, level: number, dungeon: number): MapSquare;
-  /** The square every trap door leading to a floor lands on. */
-  trapdoorLanding(level: number, dungeon: number): [number, number];
+  /** The square every trap door leading to a floor lands on, or null for a game with none. */
+  trapdoorLanding: ((level: number, dungeon: number) => [number, number]) | null;
+  /** Which of the things the legend can list this game's floors ever hold. */
+  features: MapFeatures;
   buildings: Building[];
   /** The building on a square, 0 when it has none. */
   buildingOn(square: MapSquare): number;
   routeTo: RouteTarget;
-  /** How this game fills a floor with monsters. */
-  stocking: MapStocking;
+  /** How this game fills a floor with monsters, or null for a game whose monsters are not
+   *  worked out. */
+  stocking: MapStocking | null;
   /** What an exported PNG of a floor is called. */
   pngName(dungeon: number, floor: number): string;
   /**
@@ -143,6 +162,8 @@ export const UNFORGIVEN_MAP: MapGame = {
   dungeonNoun: 'Module',
   dungeonName: (dungeon) => `Module ${MODULE_NUMERALS[dungeon]}`,
   dungeons: { lowest: 0, highest: BOTTOM_LEVEL.length - 1 },
+  defaultDungeon: 0,
+  dungeonStorageKey: null,
   bottomFloor: (dungeon) => BOTTOM_LEVEL[dungeon],
   floor: (level, dungeon) => bundledDungeon.floor(level, dungeon),
   squareOn(x, y, level, dungeon) {
@@ -167,6 +188,7 @@ export const UNFORGIVEN_MAP: MapGame = {
     return square;
   },
   trapdoorLanding: (level, dungeon) => bundledDungeon.trapdoorDest(level, dungeon),
+  features: { secretDoors: true, trapdoors: true, falseFloors: false },
   buildings: UNFORGIVEN_BUILDINGS,
   buildingOn: (square) => square.town ?? 0,
   routeTo: { noun: 'teleporter', matches: hasTeleporterSide },
@@ -201,6 +223,9 @@ const MORAFFS_WORLD_BOTTOM_FLOOR = 202;
 const DUNGEON_MIN = -32768;
 const DUNGEON_MAX = 32767;
 
+/** Which Moraff's World dungeon the map was last pointed at. */
+const MORAFFS_WORLD_DUNGEON_KEY = 'moraff-tools.mw-dungeon';
+
 /** Squares holding a ladder, which is all Moraff's World has worth walking to. */
 function hasLadder(square: MapSquare): boolean {
   return square.ladder !== 0;
@@ -212,6 +237,8 @@ export const MORAFFS_WORLD_MAP: MapGame = {
   dungeonNoun: 'Dungeon',
   dungeonName: (dungeon) => `Dungeon ${dungeon}`,
   dungeons: { lowest: DUNGEON_MIN, highest: DUNGEON_MAX },
+  defaultDungeon: 0,
+  dungeonStorageKey: MORAFFS_WORLD_DUNGEON_KEY,
   bottomFloor: () => MORAFFS_WORLD_BOTTOM_FLOOR,
   floor: (level, dungeon) => bundledMwDungeon.floor(level, dungeon),
   squareOn(x, y, level, dungeon) {
@@ -235,6 +262,7 @@ export const MORAFFS_WORLD_MAP: MapGame = {
     return square;
   },
   trapdoorLanding: (level, dungeon) => bundledMwDungeon.trapdoorDest(level, dungeon),
+  features: { secretDoors: true, trapdoors: true, falseFloors: false },
   buildings: MORAFFS_WORLD_BUILDINGS,
   buildingOn: (square) => square.surface ?? 0,
   routeTo: { noun: 'ladder', matches: hasLadder },
@@ -243,7 +271,48 @@ export const MORAFFS_WORLD_MAP: MapGame = {
   modules: false,
 };
 
+/** Which generation of Moraff's Revenge the map was last pointed at. */
+const MORAFFS_REVENGE_GENERATION_KEY = 'moraff-tools.revenge-generation';
+
+/**
+ * The generation is the character's own number, value 26 of its record: 1 until it drinks from
+ * the fountain of youth, and two more each time it does (1000:3ED0), which gives that character
+ * a dungeon of its own. The game divides by it, and its arithmetic is exact for whole numbers
+ * up to 2 ** 24, so that is as far as the map answers.
+ */
+const GENERATION_LOWEST = 1;
+const GENERATION_HIGHEST = 0xffffff;
+
+/**
+ * Moraff's Revenge. Its dungeon is not stored anywhere: every wall, ladder and chute comes out
+ * of the square's own coordinates, which is what `src/lib/game/revmap.js` works out.
+ *
+ * The game numbers its columns from 1 and its rows from 1, and the map numbers both from 0, so
+ * the map's (x, y) is the game's (x + 1, y + 1).
+ */
+export const MORAFFS_REVENGE_MAP: MapGame = {
+  id: 'revenge',
+  area: MORAFFS_REVENGE_AREA,
+  dungeonNoun: 'Generation',
+  dungeonName: (generation) => `Generation ${generation}`,
+  dungeons: { lowest: GENERATION_LOWEST, highest: GENERATION_HIGHEST },
+  defaultDungeon: GENERATION_LOWEST,
+  dungeonStorageKey: MORAFFS_REVENGE_GENERATION_KEY,
+  bottomFloor: () => REVENGE_LEVELS,
+  floor: (level, generation) => revengeFloor(level, generation),
+  squareOn: (x, y, level, generation) => revengeSquareOn(x + 1, y + 1, level, generation),
+  trapdoorLanding: null,
+  features: { secretDoors: false, trapdoors: false, falseFloors: true },
+  buildings: [],
+  buildingOn: () => 0,
+  routeTo: { noun: 'ladder', matches: hasLadder },
+  stocking: null,
+  pngName: (generation, floor) => `revenge-generation-${generation}-${floor === 0 ? 'town' : `floor-${floor}`}.png`,
+  modules: false,
+};
+
 export const MAP_GAMES: Record<GameId, MapGame> = {
   unforgiven: UNFORGIVEN_MAP,
   moraffsWorld: MORAFFS_WORLD_MAP,
+  revenge: MORAFFS_REVENGE_MAP,
 };

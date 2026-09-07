@@ -71,6 +71,8 @@
       Moraff's World has the Map, Play, the Save Editor, the Monsters, Spells, New Character and Source so far. The
       rest is on the way.
     </p>
+  {:else if app.game === 'revenge'}
+    <p class="game-note">Moraff's Revenge has the Map and Source so far. The rest is on the way.</p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
   <main class:hidden={app.tab !== 'map'}>

@@ -27,8 +27,13 @@
   /** The characters of the game the site is showing; the others are only counted. */
   const ours = $derived(app.roster.filter((entry) => entry.game === app.game));
   const elsewhere = $derived(app.roster.length - ours.length);
-  const otherGameName = $derived(GAMES.find((entry) => entry.id !== app.game)?.displayName ?? '');
-  const elsewhereLine = $derived(`${elsewhere} more character${elsewhere === 1 ? '' : 's'} under ${otherGameName}.`);
+  /** The games those other characters belong to, since there are more than two to be under. */
+  const elsewhereGames = $derived(
+    GAMES.filter((entry) => entry.id !== app.game && app.roster.some((character) => character.game === entry.id)).map(
+      (entry) => entry.displayName,
+    ),
+  );
+  const elsewhereLine = $derived(`${elsewhere} more character${elsewhere === 1 ? '' : 's'} under ${elsewhereGames.join(' and ')}.`);
 
   function toggle() {
     collapsed = !collapsed;

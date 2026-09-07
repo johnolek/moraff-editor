@@ -140,22 +140,29 @@ function drawGlyph(ctx: CanvasRenderingContext2D, square: MapSquare, x0: number,
   const x1 = x0 + w + 1;
   const y1 = y0 + h + 1;
   const size = Math.min(w, h);
+  const falling = glyph === 'chute' || glyph === 'falseFloor';
   ctx.lineWidth = size >= 16 ? 2 : 1;
-  ctx.strokeStyle = glyph === 'chute' ? palette.chute : palette.ladder;
-  if (glyph === 'chute') {
+  ctx.strokeStyle = falling ? palette.chute : palette.ladder;
+  // A false floor is a chute you cannot see until you have fallen onto it, so it is the chute's
+  // own mark drawn in a broken line.
+  if (glyph === 'falseFloor') ctx.setLineDash([2, 2]);
+  if (falling) {
     line(ctx, x0 + (w >> 1) + 1, y0 + 1, x0 + (w >> 1) + 1, y1);
     line(ctx, x0 + 1, y0 + (h >> 1) + 1, x1, y0 + (h >> 1) + 1);
   }
   if (glyph !== 'up') diagonal(ctx, x0 + 1, y0 + 1, x1, y1);
   if (glyph !== 'down') diagonal(ctx, x0 + 1, y1, x1, y0 + 1);
+  ctx.setLineDash([]);
   ctx.lineWidth = 1;
   if (size >= LABEL_MIN_CELL) drawLabel(ctx, String(glyphDestination(square, floor)), x0 + 1 + w / 2, y0 + 1 + h / 2, size);
 }
 
-/** Floor a ladder, chute or trap door square leads to. */
+/** Floor a ladder, chute, trap door or false floor square leads to. A false floor is a chute
+ *  going on, so it drops one floor like the chute that landed you on it. */
 export function glyphDestination(square: MapSquare, floor: number): number {
   if (square.ladder) return floor + square.ladder;
   if (square.trapdoor >= 0) return square.trapdoor;
+  if (square.falseFloor) return floor + 1;
   return square.chute;
 }
 

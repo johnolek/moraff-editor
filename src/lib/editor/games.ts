@@ -510,8 +510,8 @@ export const UNFORGIVEN: GameSchema = {
 
 export const GAMES: GameSchema[] = [MORAFFS_WORLD, UNFORGIVEN];
 
-/** The schema of each game the site can be switched to. */
-export const GAME_SCHEMAS: Record<GameId, GameSchema> = {
+/** The schema of each game that has a save editor. Moraff's Revenge has none yet. */
+export const GAME_SCHEMAS: Partial<Record<GameId, GameSchema>> = {
   unforgiven: UNFORGIVEN,
   moraffsWorld: MORAFFS_WORLD,
 };

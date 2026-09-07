@@ -47,13 +47,13 @@ describe('parseSections', () => {
 
 describe('the decompilations the app ships', () => {
   it('holds every function of both executables', () => {
-    expect(decompilation('unforgiven').sections.length).toBe(647);
-    expect(decompilation('moraffsWorld').sections.length).toBe(580);
+    expect(decompilation('unforgiven')!.sections.length).toBe(647);
+    expect(decompilation('moraffsWorld')!.sections.length).toBe(580);
   });
 
   it('names the executable each one was read out of', () => {
-    expect(decompilation('unforgiven').executable).toBe('UNF.EXE');
-    expect(decompilation('moraffsWorld').executable).toBe('WORLD.EXE');
+    expect(decompilation('unforgiven')!.executable).toBe('UNF.EXE');
+    expect(decompilation('moraffsWorld')!.executable).toBe('WORLD.EXE');
   });
 
   it('carries the code of a function the Dungeons of the Unforgiven port cites', () => {
@@ -81,14 +81,14 @@ describe('the decompilations the app ships', () => {
 
   it('lists the named functions before the ones only known by their address', () => {
     const names = sectionsByName().map((section) => section.name);
-    expect(names.length).toBe(decompilation('unforgiven').sections.length);
+    expect(names.length).toBe(decompilation('unforgiven')!.sections.length);
     expect(names.filter((name) => name.startsWith('FUN_')).length).toBe(447);
     expect(names.findIndex((name) => name.startsWith('FUN_'))).toBe(200);
   });
 
   it('lists Moraff\'s World the same way', () => {
     const names = sectionsByName('moraffsWorld').map((section) => section.name);
-    expect(names.length).toBe(decompilation('moraffsWorld').sections.length);
+    expect(names.length).toBe(decompilation('moraffsWorld')!.sections.length);
     expect(names[0].startsWith('FUN_')).toBe(false);
     expect(names[names.length - 1].startsWith('FUN_')).toBe(true);
   });

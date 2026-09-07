@@ -1,10 +1,12 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { beyondMapCount, type StockedMonster } from './stocking';
-  import type { MapGame } from './game';
+  import type { MapGame, MapStocking } from './game';
 
   interface Props {
     game: MapGame;
+    /** How this game fills a floor. The panel is only shown for a game that has one. */
+    stocking: MapStocking;
     dungeon: number;
     floor: number;
     /** Monsters stocked on the floor, empty when it has not been stocked. */
@@ -17,10 +19,10 @@
     onpin: (monsterId: string | null) => void;
   }
 
-  let { game, dungeon, floor, monsters, pinned, onstock, onclear, onhover, onpin }: Props = $props();
+  let { game, stocking, dungeon, floor, monsters, pinned, onstock, onclear, onhover, onpin }: Props = $props();
 
-  const canStock = $derived(game.stocking.stocks(dungeon, floor));
-  const groups = $derived(game.stocking.groups(monsters));
+  const canStock = $derived(stocking.stocks(dungeon, floor));
+  const groups = $derived(stocking.groups(monsters));
   const beyondMap = $derived(beyondMapCount(monsters, game.area));
 </script>
 
@@ -41,13 +43,13 @@
         <button class="ghost" onclick={onclear}>Clear</button>
       {/if}
     </div>
-    {#if game.stocking.note}
-      <p class="hint note">{game.stocking.note}</p>
+    {#if stocking.note}
+      <p class="hint note">{stocking.note}</p>
     {/if}
     {#if monsters.length}
       <p>{monsters.length} monsters</p>
       {#if beyondMap}
-        <p class="hint">{game.stocking.beyondMap(beyondMap)}</p>
+        <p class="hint">{stocking.beyondMap(beyondMap)}</p>
       {/if}
       {#each groups as group}
         {#if group.label}

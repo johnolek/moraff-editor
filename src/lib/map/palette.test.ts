@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { UNFORGIVEN_MAP, type MapSquare } from './game';
+import { glyphDestination } from './draw-floor';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
 
 function square(overrides: Partial<MapSquare> = {}): MapSquare {
@@ -15,6 +16,19 @@ describe('squareGlyph', () => {
     expect(squareGlyph(square({ chute: 7 }))).toBe('chute');
     expect(squareGlyph(square({ ladder: 1, trapdoor: 10, chute: 7 }))).toBe('down');
     expect(squareGlyph(square({ trapdoor: 10, chute: 7 }))).toBe('trapdoor');
+  });
+
+  it('draws a false floor only on a square that holds nothing of its own', () => {
+    expect(squareGlyph(square({ falseFloor: true }))).toBe('falseFloor');
+    expect(squareGlyph(square({ falseFloor: true, ladder: -1 }))).toBe('up');
+  });
+});
+
+describe('glyphDestination', () => {
+  it('drops a false floor one floor, the way the chute that landed you on it did', () => {
+    expect(glyphDestination(square({ falseFloor: true }), 12)).toBe(13);
+    expect(glyphDestination(square({ chute: 13 }), 12)).toBe(13);
+    expect(glyphDestination(square({ ladder: -2 }), 12)).toBe(10);
   });
 });
 

@@ -9,7 +9,9 @@
  * The header carries the name the reverse engineering gave the function, where it sits in the
  * executable, how many bytes of machine code it was, what calls it, and sometimes a note. Both
  * files are imported as text and split here, so the Source tab can show any of Dungeons of the
- * Unforgiven's 647 functions or Moraff's World's 580 without fetching anything.
+ * Unforgiven's 647 functions or Moraff's World's 580 without fetching anything. Moraff's
+ * Revenge's decompilation is not bundled: it is another megabyte and a half, and nothing on the
+ * site cites it yet.
  */
 import type { GameId } from '../app-state.svelte';
 import unfSource from '../../../dotu-tools/decomp/unf.c?raw';
@@ -92,25 +94,27 @@ function decompilationOf(executable: string, source: string): Decompilation {
   return { executable, sections, byName: new Map(sections.map((section) => [section.name, section])) };
 }
 
-const DECOMPILATIONS: Record<GameId, Decompilation> = {
+const DECOMPILATIONS: Record<GameId, Decompilation | null> = {
   unforgiven: decompilationOf('UNF.EXE', unfSource),
   moraffsWorld: decompilationOf('WORLD.EXE', mwSource),
+  revenge: null,
 };
 
 /**
- * One game's decompilation. Moraff's World ships two executables and `WORLD.EXE` is the game;
- * Dungeons of the Unforgiven has only `UNF.EXE`.
+ * One game's decompilation, or null for a game whose decompilation the site does not carry.
+ * Moraff's World ships two executables and `WORLD.EXE` is the game; Dungeons of the Unforgiven
+ * has only `UNF.EXE`.
  *
  * A caller that names no game means Dungeons of the Unforgiven, which is the game most of the
  * site is about.
  */
-export function decompilation(game: GameId = 'unforgiven'): Decompilation {
+export function decompilation(game: GameId = 'unforgiven'): Decompilation | null {
   return DECOMPILATIONS[game];
 }
 
 /** The decompilation of one function, or null for a name that game's file does not carry. */
 export function decompSection(name: string, game: GameId = 'unforgiven'): DecompSection | null {
-  return DECOMPILATIONS[game].byName.get(name) ?? null;
+  return DECOMPILATIONS[game]?.byName.get(name) ?? null;
 }
 
 /** True for the functions the reverse engineering never worked out a name for. */
@@ -125,7 +129,7 @@ function isUnnamed(section: DecompSection): boolean {
  */
 export function sectionsByName(game: GameId = 'unforgiven'): DecompSection[] {
   const byName = (a: DecompSection, b: DecompSection) => a.name.localeCompare(b.name);
-  const { sections } = DECOMPILATIONS[game];
+  const sections = DECOMPILATIONS[game]?.sections ?? [];
   return [
     ...sections.filter((section) => !isUnnamed(section)).sort(byName),
     ...sections.filter(isUnnamed).sort(byName),

@@ -36,7 +36,7 @@
   let view = $state.raw<MwPlayView | null>(null);
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
-  let style = $state<MovementStyle>(readMovementStyle(MORAFFS_WORLD_MAP.id));
+  let style = $state<MovementStyle>(readMovementStyle('moraffsWorld'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -179,7 +179,7 @@
   /** The style is picked with the mouse, and the arrow keys belong to the game rather than to a
    *  radio button, so the control hands the keyboard back as soon as it has been answered. */
   function chooseStyle(input: HTMLInputElement) {
-    writeMovementStyle(MORAFFS_WORLD_MAP.id, style);
+    writeMovementStyle('moraffsWorld', style);
     input.blur();
   }
 

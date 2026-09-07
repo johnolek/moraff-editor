@@ -28,7 +28,7 @@
   /** A square drawn beside a legend entry. The building number is written into both games'
    *  fields, so whichever one the game reads gives the sample the right colour. */
   function sample(overrides: Partial<MapSquare>, building = 0): MapSquare {
-    return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: building, surface: building, ...overrides };
+    return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, falseFloor: false, trapdoor: -1, town: building, surface: building, ...overrides };
   }
 
   /** Whether the entry is the trap door one, and this floor is a floor that can have them:
@@ -40,12 +40,19 @@
   const entries = $derived<{ label: string; square: MapSquare; kind: LegendKind; count: number }[]>([
     { label: 'Open square', square: sample({ n: 0, s: 0 }), kind: { kind: 'open' }, count: summary.open },
     { label: 'Door', square: sample({ n: 1, s: 0 }), kind: { kind: 'side', side: 1 }, count: summary.doors },
-    { label: 'Secret door', square: sample({ n: 2, s: 0 }), kind: { kind: 'side', side: 2 }, count: summary.secretDoors },
+    ...(game.features.secretDoors
+      ? [{ label: 'Secret door', square: sample({ n: 2, s: 0 }), kind: { kind: 'side', side: 2 } as LegendKind, count: summary.secretDoors }]
+      : []),
     ...(game.modules ? [{ label: 'Teleporter', square: sample({ n: 4, s: 0 }), kind: { kind: 'side', side: 4 } as LegendKind, count: summary.teleporterSquares }] : []),
     { label: GLYPH_LABELS.down, square: sample({ n: 0, s: 0, ladder: 1 }), kind: { kind: 'glyph', glyph: 'down' }, count: summary.down },
     { label: GLYPH_LABELS.up, square: sample({ n: 0, s: 0, ladder: -1 }), kind: { kind: 'glyph', glyph: 'up' }, count: summary.up },
-    { label: GLYPH_LABELS.trapdoor, square: sample({ n: 0, s: 0, trapdoor: 5 }), kind: { kind: 'glyph', glyph: 'trapdoor' }, count: summary.trapdoors },
+    ...(game.features.trapdoors
+      ? [{ label: GLYPH_LABELS.trapdoor, square: sample({ n: 0, s: 0, trapdoor: 5 }), kind: { kind: 'glyph', glyph: 'trapdoor' } as LegendKind, count: summary.trapdoors }]
+      : []),
     { label: GLYPH_LABELS.chute, square: sample({ n: 0, s: 0, chute: 1 }), kind: { kind: 'glyph', glyph: 'chute' }, count: summary.chutes },
+    ...(game.features.falseFloors
+      ? [{ label: GLYPH_LABELS.falseFloor, square: sample({ n: 0, s: 0, falseFloor: true }), kind: { kind: 'glyph', glyph: 'falseFloor' } as LegendKind, count: summary.falseFloors }]
+      : []),
     ...game.buildings.map(({ label }, index) => ({
       label,
       square: sample({ n: 0, s: 0 }, index + 1),

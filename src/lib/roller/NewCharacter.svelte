@@ -42,11 +42,14 @@
   let typed = $state('');
   let note = $state('');
 
-  const chosen = $derived(GAMES[app.game]);
+  /** Which game is being rolled for. The tab is only offered for the two games with a roller,
+   *  so a game without one shows Dungeons of the Unforgiven's behind the scenes. */
+  const rolling = $derived<'unforgiven' | 'moraffsWorld'>(app.game === 'moraffsWorld' ? 'moraffsWorld' : 'unforgiven');
+  const chosen = $derived(GAMES[rolling]);
   /** The screen a key would answer: the game's own, or the character number asked for first. */
   const screen = $derived<RollerScreen | null>(session && view ? view.question : 'number');
   const menus = $derived({ races: chosen.races.length, classes: chosen.classes.length, numbers: chosen.slots.length });
-  const fileName = $derived(app.game === 'unforgiven' ? slotFileName(slot) : mwSlotFileName(slot));
+  const fileName = $derived(rolling === 'unforgiven' ? slotFileName(slot) : mwSlotFileName(slot));
   const sheet = $derived(view === null ? [] : sheetRows(view.pc));
   const showing = $derived(
     view === null ? [] : view.question === 'name' ? [...view.screen, nameBeingTyped()] : view.screen,
@@ -105,14 +108,14 @@
 
   // A roll is one game's questions and one game's dice, so the switch in the header starts over.
   $effect(() => {
-    slot = GAMES[app.game].slots[0];
+    slot = GAMES[rolling].slots[0];
     session = null;
     view = null;
     note = '';
   });
 
   function start() {
-    const started = app.game === 'unforgiven' ? new RollerSession(slot) : new MwRollerSession(slot);
+    const started = rolling === 'unforgiven' ? new RollerSession(slot) : new MwRollerSession(slot);
     session = started;
     view = started.view();
     typed = '';
@@ -146,7 +149,7 @@
 
   function openInEditor() {
     if (!view) return;
-    keepRolledCharacter(app.game, view.pc.name || fileName, slot, characterFile(view.pc));
+    keepRolledCharacter(rolling, view.pc.name || fileName, slot, characterFile(view.pc));
     goToTab(app, 'editor');
   }
 

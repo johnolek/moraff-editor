@@ -22,7 +22,7 @@ export function squareFeature(game: MapGame, dungeon: number, floor: number, squ
     return building ? { kind: 'town', building } : null;
   }
   const destinationFloor = glyphDestination(square, floor);
-  if (glyph === 'trapdoor') {
+  if (glyph === 'trapdoor' && game.trapdoorLanding) {
     const [landingX, landingY] = game.trapdoorLanding(destinationFloor, dungeon);
     return { kind: glyph, destination: { floor: destinationFloor, x: landingX, y: landingY } };
   }

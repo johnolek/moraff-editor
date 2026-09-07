@@ -19,6 +19,7 @@
   const START: Record<GameId, { file: SourceFile; name: string }> = {
     unforgiven: { file: 'src/lib/game/port/magic.ts', name: 'spellEffect' },
     moraffsWorld: { file: 'src/lib/game/mw-port/character.ts', name: 'rollChar' },
+    revenge: { file: 'src/lib/game/revmap.js', name: 'wallSide' },
   };
 
   let search = $state('');
@@ -153,21 +154,24 @@
         <p class="empty">No functions match.</p>
       {/if}
 
-      <h3>Decompiled C ({decomp.executable})</h3>
-      <ul>
-        {#each sections as entry}
-          <li>
-            <button
-              type="button"
-              class="entry"
-              class:selected={isSelected({ kind: 'c', name: entry.name })}
-              onclick={() => showDecompiled(entry.name)}>{entry.name}</button
-            >
-          </li>
-        {/each}
-      </ul>
-      {#if sections.length === 0}
-        <p class="empty">No functions match.</p>
+      <!-- A game whose decompilation the site does not carry lists only its port. -->
+      {#if decomp}
+        <h3>Decompiled C ({decomp.executable})</h3>
+        <ul>
+          {#each sections as entry}
+            <li>
+              <button
+                type="button"
+                class="entry"
+                class:selected={isSelected({ kind: 'c', name: entry.name })}
+                onclick={() => showDecompiled(entry.name)}>{entry.name}</button
+              >
+            </li>
+          {/each}
+        </ul>
+        {#if sections.length === 0}
+          <p class="empty">No functions match.</p>
+        {/if}
       {/if}
     </div>
   </div>
