@@ -422,6 +422,23 @@ with the fourth power of your level and the discount only grows with the level i
 In the code: [the discount for helping children](formula:store-refund),
 [a night at the inn](formula:inn-cost) and [what the temple charges](formula:temple).
 
+### Nobody starts with anything in the bank
+
+Every class but the fighter gets a second roll of starting wealth at the end of character
+creation, twice your luck plus a roll on five times it. It is not money. It goes into the magic
+crystal count, and crystals are what the inn burns to give spell points back, one crystal for one
+point, so a caster whose luck came out in the twenties can start with a hundred-odd spell points'
+worth of refills. A fighter, who has no spell points to buy back, is given neither the roll nor
+the crystals.
+
+The bank balance is a field of its own a little further along the same record, and nothing in the
+roller ever writes it. Every character in the game, on either difficulty, walks into town with an
+empty account.
+
+In the code: [rollChar](source:ts/character.ts/rollChar),
+[the price of a magic crystal](formula:crystal-price) and
+[what a night at the inn does to you](formula:inn-night).
+
 ## Bugs the game has
 
 ### The lucky charm nothing gives you
@@ -511,6 +528,54 @@ can never reach you. The map explorer counts how many of a floor's 145 went ther
 In the code: [MAP_ROWS](source:ts/area.ts/MAP_ROWS),
 [beyondMapCount](source:ts/stocking.ts/beyondMapCount) and
 [the part of a floor you can reach](formula:map-area).
+
+### Every character starts at level 0
+
+Character creation wipes all 2,695 bytes of the record to zero before it rolls anything, and
+nothing in the roller ever writes the level back. Whatever race and class you pick, you leave the
+screen at level 0 with no experience. That is not only a number on the sheet: your to-hit total
+counts your level twice, so the first level you earn is worth two points on every swing you will
+ever make.
+
+Levels are handed out at the inn and nowhere else, so you stay at level 0 until you have earned
+99 experience and paid for a room, or 126 experience on "I can handle anything". Until then you
+are the cheapest customer in town, because the room and the culture stock a stay eats are both
+worked out from your level: ten rubles for the night and no stock whatsoever.
+
+In the code: [rollChar](source:ts/character.ts/rollChar),
+[blankPlayerCharacter](source:ts/character.ts/blankPlayerCharacter) and
+[when a level is actually granted](formula:level-for-exp).
+
+### The easy setting's spell point bonus never happens
+
+Normal difficulty is meant to buy a character two things that "I can handle anything" does not
+get: 25 extra health points and half again as many spell points. Only the health points arrive.
+The line that multiplies the spell points by 1.5 sits above the class table that works the spell
+points out, so it runs at a moment when the total is still zero, and it is guarded by a test that
+skips it while the total is zero, so it does not even multiply the zero. The class table then
+writes the real figure over the top of it.
+
+Two wizards with the same wisdom and intelligence therefore start with exactly the same spell
+points whichever difficulty they were rolled on. What the easy setting actually buys is the
+health, a pile of starting rubles and a gentler experience curve.
+
+In the code: [rollChar](source:ts/character.ts/rollChar) and
+[what the next level costs](formula:exp-needed).
+
+### The design screen asks for a key it does not read
+
+Designing your own character takes four points off each of the six characteristics and gives you
+twenty-four to put back wherever you like. The screen lists the keys for them: S, I, W, C, D or
+L, for strength, intelligence, wisdom, constitution, agility or luck. The key the code compares
+against for agility is A.
+
+D is what the menu one screen earlier took for designing a character at all, which is presumably
+where it came from. Pressing it here does nothing: an unrecognised key is thrown away and the
+game goes back to waiting, so the screen looks frozen until you guess A, or point the mouse at
+the line and click instead.
+
+In the code: [designYourOwn](source:ts/character.ts/designYourOwn) and
+[roll_char](source:c/roll_char).
 
 ## Trivia and history
 
@@ -611,3 +676,53 @@ between: the level nudges inside stocking after the first monster, and the damag
 single swing.
 
 In the code: [Random](source:c/Random) and [the port's own generator](source:ts/rng.ts/random).
+
+### Your sex is rolled, and nothing ever reads it
+
+The roller asks six questions and rolls everything else. Sex is one of the rolled things, a coin
+flip taken in the same breath as the age, the height and the weight and printed underneath them.
+You are never asked, and designing your own character does not offer it either, so the only way
+to get the one you wanted is to reject the roll and roll a whole new character, six fresh
+characteristics and all.
+
+The field is written there and read in exactly two places afterwards, both of which put a word on
+a screen: the roll screen itself and the character sheet. No spell, monster, shopkeeper or price
+anywhere in the game looks at it.
+
+In the code: [rollCharacteristics](source:ts/character.ts/rollCharacteristics) and
+[showRolledCharacter](source:ts/character.ts/showRolledCharacter).
+
+### The race table you choose from is wrong in two rows
+
+The race screen is a page of `UROLL.TXT` printed as it stands, and its numbers are averages
+rather than the table the game rolls from. The roll starts each characteristic at the race's own
+figure and then hands out sixty points one at a time to whichever of the six a d6 picks, so on
+average a race gets ten of everything on top of its figure. Six of the eight rows match the
+executable exactly. Two do not.
+
+The humanoid's row reads 14 in all six columns where the game rolls around 15, so the plainest
+race in the game is a point better than advertised at everything. The bigger gap is the midget's
+intelligence, printed as 18 where the game rolls around 25. That is the characteristic a wizard
+and a mage count double when their starting spell points are worked out, and the midget already
+has the highest total of any race on the menu; the file makes it look like a luck specialist and
+it is a caster.
+
+In the code: [rollCharacteristics](source:ts/character.ts/rollCharacteristics) and
+[rollChar](source:ts/character.ts/rollChar).
+
+### The contest you cannot enter
+
+`UROLL.TXT` describes three difficulties. The third is a contest: play Module I from beginning to
+end without ever saving, defeat the Shadow Demon Queen, and the first person in the world to ring
+MoraffWare with the code you are given wins a hundred dollars.
+
+The registered game reads the three lines that announce it out of the file and drops them without
+printing them, so the menu on screen simply stops after option 2, and the twelve-line page of
+contest rules behind it is read and dropped in the same way. The menu does translate a 3 into the
+contest answer, and then rejects it for being out of range. Everything behind the menu is
+finished: there is a contest flag, the routine that writes a character to disk returns without
+doing anything at all while it is set, so the no-saving rule is enforced rather than trusted, and
+the character sheet has a line calling you a contestant where an ordinary character is told they
+are still alive.
+
+In the code: [rollChar](source:ts/character.ts/rollChar) and [roll_char](source:c/roll_char).
