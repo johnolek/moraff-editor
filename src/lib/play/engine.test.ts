@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { parseSave } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
-import { savePlayer } from '../game/port/record';
+import { loadPlayer, savePlayer } from '../game/port/record';
 import { BorlandRng, type Rng } from '../game/port/rng';
-import { newGame, type PlayerCharacter } from '../game/port/state';
+import { MAP_PLAYER, monsterAt, newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
 import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
@@ -295,5 +295,73 @@ describe('dying', () => {
     expect(session.view().dead).toBe(true);
     expect(session.view().over).toBe(true);
     expect(file.bytes).toBe(before);
+  });
+});
+
+describe('an edit in the save editor', () => {
+  /** The record as the editor leaves it: the character the file holds, with fields changed. */
+  function edited(file: CharacterFile, overrides: Partial<PlayerCharacter>): Uint8Array<ArrayBuffer> {
+    return savePlayer({ ...loadPlayer(file.bytes), ...overrides }, file.bytes);
+  }
+
+  it('plays on with the character the editor wrote', async () => {
+    const start = townWalk();
+    const file = characterFile({ level: 0, dir: 0, ...start, str: 20 });
+    const session = playing(file);
+    await settle();
+    session.recordEdited(edited(file, { str: 99 }));
+    await settle();
+    expect(session.game.pc.str).toBe(99);
+  });
+
+  it('moves the character about the floor they are on', async () => {
+    const start = townWalk();
+    const file = characterFile({ level: 0, dir: 0, ...start });
+    const session = playing(file);
+    await settle();
+    const moved = findSquare(0, (square, x, y) => x !== start.x || y !== start.y);
+    session.recordEdited(edited(file, moved));
+    await settle();
+    expect(session.view().place).toMatchObject(moved);
+    expect(monsterAt(session.game, start.x, start.y)).toBe(-1);
+    expect(session.game.monsterMap[moved.y * 80 + moved.x]).toBe(MAP_PLAYER);
+  });
+
+  it('enters the floor the record puts the character on', async () => {
+    const start = townWalk();
+    const file = characterFile({ level: 0, dir: 0, ...start });
+    const session = playing(file);
+    await settle();
+    const landing = findSquare(3, (square) => square.ladder === 0 && square.chute === 0 && square.trapdoor === -1);
+    session.recordEdited(edited(file, { level: 3, ...landing }));
+    await settle();
+    expect(session.view().place).toMatchObject({ floor: 3, ...landing });
+    expect(session.floors.remembered[0]).toBe(3);
+  });
+
+  it('leaves the game alone when the record the game saved comes back', async () => {
+    const start = townWalk();
+    const file = characterFile({ level: 0, dir: 0, ...start, str: 20 });
+    const session = playing(file);
+    await settle();
+    session.save();
+    // Everything the game has done since its own save would be undone by reading the record
+    // again, which is what this asks about.
+    session.game.pc.str = 99;
+    session.recordEdited(file.bytes);
+    await settle();
+    expect(session.game.pc.str).toBe(99);
+  });
+
+  it('waits for the screen the game is showing to come down', async () => {
+    const start = townWalk();
+    const file = characterFile({ level: 0, dir: 0, ...start, str: 20 });
+    const session = playing(file);
+    await press(session, KEY.help);
+    session.recordEdited(edited(file, { str: 99 }));
+    await settle();
+    expect(session.game.pc.str).toBe(20);
+    await press(session, KEY.escape);
+    expect(session.game.pc.str).toBe(99);
   });
 });

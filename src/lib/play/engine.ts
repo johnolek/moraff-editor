@@ -9,7 +9,7 @@ import { loadPlayer, savePlayer } from '../game/port/record';
 import { clearMenuBlock } from '../game/port/screens';
 import type { Rng } from '../game/port/rng';
 import type { Game, ScreenLine } from '../game/port/state';
-import { newGame, sectionMonsterKinds } from '../game/port/state';
+import { MAP_PLAYER, newGame, sectionMonsterKinds, setMonsterMap } from '../game/port/state';
 import { UNFORGIVEN_AREA } from '../map/area';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
@@ -54,6 +54,12 @@ const MAP_VIEW_ROWS = 0x21;
 
 /** How many keys are kept for a loop that is not waiting for one yet. */
 const KEY_QUEUE = 4;
+
+/**
+ * Not a key: what the loop's wait hands back when the save editor has written the record while
+ * the game was waiting for one, so the pass starts again with the character it now describes.
+ */
+export const RECORD_EDITED = -1;
 
 /** Where the character record lives while it is being played. */
 export interface CharacterFile {
@@ -155,12 +161,20 @@ export class GameSession {
   private waitOwed = false;
   /** Whether what the game says is going to the banner rather than the message box. */
   private sayingBanner = false;
+  /** The record as the game last read it or wrote it back, which is how a record the save editor
+   *  has written is told from the game's own save. */
+  private known: Uint8Array;
+  /** A record the save editor has written, waiting for the loop to be between actions. */
+  private edited: Uint8Array | null = null;
+  /** The loop is waiting for the player's key with nothing of the game's own part-way through. */
+  private betweenActions = false;
 
   constructor(
     readonly file: CharacterFile,
     rng: Rng,
   ) {
     const pc = loadPlayer(file.bytes);
+    this.known = file.bytes.slice();
     this.game = newGame({
       pc,
       rng,
@@ -235,6 +249,22 @@ export class GameSession {
   }
 
   /**
+   * The key movecontrol waits for at the top of a pass (exe 2000:c82d), or {@link RECORD_EDITED}
+   * when the save editor writes the record while it waits.
+   *
+   * Nothing of the game's own is running while the loop waits here, which is what makes it the
+   * one place a record written outside the game is safe to take.
+   */
+  async keyOrEdit(): Promise<number> {
+    this.betweenActions = true;
+    try {
+      return await readKey(this);
+    } finally {
+      this.betweenActions = false;
+    }
+  }
+
+  /**
    * The key a ported function asked for with mgetch_message while it was running. Synchronous
    * code cannot wait, so the wait is owed until the loop reaches somewhere it can take it.
    */
@@ -279,9 +309,59 @@ export class GameSession {
     game.recenterMap = true;
   }
 
+  /**
+   * The save editor has written the character's record while the game is being played, and the
+   * game follows it. The record is read again at the next point the loop is between actions; a
+   * loop already waiting for a key is woken so that it takes the edit at once.
+   *
+   * The bytes the game itself last read or saved are the ones it already has, so its own save
+   * writing the record back is not an edit.
+   */
+  recordEdited(bytes: Uint8Array): void {
+    if (sameBytes(bytes, this.known)) return;
+    this.edited = bytes;
+    if (!this.betweenActions) return;
+    const waiting = this.waiting;
+    if (!waiting) return;
+    this.waiting = null;
+    waiting(RECORD_EDITED);
+  }
+
+  /**
+   * Read the record again, if the save editor has written one. The loop calls this at the top of
+   * a pass, where no ported function is part-way through.
+   *
+   * Everything the record holds becomes the character; everything it does not — the monsters
+   * standing on the floor, the monster being fought, the timers a moment counts down — is left
+   * exactly as it was. A record that puts the character on another floor arrives there the way
+   * the loop would, and one that moves them about the floor they are on moves them on the
+   * occupancy grid with them.
+   */
+  takeEdits(): void {
+    const bytes = this.edited;
+    if (bytes === null) return;
+    this.edited = null;
+    this.known = bytes.slice();
+    this.file.bytes = bytes;
+    const game = this.game;
+    const pc = game.pc;
+    const floor = pc.level;
+    const module = pc.module;
+    leaveSquare(game);
+    Object.assign(pc, loadPlayer(bytes));
+    if (pc.level !== floor || pc.module !== module) {
+      this.enterFloor(pc.level);
+      return;
+    }
+    setMonsterMap(game, pc.x, pc.y, MAP_PLAYER);
+    game.recenterMap = true;
+  }
+
   /** save_player (exe 2000:79ad): the record back into the character it came from. */
   save(): void {
-    this.file.write(savePlayer(this.game.pc, this.file.bytes));
+    const bytes = savePlayer(this.game.pc, this.file.bytes);
+    this.known = bytes.slice();
+    this.file.write(bytes);
   }
 
   /** The character is dead: the roster is told, and nothing more is written. */
@@ -315,6 +395,15 @@ export class GameSession {
       dead: this.dead,
     };
   }
+}
+
+/** Whether two records hold the same bytes. */
+function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
+  if (left.length !== right.length) return false;
+  for (let at = 0; at < left.length; at++) {
+    if (left[at] !== right[at]) return false;
+  }
+  return true;
 }
 
 /** Start playing a character. */
@@ -392,6 +481,10 @@ export async function runMoveControl(session: GameSession): Promise<void> {
   const game = session.game;
   const pc = game.pc;
   for (;;) {
+    // The save editor can write the record while the game is being played, and the top of a pass
+    // is where the game takes it: nothing of the original's runs across it, and everything the
+    // pass works out about the character and the square is worked out afterwards.
+    session.takeEdits();
     if (pc.sp < 0) pc.sp = 0;
     if (pc.maxSp < 0) pc.maxSp = 0;
     // The original tests the top half of the 32-bit crystal count, so what it zeroes is a count
@@ -420,7 +513,10 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     if (game.engaged === -1) pc.sleepTimer = 0;
     session.showBanner();
     if (pc.deepestFloor < pc.level) pc.deepestFloor = pc.level;
-    const key = await readKey(session);
+    const key = await session.keyOrEdit();
+    // The square the pass was worked out from is the one the record has just replaced, so the
+    // pass starts again rather than answering a key with what the character used to be.
+    if (key === RECORD_EDITED) continue;
     session.box = [];
     const handler = KEY_HANDLERS[key];
     if (handler) await handler.run(turn);
