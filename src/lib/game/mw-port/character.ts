@@ -328,8 +328,8 @@ export function spellPoints(cls: number, wis: number, iq: number): number {
     case 6:
       return Math.trunc((wis + iq * 2) / 12);
   }
-  // The original's switch has no default, so a class outside 0 to 6 would keep the zero
-  // roll_char put in the field on the line above it. The class menu cannot produce one.
+  // The original's switch has no default; roll_char zeroes the field just before it, so a class
+  // outside 0 to 6 would come out with none. The class menu cannot produce one.
   return 0;
 }
 
@@ -394,7 +394,6 @@ export function rollChar(game: MwGame): void {
   // DS:48a4 with the class name drawn after it at x = 0x3d4
   game.say(`CLASS: ${MW_CLASS_NAMES[pc.cls]}`);
 
-  pc.maxSp = 0;
   pc.hp = pc.con + pc.luck;
   pc.maxSp = spellPoints(pc.cls, pc.wis, pc.iq);
   // Current and maximum are the same number on both, which is what a fresh character starts
@@ -403,8 +402,9 @@ export function rollChar(game: MwGame): void {
   pc.maxHp = pc.hp;
   // The original prints "PLEASE SELECT A CLASS BY HITTING A NUMBER 1-7:" (DS:48ab) again here in
   // the background colour, to rub the heading of the class screen out. Nothing to rub out here.
-  // DS:48da and DS:48e9, whose four leading spaces are the gap between the two numbers
-  game.say(`SPELL POINTS: ${pc.sp}    HEALTH POINTS: ${pc.maxHp}`);
+  // DS:48da and DS:48e9, whose four leading spaces are the gap between the two numbers. The
+  // original reads the spell points back out of the record as a float and truncates them.
+  game.say(`SPELL POINTS: ${Math.trunc(pc.maxSp)}    HEALTH POINTS: ${pc.maxHp}`);
 
   pc.x = 0x38;
   pc.y = 0x3c;
