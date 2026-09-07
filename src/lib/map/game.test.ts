@@ -59,12 +59,33 @@ describe('the buildings on floor 0', () => {
     expect(MORAFFS_WORLD_MAP.buildings.map((building) => building.label)).toEqual(['Store', 'Temple', 'Bank', 'Inn', 'World map gate']);
   });
 
+  it('is the three inns, the bank, the temple, the store and the guild in Moraff’s Revenge', () => {
+    expect(MORAFFS_REVENGE_MAP.buildings.map((building) => building.label)).toEqual([
+      'Flea Bag Inn',
+      'Yuppydom Inn',
+      'Kings Inn',
+      'Bank',
+      'Temple',
+      'Store',
+      "Wizard's Guild",
+    ]);
+  });
+
   it('reads the field each game’s own generator fills', () => {
     const square = { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1 };
     expect(UNFORGIVEN_MAP.buildingOn({ ...square, town: 3 })).toBe(3);
     expect(UNFORGIVEN_MAP.buildingOn({ ...square, surface: 3 })).toBe(0);
     expect(MORAFFS_WORLD_MAP.buildingOn({ ...square, surface: 5 })).toBe(5);
     expect(MORAFFS_WORLD_MAP.buildingOn({ ...square, town: 5 })).toBe(0);
+    expect(MORAFFS_REVENGE_MAP.buildingOn({ ...square, town: 7 })).toBe(7);
+    expect(MORAFFS_REVENGE_MAP.buildingOn({ ...square, surface: 7 })).toBe(0);
+  });
+
+  it('gives every one of them a colour of its own', () => {
+    for (const game of Object.values(MAP_GAMES)) {
+      const colours = game.buildings.map((building) => building.colour);
+      expect(new Set(colours).size).toBe(colours.length);
+    }
   });
 
   it('has a colour for every building it names', () => {
@@ -129,8 +150,7 @@ describe('Moraff’s Revenge', () => {
     expect(hasDungeon(MORAFFS_REVENGE_MAP, -1)).toBe(false);
   });
 
-  it('has no buildings, no trap doors, no secret doors and no monsters', () => {
-    expect(MORAFFS_REVENGE_MAP.buildings).toEqual([]);
+  it('has no trap doors, no secret doors and no monsters', () => {
     expect(MORAFFS_REVENGE_MAP.trapdoorLanding).toBeNull();
     expect(MORAFFS_REVENGE_MAP.stocking).toBeNull();
     expect(MORAFFS_REVENGE_MAP.features).toEqual({ secretDoors: false, trapdoors: false, falseFloors: true });

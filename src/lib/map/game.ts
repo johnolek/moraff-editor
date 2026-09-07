@@ -305,6 +305,25 @@ const GENERATION_LOWEST = 1;
 const GENERATION_HIGHEST = 0xffffff;
 
 /**
+ * The town's buildings, in the order 1000:10FD numbers them and 1000:132A's `ON building GOTO`
+ * lists their routines. The names are the game's own, off the line each building opens with.
+ *
+ * Moraff's Revenge draws nothing on a town square -- its automap marks only the ladders -- so
+ * unlike the other two games' buildings these colours are ours: the three the other games have
+ * as well keep the colours the site already gives them, and the three inns are a scale of the
+ * green Dungeons of the Unforgiven fills an inn with, cheapest first.
+ */
+const MORAFFS_REVENGE_BUILDINGS: Building[] = [
+  { label: 'Flea Bag Inn', colour: '#1e7a3c' },
+  { label: 'Yuppydom Inn', colour: '#00cc44' },
+  { label: 'Kings Inn', colour: '#5cff8f' },
+  { label: 'Bank', colour: '#d75100' },
+  { label: 'Temple', colour: '#ffff51' },
+  { label: 'Store', colour: '#51caff' },
+  { label: "Wizard's Guild", colour: '#c060ff' },
+];
+
+/**
  * Moraff's Revenge. Its dungeon is not stored anywhere: every wall, ladder and chute comes out
  * of the square's own coordinates, which is what `src/lib/game/revmap.js` works out.
  *
@@ -324,8 +343,8 @@ export const MORAFFS_REVENGE_MAP: MapGame = {
   squareOn: (x, y, level, generation) => revengeSquareOn(x + 1, y + 1, level, generation),
   trapdoorLanding: null,
   features: { secretDoors: false, trapdoors: false, falseFloors: true },
-  buildings: [],
-  buildingOn: () => 0,
+  buildings: MORAFFS_REVENGE_BUILDINGS,
+  buildingOn: (square) => square.town ?? 0,
   routeTo: { noun: 'ladder', matches: hasLadder },
   stocking: null,
   exploredMaps: MORAFFS_REVENGE_BIN_FILES,
