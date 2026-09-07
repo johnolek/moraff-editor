@@ -332,7 +332,7 @@ export function fold(code) {
  * The town asks a looser question than the rest of the dungeon.  1000:55DD is a branch only
  * level 0 takes, and it takes the ladder when the level below folds to *at least* the distance
  * rather than exactly it: `IF (level + step) - code < 1 THEN code = step`, with the step in the
- * compiler's temporary at B7B8, which 1000:55F9 filled two instructions earlier.  That is the
+ * compiler's spill slot at B7B8, which 1000:55F9 filled.  That is the
  * difference between three ladders down out of the town and ten, and ten is what `7.NUM` marks
  * on level 0 -- exactly these squares and no others.
  *
@@ -384,7 +384,7 @@ export function falseFloor(column, row, level) {
  * None of this is in a file and none of it is on the game's own map: 1000:12C6 prints "There's
  * a rope above. Hit U to climb it." when you walk onto one of these squares, and pressing U is
  * what takes 1000:0DBD into the branch above.  Only level 0 reaches either (1000:0642 and
- * 1000:0DD7 both test the level first), so the same squares of the levels below hold nothing.
+ * 1000:0DD7 both test the level first), so no square of any level below holds a building.
  */
 const TOWN_SQUARES = [
   [7, 3, 1],
