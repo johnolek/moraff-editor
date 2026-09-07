@@ -1,7 +1,6 @@
 import { showHint } from '../game/port/drops';
 import { relocate } from '../game/port/moment';
 import type { Turn } from './engine';
-import { KEY } from './keys';
 
 /**
  * change_module (exe 2000:c0a5, unf.c "change_module"): the module teleporter, the wall the
