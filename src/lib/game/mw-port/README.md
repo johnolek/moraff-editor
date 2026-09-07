@@ -126,12 +126,28 @@ those replace every character that is not a letter or a digit with an underscore
 * `town.ts` — the store, the temple, the bank and the inn, the financial statement, the two
   routines a night at the inn clears the spells with, and the greeting a floor gives on arrival.
 
+* `screens.ts` — the two menu readers every choice goes through; `view_stats`; the spell screen's
+  source heading, category menu, class gates and grid of thirty, and the SPELLS.HLP record a help
+  line shows; the three menus Write Scroll and Enchant Wand walk through; the spells-in-force
+  panel and the numbers behind it; the help files and the menu of twenty-eight topics; and the
+  level, hit points and experience drawn beside an adjacent monster.
+* `inventory.ts` — the four spell listings and the magic items the P key opens, and the four
+  arrays read out as the 120 spells they index, with the charges and the cost the screens keep to
+  themselves.
+
 `stocking.ts`, `spells.ts` and `magic.ts` are here too, and are their own author's to describe.
+
+The twenty-eight numbered `.HLP` files of the game folder are mirrored into `mw-tools/data/help/`
+and `src/lib/game/mw-help/`, with the DOS line endings turned into newlines — which is what the
+game's own text-mode open does with them — and the colour codes left alone. A test in
+`../bundle-sync.test.ts` holds the two copies together. `show_help` reads them with the same
+routine Dungeons of the Unforgiven reads its `.uhp` files with, so `screens.ts` takes
+`readHelpScreen` from `../port/hints` rather than writing it twice.
 
 ## What is not ported
 
-The play loop that ties all of this together, the world map and the screens. The dungeon
-generator is already ported, verbatim from the reference bundle, in `../mwmap.js`.
+The play loop that ties all of this together, and the world map. The dungeon generator is already
+ported, verbatim from the reference bundle, in `../mwmap.js`.
 
 ## Where the code and ROLLER.md disagree
 

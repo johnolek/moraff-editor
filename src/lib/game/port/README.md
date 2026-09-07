@@ -30,6 +30,11 @@ pointer at `DAT_6000_c64b`. **Every function in this port takes a `Game` instead
 same state as named fields, and reads and writes that. Nothing else changes: the same fields are
 read, in the same order, and written with the same values.
 
+A screen that reads the keyboard is two functions here rather than one: a `draw...` that fills the
+screen and a reader that says what one key means, or an `apply...` that acts on the choice. The
+play engine puts its own `await` between them. `drawCastTypeMenu` and `gmenuChoice`,
+`drawSpellList` and `spellListChoice`, `drawHelpMenu` and `helpMenuChoice` are the pattern.
+
 Input is the other thing a `Game` carries: the original stops and reads the keyboard in the
 middle of a spell, so the menus a spell puts up are questions the `Game` answers —
 `chooseDirection` for Pass Wall, `chooseWeapon` and `chooseArmor` for the two permanent
@@ -166,6 +171,12 @@ between one screen of the roller and the next. `game.pressAnyKey()` is `mgetch_m
   step, with the two halves of a step it belongs between and `relocate`.
 * `record.ts` — `load_player` and `save_player`: the character file the game reads and writes,
   which is what lets a character played here go back to DOS.
+* `screens.ts` — the menu column: how `mset_gmenu` draws its eight lines and what its reader and
+  `get_choice` take, the two rectangles a menu wipes first, the spells-in-effect screens, the V
+  screen and the experience-needed screen.
+* `inventory.ts` — the screens a spell or an item is picked off: `cast_a_spell`'s type menu, its
+  thirty-spell table in both layouts and what casting one costs, the spell descriptions out of
+  USPELLS.HLP, the pockets screen, and the three menus Write Scroll and Enchant Wand walk through.
 
 `movecontrol` itself, the loop all of this is played in, is in `src/lib/play/`, which has a
 README of its own about the keys, the screens and where the rest of the game plugs in.

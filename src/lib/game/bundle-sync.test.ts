@@ -16,6 +16,7 @@ const copies: [string, string][] = [
   ['src/lib/game/uroll.txt', 'dotu-tools/data/uroll.txt'],
   ['src/lib/game/roll.txt', 'mw-tools/data/roll.txt'],
   ['src/lib/game/mw-spells.hlp', 'mw-tools/data/spells.hlp'],
+  ['src/lib/game/uspells.hlp', 'dotu-tools/data/uspells.hlp'],
   ['src/lib/game/hints/h.bin', 'mw-tools/data/hints/h.bin'],
   ['src/lib/game/palettes.json', 'dotu-tools/data/palettes.json'],
   ['src/lib/game/building-palette-banks.json', 'dotu-tools/data/building-palette-banks.json'],
@@ -40,6 +41,15 @@ const hintCopies: [string, string][] = hintNames.map((name) => [
   `dotu-tools/data/hints/${name}`,
 ]);
 
+// Moraff's World's help files are the same idea a year earlier, and the game folder has the same
+// gap: 0.hlp to 17.hlp and 20.hlp to 29.hlp, with no 18 or 19.
+const mwHelpNumbers = [...Array.from({ length: 18 }, (_, i) => i), ...Array.from({ length: 10 }, (_, i) => i + 20)];
+
+const mwHelpCopies: [string, string][] = mwHelpNumbers.map((number) => [
+  `src/lib/game/mw-help/${number}.hlp`,
+  `mw-tools/data/help/${number}.hlp`,
+]);
+
 describe('game modules copied from dotu-tools', () => {
   it.each(copies)('%s is identical to %s', (copy, original) => {
     expect(readFileSync(copy, 'utf8')).toBe(readFileSync(original, 'utf8'));
@@ -50,6 +60,10 @@ describe('game modules copied from dotu-tools', () => {
   });
 
   it.each(hintCopies)('%s is identical to %s', (copy, original) => {
+    expect(readFileSync(copy, 'utf8')).toBe(readFileSync(original, 'utf8'));
+  });
+
+  it.each(mwHelpCopies)('%s is identical to %s', (copy, original) => {
     expect(readFileSync(copy, 'utf8')).toBe(readFileSync(original, 'utf8'));
   });
 });

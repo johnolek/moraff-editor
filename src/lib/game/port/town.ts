@@ -33,10 +33,14 @@ export const INN_SECONDS = 8 * 3600;
 /**
  * show_money (exe 2000:438f, unf.c "show_money"): the financial statement, which the store shows
  * after a purchase and the bank after every move.
+ *
+ * The heading is drawn above the box rather than printed in it, which is why it survives the
+ * eight lines underneath being replaced.
  */
 export function showMoney(game: Game): void {
   const pc = game.pc;
-  game.say('YOUR FINANCIAL STATEMENT:'); // DS:0b38
+  // DS:0b38
+  game.draw({ text: 'YOUR FINANCIAL STATEMENT:', x: 0x3a2, y: 0x301, font: 0, colour: 4 });
   // DS:0b52, then 0b62 0b6d 0b7f 0b91 0ba3 0bb5 0bc7 each with its number written after it
   game.say(
     'LIST OF ASSETS:',
@@ -186,6 +190,11 @@ export function buyMagicCrystals(game: Game, rubles: number): void {
   game.pc.money -= storeRefund(game, price * units);
   game.pc.crystals += units;
   showMoney(game);
+}
+
+/** temple (exe 2000:4d39, unf.c "temple"): the menu the temple greets the player with. */
+export function enterTemple(game: Game): void {
+  showHint(game, 95);
 }
 
 /**
@@ -455,26 +464,43 @@ export function stayTheNight(game: Game): void {
 }
 
 /**
- * boss_office_message (exe 3000:6c9d, unf.c "boss_office_message"): the taunt a section's Shadow
- * boss sends while it is still alive. `read` is get_choice's answer to the snake's offer to show
- * it: "1) SHOW ME THE MESSAGE".
+ * boss_office_message (exe 3000:6c9d, unf.c "boss_office_message"): the taunt the section's
+ * Shadow boss would send now, and null when there is none to send.
  *
  * Module I's four bosses have three taunts each and every other section has one, so once a
- * section's count has caught up nothing more is offered. High speed mode skips the whole thing.
+ * section's count has caught up nothing more is offered. A boss that is already dead sends
+ * nothing, and high speed mode skips the whole thing.
  */
-export function bossOfficeMessage(game: Game, read: boolean): void {
+export function bossOfficeTaunt(game: Game): number | null {
   const pc = game.pc;
-  if (game.highSpeed) return;
+  if (game.highSpeed) return null;
   const section = sectionNumber(pc.module, pc.level);
-  if ((pc.objective[pc.module] & (1 << section % 4)) !== 0) return;
-  const tablet = bossTablet(section, pc.bossTaunts[section]);
-  if (tablet === null) return;
-  showHint(game, 123);
-  if (!read) return;
+  if ((pc.objective[pc.module] & (1 << section % 4)) !== 0) return null;
+  return bossTablet(section, pc.bossTaunts[section]);
+}
+
+/**
+ * boss_office_message (exe 3000:6c9d, unf.c "boss_office_message"): the message itself, once the
+ * player has asked to read it, and the count of the section's taunts that goes up with it.
+ */
+export function readBossOfficeMessage(game: Game, tablet: number): void {
+  const pc = game.pc;
   game.say(...tabletMessage(tablet));
   // DS:28ea, 28f9, then the boss's name and DS:266e
   game.say('A MESSAGE FROM', 'THE OFFICE OF THE', `${game.monsterKinds[22].name}:`);
-  pc.bossTaunts[section] += 1;
+  pc.bossTaunts[sectionNumber(pc.module, pc.level)] += 1;
+}
+
+/**
+ * boss_office_message (exe 3000:6c9d, unf.c "boss_office_message"): the snake's offer of the
+ * taunt and the taunt itself. `read` is get_choice's answer to "1) SHOW ME THE MESSAGE".
+ */
+export function bossOfficeMessage(game: Game, read: boolean): void {
+  const tablet = bossOfficeTaunt(game);
+  if (tablet === null) return;
+  showHint(game, 123);
+  if (!read) return;
+  readBossOfficeMessage(game, tablet);
 }
 
 /**

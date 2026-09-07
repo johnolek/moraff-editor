@@ -14,6 +14,8 @@
 export const KEY = {
   /** Ctrl-F: keep fighting without another key until something stops it. */
   repeatFight: 0x06,
+  /** Backspace, which typed_name (exe 4000:55b2) rubs the last character out with. */
+  backspace: 0x08,
   enter: 0x0d,
   escape: 0x1b,
   viewPrepSpells: 0x31,
@@ -58,6 +60,7 @@ const NAMED_KEYS: Record<string, number> = {
   Home: KEY.homeTurnLeft,
   PageUp: KEY.pageUpTurnRight,
   F1: KEY.f1,
+  Backspace: KEY.backspace,
   Enter: KEY.enter,
   Escape: KEY.escape,
 };

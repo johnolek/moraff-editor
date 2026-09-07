@@ -13,13 +13,18 @@ something the original does, a comment says so.
 * **`keys.ts`** — the byte `movecontrol` dispatches on for every key, and the browser key events
   they come from.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `trapdoor.ts`, `chute.ts`,
-  `dig.ts`, `modules.ts`, `quit.ts`, `help.ts`, `fight.ts`, `kill.ts`, `items.ts` — so that two
-  people can add two keys without touching the same file.
+  `dig.ts`, `modules.ts`, `quit.ts`, `help.ts`, `town.ts`, `fight.ts`, `kill.ts`, `items.ts` — so
+  that two people can add two keys without touching the same file.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
   memory that decides whether its monsters are rolled again.
-* **`screens.ts`** — where the message box goes, and `notBuiltYet`.
-* **`arrival.ts`** — the hint the snake brings on arriving on a floor.
+* **`screens.ts`** — where the message box goes, and `notBuiltYet`. **`boxes.ts`** is the rest of
+  it: putting one box up at a time, and showing the several boxes a ported function printed in
+  one go one after another, since `print_menu_only` waits for a key after each of them.
+* **`arrival.ts`** — the hint the snake brings on arriving on a floor. **`office.ts`** — the step
+  count `draw_monster_view` keeps, and the taunt the section boss sends every 250 of them.
 * **`Play.svelte`** — the tab: the map, the message box, the screens and the row of keys.
+* **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
+  prints, beside the map, and the picture of the monster in front of the character over them.
 
 ## Waiting for a key
 
@@ -118,9 +123,9 @@ ladder finds the monsters where they were left.
 The monsters the map draws are worked out from the occupancy grid (`drawnMonsters`), so a monster
 that has been killed and taken off the grid stops being drawn without anything else being told.
 
-## What the side panel can have
+## The side panel
 
-`session.view()` is what the tab draws, and it is where a panel of numbers should look:
+`session.view()` is what the tab draws, and it is where the panel of numbers looks:
 
 | field | what it is |
 | --- | --- |
@@ -133,18 +138,25 @@ that has been killed and taken off the grid stops being drawn without anything e
 | `prompt` | the ladder or doorway box |
 | `seconds` | game time spent, which `call_check_eng` counts |
 | `engaged` | the monster being faced, with its level and hit points |
+| `ahead` | that monster is the one straight ahead, which is when the game draws its picture |
 | `over`, `dead` | the loop has come back |
 
 `session.game` is the whole `Game` for anything else — the spell timers, the poison and disease
 clocks, the wand and scroll counts are all fields of `session.game.pc`.
+
+`panel.ts` is where those are read, one function per block the panel shows, each of them pure and
+each naming the function of the game its number comes from: the moves left on every battle spell
+in `view_battle_spells`' own order, the spells in effect that have no timer, the poison and
+disease clocks `pass_moment` counts down, the charges on every wand, scroll and paper, the
+engaged monster with the chance a swing lands from `src/lib/bestiary/to-hit.ts`, what the square
+underfoot holds, and the monsters nearest by. The view arrives fresh after every action, and
+reading it is what sends the panel back to the record.
 
 ## What is not built yet
 
 Every one of these keys says so in the message box today. The game functions behind them are
 mostly ported already; what is missing is the key that reaches them.
 
-* **The town** — U on a building square. `town.ts` has the store, the temple, the bank and the
-  inn, and the inn is where a character ages and gains levels.
 * **The spell screens** — C, P, W, A, 1 and 2, and the first four lines of the I key's own menu.
   `cast_a_spell` (exe 2000:e017) is the one big function still to port; `magic.ts` already has
   every spell it dispatches to.
@@ -167,4 +179,7 @@ mostly ported already; what is missing is the key that reaches them.
   `CharacterFile.write`, which is the real 2,697-byte file with its checksum, so a character can
   be downloaded and played on in DOS. Death writes nothing, which is what the original does; the
   roster marks the entry instead.
+* **The town's pictures are not drawn.** `g_store`, `temple`, `bank` and `flea_inn` fill the
+  screen with `store.pic`, `temple.pic`, `bank.pic` and `inn.pic` behind their menus, and
+  `boss_office_message` draws the boss beside its taunt. The port shows the words alone.
 * **The two hidden keys are left out**: 0xfb turns saving off and 0xfe hands out ten hit points.
