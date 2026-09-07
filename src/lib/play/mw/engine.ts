@@ -393,7 +393,7 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.arrowRight]: { c: 'movecontrol, case -0x4d of its key switch', run: (turn) => turnAndStep(turn, 3) },
   [MW_KEY.wait]: { c: 'movecontrol, the 0x74 branch', run: waitAMoment },
   [MW_KEY.space]: { c: 'movecontrol, the 0x20 branch', run: waitAMoment },
-  [MW_KEY.escape]: { c: 'movecontrol, the 0x1b branch', run: (turn) => turn.session.clearBox() },
+  [MW_KEY.escape]: { c: 'movecontrol, the 0x1b branch', run: wipeTheTopOfTheScreen },
   [MW_KEY.down]: { c: 'movecontrol, the 0x64 branch, and dig_hole', run: goDown },
   [MW_KEY.up]: { c: 'movecontrol, the 0x75 branch, and the town', run: goUp },
   [MW_KEY.trapDoor]: { c: 'movecontrol, the 0x6b branch, and FUN_2000_a6fa', run: goThroughTrapDoor },
@@ -422,6 +422,15 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.paletteBlue]: { c: 'movecontrol, the 0x2a branch', run: (turn) => mwNotBuiltYet(turn.game, 'DARKEN THE BLUE IN THE PALETTE') },
 };
 
+
+/**
+ * movecontrol's 0x1b branch: Escape fills the top left of the screen with the background colour,
+ * which takes down both the message box and the fight's banner.
+ */
+function wipeTheTopOfTheScreen(turn: MwTurn): void {
+  turn.session.clearBox();
+  turn.session.banner = [];
+}
 
 /**
  * movecontrol (WORLD.EXE 2000:aad5, mw.c "movecontrol"): the loop. It comes back when the

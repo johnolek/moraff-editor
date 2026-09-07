@@ -58,8 +58,11 @@ export async function castAtTheSpellScreen(turn: MwTurn): Promise<void> {
   const { game, session } = turn;
   const cost = await spellScreen(session, MW_FROM_SPELLBOOK);
   if (cost === 0) return;
-  spendTheSpellsTime(game, cost);
-  monstersMove(game);
+  // What the monsters do with the time the spell took is a fight, and goes where a fight goes.
+  session.fighting(() => {
+    spendTheSpellsTime(game, cost);
+    monstersMove(game);
+  });
   game.redrawView = true;
 }
 
@@ -92,7 +95,7 @@ export async function useAnItem(turn: MwTurn): Promise<void> {
   if (answer >= 1 && answer <= 3) {
     const source = [MW_FROM_SCROLL, MW_FROM_WAND, MW_FROM_PAPER][answer - 1];
     const cost = await spellScreen(session, source);
-    if (cost !== 0) spendTheSpellsTime(game, cost);
+    if (cost !== 0) session.fighting(() => spendTheSpellsTime(game, cost));
     return;
   }
   if (answer === 4) mwNotBuiltYet(game, 'SWALLOW A MAGIC VITAMIN PILL');
