@@ -24,7 +24,7 @@ export const TABS: TabEntry[] = [
  *  calculators, the formulas, the tidbits and the snake are that game's alone. */
 const GAME_TABS: Partial<Record<GameId, Tab[]>> = {
   moraffsWorld: ['map', 'play', 'editor', 'monsters', 'spells', 'roller', 'source'],
-  revenge: ['map', 'monsters', 'source'],
+  revenge: ['map', 'editor', 'monsters', 'roller', 'source'],
 };
 
 /** The one tab the other games call something else, since only Dungeons of the Unforgiven needs

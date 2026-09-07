@@ -10,8 +10,8 @@ describe('the tabs a game has', () => {
     expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['map', 'play', 'editor', 'monsters', 'spells', 'roller', 'source']);
   });
 
-  it('is the Map and Source for Moraff’s Revenge, which is all that game has so far', () => {
-    expect(tabsFor('revenge').map((tab) => tab.id)).toEqual(['map', 'monsters', 'source']);
+  it('is the Map, the Save Editor, the Monsters, New Character and Source for Moraff’s Revenge', () => {
+    expect(tabsFor('revenge').map((tab) => tab.id)).toEqual(['map', 'editor', 'monsters', 'roller', 'source']);
   });
 
   it('gives both games the Play tab, since both of them can be played', () => {
@@ -39,9 +39,9 @@ describe('the tab to show', () => {
     expect(tabFor('moraffsWorld', 'snake')).toBe('editor');
   });
 
-  it('falls back to the first tab a game with no save editor has', () => {
-    expect(tabFor('revenge', 'play')).toBe('map');
-    expect(tabFor('revenge', 'editor')).toBe('map');
+  it('falls back to the Save Editor for Moraff’s Revenge too, now that it has one', () => {
+    expect(tabFor('revenge', 'play')).toBe('editor');
+    expect(tabFor('revenge', 'editor')).toBe('editor');
     expect(tabFor('revenge', 'source')).toBe('source');
   });
 });

@@ -9,7 +9,7 @@ import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, 
 export function importCharacter(game: string, fileName: string, bytes: Uint8Array<ArrayBuffer>): void {
   const entry = newEntry({
     game,
-    name: recordName(bytes) || fileName,
+    name: recordName(bytes, game) || fileName,
     slot: slotFromFileName(fileName),
     bytes,
     imported: true,
