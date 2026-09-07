@@ -449,6 +449,20 @@ export interface MwGame {
    * is what keeps a screen up until the player has read it. {@link newMwGame} returns at once.
    */
   pressAnyKey(): void;
+  /**
+   * delay (WORLD.EXE 1000:22a2, mw.c "FUN_1000_22a2"): hold the screen as it stands for a number
+   * of milliseconds, which is how long the game leaves a message on the screen before wiping it.
+   *
+   * The argument is milliseconds. The routine busy-waits on channel 0 of the 8253, whose count it
+   * multiplies by the 2386 at DS:9162; the channel runs in square-wave mode, where the count steps
+   * down by two per 1,193,182 Hz clock, so 2386 counts is one millisecond.
+   *
+   * Nothing about the game changes over that time: the original is not reading the keyboard and no
+   * monster moves. {@link newMwGame} therefore returns at once, and the Play tab is where the
+   * delay means anything — it holds what has been drawn for that long before letting the next
+   * thing show.
+   */
+  delay(ms: number): void;
 
   // combat and town
 
@@ -657,6 +671,7 @@ export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
     askName: () => '',
     askClass: () => 0,
     pressAnyKey: () => {},
+    delay: () => {},
     monsters: [],
     engaged: -1,
     monsterMap: new Uint8Array(MW_FLOOR_COLUMNS * MW_FLOOR_ROWS).fill(MW_SQUARE_EMPTY),

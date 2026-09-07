@@ -537,6 +537,20 @@ export interface Game {
    */
   pressAnyKey(): void;
   /**
+   * delay (exe 1000:2789, unf.c "FUN_1000_2789"): hold the screen as it stands for a number of
+   * milliseconds, which is how long the game leaves a message on the screen before wiping it.
+   *
+   * The argument is milliseconds. The routine busy-waits on channel 0 of the 8253, whose count
+   * it multiplies by the 2386 at DS:7b62; the channel runs in square-wave mode, where the count
+   * steps down by two per 1,193,182 Hz clock, so 2386 counts is one millisecond.
+   *
+   * Nothing about the game changes over that time: the original is not reading the keyboard and
+   * no monster moves. {@link newGame} therefore returns at once, and the Play tab is where the
+   * delay means anything — it holds what has been drawn for that long before letting the next
+   * thing show.
+   */
+  delay(ms: number): void;
+  /**
    * getch (exe 4000:417b, unf.c "FUN_4000_417b"): the key movecontrol (exe 2000:c308) stops and
    * waits for, which is where every turn of the game begins.
    *
@@ -784,6 +798,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     askName: () => '',
     askClass: () => 0,
     pressAnyKey: () => {},
+    delay: () => {},
     key: noKeyboard,
     choice: noKeyboard,
 

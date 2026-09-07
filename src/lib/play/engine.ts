@@ -31,6 +31,7 @@ import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './mov
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
 import { MESSAGE_BOX_LINES, messageBoxLines } from './screens';
+import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
@@ -153,6 +154,11 @@ export class GameSession {
   /** Called whenever the game is about to wait for a key, so the tab can draw what it is
    *  waiting with. */
   onChange: (() => void) | null = null;
+  /**
+   * The delays the game holds a drawn message for (exe 1000:2789), which the tab keeps to. The
+   * loop runs straight past them; this is what decides which of the screens it drew is showing.
+   */
+  private readonly timed = new TimedScreens(() => this.changed());
 
   /** A key pressed while nothing was waiting for one, which is where DOS kept it too. */
   private queued: number[] = [];
@@ -190,6 +196,7 @@ export class GameSession {
       pressAnyKey: () => {
         this.waitOwed = true;
       },
+      delay: (ms) => this.timed.hold(this.game.screen, ms),
     });
     // What the game says goes through print_menu_only, which is the message box; what it draws
     // with pfont is a screen. The two are kept apart here the way they are on the screen.
@@ -208,6 +215,9 @@ export class GameSession {
 
   /** A key from the Play tab. */
   press(key: number): void {
+    // Whatever is left of a message's delay is given up: the original is not reading the keyboard
+    // while it waits, so by the time a key of the player's is looked at the wait is behind it.
+    this.timed.release();
     const waiting = this.waiting;
     if (waiting) {
       this.waiting = null;
@@ -385,7 +395,7 @@ export class GameSession {
       rows: this.rows,
       monsters: drawn,
       box: messageBoxLines(this.box),
-      screen: game.screen,
+      screen: this.timed.showing(game.screen),
       banner: this.banner,
       prompt: ladderPrompt(ladderUnder(game), pc.level === 0 ? buildingUnder(game) : 0),
       seconds: game.secondsElapsed,

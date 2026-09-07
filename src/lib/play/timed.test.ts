@@ -1,0 +1,75 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ScreenLine } from '../game/port/state';
+import { TimedScreens } from './timed';
+
+const line = (text: string): ScreenLine => ({ text, x: 0x3a2, y: 0x301, font: 0, colour: 8 });
+
+const texts = (lines: ScreenLine[]): string[] => lines.map((drawn) => drawn.text);
+
+describe('TimedScreens', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('shows the live screen while the game has asked for nothing', () => {
+    const timed = new TimedScreens(() => {});
+    expect(timed.holding).toBe(false);
+    expect(texts(timed.showing([line('YOU KILLED IT!')]))).toEqual(['YOU KILLED IT!']);
+  });
+
+  it('shows each held screen for its own delay and then hands the screen back', () => {
+    const timed = new TimedScreens(() => {});
+    const live = [line('GOOD NEWS...')];
+    timed.hold([line('YOU KILLED IT!')], 1050);
+    timed.hold([], 750);
+    timed.hold([line('YOU FIND...')], 3000);
+    expect(texts(timed.showing(live))).toEqual(['YOU KILLED IT!']);
+    vi.advanceTimersByTime(1049);
+    expect(texts(timed.showing(live))).toEqual(['YOU KILLED IT!']);
+    vi.advanceTimersByTime(1);
+    expect(texts(timed.showing(live))).toEqual([]);
+    vi.advanceTimersByTime(750);
+    expect(texts(timed.showing(live))).toEqual(['YOU FIND...']);
+    vi.advanceTimersByTime(3000);
+    expect(timed.holding).toBe(false);
+    expect(texts(timed.showing(live))).toEqual(['GOOD NEWS...']);
+  });
+
+  it('keeps the screen it was handed rather than a reference to it', () => {
+    const timed = new TimedScreens(() => {});
+    const live = [line('YOU KILLED IT!')];
+    timed.hold(live, 1050);
+    live.length = 0;
+    expect(texts(timed.showing(live))).toEqual(['YOU KILLED IT!']);
+  });
+
+  it('gives up every remaining delay at once when a key releases it', () => {
+    const timed = new TimedScreens(() => {});
+    const live = [line('NOTHING! (HIT ANY KEY)')];
+    timed.hold([line('YOU KILLED IT!')], 1050);
+    timed.hold([line('YOU FIND...')], 3000);
+    timed.release();
+    expect(timed.holding).toBe(false);
+    expect(texts(timed.showing(live))).toEqual(['NOTHING! (HIT ANY KEY)']);
+  });
+
+  it('tells the tab to draw as each screen comes up and as the last one goes', () => {
+    let draws = 0;
+    const timed = new TimedScreens(() => {
+      draws += 1;
+    });
+    timed.hold([line('YOU KILLED IT!')], 1050);
+    expect(draws).toBe(1);
+    vi.advanceTimersByTime(1050);
+    expect(draws).toBe(2);
+  });
+
+  it('ignores a delay of nothing, which is what the high speed option leaves behind', () => {
+    const timed = new TimedScreens(() => {});
+    timed.hold([line('YOU FIND...')], 0);
+    expect(timed.holding).toBe(false);
+  });
+});
