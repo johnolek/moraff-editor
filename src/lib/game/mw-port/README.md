@@ -67,12 +67,27 @@ Dungeons of the Unforgiven's `Random` (exe 2000:4156). So this port takes its `R
 * Where the game does something that looks unintended, the behaviour stays and a one-line
   comment says why it looks unintended. There are no improvements here.
 
-## The messages
+## The screens
 
-The original draws one line at a time, at coordinates, with `print_text` (exe 4000:0b14) and
-`draw_text_box` (exe 4000:4147); a colour of 0 draws in the background colour, which is how it
-rubs a number out again. A message log has nothing to rub out, so a pass that erases prints
-nothing.
+The original draws one line at a time, at coordinates, with `print_text` (exe 4000:0b14),
+`print_text_clipped` (exe 4000:0d0f) and `draw_text_box` (exe 4000:4147), each call naming an x,
+a y, one of the three fonts and a colour. That is `game.draw(...)` here, which appends the line to
+`game.messages` and also keeps `game.screen`, the lines that are showing. `print_text` works in a
+grid 1600 across and 1200 down that the game scales to whatever video mode is running, so the
+coordinates in the port are the game's own numbers.
+
+Drawing over a string already at the same x and y replaces it, which is how the game puts the next
+number where the last one was; and a colour of 0 draws in the background colour, which is how it
+rubs a number out again, so a call in colour 0 takes the line off the screen and prints nothing.
+`game.eraseScreen(fromY)` is `clear_screen` (exe 4000:34d8) and the `fill_rect` calls that clear
+the bottom of the screen between one screen of the roller and the next, and `game.pressAnyKey()`
+is `wait_key` (exe 4000:3452), the wait that keeps a screen up until the player has read it.
+
+The colour is a palette entry between 1 and 15. The ones `roll_char` uses are 2 blue, 3 light
+blue, 4 yellow, 5 orange, 6 red, 7 gold, 8 green and 15 white — the same numbers Dungeons of the
+Unforgiven's `roll_char` reaches for a year later, at the same coordinates, screen for screen.
+Moraff's World's own palette has not been read out of the executable, so what those entries look
+like is taken from the other game's; only the numbers here come from `mw.c`.
 
 Every line is the exact bytes of the game's own string, punctuation and spacing included — the
 runs of spaces inside a label are the gap the number is drawn into. The lines that come out of
@@ -84,7 +99,7 @@ segment of the PKLITE-unpacked `WORLD.EXE`, which is not in this repository:
 exe_strings.py --ds 2bb9 world.000.exe DS:4706 4735
 ```
 
-The comment on each `say` call lists the address of every line the call prints, in order, so
+The comment on each `draw` call lists the address of every line the call prints, in order, so
 they can be checked against it. Do not read the text off Ghidra's labels for the string table:
 those replace every character that is not a letter or a digit with an underscore.
 

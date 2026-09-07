@@ -15,8 +15,16 @@ import {
   typedName,
 } from './character';
 import { BorlandRng } from '../port/rng';
+import type { ScreenLine } from '../port/state';
 import type { MwGame } from './state';
 import { newMwGame } from './state';
+
+/** The line of a screen that starts with `text`, for a test that is about how it is drawn. */
+function drawn(screen: ScreenLine[], text: string): ScreenLine {
+  const line = screen.find((candidate) => candidate.text.startsWith(text));
+  if (line === undefined) throw new Error(`no line starting "${text}" on the screen`);
+  return line;
+}
 
 /** A finished character, rolled with a repeatable seed and the answers the tab would give. */
 function rolled(seed: number, race: number, cls: number, name = 'TESTY'): MwGame {
@@ -421,5 +429,101 @@ describe('rollChar', () => {
   it('keeps the age a whole number of years, counted in minutes', () => {
     const game = rolled(9, 3, 4);
     expect(game.pc.ageMinutes % MINUTES_PER_YEAR).toBe(0);
+  });
+});
+
+describe('the colours the screens are drawn in', () => {
+  /** The screen as it stands the first time `question` is asked. */
+  function screenWhenAsked(question: keyof MwGame, answer: () => number | string = () => 0): ScreenLine[] {
+    const game = newMwGame({ rng: new BorlandRng(4), askName: () => 'TESTY' });
+    let snapshot: ScreenLine[] | null = null;
+    Object.assign(game, {
+      [question]: () => {
+        snapshot ??= game.screen.map((line) => ({ ...line }));
+        return answer();
+      },
+    });
+    rollChar(game);
+    if (snapshot === null) throw new Error(`roll_char never asked ${question}`);
+    return snapshot;
+  }
+
+  it('shows the instructions on their own, waiting for a key before the race table', () => {
+    const game = newMwGame({ rng: new BorlandRng(4) });
+    let screen: ScreenLine[] = [];
+    game.pressAnyKey = () => {
+      if (screen.length === 0) screen = game.screen.map((line) => ({ ...line }));
+    };
+    rollChar(game);
+    expect(drawn(screen, 'CREATING A CHARACTER:')).toMatchObject({ x: 0, y: 0, font: 2, colour: 3 });
+    expect(drawn(screen, '  DIFFERENT CHARACTERS')).toMatchObject({ colour: 5 });
+    expect(drawn(screen, '  ADVANCED PLAYERS')).toMatchObject({ colour: 8 });
+    expect(drawn(screen, 'HIT ANY KEY')).toMatchObject({ colour: 4 });
+  });
+
+  it('clears each screen before the next one, so the race table stands on its own', () => {
+    const screen = screenWhenAsked('askRace');
+    expect(screen).toHaveLength(12);
+    expect(drawn(screen, 'RACE SELECTION:')).toMatchObject({ font: 2, colour: 3 });
+    expect(drawn(screen, '     PLEASE SELECT A RACE')).toMatchObject({ colour: 4 });
+    expect(drawn(screen, '         STRENGTH')).toMatchObject({ colour: 5 });
+    expect(drawn(screen, '1) HUMAN')).toMatchObject({ colour: 8 });
+    expect(drawn(screen, '8) IMP')).toMatchObject({ colour: 8 });
+  });
+
+  it('draws the rolled character in two columns, the numbers lined up in one of their own', () => {
+    const screen = screenWhenAsked('askKeepRerollDesign');
+    expect(drawn(screen, 'RACE: ')).toMatchObject({ x: 0, y: 0, font: 2, colour: 5, value: 'HUMAN', valueX: 0x14a });
+    for (const label of ['STRENGTH: ', 'INTELLIGENCE: ', 'WISDOM: ', 'CONSTITUTION: ', 'AGILITY: ', 'LUCK: ']) {
+      expect(drawn(screen, label)).toMatchObject({ x: 0, valueX: 0x212, font: 1, colour: 6 });
+    }
+    for (const label of ['HEIGHT: ', 'WEIGHT: ', 'AGE: ']) {
+      expect(drawn(screen, label)).toMatchObject({ x: 0x2ee, font: 1, colour: 8 });
+    }
+    expect(drawn(screen, 'SEX: ')).toMatchObject({ y: 0, font: 2, colour: 15 });
+    for (const line of ['Y) KEEP', 'N) ROLL', 'D) DESIGN', 'PLEASE SELECT ONE OF THE ABOVE']) {
+      expect(drawn(screen, line)).toMatchObject({ x: 0xbe, font: 1, colour: 4 });
+    }
+  });
+
+  it('leaves only the top of the character screen standing under the name prompt', () => {
+    const screen = screenWhenAsked('askName', () => 'TESTY');
+    expect(drawn(screen, 'PLEASE TYPE YOUR NAME:')).toMatchObject({ x: 0, y: 700, font: 1, colour: 7 });
+    expect(screen.some((line) => line.text.startsWith('Y) KEEP'))).toBe(false);
+    expect(drawn(screen, 'STRENGTH: ')).toMatchObject({ colour: 6 });
+  });
+
+  it('puts the design screen up in cyan, red and yellow with the count beside its label', () => {
+    const game = newMwGame({ rng: new BorlandRng(4), askKeepRerollDesign: () => 2, askName: () => 'TESTY' });
+    let screen: ScreenLine[] | null = null;
+    game.askDesignStat = () => {
+      screen ??= game.screen.map((line) => ({ ...line }));
+      return 0;
+    };
+    rollChar(game);
+    expect(drawn(screen!, 'ESC-CANCEL THIS CHARACTER')).toMatchObject({ x: 0x96, colour: 4 });
+    expect(drawn(screen!, 'YOU MAY ASSIGN')).toMatchObject({ colour: 3, spreadTo: 0x63f });
+    expect(drawn(screen!, 'CHARACTERISTIC POINTS LEFT: ')).toMatchObject({ y: 0x348, colour: 6 });
+    expect(drawn(screen!, '24')).toMatchObject({ x: 1000, y: 0x348, colour: 6 });
+    expect(drawn(screen!, 'STRENGTH, INTELLIGENCE, WIZDOM')).toMatchObject({ colour: 4 });
+  });
+
+  it('gives each of the seven classes its own colour', () => {
+    const screen = screenWhenAsked('askClass');
+    expect(drawn(screen, 'PLEASE SELECT A CLASS')).toMatchObject({ font: 1, colour: 2 });
+    expect(drawn(screen, 'NAME: ')).toMatchObject({ x: 700, y: 0x136, colour: 8, value: 'TESTY' });
+    expect(screen.some((line) => line.text.startsWith('SPELL POINTS: '))).toBe(false);
+    const colours = ['1) FIGHTER', '2) WORSHIPER', '3) MONK', '4) WIZARD', '5) PRIEST', '6) SAGE', '7) MAGE'].map(
+      (line) => drawn(screen, line).colour,
+    );
+    expect(colours).toEqual([3, 4, 5, 6, 8, 7, 2]);
+  });
+
+  it('ends on the sheet and the class list, the question rubbed out and the points in yellow', () => {
+    const game = rolled(4, 0, 6);
+    expect(drawn(game.screen, 'CLASS: ')).toMatchObject({ x: 700, y: 0x17c, colour: 8, value: 'MAGE' });
+    expect(drawn(game.screen, 'SPELL POINTS: ')).toMatchObject({ x: 0, y: 0x1cc, font: 1, colour: 4 });
+    expect(drawn(game.screen, '7) MAGE')).toMatchObject({ colour: 2 });
+    expect(game.screen.some((line) => line.text.startsWith('PLEASE SELECT A CLASS'))).toBe(false);
   });
 });

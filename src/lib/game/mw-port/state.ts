@@ -1,5 +1,6 @@
 import type { Rng } from '../port/rng';
 import { BorlandRng } from '../port/rng';
+import type { ScreenLine } from '../port/state';
 
 /**
  * The character record Moraff's World writes, as far as `roll_char` fills it in.
@@ -141,6 +142,8 @@ export interface MwGame {
   mapViewRows: number;
   /** Every line the game has printed, oldest first. */
   messages: string[];
+  /** What is on the screen now, in the order it was drawn. */
+  screen: ScreenLine[];
   /** Every side effect the port declined to carry out, oldest first. */
   events: MwEvent[];
   rng: Rng;
@@ -166,15 +169,39 @@ export interface MwGame {
   /** The class menu, which takes 1 to 7: 0 to 6, Fighter through Mage. Escape quits the game. */
   askClass(): number;
   /**
-   * One line of text on the screen. The original draws each at its own coordinates with
-   * print_text (exe 4000:0b14) or draw_text_box (exe 4000:4147); here a screen is a run of
-   * lines, and the empty strings a caller passes on the end are dropped.
+   * One line of text on the screen with nowhere in particular to go. The roller draws every line
+   * it prints with {@link MwGame.draw} instead.
    */
   say(...lines: string[]): void;
+  /**
+   * print_text (exe 4000:0b14, mw.c "print_text"), print_text_clipped (exe 4000:0d0f) and
+   * draw_text_box (exe 4000:4147): draw one string on the screen and append it to `messages`.
+   *
+   * Drawing over a string already at the same x and y replaces it, which is how the game puts the
+   * next number where the last one was. Colour 0 is the background: the game rubs a string out by
+   * drawing it again in it, so a call in colour 0 takes the line off the screen and prints
+   * nothing. The {@link ScreenLine} the two games draw is the same shape, so the port takes it
+   * from the Dungeons of the Unforgiven port rather than declaring it twice.
+   */
+  draw(line: ScreenLine): void;
+  /**
+   * clear_screen (exe 4000:34d8, mw.c "clear_screen") and the fill_rect (exe 4000:2020) calls
+   * roll_char wipes the bottom of the screen with: everything drawn at `fromY` or below it goes,
+   * and everything by default. What `messages` has already recorded stays.
+   */
+  eraseScreen(fromY?: number): void;
+  /**
+   * wait_key (exe 4000:3452, mw.c "wait_key"): wait for a key with the screen as it stands, which
+   * is what keeps a screen up until the player has read it. {@link newMwGame} returns at once.
+   */
+  pressAnyKey(): void;
 }
 
-/** The overrides {@link newMwGame} accepts: any field of an {@link MwGame} except `say`. */
-export interface MwGameOverrides extends Partial<Omit<MwGame, 'pc' | 'say'>> {
+/**
+ * The overrides {@link newMwGame} accepts: any field of an {@link MwGame} except `pc`, which it
+ * takes field by field, and the three printing methods, which it always supplies itself.
+ */
+export interface MwGameOverrides extends Partial<Omit<MwGame, 'pc' | 'say' | 'draw' | 'eraseScreen'>> {
   pc?: Partial<MwCharacter>;
 }
 
@@ -235,6 +262,7 @@ export function blankMwCharacter(): MwCharacter {
 export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
   const { pc: pcOverrides, ...rest } = overrides;
   const messages = overrides.messages ?? [];
+  const screen = overrides.screen ?? [];
   return {
     pc: { ...blankMwCharacter(), ...pcOverrides },
     slot: 0,
@@ -247,12 +275,29 @@ export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
     askDesignStat: () => 6,
     askName: () => '',
     askClass: () => 0,
+    pressAnyKey: () => {},
     ...rest,
     messages,
+    screen,
     say(...lines: string[]): void {
       let last = lines.length;
       while (last > 0 && lines[last - 1] === '') last--;
       for (let i = 0; i < last; i++) messages.push(lines[i]);
+    },
+    draw(line: ScreenLine): void {
+      const at = screen.findIndex((drawn) => drawn.x === line.x && drawn.y === line.y);
+      if (line.colour === 0) {
+        if (at !== -1) screen.splice(at, 1);
+        return;
+      }
+      messages.push(line.value === undefined ? line.text : line.text + line.value);
+      if (at === -1) screen.push(line);
+      else screen[at] = line;
+    },
+    eraseScreen(fromY = 0): void {
+      for (let at = screen.length - 1; at >= 0; at--) {
+        if (screen[at].y >= fromY) screen.splice(at, 1);
+      }
     },
   };
 }
