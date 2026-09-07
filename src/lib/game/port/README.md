@@ -149,10 +149,17 @@ between one screen of the roller and the next. `game.pressAnyKey()` is `mgetch_m
   permanent enchantments, the rings, Body Armor, Write Scroll and Enchant Wand, the temporary
   enchantments, and the carried weight.
 
+* `kills.ts` — `kill_monster` (exe 3000:b12d): the experience, the garbage-can rewrite of the
+  slot, the drainer's potion or key, the seven drop rolls, the find gate and the twenty section
+  rewards, and the death path behind it.
+* `drops.ts` — the eight drop routines, `find_item`, `post_kill_heal`, `post_kill_sp`,
+  `lose_item` and `use_magic_item`.
+* `levels.ts` — `go_up_level`, `check_gain_level`, `gain_level` and the level-up screen.
+* `town.ts` — the store, the temple, the bank, the inn and the night's clearing, the boss office
+  message and the arrival hints.
+
 ## What is not ported yet
 
-* `kill_monster` (exe 3000:b12d): experience, drops and the boss rewards. Where a fight reaches
-  the end of a monster, the port leaves its hit points where they land and the caller is left to
-  notice.
-* Everything else: movement, the town, the dungeon (the dungeon generator is already ported,
-  verbatim from the reference bundle, in `src/lib/game/unfmap.js`).
+* Movement and the moment (`movecontrol`, `pass_moment`) live in `src/lib/play/` once the play
+  engine lands; the dungeon generator is already ported, verbatim from the reference bundle, in
+  `src/lib/game/unfmap.js`.
