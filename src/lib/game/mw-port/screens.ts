@@ -1,6 +1,7 @@
 import { MW_CLASS_NAMES, MW_RACES } from './character';
 import { experienceForKill } from './combat';
 import { MW_FROM_PAPER, MW_FROM_SPELLBOOK, spellHeld as mwSpellHeld } from './magic';
+import { type HelpLine, readHelpScreen } from '../port/hints';
 import type { MwSpellChoice } from './state';
 import {
   MW_SPELL_CATEGORY_LABELS,
@@ -754,4 +755,157 @@ export function drawWriteSpellSlotMenu(
     '4) PREVIOUS MENU',
     maxLevel > 9 ? "HIT 0 FOR 10'TH LEVEL" : '',
   );
+}
+
+/**
+ * The .hlp files the game folder holds, mirrored into `src/lib/game/mw-help/` with their DOS line
+ * endings turned into newlines, which is what show_help's own "rt" open does with them.
+ */
+const helpFiles = import.meta.glob('../mw-help/*.hlp', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
+/** The numbered help files, in number order: 0 to 17 and 20 to 29, with nothing between. */
+export const MW_HELP_FILES: number[] = Object.keys(helpFiles)
+  .map((path) => Number(path.replace('../mw-help/', '').replace('.hlp', '')))
+  .sort((a, b) => a - b);
+
+/**
+ * show_help (WORLD.EXE 2000:8fd8, mw.c "show_help"): the pages of one help file.
+ *
+ * The reader is the same one Dungeons of the Unforgiven uses for its .uhp files a year later,
+ * down to the "rgbynow" colour codes and the 'e' that ends a page, so the port takes it from
+ * there rather than writing it twice. What Moraff's World does differently is where it draws the
+ * lines — see {@link showHelp}.
+ *
+ * @returns the pages, or null when the game folder has no file of that number.
+ */
+export function mwHelpPages(file: number): HelpLine[][] | null {
+  const text = helpFiles[`../mw-help/${file}.hlp`];
+  return text === undefined ? null : readHelpScreen(text);
+}
+
+/**
+ * show_help (WORLD.EXE 2000:8fd8, mw.c "show_help"): one help file, a page at a time, down the
+ * right-hand panel.
+ *
+ * Each line is drawn at x 0x2d0 and forty down from the one before, and a line that came out
+ * empty is not drawn at all — the row is still counted, so a blank line in the file is a gap on
+ * the screen. FUN_2000_8f95 (exe 2000:8f95) clears the panel before every page.
+ *
+ * A file the game folder does not have gets "HELP FILE NOT FOUND" at the top left instead, in the
+ * colour every line drawn straight onto the play screen comes out in.
+ */
+export function showHelp(game: MwGame, file: number): void {
+  const pages = mwHelpPages(file);
+  if (pages === null) {
+    game.eraseScreen();
+    // DS:2be9
+    game.draw({ text: 'HELP FILE NOT FOUND', x: 0, y: 0, font: 0, colour: TEXT_COLOUR });
+    game.pressAnyKey();
+    return;
+  }
+  for (const page of pages) {
+    game.eraseScreen();
+    page.forEach((line, row) => {
+      if (line.text === '') return;
+      game.draw({ text: line.text, x: PANEL_X, y: row * 0x28, font: 0, colour: line.colour });
+    });
+    game.pressAnyKey();
+  }
+  game.eraseScreen();
+}
+
+/** One line of the help menu: the key that opens it, the line itself, and the file it opens. */
+export interface MwHelpTopic {
+  key: string;
+  /** The line as FUN_4000_3563 prints it (exe DS:822f onwards). */
+  label: string;
+  /** The number of the .hlp file the topic reads. */
+  file: number;
+}
+
+/**
+ * FUN_4000_3563 (WORLD.EXE 4000:3563): the twenty-eight lines of the help menu, in the order it
+ * draws them. The order has nothing to do with the order of the files.
+ */
+export const MW_HELP_TOPICS: MwHelpTopic[] = [
+  { key: 'A', label: 'A-CHANGE ARMOR', file: 4 },
+  { key: 'B', label: 'B-BRICK SPEED CHANGE (4 SETTINGS)', file: 11 },
+  { key: 'C', label: 'C-CAST SPELL OR GET HELP ON SPELLS', file: 13 },
+  { key: 'D', label: 'D-GO DOWN LADDER OR DIG HOLE', file: 9 },
+  { key: 'E', label: 'E-EXPERIENCE NEEDED TO GAIN LEVEL', file: 12 },
+  { key: 'F', label: 'F-ATTACK MONSTER IF POSSIBLE', file: 2 },
+  { key: 'I', label: 'I-USE ITEM', file: 6 },
+  { key: 'L', label: 'L-LOSE (DROP) ITEM', file: 8 },
+  { key: 'M', label: 'M-VIEW MONETARY BREAKDOWN', file: 5 },
+  { key: 'Q', label: 'Q-QUIT AND SAVE POSITION', file: 1 },
+  { key: 'S', label: 'S-SAVE AND CONTINUE PLAYING', file: 0 },
+  { key: 'U', label: 'U-CLIMB UP LADDER OR ROPE', file: 10 },
+  { key: 'V', label: "V-VIEW PLAYER'S VITAL STATISTICS", file: 7 },
+  { key: 'W', label: 'W-SELECT WEAPON', file: 3 },
+  { key: 'P', label: 'P-VIEW CONTENTS OF POCKETS', file: 14 },
+  { key: 'O', label: 'O-ON OFF SWITCH FOR THE SOUND', file: 16 },
+  { key: 'X', label: 'X-EXPAND THE 2D MAP', file: 17 },
+  { key: 'Z', label: 'Z-ZOOM IN ON A 3D VIEW', file: 15 },
+  { key: '0', label: '0-OBJECTIVE OF THE GAME', file: 20 },
+  { key: '1', label: '1-GENERAL PLAY OF GAME', file: 21 },
+  { key: '2', label: '2-A GUIDE TO THE TOWNS', file: 22 },
+  { key: '3', label: '3-THE DUNGEONS AND THE VIEWS', file: 23 },
+  { key: '4', label: '4-TRAVELLING IN THE WILDERNESS', file: 24 },
+  { key: '5', label: '5-GENERAL STRATEGY', file: 25 },
+  { key: '6', label: '6-SPELLS, SCROLLS, WANDS, PAPERS', file: 26 },
+  { key: '7', label: '7-MAGIC ITEMS', file: 27 },
+  { key: '8', label: '8-TIMING AND FIGHTING', file: 28 },
+  { key: '9', label: '9-MORE HINTS AND STRATEGIES', file: 29 },
+];
+
+/**
+ * FUN_2000_919a (WORLD.EXE 2000:919a) and FUN_4000_3563 (exe 4000:3563): the help menu, over the
+ * right-hand panel.
+ *
+ * The two headings are drawn at the top and the twenty-eight topics forty apart under them.
+ */
+export function drawHelpMenu(game: MwGame): void {
+  game.eraseScreen();
+  // DS:81e8 820c
+  game.draw({
+    text: 'HELP MENU-HIT ESC TO RETURN TO GAME',
+    x: PANEL_X,
+    y: 0,
+    font: 0,
+    colour: 4,
+  });
+  game.draw({
+    text: 'HIT LETTER OR NUMBER FOR MORE HELP',
+    x: PANEL_X,
+    y: 0x28,
+    font: 0,
+    colour: 5,
+  });
+  MW_HELP_TOPICS.forEach((topic, row) => {
+    game.draw({ text: topic.label, x: PANEL_X, y: (row + 2) * 0x28, font: 0, colour: 8 });
+  });
+}
+
+/**
+ * FUN_2000_919a (WORLD.EXE 2000:919a): which help file a key at the menu opens.
+ *
+ * The key is lower-cased first, so either case works. A digit is turned into a file by taking
+ * 0x1c off it, which is what puts '0' to '9' on files 20 to 29; every letter goes through a
+ * switch. Anything else leaves the menu, Escape included.
+ *
+ * That switch is shared with the mouse, whose region numbers are 0 to 17 — so a control character
+ * in that range, Ctrl-A say, opens a help file as though the line had been clicked.
+ *
+ * @returns the file number, or -1 to leave the menu.
+ */
+export function helpMenuFile(key: number): number {
+  const lowered = key >= 0x41 && key <= 0x5a ? key + 0x20 : key;
+  if (lowered >= 0x30 && lowered <= 0x39) return lowered - 0x1c;
+  if (lowered >= 0 && lowered <= 0x11) return MW_HELP_TOPICS[lowered].file;
+  const topic = MW_HELP_TOPICS.find((entry) => entry.key.toLowerCase().charCodeAt(0) === lowered);
+  return topic === undefined ? -1 : topic.file;
 }

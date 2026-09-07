@@ -7,8 +7,11 @@ import {
 } from './magic';
 import {
   MW_ESCAPE,
+  MW_HELP_FILES,
+  MW_HELP_TOPICS,
   MW_SPELL_CATEGORY_MENU,
   applySpellCategory,
+  drawHelpMenu,
   drawMonsterInfo,
   drawSpellCategoryMenu,
   drawSpellGrid,
@@ -16,9 +19,12 @@ import {
   drawWriteSpellCategoryMenu,
   drawWriteSpellLevelMenu,
   drawWriteSpellSlotMenu,
+  helpMenuFile,
+  mwHelpPages,
   mwLineMenuKey,
   mwMenuKey,
   mwSpellTimers,
+  showHelp,
   showSpellDescription,
   spellGridKey,
   viewStats,
@@ -421,5 +427,81 @@ describe('the write scroll and enchant wand menus', () => {
     const shallow = newMwGame();
     drawWriteSpellSlotMenu(shallow, 3, 2, 0);
     expect(shallow.messages).toHaveLength(4);
+  });
+});
+
+describe('the help files', () => {
+  it('has the twenty-eight the game folder holds, with no 18 or 19', () => {
+    expect(MW_HELP_FILES).toHaveLength(28);
+    expect(MW_HELP_FILES).toContain(17);
+    expect(MW_HELP_FILES).not.toContain(18);
+    expect(MW_HELP_FILES).not.toContain(19);
+    expect(MW_HELP_FILES).toContain(20);
+  });
+
+  it('has a file behind every line of the menu', () => {
+    for (const topic of MW_HELP_TOPICS) expect(MW_HELP_FILES).toContain(topic.file);
+  });
+
+  it('reads the save file page in the colours it names', () => {
+    const pages = mwHelpPages(0);
+    expect(pages).not.toBeNull();
+    expect(pages?.[0][0]).toEqual({ colour: 4, text: 'THE SAVE COMMAND:' });
+    expect(pages?.[0][2].colour).toBe(5);
+  });
+
+  it('gives back nothing for a file the folder does not have', () => {
+    expect(mwHelpPages(18)).toBeNull();
+  });
+});
+
+describe('showHelp', () => {
+  it('draws the lines of a page forty apart and skips the blank ones', () => {
+    const game = newMwGame();
+    showHelp(game, 15);
+    expect(game.messages[0]).toBe("HIT 'Z' TO ZOOM IN ON ANY VIEW");
+    expect(game.messages[1]).toBe('   THE ZOOM FEATURE WILL ALLOW YOU');
+    expect(game.messages[game.messages.length - 1]).toBe('HIT ANY KEY...');
+  });
+
+  it('says so when the folder has no such file', () => {
+    const game = newMwGame();
+    showHelp(game, 18);
+    expect(game.messages).toEqual(['HELP FILE NOT FOUND']);
+  });
+});
+
+describe('drawHelpMenu', () => {
+  it('draws the two headings and the twenty-eight topics', () => {
+    const game = newMwGame();
+    drawHelpMenu(game);
+    expect(game.messages).toHaveLength(30);
+    expect(game.messages[0]).toBe('HELP MENU-HIT ESC TO RETURN TO GAME');
+    expect(game.messages[2]).toBe('A-CHANGE ARMOR');
+    expect(game.screen[2]).toMatchObject({ x: 0x2d0, y: 0x50 });
+    expect(game.messages[game.messages.length - 1]).toBe('9-MORE HINTS AND STRATEGIES');
+  });
+});
+
+describe('helpMenuFile', () => {
+  it('takes a letter in either case', () => {
+    expect(helpMenuFile(0x73)).toBe(0);
+    expect(helpMenuFile(0x53)).toBe(0);
+    expect(helpMenuFile(0x62)).toBe(11);
+  });
+
+  it('puts the ten digits on files 20 to 29', () => {
+    expect(helpMenuFile(0x30)).toBe(20);
+    expect(helpMenuFile(0x39)).toBe(29);
+  });
+
+  it('takes a control character as a click on the line of that number', () => {
+    expect(helpMenuFile(0)).toBe(MW_HELP_TOPICS[0].file);
+    expect(helpMenuFile(0x11)).toBe(MW_HELP_TOPICS[0x11].file);
+  });
+
+  it('leaves the menu on anything else', () => {
+    expect(helpMenuFile(MW_ESCAPE)).toBe(-1);
+    expect(helpMenuFile(0x67)).toBe(-1);
   });
 });
