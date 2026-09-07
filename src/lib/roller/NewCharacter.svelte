@@ -6,12 +6,12 @@
   import type { MwCharacter } from '../game/mw-port/state';
   import { CLASS_NAMES, RACES, typedName } from '../game/port/character';
   import type { PlayerCharacter, ScreenLine } from '../game/port/state';
+  import GameScreen from '../ui/GameScreen.svelte';
   import PixelText from '../ui/PixelText.svelte';
   import { DESIGN_STAT_KEYS, rollerKey, type RollerScreen } from './keys';
   import { MW_SLOTS, mwSlotFileName, newMwCharacterFile } from './mw-save-file';
   import { MwRollerSession } from './mw-session';
   import { newCharacterFile, slotFileName, SLOTS } from './save-file';
-  import { screenSpans } from './screen';
   import { RollerSession } from './session';
 
   const STATS = ['STRENGTH', 'INTELLIGENCE', 'WISDOM', 'CONSTITUTION', 'AGILITY', 'LUCK'];
@@ -41,7 +41,6 @@
   let view = $state.raw<ReturnType<RollerSession['view']> | ReturnType<MwRollerSession['view']> | null>(null);
   let typed = $state('');
   let note = $state('');
-  let screenWidth = $state(0);
 
   const chosen = $derived(GAMES[app.game]);
   /** The screen a key would answer: the game's own, or the character number asked for first. */
@@ -52,7 +51,6 @@
   const showing = $derived(
     view === null ? [] : view.question === 'name' ? [...view.screen, nameBeingTyped()] : view.screen,
   );
-  const spans = $derived(screenSpans(showing));
 
   /**
    * The name as it is typed, which typed_name (exe 4000:55b2) draws under the prompt as the keys
@@ -218,17 +216,7 @@
         <button type="button" class="ghost" onclick={leave}>Pick another number</button>
       </div>
 
-      <!-- The game's own screen: 1600 units across and 1200 down, each line where roll_char draws it. -->
-      <div class="screen" bind:clientWidth={screenWidth} style:--u="{screenWidth / 1600}px">
-        {#each spans as span}
-          <span
-            style:left="calc({span.x} * var(--u))"
-            style:top="calc({span.y} * var(--u))"
-            style:font-size="calc({span.size} * var(--u))"
-            style:letter-spacing="calc({span.spacing} * var(--u))"
-            style:color={span.colour}>{span.text}</span>
-        {/each}
-      </div>
+      <GameScreen lines={showing} />
 
       {#if view.question === 'continue'}
         <div class="choices">
@@ -416,22 +404,6 @@
     font-weight: 600;
   }
   /* The game's own screen, in the game's own typeface, laid out in the game's own coordinates. */
-  .screen {
-    position: relative;
-    /* The screen is 1600 by 1200; the extra height is room under the lowest line the game draws,
-       and leaves a unit as tall as it is wide either way. */
-    aspect-ratio: 1600 / 1224;
-    background: #000;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .screen span {
-    position: absolute;
-    font-family: var(--font-dos);
-    line-height: 1;
-    white-space: pre;
-  }
   .sheet {
     margin-top: 22px;
   }
