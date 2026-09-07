@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { app, type Tab } from './lib/app-state.svelte';
-  import { restoreRoster } from './lib/character/current';
+  import { restoreGame, restoreRoster, switchGame } from './lib/character/current';
+  import { GAME_CHOICES } from './lib/game-choice';
   import { isAppHistoryState, tabState, type AppHistoryState } from './lib/history';
+  import { tabsFor } from './lib/tabs';
   import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
   import CharacterPanel from './lib/character/CharacterPanel.svelte';
   import Calculators from './lib/calculators/Calculators.svelte';
@@ -16,21 +18,11 @@
   import Tidbits from './lib/tidbits/Tidbits.svelte';
   import PixelText from './lib/ui/PixelText.svelte';
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'map', label: 'DotU Map' },
-    { id: 'editor', label: 'Save Editor' },
-    { id: 'monsters', label: 'Monsters' },
-    { id: 'spells', label: 'Spells' },
-    { id: 'calculators', label: 'Calculators' },
-    { id: 'formulas', label: 'Formulas' },
-    { id: 'tidbits', label: 'Tidbits' },
-    { id: 'snake', label: 'Snake' },
-    { id: 'roller', label: 'New Character' },
-    { id: 'source', label: 'Source' },
-  ];
+  const tabs = $derived(tabsFor(app.game));
 
   onMount(() => {
     restoreRoster();
+    restoreGame();
     const state = history.state;
     if (isAppHistoryState(state)) {
       restore(state);
@@ -53,7 +45,8 @@
   }
 
   function restore(state: AppHistoryState) {
-    // An entry left by an older build of the site can name a tab this one no longer has.
+    // The entry can name a tab that is not there to go to: one an older build of the site had,
+    // or one of the other game's, since the game is not part of what history remembers.
     if (tabs.some((entry) => entry.id === state.tab)) app.tab = state.tab;
     app.mapHistory = app.mapHistory.movedTo(state.index);
   }
@@ -69,7 +62,22 @@
         <button type="button" class="tab" class:active={app.tab === entry.id} onclick={() => show(entry.id)}>{entry.label}</button>
       {/each}
     </nav>
+    <div class="games" role="group" aria-label="Game">
+      {#each GAME_CHOICES as choice}
+        <button
+          type="button"
+          class="game"
+          class:active={app.game === choice.id}
+          aria-pressed={app.game === choice.id}
+          onclick={() => switchGame(choice.id)}>{choice.label}</button>
+      {/each}
+    </div>
   </header>
+  {#if app.game === 'moraffsWorld'}
+    <p class="game-note">
+      Moraff's World has the Save Editor and New Character so far — the map, the monsters and the rest are Dungeons of the Unforgiven only.
+    </p>
+  {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
   <main class:hidden={app.tab !== 'map'}>
     <MapExplorer />
@@ -143,6 +151,37 @@
   .tab.active {
     color: var(--ink);
     background: var(--panel-2);
+  }
+  .games {
+    display: flex;
+    margin-left: auto;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .game {
+    padding: 6px 14px;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .game:hover {
+    color: var(--ink);
+  }
+  .game.active {
+    background: var(--accent-dim);
+    color: #1a1822;
+    font-weight: 600;
+  }
+  .game-note {
+    margin: 0;
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
   }
   main {
     display: flex;
