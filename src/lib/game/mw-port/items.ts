@@ -1,3 +1,4 @@
+import data from '../mw-data.json';
 import { HINT, loadHBin } from './hints';
 import type { MwGame } from './state';
 
@@ -253,5 +254,216 @@ export function takeAPill(game: MwGame, choice: number): void {
   pc[pill.raised] += PILL_RAISES;
   pc[pill.dropped] -= PILL_DROPS;
   game.say(...pill.said);
+  game.pressAnyKey();
+}
+
+/** H.BIN 0x13, the six magic items FUN_3000_e221 opens with. */
+export function drawMagicItemMenu(game: MwGame): void {
+  loadHBin(game, HINT.magicItems);
+}
+
+/**
+ * What FUN_3000_e221 says for an item the character does not have. Five of the six lines lead
+ * here; the third, which is a joke, is free.
+ */
+export function sayNoSuchItem(game: MwGame): void {
+  // DS:7286 72a0 72b5 72cd 72e6 72fe, DS:45cd, DS:4a75
+  game.say(
+    'MAGIC ITEMS ARE MUCH MORE',
+    '  EFFECTIVE WHEN YOU',
+    '  ACTUALLY POSESS THEM.',
+    'KILL SOME MORE MONSTERS,',
+    "  YOU'RE BOUND FIND ONE",
+    '  EVENTUALLY.',
+    '',
+    'HIT ANY KEY...',
+  );
+  game.pressAnyKey();
+}
+
+/** The first floor a floor slosher will not go through. */
+const DEEPEST_SLOSH = 0x4c;
+
+/** The margin the square a slosher drops onto is rolled inside: `random(size - 5) + 2`. */
+const SLOSH_MARGIN = { inset: 5, from: 2 };
+
+/**
+ * FUN_3000_e221's first line: the floor slosher, which drops the character through the floor
+ * onto the one below it.
+ *
+ * The square is the one they were standing on, rolled again until it is not rock. Nothing takes
+ * the slosher off the character, so the one they have works for ever — and the game never lets
+ * them hold more than one.
+ *
+ * @returns whether the character is on a new floor, which is where the original calls
+ * enter_level (WORLD.EXE 2000:55fc).
+ */
+export function useFloorSlosher(game: MwGame): boolean {
+  const pc = game.pc;
+  if (pc.floorSloshers === 0) {
+    sayNoSuchItem(game);
+    return false;
+  }
+  if (pc.floor >= DEEPEST_SLOSH) {
+    // DS:71c5, DS:45cd, DS:4a75
+    game.say("DOESN'T WORK THIS DEEP!", '', 'HIT ANY KEY...');
+    game.pressAnyKey();
+    return false;
+  }
+  // DS:71dd 71fa
+  game.say('YOU ARE SLIPPING THROUGH THE', '  FLOOR. HIT ANY KEY...');
+  game.pressAnyKey();
+  pc.floor += 1;
+  while (game.isSolid(pc.x, pc.y, pc.floor, pc.dungeon)) {
+    pc.x = game.rng.random(game.columns - SLOSH_MARGIN.inset) + SLOSH_MARGIN.from;
+    pc.y = game.rng.random(game.rows - SLOSH_MARGIN.inset) + SLOSH_MARGIN.from;
+  }
+  game.recenterMap = true;
+  return true;
+}
+
+/**
+ * FUN_3000_e221's second line: a potion of healing, which fills the hit points back up to the
+ * maximum however far down they are.
+ *
+ * The original draws its one line at the top left of the screen in colour 15, where the fight's
+ * lines go, rather than as a box; the port says it in the message box, the way dig_hole's lines
+ * from the same corner are said.
+ */
+export function drinkHealingPotion(game: MwGame): void {
+  const pc = game.pc;
+  if (pc.healingPotions < 1) {
+    sayNoSuchItem(game);
+    return;
+  }
+  game.say('YOU FEEL GREAT! HIT A KEY...'); // DS:7212
+  game.pressAnyKey();
+  pc.hp = pc.maxHp;
+  pc.healingPotions -= 1;
+}
+
+/** H.BIN 0x14, the four wishes the third line offers and the fifth line that leaves them. */
+export function drawWishMenu(game: MwGame): void {
+  loadHBin(game, HINT.wishes);
+}
+
+/**
+ * FUN_3000_e221's third line: the joke. Any of the four wishes is answered with the address to
+ * send a million zillion dollars to and what a stamp costs, and the fifth goes back to the game.
+ *
+ * @param choice 1 to 5, the digit off the menu.
+ */
+export function askForAWish(game: MwGame, choice: number): void {
+  if (choice < 1 || choice > 4) return;
+  loadHBin(game, HINT.millionZillion);
+  game.pressAnyKey();
+  loadHBin(game, HINT.firstClassStamp);
+  game.pressAnyKey();
+}
+
+/**
+ * FUN_3000_e221's fourth line: a stone of seeing, which marks every square of the floor that is
+ * not rock as one the character has walked over.
+ *
+ * The port has no explored map — the whole floor is drawn from the start — so the loop over
+ * mark_explored (WORLD.EXE 2000:5263) has nothing to write and is left out. The stone is used
+ * up all the same.
+ */
+export function useSeeingStone(game: MwGame): void {
+  const pc = game.pc;
+  if (pc.seeingStones === 0) {
+    sayNoSuchItem(game);
+    return;
+  }
+  pc.seeingStones -= 1;
+  game.recenterMap = true;
+  loadHBin(game, HINT.seeingStone);
+  game.pressAnyKey();
+}
+
+/** The border the square a teleport stone lands on is looked for inside. */
+const TELEPORT_MARGIN = 0x14;
+
+/**
+ * FUN_3000_e221's fifth line: a stone of teleportation, which puts the character back in the
+ * town.
+ *
+ * The square they land on is the last open one the search finds rather than the first: the two
+ * loops never stop early, so every open square inside the border overwrites the one before it
+ * and the character always arrives on the same square of the town.
+ *
+ * The original enters floor 0 before it looks for that square. Floor 0 is stocked with nothing
+ * at all, so the port looks first and lets its caller enter the floor afterwards.
+ *
+ * @returns whether the character is on a new floor, which is where enter_level is called.
+ */
+export function useTeleportStone(game: MwGame): boolean {
+  const pc = game.pc;
+  if (pc.teleportStones < 1) {
+    sayNoSuchItem(game);
+    return false;
+  }
+  pc.teleportStones -= 1;
+  pc.floor = 0;
+  for (let x = TELEPORT_MARGIN; x < game.columns - TELEPORT_MARGIN; x++) {
+    for (let y = TELEPORT_MARGIN; y < game.rows - TELEPORT_MARGIN; y++) {
+      if (game.isSolid(x, y, pc.floor, pc.dungeon)) continue;
+      pc.x = x;
+      pc.y = y;
+    }
+  }
+  game.engaged = -1;
+  game.redrawView = true;
+  game.recenterMap = true;
+  loadHBin(game, HINT.teleportStone);
+  game.pressAnyKey();
+  return true;
+}
+
+/** The kind byte (row offset 0x10) of the ten monsters that catch a grenade. */
+const SPELL_PROOF_KIND = 100;
+
+/** The kind of each of the 112 monsters (exe DS:0247, one every 35 bytes). */
+const MONSTER_KINDS = data.monsters.map((monster) => monster.kind);
+
+/** What the grenade writes over the monster's hit points, which is what autokill writes. */
+const GRENADE_HP = -100;
+
+/**
+ * FUN_3000_e221's sixth line: the holy hand grenade, which kills whatever the character is
+ * fighting outright.
+ *
+ * It writes −100 over the monster's hit points rather than killing it here, so the kill itself
+ * happens where movecontrol makes it happen — after the key, through monster_killed, with all
+ * of the loot and the experience.
+ *
+ * A monster of kind 100 — ZEUS, the DEVIL and the eight quest bosses — catches it instead, and
+ * the grenade is not used up. With nothing being fought the game only asks whether the player
+ * really means to throw one of the most powerful magic items in Moraff's World onto an empty
+ * floor, and nothing is thrown either way.
+ */
+export function throwGrenade(game: MwGame): void {
+  const pc = game.pc;
+  if (pc.grenades !== 0 && game.engaged !== -1) {
+    if (MONSTER_KINDS[game.monsters[game.engaged].type] === SPELL_PROOF_KIND) {
+      // DS:722f 724a, DS:45cd 45cd 45cd, DS:621b
+      game.say('   THE MONSTER CATCHES THE', 'GRADADE.', '', '', '', '      HIT ANY KEY...');
+      game.pressAnyKey();
+      loadHBin(game, HINT.grenadeCaught);
+      game.pressAnyKey();
+      return;
+    }
+    pc.grenades -= 1;
+    game.monsters[game.engaged].hp = GRENADE_HP;
+    // DS:7253 726d, DS:45cd, DS:4a75
+    game.say('A MASSIVE EXPLOSION KILLS', '  THE MONSTER INSTANTLY.', '', 'HIT ANY KEY...');
+    game.pressAnyKey();
+    return;
+  }
+  if (pc.grenades === 0) {
+    sayNoSuchItem(game);
+    return;
+  }
+  loadHBin(game, HINT.grenadeOnEmptyFloor);
   game.pressAnyKey();
 }

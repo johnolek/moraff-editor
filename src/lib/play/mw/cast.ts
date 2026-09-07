@@ -21,10 +21,11 @@ import {
 } from '../../game/mw-port/screens';
 import type { MwGame, MwSpellChoice } from '../../game/mw-port/state';
 import type { MwGameSession, MwTurn } from './engine';
+import { useAMagicItem } from './items';
 import { drawArmorSlotMenu, drawDirectionMenu, drawWeaponSlotMenu } from './menus';
 import { swallowAPill } from './pills';
 import { runAsking } from './replay';
-import { mwNotBuiltYet, MW_TEXT_COLOUR } from './screens';
+import { MW_TEXT_COLOUR } from './screens';
 
 /**
  * The C key and the I key: the spell screen, and everything a spell stops to ask.
@@ -99,7 +100,7 @@ export async function useAnItem(turn: MwTurn): Promise<void> {
     return;
   }
   if (answer === 4) await swallowAPill(session);
-  if (answer === 5) mwNotBuiltYet(game, 'USE A RING, A GRENADE OR ANOTHER MAGIC ITEM');
+  if (answer === 5) await useAMagicItem(session);
 }
 
 /**

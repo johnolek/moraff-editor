@@ -48,6 +48,22 @@ export const HINT = {
   buyAnotherContract: 0x1f,
   /** "I THINK YOU'RE DEAD!" — no contract, and the character's files are deleted. */
   noContract: 0x20,
+  /** "HIT A KEY (1-6):" — the six magic items behind the I key's fifth line. */
+  magicItems: 0x13,
+  /** "PLEASE SELECT ONE:" — win life, become rich, rule the world, live forever. */
+  wishes: 0x14,
+  /** "TO EXECUTE THIS REQUEST SEND ONE MILLION ZILLION DOLLARS..." */
+  millionZillion: 0x15,
+  /** "BY THE WAY, A FIRST CLASS STAMP TO MORAFF'S WORLD COSTS ONE MILLION ZILLION CENTS." */
+  firstClassStamp: 0x16,
+  /** "SUDDENLY YOU FEEL THAT YOU CAN SEE RIGHT THROUGH ALL OF THE WALLS ON THIS LEVEL." */
+  seeingStone: 0x17,
+  /** "YOU ARE FLOATING THROUGH SPACE..." — the stone of teleportation. */
+  teleportStone: 0x18,
+  /** "ARE YOU SURE THAT YOU WANT TO TOSS ONE OF THE MOST POWERFUL MAGIC ITEMS..." */
+  grenadeOnEmptyFloor: 0x19,
+  /** "HE THEN LAUGHS HYSTERICALLY AND HANDS IT BACK TO YOU." — the grenade caught. */
+  grenadeCaught: 0x1a,
   /** "DROP WHICH KIND OF COINS?" — the five piles the L key's money branch offers. */
   dropCoins: 0x21,
 } as const;
