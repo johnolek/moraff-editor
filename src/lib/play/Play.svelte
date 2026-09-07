@@ -9,6 +9,7 @@
   import GameScreen from '../ui/GameScreen.svelte';
   import PixelText from '../ui/PixelText.svelte';
   import Panel from './Panel.svelte';
+  import Portrait from './Portrait.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
   import { gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
   import { MESSAGE_BOX } from './screens';
@@ -187,6 +188,11 @@
             {/each}
           </div>
         </div>
+        <Portrait
+          monster={view.ahead ? view.engaged : null}
+          module={view.place.module}
+          floor={view.place.floor}
+        />
         <Panel game={session.game} {view} />
       </aside>
     </div>

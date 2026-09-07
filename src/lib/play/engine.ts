@@ -97,6 +97,9 @@ export interface PlayView {
   seconds: number;
   /** The monster the character is facing, or null. */
   engaged: StockedMonster | null;
+  /** That monster is the one standing straight ahead (DS:c655) rather than one being fought
+   *  from another side, which is when the game has its picture on the screen. */
+  ahead: boolean;
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
@@ -260,6 +263,7 @@ export class GameSession {
       prompt: ladderPrompt(ladderUnder(game), pc.level === 0 ? buildingUnder(game) : 0),
       seconds: game.secondsElapsed,
       engaged: facing === -1 ? null : (drawn.find((monster) => monster.slot === facing) ?? null),
+      ahead: game.engagedAhead !== -1,
       over: this.over,
       dead: this.dead,
     };
