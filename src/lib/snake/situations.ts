@@ -279,7 +279,7 @@ export const SITUATIONS: Situation[] = [
     id: 'kills',
     title: 'Killing a monster',
     when:
-      'The nineteen rewards are what the section bosses carry, and each one points you at the next boss. The twentieth boss, the Shadow Ogeroth on floor 100, hands over nothing and gets no message.',
+      'The nineteen rewards are what the section bosses carry, and each one points you at the next boss. The twentieth boss, the Shadow Ogeroth on floor 100, is not in this list: its three screens are string constants in the executable rather than hints.',
     snake: false,
     c: 'kill_monster',
     entries: [
@@ -391,7 +391,7 @@ export const SITUATIONS: Situation[] = [
     id: 'never',
     title: 'Never shown',
     when:
-      'Four messages nothing can reach. The new-universe text was replaced by the two the teleporter uses; three of the notes in the corner sit in switch cases with no body; and the test that would show "try not to die" compares a field that is 56 on every character with -1.',
+      'Five messages nothing can reach. The new-universe text was replaced by the two the teleporter uses; three of the notes in the corner sit in switch cases with no body; and the test that would show "try not to die" compares a field that is 56 on every character with -1.',
     snake: false,
     c: 'FUN_3000_6b8a',
     entries: [
