@@ -70,7 +70,7 @@ const MAP: Topic = {
         'The generator fills a grid 80 columns wide and 110 rows tall, but the game only ever draws and walks 79 by 104. The last column and the last six rows are generated like everything else and can hold perfectly good open squares that no spell, teleporter or footstep will ever reach, because every check the game makes on a destination square stops at those two numbers. The map explorer counts and draws the same area the game does, so its floor totals match what a player could actually explore.',
       inputs: 'Two sizes the game keeps for itself. Nothing about your character or the floor.',
       origin: 'the globals at DS:2328 and DS:232a, tested in relocate (exe 3000:da2c), pass_wall (exe 3000:e003) and go_away (exe 3000:db1e).',
-      c: 'relocate_spell',
+      c: 'relocate',
       code: { file: 'src/lib/map/area.ts', name: 'MAP_COLUMNS' },
     },
   ],
@@ -97,8 +97,8 @@ const TELEPORTERS: Topic = {
       explanation:
         'Walking into a teleporter moves you to the town of the module next door: up from Module I, down from Module V, and your choice of the two in between. Where in that town you appear is decided by drawing a column and a row at random over the area the game shows and drawing again until the square is not rock, so any of the three thousand or so open squares is as likely as any other. The same routine places you after Relocate, after Descend and Ascend, and after digging a hole, which is why none of those ever put you somewhere convenient.',
       inputs: 'Which squares of the destination floor are rock. Not the square you left, and nothing about your character.',
-      origin: 'exe relocate 3000:da2c, relocate_spell in dotu-tools/decomp/unf.c. Handoff section 4.',
-      c: 'relocate_spell',
+      origin: 'exe relocate 3000:da2c, relocate in dotu-tools/decomp/unf.c. Handoff section 4.',
+      c: 'relocate',
       code: { file: 'src/lib/map/relocate.ts', name: 'randomOpenSquare' },
     },
   ],
@@ -115,7 +115,7 @@ const TOWN: Topic = {
         'Floor 0 of every module is a town, built by exactly the same machinery as a dungeon floor, with buildings dropped onto squares instead of ladders and chutes. For each square the hash draws a number below sixty: a one is a general store, a two the temple, a three the bank, a four the inn, and everything else is empty ground. Each building therefore has one square in sixty and about one square in fifteen is a doorway, which in the town of Module I works out as 60 stores, 50 temples, 42 banks and 51 inns among its 3,129 open squares. A square that has a ladder is never a building: the game asks about ladders first and only looks for a building when there is none.',
       inputs: 'The square\'s column and row and the module. The floor is always the town.',
       origin:
-        'exe town_features 2000:9cba, town_features in dotu-tools/decomp/unf.c. Handoff section 4 and FAQ [LDRS]; the ladder-first order is in drawsquare (exe 3000:87de) and movecontrol (exe 2000:c308).',
+        'exe town_features 2000:bd32, town_features in dotu-tools/decomp/unf.c. Handoff section 4 and FAQ [LDRS]; the ladder-first order is in drawsquare (exe 3000:87de) and movecontrol (exe 2000:c308).',
       c: 'town_features',
       code: { file: 'src/lib/game/unfmap.js', name: 'townFeature' },
     },
@@ -152,7 +152,7 @@ const WAYS_DOWN: Topic = {
       explanation:
         'A trap door is a locked shortcut that names the floor it goes to, always a multiple of five, and only opens for a character carrying that floor\'s key. The hash draws a number below twenty-four hundred and multiplies it by five; the answer counts only if it is floor 5 or deeper, above four fifths of the way to the bottom of the module, and in a different block of five floors from the one you are standing on. In Module I that leaves floors 5, 10 and 15 as the only destinations and roughly one square in eight hundred with a trap door on it, while Module V allows sixteen destinations and roughly one square in a hundred and fifty. Floor 12 of Module I, for instance, has five trap doors, and every one of them leads to floor 5 or floor 15.',
       inputs: 'The square\'s column and row, the floor, the module, and the module\'s bottom floor.',
-      origin: 'exe trapdoor 2000:bd32, trapdoor in dotu-tools/decomp/unf.c. Handoff section 4 and FAQ [LDRS].',
+      origin: 'exe trapdoor 2000:9cba, trapdoor in dotu-tools/decomp/unf.c. Handoff section 4 and FAQ [LDRS].',
       c: 'trapdoor',
       code: { file: 'src/lib/game/unfmap.js', name: 'trapdoor' },
     },
@@ -548,8 +548,8 @@ const MAGIC: Topic = {
         'The four protection spells take 2, 8, 18 and 32 off every attack roll a monster makes against you, which is the same currency as armor and worth roughly that many extra points of armor class. Ultra Protection at 32 is worth more than any suit in the game. The priest\'s own Protection is a bug: it sets the weakest level, the same as Minor Protection, so a priest jumps from 2 straight to Major Protection\'s 18 with nothing in between.',
       inputs: 'Which protection spell is running.',
       origin:
-        'exe battle_speed 3000:ddc9 and defend 2000:82b7, battle_speed in dotu-tools/decomp/unf.c. RE notes 4.4 and 5.2; the priest bug is in TIDBITS, "Bugs".',
-      c: 'battle_speed',
+        'exe protection 3000:ddc9 and defend 2000:82b7, protection in dotu-tools/decomp/unf.c. RE notes 4.4 and 5.2; the priest bug is in TIDBITS, "Bugs".',
+      c: 'protection',
       code: { file: 'src/lib/game/dotu-mech.js', name: 'PROTECTION_BONUS' },
     },
     {

@@ -17,25 +17,34 @@ export function msgAlreadyInEffect(game: Game): void {
   game.say('CASTING THIS SPELL WOULD', '   BE REDUNDANT.', '', 'HIT ANY KEY...');
 }
 
-/** FUN_3000_d11b (exe 3000:d11b, unf.c "FUN_3000_d11b"): the other "already cast" refusal. */
+/**
+ * msg_already_cast_this_spell (exe 3000:d11b, unf.c "msg_already_cast_this_spell"): the other
+ * "already cast" refusal.
+ */
 export function msgAlreadyCastThisSpell(game: Game): void {
   // DS:36ab 36c1 258b 2b3a
   game.say('YOU HAVE ALREADY CAST', '   THIS SPELL!', '', 'HIT ANY KEY...');
 }
 
-/** FUN_3000_d7be (exe 3000:d7be, unf.c "FUN_3000_d7be"): what a small cure prints. */
+/** msg_you_feel_good (exe 3000:d7be, unf.c "msg_you_feel_good"): what a small cure prints. */
 export function msgYouFeelGood(game: Game): void {
   // DS:3855
   game.say('YOU FEEL GOOD - HIT ANY KEY');
 }
 
-/** FUN_3000_d7eb (exe 3000:d7eb, unf.c "FUN_3000_d7eb"): what a big cure or a stat boost prints. */
+/**
+ * msg_you_feel_very_good (exe 3000:d7eb, unf.c "msg_you_feel_very_good"): what a big cure or a
+ * stat boost prints.
+ */
 export function msgYouFeelVeryGood(game: Game): void {
   // DS:3871 258b 2b3a
   game.say('YOU FEEL VERY GOOD!', '', 'HIT ANY KEY...');
 }
 
-/** FUN_3000_dd37 (exe 3000:dd37, unf.c "FUN_3000_dd37"): re-casting extended the spell. */
+/**
+ * msg_sixty_moves_longer (exe 3000:dd37, unf.c "msg_sixty_moves_longer"): re-casting extended
+ * the spell.
+ */
 export function msgSixtyMovesLonger(game: Game): void {
   // DS:3a95 3aaf 3acc 258b 2b3a
   game.say(
@@ -289,10 +298,7 @@ export function sleepMonster(game: Game): boolean {
   return true;
 }
 
-/**
- * FUN_3000_d990 (exe 3000:d990, unf.c "FUN_3000_d990"): Strength, +7 STR for 60 moves. The
- * function catalog leaves this one unnamed; the battle_strength it does name is `powerWeapon`.
- */
+/** strength (exe 3000:d990, unf.c "strength"): Strength, +7 STR for 60 moves. */
 export function strength(game: Game): boolean {
   if (game.pc.strengthTimer === 0) {
     game.pc.strengthTimer = 60;
@@ -304,10 +310,7 @@ export function strength(game: Game): boolean {
   return false;
 }
 
-/**
- * FUN_3000_d9ba (exe 3000:d9ba, unf.c "FUN_3000_d9ba"): Speed, +7 AGI for 60 moves. The function
- * catalog leaves this one unnamed; the battle_speed it does name is `protection`.
- */
+/** speed (exe 3000:d9ba, unf.c "speed"): Speed, +7 AGI for 60 moves. */
 export function speed(game: Game): boolean {
   if (game.pc.speedTimer === 0) {
     game.pc.speedTimer = 60;
@@ -319,9 +322,7 @@ export function speed(game: Game): boolean {
   return false;
 }
 
-/**
- * FUN_3000_d9e4 (exe 3000:d9e4, unf.c "FUN_3000_d9e4"): Strength And Speed, both boosts at once.
- */
+/** strength_and_speed (exe 3000:d9e4, unf.c "strength_and_speed"): both boosts at once. */
 export function strengthAndSpeed(game: Game): boolean {
   // It only refuses when both are already running: with one of them up, that one is extended by
   // 60 moves and the other is cast normally.
@@ -338,8 +339,8 @@ export function strengthAndSpeed(game: Game): boolean {
 }
 
 /**
- * relocate_spell (exe 3000:da2c, unf.c "relocate_spell"): Relocate, which drops the player on a
- * random open square of the same floor that no monster is standing on.
+ * relocate (exe 3000:da2c, unf.c "relocate"): Relocate, which drops the player on a random open
+ * square of the same floor that no monster is standing on.
  */
 export function relocateSpell(game: Game): boolean {
   setMonsterMap(game, game.pc.x, game.pc.y, MAP_EMPTY);
@@ -412,9 +413,8 @@ export function autokill(game: Game): boolean {
 }
 
 /**
- * battle_strength (exe 3000:dd64, unf.c "battle_strength"): Power Weapon I to III. The name is
- * the function catalog's, and wrong: this sets the power-weapon level and its 60-move clock; the
- * +7 Strength spell is FUN_3000_d990.
+ * power_weapon (exe 3000:dd64, unf.c "power_weapon"): Power Weapon I to III, which the function
+ * catalog used to call battle_strength.
  *
  * The three spells put a 129, 199 or 399 damage die in the player's hands for 60 moves. `level`
  * is 1, 2 or 3; `strike` adds eight to it to reach the weapon table, which lands one row past
@@ -447,9 +447,8 @@ export function powerWeapon(game: Game, level: number): boolean {
 }
 
 /**
- * battle_speed (exe 3000:ddc9, unf.c "battle_speed"): Minor Protection, Protection, Major
- * Protection and Ultra Protection. The name is the function catalog's, and wrong: this sets the
- * protection level and its 60-move clock; the +7 Agility spell is FUN_3000_d9ba.
+ * protection (exe 3000:ddc9, unf.c "protection"): Minor Protection, Protection, Major
+ * Protection and Ultra Protection, which the function catalog used to call battle_speed.
  *
  * The four spells take 2, 8, 18 and 32 off a monster's attack roll for 60 moves. `level` is 1,
  * 2, 3 or 4. The level is at save offset 0x7eb.
@@ -601,7 +600,7 @@ export function passWall(game: Game, choice: number): boolean {
     if (monsterAt(game, x, y) !== -1) continue;
     game.pc.mapCursorX += dx * distance;
     game.pc.mapCursorY += dy * distance;
-    // Asking whether the walk left the view is wasted work: FUN_2000_3d9b below sets the same
+    // Asking whether the walk left the view is wasted work: reset_view_caches below sets the same
     // flag on every cast anyway.
     if (
       game.pc.mapCursorX < 1 ||
@@ -615,7 +614,7 @@ export function passWall(game: Game, choice: number): boolean {
     game.pc.x = x;
     game.pc.y = y;
     setMonsterMap(game, x, y, MAP_PLAYER);
-    // FUN_2000_3d9b (exe 2000:3d9b) throws away every cached piece of the display; of that, the
+    // reset_view_caches (exe 2000:3d9b) throws away every cached piece of the display; of that, the
     // port keeps the two flags it models.
     game.recenterMap = true;
     game.redrawView = true;
@@ -1490,7 +1489,7 @@ export function fastHeal(game: Game): boolean {
  *
  * Ghidra could not tell case 3 from case 2 — the jump table left both bodies under one label —
  * so this is the second of the two switches at unf.c line 25516, the one whose first case calls
- * sleep_monster, battle_speed and FUN_3000_d990.
+ * sleep_monster, protection and strength.
  */
 export function priestBattle(game: Game, levelIndex: number, slot: number): boolean {
   switch (levelIndex) {

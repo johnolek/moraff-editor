@@ -72,7 +72,7 @@ export function openUroll(text: string = urollText): UrollFile {
 }
 
 /**
- * FUN_3000_4a24 (exe 3000:4a24, unf.c "FUN_3000_4a24"): read the next line of UROLL.TXT.
+ * read_uroll_line (exe 3000:4a24, unf.c "read_uroll_line"): read the next line of UROLL.TXT.
  *
  * It copies characters up to and including the newline into a buffer, dropping every '|' on the
  * way, and then writes a zero over the last character it copied, which is that newline. Nothing
@@ -98,8 +98,9 @@ export function readUrollLines(file: UrollFile, count: number): string[] {
 }
 
 /**
- * FUN_3000_4a67 (exe 3000:4a67, unf.c "FUN_3000_4a67"): draw the numbers of the character that
- * has just been rolled — the six characteristics, the height, the weight, the age and the sex.
+ * show_rolled_character (exe 3000:4a67, unf.c "show_rolled_character"): draw the numbers of the
+ * character that has just been rolled — the six characteristics, the height, the weight, the age
+ * and the sex.
  *
  * The original draws each number at a fixed column beside a label roll_char has already put on
  * the screen, and `on` picks the colour it draws in: 1 for the text colour and 0 for the
@@ -335,8 +336,8 @@ export function blankPlayerCharacter(): PlayerCharacter {
 }
 
 /**
- * FUN_4000_55b2 (exe 4000:55b2, unf.c "FUN_4000_55b2") as roll_char calls it: the name the
- * player types, cut to the 18 characters the record's name field holds.
+ * typed_name (exe 4000:55b2, unf.c "typed_name") as roll_char calls it: the name the player
+ * types, cut to the 18 characters the record's name field holds.
  *
  * The original reads the keyboard a key at a time. Every key goes through toupper and only
  * letters, digits and the space bar are taken, so a name is upper case with nothing else in it.
@@ -378,7 +379,7 @@ export function startingSpells(game: Game): void {
 }
 
 /**
- * FUN_2000_3d9b (exe 2000:3d9b, unf.c "FUN_2000_3d9b"): throw away everything the game has
+ * reset_view_caches (exe 2000:3d9b, unf.c "reset_view_caches"): throw away everything the game has
  * cached about the view it is showing, so the next frame is drawn from nothing.
  *
  * Nearly all of it is display state this port does not keep: twelve bytes at DS:034c, a dozen

@@ -418,7 +418,7 @@ export interface Game {
 }
 
 /**
- * FUN_2000_65b0 (exe 2000:65b0, unf.c "FUN_2000_65b0"): the slot of the monster standing on a
+ * monster_at (exe 2000:65b0, unf.c "monster_at"): the slot of the monster standing on a
  * square, or -1 when the square is empty. A square holding the player reads back as 0xfe, not
  * as empty.
  */

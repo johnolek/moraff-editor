@@ -50,10 +50,9 @@ reads. The rest of moving between floors — writing the explored map out, redra
 happens above `spell_effect`, in the caller, and is not part of this port either way.
 
 Combat stops in the same place. `defend` writes the character record back out to its file five
-times over; the port appends a `playerSaved` event instead. Nothing in this port calls
-`kill_player` (exe 2000:c0a5) either, because nothing in the game calls it from here: `defend`
-takes the hit points down and `movecontrol` is what notices the character is dead on the next
-pass round its loop.
+times over; the port appends a `playerSaved` event instead. Nothing in this port handles the
+character dying either, because nothing in `defend` does: it takes the hit points down and
+`movecontrol` is what notices the character is dead on the next pass round its loop.
 
 The character record's fields are named the way `src/lib/game/dotu-files.js` already names those
 save offsets, so `pc.lev` is the character's level and `pc.level` is the floor, exactly as the

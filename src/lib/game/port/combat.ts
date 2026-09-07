@@ -6,7 +6,7 @@ import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
 // prints, in order; dotu-tools/reference/scripts/exe_strings.py reads them back.
 
 /**
- * FUN_2000_8189 (exe 2000:8189, unf.c "FUN_2000_8189"): move one of the six stats by `amount`,
+ * gain_or_drain (exe 2000:8189, unf.c "gain_or_drain"): move one of the six stats by `amount`,
  * which the monster tables hold as -6..-1 to drain and 1..6 to raise. Which stat it is comes
  * from the size of the number and how far it moves from the number itself, divided by that same
  * size — so every one of the twelve values moves its stat by exactly one point.
@@ -588,7 +588,7 @@ export function engagementTiming(game: Game): void {
 }
 
 /**
- * FUN_2000_b1b7 (exe 2000:b1b7, unf.c "FUN_2000_b1b7"): how many seconds one step costs. A
+ * move_seconds (exe 2000:b1b7, unf.c "move_seconds"): how many seconds one step costs. A
  * character carrying nothing much with a good agility takes one second; every hundred points of
  * weight over ten times their agility adds another.
  */
