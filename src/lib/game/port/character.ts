@@ -128,3 +128,116 @@ export function showRolledCharacter(game: Game, on: number): void {
   // columns, 900 for the male one and 750 for the female one.
   game.say(pc.sex === 0 ? 'SEX: MALE' : 'SEX: FEMALE');
 }
+
+/**
+ * The roll at the top of roll_char's loop (exe 3000:4c77, unf.c "roll_char"): everything about a
+ * character that comes out of the race table and the dice — the age, the weight, the height, the
+ * sex and the six characteristics.
+ *
+ * Each characteristic starts at its race's number and then sixty points are handed out one at a
+ * time, each to whichever of the six a d6 picks, which is why a race's average is its number
+ * plus ten and why the six always add up to the race's total plus sixty.
+ *
+ * The height is the race's number times thirty and divided by a hundred, and every screen that
+ * prints it multiplies by four again, so a HUMANOID whose table row says 70 stands 84 inches
+ * tall. The weight is spread a fifth of the race's weight wide around a tenth of it below.
+ */
+export function rollCharacteristics(game: Game): void {
+  const pc = game.pc;
+  const race = RACES[pc.race];
+  pc.age = race.age + game.rng.random(10);
+  pc.weight = race.weight;
+  pc.weight = pc.weight + (game.rng.random(Math.trunc(pc.weight / 5)) - Math.trunc(pc.weight / 10));
+  pc.height = Math.trunc((race.height * 30) / 100);
+  pc.sex = game.rng.random(2);
+  pc.str = race.str;
+  pc.iq = race.iq;
+  pc.wis = race.wis;
+  pc.con = race.con;
+  pc.dex = race.dex;
+  pc.luck = race.luck;
+  for (let point = 0; point < 60; point++) {
+    switch (game.rng.random(6)) {
+      case 0:
+        pc.str += 1;
+        break;
+      case 1:
+        pc.iq += 1;
+        break;
+      case 2:
+        pc.wis += 1;
+        break;
+      case 3:
+        pc.con += 1;
+        break;
+      case 4:
+        pc.dex += 1;
+        break;
+      case 5:
+        pc.luck += 1;
+        break;
+    }
+  }
+}
+
+/**
+ * The D of roll_char's keep, reroll and design menu (exe 3000:4c77, unf.c "roll_char"): four
+ * points come off every characteristic and the player puts twenty-four back wherever they like,
+ * which leaves the six adding up to exactly what the roll gave them.
+ *
+ * Returns false for the Escape the screen calls "cancel this character". It does not leave
+ * character creation: roll_char goes back round and rolls another character from the top.
+ *
+ * The prompt tells the player to press D for agility and the code reads A. D is what the menu
+ * one screen earlier took for designing a character, and pressing it here does nothing at all.
+ */
+export function designYourOwn(game: Game): boolean {
+  const pc = game.pc;
+  showRolledCharacter(game, 0);
+  pc.str -= 4;
+  pc.iq -= 4;
+  pc.wis -= 4;
+  pc.con -= 4;
+  pc.dex -= 4;
+  pc.luck -= 4;
+  showRolledCharacter(game, 1);
+  // DS:2756 2770 2794 27b2 27cf 27f9 2818, then DS:2836, which the original only prints when a
+  // mouse is attached. The port has no mouse flag and prints it either way.
+  game.say(
+    'ESC-CANCEL THIS CHARACTER',
+    'YOU MAY ASSIGN 24 ADDITIONAL POINTS',
+    'TO THE ABOVE CHARACTERISTICS.',
+    'CHARACTERISTIC POINTS LEFT: ',
+    "PRESS 'S', 'I', 'W', 'C', 'D', OR 'L' FOR",
+    'STRENGTH, INTELLIGENCE, WISDOM',
+    'CONSTITUTION, AGILITY OR LUCK',
+    'OR POINT THE MOUSE TO A CHARACTERISTIC AND PRESS THE BUTTON',
+  );
+  for (let left = 24; left > 0; left--) {
+    // The original rubs out the last count and draws this one on the end of the label above.
+    game.say(String(left));
+    const stat = game.askDesignStat();
+    if (stat === 6) return false;
+    switch (stat) {
+      case 0:
+        pc.str += 1;
+        break;
+      case 1:
+        pc.iq += 1;
+        break;
+      case 2:
+        pc.wis += 1;
+        break;
+      case 3:
+        pc.con += 1;
+        break;
+      case 4:
+        pc.dex += 1;
+        break;
+      case 5:
+        pc.luck += 1;
+        break;
+    }
+  }
+  return true;
+}
