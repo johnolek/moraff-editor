@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { strike as mechStrike } from '../dotu-mech.js';
+import { defend as mechDefend, strike as mechStrike } from '../dotu-mech.js';
 import { BorlandRand } from '../unfmap.js';
-import { gainOrDrain, strike } from './combat';
+import { defend, expNeeded, gainOrDrain, strike } from './combat';
 import { BorlandRng } from './rng';
-import type { Game, Monster, PlayerCharacter } from './state';
-import { MAP_PLAYER, newGame, setMonsterMap } from './state';
+import type { Game, Monster, MonsterKind, PlayerCharacter } from './state';
+import { MAP_PLAYER, monsterAt, newGame, setMonsterMap } from './state';
 
-/** Monster kind 23 is one of section 1's ordinary monsters; kind 26 is its level drainer. */
+/** Monster kind 23 is Gargalon, one of section 1's ordinary monsters. */
 const REGULAR = 23;
 
 /**
@@ -44,9 +44,13 @@ function fighting(
   return { game, monster: engage(game, monster) };
 }
 
-/** Four characters that exercise the branches of the two rolls. */
-const FIGHTERS: [string, Partial<PlayerCharacter>][] = [
-  ['a new fighter', { cls: 0, lev: 1, level: 3, str: 14, dex: 11, con: 12, luck: 9, weapon: 1 }],
+/** Four characters that exercise the branches of the two rolls, each with a monster to match. */
+const FIGHTERS: [string, Partial<PlayerCharacter>, number][] = [
+  [
+    'a new fighter',
+    { cls: 0, lev: 1, level: 3, str: 14, dex: 11, con: 12, luck: 9, weapon: 1 },
+    3,
+  ],
   [
     'a mid fighter',
     {
@@ -68,14 +72,17 @@ const FIGHTERS: [string, Partial<PlayerCharacter>][] = [
       protRing: 2,
       protection: 3,
     },
+    40,
   ],
   [
     'a monk deep down',
     { cls: 2, lev: 40, level: 90, str: 80, iq: 70, dex: 90, con: 70, luck: 50, weapon: 0 },
+    90,
   ],
   [
     'a hard-mode sage',
     { cls: 5, hard: 1, lev: 30, level: 60, str: 95, dex: 60, con: 55, luck: 40, weapon: 4 },
+    60,
   ],
 ];
 
@@ -130,15 +137,19 @@ describe('gainOrDrain', () => {
 });
 
 describe('strike', () => {
-  it.each(FIGHTERS)('agrees with dotu-mech for %s', (_name, pc) => {
+  it.each(FIGHTERS)('agrees with dotu-mech for %s', (_name, pc, level) => {
+    let hits = 0;
     for (let seed = 1; seed <= 40; seed++) {
-      const { game, monster } = fighting(seed, pc);
+      const { game, monster } = fighting(seed, pc, { level });
       const { p, m } = striker(game, monster);
       const mech = mechRng(seed);
       for (let swing = 0; swing < 25; swing++) {
-        expect(strike(game)).toBe(mechStrike(p, m, mech));
+        const damage = strike(game);
+        expect(damage).toBe(mechStrike(p, m, mech));
+        if (damage > 0) hits++;
       }
     }
+    expect(hits).toBeGreaterThan(0);
   });
 
   it('takes the damage off the engaged monster', () => {
@@ -183,5 +194,321 @@ describe('strike', () => {
     };
     expect(onlyRow(level + 8)).toBeGreaterThan(0);
     expect(onlyRow(level + 7)).toBe(0);
+  });
+});
+
+/** What `dotu-mech.js`'s `defend` wants, read off the same game the port's `defend` reads. */
+function defender(game: Game, monster: Monster) {
+  const pc = game.pc;
+  const stats = game.monsterStats[game.monsterKinds[monster.type].type];
+  return {
+    p: {
+      lev: pc.lev,
+      cls: pc.cls,
+      iq: pc.iq,
+      dex: pc.dex,
+      luck: pc.luck,
+      luckyCharms: pc.luckyCharms,
+      armor: game.armorHitChance[pc.armor],
+      tempArmorPlus: pc.tempArmorPlus,
+      bodyArmor: pc.bodyArmor,
+      protRing: pc.protRing,
+      protection: pc.protection,
+      con: pc.con,
+      depth: pc.level,
+    },
+    m: { level: monster.level, damageDie: stats.damageDie },
+  };
+}
+
+/** Rewrites the description of the monster kind the fixtures fight, in place. */
+function describeMonster(game: Game, overrides: Partial<MonsterKind>): void {
+  game.monsterKinds[REGULAR] = { ...game.monsterKinds[REGULAR], ...overrides };
+}
+
+/** Attacks until one lands, clearing the messages and events before each attempt. */
+function attackUntilItLands(game: Game, limit = 500): number {
+  for (let attempt = 0; attempt < limit; attempt++) {
+    game.messages.length = 0;
+    game.events.length = 0;
+    const damage = defend(game, 0);
+    if (damage > 0) return damage;
+  }
+  throw new Error('the monster never landed a hit');
+}
+
+/** Attacks until one of the messages starts with `start`, clearing between attempts. */
+function attackUntilItSays(game: Game, start: string, limit = 500): string[] {
+  for (let attempt = 0; attempt < limit; attempt++) {
+    game.messages.length = 0;
+    game.events.length = 0;
+    defend(game, 0);
+    if (game.messages.some((line) => line.startsWith(start))) return [...game.messages];
+  }
+  throw new Error(`the monster never said ${start}`);
+}
+
+describe('defend', () => {
+  it.each(FIGHTERS)('agrees with dotu-mech for %s', (_name, pc, level) => {
+    // Monster kind 23 has no breath, no drains and no poison, so nothing beyond the roll
+    // dotu-mech models takes a turn of the sequence.
+    let hits = 0;
+    for (let seed = 1; seed <= 40; seed++) {
+      const { game, monster } = fighting(seed, pc, { level });
+      const { p, m } = defender(game, monster);
+      const mech = mechRng(seed);
+      for (let attack = 0; attack < 25; attack++) {
+        game.pc.hp = 100000;
+        const damage = defend(game, 0);
+        expect(damage).toBe(mechDefend(p, m, mech));
+        if (damage > 0) hits++;
+      }
+    }
+    expect(hits).toBeGreaterThan(0);
+  });
+
+  it('takes the damage off the player and says how much', () => {
+    const { game } = fighting(2, FIGHTERS[1][1]);
+    game.pc.hp = 5000;
+    const damage = attackUntilItLands(game);
+    expect(game.pc.hp).toBe(5000 - damage);
+    const points = damage === 1 ? 'POINT' : 'POINTS';
+    expect(game.messages).toEqual([`THE GARGALON DOES ${damage} ${points}`]);
+  });
+
+  it('says the monster missed and leaves the player alone', () => {
+    const { game } = fighting(1, { lev: 60, dex: 90, luck: 90, con: 60, level: 4, armor: 6 });
+    game.pc.hp = 500;
+    for (let attempt = 0; attempt < 40; attempt++) {
+      game.messages.length = 0;
+      if (defend(game, 0) === 0) {
+        expect(game.messages).toEqual(['THE GARGALON MISSES!']);
+        expect(game.pc.hp).toBe(500);
+        return;
+      }
+    }
+    throw new Error('the monster never missed');
+  });
+
+  it('ignores the permanent plus on the armor being worn', () => {
+    const bare = fighting(11, { ...FIGHTERS[1][1], armorPlus: [0, 0, 0, 0, 0, 0, 0, 0] });
+    const enchanted = fighting(11, { ...FIGHTERS[1][1], armorPlus: [0, 0, 0, 0, 0, 9, 0, 0] });
+    for (let attack = 0; attack < 200; attack++) {
+      expect(defend(enchanted.game, 0)).toBe(defend(bare.game, 0));
+    }
+  });
+
+  it('takes the shield byte off the roll the same way the temporary plus comes off', () => {
+    const shielded = fighting(12, { ...FIGHTERS[1][1], shield: 7, tempArmorPlus: 2 });
+    const enchanted = fighting(12, { ...FIGHTERS[1][1], shield: 0, tempArmorPlus: 9 });
+    for (let attack = 0; attack < 400; attack++) {
+      expect(defend(shielded.game, 0)).toBe(defend(enchanted.game, 0));
+    }
+  });
+});
+
+describe('defend, the puffball', () => {
+  it('moves the stat, empties the slot and leaves the record on the floor', () => {
+    const { game, monster } = fighting(4, {});
+    describeMonster(game, { special: 6, statDrain: -4 });
+    expect(defend(game, 0)).toBe(0);
+    expect(game.pc.con).toBe(19);
+    expect(game.messages).toEqual(['CONSTITUTION DRAINED BY PUFFBALL!']);
+    expect(monsterAt(game, 10, 10)).toBe(-1);
+    expect(monster).toEqual({ x: 100, y: 100, hp: 0, type: 0, level: 0 });
+    expect(game.redrawView).toBe(true);
+  });
+
+  it('raises the stat when the description says to', () => {
+    const { game } = fighting(4, {});
+    describeMonster(game, { special: 6, statDrain: 5 });
+    defend(game, 0);
+    expect(game.pc.dex).toBe(21);
+    expect(game.messages).toEqual(['DEXTERITY RAISED BY PUFFBALL!']);
+  });
+});
+
+describe('defend, asleep and held', () => {
+  it.each([
+    ['sleepTimer' as const],
+    ['holdMonsterTimer' as const],
+  ])('runs %s down a move at a time and does nothing else', (field) => {
+    const { game } = fighting(5, { [field]: 25, level: 1 });
+    expect(defend(game, 0)).toBe(0);
+    expect(game.pc[field]).toBe(24);
+    expect(game.messages).toEqual([]);
+    expect(game.pc.hp).toBe(100);
+  });
+
+  it('wakes the monster early on a deep floor', () => {
+    // The wake-up roll is random(500) < the floor number, so floor 499 all but always wakes it.
+    const { game } = fighting(5, { sleepTimer: 25, level: 499 });
+    defend(game, 0);
+    expect(game.pc.sleepTimer).toBe(0);
+  });
+});
+
+describe('defend, the drains', () => {
+  it('takes levels, rewrites the experience and takes the hit points back', () => {
+    const { game } = fighting(6, { ...FIGHTERS[1][1], cls: 0, lev: 22, hp: 100000, maxHp: 100000 });
+    describeMonster(game, { levelDrain: 2 });
+    attackUntilItLands(game);
+    expect(game.pc.lev).toBe(20);
+    expect(game.pc.exp).toBe(expNeeded(game, 19));
+    expect(game.pc.maxHp).toBeLessThan(100000);
+    expect(game.messages).toContain('OH NO! HIT BY LIFE DRAINER!');
+    expect(game.messages).toContain('  YOU LOSE 2 LEVELS!');
+    expect(game.events).toContainEqual({ kind: 'playerSaved' });
+  });
+
+  it('says LEVEL rather than LEVELS for one', () => {
+    const { game } = fighting(6, { ...FIGHTERS[1][1], hp: 100000, maxHp: 100000 });
+    describeMonster(game, { levelDrain: 1 });
+    attackUntilItLands(game);
+    expect(game.messages).toContain('  YOU LOSE 1 LEVEL!');
+  });
+
+  it('always takes 30 experience however much the message says', () => {
+    // The subtraction is the constant 30.0 at DS:14df; only the message reads the monster's
+    // own number, and every experience drainer in the game happens to hold -30.
+    const { game } = fighting(6, { ...FIGHTERS[1][1], exp: 100000, hp: 100000 });
+    describeMonster(game, { levelDrain: -5 });
+    attackUntilItLands(game);
+    expect(game.pc.exp).toBe(99970);
+    expect(game.messages).toContain('  YOU LOSE 5 EXP. POINTS!');
+  });
+
+  it('leaves the experience at zero rather than below it', () => {
+    const { game } = fighting(6, { ...FIGHTERS[1][1], exp: 30, hp: 100000 });
+    describeMonster(game, { levelDrain: -30 });
+    attackUntilItLands(game);
+    expect(game.pc.exp).toBe(0);
+  });
+
+  it('does nothing while Resist Level Drain is up', () => {
+    const { game } = fighting(6, { ...FIGHTERS[1][1], exp: 100000, hp: 100000, resistDrainTimer: 5 });
+    describeMonster(game, { levelDrain: -30 });
+    attackUntilItLands(game);
+    expect(game.pc.exp).toBe(100000);
+    expect(game.messages).not.toContain('OH NO! HIT BY LIFE DRAINER!');
+  });
+
+  it('moves a stat and says so', () => {
+    const { game } = fighting(7, { ...FIGHTERS[1][1], hp: 100000 });
+    describeMonster(game, { statDrain: -1 });
+    const before = game.pc.str;
+    attackUntilItLands(game);
+    expect(game.pc.str).toBe(before - 1);
+    expect(game.messages).toContain('STRENGTH HAS BEEN DRAINED!');
+  });
+});
+
+describe('defend, poison and disease', () => {
+  it('poisons the player for 450 moves', () => {
+    const { game } = fighting(8, { ...FIGHTERS[1][1], hp: 100000 });
+    describeMonster(game, { special: 1 });
+    attackUntilItLands(game);
+    expect(game.pc.poison).toBe(450);
+    expect(game.messages).toContain('OH NO! YOU HAVE BEEN');
+    expect(game.messages).toContain('  POISONED!');
+    expect(game.messages).toContain('HIT ANY KEY');
+    expect(game.reprintBattleInfo).toBe(true);
+  });
+
+  it('diseases the player for 450 moves', () => {
+    const { game } = fighting(8, { ...FIGHTERS[1][1], hp: 100000 });
+    describeMonster(game, { special: 2 });
+    attackUntilItLands(game);
+    expect(game.pc.disease).toBe(450);
+    expect(game.messages).toContain('OH NO! YOU HAVE CAUGHT A');
+    expect(game.messages).toContain('  DISEASE!');
+  });
+
+  it('leaves a poison already running alone', () => {
+    const { game } = fighting(8, { ...FIGHTERS[1][1], hp: 100000, poison: 12 });
+    describeMonster(game, { special: 1 });
+    attackUntilItLands(game);
+    expect(game.pc.poison).toBe(12);
+  });
+
+  it('says nothing while Resist Poison is up', () => {
+    const { game } = fighting(8, { ...FIGHTERS[1][1], hp: 100000, resistPoisonTimer: 9 });
+    describeMonster(game, { special: 1 });
+    attackUntilItLands(game);
+    expect(game.pc.poison).toBe(0);
+    expect(game.messages).not.toContain('OH NO! YOU HAVE BEEN');
+  });
+});
+
+describe('defend, the breath weapons', () => {
+  it.each([
+    [1, 'FIRE', 'YOU FEEL TOASTED.'],
+    [2, 'ICE', 'YOU FEEL CHILLED.'],
+  ] as [number, string, string][])('breathes %s and does level + Random(level)', (
+    breath,
+    name,
+    feeling,
+  ) => {
+    const { game } = fighting(13, { ...FIGHTERS[1][1], hp: 100000 }, { level: 40 });
+    describeMonster(game, { breath });
+    const messages = attackUntilItSays(game, 'THE MONSTER BREATHES');
+    expect(messages[0]).toBe(`THE MONSTER BREATHES ${name}`);
+    expect(messages[2]).toBe('  OF DAMAGE TO YOU.');
+    expect(messages[3]).toBe(feeling);
+    const damage = Number(messages[1].replace('  ON YOU. IT DOES ', '').replace(' POINTS', ''));
+    expect(damage).toBeGreaterThanOrEqual(40);
+    expect(damage).toBeLessThan(80);
+  });
+
+  it('halves the damage when the matching resistance is up', () => {
+    const { game } = fighting(13, { ...FIGHTERS[1][1], hp: 100000, antiFireTimer: 20 }, { level: 40 });
+    describeMonster(game, { breath: 1 });
+    const messages = attackUntilItSays(game, 'THE MONSTER BREATHES');
+    const damage = Number(messages[1].replace('  ON YOU. IT DOES ', '').replace(' POINTS', ''));
+    expect(damage).toBeGreaterThanOrEqual(20);
+    expect(damage).toBeLessThan(40);
+    expect(messages).not.toContain('YOU FEEL TOASTED.');
+  });
+
+  it('has acid destroy the armor being worn, plus and all', () => {
+    const pc = { ...FIGHTERS[1][1], hp: 100000, armor: 5, armorPlus: [0, 0, 0, 0, 0, 4, 0, 0] };
+    const { game } = fighting(13, pc, { level: 40 });
+    describeMonster(game, { breath: 3 });
+    const messages = attackUntilItSays(game, 'THE MONSTER BREATHES');
+    expect(messages[3]).toBe('THE ACID DISOLVES YOUR ARMOR');
+    expect(game.pc.armor).toBe(0);
+    expect(game.pc.armorPlus[5]).toBe(0);
+    expect(game.pc.armorOwned[5]).toBe(-1);
+  });
+
+  it('has green phlegm bring the disease with two lines of its own', () => {
+    const { game } = fighting(13, { ...FIGHTERS[1][1], hp: 100000 }, { level: 40 });
+    describeMonster(game, { breath: 4 });
+    const messages = attackUntilItSays(game, 'THE MONSTER BREATHES');
+    expect(messages[3]).toBe('YOU FEEL VERY SICK. YOU NEED');
+    expect(messages[4]).toBe('  A CURE DISEASE SPELL.');
+    expect(game.pc.disease).toBe(450);
+  });
+
+  it('has black slime bring the poison', () => {
+    const { game } = fighting(13, { ...FIGHTERS[1][1], hp: 100000 }, { level: 40 });
+    describeMonster(game, { breath: 5 });
+    const messages = attackUntilItSays(game, 'THE MONSTER BREATHES');
+    expect(messages[3]).toBe('YOU FEEL KIND OF WEAK. YOU');
+    expect(messages[4]).toBe('  MIGHT GET A CURE POISON.');
+    expect(game.pc.poison).toBe(450);
+  });
+
+  it('swings normally about half the time', () => {
+    const { game } = fighting(14, { ...FIGHTERS[1][1], hp: 1000000 }, { level: 40 });
+    describeMonster(game, { breath: 1 });
+    let breaths = 0;
+    for (let attack = 0; attack < 400; attack++) {
+      game.messages.length = 0;
+      defend(game, 0);
+      if (game.messages[0].startsWith('THE MONSTER BREATHES')) breaths++;
+    }
+    expect(breaths).toBeGreaterThan(150);
+    expect(breaths).toBeLessThan(250);
   });
 });
