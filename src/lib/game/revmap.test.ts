@@ -7,6 +7,7 @@ import {
   LEVELS,
   ROWS,
   TEN,
+  TOWN_BUILDINGS,
   WALL,
   blocked,
   falseFloor,
@@ -27,6 +28,7 @@ import {
   mbfValue,
   side,
   squareOn,
+  townBuilding,
   wallSide,
   type Mbf,
 } from './revmap.js';
@@ -293,6 +295,47 @@ describe('falseFloor', () => {
   });
 });
 
+// The ten squares and their numbers are 1000:10FD's ten column-and-row tests, and the numbers
+// are the ones 1000:132A's `ON building GOTO` hands to the seven building routines.
+describe('townBuilding', () => {
+  it.each([
+    [7, 3, 1],
+    [3, 2, 2],
+    [18, 17, 3],
+    [13, 3, 4],
+    [7, 15, 5],
+    [14, 12, 5],
+    [18, 3, 6],
+    [13, 18, 6],
+    [2, 8, 6],
+    [6, 14, 7],
+  ])('stands building %3$i on (%1$i, %2$i)', (column, row, building) => {
+    expect(townBuilding(column, row)).toBe(building);
+  });
+
+  it('leaves every other square of the town empty', () => {
+    let standing = 0;
+    for (let row = 1; row <= ROWS; row++) {
+      for (let column = 1; column <= COLUMNS; column++) {
+        const building = townBuilding(column, row);
+        expect(building).toBeLessThanOrEqual(TOWN_BUILDINGS);
+        if (building) standing += 1;
+      }
+    }
+    expect(standing).toBe(10);
+  });
+
+  // The buildings sit on their own squares: nothing the game does would stop a ladder and a
+  // building sharing one, and none of the ten does.
+  it('stands no building on a square that holds a ladder', () => {
+    for (let row = 1; row <= ROWS; row++) {
+      for (let column = 1; column <= COLUMNS; column++) {
+        if (townBuilding(column, row)) expect(feature(column, row, 0)).toBeNull();
+      }
+    }
+  });
+});
+
 describe('floor', () => {
   it('is 19 rows of 20 squares', () => {
     const rows = floor(2);
@@ -311,13 +354,19 @@ describe('floor', () => {
       'chute',
       'falseFloor',
       'trapdoor',
-      'surface',
+      'town',
     ]);
   });
 
-  it('has no rock, no trap doors and no buildings anywhere', () => {
+  it('has no rock and no trap doors anywhere', () => {
     const squares = floor(2).flat();
-    expect(squares.every((square) => !square.solid && square.trapdoor === -1 && square.surface === 0)).toBe(true);
+    expect(squares.every((square) => !square.solid && square.trapdoor === -1)).toBe(true);
+  });
+
+  it('puts a building on a town square and nothing on the same square below', () => {
+    expect(floor(0)[2][6].town).toBe(1);
+    expect(floor(1)[2][6].town).toBe(0);
+    expect(floor(0).flat().filter((square) => square.town !== 0).length).toBe(10);
   });
 
   it('carries the ladder as the floors it spans, up being negative', () => {

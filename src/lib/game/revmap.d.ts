@@ -64,8 +64,8 @@ export interface Square extends Sides {
   falseFloor: boolean;
   /** Always -1: the game has no trap doors. */
   trapdoor: number;
-  /** Always 0: the town has no buildings on its squares. */
-  surface: number;
+  /** The town building on this square, 1 to 7, and 0 everywhere else. */
+  town: number;
 }
 
 /** What a ladder or a chute is, and how many levels it spans. */
@@ -85,6 +85,10 @@ export function fold(code: number): number;
 export function feature(column: number, row: number, level: number): Feature;
 /** Whether a chute drops the player here and the fall goes on. */
 export function falseFloor(column: number, row: number, level: number): boolean;
+/** How many kinds of building the town holds. */
+export const TOWN_BUILDINGS: 7;
+/** Which building stands on a town square, 1 to 7 as the game numbers them, or 0 for none. */
+export function townBuilding(column: number, row: number): number;
 /** One square, in the game's own coordinates: columns 1 to 20, rows 1 to 19. */
 export function squareOn(column: number, row: number, level: number, generation?: number): Square;
 /** A whole floor as rows[row - 1][column - 1]. */

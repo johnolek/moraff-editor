@@ -371,6 +371,43 @@ export function falseFloor(column, row, level) {
   return above !== null && above.kind === 'chute' && feature(column, row, level) === null;
 }
 
+/**
+ * The town's ten buildings, as `[column, row, building]`, in the order 1000:10FD tests them.
+ *
+ * That routine is ten `IF column = c AND row = r THEN building = n` tests in a row against the
+ * player's column at B4CA and row at B4D2, and the number it leaves in B53E is what 1000:132A
+ * hands to `ON building GOTO`: 1 the Flea Bag Inn (1000:1E0A), 2 the Yuppydom Inn (1F3D), 3 the
+ * Kings Inn (1FCD), 4 the bank (22F7), 5 the temple (2522), 6 the store (281E) and 7 the
+ * wizard's guild (2BB8).  There are three stores and two temples, which is why ten squares hold
+ * seven kinds of building.
+ *
+ * None of this is in a file and none of it is on the game's own map: 1000:12C6 prints "There's
+ * a rope above. Hit U to climb it." when you walk onto one of these squares, and pressing U is
+ * what takes 1000:0DBD into the branch above.  Only level 0 reaches either (1000:0642 and
+ * 1000:0DD7 both test the level first), so the same squares of the levels below hold nothing.
+ */
+const TOWN_SQUARES = [
+  [7, 3, 1],
+  [3, 2, 2],
+  [18, 17, 3],
+  [13, 3, 4],
+  [7, 15, 5],
+  [14, 12, 5],
+  [18, 3, 6],
+  [13, 18, 6],
+  [2, 8, 6],
+  [6, 14, 7],
+];
+
+/** How many kinds of building the town holds, which is how many routines 1000:132A lists. */
+export const TOWN_BUILDINGS = 7;
+
+/** Which building stands on a town square, 1 to 7 as the game numbers them, or 0 for none. */
+export function townBuilding(column, row) {
+  const found = TOWN_SQUARES.find(([buildingColumn, buildingRow]) => buildingColumn === column && buildingRow === row);
+  return found ? found[2] : 0;
+}
+
 /** One square of a floor, in the game's own coordinates: columns 1 to 20, rows 1 to 19. */
 export function squareOn(column, row, level, generation = 1) {
   const square = sides(column, row, level, generation);
@@ -380,9 +417,9 @@ export function squareOn(column, row, level, generation = 1) {
   square.ladder = 0;
   square.chute = 0;
   square.falseFloor = false;
-  // The site's other two games put trap doors and buildings on a floor; this one has neither.
+  // The site's other two games put trap doors on a floor; this one has none.
   square.trapdoor = -1;
-  square.surface = 0;
+  square.town = level === 0 ? townBuilding(column, row) : 0;
   const here = feature(column, row, level);
   if (here === null) square.falseFloor = falseFloor(column, row, level);
   else if (here.kind === 'chute') square.chute = level + 1;
@@ -391,7 +428,7 @@ export function squareOn(column, row, level, generation = 1) {
 }
 
 /** A whole floor as rows[row - 1][column - 1] of
- *  {n,s,w,e,solid,ladder,chute,falseFloor,trapdoor,surface}. */
+ *  {n,s,w,e,solid,ladder,chute,falseFloor,trapdoor,town}. */
 export function floor(level, generation = 1) {
   const rows = [];
   for (let row = 1; row <= ROWS; row++) {
