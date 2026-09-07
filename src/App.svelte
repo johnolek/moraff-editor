@@ -5,12 +5,13 @@
   import { GAME_CHOICES } from './lib/game-choice';
   import { isAppHistoryState, tabState, type AppHistoryState } from './lib/history';
   import { tabsFor } from './lib/tabs';
-  import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
+  import Monsters from './lib/bestiary/Monsters.svelte';
   import CharacterPanel from './lib/character/CharacterPanel.svelte';
   import Calculators from './lib/calculators/Calculators.svelte';
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import Formulas from './lib/formulas/Formulas.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
+  import MwMonsters from './lib/mw-bestiary/MwMonsters.svelte';
   import NewCharacter from './lib/roller/NewCharacter.svelte';
   import Snake from './lib/snake/Snake.svelte';
   import SourceViewer from './lib/source/SourceViewer.svelte';
@@ -75,7 +76,7 @@
   </header>
   {#if app.game === 'moraffsWorld'}
     <p class="game-note">
-      Moraff's World has the Save Editor and New Character so far. The map, the monsters and the rest are on the way.
+      Moraff's World has the Save Editor, the Monsters and New Character so far. The map and the rest are on the way.
     </p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
@@ -86,7 +87,13 @@
     <SaveEditor />
   </main>
   <main class:hidden={app.tab !== 'monsters'}>
-    <MonsterDatabase />
+    <!-- The two games share the list and the search but not a single fact about a monster, so
+         each brings its own database rather than one being taught both. -->
+    {#if app.game === 'moraffsWorld'}
+      <MwMonsters />
+    {:else}
+      <Monsters />
+    {/if}
   </main>
   <main class:hidden={app.tab !== 'spells'}>
     <SpellReference />

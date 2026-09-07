@@ -1,10 +1,11 @@
+<!-- The list of monsters both games' databases show, grouped and scrolled. -->
 <script lang="ts">
-  import type { Monster, MonsterGroup } from './monsters';
+  import type { ListEntry, ListGroup } from './list';
 
   interface Props {
-    groups: MonsterGroup[];
+    groups: ListGroup[];
     selectedId: string;
-    onselect: (entry: Monster) => void;
+    onselect: (entry: ListEntry) => void;
   }
 
   let { groups, selectedId, onselect }: Props = $props();

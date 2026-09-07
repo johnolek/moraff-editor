@@ -145,6 +145,11 @@ export function floorGroup(dungeon: number): number {
   return (((dungeon + 6) % GROUPS) + GROUPS) % GROUPS;
 }
 
+/** The nine monsters a group can name, which are the first nine of the table. */
+export function groupMonsters(): MwMonster[] {
+  return MONSTERS.slice(0, GROUPS);
+}
+
 /**
  * How often one draw of pick_monster names this monster, before the floor and the picture are
  * checked: one time in three it is any of the 104, and the rest of the time it is the group
@@ -198,13 +203,18 @@ export function hpRange(monster: MwMonster, floor: number): [number, number] {
  * it has wandered more than ten from it.
  */
 export function depthRange(floor: number): [number, number] {
-  const depth = Math.min(floor, DEPTH_MAX);
+  const depth = depthAtFloor(floor);
   return [Math.max(1, depth - DEPTH_DRIFT), Math.min(DEPTH_MAX, depth + DEPTH_DRIFT)];
+}
+
+/** The depth a monster is stocked with before it drifts: the floor, or 242 past that. */
+export function depthAtFloor(floor: number): number {
+  return Math.min(floor, DEPTH_MAX);
 }
 
 /** How often a monster stocked on this floor ends up at each depth. */
 export function depthDistribution(floor: number, steps = 20): { depth: number; p: number }[] {
-  const start = Math.min(floor, DEPTH_MAX);
+  const start = depthAtFloor(floor);
   let walking = new Map<number, number>([[start, 1]]);
   const stopped = new Map<number, number>();
   for (let step = 0; step <= steps; step++) {
@@ -321,6 +331,10 @@ export function monsterGroups(): MwMonsterGroup[] {
 export function allMonsters(): MwMonster[] {
   return MONSTERS;
 }
+
+/** The eight weapons a character can hold; the four after them are what a Power Weapon spell
+ *  puts in their hands, and no character owns one. */
+export const HELD_WEAPONS: MwWeapon[] = WEAPONS.slice(0, 8);
 
 /** The weapon a character's record names, or the fist when the byte is not one of the twelve. */
 export function weaponById(index: number): MwWeapon {

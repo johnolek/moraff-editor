@@ -6,8 +6,8 @@ describe('the tabs a game has', () => {
     expect(tabsFor('unforgiven')).toEqual(TABS);
   });
 
-  it('is the Save Editor and New Character for Moraff’s World', () => {
-    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['editor', 'roller']);
+  it('is the Save Editor, the Monsters and New Character for Moraff’s World', () => {
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['editor', 'monsters', 'roller']);
   });
 });
 
