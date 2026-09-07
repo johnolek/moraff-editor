@@ -4,6 +4,7 @@
   import { TEMPLE } from '../game/dotu-mech.js';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import BarChart from '../ui/BarChart.svelte';
+  import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { loadedCharacter } from './character';
   import {
@@ -114,16 +115,23 @@
   </section>
 
   <section>
-    <SectionHeading title="One rest at the inn" />
+    <SectionHeading title="One rest at the inn">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'innCost' }} c="flea_inn" />
+    </SectionHeading>
     <table>
       <thead>
         <tr><th></th><th>Units</th><th>Each</th><th>Rubles</th></tr>
       </thead>
       <tbody>
         <tr><td>Room</td><td>—</td><td>—</td><td>{number(cost.room)}</td></tr>
-        <tr><td>Culture stock</td><td>{number(cost.stockUnits)}</td><td>{number(cost.stockUnitPrice)}</td><td>{number(cost.stock)}</td></tr>
         <tr>
-          <td>Magic crystals</td>
+          <td>Culture stock<SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'stockPrice' }} c="g_store" /></td>
+          <td>{number(cost.stockUnits)}</td>
+          <td>{number(cost.stockUnitPrice)}</td>
+          <td>{number(cost.stock)}</td>
+        </tr>
+        <tr>
+          <td>Magic crystals<SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'crystalPrice' }} c="g_store" /></td>
           <td>{number(cost.crystalUnits)}</td>
           <td>{number(cost.crystalUnitPrice)}</td>
           <td>{number(cost.crystals)}</td>
@@ -170,7 +178,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Temple" />
+    <SectionHeading title="Temple">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'TEMPLE' }} c="temple" />
+    </SectionHeading>
     <table>
       <tbody>
         {#each TEMPLE as [service, price]}
@@ -181,7 +191,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Money per kill" />
+    <SectionHeading title="Money per kill">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'rollMoney' }} c="drop_money" />
+    </SectionHeading>
     <div class="fields">
       <FloorPicker bind:module bind:floor />
     </div>

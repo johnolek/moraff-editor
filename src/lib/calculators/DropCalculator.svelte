@@ -3,6 +3,7 @@
   import data from '../game/dotu-data.json';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import BarChart from '../ui/BarChart.svelte';
+  import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { loadedCharacter } from './character';
   import DropTable from './DropTable.svelte';
@@ -86,7 +87,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Weapons" />
+    <SectionHeading title="Weapons">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' }} c="drop_weapon" />
+    </SectionHeading>
     <div class="owned">
       <span class="owned-label">Already owned</span>
       {#each WEAPON_NAMES as name, index}
@@ -107,7 +110,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Armor" />
+    <SectionHeading title="Armor">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' }} c="drop_armor" />
+    </SectionHeading>
     <DropTable rows={tables.armors} {killsPerMinute} />
     {#if cls === MONK}
       <p class="note">Monks never find gear.</p>
@@ -117,7 +122,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Items" />
+    <SectionHeading title="Items">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' }} c="find_item" />
+    </SectionHeading>
     <DropTable rows={tables.items} {killsPerMinute} />
     <p class="note">
       YOU FIND check passes {percent(tables.findGate)} of the time on this floor. One check in three finds nothing, and the rest is shared
@@ -129,7 +136,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Level drainer kills" />
+    <SectionHeading title="Level drainer kills">
+      <SourceLink ts={{ file: 'src/lib/calculators/drops.ts', name: 'drainerShare' }} c="kill_monster" />
+    </SectionHeading>
     <DropTable rows={tables.drainer} {killsPerMinute} />
     {#if tables.drainerShare > 0}
       <p class="note">
@@ -142,7 +151,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Spells" />
+    <SectionHeading title="Spells">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' }} c="drop_spellbook" />
+    </SectionHeading>
     <DropTable rows={tables.spells} {killsPerMinute} />
     <p class="note">A spell book only teaches you a spell you do not know yet, and scrolls, wands and papers are only rolled when no book was learned.</p>
     {#if cls === FIGHTER}

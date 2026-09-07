@@ -2,6 +2,7 @@
   import { app } from '../app-state.svelte';
   import data from '../game/dotu-data.json';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
+  import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { loadedCharacter } from './character';
   import { drainCost, killRows, levelProgress, type Stats } from './experience';
@@ -107,7 +108,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Levels" />
+    <SectionHeading title="Levels">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'expToReach' }} c="exp_needed" />
+    </SectionHeading>
     <div class="fields">
       <label>
         <span>Target level</span>
@@ -132,7 +135,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Kills on this floor" />
+    <SectionHeading title="Kills on this floor">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'expValue' }} c="exp_value" />
+    </SectionHeading>
     <div class="fields">
       <FloorPicker bind:module bind:floor />
     </div>

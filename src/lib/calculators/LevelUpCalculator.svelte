@@ -1,6 +1,7 @@
 <script lang="ts">
   import { app } from '../app-state.svelte';
   import data from '../game/dotu-data.json';
+  import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { loadedCharacter } from './character';
   import { allClassRolls, levelUpRoll, type LevelUpStats } from './levelup';
@@ -82,7 +83,9 @@
   </section>
 
   <section>
-    <SectionHeading title="One level" />
+    <SectionHeading title="One level">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'levelGain' }} c="gain_level" />
+    </SectionHeading>
     <table>
       <tbody>
         <tr><td>HP gain</td><td>{range(roll.hp)}</td></tr>

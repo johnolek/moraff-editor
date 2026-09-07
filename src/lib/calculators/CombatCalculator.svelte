@@ -5,6 +5,7 @@
   import data from '../game/dotu-data.json';
   import { monsterLevelBase } from '../game/dotu-mech.js';
   import BarChart from '../ui/BarChart.svelte';
+  import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { loadedCharacter } from './character';
   import { ARMORS, combatReport, WEAPONS, type Fighter } from './combat';
@@ -293,7 +294,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Your attacks" />
+    <SectionHeading title="Your attacks">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'strike' }} c="strike" />
+    </SectionHeading>
     <table>
       <tbody>
         <tr><td>Hit chance</td><td>{percent(report.yours.hitChance)}</td></tr>
@@ -320,7 +323,9 @@
   </section>
 
   <section>
-    <SectionHeading title="Its attacks" />
+    <SectionHeading title="Its attacks">
+      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'defend' }} c="defend" />
+    </SectionHeading>
     <table>
       <tbody>
         <tr><td>Its hit chance</td><td>{percent(report.its.hitChance)}</td></tr>
