@@ -45,6 +45,47 @@ export function showHint(game: Game, index: number): void {
 const TAKE = 0x31;
 const LEAVE = 0x32;
 
+/** get_choice's Escape, the one answer it takes outside the run of digits a menu is numbered in. */
+const ESCAPE = 0x1b;
+
+/** The keys a menu of eight lines is answered with (exe 2000:2b08, mset_gmenu). */
+export const MENU_ROWS = [0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38];
+
+/** The keys a menu numbered 1 to 3 is answered with, which is both of lose_item's own. */
+const THREE_WAYS = [0x31, 0x32, 0x33];
+
+/** The keys the six-line menu use_magic_item puts up is answered with. */
+const SIX_ITEMS = [0x31, 0x32, 0x33, 0x34, 0x35, 0x36];
+
+/**
+ * The eight lines lose_item (exe 2000:98b7) and the orb menu of kill_monster (exe 3000:b12d)
+ * both build out of the weapon or the armor table: the name of a row the character owns and the
+ * plus it carries, and a row of dashes for a row they do not own.
+ *
+ * Neither number shows without a plus, so a plain suit of armor is named and nothing more, and
+ * `countOwned` is the one difference between the two — lose_item puts how many are owned after
+ * the plus and kill_monster does not.
+ *
+ * Both loops run over eight rows though the armor table has seven, so the last row of an armor
+ * menu reads the bytes that follow the table; the port leaves it empty, and since nothing owns
+ * that row it always comes out as the dashes anyway.
+ */
+export function itemMenu(
+  names: string[],
+  owned: number[],
+  plus: number[],
+  countOwned: boolean,
+): string[] {
+  return MENU_ROWS.map((_, row) => {
+    if (!(owned[row] > 0)) return '--------'; // DS:1806, and DS:326e for kill_monster's copy
+    const name = names[row] ?? '';
+    if (plus[row] === 0) return name;
+    // DS:1691 with the plus after it, then DS:1803, the count and DS:0fda
+    const count = countOwned ? ` (${owned[row]})` : '';
+    return `${name}, PLUS ${plus[row]}${count}`;
+  });
+}
+
 /**
  * FUN_3000_a1c4 (exe 3000:a1c4): the line every drop opens with. The original follows it with a
  * 300 millisecond delay unless the high speed option is on.
@@ -493,16 +534,28 @@ export function dropMoney(game: Game): void {
 }
 
 /**
- * lose_item (exe 2000:98b7, unf.c "lose_item"): throwing something away, which the D key does.
- * `kind` is the first menu — 1 armor, 2 weapon, 3 money — and `choice` is the second: the line
- * of the eight-item menu for armor and weapons, or 1 to throw all the money away, 2 to keep it
- * and 3 for the joke.
+ * lose_item (exe 2000:98b7, unf.c "lose_item"): the eight-line menu of what the character owns,
+ * and the line of it they pick. The answer is mset_gmenu's (exe 2000:2b08), which is the line
+ * number 1 to 8, and -1 for the Escape it also takes.
+ */
+async function pickAnItem(game: Game, lines: string[]): Promise<number> {
+  game.say(...lines);
+  const key = await game.choice(MENU_ROWS);
+  return key === ESCAPE ? -1 : key - 0x30;
+}
+
+/**
+ * lose_item (exe 2000:98b7, unf.c "lose_item"): throwing something away, which the L key does.
+ * It asks what kind — armor, weapon or money — and then which one.
  *
  * Line 1 of both item menus is the row the character can never be without — bare skin and bare
  * fists — so picking it says the item will not come off. Throwing away the last of whatever is
  * in hand or worn puts the character back on that row.
+ *
+ * Escaping the second menu leaves the original writing one byte in front of the counts it is
+ * dropping from, which here is a read past the start of an array and changes nothing.
  */
-export function loseItem(game: Game, kind: number, choice: number): void {
+export async function loseItem(game: Game): Promise<void> {
   const pc = game.pc;
   // DS:17ba 17d7 06f0 17e7 17f0 17fa 06f0
   game.say(
@@ -513,7 +566,9 @@ export function loseItem(game: Game, kind: number, choice: number): void {
     '2) WEAPON',
     '3) MONEY',
   );
-  if (kind === 1) {
+  const kind = await game.choice(THREE_WAYS);
+  if (kind === 0x31) {
+    const choice = await pickAnItem(game, itemMenu(ARMOR_NAMES, pc.armorOwned, pc.armorPlus, true));
     if (choice === 1) {
       game.say("OWE! IT JUST WON'T COME OFF!", 'HIT ANY KEY...'); // DS:180f 0c5a
     } else {
@@ -521,7 +576,9 @@ export function loseItem(game: Game, kind: number, choice: number): void {
       if (pc.armor === choice - 1 && pc.armorOwned[choice - 1] === 0) pc.armor = 0;
     }
   }
-  if (kind === 2) {
+  if (kind === 0x32) {
+    const menu = itemMenu(WEAPON_NAMES, pc.weaponsOwned, pc.weaponPlus, true);
+    const choice = await pickAnItem(game, menu);
     if (choice === 1) {
       game.say("OWE! IT JUST WON'T COME OFF!", 'HIT ANY KEY...'); // DS:180f 0c5a
     } else {
@@ -529,18 +586,19 @@ export function loseItem(game: Game, kind: number, choice: number): void {
       if (pc.weapon === choice - 1 && pc.weaponsOwned[choice - 1] === 0) pc.weapon = 0;
     }
   }
-  if (kind === 3) {
+  if (kind === 0x33) {
     showHint(game, 87);
-    if (choice === 1) pc.money = 0;
-    else if (choice === 3) showHint(game, 88);
+    const choice = await game.choice(THREE_WAYS);
+    if (choice === 0x31) pc.money = 0;
+    else if (choice === 0x33) showHint(game, 88);
   }
   computeWeight(game);
 }
 
 /**
- * use_magic_item (exe 2000:b202, unf.c "use_magic_item"): the six-item menu the U key puts up.
- * `choice` is 1 to 6: the floor slosher, a potion of healing, becoming God, a stone of seeing, a
- * stone of teleportation and a nuclear hand grenade.
+ * use_magic_item (exe 2000:b202, unf.c "use_magic_item"): the six-item menu the last line of the
+ * I key's own menu opens — the floor slosher, a potion of healing, becoming God, a stone of
+ * seeing, a stone of teleportation and a nuclear hand grenade.
  *
  * Where the original reloads the floor around the character the port records a `levelChanged`
  * event, and where it marks the whole floor explored the port does nothing, the way the ported
@@ -549,10 +607,11 @@ export function loseItem(game: Game, kind: number, choice: number): void {
  * The floor slosher is the one item here that is not used up, which is what its own description
  * says: it "MAY [BE] USED LIMITLESSLY".
  */
-export function useMagicItem(game: Game, choice: number): void {
+export async function useMagicItem(game: Game): Promise<void> {
   const pc = game.pc;
   let notCarried = false;
   showHint(game, 23);
+  const choice = (await game.choice(SIX_ITEMS)) - 0x30;
   if (choice === 1) {
     if (pc.slosher === 0) {
       notCarried = true;

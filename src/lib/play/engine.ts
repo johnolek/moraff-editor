@@ -16,6 +16,7 @@ import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
 import { showHelp } from './help';
+import { dropSomething, useAnItem } from './items';
 import { killTheDead } from './kill';
 import { KEY } from './keys';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
@@ -326,7 +327,7 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.fight]: { c: 'strike', run: swingAtMonster },
   [KEY.repeatFight]: { c: 'movecontrol, the DS:0437 repeat flag', run: keepSwinging },
   [KEY.cast]: { c: 'cast_a_spell', run: (turn) => notBuiltYet(turn.game, 'CAST A SPELL') },
-  [KEY.useItem]: { c: 'use_magic_item', run: (turn) => notBuiltYet(turn.game, 'USE A SCROLL, WAND, PAPER OR POTION') },
+  [KEY.useItem]: { c: 'movecontrol, case 0x69, and use_magic_item', run: useAnItem },
   [KEY.viewPrepSpells]: { c: 'view_prep_spells', run: (turn) => notBuiltYet(turn.game, 'LIST THE PREPARATION SPELLS IN EFFECT') },
   [KEY.viewBattleSpells]: { c: 'view_battle_spells', run: (turn) => notBuiltYet(turn.game, 'LIST THE BATTLE SPELLS IN EFFECT') },
   [KEY.armor]: { c: 'movecontrol, the 0x61 branch', run: (turn) => notBuiltYet(turn.game, 'CHANGE THE ARMOR YOU WEAR') },
@@ -335,7 +336,7 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.viewStats]: { c: 'view_stats', run: (turn) => notBuiltYet(turn.game, 'SHOW YOUR VITAL STATISTICS') },
   [KEY.pockets]: { c: 'FUN_3000_7545', run: (turn) => notBuiltYet(turn.game, 'LOOK IN YOUR POCKETS') },
   [KEY.money]: { c: 'show_money', run: (turn) => notBuiltYet(turn.game, 'COUNT YOUR MONEY') },
-  [KEY.loseItem]: { c: 'lose_item', run: (turn) => notBuiltYet(turn.game, 'DROP SOMETHING YOU CARRY') },
+  [KEY.loseItem]: { c: 'lose_item', run: dropSomething },
   [KEY.monsterManual]: { c: 'monster_manual', run: (turn) => notBuiltYet(turn.game, 'READ ABOUT THE MONSTERS DOWN HERE') },
   [KEY.options]: { c: 'movecontrol, the 0x6f branch', run: (turn) => notBuiltYet(turn.game, 'OPEN THE OPTIONS MENU') },
   [KEY.graphics]: { c: 'movecontrol, the 0x67 branch', run: (turn) => notBuiltYet(turn.game, 'OPEN THE GRAPHICS MENU') },

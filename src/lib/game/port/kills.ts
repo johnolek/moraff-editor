@@ -10,6 +10,8 @@ import {
   dropWand,
   dropWeapon,
   findItem,
+  itemMenu,
+  MENU_ROWS,
   postKillHeal,
   postKillSp,
   showHint,
@@ -26,32 +28,11 @@ import { MAP_EMPTY, setMonsterMap } from './state';
 /** The square a dead monster's slot is parked on, off the 80 x 110 floor and out of the way. */
 export const GARBAGE_CAN = 100;
 
-/** The eight rows of the orb menu, as get_choice (exe 2000:2d93) reads them back. */
-const MENU_ROWS = [0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38];
-
 /**
  * Where kill_monster draws the orb menu's heading (exe 3000:b72b): one line above the message
  * box the eight rows go in, in colour 5.
  */
 const ENHANCE_HEADING = { x: 0x3a2, y: 0x301, font: 0, colour: 5 } as const;
-
-/**
- * kill_monster (exe 3000:b12d, unf.c "kill_monster"), the eight lines a section boss's orb menu
- * is built from: the name of each weapon or suit of armor the character owns and the plus it
- * already carries, and a row of dashes for one they do not own.
- *
- * The loop runs over eight rows though the armor table has seven, so the last row of the armor
- * menu reads the bytes that follow the table; the port leaves it empty, and since nothing owns
- * that row it always comes out as the dashes anyway.
- */
-function ownedMenu(names: string[], owned: number[], plus: number[]): string[] {
-  return MENU_ROWS.map((_, row) => {
-    if (!(owned[row] > 0)) return '--------'; // DS:326e
-    const name = names[row] ?? '';
-    // DS:2aec, with the plus written after it
-    return plus[row] === 0 ? name : `${name}, PLUS ${plus[row]}`;
-  });
-}
 
 /**
  * kill_monster (exe 3000:b12d, unf.c "kill_monster"): the menu a section boss's orb puts up, and
@@ -68,7 +49,7 @@ async function chooseEnhanced(
   plus: number[],
 ): Promise<number> {
   for (;;) {
-    game.say(...ownedMenu(names, owned, plus));
+    game.say(...itemMenu(names, owned, plus, false));
     game.draw({ ...ENHANCE_HEADING, text: heading });
     const row = (await game.choice(MENU_ROWS)) - 0x31;
     if (row >= 0 && row < MENU_ROWS.length && owned[row] > 0) {
