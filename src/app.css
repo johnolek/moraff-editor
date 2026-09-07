@@ -12,6 +12,7 @@
   --mw-red: #ff3030;
   --good: #5cff7a;
   --warn: #ffd040;
+  --font-dos: 'VT323', 'Courier New', monospace;
 }
 
 * {
