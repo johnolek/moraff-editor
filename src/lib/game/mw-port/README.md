@@ -126,10 +126,12 @@ those replace every character that is not a letter or a digit with an underscore
 * `town.ts` — the store, the temple, the bank and the inn, the financial statement, the two
   routines a night at the inn clears the spells with, and the greeting a floor gives on arrival.
 
+`stocking.ts`, `spells.ts` and `magic.ts` are here too, and are their own author's to describe.
+
 ## What is not ported
 
-The play loop that ties all of this together, the spells, the world map and the screens. The
-dungeon generator is already ported, verbatim from the reference bundle, in `../mwmap.js`.
+The play loop that ties all of this together, the world map and the screens. The dungeon
+generator is already ported, verbatim from the reference bundle, in `../mwmap.js`.
 
 ## Where the code and ROLLER.md disagree
 
