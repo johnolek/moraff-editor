@@ -25,3 +25,50 @@ describe('the M key', () => {
     expect(session.game.screen).toEqual([]);
   });
 });
+
+describe('the O key', () => {
+  it('turns the high speed option on and off', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.options);
+    expect(session.box).toContain('YOUR SPECIAL OPTIONS MENU:');
+    await press(session, 0x31);
+    expect(session.game.highSpeed).toBe(true);
+    expect(session.box).toContain('HIGH SPEED MODE IS NOW IN');
+    await press(session, KEY.escape);
+    await press(session, KEY.options);
+    await press(session, 0x31);
+    expect(session.game.highSpeed).toBe(false);
+    expect(session.box).toContain('HIGH SPEED MODE IS NO');
+  });
+
+  it("gives the game's own answer about sound", async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.options);
+    await press(session, 0x36);
+    expect(session.box).toContain('SOUND DOES NOT DO MUCH IN');
+  });
+
+  it('says what it has instead for the switches that are the DOS screen', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.options);
+    await press(session, 0x33);
+    expect(session.box).toContain('THAT SWITCH IS FOR THE DOS');
+  });
+
+  it('changes nothing on escape', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.options);
+    await press(session, KEY.escape);
+    expect(session.game.highSpeed).toBe(false);
+  });
+});
+
+describe('the G key', () => {
+  it('shows the graphics menu and says the port draws no 3-D views', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.graphics);
+    expect(session.box).toContain('2) WALL IMAGE TOGGLE (3-WAY)');
+    await press(session, 0x34);
+    expect(session.box).toContain('THE GRAPHICS MENU SETS UP THE');
+  });
+});

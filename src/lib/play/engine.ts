@@ -20,7 +20,7 @@ import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { changeArmor, changeWeapon } from './gear';
 import { readTheMonsterManual } from './manual';
-import { countTheMoney } from './misc';
+import { countTheMoney, openGraphics, openOptions } from './misc';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
 import { showHelp } from './help';
 import { dropSomething } from './items';
@@ -368,8 +368,8 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.money]: { c: 'show_money', run: countTheMoney },
   [KEY.loseItem]: { c: 'lose_item', run: dropSomething },
   [KEY.monsterManual]: { c: 'monster_manual', run: readTheMonsterManual },
-  [KEY.options]: { c: 'movecontrol, the 0x6f branch', run: (turn) => notBuiltYet(turn.game, 'OPEN THE OPTIONS MENU') },
-  [KEY.graphics]: { c: 'movecontrol, the 0x67 branch', run: (turn) => notBuiltYet(turn.game, 'OPEN THE GRAPHICS MENU') },
+  [KEY.options]: { c: 'movecontrol, the 0x6f branch', run: openOptions },
+  [KEY.graphics]: { c: 'movecontrol, the 0x67 branch', run: openGraphics },
   [KEY.expandMap]: { c: 'movecontrol, the 0x78 branch', run: (turn) => notBuiltYet(turn.game, 'SHOW THE MAP A THIRD AT A TIME') },
   [KEY.zoomView]: { c: 'movecontrol, the 0x7a branch', run: (turn) => notBuiltYet(turn.game, 'SWAP THE MAP FOR THE FORWARD VIEW') },
 };
