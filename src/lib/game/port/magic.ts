@@ -577,8 +577,8 @@ export function drainMonster(game: Game): boolean {
 /**
  * pass_wall (exe 3000:e003, unf.c "pass_wall"): Pass Wall, which walks the player through
  * whatever is in the way to the first square 2 to 19 away in the chosen direction that is on the
- * map, is not rock and has no monster on it. Finding none, it does nothing and the spell points
- * are still spent.
+ * map, is not rock and has no monster on it. Finding none, it does nothing and reports failure,
+ * and cast_a_spell charges nothing for a spell that reports failure.
  *
  * `choice` is the number the player picks off the direction menu: 1 north, 2 south, 3 east, 4
  * west, 5 cancel. The original prints that menu and reads the key itself (FUN_2000_2f5d and
