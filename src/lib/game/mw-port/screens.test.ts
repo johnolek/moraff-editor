@@ -55,8 +55,9 @@ describe('mwMenuKey', () => {
 describe('mwLineMenuKey', () => {
   it('hands back the digit rather than the key', () => {
     expect(mwLineMenuKey(1, 8, 0x33)).toBe(3);
-    expect(mwLineMenuKey(1, 8, 0x39)).toBe(-1);
-    expect(mwLineMenuKey(1, 8, MW_ESCAPE)).toBe(-1);
+    // A key the menu does not take leaves the original waiting; Escape ends the wait.
+    expect(mwLineMenuKey(1, 8, 0x39)).toBeNull();
+    expect(mwLineMenuKey(1, 8, MW_ESCAPE)).toBe('escape');
   });
 
   it('takes any key at all when the low digit is -1', () => {

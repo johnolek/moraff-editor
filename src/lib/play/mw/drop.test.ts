@@ -64,13 +64,28 @@ describe('the L key', () => {
     expect(session.game.pc.stones).toEqual([10, 20, 30, 0, 50, 60]);
   });
 
-  it('drops nothing when the slot menu is escaped', async () => {
+  it('closes the weapon slot menu on Escape and drops nothing', async () => {
     const session = playingMw(
       mwCharacterFile({ floor: 0, weaponsOwned: [1, 3, 0, 0, 0, 0, 0, 0], ...townSquare() }),
     );
     await pressMw(session, MW_KEY.loseItem);
     await pressMw(session, 0x32);
+    expect(session.box).toContain('2) STICK');
     await pressMw(session, MW_KEY.escape);
+    expect(session.box).toEqual([]);
     expect(session.game.pc.weaponsOwned[1]).toBe(3);
+  });
+
+  it('closes the armor slot menu on Escape and drops nothing', async () => {
+    const session = playingMw(
+      mwCharacterFile({ floor: 0, armorOwned: [1, 1, 0, 0, 0, 0, 0, 0], armor: 1, ...townSquare() }),
+    );
+    await pressMw(session, MW_KEY.loseItem);
+    await pressMw(session, 0x31);
+    expect(session.box).toContain('2) LEATHER');
+    await pressMw(session, MW_KEY.escape);
+    expect(session.box).toEqual([]);
+    expect(session.game.pc.armorOwned[1]).toBe(1);
+    expect(session.game.pc.armor).toBe(1);
   });
 });

@@ -77,6 +77,36 @@ describe('the W key', () => {
     expect(session.game.pc.weapon).toBe(0);
     expect(session.box).toContain('  CAN NOT USE THAT WEAPON.');
   });
+
+  it('closes on Escape with the weapon in hand left alone', async () => {
+    const session = playingMw(
+      mwCharacterFile({
+        floor: 0,
+        cls: 0,
+        weapon: 0,
+        weaponsOwned: [1, 0, 0, 0, 0, 0, 1, 0],
+        ...standing(),
+      }),
+    );
+    await pressMw(session, MW_KEY.weapon);
+    expect(session.box[6]).toBe('7) LONG SWORD');
+    await pressMw(session, MW_KEY.escape);
+    expect(session.box).toEqual([]);
+    expect(session.game.pc.weapon).toBe(0);
+  });
+});
+
+describe('the A key', () => {
+  it('closes on Escape with the armor worn left alone', async () => {
+    const session = playingMw(
+      mwCharacterFile({ floor: 0, cls: 0, armor: 0, armorOwned: [1, 1, 0, 0, 0, 0, 0], ...standing() }),
+    );
+    await pressMw(session, MW_KEY.armor);
+    expect(session.box[1]).toBe('2) LEATHER');
+    await pressMw(session, MW_KEY.escape);
+    expect(session.box).toEqual([]);
+    expect(session.game.pc.armor).toBe(0);
+  });
 });
 
 describe('the P key', () => {

@@ -56,21 +56,28 @@ export function mwMenuKey(first: number, last: number, key: number): number {
   return key;
 }
 
+/** What {@link mwLineMenuKey} makes of a key: a line of the menu, an escape, or a key the
+ *  original goes on waiting past. */
+export type MwMenuChoice = number | 'escape' | null;
+
 /**
  * FUN_2000_1d0b (WORLD.EXE 2000:1d0b): the other menu reader, which draws the eight lines itself
  * and hands back the digit rather than the key — 1 to 8, or -1 for Escape.
  *
- * `lo` and `hi` are the digits it accepts. The original draws the eight lines one at a time and
- * stops drawing the moment an acceptable key arrives, so a fast player sees a half-drawn menu;
- * the port draws the whole box and then applies this filter.
+ * `lo` and `hi` are the digits it accepts. The original's wait is
+ * `while ((hi < key - 0x30 || key - 0x30 < lo) && key != 0x1b)`, so a key outside the range is
+ * thrown away and Escape ends the wait; that is the difference between the `null` and the
+ * `'escape'` here, and the caller turns the second back into the -1 the original returns. It also
+ * draws the eight lines one at a time and stops drawing the moment an acceptable key arrives, so
+ * a fast player sees a half-drawn menu; the port draws the whole box and then applies this filter.
  *
  * `lo` of -1 is the "any key" form the description screens use: the original then takes whatever
- * key comes and adds 0x30 to it, so this returns the key code itself.
+ * key comes and adds 0x30 to it, so this returns the key code itself — Escape included.
  */
-export function mwLineMenuKey(lo: number, hi: number, key: number): number {
+export function mwLineMenuKey(lo: number, hi: number, key: number): MwMenuChoice {
   if (lo === -1) return key;
-  if (key === MW_ESCAPE) return -1;
-  if (key - 0x30 < lo || hi < key - 0x30) return -1;
+  if (key === MW_ESCAPE) return 'escape';
+  if (key - 0x30 < lo || hi < key - 0x30) return null;
   return key - 0x30;
 }
 

@@ -273,11 +273,18 @@ export class MwGameSession {
     }
   }
 
-  /** FUN_2000_1d0b (WORLD.EXE 2000:1d0b): the same over a menu that hands back the digit. */
+  /**
+   * FUN_2000_1d0b (WORLD.EXE 2000:1d0b): the same over a menu that hands back the digit.
+   *
+   * Escape ends the original's wait and it returns -1, which every caller reads as a line the
+   * character owns nothing on, so the menu closes and nothing happens. A key the menu does not
+   * take is thrown away and the wait goes on.
+   */
   async lineMenuKey(lo: number, hi: number): Promise<number> {
     for (;;) {
       const chosen = mwLineMenuKey(lo, hi, await this.key());
-      if (chosen !== -1) return chosen;
+      if (chosen === 'escape') return -1;
+      if (chosen !== null) return chosen;
     }
   }
 

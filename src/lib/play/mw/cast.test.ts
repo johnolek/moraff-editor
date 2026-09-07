@@ -45,6 +45,19 @@ describe('the C key', () => {
     expect(session.game.pc.sp).toBe(10);
   });
 
+  it('closes the type menu on Escape without opening a grid', async () => {
+    const session = playingMw(priest());
+    await pressMw(session, MW_KEY.cast);
+    expect(session.box).toContain('4) PRIEST BATTLE SPELLS');
+    await pressMw(session, MW_KEY.escape);
+    expect(session.game.screen).toEqual([]);
+    expect(session.game.pc.sp).toBe(10);
+    // The loop is waiting for the next key rather than still on the menu, which is what the
+    // E key's box proves.
+    await pressMw(session, MW_KEY.expNeeded);
+    expect(session.box[0]).toBe('EXPERIENCE NEEDED FOR LEVEL:');
+  });
+
   it('turns a fighter away from everything but magic paper', async () => {
     const session = playingMw(priest({ cls: 0 }));
     await pressMw(session, MW_KEY.cast);
@@ -105,5 +118,37 @@ describe('a spell that stops for a menu', () => {
     // A permanent spell costs its level off the spell points and off the maximum as well.
     expect(session.game.pc.sp).toBe(17);
     expect(session.game.pc.maxSp).toBe(17);
+  });
+
+  it('gives Enchant Weapon up when its slot menu is escaped', async () => {
+    const spellbook = Array.from({ length: 180 }, () => 0);
+    spellbook[at(0, 3, 0)] = 1;
+    const weaponsOwned = [1, 0, 0, 0, 1, 0, 0, 0];
+    const session = playingMw(priest({ spellbook, weaponsOwned, sp: 20, maxSp: 20 }));
+    await pressMw(session, MW_KEY.cast);
+    await pressMw(session, 0x31);
+    await pressMw(session, 0x67);
+    expect(session.box).toContain('5) KNIFE');
+    await pressMw(session, MW_KEY.escape);
+    expect(session.game.pc.weaponPlus[4]).toBe(0);
+    await pressMw(session, MW_KEY.expNeeded);
+    expect(session.box[0]).toBe('EXPERIENCE NEEDED FOR LEVEL:');
+  });
+
+  it('gives Enchant Armor up when its slot menu is escaped', async () => {
+    const spellbook = Array.from({ length: 180 }, () => 0);
+    // Permanent, level 2, the first of the three: ENCHANT ARMOR LEVEL 1.
+    spellbook[at(0, 2, 0)] = 1;
+    const armorOwned = [1, 1, 0, 0, 0, 0, 0];
+    const session = playingMw(priest({ spellbook, armorOwned, sp: 20, maxSp: 20 }));
+    await pressMw(session, MW_KEY.cast);
+    await pressMw(session, 0x31);
+    // Level 2, the first of the three, is D.
+    await pressMw(session, 0x64);
+    expect(session.box).toContain('2) LEATHER');
+    await pressMw(session, MW_KEY.escape);
+    expect(session.game.pc.armorPlus[1]).toBe(0);
+    await pressMw(session, MW_KEY.expNeeded);
+    expect(session.box[0]).toBe('EXPERIENCE NEEDED FOR LEVEL:');
   });
 });
