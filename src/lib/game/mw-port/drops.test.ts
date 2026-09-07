@@ -47,6 +47,18 @@ describe('weaponFind', () => {
     expect(game.screen).toEqual([{ text: 'GOOD NEWS...', x: 0, y: 0, font: 0, colour: 15 }]);
   });
 
+  it('pauses either side of the heading it draws', () => {
+    const delays: number[] = [];
+    const game = lootGame(40, {
+      rng: scripted([0, 49]),
+      delay: (ms) => {
+        delays.push(ms);
+      },
+    });
+    weaponFind(game, () => true);
+    expect(delays).toEqual([1000, 1300]);
+  });
+
   it('leaves the weapon behind when the menu says so', () => {
     const game = lootGame(40, { rng: scripted([0, 0]) });
     weaponFind(game, () => false);

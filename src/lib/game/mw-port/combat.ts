@@ -1027,15 +1027,24 @@ function levelDrainerExtras(game: MwGame): void {
  * The colour monster_killed (WORLD.EXE 3000:d51c) draws each of its own three messages in.
  *
  * All three go on the strip above the message box, and each is preceded by a fill_rect wiping
- * whatever was there. "YOU KILLED IT!" is left standing: the fill_rect after it covers the top
- * of the message box rather than the strip. The other two are wiped, but only after a delay the
- * original times off the BIOS tick counter, and after the wait_key for "NOTHING! (HIT ANY KEY)".
- * There is no clock here, and {@link MwGame.pressAnyKey} records that a key is owed rather than
- * waiting for it, so wiping the strip at either of those points would take the line back off
- * before anyone saw it. The port leaves all three standing; the next thing written on that strip
- * replaces them.
+ * whatever was there. None of them is wiped afterwards: every fill_rect the kill makes once a
+ * message is up starts at y 0x78 or y 0x28, which is the message box rather than the strip. Each
+ * message stands until the next thing written there replaces it, and the last one until the Play
+ * tab's loop takes the strip off with the box.
  */
 const KILL_MESSAGE_COLOUR = 8;
+
+/**
+ * How long monster_killed leaves "YOU KILLED IT!" up (WORLD.EXE 3000:d5c0), the pause it takes
+ * before it says anything about what the monster was carrying (3000:da11), and how long
+ * "YOU FIND..." stands (3000:da8a).
+ *
+ * The first is drawn only while DS:45c9 is 0, which is the layout the Z key cycles through three
+ * of. This port is played on the map and never leaves that first layout, so it always applies.
+ */
+const KILLED_IT_MS = 1050;
+const BEFORE_THE_FIND_MS = 750;
+const FIND_MS = 3000;
 
 /**
  * monster_killed (WORLD.EXE 3000:d51c, mw.c "monster_killed"): the kill.
@@ -1059,6 +1068,7 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
   if (kind.kind !== PUFFBALL) {
     mwClearMessageLine(game);
     game.draw(mwMessageLine('YOU KILLED IT!', KILL_MESSAGE_COLOUR)); // DS:678d
+    game.delay(KILLED_IT_MS);
   }
   pc.exp += experienceForKill(game, slot);
   if (kind.levelDrain > 0) levelDrainerExtras(game);
@@ -1075,8 +1085,10 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
   cupOfHealth(game);
   ballOfThought(game);
   if (pc.cls !== 2 && game.rng.random(950) < pc.floor + 40 && game.rng.random(20) < pc.floor) {
+    game.delay(BEFORE_THE_FIND_MS);
     mwClearMessageLine(game);
     game.draw(mwMessageLine('YOU FIND...', KILL_MESSAGE_COLOUR)); // DS:68d6
+    game.delay(FIND_MS);
     if (game.rng.random(2) === 0) specialFind(game);
     else {
       game.draw(mwMessageLine('NOTHING! (HIT ANY KEY)', KILL_MESSAGE_COLOUR)); // DS:68e2

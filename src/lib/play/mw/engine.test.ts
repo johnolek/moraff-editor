@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bundledMwDungeon } from '../../game/mw-dungeon';
-import { blankMwCharacter, MW_SQUARE_PLAYER, mwOccupantAt, type MwCharacter } from '../../game/mw-port/state';
+import { blankMwCharacter, MW_SQUARE_PLAYER, mwMessageLine, mwOccupantAt, type MwCharacter } from '../../game/mw-port/state';
 import { BorlandRng, type Rng } from '../../game/port/rng';
 import { MORAFFS_WORLD_MAP, type MapSquare } from '../../map/game';
 import { MwGameSession, runMwMoveControl, startMwGame, type MwCharacterFile } from './engine';
@@ -137,6 +137,14 @@ describe('the message box', () => {
     expect(session.box.length).toBeGreaterThan(0);
     await pressMw(session, MW_KEY.escape);
     expect(session.box).toEqual([]);
+  });
+
+  it('takes the strip above the box off with it', async () => {
+    const session = playingMw(mwCharacterFile({ floor: 0, ...townWalk() }));
+    const game = session.game;
+    game.draw(mwMessageLine('NOTHING! (HIT ANY KEY)', 8));
+    await pressMw(session, MW_KEY.escape);
+    expect(game.screen).toEqual([]);
   });
 });
 

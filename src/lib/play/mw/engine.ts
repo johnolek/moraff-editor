@@ -3,7 +3,7 @@ import { bundledMwDungeon } from '../../game/mw-dungeon';
 import { recomputeWeight } from '../../game/mw-port/magic';
 import { mwMenuKey, mwLineMenuKey } from '../../game/mw-port/screens';
 import type { MwGame } from '../../game/mw-port/state';
-import { MW_SQUARE_PLAYER, mwSetOccupant, newMwGame } from '../../game/mw-port/state';
+import { MW_SQUARE_PLAYER, mwClearMessageLine, mwSetOccupant, newMwGame } from '../../game/mw-port/state';
 import type { Rng } from '../../game/port/rng';
 import type { ScreenLine } from '../../game/port/state';
 import { MORAFFS_WORLD_MAP, type MapSquare } from '../../map/game';
@@ -39,6 +39,7 @@ import { leaveSquare } from './moment';
 import { resolveStep, turnAndStep, waitAMoment } from './move';
 import { loadMwPlayer, saveMwPlayer } from './record';
 import { mwMessageBoxLines, MW_MESSAGE_BOX } from './screens';
+import { TimedScreens } from '../timed';
 import { quitAndSave } from './quit';
 import { buildingUnder } from './town';
 import { explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
@@ -145,6 +146,12 @@ export class MwGameSession {
   /** Called whenever the game is about to wait for a key, so the tab can draw what it is
    *  waiting with. */
   onChange: (() => void) | null = null;
+  /**
+   * The delays the game holds a drawn message for (WORLD.EXE 1000:22a2), which the tab keeps to.
+   * The loop runs straight past them; this is what decides which of the screens it drew is
+   * showing.
+   */
+  private readonly timed = new TimedScreens(() => this.changed());
 
   /** A key pressed while nothing was waiting for one, which is where DOS kept it too. */
   private queued: number[] = [];
@@ -189,6 +196,7 @@ export class MwGameSession {
           this.box = box.slice(0, MW_MESSAGE_BOX.lines);
         }
       },
+      delay: (ms) => this.timed.hold(this.game.screen, ms),
     });
     // The boxes go through say and the screens through draw, the way they are kept apart on the
     // screen itself.
@@ -213,6 +221,9 @@ export class MwGameSession {
 
   /** A key from the Play tab. */
   press(key: number): void {
+    // Whatever is left of a message's delay is given up: the original is not reading the keyboard
+    // while it waits, so by the time a key of the player's is looked at the wait is behind it.
+    this.timed.release();
     const waiting = this.waiting;
     if (waiting) {
       this.waiting = null;
@@ -445,7 +456,7 @@ export class MwGameSession {
       rows: this.rows,
       monsters: drawn,
       box: mwMessageBoxLines(this.box),
-      screen: game.screen,
+      screen: this.timed.showing(game.screen),
       prompt: ladderPrompt(
         ladderUnder(game),
         pc.floor === 0 ? buildingUnder(game) : 0,
@@ -559,6 +570,11 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     // pass starts again rather than answering a key with what the character used to be.
     if (key === MW_RECORD_EDITED) continue;
     session.clearBox();
+    // The strip above the box goes with it. A kill's own messages are never wiped by the game —
+    // the fill_rect after each covers the box rather than the strip — so one would otherwise
+    // stand over the map for the rest of the game, this port having no repaint of the play
+    // screen to take it off.
+    mwClearMessageLine(game);
     const handler = MW_KEY_HANDLERS[key];
     if (handler) await handler.run(turn);
     await session.settle();

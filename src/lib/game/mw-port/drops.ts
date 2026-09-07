@@ -43,18 +43,26 @@ function spellIndex(type: number, level: number, slot: number): number {
 /** The colour FUN_3000_b99e draws its line in, which is the white of the fixed UI colours. */
 const GOOD_NEWS_COLOUR = 15;
 
+/** The two pauses FUN_3000_b99e takes, one either side of the line it draws (WORLD.EXE 3000:b9a1
+ *  and 3000:ba1a). */
+const BEFORE_GOOD_NEWS_MS = 1000;
+const GOOD_NEWS_MS = 1300;
+
 /**
  * The banner in front of a find (WORLD.EXE 3000:b99e, mw.c "FUN_3000_b99e"): a pause, a wiped
  * message line and "GOOD NEWS..." in white on the strip above the message box the find itself
  * goes in, so it reads as the find's heading.
  *
- * The original pauses again after drawing it and never wipes it, so the port leaves it standing
- * too and the next thing written on that strip replaces it.
+ * The first pause is what leaves whatever the kill last wrote on the strip up long enough to be
+ * read; the second holds this line before the find goes in the box. Nothing wipes it, so it
+ * stands until the next thing written on that strip replaces it.
  */
 export function goodNews(game: MwGame): void {
+  game.delay(BEFORE_GOOD_NEWS_MS);
   mwClearMessageLine(game);
   // DS:5dfb, whose first two bytes are the float in front of it
   game.draw(mwMessageLine('GOOD NEWS...', GOOD_NEWS_COLOUR));
+  game.delay(GOOD_NEWS_MS);
 }
 
 /**

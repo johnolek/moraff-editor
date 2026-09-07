@@ -647,17 +647,23 @@ describe('monsterKilled', () => {
     // the half that finds nothing.
     const findsNothing: Rng = { random: (n) => (n === 950 || n === 20 ? 0 : n === 2 ? 1 : 9999) };
     let keysWaitedFor = 0;
+    const delays: number[] = [];
     const game = killing({
       rng: findsNothing,
       pc: { cls: 0, lev: 5, floor: 30, x: 5, y: 5, hp: 100, maxHp: 100 },
       pressAnyKey: () => {
         keysWaitedFor += 1;
       },
+      delay: (ms) => {
+        delays.push(ms);
+      },
     });
     monsterKilled(game, nothing);
     expect(game.messages).toContain('YOU FIND...');
     expect(game.messages).toContain('NOTHING! (HIT ANY KEY)');
-    // The kill's three messages share the strip above the box, so the last is all that stands.
+    // The kill's three messages share the strip above the box, so the last is all that stands,
+    // and each of the first two is held on the screen by the delay drawn behind it.
+    expect(delays).toEqual([1050, 750, 3000]);
     expect(game.screen).toEqual([
       { text: 'NOTHING! (HIT ANY KEY)', x: 0, y: 0, font: 0, colour: 8 },
     ]);
