@@ -472,9 +472,8 @@ export function dropMoney(game: Game): void {
   pc.dollars += amount;
   if (game.highSpeed) return;
   const tier = MONEY_COMMENT_TIERS.findIndex((limit) => amount < limit);
-  const comment = MONEY_COMMENTS[tier === -1 ? MONEY_COMMENTS.length - 1 : tier][
-    game.rng.random(4)
-  ];
+  const comments = tier === -1 ? MONEY_COMMENTS[MONEY_COMMENTS.length - 1] : MONEY_COMMENTS[tier];
+  const comment = comments[game.rng.random(4)];
   // DS:6789 67a5 67c2 67db 67e1, then the amount and 67fd, then the two comment lines
   game.say(
     '  YOU FIND GREATER-AMERICAN',
