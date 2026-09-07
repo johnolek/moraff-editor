@@ -10,6 +10,7 @@ const copies: [string, string][] = [
   ['src/lib/game/dotu-pic.js', 'dotu-tools/reference/dotu-pic.js'],
   ['src/lib/game/unfdung.b64.js', 'dotu-tools/data/unfdung.b64.js'],
   ['src/lib/game/mwmap.js', 'mw-tools/reference/mwmap.js'],
+  ['src/lib/game/revmap.js', 'rev-tools/reference/revmap.js'],
   ['src/lib/game/dung.b64.js', 'mw-tools/data/dung.b64.js'],
   ['src/lib/game/dotu-data.json', 'dotu-tools/data/dotu-data.json'],
   ['src/lib/game/dotu-fonts.json', 'dotu-tools/data/dotu-fonts.json'],
@@ -50,7 +51,7 @@ const mwHelpCopies: [string, string][] = mwHelpNumbers.map((number) => [
   `mw-tools/data/help/${number}.hlp`,
 ]);
 
-describe('game modules copied from dotu-tools', () => {
+describe('game modules copied from the tools directories', () => {
   it.each(copies)('%s is identical to %s', (copy, original) => {
     expect(readFileSync(copy, 'utf8')).toBe(readFileSync(original, 'utf8'));
   });
