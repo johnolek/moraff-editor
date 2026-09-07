@@ -33,10 +33,14 @@ export const INN_SECONDS = 8 * 3600;
 /**
  * show_money (exe 2000:438f, unf.c "show_money"): the financial statement, which the store shows
  * after a purchase and the bank after every move.
+ *
+ * The heading is drawn above the box rather than printed in it, which is why it survives the
+ * eight lines underneath being replaced.
  */
 export function showMoney(game: Game): void {
   const pc = game.pc;
-  game.say('YOUR FINANCIAL STATEMENT:'); // DS:0b38
+  // DS:0b38
+  game.draw({ text: 'YOUR FINANCIAL STATEMENT:', x: 0x3a2, y: 0x301, font: 0, colour: 4 });
   // DS:0b52, then 0b62 0b6d 0b7f 0b91 0ba3 0bb5 0bc7 each with its number written after it
   game.say(
     'LIST OF ASSETS:',

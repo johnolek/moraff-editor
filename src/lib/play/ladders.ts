@@ -5,7 +5,7 @@ import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { hintOnFloor } from './arrival';
 import type { Turn } from './engine';
 import { changeModule } from './modules';
-import { notBuiltYet } from './screens';
+import { enterBuilding } from './town';
 
 /**
  * The ladders: U to climb one, D to go down one, and the module teleporter waiting at the bottom
@@ -14,9 +14,6 @@ import { notBuiltYet } from './screens';
 
 /** The snake's answer to U or D on a square with no ladder on it. */
 const NO_LADDER = 0x67;
-
-/** What the town's four buildings are called, in the order the generator numbers them from 1. */
-const BUILDINGS = ['STORE', 'TEMPLE', 'BANK', 'INN'];
 
 /**
  * check_for_ladder (exe 3000:827f, unf.c "check_for_ladder"): how many floors the ladder on this
@@ -50,7 +47,7 @@ export async function goUp(turn: Turn): Promise<void> {
     return;
   }
   if (turn.building !== 0) {
-    notBuiltYet(game, `GO INTO THE ${BUILDINGS[turn.building - 1]}`);
+    await enterBuilding(turn);
     return;
   }
   showHint(game, NO_LADDER);
