@@ -13,6 +13,18 @@ export const MW_SPELL_CATEGORIES = ['permanent', 'preparation', 'wizard', 'pries
 
 export type MwSpellCategory = (typeof MW_SPELL_CATEGORIES)[number];
 
+/**
+ * The four lines the spell screen's first menu offers (exe DS:4583, the first four of its eight
+ * near pointers). The other four are the same categories again as "5) HELP-PERMANENT SPELLS" and
+ * so on, which show the SPELLS.HLP paragraph instead of casting anything.
+ */
+export const MW_SPELL_CATEGORY_LABELS = [
+  '1) PERMANENT SPELLS',
+  '2) PREPARATION SPELLS',
+  '3) WIZARD BATTLE SPELLS',
+  '4) PRIEST BATTLE SPELLS',
+];
+
 /** Levels in a category, which is how many lines of three the menu draws. */
 export const MW_SPELL_LEVELS = 10;
 
@@ -61,7 +73,7 @@ export function mwSpellBookSlot(category: number, level: number, slot: number): 
 /**
  * What a spell costs to cast out of the spellbook (WORLD.EXE 2000:ea27, mw.c "FUN_2000_ea27"):
  * one spell point per level, which is what the heading over the menu says as well — "SELECT A
- * SPELL SPELLS USE ONE SPELL POINT PER LEVEL:".
+ * SPELL-SPELLS USE ONE SPELL POINT PER LEVEL:" (exe DS:4201).
  *
  * The menu refuses the spell when current spell points are below the cost, and takes the cost
  * off them once the spell has done something. A spell cast off a scroll, a wand or a piece of
@@ -158,3 +170,70 @@ export function mwCanCast(classIndex: number, category: number): boolean {
   if (category === 3) return MW_PRIESTLY_CLASSES.includes(classIndex);
   return true;
 }
+
+/**
+ * The names the spell menu prints, exactly as the executable holds them (exe DS:4493, 120 near
+ * pointers two bytes apart). They are indexed the same way SPELLS.HLP is, which is what ties the
+ * two together: `names[category * 30 + level * 3 + slot]`.
+ *
+ * The heading line of a spell's SPELLS.HLP record repeats the name and then runs on into the
+ * description, so it is these strings rather than that line that the menu shows. Two of them
+ * differ from the file: record 10 is ANTI-MAGIC RING LEVEL 1 here and ANTI MAGIC RING LEVEL 1
+ * there, and record 11 is WRITE SCROLL - LEVEL 10 here and WRITE SCROLL TO LEVEL 10 there.
+ */
+export const MW_SPELL_NAMES = [
+  'ENCHANT WEAPON LEVEL 1', 'EXTRA HEALTH POINT', 'WRITE SCROLL TO LEVEL 3',
+  'ENCHANT ARMOR LEVEL 1', 'EXTRA 3 HEALTH POINTS', 'ENCHANT WAND LEVEL 3',
+  'ENCHANT WEAPON LEVEL 2', 'EXTRA 5 HEALTH POINTS', 'ENCHANT RING LEVEL 1',
+  'ENCHANT ARMOR LEVEL 2', 'ANTI-MAGIC RING LEVEL 1', 'WRITE SCROLL - LEVEL 10',
+  'ENCHANT WEAPON LEVEL 3', 'ENCHANT RING LEVEL 2', 'BODY ARMOR LEVEL 1',
+  'ENCHANT ARMOR LEVEL 3', 'ANTI-MAGIC RING LEVEL 2', 'ENCHANT WAND LEVEL 8',
+  'ENCHANT RING LEVEL 3', 'ANTI-MAGIC RING LEVEL 3', 'BODY ARMOR LEVEL 2',
+  'ENCHANT WEAPON LEVEL 4', 'ENCHANT ARMOR LEVEL 4', 'ENCHANT WAND ANY LEVEL',
+  'PERMANENT FEATHER', 'ANTI-MAGIC RING LEVEL 5', 'EXTRA 25 HEALTH POINTS',
+  'PERMANENT INVISIBILITY', 'YOUTH', 'BODY ARMOR LEVEL 4',
+
+  'ENCHANT ARMOR LEVEL 1', 'ENCHANT WEAPON LEVEL 1', 'LITTLE CURE',
+  'ENCHANT WEAPON LEVEL 2', 'RELOCATE', 'DETECT LEVEL',
+  'CURE', 'ENCHANT ARMOR LEVEL 2', 'STRENGTH',
+  'ENCHANT WEAPON LEVEL 3', 'AGILITY', 'DESCEND',
+  'ASCEND', 'DETECT POSITION', 'FEATHER',
+  'BIG CURE', 'DOUBLE ASCEND', 'ENCHANT WEAPON LEVEL 4',
+  'INVISIBILITY', 'ENCHANT ARMOR LEVEL 3', 'FAST MOVE',
+  'SUPER STRENGTH', 'ENCHANT WEAPON LEVEL 5', 'MAJOR DESCEND',
+  'SUPER AGILITY', 'CURE POISON', 'HEAL ALL WOUNDS',
+  'MAJOR ASCEND', 'CURE DISEASE', 'ENCHANT ARMOR LEVEL 4',
+
+  'SLEEP', 'MAGIC ZAP', 'MINOR PROTECTION',
+  'SLOW ENEMIES', 'STRENGTH', 'MINOR SHOCK',
+  'LIGHTNING', 'MAGIC MISSLE', 'SPEED',
+  'GO AWAY', 'RELOCATE', 'POWER WEAPON I',
+  'MINOR EXPLOSION', 'PROTECTION', 'RESIST POISON',
+  'MAGIC ZOT', 'SHOCK', 'ANTI-COLD',
+  'EXPLOSION', 'PASS WALL', 'ANTI-FIRE',
+  'MAGIC BOLT', 'MAJOR PROTECTION', 'POWER WEAPON II',
+  'HOLD MONSTER', 'DRAIN MONSTER', 'MAJOR SHOCK',
+  'MAJOR EXPLOSION', 'AUTOKILL', 'POWER WEAPON III',
+
+  'SLEEP', 'MINOR PROTECTION', 'STRENGTH',
+  'RESIST POISON', 'SPEED', 'FAST CURE',
+  'RESIST DISEASE', 'RELOCATE', 'SLOW ENEMIES',
+  'ANTI-COLD', 'GO AWAY', 'POWER WEAPON I',
+  'PROTECTION', 'ANTI-FIRE', 'PASS WALL',
+  'RESIST LEVEL DRAIN', 'DRAIN MONSTER', 'FAST BIG CURE',
+  'HOLD MONSTER', 'POWER WEAPON II', 'SHOCK',
+  'MAJOR PROTECTION', 'EXPLOSION', 'MAGIC ZOT',
+  'AUTOKILL', 'POWER WEAPON III', 'STRENGTH AND SPEED',
+  'ULTRA PROTECTION', 'FAST HEAL', 'MAJOR SHOCK',
+];
+
+/**
+ * The rows of the weapon table (exe DS:01c0, seven bytes apiece) that a power weapon spell puts
+ * you on. Power weapon level N sends strike (WORLD.EXE 2000:5bef) to row N + 8 for the damage
+ * die it rolls, so the three spells give the dice below — the row labelled POWER WEAPON 1, whose
+ * die is 69, is never reached.
+ *
+ * Only the die is taken from that row: the to-hit bonus strike adds comes from the weapon
+ * actually in your hand, at the row the equipped-weapon byte names.
+ */
+export const MW_POWER_WEAPON_DICE = [129, 199, 399];
