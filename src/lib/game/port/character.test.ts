@@ -6,10 +6,12 @@ import {
   RACES,
   readUrollLine,
   readUrollLines,
+  rollChar,
   rollCharacteristics,
   showRolledCharacter,
 } from './character';
 import { BorlandRng } from './rng';
+import type { Game } from './state';
 import { newGame } from './state';
 
 describe('reading UROLL.TXT', () => {
@@ -220,5 +222,293 @@ describe('designYourOwn', () => {
     expect(game.messages).toContain('CHARACTERISTIC POINTS LEFT: ');
     expect(game.messages).toContain('24');
     expect(game.messages).toContain('1');
+  });
+});
+
+/** A game whose six questions are answered the way `answers` says, with a repeatable roll. */
+function roller(answers: {
+  seed?: number;
+  difficulty?: number;
+  race?: number;
+  cls?: number;
+  name?: string;
+  keep?: number[];
+  design?: number[];
+}): Game {
+  const keep = answers.keep ?? [0];
+  const design = answers.design ?? [];
+  let keepNext = 0;
+  let designNext = 0;
+  return newGame({
+    rng: new BorlandRng(answers.seed ?? 1),
+    askDifficulty: () => answers.difficulty ?? 0,
+    askRace: () => answers.race ?? 0,
+    askClass: () => answers.cls ?? 0,
+    askName: () => answers.name ?? 'HERO',
+    askKeepRerollDesign: () => keep[Math.min(keepNext++, keep.length - 1)],
+    askDesignStat: () => design[Math.min(designNext++, design.length - 1)],
+  });
+}
+
+describe('rollChar', () => {
+  it('starts the character on floor 1 of module I with fists, skin and nothing else', () => {
+    const game = roller({});
+    rollChar(game);
+    const pc = game.pc;
+    expect(pc.x).toBe(58);
+    expect(pc.y).toBe(44);
+    expect(pc.level).toBe(1);
+    expect(pc.module).toBe(0);
+    expect(pc.dir).toBe(0);
+    expect(pc.weaponsOwned).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
+    expect(pc.armorOwned).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
+    expect(pc.weapon).toBe(0);
+    expect(pc.armor).toBe(0);
+    expect(pc.scrolls.every((count) => count === 0)).toBe(true);
+    expect(pc.wands.every((count) => count === 0)).toBe(true);
+    expect(pc.luckyCharms).toBe(0);
+    expect(pc.bank).toBe(0);
+  });
+
+  it('leaves the character at level 0 with no experience, which is what the game does', () => {
+    const game = roller({});
+    rollChar(game);
+    expect(game.pc.lev).toBe(0);
+    expect(game.pc.exp).toBe(0);
+  });
+
+  it('fills the seven fields nothing in the game reads back', () => {
+    const game = roller({});
+    rollChar(game);
+    const pc = game.pc;
+    expect([pc.unread7fc, pc.unread7fe, pc.unread808, pc.unread80a, pc.unread80c, pc.unread80e, pc.unread810]).toEqual(
+      [2146, 1431, 0, 56, 60, 300, 0],
+    );
+  });
+
+  it('puts the map cursor at the middle of the view the game is showing', () => {
+    const game = roller({});
+    game.areaColumns = 0x13;
+    game.areaRows = 0x21;
+    rollChar(game);
+    expect(game.pc.mapCursorX).toBe(9);
+    expect(game.pc.mapCursorY).toBe(16);
+  });
+
+  it('takes the name in upper case, cut to the eighteen the field holds', () => {
+    const game = roller({ name: 'a very long name indeed, honestly' });
+    rollChar(game);
+    expect(game.pc.name).toBe('A VERY LONG NAME I');
+  });
+
+  it('keeps letters, digits and spaces out of the name and nothing else', () => {
+    const game = roller({ name: "o'brien-2!" });
+    rollChar(game);
+    expect(game.pc.name).toBe('OBRIEN2');
+  });
+
+  it('records the character and its file number where the game writes the file', () => {
+    const game = roller({});
+    game.slot = 27;
+    rollChar(game);
+    const created = game.events.filter((event) => event.kind === 'characterCreated');
+    expect(created).toHaveLength(1);
+    expect(created[0]).toMatchObject({ slot: 27 });
+    expect((created[0] as { pc: typeof game.pc }).pc).toBe(game.pc);
+  });
+
+  it('shows the tablet its class has, and the contest tablet to nobody', () => {
+    for (let cls = 0; cls < 7; cls++) {
+      const game = roller({ cls });
+      rollChar(game);
+      expect(game.events.filter((event) => event.kind === 'tabletShown')).toEqual([
+        { kind: 'tabletShown', entry: 0x34 + cls },
+      ]);
+    }
+  });
+});
+
+describe('the spells a class starts with', () => {
+  const spellsOf = (cls: number): number[] => {
+    const game = roller({ cls });
+    rollChar(game);
+    return game.pc.spellbook.flatMap((known, index) => (known ? [index] : []));
+  };
+
+  it('gives a fighter nothing', () => {
+    expect(spellsOf(0)).toEqual([]);
+  });
+
+  it('gives a worshipper and a priest Little Cure and priest Strength', () => {
+    expect(spellsOf(1)).toEqual([47, 137]);
+    expect(spellsOf(4)).toEqual([47, 137]);
+  });
+
+  it('gives a wizard and a mage Little Cure and Magic Zap', () => {
+    expect(spellsOf(3)).toEqual([47, 91]);
+    expect(spellsOf(6)).toEqual([47, 91]);
+  });
+
+  it('gives a sage all three', () => {
+    expect(spellsOf(5)).toEqual([47, 91, 137]);
+  });
+
+  it('gives a monk the whole book, all 180 flags', () => {
+    expect(spellsOf(2)).toHaveLength(180);
+  });
+});
+
+describe('health and spell points', () => {
+  it('gives a normal-difficulty character 25 more health than a tough one', () => {
+    const normal = roller({ difficulty: 0 });
+    rollChar(normal);
+    const tough = roller({ difficulty: 1 });
+    rollChar(tough);
+    expect(normal.pc.hard).toBe(0);
+    expect(tough.pc.hard).toBe(1);
+    expect(normal.pc.maxHp).toBe(tough.pc.maxHp + 25);
+  });
+
+  it('starts the character full up', () => {
+    const game = roller({ cls: 3 });
+    rollChar(game);
+    expect(game.pc.hp).toBe(game.pc.maxHp);
+    expect(game.pc.sp).toBe(game.pc.maxSp);
+  });
+
+  it('gives a fighter no spell points and every other class some', () => {
+    const fighter = roller({ cls: 0, race: 7 });
+    rollChar(fighter);
+    expect(fighter.pc.maxSp).toBe(0);
+    for (const cls of [1, 2, 3, 4, 6]) {
+      const game = roller({ cls, race: 7 });
+      rollChar(game);
+      expect(game.pc.maxSp).toBeGreaterThan(0);
+    }
+  });
+
+  it('works the spell points out of wisdom and intelligence, the way each class does', () => {
+    for (const cls of [1, 2, 3, 4, 5, 6]) {
+      const game = roller({ cls, race: 7 });
+      rollChar(game);
+      const { wis, iq } = game.pc;
+      const expected = [
+        0,
+        Math.trunc((wis * 2 + iq) / 4),
+        Math.trunc((wis + iq) / 17) + 1,
+        Math.trunc((wis + iq * 2) / 7),
+        Math.trunc((wis * 2 + iq) / 8),
+        Math.trunc((wis + iq) / 18),
+        Math.trunc((wis + iq * 2) / 12),
+      ];
+      expect(game.pc.maxSp).toBe(expected[cls]);
+    }
+  });
+
+  it('gives a fighter and a sage two extra rolls of health', () => {
+    // The health roll is the same for both seeds up to the class, so the two extra d22 rolls
+    // are the whole difference between a fighter and a worshipper of the same numbers.
+    const fighter = roller({ cls: 0 });
+    rollChar(fighter);
+    const worshipper = roller({ cls: 1 });
+    rollChar(worshipper);
+    expect(fighter.pc.maxHp).toBeGreaterThan(worshipper.pc.maxHp - 25);
+  });
+});
+
+describe('starting money', () => {
+  it('gives a fighter no magic crystals and everyone else some', () => {
+    const fighter = roller({ cls: 0 });
+    rollChar(fighter);
+    expect(fighter.pc.crystals).toBe(0);
+    const sage = roller({ cls: 5 });
+    rollChar(sage);
+    expect(sage.pc.crystals).toBeGreaterThan(0);
+  });
+
+  it('keeps a tough character to five times their luck plus a roll on twice it', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const game = roller({ seed, difficulty: 1, race: 4 });
+      rollChar(game);
+      expect(game.pc.money).toBeGreaterThanOrEqual(game.pc.luck * 5);
+      expect(game.pc.money).toBeLessThan(game.pc.luck * 7);
+    }
+  });
+
+  it('gives a normal-difficulty character at least five hundred more', () => {
+    const game = roller({ difficulty: 0, race: 4 });
+    rollChar(game);
+    expect(game.pc.money).toBeGreaterThanOrEqual(game.pc.luck * 5 + 500);
+  });
+});
+
+describe('keeping, rerolling and designing', () => {
+  it('rolls another character for every N and keeps the last one', () => {
+    const kept = roller({ keep: [0] });
+    rollChar(kept);
+    const rerolled = roller({ keep: [1, 1, 0] });
+    rollChar(rerolled);
+    expect(rerolled.messages.filter((line) => line === 'RACE: HUMANOID')).toHaveLength(3);
+    expect(kept.messages.filter((line) => line === 'RACE: HUMANOID')).toHaveLength(1);
+  });
+
+  it('keeps a designed character without asking again', () => {
+    const game = roller({ keep: [2], design: [0] });
+    rollChar(game);
+    expect(game.messages.filter((line) => line === 'RACE: HUMANOID')).toHaveLength(1);
+    expect(game.pc.str).toBeGreaterThan(game.pc.iq);
+  });
+
+  it('rolls a fresh character when the design screen is escaped', () => {
+    // Escape the first design, then keep the character rolled in its place.
+    const game = roller({ keep: [2, 0], design: [6] });
+    rollChar(game);
+    expect(game.messages.filter((line) => line === 'RACE: HUMANOID')).toHaveLength(2);
+    // The four points the abandoned character lost are not on the one that is kept.
+    const pc = game.pc;
+    const total = pc.str + pc.iq + pc.wis + pc.con + pc.dex + pc.luck;
+    expect(total).toBe(RACES[0].str * 6 + 60);
+  });
+});
+
+describe('the screens roll_char shows', () => {
+  it('opens on the difficulty menu, without the contest UROLL.TXT still describes', () => {
+    const game = roller({});
+    rollChar(game);
+    expect(game.messages.slice(0, 3)).toEqual([
+      'PLEASE SELECT ONE:',
+      '1) NORMAL DIFFICULTY',
+      'NORMAL CHARACTERS CAN VISIT MODULES I, II,',
+    ]);
+    expect(game.messages[12]).toBe('ADVANCED PLAYER.');
+    expect(game.messages).not.toContain('3) CONTEST DIFFICULTY (WIN 100 DOLLARS!)');
+    expect(game.messages).not.toContain('MORAFFWARE IS RUNNING A CONTEST TO SEE WHO');
+  });
+
+  it('shows the advice and the race table before it rolls', () => {
+    const game = roller({});
+    rollChar(game);
+    expect(game.messages[13]).toBe('CREATING A CHARACTER:');
+    expect(game.messages[25]).toBe('RACE SELECTION:');
+    expect(game.messages[29]).toBe('1) HUMANOID 14         14        14        14         14    14');
+    expect(game.messages[37]).toBe('RACE: HUMANOID');
+  });
+
+  it('asks for the name, then shows the class descriptions and what was picked', () => {
+    const game = roller({ cls: 6, name: 'ZOG' });
+    rollChar(game);
+    const asked = game.messages.indexOf('PLEASE TYPE YOUR NAME:');
+    expect(game.messages[asked + 1]).toBe('NAME: ZOG');
+    expect(game.messages[asked + 2]).toBe('PLEASE SELECT A CLASS BY HITTING A NUMBER 1-7:');
+    expect(game.messages[asked + 18]).toBe('CLASS: MAGE');
+  });
+
+  it("ends on the health and spell points, with the game's own spacing", () => {
+    const game = roller({ cls: 3, race: 7 });
+    rollChar(game);
+    const pc = game.pc;
+    expect(game.messages[game.messages.length - 1]).toBe(
+      `SPELL POINTS: ${pc.maxSp}    HEALTH POINTS: ${pc.maxHp}`,
+    );
   });
 });

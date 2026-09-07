@@ -1,5 +1,5 @@
 import urollText from '../uroll.txt?raw';
-import type { Game } from './state';
+import type { Game, PlayerCharacter } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
 // the unpacked executable. The comment on each say call gives the address of every line it
@@ -240,4 +240,315 @@ export function designYourOwn(game: Game): boolean {
     }
   }
   return true;
+}
+
+/**
+ * The memset at the top of roll_char (exe 3000:4ca8, unf.c "roll_char"): all 0xa87 bytes of the
+ * character record go to zero before anything about the new character is rolled. The fields the
+ * port keeps as a string or an array come back empty and all-zero, which is those same bytes.
+ *
+ * Nothing puts the character's own level back up afterwards, so a character starts play at level
+ * 0 with no experience and reaches level 1 at the inn. Every freshly rolled save file in the
+ * game folder has a zero there.
+ */
+export function blankPlayerCharacter(): PlayerCharacter {
+  return {
+    name: '',
+    race: 0,
+    sex: 0,
+    cls: 0,
+    hp: 0,
+    maxHp: 0,
+    sp: 0,
+    maxSp: 0,
+    height: 0,
+    weight: 0,
+    loadedWeight: 0,
+    weaponsOwned: [0, 0, 0, 0, 0, 0, 0, 0],
+    weaponPlus: [0, 0, 0, 0, 0, 0, 0, 0],
+    weapon: 0,
+    armorOwned: [0, 0, 0, 0, 0, 0, 0, 0],
+    armorPlus: [0, 0, 0, 0, 0, 0, 0, 0],
+    armor: 0,
+    shield: 0,
+    spellbook: Array.from({ length: 180 }, () => 0),
+    scrolls: Array.from({ length: 180 }, () => 0),
+    wands: Array.from({ length: 180 }, () => 0),
+    money: 0,
+    bank: 0,
+    crystals: 0,
+    exp: 0,
+    lev: 0,
+    dir: 0,
+    x: 0,
+    y: 0,
+    level: 0,
+    module: 0,
+    mapCursorX: 0,
+    mapCursorY: 0,
+    luckyCharms: 0,
+    disease: 0,
+    poison: 0,
+    tempWeaponPlus: 0,
+    tempArmorPlus: 0,
+    bodyArmor: 0,
+    protRing: 0,
+    antiMagicRing: 0,
+    feather: 0,
+    fastMove: 0,
+    invisible: 0,
+    age: 0,
+    prepStrength: 0,
+    prepAgility: 0,
+    superStrength: 0,
+    superAgility: 0,
+    strengthTimer: 0,
+    speedTimer: 0,
+    slowEnemiesTimer: 0,
+    powerWeapon: 0,
+    powerWeaponTime: 0,
+    protection: 0,
+    protectionTime: 0,
+    resistPoisonTimer: 0,
+    resistDiseaseTimer: 0,
+    antiColdTimer: 0,
+    antiFireTimer: 0,
+    resistDrainTimer: 0,
+    sleepTimer: 0,
+    holdMonsterTimer: 0,
+    unread7fc: 0,
+    unread7fe: 0,
+    unread808: 0,
+    unread80a: 0,
+    unread80c: 0,
+    unread80e: 0,
+    unread810: 0,
+    str: 0,
+    iq: 0,
+    wis: 0,
+    con: 0,
+    dex: 0,
+    luck: 0,
+    gauntlet: 0,
+    hard: 0,
+  };
+}
+
+/**
+ * FUN_4000_55b2 (exe 4000:55b2, unf.c "FUN_4000_55b2") as roll_char calls it: the name the
+ * player types, cut to the 18 characters the record's name field holds.
+ *
+ * The original reads the keyboard a key at a time. Every key goes through toupper and only
+ * letters, digits and the space bar are taken, so a name is upper case with nothing else in it.
+ * Enter finishes and Escape gives up, but both are ignored until at least one character has been
+ * typed, so a character cannot end up with no name at all. The port takes what the hook answers
+ * as final and only filters it.
+ */
+export function typedName(typed: string): string {
+  let name = '';
+  for (const character of typed.toUpperCase()) {
+    if (name.length === 18) break;
+    if (/[A-Z0-9 ]/.test(character)) name += character;
+  }
+  return name;
+}
+
+/**
+ * The spells a class starts with, in roll_char (exe 3000:4c77, unf.c "roll_char") straight after
+ * the class menu. The spell book is 180 flags indexed `type * 45 + level * 3 + slot`, the same
+ * way the scrolls and the wands are.
+ *
+ * A monk has every one of the 180 set, the fifteen unused slots on the end of each of the four
+ * lists included: that is the class UROLL.TXT says "has ability to cast spells without
+ * spellbooks". Everyone but a fighter starts with the preparation Little Cure, the wizard, sage
+ * and mage with the wizard Magic Zap, and the worshipper, priest and sage with priest Strength.
+ */
+export function startingSpells(game: Game): void {
+  const pc = game.pc;
+  if (pc.cls === 2) {
+    for (let slot = 0; slot < 3; slot++) {
+      for (let level = 0; level < 15; level++) {
+        for (let type = 0; type < 4; type++) pc.spellbook[type * 45 + level * 3 + slot] = 1;
+      }
+    }
+  }
+  if (pc.cls !== 0) pc.spellbook[1 * 45 + 0 * 3 + 2] = 1;
+  if (pc.cls === 3 || pc.cls === 5 || pc.cls === 6) pc.spellbook[2 * 45 + 0 * 3 + 1] = 1;
+  if (pc.cls === 1 || pc.cls === 4 || pc.cls === 5) pc.spellbook[3 * 45 + 0 * 3 + 2] = 1;
+}
+
+/**
+ * FUN_2000_3d9b (exe 2000:3d9b, unf.c "FUN_2000_3d9b"): throw away everything the game has
+ * cached about the view it is showing, so the next frame is drawn from nothing.
+ *
+ * Nearly all of it is display state this port does not keep: twelve bytes at DS:034c, a dozen
+ * -1s over the drawing scratch, the eight counters at DS:ca67. The two the Game does have are
+ * the flags that say the 3D view has to be redrawn and the map re-centred on the player.
+ */
+export function resetViewCaches(game: Game): void {
+  game.redrawView = true;
+  game.recenterMap = true;
+}
+
+/**
+ * roll_char (exe 3000:4c77, unf.c "roll_char"): create a character, from the difficulty menu to
+ * the file the finished character is written out to.
+ *
+ * It shows five screens out of UROLL.TXT — the difficulty menu, the contest screen, the advice,
+ * the race table and the class descriptions — asks six questions, and rolls the character
+ * between the third and the fourth. Where the original writes the character to its file, the
+ * port records a `characterCreated` event with the record and the file number instead; where it
+ * stocks floor 1 with monsters, through stock_level (exe 2000:671e), the port does nothing,
+ * which is the same place the rest of this port stops.
+ *
+ * A character comes out of here at level 0 with no experience: nothing in the roller writes the
+ * level field the memset zeroed.
+ */
+export function rollChar(game: Game): void {
+  const pc = game.pc;
+  // The original zeroes the module at DS:c036 first, which the memset on the next line does too.
+  Object.assign(pc, blankPlayerCharacter());
+  const uroll = openUroll();
+  game.say(...readUrollLines(uroll, 13));
+  // UROLL.TXT describes a third difficulty, the shareware contest, over the next three lines.
+  // This is the registered game, whose menu only takes 1 or 2, so it reads them and throws them
+  // away and there is no way to pick it.
+  readUrollLines(uroll, 3);
+  const difficulty = game.askDifficulty();
+  // DS:c647, the contest flag. Nothing can set it, because the menu above is the only thing
+  // that writes it and it never comes back with anything but 0 or 1.
+  let contest = 0;
+  if (difficulty === 0) {
+    pc.hard = 0;
+  } else {
+    pc.hard = 1;
+    contest = difficulty === 1 ? 0 : 1;
+  }
+  if (contest === 1) {
+    game.say(...readUrollLines(uroll, 12));
+    game.events.push({ kind: 'tabletShown', entry: 0x55 });
+  } else {
+    readUrollLines(uroll, 12);
+  }
+  game.say(...readUrollLines(uroll, 12));
+  // The srand(clock()) between the advice screen and the race screen, deliberately not
+  // ported: see the README's third departure. It is the only reseed in the whole roller.
+  game.say(...readUrollLines(uroll, 12));
+  pc.race = game.askRace();
+
+  for (;;) {
+    let choice = 0;
+    for (;;) {
+      // DS:266a with the race's name drawn after it at x = 0x14a
+      game.say(`RACE: ${RACES[pc.race].name}`);
+      rollCharacteristics(game);
+      showRolledCharacter(game, 1);
+      // DS:26eb 2702 271a 2737
+      game.say(
+        'Y) KEEP THIS CHARACTER',
+        'N) ROLL A NEW CHARACTER',
+        'D) DESIGN YOUR OWN CHARACTER',
+        'PLEASE SELECT ONE OF THE ABOVE',
+      );
+      choice = game.askKeepRerollDesign();
+      if (choice === 0) break;
+      if (choice === 1) showRolledCharacter(game, 0);
+      if (choice === 2) break;
+    }
+    if (choice === 0) break;
+    // A designed character is kept without being asked again; Escape rolls another one.
+    if (designYourOwn(game)) break;
+  }
+
+  game.say('PLEASE TYPE YOUR NAME:'); // DS:2872
+  pc.name = typedName(game.askName());
+  // DS:2872 + 17, which is the tail of the same string, with the name drawn after it
+  game.say(`NAME: ${pc.name}`);
+  game.say(...readUrollLines(uroll, 16));
+  pc.cls = game.askClass();
+  startingSpells(game);
+  // DS:2889 with the class name drawn after it at x = 0x3d4
+  game.say(`CLASS: ${CLASS_NAMES[pc.cls]}`);
+
+  pc.maxSp = 0;
+  pc.hp = pc.con + Math.trunc(pc.con / 2) + Math.trunc(pc.luck / 2) + game.rng.random(7);
+  pc.maxHp = pc.hp;
+  if (pc.cls === 0 || pc.cls === 5) {
+    pc.maxHp = pc.maxHp + game.rng.random(22) + game.rng.random(22);
+  }
+  if (pc.hard === 0) {
+    pc.maxHp = pc.maxHp + 25;
+    // The 1.5 at DS:25d7 was meant to give a normal-difficulty character half again as many
+    // spell points, but the spell points are worked out below, so this multiplies a zero and
+    // the test in front of it means it does not even do that.
+    if (pc.maxSp !== 0) pc.maxSp = pc.maxSp * 1.5;
+  }
+  switch (pc.cls) {
+    case 0:
+      pc.maxSp = 0;
+      break;
+    case 1:
+      pc.maxSp = Math.trunc((pc.wis * 2 + pc.iq) / 4);
+      break;
+    case 2:
+      pc.maxSp = Math.trunc((pc.wis + pc.iq) / 17) + 1;
+      break;
+    case 3:
+      pc.maxSp = Math.trunc((pc.wis + pc.iq * 2) / 7);
+      break;
+    case 4:
+      pc.maxSp = Math.trunc((pc.wis * 2 + pc.iq) / 8);
+      break;
+    case 5:
+      pc.maxSp = Math.trunc((pc.wis + pc.iq) / 18);
+      break;
+    case 6:
+      pc.maxSp = Math.trunc((pc.wis + pc.iq * 2) / 12);
+      break;
+  }
+  pc.sp = pc.maxSp;
+  pc.hp = pc.maxHp;
+  // DS:28bf and DS:28ce, whose four leading spaces are the gap between the two numbers
+  game.say(`SPELL POINTS: ${Math.trunc(pc.sp)}    HEALTH POINTS: ${pc.maxHp}`);
+  game.events.push({ kind: 'tabletShown', entry: pc.cls + 0x34 });
+
+  pc.x = 0x3a;
+  pc.y = 0x2c;
+  pc.level = 1;
+  pc.module = 0;
+  pc.mapCursorY = game.areaRows >> 1;
+  pc.mapCursorX = game.areaColumns >> 1;
+  pc.unread7fc = 0x862;
+  pc.unread7fe = 0x597;
+  // The kit: bare fists and bare skin, which are the first row of each of the two tables.
+  pc.weaponsOwned[0] = 1;
+  pc.armorOwned[0] = 1;
+  pc.unread808 = 0;
+  pc.unread80a = 0x38;
+  pc.unread80c = 0x3c;
+  pc.unread810 = 0;
+  pc.unread80e = 300;
+
+  pc.money = pc.luck * 5 + game.rng.random(pc.luck * 2);
+  // A fighter gets no magic crystals. The save layout has the bank two fields before this one,
+  // and this writes the crystals, so nobody starts with anything in the bank.
+  if (pc.cls !== 0) {
+    pc.crystals = pc.luck * 2 + game.rng.random(pc.luck * 5);
+  }
+  if (pc.hard === 0) {
+    pc.money = pc.money + game.rng.random(100) + 500;
+    if (pc.luck > 10) {
+      // Three rolls on how much luck is over ten, multiplied together, so a lucky character on
+      // normal difficulty can start with thousands and an unlucky one with a few hundred.
+      pc.money =
+        pc.money +
+        (game.rng.random(pc.luck - 10) + 1) *
+          (game.rng.random(pc.luck - 10) + 1) *
+          (game.rng.random(pc.luck - 10) + 1);
+    }
+  }
+  resetViewCaches(game);
+  // save_player (exe 2000:79ad) writes the record to the file named after the character number.
+  game.events.push({ kind: 'characterCreated', slot: game.slot, pc });
+  // stock_level(0) (exe 2000:671e) fills floor 1 with monsters; not ported, see the README.
 }
