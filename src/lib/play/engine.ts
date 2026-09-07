@@ -13,6 +13,7 @@ import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
 import { chuteUnder, fallDownChute } from './chute';
 import { digHole } from './dig';
+import { swingAtMonster } from './fight';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
 import { showHelp } from './help';
 import { KEY } from './keys';
@@ -177,6 +178,14 @@ export class GameSession {
     if (this.queued.length < KEY_QUEUE) this.queued.push(key);
   }
 
+  /**
+   * The `while (kbhit()) getch();` strike (exe 2000:7f2b) ends with: whatever the player typed
+   * while the swing was on the screen is thrown away rather than answering the next turn.
+   */
+  flushKeys(): void {
+    this.queued = [];
+  }
+
   /** getch (exe 4000:417b): the next key, once there is one. */
   key(): Promise<number> {
     const queued = this.queued.shift();
@@ -303,7 +312,7 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.quit]: { c: 'quit_game', run: quitGame },
   [KEY.help]: { c: 'FUN_3000_7dfc', run: (turn) => showHelp(turn.session) },
   [KEY.f1]: { c: 'FUN_3000_7dfc', run: (turn) => showHelp(turn.session) },
-  [KEY.fight]: { c: 'strike', run: (turn) => notBuiltYet(turn.game, 'SWING AT THE MONSTER YOU FACE') },
+  [KEY.fight]: { c: 'strike', run: swingAtMonster },
   [KEY.repeatFight]: { c: 'movecontrol, the DS:0437 repeat flag', run: (turn) => notBuiltYet(turn.game, 'KEEP SWINGING WITHOUT ANOTHER KEY') },
   [KEY.cast]: { c: 'cast_a_spell', run: (turn) => notBuiltYet(turn.game, 'CAST A SPELL') },
   [KEY.useItem]: { c: 'use_magic_item', run: (turn) => notBuiltYet(turn.game, 'USE A SCROLL, WAND, PAPER OR POTION') },
