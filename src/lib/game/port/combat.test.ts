@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { defend as mechDefend, strike as mechStrike } from '../dotu-mech.js';
+import {
+  attackSeconds as mechAttackSeconds,
+  defend as mechDefend,
+  expValue as mechExpValue,
+  monsterAttackInterval,
+  moveSeconds as mechMoveSeconds,
+  strike as mechStrike,
+} from '../dotu-mech.js';
 import { BorlandRand } from '../unfmap.js';
-import { defend, expNeeded, gainOrDrain, strike } from './combat';
+import {
+  attackTiming,
+  callCheckEng,
+  checkEngagement,
+  defend,
+  engagementTiming,
+  expNeeded,
+  expValue,
+  gainOrDrain,
+  moveSeconds,
+  spendAttackTime,
+  strike,
+} from './combat';
 import { BorlandRng } from './rng';
 import type { Game, Monster, MonsterKind, PlayerCharacter } from './state';
 import { MAP_PLAYER, monsterAt, newGame, setMonsterMap } from './state';
@@ -510,5 +529,212 @@ describe('defend, the breath weapons', () => {
     }
     expect(breaths).toBeGreaterThan(150);
     expect(breaths).toBeLessThan(250);
+  });
+});
+
+/** A game with one monster standing on the square east of the player and its timer at zero. */
+function standingBeside(
+  seed: number,
+  pc: Partial<PlayerCharacter> = {},
+  kind: Partial<MonsterKind> = {},
+): { game: Game; monster: Monster } {
+  const fight = fighting(seed, { hp: 1000000, dex: 20, ...pc }, { x: 41, y: 50 });
+  // Monster type 5 is the one the Shadow bosses fight with: speed 55, so 20 seconds a strike.
+  describeMonster(fight.game, { type: 5, ...kind });
+  fight.game.monsterTimers[0] = 0;
+  fight.game.messages.length = 0;
+  return fight;
+}
+
+describe('checkEngagement', () => {
+  it.each([
+    [0, 40, 49],
+    [1, 40, 51],
+    [2, 39, 50],
+    [3, 41, 50],
+  ])('finds the monster on the square facing %i', (dir, x, y) => {
+    const { game } = fighting(1, { dir }, { x, y });
+    expect(checkEngagement(game)).toBe(0);
+  });
+
+  it('finds nothing through a wall', () => {
+    const { game } = fighting(1, { dir: 3 }, { x: 41, y: 50 });
+    game.retdwall = () => 0;
+    expect(checkEngagement(game)).toBe(-1);
+  });
+
+  it('finds nothing on an empty square', () => {
+    const { game } = fighting(1, { dir: 0 }, { x: 41, y: 50 });
+    expect(checkEngagement(game)).toBe(-1);
+  });
+});
+
+describe('callCheckEng', () => {
+  it('gives a speed 55 monster one strike every 20 seconds', () => {
+    const { game } = standingBeside(21);
+    callCheckEng(game, 1);
+    expect(game.messages).toHaveLength(1);
+    expect(game.monsterTimers[0] + 1).toBe(monsterAttackInterval(55));
+  });
+
+  it('gives a ten second action one strike', () => {
+    const { game } = standingBeside(22);
+    callCheckEng(game, 10);
+    expect(game.messages).toHaveLength(1);
+    expect(game.monsterTimers[0]).toBe(10);
+  });
+
+  it.each([60, 100, 600])('never gives more than three strikes, here for %i seconds', (seconds) => {
+    const { game } = standingBeside(23);
+    callCheckEng(game, seconds);
+    expect(game.messages).toHaveLength(3);
+    // The third strike throws the timer up to the whole of the character's agility first.
+    expect(game.monsterTimers[0]).toBe(game.pc.dex + 20);
+  });
+
+  it('leaves a monster that is not next to the player alone', () => {
+    const { game, monster } = standingBeside(24);
+    monster.x = 43;
+    callCheckEng(game, 600);
+    expect(game.messages).toEqual([]);
+    expect(game.monsterTimers[0]).toBe(-600);
+  });
+
+  it('leaves a monster with a wall between alone', () => {
+    const { game } = standingBeside(25);
+    game.retdwall = () => 0;
+    callCheckEng(game, 600);
+    expect(game.messages).toEqual([]);
+  });
+
+  it('does nothing but move the clock in the town', () => {
+    const { game } = standingBeside(26, { level: 0 });
+    callCheckEng(game, 600);
+    expect(game.messages).toEqual([]);
+    expect(game.monsterTimers[0]).toBe(0);
+    expect(game.secondsElapsed).toBe(600);
+  });
+
+  it('gives Slow Enemies a quarter of its checks back to the timer', () => {
+    const { game } = standingBeside(27, { slowEnemiesTimer: 40, dex: 60 });
+    game.monsterTimers[0] = 400;
+    for (let check = 0; check < 400; check++) callCheckEng(game, 1);
+    // Without the spell the timer would be 0; a third of 60 back one check in four is +5 a check.
+    expect(game.monsterTimers[0]).toBeGreaterThan(400);
+  });
+});
+
+describe('attackTiming', () => {
+  it('engages the monster the player faces and leaves them facing that way', () => {
+    const { game } = fighting(31, { dir: 0 }, { x: 40, y: 49 });
+    expect(attackTiming(game)).toBe(0);
+    expect(game.engaged).toBe(0);
+    expect(game.enemyDir).toBe(0);
+    expect(game.pc.dir).toBe(0);
+    expect(game.engagedAhead).toBe(0);
+  });
+
+  it('turns right round to find a monster beside the player and turns back', () => {
+    const { game } = fighting(31, { dir: 1 }, { x: 40, y: 49 });
+    expect(attackTiming(game)).toBe(0);
+    expect(game.enemyDir).toBe(0);
+    expect(game.pc.dir).toBe(1);
+    expect(game.engagedAhead).toBe(-1);
+  });
+
+  it('turns one more time when there is nothing on any side', () => {
+    const { game } = fighting(31, { dir: 2 }, { x: 10, y: 10 });
+    expect(attackTiming(game)).toBe(-1);
+    expect(game.enemyDir).toBe(2);
+    expect(game.pc.dir).toBe(2);
+  });
+
+  it('starts a new engagement at a roll on the agility about two times in three', () => {
+    const { game } = fighting(31, { dir: 0, dex: 40, invisible: 0 }, { x: 40, y: 49 });
+    let started = 0;
+    for (let meeting = 0; meeting < 600; meeting++) {
+      game.engaged = -1;
+      game.monsterTimers[0] = 9999;
+      attackTiming(game);
+      if (game.monsterTimers[0] === 9999) continue;
+      started++;
+      expect(game.monsterTimers[0]).toBeGreaterThanOrEqual(0);
+      expect(game.monsterTimers[0]).toBeLessThan(40);
+    }
+    expect(started).toBeGreaterThan(350);
+    expect(started).toBeLessThan(450);
+  });
+
+  it('leaves the timers alone when the player walks away from the last monster', () => {
+    const { game } = fighting(31, { dir: 0 }, { x: 10, y: 10 });
+    game.engaged = 0;
+    game.monsterTimers[0] = 7;
+    expect(attackTiming(game)).toBe(-1);
+    expect(game.engaged).toBe(-1);
+    expect(game.monsterTimers[0]).toBe(7);
+  });
+});
+
+describe('the battle banner', () => {
+  it('prints the level, the name, the experience and the hit points', () => {
+    const { game } = fighting(41, { dir: 3, level: 5 }, { x: 41, y: 50, level: 40, hp: 1234 });
+    engagementTiming(game);
+    expect(game.battleInfoOn).toBe(true);
+    expect(game.messages).toEqual([
+      'YOU ARE FIGHTING A LEVEL 40',
+      'GARGALON',
+      'EXP. VALUE: ' + expValue(game, 0).toFixed(0).padEnd(20),
+      'THIS IS AN AVERAGE JOE (JILL)',
+      'IT HAS 1234 HEALTH POINTS LEFT',
+    ]);
+  });
+
+  it.each([
+    [5, 'EXP. VALUE: '],
+    [20, 'EXP: '],
+    [60, 'EX:'],
+    [90, ''],
+  ])('shortens the label to %s on floor %i', (floor, label) => {
+    const { game } = fighting(41, { dir: 3, level: floor }, { x: 41, y: 50, level: 40 });
+    engagementTiming(game);
+    expect(game.messages[2]).toBe(label + expValue(game, 0).toFixed(0).padEnd(20));
+  });
+
+  it('agrees with dotu-mech on what a kill is worth', () => {
+    const { game } = fighting(41, { dir: 3 }, { x: 41, y: 50, level: 61 });
+    expect(expValue(game, 0)).toBeCloseTo(mechExpValue(61, 1), 6);
+  });
+
+  it('is worth nothing at all when the description says so', () => {
+    const { game } = fighting(41, { dir: 3 }, { x: 41, y: 50, level: 40 });
+    describeMonster(game, { expMult: 0 });
+    expect(expValue(game, 0)).toBe(0);
+  });
+});
+
+describe('the seconds an action costs', () => {
+  it('agrees with dotu-mech on a step', () => {
+    for (const [weight, agility] of [
+      [400, 0],
+      [150, 20],
+      [0, 90],
+      [900, 5],
+    ]) {
+      const game = newGame({ pc: { loadedWeight: weight, dex: agility } });
+      expect(moveSeconds(game)).toBe(mechMoveSeconds(weight, agility));
+    }
+  });
+
+  it('spends a swing as the weapon time and then a fifth of the missing agility', () => {
+    const { game } = standingBeside(51, { dex: 20, weapon: 7 });
+    spendAttackTime(game);
+    expect(game.secondsElapsed).toBe(mechAttackSeconds(game.weaponTime[7], 20));
+    expect(game.secondsElapsed).toBe(25 + 13);
+  });
+
+  it('skips the second check for a character quick enough', () => {
+    const { game } = standingBeside(52, { dex: 84, weapon: 1 });
+    spendAttackTime(game);
+    expect(game.secondsElapsed).toBe(game.weaponTime[1]);
   });
 });

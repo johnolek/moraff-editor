@@ -96,6 +96,10 @@ those replace every character that is not a letter or a digit with an underscore
 
 * `state.ts` — the `Game` state, the monster and item tables, and `newGame()` for tests.
 * `rng.ts` — `Random(n)` over Borland's generator.
+* `combat.ts` — `strike` and `defend`, with the drains, the poison, the disease, the puffballs
+  and the five breath weapons, and the clock that decides how many attacks an adjacent monster
+  gets while the player acts: `check_engagement`, `call_check_eng`, `attack_timing`, the battle
+  banner, and the seconds a step and a swing cost.
 * `magic.ts` — all four of `spell_effect`'s spell lists and `spellEffect` itself, with the
   helpers they share: the explosion roll, the autokill roll, Drain Monster, Go Away, Sleep,
   Relocate, Pass Wall, the protection and power weapon levels, the five resistances, the two
@@ -104,5 +108,8 @@ those replace every character that is not a letter or a digit with an underscore
 
 ## What is not ported yet
 
-* Everything else: movement, combat, the town, the dungeon (the dungeon generator is already
-  ported, verbatim from the reference bundle, in `src/lib/game/unfmap.js`).
+* `kill_monster` (exe 3000:b12d): experience, drops and the boss rewards. Where a fight reaches
+  the end of a monster, the port leaves its hit points where they land and the caller is left to
+  notice.
+* Everything else: movement, the town, the dungeon (the dungeon generator is already ported,
+  verbatim from the reference bundle, in `src/lib/game/unfmap.js`).

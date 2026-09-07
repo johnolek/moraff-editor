@@ -182,7 +182,10 @@ export interface MonsterKind {
   special: number;
   /** Byte 25: which row of `monsterStats` this monster fights with. */
   type: number;
-  /** Bytes 26..27: what a kill's experience is multiplied by. -1 is worth nothing at all. */
+  /**
+   * Bytes 26..27 plus one: what a kill's experience is multiplied by. `dotu-data.json` stores it
+   * that way, so the -1 the exe treats as worth nothing at all arrives here as 0.
+   */
   expMult: number;
 }
 
@@ -222,6 +225,8 @@ export interface MonsterStats {
   hpPerLevel: number;
   /** The `dex` column of the table; Autokill rolls against it, and it sets the attack interval. */
   speed: number;
+  /** The line the battle banner prints under the monster's name, such as "THIS ONE IS FAST!". */
+  text: string;
 }
 
 /**

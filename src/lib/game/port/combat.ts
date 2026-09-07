@@ -1,5 +1,5 @@
 import type { Game } from './state';
-import { MAP_EMPTY, setMonsterMap } from './state';
+import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
 // the unpacked executable. The comment on each say call gives the address of every line it
@@ -394,4 +394,221 @@ export function defend(game: Game, slot: number): number {
   }
   if (damage > 0) pc.hp -= damage;
   return damage;
+}
+
+/**
+ * check_engagement (exe 2000:a0c8, unf.c "check_engagement"): the slot of the monster standing
+ * on the square the player faces, or -1 when there is nothing there or a wall in the way.
+ */
+export function checkEngagement(game: Game): number {
+  const pc = game.pc;
+  let x = pc.x;
+  let y = pc.y;
+  if (pc.dir === 0) {
+    if (game.retdwall(x, y, 1, pc.level, pc.module) !== 3) return -1;
+    y -= 1;
+  }
+  if (pc.dir === 1) {
+    if (game.retdwall(x, y + 1, 1, pc.level, pc.module) !== 3) return -1;
+    y += 1;
+  }
+  if (pc.dir === 2) {
+    if (game.retdwall(x, y, 0, pc.level, pc.module) !== 3) return -1;
+    x -= 1;
+  }
+  if (pc.dir === 3) {
+    if (game.retdwall(x + 1, y, 0, pc.level, pc.module) !== 3) return -1;
+    x += 1;
+  }
+  const slot = monsterAt(game, x, y);
+  if (slot !== -1 && slot !== MAP_PLAYER) return slot;
+  return -1;
+}
+
+/**
+ * call_check_eng (exe 2000:a319, unf.c "call_check_eng"): let `seconds` of game time go by and
+ * give every monster standing next to the player, with no wall between, whatever attacks that
+ * much time buys it.
+ *
+ * A monster's timer counts down the seconds until its next attack and goes back up by
+ * `(85 - its type's speed) / 3 + 10` after each one, so a speed 55 monster attacks every 20
+ * seconds. Three attacks is the most one call can produce: the third one throws the timer up to
+ * the character's whole agility first, which no ordinary action is long enough to spend.
+ */
+export function callCheckEng(game: Game, seconds: number): void {
+  const pc = game.pc;
+  game.secondsElapsed += seconds;
+  // The town has no monsters, so only the clock moves.
+  if (pc.level === 0) return;
+  for (let slot = 0; slot < 145; slot++) {
+    game.monsterTimers[slot] -= seconds;
+    // Slow Enemies gives a third of the character's agility back to a monster's timer one check
+    // in four — every monster on the floor, not only the ones standing next to the player.
+    if (pc.slowEnemiesTimer > 0 && game.rng.random(4) === 0) {
+      game.monsterTimers[slot] += Math.trunc(pc.dex / 3);
+    }
+    const monster = game.monsters[slot];
+    const dx = monster.x - pc.x;
+    const dy = monster.y - pc.y;
+    if (!((dy === 0 && Math.abs(dx) === 1) || (dx === 0 && Math.abs(dy) === 1))) continue;
+    if (
+      !(
+        (dy === -1 && game.retdwall(pc.x, pc.y, 1, pc.level, pc.module) === 3) ||
+        (dy === 1 && game.retdwall(pc.x, pc.y + 1, 1, pc.level, pc.module) === 3) ||
+        (dx === -1 && game.retdwall(pc.x, pc.y, 0, pc.level, pc.module) === 3) ||
+        (dx === 1 && game.retdwall(pc.x + 1, pc.y, 0, pc.level, pc.module) === 3)
+      )
+    ) {
+      continue;
+    }
+    let strikes = 0;
+    while (game.monsterTimers[slot] < 0) {
+      strikes += 1;
+      if (strikes === 3) game.monsterTimers[slot] = pc.dex;
+      // The kind is read again on each pass, so a puffball that has just turned itself into an
+      // empty slot sets the next interval from monster type 0 rather than its own.
+      const stats = game.monsterStats[game.monsterKinds[monster.type].type];
+      game.monsterTimers[slot] += Math.trunc((85 - stats.speed) / 3) + 10;
+      if (monster.hp > 0) game.lastMonsterDamage = defend(game, slot);
+    }
+  }
+}
+
+/**
+ * attack_timing (exe 2000:b8f7, unf.c "attack_timing"): work out which monster the player is
+ * fighting. It looks the way the player faces first and then round the other three sides, and
+ * hands back the slot it settles on, leaving the character facing the way they were.
+ *
+ * Meeting a monster it was not already fighting, it usually starts that monster's attack timer
+ * at a roll on the character's agility, which is why a nimble character gets the first move.
+ * One new engagement in three does not, unless the character is invisible and lucky.
+ */
+export function attackTiming(game: Game): number {
+  const pc = game.pc;
+  const facing = pc.dir;
+  let slot = checkEngagement(game);
+  if (slot === -1) {
+    pc.dir = (pc.dir + 1) % 4;
+    slot = checkEngagement(game);
+    if (slot === -1) {
+      pc.dir = (pc.dir + 1) % 4;
+      slot = checkEngagement(game);
+      if (slot === -1) {
+        pc.dir = (pc.dir + 1) % 4;
+        slot = checkEngagement(game);
+        // The step is inside the test and the wrap is not, so the fourth failure turns the
+        // character one more time and every other path leaves the direction alone.
+        if (slot === -1) pc.dir += 1;
+        pc.dir = pc.dir % 4;
+      }
+    }
+  }
+  if (slot !== game.engaged) {
+    game.engaged = slot;
+    // The original also aims the pointer at DS:c64b at this monster's hit points, which is what
+    // strike writes its damage through.
+    if (
+      game.rng.random(3) !== 0 ||
+      (pc.invisible !== 0 && game.rng.random(pc.level + Math.trunc(pc.level / 2)) > pc.lev)
+    ) {
+      const start = game.rng.random(pc.dex);
+      // Walking away from the last monster leaves the slot at -1 and the original writes the
+      // roll at monster_time[-1], which is the two bytes in front of the timer array: the start
+      // of the monster status line at DS:c4dd. The port rolls and throws the roll away.
+      if (game.engaged !== -1) game.monsterTimers[game.engaged] = start;
+    }
+  }
+  game.enemyDir = pc.dir;
+  pc.dir = facing;
+  game.engagedAhead = checkEngagement(game);
+  return slot;
+}
+
+/**
+ * exp_value (exe 3000:a0fa, unf.c "exp_value"): what killing the monster in slot `slot` is
+ * worth. Levels past 130 are all worth the same.
+ *
+ * Ghidra kept the `pow` base — the double at DS:2f60, which is 1.23 — and dropped the FPU
+ * arithmetic around it; the shape is `expValue` in `dotu-mech.js`. A monster whose experience
+ * multiplier is the exe's -1 makes the original return without leaving anything behind, so its
+ * caller prints whatever was on the floating point stack; the port returns 0.
+ */
+export function expValue(game: Game, slot: number): number {
+  const monster = game.monsters[slot];
+  let level = monster.level;
+  if (level > 130) level = 130;
+  const kind = game.monsterKinds[monster.type];
+  if (kind.expMult === 0) return 0;
+  return kind.expMult * (level + 1 + 5 * Math.pow(1.23, level));
+}
+
+/**
+ * print_battle_hp_info (exe 2000:b68d, unf.c "print_battle_hp_info"): the hit points line under
+ * the battle banner. It reports the monster the player is facing, falling back to the one they
+ * are engaging when there is nothing ahead of them.
+ */
+export function printBattleHpInfo(game: Game): void {
+  const slot = game.engagedAhead === -1 ? game.engaged : game.engagedAhead;
+  // DS:1af7 1aff, with the hit points written between them
+  game.say(`IT HAS ${game.monsters[slot].hp} HEALTH POINTS LEFT`);
+}
+
+/**
+ * engagement_timing (exe 2000:b782, unf.c "engagement_timing"): the battle banner — the level
+ * and name of the monster being fought, what killing it is worth, the line its type carries, and
+ * its hit points. Despite the name the function catalog gives it, it keeps no time; the timers
+ * are {@link callCheckEng} and {@link attackTiming}.
+ *
+ * The label in front of the experience gets shorter the deeper the floor is, because the number
+ * behind it gets longer, and past floor 80 there is no room for a label at all.
+ *
+ * The caller only reaches this with a monster in front of the player. The original would read
+ * the six bytes in front of the monster table if there were not.
+ */
+export function engagementTiming(game: Game): void {
+  const pc = game.pc;
+  game.battleInfoOn = true;
+  game.engagedAhead = checkEngagement(game);
+  const monster = game.monsters[game.engagedAhead];
+  const kind = game.monsterKinds[monster.type];
+  // DS:1b13 with the level written on the end
+  game.say(`YOU ARE FIGHTING A LEVEL ${monster.level}`);
+  game.say(kind.name);
+  let label = ''; // DS:06f0
+  if (pc.level <= 80) {
+    if (pc.level <= 40) {
+      if (pc.level <= 10) label = 'EXP. VALUE: '; // DS:1b37
+      else label = 'EXP: '; // DS:1b31
+    } else label = 'EX:'; // DS:1b2d
+  }
+  // DS:12fb is "%-20.0f", so the number is padded out to twenty columns with spaces
+  game.say(label + expValue(game, game.engagedAhead).toFixed(0).padEnd(20));
+  game.say(game.monsterStats[kind.type].text);
+  printBattleHpInfo(game);
+}
+
+/**
+ * FUN_2000_b1b7 (exe 2000:b1b7, unf.c "FUN_2000_b1b7"): how many seconds one step costs. A
+ * character carrying nothing much with a good agility takes one second; every hundred points of
+ * weight over ten times their agility adds another.
+ */
+export function moveSeconds(game: Game): number {
+  let over = game.pc.loadedWeight + 100 - game.pc.dex * 10;
+  if (over < 0) over = 0;
+  return Math.trunc(over / 100) + 1;
+}
+
+/**
+ * The player's attack time, which movecontrol (exe 2000:c308, unf.c "movecontrol") spends inline
+ * rather than in a function of its own: the weapon in hand costs its own time, and a character
+ * whose agility is under 84 pays a fifth of what they are short on top.
+ *
+ * `attackSeconds` in `dotu-mech.js` adds the two together, which is the total time a swing
+ * costs. The game spends them as two separate checks, and each check is another run at an
+ * adjacent monster's timer, so the two are not quite the same thing.
+ */
+export function spendAttackTime(game: Game): void {
+  const pc = game.pc;
+  callCheckEng(game, game.weaponTime[pc.weapon]);
+  if (85 - pc.dex > 1) callCheckEng(game, Math.trunc((85 - pc.dex) / 5));
 }

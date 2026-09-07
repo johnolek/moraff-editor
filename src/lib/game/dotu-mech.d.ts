@@ -32,6 +32,8 @@ export const MONSTER_TYPE_ODDS: {
 };
 /** Seconds between a monster's strikes, from its type's speed. */
 export function monsterAttackInterval(speed: number): number;
+/** Seconds of game time one step takes, from the carried weight and the agility. */
+export function moveSeconds(weight: number, agi: number): number;
 /** Breath damage: ml + rand(ml), halved by the matching resist. */
 export function breathDamage(ml: number, resisted: boolean, rnd?: () => number): number;
 
