@@ -1,3 +1,4 @@
+import { DUNGEON_XMAX as MW_DUNGEON_XMAX, DUNGEON_YMAX as MW_DUNGEON_YMAX } from '../game/mwmap.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX } from '../game/unfmap.js';
 import type { Point } from './viewport';
 
@@ -18,6 +19,15 @@ export const MAP_COLUMNS = DUNGEON_XMAX;
 export const MAP_ROWS = DUNGEON_YMAX;
 
 export const UNFORGIVEN_AREA: MapArea = { columns: MAP_COLUMNS, rows: MAP_ROWS };
+
+/**
+ * How much of a floor Moraff's World shows and lets you walk on: 79 columns and all 110 rows.
+ * Its two globals are DAT_6000_448b = 79 and DAT_6000_448d = 110, and movecontrol refuses a
+ * step that would leave `0 <= x < 79` and `0 <= y < 110`. wall_side walls off the west side of
+ * column 79 and everything past it, so the generator's last column is enclosed and unreachable,
+ * while every row it makes is walked on.
+ */
+export const MORAFFS_WORLD_AREA: MapArea = { columns: MW_DUNGEON_XMAX, rows: MW_DUNGEON_YMAX };
 
 /** Whether a square is one of the squares the game shows. */
 export function isOnMap(point: Point, area: MapArea): boolean {
