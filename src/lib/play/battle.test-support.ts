@@ -55,6 +55,34 @@ export function townSquare(): { x: number; y: number } {
   throw new Error('no walkable town square');
 }
 
+/**
+ * A character on a dungeon floor with a monster in front of them, which is where a monster can
+ * fight back: call_check_eng leaves the town alone.
+ */
+export function onAFloorFacingAMonster(
+  rng: Rng,
+  level: number,
+  overrides: Partial<PlayerCharacter> = {},
+): GameSession {
+  const rows: MapSquare[][] = UNFORGIVEN_MAP.floor(level, 0);
+  const start = (() => {
+    for (let y = 1; y < 100; y++) {
+      for (let x = 1; x < 76; x++) {
+        if (!rows[y][x].solid && rows[y][x].n === 3) return { x, y };
+      }
+    }
+    throw new Error(`no square with a way north on floor ${level}`);
+  })();
+  const session = startGame(characterFile({ level, dir: 0, ...start, ...overrides }), rng);
+  void runMoveControl(session);
+  const planted = session.game.monsters[0];
+  session.game.monsterMap[planted.y * 80 + planted.x] = 0xff;
+  planted.x = start.x;
+  planted.y = start.y - 1;
+  session.game.monsterMap[planted.y * 80 + planted.x] = 0;
+  return session;
+}
+
 /** A character standing in the town with the loop running and waiting for its first key. */
 export function inTheTown(rng: Rng, overrides: Partial<PlayerCharacter> = {}): GameSession {
   const session = startGame(

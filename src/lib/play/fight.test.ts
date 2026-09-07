@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { Rng } from '../game/port/rng';
-import { facingAMonster, inTheTown, press, settle } from './battle.test-support';
+import { BorlandRng, type Rng } from '../game/port/rng';
+import { facingAMonster, inTheTown, onAFloorFacingAMonster, press, settle } from './battle.test-support';
 import { KEY } from './keys';
 
 /** A generator that rolls as high as it can, so a swing always lands. */
@@ -63,5 +63,22 @@ describe('keeping the swings up with Ctrl-F', () => {
     await settle();
     expect(session.repeatFight).toBe(false);
     expect(session.game.monsters[0].hp).toBeGreaterThan(0);
+  });
+});
+
+describe('dying in a fight', () => {
+  it('ends the game once the monster fighting back has taken the last hit point', async () => {
+    // A stocked floor needs a generator that answers differently each time it is asked, since
+    // the stocking draws squares until it finds a free one.
+    const session = onAFloorFacingAMonster(new BorlandRng(7), 3, { hp: 1, maxHp: 1, lev: 0, str: 1 });
+    await settle();
+    for (let swing = 0; swing < 60 && !session.view().over; swing++) {
+      // The monster's timer has run out, so the seconds the swing costs buy it an attack.
+      session.game.monsterTimers[0] = -1;
+      await press(session, KEY.fight);
+    }
+    expect(session.game.pc.hp).toBe(-100);
+    expect(session.view().dead).toBe(true);
+    expect(session.view().over).toBe(true);
   });
 });
