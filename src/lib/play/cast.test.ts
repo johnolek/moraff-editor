@@ -215,10 +215,10 @@ describe('casting out of an item', () => {
     expect(session.box).toContain('FIGHTERS CAN ONLY CAST');
   });
 
-  it('says the potion line is not built yet', async () => {
+  it('opens the potion menu on the fourth line', async () => {
     const session = playing(wandCarrier([], 0));
     await press(session, KEY.useItem, 0x34);
-    expect(session.box).toContain('NOT BUILT YET: DRINK ONE OF THE SIX POTIONS');
+    expect(session.box).toContain('PRESS 1-6 TO TAKE A POTION:');
   });
 
   it('closes the menu on escape', async () => {

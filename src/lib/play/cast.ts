@@ -32,7 +32,7 @@ import {
 import type { Game, SpellChoice } from '../game/port/state';
 import type { Turn } from './engine';
 import { gearMenuLines } from './gear';
-import { notBuiltYet } from './screens';
+import { drinkAPotion } from './potions';
 
 /**
  * cast_a_spell (exe 2000:e017, unf.c "cast_a_spell"), the whole of it: the menu of the eight
@@ -179,8 +179,8 @@ const ITEM_MENU_SOURCES = [CAST_SCROLL, CAST_WAND, CAST_PAPER];
  *
  * The first three lines are cast_a_spell over the scrolls, the wands and the sheets of paper,
  * and a scroll or a sheet is used up where a wand loses one of its charges. The fourth line is
- * the potion menu (exe 3000:7052), which is not built yet and says so; the fifth is
- * use_magic_item (exe 2000:b202), the six things a kill turns up.
+ * the potion menu (exe 3000:7052) and the fifth is use_magic_item (exe 2000:b202), the six
+ * things a kill turns up.
  *
  * movecontrol draws "USE MAGIC MENU:" one line above the box first (exe 2000:d5b0), in the colour
  * at DS:0435, which is white and nothing ever writes to.
@@ -204,8 +204,7 @@ export async function useAnItem(turn: Turn): Promise<void> {
     await useMagicItem(game);
     return;
   }
-  notBuiltYet(game, 'DRINK ONE OF THE SIX POTIONS');
-  game.pressAnyKey();
+  await drinkAPotion(turn);
 }
 
 /**
