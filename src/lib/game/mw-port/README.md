@@ -17,8 +17,9 @@ a lot of shape.
 ## Where this is going
 
 The Dungeons of the Unforgiven port is meant to become that game, playable in a browser. This
-one starts the same way, from the same end: `roll_char` makes a character the real game will
-load, so the New Character tab can roll one for either game.
+one is the same: `src/lib/play/mw/` is the play loop these functions are called from, and
+`roll_char` makes a character the real game will load, so the New Character tab can roll one for
+either game.
 
 ## The departures
 
@@ -146,8 +147,10 @@ routine Dungeons of the Unforgiven reads its `.uhp` files with, so `screens.ts` 
 
 ## What is not ported
 
-The play loop that ties all of this together, and the world map. The dungeon generator is already
-ported, verbatim from the reference bundle, in `../mwmap.js`.
+The world map, `FUN_2000_7756`'s drop menu, `FUN_3000_9ac0`'s vitamin pills and
+`FUN_3000_e221`'s magic items. The dungeon generator is already ported, verbatim from the
+reference bundle, in `../mwmap.js`, and the play loop that ties all of this together is
+`src/lib/play/mw/`.
 
 ## Where the code and ROLLER.md disagree
 
