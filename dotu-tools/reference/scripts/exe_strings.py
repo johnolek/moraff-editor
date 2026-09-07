@@ -1,23 +1,27 @@
 #!/usr/bin/env python3
-"""Print the C strings in the data segment of the PKLITE-unpacked unf.exe, so the text the
-game prints can be read exactly instead of guessed from Ghidra's string labels.
+"""Print the C strings in the data segment of a PKLITE-unpacked Moraff executable, so the text
+the game prints can be read exactly instead of guessed from Ghidra's string labels.
 
 Usage: exe_strings.py <unpacked unf.000.exe> DS:3ef7 3b46 ...
        exe_strings.py <unpacked unf.000.exe> --range 3900 3a00
+       exe_strings.py --ds 2bb9 <unpacked world.000.exe> DS:4706 ...
 
 Offsets are hex, with or without a "DS:" prefix.  Each string is printed repr-style so that
-leading spaces (the game indents its continuation lines with them) are visible."""
+leading spaces (the game indents its continuation lines with them) are visible.
+
+--ds gives the data segment of a different game; it defaults to Dungeons of the Unforgiven's.
+Moraff's World's is 2bb9, which mw-tools/decomp/README.md's segment table names as DGROUP."""
 import struct
 import sys
 
-DATA_SEGMENT = 0x30A0
+UNFORGIVEN_DATA_SEGMENT = 0x30A0
 
 
-def load_data_segment(path):
+def load_data_segment(path, data_segment):
     exe = open(path, 'rb').read()
     header = struct.unpack('<14H', exe[:28])
     image = exe[header[4] * 16:]
-    return image[DATA_SEGMENT * 16:]
+    return image[data_segment * 16:]
 
 
 def read_string(data, offset):
@@ -30,9 +34,14 @@ def parse_offset(text):
 
 
 def main(argv):
+    argv = list(argv)
+    data_segment = UNFORGIVEN_DATA_SEGMENT
+    if len(argv) > 2 and argv[1] == '--ds':
+        data_segment = parse_offset(argv[2])
+        del argv[1:3]
     if len(argv) < 3:
         sys.exit(__doc__)
-    data = load_data_segment(argv[1])
+    data = load_data_segment(argv[1], data_segment)
     if argv[2] == '--range':
         start, stop = parse_offset(argv[3]), parse_offset(argv[4])
         offset = start
