@@ -1,5 +1,13 @@
 import { MW_CLASS_NAMES, MW_RACES } from './character';
 import { experienceForKill } from './combat';
+import { MW_FROM_PAPER, MW_FROM_SPELLBOOK, spellHeld as mwSpellHeld } from './magic';
+import {
+  MW_SPELL_CATEGORY_LABELS,
+  MW_SPELL_NAMES,
+  mwCanCast,
+  mwSpellHelp,
+  mwSpellRecord,
+} from './spells';
 import type { MwGame } from './state';
 import { mwOccupantAt } from './state';
 
@@ -434,4 +442,219 @@ export function drawMonsterInfo(
     font: 0,
     colour: TEXT_COLOUR,
   });
+}
+
+/**
+ * The eight lines of the spell screen's first menu (exe DS:4583). The first four cast a spell out
+ * of the category and the last four show its SPELLS.HLP paragraph and cast nothing.
+ */
+export const MW_SPELL_CATEGORY_MENU = [
+  ...MW_SPELL_CATEGORY_LABELS,
+  '5) HELP-PERMANENT SPELLS',
+  '6) HELP-PREPARATION SPELLS',
+  '7) HELP-WIZARD BATTLE SP.',
+  '8) HELP-PRIEST BATTLE SP.',
+];
+
+/** The heading over the first menu, one per source (exe DS:40aa, 40c4, 40df, 40f8). */
+const SPELL_SOURCE_HEADINGS = [
+  'SELECT THE TYPE OF SPELL:',
+  'SELECT THE TYPE OF SCROLL:',
+  'SELECT THE TYPE OF WAND:',
+  'SELECT THE TYPE OF PAPER:',
+];
+
+/**
+ * spell_screen (WORLD.EXE 2000:ea27, mw.c "spell_screen"): the heading and the eight-line category
+ * menu the C key puts up, one heading per source.
+ *
+ * A fighter is turned away before the menu is drawn at all, unless they are casting off magic
+ * paper. The engine reads a key after this and hands it to {@link mwLineMenuKey} with 1 and 8,
+ * then to {@link applySpellCategory}.
+ *
+ * @param source {@link MW_FROM_SPELLBOOK}, {@link MW_FROM_SCROLL}, {@link MW_FROM_WAND} or
+ *   {@link MW_FROM_PAPER}.
+ * @returns whether the menu went up.
+ */
+export function drawSpellCategoryMenu(game: MwGame, source: number): boolean {
+  if (source !== MW_FROM_PAPER && game.pc.cls === 0) {
+    // DS:4064 407b 4093 1476 20bd
+    game.say(
+      'FIGHTERS CAN ONLY CAST',
+      '  SPELLS BY USING MAGIC',
+      '  PAPER. KEEP LOOKING.',
+      '',
+      'HIT ANY KEY...',
+    );
+    return false;
+  }
+  game.eraseScreen();
+  game.draw({ text: SPELL_SOURCE_HEADINGS[source - 1], x: 0, y: 0, font: 0, colour: 8 });
+  game.say(...MW_SPELL_CATEGORY_MENU);
+  return true;
+}
+
+/**
+ * spell_screen (WORLD.EXE 2000:ea27, mw.c "spell_screen"): the three gates between the category
+ * menu and the list of spells.
+ *
+ * Permanent spells are refused anywhere but the town and preparation spells during a battle,
+ * whichever source they are being cast from. The class gate is the one the spellbook alone
+ * applies, and it covers the help lines as well: a priest reading the spellbook cannot even look
+ * up a wizard spell.
+ *
+ * @param choice what the category menu answered, 1 to 8, or -1 for Escape.
+ * @returns 0 to 7 — the four categories and then the four help lines — or -1 when the screen
+ *   closed.
+ */
+export function applySpellCategory(game: MwGame, source: number, choice: number): number {
+  if (choice === -1) return -1;
+  const category = choice - 1;
+  if (category === 0 && game.pc.floor !== 0) {
+    // DS:4112 412e 4148 1476 20bd
+    game.say(
+      'THESE SPELLS TAKE ONE MONTH',
+      '   TO CAST AND CAN NOT BE',
+      '   USED IN THE DUNGEON.',
+      '',
+      'HIT ANY KEY...',
+    );
+    return -1;
+  }
+  if (category === 1 && game.engaged !== -1) {
+    // DS:4160 417c 4195 1476 20bd
+    game.say(
+      'THESE SPELLS TAKE 3 MINUTES',
+      '   TO CAST. THIS CAN NOT',
+      '   BE DONE DURING BATTLE.',
+      '',
+      'HIT ANY KEY...',
+    );
+    return -1;
+  }
+  if (source === MW_FROM_SPELLBOOK && !mwCanCast(game.pc.cls, category % 4)) {
+    // DS:41af 41cb 1476 20bd
+    game.say('YOU ARE UNABLE TO CAST THIS', '   TYPE OF SPELLS.', '', 'HIT ANY KEY...');
+    return -1;
+  }
+  return category;
+}
+
+/**
+ * The key printed in front of each of the thirty spells (exe DS:426e onwards, ten rows of three).
+ * The level leads the row and the spells are lettered A to Z and then 1 to 4.
+ */
+const SPELL_LINE_KEYS = [
+  ['1- A)', ' B)', ' C)'],
+  ['2- D)', ' E)', ' F)'],
+  ['3- G)', ' H)', ' I)'],
+  ['4- J)', ' K)', ' L)'],
+  ['5- M)', ' N)', ' O)'],
+  ['6- P)', ' Q)', ' R)'],
+  ['7- S)', ' T)', ' U)'],
+  ['8- V)', ' W)', ' X)'],
+  ['9- Y)', ' Z)', ' 1)'],
+  ['10-2)', ' 3)', ' 4)'],
+];
+
+/** Where the three spells of a row start (exe 2000:e94e, which pads each to the next). */
+const SPELL_LINE_COLUMNS = [0x1b, 0x35, 0x4f];
+
+/** The y of each of the ten rows. The gaps are 39 apart but for two of 38 and one of 42. */
+const SPELL_LINE_ROWS = [0x28, 0x4f, 0x76, 0x9d, 0xc4, 0xea, 0x114, 0x13b, 0x162, 0x188];
+
+/** Spells on the grid, which is the thirty of one category. */
+const SPELL_GRID_SIZE = 30;
+
+/**
+ * FUN_2000_e94e (WORLD.EXE 2000:e94e): one row of the spell grid, three spells wide.
+ *
+ * Each spell is its key and either its name or "NOT YET FOUND", and FUN_2000_e91e (exe 2000:e91e)
+ * pads the row out to the next column — and cuts it off there, so a name long enough to reach the
+ * next column loses its tail.
+ */
+function spellGridRow(game: MwGame, source: number, category: number, level: number): string {
+  let row = '';
+  for (let slot = 0; slot < 3; slot++) {
+    row += SPELL_LINE_KEYS[level][slot];
+    row += mwSpellHeld(game, source, category % 4, level, slot)
+      ? MW_SPELL_NAMES[mwSpellRecord(category % 4, level + 1, slot)]
+      : 'NOT YET FOUND'; // DS:4056
+    row = row.padEnd(SPELL_LINE_COLUMNS[slot]).slice(0, SPELL_LINE_COLUMNS[slot]);
+  }
+  return row;
+}
+
+/**
+ * spell_screen (WORLD.EXE 2000:ea27, mw.c "spell_screen"): the ten rows of three the category menu
+ * opens onto.
+ *
+ * The heading says what the screen is for: casting out of the spellbook says what a spell costs,
+ * a help line says a key gets a description, and a scroll, a wand or a piece of paper just asks
+ * for the spell. A spell the character does not hold reads NOT YET FOUND and cannot be picked,
+ * which is as true of the help lines as of the casting ones.
+ *
+ * @param category 0 to 7, what {@link applySpellCategory} answered.
+ */
+export function drawSpellGrid(game: MwGame, source: number, category: number): void {
+  game.eraseScreen();
+  // DS:4201 / DS:4236 / DS:41de
+  const heading =
+    source !== MW_FROM_SPELLBOOK
+      ? 'SELECT A SPELL FROM THE FOLLOWING:'
+      : category < 4
+        ? 'SELECT A SPELL-SPELLS USE ONE SPELL POINT PER LEVEL:'
+        : 'PRESS A LETTER OR A NUMBER TO GET A DESCRIPTION:';
+  game.draw({ text: heading, x: 0, y: 0, font: 0, colour: 4 });
+  game.draw({ text: 'ESCAPE', x: 0x5be, y: 0, font: 0, colour: 3 }); // DS:4267
+  for (let level = 0; level < SPELL_LINE_ROWS.length; level++) {
+    game.draw({
+      text: spellGridRow(game, source, category, level),
+      x: 0,
+      y: SPELL_LINE_ROWS[level],
+      font: 0,
+      colour: 8,
+    });
+  }
+}
+
+/**
+ * spell_screen (WORLD.EXE 2000:ea27, mw.c "spell_screen"): which of the thirty spells a key picks.
+ *
+ * The key is upper-cased, '1' to '4' are pushed up past 'Z' by adding 0x2a, and 'A' comes off to
+ * leave a number 0 to 29. A key that lands on a spell the character does not hold is thrown away
+ * along with everything outside the grid, so the wait goes on.
+ *
+ * Escape is the one key the original tests before this arithmetic, and it closes the screen. The
+ * engine has to catch it first, because it comes back from here as another ignored key.
+ *
+ * @returns 0 to 29, the row times three plus the slot, or -1 for a key the original ignores.
+ */
+export function spellGridKey(game: MwGame, source: number, category: number, key: number): number {
+  let code = key >= 0x61 && key <= 0x7a ? key - 0x20 : key;
+  if (code > 0x30 && code < 0x35) code += 0x2a;
+  const index = code - 0x41;
+  if (index < 0 || index >= SPELL_GRID_SIZE) return -1;
+  if (!mwSpellHeld(game, source, category % 4, Math.trunc(index / 3), index % 3)) return -1;
+  return index;
+}
+
+/**
+ * spell_screen (WORLD.EXE 2000:ea27, mw.c "spell_screen"): the four help lines of the category
+ * menu, which show one record of SPELLS.HLP in the message box and cast nothing.
+ *
+ * The record is the one for the spell picked off the grid, in the category the help line names —
+ * load_spell_lines (exe 3000:b7fd) is handed the menu digit less five, so line 5 is the permanent
+ * category. Its eight lines are the record split at the '@' the loader put in place of every
+ * newline.
+ *
+ * @param category 4 to 7, the help line, which is the spell category plus four.
+ */
+export function showSpellDescription(
+  game: MwGame,
+  category: number,
+  level: number,
+  slot: number,
+): void {
+  game.say(...mwSpellHelp(mwSpellRecord(category - 4, level + 1, slot)));
 }
