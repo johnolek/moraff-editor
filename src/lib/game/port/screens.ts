@@ -1,7 +1,6 @@
 import { CLASS_NAMES, RACES } from './character';
 import { expNeeded } from './combat';
 import { ARMOR_NAMES, WEAPON_NAMES } from './drops';
-import { HELP_TOPICS } from './hints';
 import type { Game, ScreenLine } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
@@ -110,6 +109,22 @@ export function drawMenu(game: Game, lines: string[]): void {
   });
 }
 
+/**
+ * The key that cancels every menu in the game. `game.key` hands a key back as the byte the
+ * original dispatches on, which is what every reader here takes; `src/lib/play/keys.ts` names
+ * the rest of them.
+ */
+export const ESCAPE = 0x1b;
+
+/**
+ * toupper (exe 1000:1d8b, unf.c "FUN_1000_1d8b"): what the game puts a menu key through before
+ * looking at it. The original asks a table of character types, which marks the accented lower
+ * case letters of the code page as well; no menu in the game is keyed to one.
+ */
+export function toUpperByte(key: number): number {
+  return key >= 0x61 && key <= 0x7a ? key - 0x20 : key;
+}
+
 /** What a menu reader makes of a key: a menu number, an escape, or a key it goes on waiting past. */
 export type MenuChoice = number | 'escape' | null;
 
@@ -122,9 +137,9 @@ export type MenuChoice = number | 'escape' | null;
  * waiting, which is the `null` here. A menu called with a `first` of -1 takes any key at all and
  * hands back its character code; that is {@link anyKeyChoice}.
  */
-export function gmenuChoice(first: number, last: number, key: string): MenuChoice {
-  if (key === '\x1b') return 'escape';
-  const digit = key.charCodeAt(0) - 0x30;
+export function gmenuChoice(first: number, last: number, key: number): MenuChoice {
+  if (key === ESCAPE) return 'escape';
+  const digit = key - 0x30;
   if (digit < first || digit > last) return null;
   return digit;
 }
@@ -140,9 +155,9 @@ export function gmenuChoice(first: number, last: number, key: string): MenuChoic
  * byte, and the original throws away the scan code behind it and goes on waiting, which is what
  * the `null` for an unknown key stands for here.
  */
-export function getChoice(first: number, last: number, key: string): MenuChoice {
-  if (key === '\x1b') return 'escape';
-  const digit = key.charCodeAt(0) - 0x30;
+export function getChoice(first: number, last: number, key: number): MenuChoice {
+  if (key === ESCAPE) return 'escape';
+  const digit = key - 0x30;
   if (digit < 1 || digit - 1 > last - first) return null;
   return digit;
 }
@@ -151,8 +166,8 @@ export function getChoice(first: number, last: number, key: string): MenuChoice 
  * mset_gmenu (exe 2000:2b08) called with a `first` of -1: the wait that keeps a screen up until
  * the player has read it, which hands back whatever key was pressed. Escape still cancels.
  */
-export function anyKeyChoice(key: string): string | 'escape' {
-  return key === '\x1b' ? 'escape' : key;
+export function anyKeyChoice(key: number): number | 'escape' {
+  return key === ESCAPE ? 'escape' : key;
 }
 
 /** Where the eight-line message box's wait draws {@link drawHitAnyKey}. */
@@ -470,77 +485,4 @@ export function expNeededScreen(game: Game): void {
   });
   // DS:12de, then the seven lines
   game.say('EXPERIENCE NEEDED FOR LEVEL:', ...lines);
-}
-
-/**
- * FUN_3000_9026 (exe 3000:9026): the four lines of the stone-tablet box, which is what the snake
- * speaks out of.
- *
- * The box itself is a picture with a frame and a drop shadow, drawn by a routine of its own that
- * spreads each line into a band 0x50 tall and 0x8c apart; the port draws the four lines where
- * that puts them and nothing of the frame. In the two narrowest video modes the whole box is
- * pulled 0x5a wider on both sides, which the port does not do either.
- */
-export function drawTabletLines(game: Game, lines: string[]): void {
-  lines.forEach((text, index) => {
-    game.draw({ text, x: 100, y: index * 0x8c + 0x159, spreadTo: 0x5dc, font: 0, colour: 15 });
-  });
-}
-
-/** The greeting the F1 menu opens with (exe DS:2d57 2d7b 2d9f 2dc3), padded the way the file has it. */
-export const HELP_GREETING = [
-  'A little snake scurries up and says',
-  "'Smarty is my name, and information",
-  'is my game! Learning means earning,',
-  'so what can I do for you?      ',
-];
-
-/** How many rows each of the F1 menu's two columns has. */
-export const HELP_MENU_ROWS = 14;
-
-/**
- * How wide the two tables of menu labels (exe DS:52d8 and DS:52f4) pad each line. Every one of the
- * 28 is 31 characters, which matters because the game spreads the line out over a fixed span: a
- * shorter label would come out wider-spaced than its neighbours.
- */
-export const HELP_LABEL_WIDTH = 31;
-
-/**
- * FUN_3000_7dfc (exe 3000:7dfc, unf.c "FUN_3000_7dfc"): the menu F1 puts up, in two columns of
- * fourteen boxes.
- *
- * The snake's greeting goes up first, in the stone-tablet box, and is then painted over: the
- * loop that draws the menu starts by filling the whole screen in colour 4, so the greeting is on
- * the screen for as long as it takes to draw the first box. The port draws it and wipes it in the
- * same order, which leaves it in the message log and not on the screen.
- *
- * `HELP_TOPICS` in `hints.ts` is the two label tables end to end, left column first, with the
- * trailing spaces trimmed off.
- */
-export function drawHelpMenu(game: Game): void {
-  drawTabletLines(game, HELP_GREETING);
-  game.eraseScreen();
-  HELP_TOPICS.forEach((topic, index) => {
-    const column = index < HELP_MENU_ROWS ? { x: 0x6e, spreadTo: 0x2b2 } : { x: 0x38e, spreadTo: 0x5d2 };
-    const row = index % HELP_MENU_ROWS;
-    const text = topic.label.padEnd(HELP_LABEL_WIDTH);
-    game.draw({ text, x: column.x, y: row * 0x4e + 0x73, spreadTo: column.spreadTo, font: 0, colour: 6 });
-  });
-  // DS:2de3
-  const exit = 'HIT RIGHT BUTTON OR ESCAPE TO EXIT';
-  game.draw({ text: exit, x: 0xdc, y: 0x1a, spreadTo: 0x56e, font: 1, colour: 5 });
-}
-
-/**
- * FUN_3000_7dfc (exe 3000:7dfc, unf.c "FUN_3000_7dfc"), the half of it that reads: the .uhp file
- * one key opens, or null to leave the menu.
- *
- * The key is lower-cased and looked up in a switch; the ten digits are worked out instead, as the
- * key less 0x1c, which puts '0' on file 20 and '9' on file 29. Anything else leaves the menu, so
- * the "HIT RIGHT BUTTON OR ESCAPE TO EXIT" the screen prints undersells it: any key that is not
- * one of the 28 gets out, Escape included.
- */
-export function helpMenuChoice(key: string): number | null {
-  const topic = HELP_TOPICS.find((entry) => entry.key === key.toUpperCase());
-  return topic === undefined ? null : topic.file;
 }

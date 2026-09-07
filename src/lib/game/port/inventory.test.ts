@@ -33,7 +33,13 @@ import {
   spellMenuIndex,
 } from './inventory';
 import type { Rng } from './rng';
+import { ESCAPE } from './screens';
 import { newGame } from './state';
+
+/** The byte `game.key` hands back for a key that makes a character. */
+function key(character: string): number {
+  return character.charCodeAt(0);
+}
 
 /** An {@link Rng} that answers every roll with the same number. */
 function always(value: number): Rng {
@@ -126,47 +132,47 @@ describe('a line of the spell menu', () => {
 
 describe('the keys the spell menu takes', () => {
   it('runs A to Z and then 1 to 4', () => {
-    expect(spellMenuIndex('A')).toBe(0);
-    expect(spellMenuIndex('a')).toBe(0);
-    expect(spellMenuIndex('Z')).toBe(25);
-    expect(spellMenuIndex('1')).toBe(26);
-    expect(spellMenuIndex('4')).toBe(29);
+    expect(spellMenuIndex(key('A'))).toBe(0);
+    expect(spellMenuIndex(key('a'))).toBe(0);
+    expect(spellMenuIndex(key('Z'))).toBe(25);
+    expect(spellMenuIndex(key('1'))).toBe(26);
+    expect(spellMenuIndex(key('4'))).toBe(29);
     expect(SPELL_MENU_KEYS.length).toBe(30);
   });
 
   it('takes the four keys between Z and the digits as the same four spells', () => {
-    expect(spellMenuIndex('[')).toBe(26);
-    expect(spellMenuIndex('^')).toBe(29);
+    expect(spellMenuIndex(key('['))).toBe(26);
+    expect(spellMenuIndex(key('^'))).toBe(29);
   });
 
   it('picks a spell the character has and ignores one they do not', () => {
     const game = newGame({ pc: { cls: 3 } });
     game.pc.spellbook[spellIndex(2, 0, 0)] = 1;
-    expect(spellListChoice(game, CAST_SPELLBOOK, 2, 'A')).toEqual({
+    expect(spellListChoice(game, CAST_SPELLBOOK, 2, key('A'))).toEqual({
       kind: 'spell',
       index: 0,
       level: 0,
       slot: 0,
     });
-    expect(spellListChoice(game, CAST_SPELLBOOK, 2, 'B')).toEqual({ kind: 'ignored' });
+    expect(spellListChoice(game, CAST_SPELLBOOK, 2, key('B'))).toEqual({ kind: 'ignored' });
   });
 
   it('reads a wand run down to no charges as a spell that is not there', () => {
     const game = newGame({ pc: { cls: 3 } });
     game.pc.wands[spellIndex(2, 0, 0)] = 0;
-    expect(spellListChoice(game, CAST_WAND, 2, 'A')).toEqual({ kind: 'ignored' });
+    expect(spellListChoice(game, CAST_WAND, 2, key('A'))).toEqual({ kind: 'ignored' });
   });
 
   it('gives up on escape and swaps the layout on 5', () => {
     const game = newGame({ pc: { cls: 3 } });
-    expect(spellListChoice(game, CAST_SPELLBOOK, 2, '\x1b')).toEqual({ kind: 'escape' });
-    expect(spellListChoice(game, CAST_SPELLBOOK, 2, '5')).toEqual({ kind: 'switchLayout' });
+    expect(spellListChoice(game, CAST_SPELLBOOK, 2, ESCAPE)).toEqual({ kind: 'escape' });
+    expect(spellListChoice(game, CAST_SPELLBOOK, 2, key('5'))).toEqual({ kind: 'switchLayout' });
   });
 
   it('takes the key for a help list off the same list of thirty', () => {
     const game = newGame({ pc: { cls: 3 } });
     game.pc.spellbook[spellIndex(2, 9, 2)] = 1;
-    expect(spellListChoice(game, CAST_SPELLBOOK, 6, '4')).toEqual({
+    expect(spellListChoice(game, CAST_SPELLBOOK, 6, key('4'))).toEqual({
       kind: 'spell',
       index: 29,
       level: 9,
@@ -487,12 +493,12 @@ describe('the write scroll or wand menus', () => {
   });
 
   it('takes a level by its digit and the tenth by zero', () => {
-    expect(writeSpellLevelChoice(3, '1')).toBe(0);
-    expect(writeSpellLevelChoice(3, '3')).toBe(2);
-    expect(writeSpellLevelChoice(3, '4')).toBeNull();
-    expect(writeSpellLevelChoice(3, '0')).toBeNull();
-    expect(writeSpellLevelChoice(10, '0')).toBe(9);
-    expect(writeSpellLevelChoice(10, '\x1b')).toBe('escape');
+    expect(writeSpellLevelChoice(3, key('1'))).toBe(0);
+    expect(writeSpellLevelChoice(3, key('3'))).toBe(2);
+    expect(writeSpellLevelChoice(3, key('4'))).toBeNull();
+    expect(writeSpellLevelChoice(3, key('0'))).toBeNull();
+    expect(writeSpellLevelChoice(10, key('0'))).toBe(9);
+    expect(writeSpellLevelChoice(10, ESCAPE)).toBe('escape');
   });
 
   it('names the three spells on the line and keeps the level menu leftover under them', () => {

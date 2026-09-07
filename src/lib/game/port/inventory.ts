@@ -6,8 +6,10 @@ import {
   clearRect,
   clearStatsScreen,
   drawMenu,
+  ESCAPE,
   MENU_X,
   MESSAGE_LINE_Y,
+  toUpperByte,
   viewBattleSpells,
 } from './screens';
 import type { MenuChoice } from './screens';
@@ -261,8 +263,8 @@ export const SPELL_MENU_KEYS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234';
  * is taken off. Nothing checks that what is left is a letter, so the four keys between Z and the
  * shifted digits — '[', '\', ']' and '^' — pick the last four spells as well.
  */
-export function spellMenuIndex(key: string): number {
-  let code = key.toUpperCase().charCodeAt(0);
+export function spellMenuIndex(key: number): number {
+  let code = toUpperByte(key);
   if (code > 0x30 && code < 0x35) code += 0x2a;
   return code - 0x41;
 }
@@ -396,9 +398,14 @@ export type SpellListChoice =
  * cast. Switching layouts ends the spell as well as changing the menu: the original returns from
  * cast_a_spell with the flag flipped, so the player has to press the key again to see the list.
  */
-export function spellListChoice(game: Game, source: number, type: number, key: string): SpellListChoice {
-  if (key === '\x1b') return { kind: 'escape' };
-  if (key === '5') return { kind: 'switchLayout' };
+export function spellListChoice(
+  game: Game,
+  source: number,
+  type: number,
+  key: number,
+): SpellListChoice {
+  if (key === ESCAPE) return { kind: 'escape' };
+  if (key === 0x35) return { kind: 'switchLayout' };
   const index = spellMenuIndex(key);
   if (index < 0 || index > 29) return { kind: 'ignored' };
   const level = Math.trunc(index / 3);
@@ -703,9 +710,9 @@ export function drawWriteSpellSlotMenu(
  * @returns the line of the book, 0 for the level 1 line, or 'escape', or null for a key the
  * original goes on waiting past.
  */
-export function writeSpellLevelChoice(maxLevel: number, key: string): MenuChoice {
-  if (key === '\x1b') return 'escape';
-  const digit = key.charCodeAt(0) - 0x30;
+export function writeSpellLevelChoice(maxLevel: number, key: number): MenuChoice {
+  if (key === ESCAPE) return 'escape';
+  const digit = key - 0x30;
   if (digit === 0) return maxLevel >= 10 ? 9 : null;
   if (digit < 1 || digit > maxLevel) return null;
   return digit - 1;

@@ -168,7 +168,7 @@ between one screen of the roller and the next. `game.pressAnyKey()` is `mgetch_m
   which is what lets a character played here go back to DOS.
 * `screens.ts` — the menu column: how `mset_gmenu` draws its eight lines and what its reader and
   `get_choice` take, the two rectangles a menu wipes first, the spells-in-effect screens, the V
-  screen, the experience-needed screen and the F1 help menu.
+  screen and the experience-needed screen.
 * `inventory.ts` — the screens a spell or an item is picked off: `cast_a_spell`'s type menu, its
   thirty-spell table in both layouts and what casting one costs, the spell descriptions out of
   USPELLS.HLP, the pockets screen, and the three menus Write Scroll and Enchant Wand walk through.
