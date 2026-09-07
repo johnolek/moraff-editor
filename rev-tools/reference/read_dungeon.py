@@ -20,7 +20,8 @@ for the second).  What each one is:
 * `6.NUM`  eighteen pictures of 20 by 14 pixels for the far view.
 * `7.NUM`  which squares of the dungeon hold a fixed feature -- the ladders and
   the false floors.  Same array shape as a character's `<n>.BIN` explored map,
-  at DGROUP 8366.
+  at DGROUP 8366.  `--formula` recomputes it from the routine the game works the
+  feature out with and reports where the two disagree.
 
 `3A`, `4A`, `5A` and `6A` are the second dungeon's; nothing else differs between
 a pair, and no program loads both.
@@ -86,7 +87,56 @@ def monster_names(path, stem):
     return QUOTED.findall(open(table, "rb").read().decode("cp437"))
 
 
-def show_features(values, explored, only_level):
+# The routine at 1000:5793 works out what is on a square from the square's own
+# coordinates: it raises `column + 7` to the power 1.3, `row + 6` to 1.2 and
+# `level + step + 1` to 1.1 (the constants at DGROUP CF24, BB74 and BB70; INT 3F
+# $25 is `^`, which BRUN30 CS:B89E gives away by returning 1 when the exponent is
+# zero), multiplies the three together, takes the product modulo 300 at
+# 1000:57DE and subtracts 3.
+FEATURE_MODULUS = 300
+FEATURE_BIAS = 3
+FEATURE_RANGE = (0, 9)
+
+
+def single(value):
+    """Round to the 24-bit mantissa the game's arithmetic works in."""
+    return struct.unpack("<f", struct.pack("<f", value))[0]
+
+
+def feature_code(column, row, level, step=0):
+    product = single(single(single((column + 7) ** 1.3) * single((row + 6) ** 1.2))
+                     * single((level + step + 1) ** 1.1))
+    scaled = single(product / FEATURE_MODULUS)
+    remainder = single(single(scaled - int(scaled)) * FEATURE_MODULUS)
+    return int(remainder) - FEATURE_BIAS
+
+
+def has_feature(column, row, level):
+    """Whether 1000:552B finds anything on a square.
+
+    It asks for the square's own code first, and then, for each of the three
+    levels below, whether that level's code folds down to the distance -- the
+    loop at 1000:55A6, which is what a ladder going down is.
+    """
+    low, high = FEATURE_RANGE
+    if low <= feature_code(column, row, level) <= high:
+        return True
+    for step in (1, 2, 3):
+        if level + step > DEEPEST_LEVEL:
+            break
+        code = feature_code(column, row, level, step)
+        if not 1 <= code <= high:
+            continue
+        # 1000:5649 takes 3 off twice while the code is over 3.
+        for _ in range(2):
+            if code > 3:
+                code -= 3
+        if code == step:
+            return True
+    return False
+
+
+def show_features(values, explored, only_level, formula=False):
     """Draw the squares that hold a fixed feature, one level at a time.
 
     A set bit means the square has a ladder or a false floor on it; which of
@@ -102,16 +152,23 @@ def show_features(values, explored, only_level):
         if not any(rows):
             continue
         print("level %d:" % level)
-        for row, walked in zip(rows, seen):
+        disagreed = 0
+        for number, (row, walked) in enumerate(zip(rows, seen), start=1):
             line = ""
             for column in range(1, read_bsave.COLUMNS + 1):
-                if read_bsave.is_set(row, column):
+                stored = read_bsave.is_set(row, column)
+                if formula and stored != has_feature(column, number, level):
+                    line += "?"
+                    disagreed += 1
+                elif stored:
                     line += "X"
                 elif read_bsave.is_set(walked, column):
                     line += "#"
                 else:
                     line += "."
             print("  " + line)
+        if formula and disagreed:
+            print("  (%d squares where the formula and the file disagree)" % disagreed)
 
 
 def show_monsters(values, strengths, only_level):
@@ -182,6 +239,8 @@ def main():
     parser.add_argument("--explored", help="a character's <n>.BIN, drawn under 7.NUM")
     parser.add_argument("--level", type=int, help="only this dungeon level")
     parser.add_argument("--picture", type=int, help="only this picture of 4.NUM or 6.NUM")
+    parser.add_argument("--formula", action="store_true",
+                        help="mark the 7.NUM squares the feature routine disagrees about")
     args = parser.parse_args()
     explored = None
     if args.explored:
@@ -192,7 +251,7 @@ def main():
         print("=" * 72)
         print("%s" % path)
         if stem == "7":
-            show_features(mbf.singles(data), explored, args.level)
+            show_features(mbf.singles(data), explored, args.level, args.formula)
         elif stem == "1":
             beside = os.path.join(os.path.dirname(path), "2.NUM")
             strengths = None
