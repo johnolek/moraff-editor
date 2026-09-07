@@ -72,6 +72,11 @@ teleporter rule — are in the FAQ and the RE notes; this list is the rest.
   counter rather than cure it (2000:a53c).
 * **Boss HP in sections 18-20 is doubled after the +20/level bonus**, which is why the
   Module V bosses feel like a wall.
+* **The last boss's reward message is not in a text file.**  `kill_monster` (3000:b12d) gives
+  the other nineteen section bosses `give_hint(60 + section)`; section 20's case skips
+  `give_hint` and prints the tiny-cat screen and the Orb of Explosive Weapon Enhancement from
+  string constants in the executable.  UH.BIN's run of reward hints stops at 78, which is the
+  boss of floor 75 telling you to go and find the Shadow Ogeroth.
 
 ## Numbers with a story
 
@@ -94,6 +99,13 @@ teleporter rule — are in the FAQ and the RE notes; this list is the rest.
   in the text is a colour code rather than a character, and `e` ends the page.  The snake's
   spoken hints are `UH.BIN` (138 messages of eight lines, `give_hint` 2000:313a) and the stone
   tablets `UH2.BIN` (86 of four, `tablet_message` 3000:931c).
+* **One help screen has no key.**  The F1 menu's twenty-eight lines open twenty-eight of the
+  twenty-nine `.uhp` files.  `18.uhp` is the options help of `16.uhp` on a single page instead
+  of two, and nothing opens it; there is no `19.uhp` either.
+* **The inn is a different inn in each module.**  `flea_inn` (2000:4fe7) prints hint 16 +
+  module — the Hell Hole Inn, the Slacker Hotel, the Flea Bag Inn, the Motel 6.5 and the
+  Moraff Inn — and then works the room price, the aging and the spell-point refill out
+  of the level and the children helped, with no module anywhere in them.
 * **`f_bug.exe` and `fix.bat`.**  The README's "if the map keeps telling you to GO EAST,
   type FIX" deletes every `*.MAP` and runs `f_bug`, which "puts the special monster back".
   The boss position is remembered per section in the save (`bossX/bossY`); the homing
@@ -154,6 +166,12 @@ BIOS tick counter, 18.2 per second, counted from program start and truncated to 
   have no callers; so do two large drawing routines in the WORLD segment (2000:1d4f,
   2000:0fc5) that only touch the resolution variables and the line-drawing driver.
 * **The shareware nag screen** (4000:751b), as noted above.
+* **Five messages nothing asks for.**  UH.BIN 30 is the arrival in a new universe, which
+  the module teleporter's own two messages replaced.  UH2 72, 73 and 74 are the
+  registration and "modules 2,3,4, and 5 are now available" pitches, sitting in the three
+  empty cases at the end of the switch in 3000:6b8a.  UH2 81 is "TRY NOT TO DIE, IT'S BAD
+  FOR YOUR HEALTH", which `draw_monster_view` guards with `DAT_6000_c08a == -1` on a field
+  that is 56 on every character.
 
 ## Sized for a bigger game
 
@@ -187,6 +205,10 @@ BIOS tick counter, 18.2 per second, counted from program start and truncated to 
   DS:0000 (the Borland copyright string), and the loop runs until it meets a `~` byte.
 * **A power weapon spell** replaces only the damage die; the held weapon's hit bonus,
   plus and speed still apply, so the best play is to keep your best weapon in hand.
+* **The town greeting resets when the game does.**  `FUN_3000_9488` picks the greeting from
+  DS:c179, the deepest floor reached, which `movecontrol` raises as you walk and nothing ever
+  writes to or reads from the save file.  Every session starts a floor-90 character back at
+  "You are still a wimp!".
 
 ## How much time a spell costs, and why it matters against a boss
 

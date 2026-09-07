@@ -378,6 +378,24 @@ having a tint that matches their colour set and ten by having no tint at all.
 In the code: [scale_image2](source:c/scale_image2) and
 [which monster turns up](formula:monster-kind).
 
+### The last boss's reward is the only one not in a text file
+
+Killing a section's Shadow boss prints what you have won and points you at the next one. The
+nineteenth of them, for the boss on floor 75, ends `NOW FIND THE SHADOW OGEROTH ON LEVEL 100. IT
+IS UNBELIEVABLY POWERFUL...`
+
+That is where the run stops. `UH.BIN` carries nineteen reward messages for twenty sections, and
+the twentieth boss has none in any of the three text files. The three screens the Shadow Ogeroth
+gets are string constants inside the executable, handed straight to the printer: the body turning
+into a tiny cat that scurries away promising to be back, the Mighty Orb of Explosive Weapon
+Enhancement that puts +101 on a weapon of your choosing, and the invitation to go on wandering or
+to start again with a different character.
+
+Every other boss in the game can be given something else to say by editing a text file. The last
+one cannot.
+
+In the code: [kill_monster](source:c/kill_monster) and [allHints](source:ts/hints.ts/allHints).
+
 ## Map and travel
 
 ### There is no map, anywhere
@@ -507,6 +525,22 @@ empty account.
 
 In the code: [rollChar](source:ts/character.ts/rollChar),
 [the price of a magic crystal](formula:crystal-price) and
+[what a night at the inn does to you](formula:inn-night).
+
+### Five inns, and the sign is the only difference
+
+Every module has its own inn. Module I has the HELL HOLE INN, whose tin sign explains that A
+NIGHT IN OUR HORRIBLE HOTEL MIGHT NOT KILL YOU. PLEASE KEEP VALUABLES IN BED WITH YOU. After it
+come the SLACKER HOTEL on paper, the FLEA BAG INN on wood and the MOTEL 6.5 on plastic, and
+Module V has the MORAFF INN on a golden sign, where IF YOU HAVE ANY PROBLEMS, LET US KNOW AND THE
+MAINTAINANCE DIRECTOR WILL BE PUT TO DEATH.
+
+The sign is the whole of the difference. The price of the room, the year it takes off you and the
+spell points it buys back all come from your level and the children you have helped, and the only
+thing the inn asks the module for is which of the five signs to hang up.
+
+In the code: [innSignHint](source:ts/hints.ts/innSignHint),
+[what a night at the inn costs](formula:inn-cost) and
 [what a night at the inn does to you](formula:inn-night).
 
 ## Bugs the game has
@@ -647,6 +681,22 @@ the line and click instead.
 In the code: [designYourOwn](source:ts/character.ts/designYourOwn) and
 [roll_char](source:c/roll_char).
 
+### The snake calls you a wimp every time you start the game
+
+The greeting for walking into town is picked by the deepest floor you have reached, not by your
+level. Below floor 4 it is `'Hail novice adventurer! You are still a wimp! Keep trying.'`, and it
+works up through ten of them; from floor 100 the snake has nothing left to say and the tablet
+does not come up at all.
+
+The depth it reads is a running maximum kept in memory and raised to the current floor as you
+walk. Nothing writes it into the save file and nothing reads it back out of one, so it is zero
+again every time the game starts. A character who has been to floor 90 is greeted as a wimp on
+the way back in, and has to go down four floors before the snake will admit they are `no longer
+the weakest player in the world!`
+
+In the code: [townTablet](source:ts/hints.ts/townTablet) and
+[FUN_3000_9488](source:c/FUN_3000_9488).
+
 ## Trivia and history
 
 ### The file called v
@@ -719,6 +769,40 @@ bosses' taunts.
 
 In the code: [readHelpScreen](source:ts/hints.ts/readHelpScreen),
 [giveHint](source:ts/hints.ts/giveHint) and [tabletMessage](source:ts/hints.ts/tabletMessage).
+
+### The help screen with no key to press
+
+The F1 menu is twenty-eight lines in two columns, and between them they open twenty-eight of the
+twenty-nine `.uhp` files in the game folder. The one nothing opens is `18.uhp`, and it is the
+options help: the same text as `16.uhp`, which the O line opens, laid out as one long page
+instead of two with HIT ANY KEY TO CONTINUE in the middle.
+
+The numbering has a hole in it as well. The files run 0 to 18 and then 20 to 29. There is no
+`19.uhp`, and nothing goes looking for one.
+
+In the code: [HELP_TOPICS](source:ts/hints.ts/HELP_TOPICS) and
+[HELP_FILES](source:ts/hints.ts/HELP_FILES).
+
+### Five messages nobody can be shown
+
+Every message in `UH.BIN` and `UH2.BIN` is asked for by number from somewhere in the game, except
+five.
+
+`UH.BIN` 30 announces an arrival: YOU SENSE THE APPROACH OF A NEW UNIVERSE THAT SEEMS TO BUZZ
+WITH POWER. The teleporter that carries a character from one module to the next ended up with two
+other messages, and this one was left where it was.
+
+Three more are the sales pitch. The notes that appear under a monster while a new character finds
+its feet come out of a switch with fourteen cases, and the last three are written out with nothing
+in them: PLEASE REGISTER THIS GAME, MODULES 2,3,4, AND 5 ARE NOW AVAILABLE! and the one about the
+monsters waiting in them. The registered game carries all three and can never print any of them.
+
+The fifth is TRY NOT TO DIE, IT'S BAD FOR YOUR HEALTH, which is shown when a field that is 56 on
+every character ever rolled turns out to be -1.
+
+In the code: [allHints](source:ts/hints.ts/allHints),
+[FUN_3000_6b8a](source:c/FUN_3000_6b8a) and
+[draw_monster_view](source:c/draw_monster_view).
 
 ### The intro demo has its own dungeon
 
