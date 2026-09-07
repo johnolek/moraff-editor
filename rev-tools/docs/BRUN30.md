@@ -7,7 +7,7 @@ those calls have names the disassembly says nothing.  With them it reads close t
 a transcript of the original BASIC.
 
 This is what each of them is.  136 distinct run-time routines are reached from
-the game; 112 are named with the routine's own code as the evidence, 22 from the
+the game; 113 are named with the routine's own code as the evidence, 21 from the
 family a routine sits in or from the one reading a call site allows, and 2 are
 still only understood as far as what they do to the machine.
 
@@ -217,8 +217,15 @@ table points at, in BRUN30's code segment.
 | `$2F` | `C736` | `EOF` | BX = the file number | 2 | high |
 | `$33` | `B2C7` | `RND` | with an argument at BX | 3 | high |
 | `$34` | `B2C2` | `RND` | no argument | 97 | high |
-| `$39` | `BF0C` | `SIN` | single at BX | 19 | medium |
+| `$39` | `BF0C` | `SIN` | single at BX | 19 | high |
 | `$43` | `C12F` | `TIMER` | no argument | 20 | high |
+
+`$39` is `SIN` outright, not by elimination.  Reading its constants settles it:
+it multiplies by the single at DGROUP 03CA, which is `1 / (2 * pi)`, folds the
+fraction of that into a quarter turn and evaluates an odd polynomial in the
+result whose leading coefficient, at DGROUP 06BA, is `2 * pi`.
+`../docs/DUNGEON.md` section 6 walks through the routine, because the dungeon's
+walls are `INT(ABS(SIN(...)) * 10)` and a port has to reproduce it.
 
 ### INT 3Eh
 
@@ -666,11 +673,6 @@ name: `qb_PRINT_6e`, `qb_INPUT_b6`, `qb_add_7f`.
   routine, and CS:95FA behind it assigns a string.  So the output goes somewhere
   other than the screen; which statement that is has not been settled.  The game
   uses it five times.
-* **`INT 3Dh $39`** is a trigonometric function for certain — it reduces its
-  argument modulo a constant, evaluates a polynomial and restores the sign, so it
-  is odd, which rules out `COS` — and `SIN` rather than `TAN` because there is no
-  division in it and it cannot raise "Division by zero".  That is one step short
-  of proof.
 * **The `$B7` type codes.**  Only `02` and `03` occur in the game and both are
   settled from the character files.  The translate table at DGROUP 0707 that
   turns them into the run-time's own type numbers is BRUN30's initialised data

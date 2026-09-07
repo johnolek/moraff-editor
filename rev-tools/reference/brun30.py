@@ -90,7 +90,7 @@ ROUTINE = {
     (0x3D, 0x31): _r(0xC750, "LOF", "BX = the file number", confidence="medium"),
     (0x3D, 0x33): _r(0xB2C7, "RND", "with an argument at BX"),
     (0x3D, 0x34): _r(0xB2C2, "RND", "no argument"),
-    (0x3D, 0x39): _r(0xBF0C, "SIN", "single at BX", confidence="medium"),
+    (0x3D, 0x39): _r(0xBF0C, "SIN", "single at BX"),
     (0x3D, 0x43): _r(0xC12F, "TIMER", "no argument"),
 
     # ------------------------------------------------------------------
