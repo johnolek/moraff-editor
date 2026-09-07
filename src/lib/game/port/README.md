@@ -8,7 +8,7 @@ names the reverse engineering worked out. `dotu-tools/docs/UNFORGIVEN-RE-NOTES.m
 This is not a reimplementation and not a tidy-up. Every function here does what the 1993 code
 does, including the parts that look like accidents.
 
-## The two deliberate departures
+## The three deliberate departures
 
 The original keeps the whole game in globals in its data segment: `spell_effect` reads the
 player's wisdom straight out of `DAT_6000_c09a` and writes the monster's hit points through a
@@ -23,7 +23,7 @@ enchantments, and `chooseSpell` for the three menus Write Scroll and Enchant Wan
 Each is shaped after what the original's menu code reads back, down to the numbering, and each
 one `newGame` supplies cancels the spell.
 
-**The other departure is that a spell here stops at the character record.** Ascend, Descend
+**The second departure is that a spell here stops at the character record.** Ascend, Descend
 and the three like them change the floor the character is on and drop them somewhere open on
 it; the original then reloads the game around them, and this port does not. Where the original
 calls `load_level_map` (exe 2000:7687) to read in the new floor's monsters, and `give_hint`
@@ -33,10 +33,25 @@ the original leaves in it; what is missing is the world around it, which nothing
 reads. The rest of moving between floors — writing the explored map out, redrawing the screen —
 happens above `spell_effect`, in the caller, and is not part of this port either way.
 
+Combat stops in the same place. `defend` writes the character record back out to its file five
+times over; the port appends a `playerSaved` event instead. Nothing in this port calls
+`kill_player` (exe 2000:c0a5) either, because nothing in the game calls it from here: `defend`
+takes the hit points down and `movecontrol` is what notices the character is dead on the next
+pass round its loop.
+
 The character record's fields are named the way `src/lib/game/dotu-files.js` already names those
 save offsets, so `pc.lev` is the character's level and `pc.level` is the floor, exactly as the
 save parser has it. Fields that parser does not read are named after their label in
 `src/lib/editor/games.ts`.
+
+**The third departure is that the port never reseeds the random number generator.** The original
+calls `srand(clock() + something)` before nearly every roll — `strike` (exe 2000:7e36) does it
+before the to-hit roll, `defend` (exe 2000:82b7) does it with `+ 100`, and `Random` (exe
+2000:4156) does it on every single call. That is why the to-hit roll follows the BIOS tick
+counter round a sawtooth instead of being random, which `dotu-tools/docs/TIDBITS.md` lays out.
+The aim of this port is a game that plays the way the original does but whose random numbers are
+genuinely random, so where the original reseeds, the port calls nothing and says so in a comment
+at that line. The arithmetic on either side of the reseed is ported exactly.
 
 ## Naming and citations
 
@@ -65,7 +80,9 @@ save parser has it. Fields that parser does not read are named after their label
 
 The game prints through `print_menu_only`, which takes eight lines and waits for a key. Here
 that is `game.say(...lines)`, which appends to `game.messages`; the empty strings the game pads
-the unused slots with are dropped from the end of a call and kept in the middle.
+the unused slots with are dropped from the end of a call and kept in the middle. Combat also
+prints single lines straight onto the message line with `pfont`, out of the scratch buffer at
+DS:c427; those are `say` calls of one line each, in the order the game prints them.
 
 The text is upper-case because the game's is. Every line is the exact bytes of the game's own
 string, punctuation and spacing included — the leading spaces on a line are the game indenting

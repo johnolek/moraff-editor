@@ -16,10 +16,16 @@ export const MAP_PLAYER = 0xfe;
  * offset `xxxx - 0xb880`.
  */
 export interface PlayerCharacter {
+  /** 0x2a, DS:b8aa: 0 Fighter, 1 Worshipper, 2 Monk, 3 Wizard, 4 Priest, 5 Sage, 6 Mage. */
+  cls: number;
   /** 0x31, DS:b8b1. */
   hp: number;
   /** 0x33, DS:b8b3. */
   maxHp: number;
+  /** 0x35, DS:b8b5: spell points, the one other field the game keeps as a float. */
+  sp: number;
+  /** 0x39, DS:b8b9. */
+  maxSp: number;
   /** 0x3f, DS:b8bf: what the character weighs with nothing carried. */
   weight: number;
   /** 0x41, DS:b8c1: what the character weighs carrying everything they own. */
@@ -28,10 +34,19 @@ export interface PlayerCharacter {
   weaponsOwned: number[];
   /** 0x8e, DS:b90e: the plus on each of the eight weapons. */
   weaponPlus: number[];
+  /** 0x9b, DS:b91b: which of the eight weapons is in hand. */
+  weapon: number;
   /** 0xb0, DS:b930: how many of each of the eight armors the character owns. */
   armorOwned: number[];
   /** 0xb8, DS:b938: the plus on each of the eight armors. */
   armorPlus: number[];
+  /** 0xc0, DS:b940: which of the seven suits of armor is worn. */
+  armor: number;
+  /**
+   * 0xdd, DS:b95d: taken off a monster's attack roll. The save layout in the RE notes has no
+   * name for this byte; the recovered source calls it `shield`. Nothing in the game writes it.
+   */
+  shield: number;
   /** 0x22b, DS:baab: 180 scroll counts, indexed `type * 45 + level * 3 + slot`. */
   scrolls: number[];
   /** 0x2df, DS:bb5f: 180 wand charge counts, indexed the same way. */
@@ -40,6 +55,8 @@ export interface PlayerCharacter {
   exp: number;
   /** 0x7ac, DS:c02c: the character's experience level. */
   lev: number;
+  /** 0x7ae, DS:c02e: which way the character faces, 0 north, 1 south, 2 west, 3 east. */
+  dir: number;
   /** 0x7b0, DS:c030. */
   x: number;
   /** 0x7b2, DS:c032. */
@@ -52,6 +69,8 @@ export interface PlayerCharacter {
   mapCursorX: number;
   /** 0x7b9, DS:c039. */
   mapCursorY: number;
+  /** 0x7cb, DS:c04b: how many lucky charms the character carries. */
+  luckyCharms: number;
   /** 0x7ce, DS:c04e: moves until the disease bites again; -1 once it is cured. */
   disease: number;
   /** 0x7d0, DS:c050: moves until the poison bites again; -1 once it is cured. */
@@ -116,8 +135,16 @@ export interface PlayerCharacter {
   iq: number;
   /** 0x81a, DS:c09a. */
   wis: number;
+  /** 0x81c, DS:c09c. */
+  con: number;
   /** 0x81e, DS:c09e: agility. The save parser calls this field `dex`. */
   dex: number;
+  /** 0x820, DS:c0a0. */
+  luck: number;
+  /** 0x853, DS:c0d3: the plus on the gauntlets. */
+  gauntlet: number;
+  /** 0x8f6, DS:c176: 1 on a character rolled under I Care How Awful, the hard mode. */
+  hard: number;
 }
 
 /**
@@ -135,14 +162,28 @@ export interface Monster {
 }
 
 /**
- * The two fields of a monster's 29-byte description (exe DS:4fc9 for the 22 built-in monsters,
- * `MD.BIN` for the section's 22..26) that the battle spells read.
+ * The fields of a monster's 29-byte description (exe DS:4fc9 for the 22 built-in monsters,
+ * `MD.BIN` for the section's 22..26) that the ported functions read. The record is
+ * `name[19], picnum, color_set, ldrain, chrdrain, breath, special, type, int16 exp, color`.
  */
 export interface MonsterKind {
-  /** Byte 24. 100 marks a Shadow boss, which several spells refuse to touch. */
+  /** Bytes 0..18, upper case as the game stores it: what a battle message calls the monster. */
+  name: string;
+  /**
+   * Byte 21. Above zero it drains that many character levels a hit; below zero it drains
+   * experience, and the amount it names is only what the message prints — see {@link defend}.
+   */
+  levelDrain: number;
+  /** Byte 22: 1..6 raises a stat and -1..-6 drains one, the stat being `abs(byte) - 1`. */
+  statDrain: number;
+  /** Byte 23: 0 none, 1 fire, 2 ice, 3 acid, 4 green phlegm, 5 black slime. */
+  breath: number;
+  /** Byte 24. 100 marks a Shadow boss, which several spells refuse to touch; 6 a puffball. */
   special: number;
   /** Byte 25: which row of `monsterStats` this monster fights with. */
   type: number;
+  /** Bytes 26..27: what a kill's experience is multiplied by. -1 is worth nothing at all. */
+  expMult: number;
 }
 
 /**
@@ -167,13 +208,19 @@ export type GameEvent =
   /** load_level_map (exe 2000:7687) reads in another floor's monsters. */
   | { kind: 'levelChanged'; from: number; to: number }
   /** give_hint (exe 2000:313a) prints one of the hints in `UH.BIN`. */
-  | { kind: 'hintShown'; hint: number };
+  | { kind: 'hintShown'; hint: number }
+  /** save_player (exe 2000:79ad) writes the character record back out to its file. */
+  | { kind: 'playerSaved' };
 
-/** The two columns of the type table `mstats` (exe DS:5402) that the battle spells read. */
+/** The columns of the type table `mstats` (exe DS:5402) that the ported functions read. */
 export interface MonsterStats {
+  /** The to-hit armor column; a swing at the monster has it taken off the roll. */
+  defense: number;
+  /** The die a monster of this type rolls for damage. */
+  damageDie: number;
   /** Hit points per level; Drain Monster takes half of it for each point of wisdom. */
   hpPerLevel: number;
-  /** The `dex` column of the table; Autokill rolls against it. */
+  /** The `dex` column of the table; Autokill rolls against it, and it sets the attack interval. */
   speed: number;
 }
 
@@ -196,8 +243,19 @@ export interface Game {
   monsterStats: MonsterStats[];
   /** The weight column of the eight weapons (exe DS:01a6, one every 7 bytes). */
   weaponWeights: number[];
+  /**
+   * The damage-die column of the weapon table (exe DS:01a2, one every 7 bytes). It has twelve
+   * rows: the eight weapons, then the four power weapons a Power Weapon spell puts in hand.
+   */
+  weaponDamage: number[];
+  /** The to-hit column of the same twelve rows (exe DS:01a4). */
+  weaponHit: number[];
+  /** The seconds-per-swing column of the same twelve rows (exe DS:01a5). */
+  weaponTime: number[];
   /** The weight column of the seven armors (exe DS:01f8, one every 5 bytes). */
   armorWeights: number[];
+  /** The armor-rating column of the seven armors (exe DS:01f6, one every 5 bytes). */
+  armorHitChance: number[];
   /** The deepest floor of each of the five modules (exe DS:0493): 25, 45, 65, 85, 105. */
   bottomLevel: number[];
   /**
@@ -205,8 +263,18 @@ export interface Game {
    * {@link MAP_EMPTY}, {@link MAP_PLAYER}, or the slot number of the monster standing there.
    */
   monsterMap: Uint8Array;
+  /** DS:c4df: one seconds-until-its-next-attack timer per monster slot. */
+  monsterTimers: Int16Array;
   /** DS:2517: the slot of the monster the player is fighting, or -1 for none. */
   engaged: number;
+  /** DS:c655: the monster standing in the direction the player faces, or -1 for none. */
+  engagedAhead: number;
+  /** DS:049d: the direction the monster found by call_check_eng was standing in. */
+  enemyDir: number;
+  /** DS:0431: what the last monster attack did to the player. */
+  lastMonsterDamage: number;
+  /** DS:047b: how many seconds of game time the character has spent, counted as a float. */
+  secondsElapsed: number;
   /** DS:2328: how many columns of a floor the game lets the player reach. */
   columns: number;
   /** DS:232a: how many rows of a floor the game lets the player reach. */
@@ -219,6 +287,10 @@ export interface Game {
   recenterMap: boolean;
   /** DS:c607: the 3D view has to be redrawn. */
   redrawView: boolean;
+  /** DS:c657: the battle banner is on screen. */
+  battleInfoOn: boolean;
+  /** DS:c649: the battle banner has been written over and has to be printed again. */
+  reprintBattleInfo: boolean;
   /** DS:c4dd: the line printed beside the monster during a fight. */
   monsterStatusLine: string;
   /** Every line the game has printed, oldest first. */
@@ -231,6 +303,12 @@ export interface Game {
    * four of its sides are walls. `Dungeon.solid` in `src/lib/game/unfmap.js` is the same test.
    */
   solid(x: number, y: number, level: number, module: number): boolean;
+  /**
+   * retdwall (exe 3000:8360, unf.c "retdwall"): what stands on one side of a square — 0 wall,
+   * 1 door, 2 secret door, 3 open. `hv` is 0 for the west side and 1 for the north side.
+   * `Dungeon.side` in `src/lib/game/unfmap.js` is the same function.
+   */
+  retdwall(x: number, y: number, hv: number, level: number, module: number): number;
   /**
    * get_choice (exe 2000:2d93) reading the direction menu Pass Wall prints: 1 north, 2 south, 3
    * east, 4 west, 5 cancel. The original reads the keyboard; the port asks whoever built the
@@ -286,24 +364,32 @@ export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say'>> {
 /** A character to run a ported function against. Fresh each call, arrays and all. */
 function defaultPc(): PlayerCharacter {
   return {
+    cls: 0,
     hp: 100,
     maxHp: 100,
+    sp: 0,
+    maxSp: 0,
     weight: 150,
     loadedWeight: 150,
     weaponsOwned: [1, 0, 0, 0, 0, 0, 0, 0],
     weaponPlus: [0, 0, 0, 0, 0, 0, 0, 0],
+    weapon: 0,
     armorOwned: [1, 0, 0, 0, 0, 0, 0, 0],
     armorPlus: [0, 0, 0, 0, 0, 0, 0, 0],
+    armor: 0,
+    shield: 0,
     scrolls: Array.from({ length: 180 }, () => 0),
     wands: Array.from({ length: 180 }, () => 0),
     exp: 100000,
     lev: 10,
+    dir: 0,
     x: 40,
     y: 50,
     level: 5,
     module: 0,
     mapCursorX: 40,
     mapCursorY: 55,
+    luckyCharms: 0,
     disease: 0,
     poison: 0,
     tempWeaponPlus: 0,
@@ -336,8 +422,28 @@ function defaultPc(): PlayerCharacter {
     str: 20,
     iq: 20,
     wis: 20,
+    con: 20,
     dex: 20,
+    luck: 20,
+    gauntlet: 0,
+    hard: 0,
   };
+}
+
+/**
+ * The 27 monster descriptions of section 1. `dotu-data.json` title-cases the names for the
+ * bestiary; the game holds them upper case, which is how a battle message prints them.
+ */
+function sectionMonsterKinds(): MonsterKind[] {
+  return [...data.builtinMonsters, ...data.sections[0].monsters].map((kind) => ({
+    name: kind.name.toUpperCase(),
+    levelDrain: kind.levelDrain,
+    statDrain: kind.statDrain,
+    breath: kind.breath,
+    special: kind.special,
+    type: kind.type,
+    expMult: kind.expMult,
+  }));
 }
 
 /** The 145 empty slots a floor starts with. */
@@ -356,22 +462,34 @@ export function newGame(overrides: GameOverrides = {}): Game {
     pc: { ...defaultPc(), ...pcOverrides },
     events: [],
     monsters: emptySlots(),
-    monsterKinds: [...data.builtinMonsters, ...data.sections[0].monsters],
+    monsterKinds: sectionMonsterKinds(),
     monsterStats: data.monsterTypes,
     weaponWeights: data.weapons.slice(0, 8).map((weapon) => weapon.weight),
+    weaponDamage: data.weapons.map((weapon) => weapon.damageDie),
+    weaponHit: data.weapons.map((weapon) => weapon.hit),
+    weaponTime: data.weapons.map((weapon) => weapon.speed),
     armorWeights: data.armor.map((armor) => armor.weight),
+    armorHitChance: data.armor.map((armor) => armor.armor),
     bottomLevel: data.constants.bottomLevel,
     monsterMap: new Uint8Array(WIDTH * HEIGHT).fill(MAP_EMPTY),
+    monsterTimers: new Int16Array(145),
     engaged: -1,
+    engagedAhead: -1,
+    enemyDir: -1,
+    lastMonsterDamage: 0,
+    secondsElapsed: 0,
     columns: DUNGEON_XMAX,
     rows: DUNGEON_YMAX,
     areaColumns: WIDTH,
     areaRows: HEIGHT,
     recenterMap: false,
     redrawView: false,
+    battleInfoOn: false,
+    reprintBattleInfo: false,
     monsterStatusLine: '',
     rng: new BorlandRng(1),
     solid: () => false,
+    retdwall: () => 3,
     chooseDirection: () => 5,
     chooseWeapon: () => null,
     chooseArmor: () => null,
