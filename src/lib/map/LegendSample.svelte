@@ -1,12 +1,12 @@
 <script lang="ts">
-  import type { Square } from '../game/unfmap.js';
   import { drawSquare } from './draw-floor';
+  import type { MapGame, MapSquare } from './game';
   import { palette } from './palette';
   import { TELEPORTER_STILL_HUE, teleporterHue } from './teleporters';
 
   const SIZE = 18;
 
-  let { square }: { square: Square } = $props();
+  let { square, game }: { square: MapSquare; game: MapGame } = $props();
 
   let canvas: HTMLCanvasElement;
 
@@ -23,7 +23,7 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.fillStyle = palette.background;
       ctx.fillRect(0, 0, edge, edge);
-      drawSquare(ctx, sample, 2, 2, SIZE, SIZE, 0, hue);
+      drawSquare(ctx, sample, 2, 2, SIZE, SIZE, 0, hue, game);
     };
     if (!animated) {
       paint(TELEPORTER_STILL_HUE);

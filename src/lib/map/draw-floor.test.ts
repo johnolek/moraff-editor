@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { HEIGHT, WIDTH, type Square } from '../game/unfmap.js';
+import { HEIGHT, WIDTH } from '../game/unfmap.js';
 import { MAP_COLUMNS, MAP_ROWS } from './area';
 import { drawFloor } from './draw-floor';
+import { UNFORGIVEN_MAP, type MapSquare } from './game';
 
-function openFloor(): Square[][] {
+function openFloor(): MapSquare[][] {
   return Array.from({ length: HEIGHT }, () =>
-    Array.from({ length: WIDTH }, () => ({ n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0 }) as Square),
+    Array.from({ length: WIDTH }, () => ({ n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0 }) as MapSquare),
   );
 }
 
@@ -24,7 +25,7 @@ describe('drawFloor', () => {
   it('draws only the squares the game itself shows', () => {
     const fills: { x: number; y: number }[] = [];
     // One pixel per square on a canvas large enough for every row the generator makes.
-    drawFloor(recordingContext(fills), openFloor(), { cell: 1, originX: 0, originY: 0, width: WIDTH, height: HEIGHT, floor: 1, teleporterHue: null });
+    drawFloor(recordingContext(fills), openFloor(), { cell: 1, originX: 0, originY: 0, width: WIDTH, height: HEIGHT, floor: 1, teleporterHue: null, game: UNFORGIVEN_MAP });
     // The first fill is the background; each square is filled one pixel in from its corner.
     const squares = fills.slice(1);
     expect(squares).toHaveLength(MAP_COLUMNS * MAP_ROWS);

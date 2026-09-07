@@ -3,8 +3,9 @@ import { nudgeLevel, rollHp } from '../bestiary/roll';
 import { sectionOf } from '../game/dotu-files.js';
 import { monsterLevelBase } from '../game/dotu-mech.js';
 import { sectionInfo, type SectionInfo } from '../game/sections';
-import { HEIGHT, WIDTH, type Square } from '../game/unfmap.js';
-import { isOnMap } from './area';
+import { HEIGHT, WIDTH } from '../game/unfmap.js';
+import { isOnMap, UNFORGIVEN_AREA } from './area';
+import type { MapSquare } from './game';
 
 /** Monsters the game keeps for one floor, boss included (RE notes 4.1). */
 export const MONSTER_SLOTS = 145;
@@ -73,7 +74,7 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  *
  * A floor the game could not stock gets nothing.
  */
-export function stockFloor(rows: Square[][], moduleIndex: number, floor: number, rnd: () => number): StockedMonster[] {
+export function stockFloor(rows: MapSquare[][], moduleIndex: number, floor: number, rnd: () => number): StockedMonster[] {
   const section = stockingSection(moduleIndex, floor);
   if (!section) return [];
   const baseLevel = monsterLevelBase(floor, moduleIndex);
@@ -112,7 +113,7 @@ export function monsterCounts(monsters: StockedMonster[]): MonsterCount[] {
 
 /** How many of the floor's monsters stand outside the area the game shows. */
 export function beyondMapCount(monsters: StockedMonster[]): number {
-  return monsters.filter((monster) => !isOnMap(monster)).length;
+  return monsters.filter((monster) => !isOnMap(monster, UNFORGIVEN_AREA)).length;
 }
 
 export interface MonsterCountGroup {
@@ -165,7 +166,7 @@ function sectionMonster(section: number, slot: number): Monster {
 }
 
 /** A random square, redrawn until it is open and holds no monster yet. */
-function freeSquare(rows: Square[][], taken: Set<number>, rnd: () => number): { x: number; y: number } {
+function freeSquare(rows: MapSquare[][], taken: Set<number>, rnd: () => number): { x: number; y: number } {
   for (;;) {
     const x = random(rnd, WIDTH);
     const y = random(rnd, HEIGHT);
@@ -173,7 +174,7 @@ function freeSquare(rows: Square[][], taken: Set<number>, rnd: () => number): { 
   }
 }
 
-function bossSquare(rows: Square[][], taken: Set<number>, rnd: () => number): { x: number; y: number } {
+function bossSquare(rows: MapSquare[][], taken: Set<number>, rnd: () => number): { x: number; y: number } {
   for (;;) {
     const x = random(rnd, BOSS_AREA_SIZE) + BOSS_AREA_ORIGIN;
     const y = random(rnd, BOSS_AREA_SIZE) + BOSS_AREA_ORIGIN;

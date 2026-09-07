@@ -1,6 +1,6 @@
-import type { Square } from '../game/unfmap.js';
-import { forEachShownSquare } from './area';
+import { forEachShownSquare, type MapArea } from './area';
 import { squareRect } from './draw-floor';
+import type { MapSquare } from './game';
 import type { Viewport } from './viewport';
 
 /** One teleporter side: the west edge of square (x, y) when vertical, else its north edge. */
@@ -29,7 +29,7 @@ export function teleporterLineWidth(cell: number): number {
 }
 
 /** Every teleporter side of a floor, each listed once even though two squares share it. */
-export function teleporterSegments(rows: Square[][]): TeleporterSegment[] {
+export function teleporterSegments(rows: MapSquare[][], area: MapArea): TeleporterSegment[] {
   const seen = new Set<string>();
   const segments: TeleporterSegment[] = [];
   const add = (x: number, y: number, vertical: boolean) => {
@@ -38,7 +38,7 @@ export function teleporterSegments(rows: Square[][]): TeleporterSegment[] {
     seen.add(key);
     segments.push({ x, y, vertical });
   };
-  forEachShownSquare(rows, (square, x, y) => {
+  forEachShownSquare(rows, area, (square, x, y) => {
     if (square.solid) return;
     if (square.w === 4) add(x, y, true);
     if (square.e === 4) add(x + 1, y, true);

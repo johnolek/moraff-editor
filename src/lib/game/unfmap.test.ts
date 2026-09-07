@@ -1,8 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from './dungeon';
-import { floorBounds, floorsOfModule, summarizeFloor, type FloorSummary } from './floor-summary';
+import { floorBounds, summarizeFloor, type FloorSummary } from './floor-summary';
 import { MAP_ROWS } from '../map/area';
+import { floorsOf, UNFORGIVEN_MAP } from '../map/game';
 import { HEIGHT, WIDTH, render, type Dungeon, type Square } from './unfmap.js';
 
 // Both fixtures were produced by the verified generator (dotu-tools/reference/make_fixtures.mjs).
@@ -27,7 +28,7 @@ describe('bundled dungeon', () => {
 
   it.each([1, 2, 3, 4, 5])('counts every feature of every floor of module %i like the fixture', (module) => {
     const expected = fixtureSummaries.filter((summary) => summary.module === module);
-    const actual = floorsOfModule(module - 1).map((floor) => summarizeFloor(bundledDungeon, floor, module - 1, HEIGHT));
+    const actual = floorsOf(UNFORGIVEN_MAP, module - 1).map((floor) => summarizeFloor(bundledDungeon, floor, module - 1, HEIGHT));
     expect(actual).toEqual(expected);
   });
 });

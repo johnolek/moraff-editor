@@ -1,47 +1,50 @@
 <script lang="ts">
-  import type { FloorSummary } from '../game/floor-summary';
-  import type { Square } from '../game/unfmap.js';
+  import type { MapFloorSummary } from '../game/floor-summary';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { GLYPH_LABELS, TOWN_BUILDINGS } from './labels';
+  import type { MapGame, MapSquare } from './game';
+  import { GLYPH_LABELS } from './labels';
   import LegendSample from './LegendSample.svelte';
   import type { LegendKind } from './marks';
 
   interface Props {
+    game: MapGame;
     /** Counts shown under each entry. */
-    summary: FloorSummary;
+    summary: MapFloorSummary;
     /** Label of the entry whose squares stay marked until it is clicked again or cleared. */
     pinned: string | null;
     onhover: (kind: LegendKind | null) => void;
     onpin: (label: string | null, kind: LegendKind | null) => void;
   }
 
-  let { summary, pinned, onhover, onpin }: Props = $props();
+  let { game, summary, pinned, onhover, onpin }: Props = $props();
 
   function toggle(label: string, kind: LegendKind) {
     if (pinned === label) onpin(null, null);
     else onpin(label, kind);
   }
 
-  function sample(overrides: Partial<Square>): Square {
-    return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
+  /** A square drawn beside a legend entry. The building number is written into both games'
+   *  fields, so whichever one the game reads gives the sample the right colour. */
+  function sample(overrides: Partial<MapSquare>, building = 0): MapSquare {
+    return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: building, surface: building, ...overrides };
   }
 
   function isTrapdoor(kind: LegendKind): boolean {
     return kind.kind === 'glyph' && kind.glyph === 'trapdoor';
   }
 
-  const entries = $derived<{ label: string; square: Square; kind: LegendKind; count: number }[]>([
+  const entries = $derived<{ label: string; square: MapSquare; kind: LegendKind; count: number }[]>([
     { label: 'Open square', square: sample({ n: 0, s: 0 }), kind: { kind: 'open' }, count: summary.open },
     { label: 'Door', square: sample({ n: 1, s: 0 }), kind: { kind: 'side', side: 1 }, count: summary.doors },
     { label: 'Secret door', square: sample({ n: 2, s: 0 }), kind: { kind: 'side', side: 2 }, count: summary.secretDoors },
-    { label: 'Teleporter', square: sample({ n: 4, s: 0 }), kind: { kind: 'side', side: 4 }, count: summary.teleporterSquares },
+    ...(game.modules ? [{ label: 'Teleporter', square: sample({ n: 4, s: 0 }), kind: { kind: 'side', side: 4 } as LegendKind, count: summary.teleporterSquares }] : []),
     { label: GLYPH_LABELS.down, square: sample({ n: 0, s: 0, ladder: 1 }), kind: { kind: 'glyph', glyph: 'down' }, count: summary.down },
     { label: GLYPH_LABELS.up, square: sample({ n: 0, s: 0, ladder: -1 }), kind: { kind: 'glyph', glyph: 'up' }, count: summary.up },
     { label: GLYPH_LABELS.trapdoor, square: sample({ n: 0, s: 0, trapdoor: 5 }), kind: { kind: 'glyph', glyph: 'trapdoor' }, count: summary.trapdoors },
     { label: GLYPH_LABELS.chute, square: sample({ n: 0, s: 0, chute: 1 }), kind: { kind: 'glyph', glyph: 'chute' }, count: summary.chutes },
-    ...TOWN_BUILDINGS.map((label, index) => ({
+    ...game.buildings.map(({ label }, index) => ({
       label,
-      square: sample({ n: 0, s: 0, town: index + 1 }),
+      square: sample({ n: 0, s: 0 }, index + 1),
       kind: { kind: 'town', building: index + 1 } as LegendKind,
       count: summary.town[index],
     })),
@@ -71,7 +74,7 @@
           onpointerleave={() => onhover(null)}
           onclick={() => toggle(label, kind)}
         >
-          <LegendSample {square} />
+          <LegendSample {square} {game} />
           <span class="text">
             <span>{label}</span>
             <span class="count">{count}</span>

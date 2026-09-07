@@ -1,8 +1,9 @@
-import type { Side, Square } from '../game/unfmap.js';
+import type { MapGame, MapSquare } from './game';
 
 /** Colours of the game's expanded map: entries 0..15 of every DotU palette, read from
  *  drawsquare/draw_side in unf.exe. Secret doors are never drawn by the game, so that one
- *  is ours; teleporter sides are styled in teleporters.ts. */
+ *  is ours; teleporter sides are styled in teleporters.ts, and the colours of the buildings
+ *  on floor 0 belong to the game each of them comes from. */
 export const palette = {
   background: '#710000',
   square: '#000000',
@@ -21,14 +22,12 @@ export const palette = {
    *  small for their pictures: entries 7 and 6 of every DotU palette. */
   monster: '#ffb600',
   boss: '#ff0028',
-  /** Store, temple, bank, inn: the fill of a building square on floor 0. */
-  town: ['#51caff', '#ffff51', '#d75100', '#00ff00'],
 } as const;
 
 export type Glyph = 'down' | 'up' | 'trapdoor' | 'chute';
 
 /** The one glyph drawn inside a square, in the game's priority order. */
-export function squareGlyph(square: Square): Glyph | null {
+export function squareGlyph(square: MapSquare): Glyph | null {
   if (square.ladder > 0) return 'down';
   if (square.ladder < 0) return 'up';
   if (square.trapdoor >= 0) return 'trapdoor';
@@ -38,7 +37,7 @@ export function squareGlyph(square: Square): Glyph | null {
 
 export type SideStroke = 'wall' | 'door' | 'secretDoor' | 'teleporter';
 
-export function sideStroke(side: Side): SideStroke | null {
+export function sideStroke(side: number): SideStroke | null {
   switch (side) {
     case 0:
       return 'wall';
@@ -53,8 +52,9 @@ export function sideStroke(side: Side): SideStroke | null {
   }
 }
 
-export function squareFill(square: Square): string | null {
+export function squareFill(square: MapSquare, game: MapGame): string | null {
   if (square.solid) return null;
-  if (square.town) return palette.town[square.town - 1];
+  const building = game.buildingOn(square);
+  if (building) return game.buildings[building - 1].colour;
   return palette.square;
 }

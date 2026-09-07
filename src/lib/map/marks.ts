@@ -1,6 +1,6 @@
-import type { Side, Square } from '../game/unfmap.js';
-import { forEachShownSquare } from './area';
+import { forEachShownSquare, type MapArea } from './area';
 import { glyphDestination } from './draw-floor';
+import type { MapSquare } from './game';
 import { squareGlyph, type Glyph } from './palette';
 
 /** A square to emphasise on the map, with an optional label drawn beside it. */
@@ -13,25 +13,25 @@ export interface Mark {
 /** What a legend entry stands for. */
 export type LegendKind =
   | { kind: 'glyph'; glyph: Glyph }
-  | { kind: 'side'; side: Side }
+  | { kind: 'side'; side: number }
   | { kind: 'town'; building: number }
   | { kind: 'trapdoorTo'; floor: number }
   | { kind: 'open' };
 
 /** Every square of the floor matching a legend entry. Ladders, chutes and trap doors carry
  *  their destination floor as the label. "Open square" would be the whole floor, so nothing. */
-export function squaresOfKind(rows: Square[][], floor: number, kind: LegendKind): Mark[] {
+export function squaresOfKind(rows: MapSquare[][], floor: number, kind: LegendKind, area: MapArea): Mark[] {
   if (kind.kind === 'open') return [];
   const labelled = kind.kind === 'glyph' || kind.kind === 'trapdoorTo';
   const marks: Mark[] = [];
-  forEachShownSquare(rows, (square, x, y) => {
+  forEachShownSquare(rows, area, (square, x, y) => {
     if (square.solid) return;
     if (matches(square, kind)) marks.push({ x, y, label: labelled ? String(glyphDestination(square, floor)) : null });
   });
   return marks;
 }
 
-function matches(square: Square, kind: LegendKind): boolean {
+function matches(square: MapSquare, kind: LegendKind): boolean {
   switch (kind.kind) {
     case 'glyph':
       return squareGlyph(square) === kind.glyph;

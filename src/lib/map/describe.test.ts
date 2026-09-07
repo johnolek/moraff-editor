@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Square } from '../game/unfmap.js';
 import { describeFeature, describeMonster, describeNote, describeSquare, describeTeleporter, featureLine } from './describe';
+import { UNFORGIVEN_MAP, type MapSquare } from './game';
 
-function square(overrides: Partial<Square> = {}): Square {
+function square(overrides: Partial<MapSquare> = {}): MapSquare {
   return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
 }
 
@@ -16,21 +16,21 @@ describe('describeTeleporter', () => {
 
 describe('describeFeature', () => {
   it('spells out destinations and landing squares', () => {
-    expect(describeFeature(null)).toBeNull();
-    expect(describeFeature({ kind: 'down', destination: { floor: 3, x: 1, y: 2 } })).toBe('Down ladder to floor 3');
-    expect(describeFeature({ kind: 'trapdoor', destination: { floor: 10, x: 18, y: 93 } })).toBe('Trap door to floor 10, lands at 18, 93');
-    expect(describeFeature({ kind: 'town', building: 2 })).toBe('Temple');
+    expect(describeFeature(null, UNFORGIVEN_MAP)).toBeNull();
+    expect(describeFeature({ kind: 'down', destination: { floor: 3, x: 1, y: 2 } }, UNFORGIVEN_MAP)).toBe('Down ladder to floor 3');
+    expect(describeFeature({ kind: 'trapdoor', destination: { floor: 10, x: 18, y: 93 } }, UNFORGIVEN_MAP)).toBe('Trap door to floor 10, lands at 18, 93');
+    expect(describeFeature({ kind: 'town', building: 2 }, UNFORGIVEN_MAP)).toBe('Temple');
   });
 });
 
 describe('describeSquare', () => {
   it('describes rock and a plain open square', () => {
-    expect(describeSquare(square({ solid: true }), null, 5, 6, 0)).toEqual({ title: 'Square 5, 6', rock: true, feature: null, beyondMap: false });
-    expect(describeSquare(square({ n: 0, e: 1 }), null, 5, 6, 0)).toEqual({ title: 'Square 5, 6', rock: false, feature: null, beyondMap: false });
+    expect(describeSquare(square({ solid: true }), null, 5, 6, UNFORGIVEN_MAP, 0)).toEqual({ title: 'Square 5, 6', rock: true, feature: null, beyondMap: false });
+    expect(describeSquare(square({ n: 0, e: 1 }), null, 5, 6, UNFORGIVEN_MAP, 0)).toEqual({ title: 'Square 5, 6', rock: false, feature: null, beyondMap: false });
   });
 
   it('says only that nothing can reach a square beyond the area the game shows', () => {
-    const beyond = describeSquare(square({ ladder: -1 }), { kind: 'up', destination: { floor: 4, x: 5, y: 105 } }, 5, 105, 0);
+    const beyond = describeSquare(square({ ladder: -1 }), { kind: 'up', destination: { floor: 4, x: 5, y: 105 } }, 5, 105, UNFORGIVEN_MAP, 0);
     expect(beyond).toEqual({
       title: 'Square 5, 105',
       rock: false,
@@ -40,16 +40,16 @@ describe('describeSquare', () => {
   });
 
   it('names a teleporter only when the square holds nothing else', () => {
-    expect(describeSquare(square({ e: 4 }), null, 5, 6, 2).feature).toBe('Teleporter to Module II or IV');
-    expect(describeSquare(square({ e: 4 }), { kind: 'down', destination: { floor: 3, x: 5, y: 6 } }, 5, 6, 2).feature).toBe('Down ladder to floor 3');
+    expect(describeSquare(square({ e: 4 }), null, 5, 6, UNFORGIVEN_MAP, 2).feature).toBe('Teleporter to Module II or IV');
+    expect(describeSquare(square({ e: 4 }), { kind: 'down', destination: { floor: 3, x: 5, y: 6 } }, 5, 6, UNFORGIVEN_MAP, 2).feature).toBe('Down ladder to floor 3');
   });
 });
 
 describe('featureLine', () => {
   it('names rock, and the reason a square beyond the map holds nothing worth naming', () => {
-    expect(featureLine(describeSquare(square({ solid: true }), null, 5, 6, 0))).toBe('Rock');
-    expect(featureLine(describeSquare(square(), { kind: 'town', building: 2 }, 5, 6, 0))).toBe('Temple');
-    expect(featureLine(describeSquare(square({ solid: true }), null, 5, 105, 0))).toBe("Beyond the game's map: nothing can reach this square.");
+    expect(featureLine(describeSquare(square({ solid: true }), null, 5, 6, UNFORGIVEN_MAP, 0))).toBe('Rock');
+    expect(featureLine(describeSquare(square(), { kind: 'town', building: 2 }, 5, 6, UNFORGIVEN_MAP, 0))).toBe('Temple');
+    expect(featureLine(describeSquare(square({ solid: true }), null, 5, 105, UNFORGIVEN_MAP, 0))).toBe("Beyond the game's map: nothing can reach this square.");
   });
 });
 

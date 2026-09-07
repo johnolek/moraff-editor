@@ -1,5 +1,4 @@
-import type { Side, Square } from '../game/unfmap.js';
-import { MAP_COLUMNS, MAP_ROWS } from './area';
+import type { MapGame, MapSquare } from './game';
 import type { Mark } from './marks';
 import type { Hop, Route } from './path';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
@@ -7,6 +6,8 @@ import { teleporterColour, teleporterLineWidth } from './teleporters';
 import type { Point, Viewport } from './viewport';
 
 export interface DrawOptions extends Viewport {
+  /** The game whose area is drawn and whose buildings colour floor 0. */
+  game: MapGame;
   /** Canvas size in CSS pixels, used to skip squares outside the view. */
   width: number;
   height: number;
@@ -23,15 +24,15 @@ export const LABEL_MIN_CELL = 20;
  *  with white sides, doors barred, ladders and trap doors as yellow diagonals, chutes as
  *  a blue star, town buildings as coloured squares. Rock is left as background.
  *  Square edges are snapped to whole pixels so lines stay crisp at any zoom. */
-export function drawFloor(ctx: CanvasRenderingContext2D, rows: Square[][], options: DrawOptions): void {
-  const { cell, originX, originY, width, height } = options;
+export function drawFloor(ctx: CanvasRenderingContext2D, rows: MapSquare[][], options: DrawOptions): void {
+  const { cell, originX, originY, width, height, game } = options;
   ctx.fillStyle = palette.background;
   ctx.fillRect(0, 0, width, height);
 
   const firstX = Math.max(0, Math.floor(-originX / cell));
-  const lastX = Math.min(MAP_COLUMNS - 1, Math.ceil((width - originX) / cell));
+  const lastX = Math.min(game.area.columns - 1, Math.ceil((width - originX) / cell));
   const firstY = Math.max(0, Math.floor(-originY / cell));
-  const lastY = Math.min(MAP_ROWS - 1, Math.ceil((height - originY) / cell));
+  const lastY = Math.min(game.area.rows - 1, Math.ceil((height - originY) / cell));
 
   ctx.lineWidth = 1;
   for (let y = firstY; y <= lastY; y++) {
@@ -42,7 +43,7 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: Square[][], optio
       if (square.solid) continue;
       const x0 = Math.round(originX + x * cell);
       const w = Math.round(originX + (x + 1) * cell) - x0;
-      drawSquare(ctx, square, x0, y0, w, h, options.floor, options.teleporterHue);
+      drawSquare(ctx, square, x0, y0, w, h, options.floor, options.teleporterHue, game);
     }
   }
 }
@@ -50,15 +51,16 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: Square[][], optio
 /** One square whose top-left corner pixel is (x0, y0) and whose sides are `w` and `h` apart. */
 export function drawSquare(
   ctx: CanvasRenderingContext2D,
-  square: Square,
+  square: MapSquare,
   x0: number,
   y0: number,
   w: number,
   h: number,
   floor: number,
   teleporterHue: number | null,
+  game: MapGame,
 ): void {
-  ctx.fillStyle = squareFill(square)!;
+  ctx.fillStyle = squareFill(square, game)!;
   ctx.fillRect(x0 + 1, y0 + 1, w, h);
   drawSide(ctx, square.w, x0, y0, h, true, teleporterHue);
   drawSide(ctx, square.n, x0, y0, w, false, teleporterHue);
@@ -70,7 +72,7 @@ export function drawSquare(
 /** One side, as draw_side does it: a line that stops one pixel short of both corners,
  *  and for doors a bar across the middle. `vertical` sides sit on the square's west edge,
  *  horizontal ones on its north edge; `length` is the square's size along the side. */
-function drawSide(ctx: CanvasRenderingContext2D, side: Side, x0: number, y0: number, length: number, vertical: boolean, teleporterHue: number | null): void {
+function drawSide(ctx: CanvasRenderingContext2D, side: number, x0: number, y0: number, length: number, vertical: boolean, teleporterHue: number | null): void {
   const stroke = sideStroke(side);
   if (!stroke) return;
   if (stroke === 'teleporter') {
@@ -109,7 +111,7 @@ function drawDoorBar(ctx: CanvasRenderingContext2D, x0: number, y0: number, leng
   }
 }
 
-function drawGlyph(ctx: CanvasRenderingContext2D, square: Square, x0: number, y0: number, w: number, h: number, floor: number): void {
+function drawGlyph(ctx: CanvasRenderingContext2D, square: MapSquare, x0: number, y0: number, w: number, h: number, floor: number): void {
   const glyph = squareGlyph(square);
   if (!glyph) return;
   const x1 = x0 + w + 1;
@@ -128,7 +130,7 @@ function drawGlyph(ctx: CanvasRenderingContext2D, square: Square, x0: number, y0
 }
 
 /** Floor a ladder, chute or trap door square leads to. */
-export function glyphDestination(square: Square, floor: number): number {
+export function glyphDestination(square: MapSquare, floor: number): number {
   if (square.ladder) return floor + square.ladder;
   if (square.trapdoor >= 0) return square.trapdoor;
   return square.chute;

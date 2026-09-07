@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { Square } from '../game/unfmap.js';
+import { UNFORGIVEN_MAP, type MapSquare } from './game';
 import { palette, sideStroke, squareFill, squareGlyph } from './palette';
 
-function square(overrides: Partial<Square> = {}): Square {
+function square(overrides: Partial<MapSquare> = {}): MapSquare {
   return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
 }
 
@@ -30,9 +30,9 @@ describe('sideStroke', () => {
 
 describe('squareFill', () => {
   it('leaves rock unfilled and colours buildings by kind', () => {
-    expect(squareFill(square({ solid: true }))).toBeNull();
-    expect(squareFill(square())).toBe(palette.square);
-    expect(squareFill(square({ town: 1 }))).toBe(palette.town[0]);
-    expect(squareFill(square({ town: 4 }))).toBe(palette.town[3]);
+    expect(squareFill(square({ solid: true }), UNFORGIVEN_MAP)).toBeNull();
+    expect(squareFill(square(), UNFORGIVEN_MAP)).toBe(palette.square);
+    expect(squareFill(square({ town: 1 }), UNFORGIVEN_MAP)).toBe(UNFORGIVEN_MAP.buildings[0].colour);
+    expect(squareFill(square({ town: 4 }), UNFORGIVEN_MAP)).toBe(UNFORGIVEN_MAP.buildings[3].colour);
   });
 });

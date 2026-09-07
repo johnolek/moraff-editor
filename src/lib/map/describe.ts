@@ -1,7 +1,7 @@
-import type { Square } from '../game/unfmap.js';
 import { isOnMap } from './area';
 import { teleporterTargets, type Feature } from './floor-info';
-import { GLYPH_LABELS, MODULE_NUMERALS, TOWN_BUILDINGS } from './labels';
+import type { MapGame, MapSquare } from './game';
+import { GLYPH_LABELS, MODULE_NUMERALS } from './labels';
 import type { Note } from './notes';
 import { hasTeleporterSide } from './path';
 import { monsterById, type StockedMonster } from './stocking';
@@ -12,9 +12,9 @@ export function describeTeleporter(moduleIndex: number): string {
   return `Teleporter to Module ${targets.join(' or ')}`;
 }
 
-export function describeFeature(feature: Feature): string | null {
+export function describeFeature(feature: Feature, game: MapGame): string | null {
   if (!feature) return null;
-  if (feature.kind === 'town') return TOWN_BUILDINGS[feature.building - 1];
+  if (feature.kind === 'town') return game.buildings[feature.building - 1].label;
   const { floor, x, y } = feature.destination;
   const landing = feature.kind === 'trapdoor' ? `, lands at ${x}, ${y}` : '';
   return `${GLYPH_LABELS[feature.kind]} to floor ${floor}${landing}`;
@@ -38,14 +38,14 @@ const BEYOND_MAP = "Beyond the game's map: nothing can reach this square.";
 
 /** A teleporter is only mentioned on squares that hold nothing else, since a ladder, chute,
  *  trap door or building is the more useful thing to say about the square. */
-export function describeSquare(square: Square, feature: Feature, x: number, y: number, moduleIndex: number): SquareDescription {
+export function describeSquare(square: MapSquare, feature: Feature, x: number, y: number, game: MapGame, dungeon: number): SquareDescription {
   const title = `Square ${x}, ${y}`;
-  if (!isOnMap({ x, y })) return { title, rock: square.solid, feature: BEYOND_MAP, beyondMap: true };
-  const named = describeFeature(feature);
+  if (!isOnMap({ x, y }, game.area)) return { title, rock: square.solid, feature: BEYOND_MAP, beyondMap: true };
+  const named = describeFeature(feature, game);
   return {
     title,
     rock: square.solid,
-    feature: named ?? (!square.solid && hasTeleporterSide(square) ? describeTeleporter(moduleIndex) : null),
+    feature: named ?? (!square.solid && hasTeleporterSide(square) ? describeTeleporter(dungeon) : null),
     beyondMap: false,
   };
 }

@@ -1,32 +1,17 @@
-import type { Dungeon, Square } from '../game/unfmap.js';
-import { forEachShownSquare } from './area';
+import { forEachShownSquare, type MapArea } from './area';
 import { glyphDestination } from './draw-floor';
+import type { MapGame, MapSquare } from './game';
 import { squareGlyph } from './palette';
 import type { Point } from './viewport';
 
-/** Access to single squares of any floor of one module. */
+/** Access to single squares of any floor of one dungeon. */
 export interface FloorLookup {
-  squareOn(x: number, y: number, level: number): Square;
+  squareOn(x: number, y: number, level: number): MapSquare;
 }
 
-/** The generator's per-square logic, the same as Dungeon.floor() applies to every square. */
-export function dungeonLookup(dungeon: Dungeon, moduleIndex: number): FloorLookup {
-  return {
-    squareOn(x, y, level) {
-      const square: Square = { ...dungeon.sides(x, y, level, moduleIndex), solid: dungeon.solid(x, y, level, moduleIndex), ladder: 0, chute: 0, trapdoor: -1, town: 0 };
-      if (square.solid) return square;
-      square.ladder = dungeon.ladder(x, y, level, moduleIndex);
-      if (square.ladder !== 0) return square;
-      if (level === 0) {
-        square.town = dungeon.townFeature(x, y, moduleIndex);
-      } else {
-        square.trapdoor = dungeon.trapdoor(x, y, level, moduleIndex);
-        const chute = dungeon.chute(x, y, level, moduleIndex);
-        square.chute = chute !== level ? chute : 0;
-      }
-      return square;
-    },
-  };
+/** The generator's per-square logic, over every floor of one dungeon. */
+export function dungeonLookup(game: MapGame, dungeon: number): FloorLookup {
+  return { squareOn: (x, y, level) => game.squareOn(x, y, level, dungeon) };
 }
 
 export type Note =
@@ -37,7 +22,7 @@ export type Note =
 
 /** What is odd about a square. Only up ladders are worth a note: the way back down is what a
  *  party can be stranded without, and every other pairing is either normal or harmless. */
-export function squareNotes(lookup: FloorLookup, floor: number, square: Square, x: number, y: number): Note[] {
+export function squareNotes(lookup: FloorLookup, floor: number, square: MapSquare, x: number, y: number): Note[] {
   if (squareGlyph(square) !== 'up') return [];
   const topFloor = glyphDestination(square, floor);
   const landing = lookup.squareOn(x, y, topFloor);
@@ -54,9 +39,9 @@ export interface NotableSquares {
   intoChute: (Point & { chuteFloor: number })[];
 }
 
-export function notableSquares(lookup: FloorLookup, floor: number, rows: Square[][]): NotableSquares {
+export function notableSquares(lookup: FloorLookup, floor: number, rows: MapSquare[][], area: MapArea): NotableSquares {
   const notable: NotableSquares = { oneWayUp: [], intoChute: [] };
-  forEachShownSquare(rows, (square, x, y) => {
+  forEachShownSquare(rows, area, (square, x, y) => {
     for (const note of squareNotes(lookup, floor, square, x, y)) {
       if (note.kind === 'oneWayUp') notable.oneWayUp.push({ x, y });
       else notable.intoChute.push({ x, y, chuteFloor: note.chuteFloor });

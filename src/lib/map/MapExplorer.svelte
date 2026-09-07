@@ -1,16 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { app } from '../app-state.svelte';
-  import { bundledDungeon } from '../game/dungeon';
-  import { floorBounds, floorsOfModule, summarizeFloor } from '../game/floor-summary';
+  import { floorBounds, summarizeMapFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
-  import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import { isAppHistoryState, type AppHistoryState } from '../history';
-  import { isOnMap, MAP_COLUMNS, MAP_ROWS } from './area';
+  import { forEachShownSquare, isOnMap } from './area';
   import { downloadFloorPng } from './export-png';
   import { describeMonster, describeNote, describeSquare, featureLine } from './describe';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
+  import { floorsOf, UNFORGIVEN_MAP } from './game';
   import { jumpTarget, squareFeature, teleporterTargets, type Destination } from './floor-info';
   import { FLOOR_MAX, FLOOR_MIN, samePlace, type MapPlace } from './history';
   import { keyAction } from './keyboard';
@@ -18,20 +17,20 @@
   import Legend from './Legend.svelte';
   import Notable from './Notable.svelte';
   import { dungeonLookup, notableSquares, squareNotes } from './notes';
-  import { hasTeleporterSide, pathToNearestTeleporter, type Route } from './path';
+  import { shortestPath, type Route } from './path';
   import { randomOpenSquare } from './relocate';
   import Selection from './Selection.svelte';
   import { squaresOfKind, type LegendKind, type Mark } from './marks';
   import SquareInfo from './SquareInfo.svelte';
-  import { teleporterSegments } from './teleporters';
   import { monsterAt, stockFloor, stockingSection, type StockedMonster } from './stocking';
   import { twinsOf, type TwinFloor } from './twins';
   import { boundsIncluding, type Point } from './viewport';
   import { nearestOpenSquare, stepFrom } from './you';
 
-  let moduleIndex = $state(0);
+  const game = UNFORGIVEN_MAP;
+  let dungeon = $state(0);
   let floor = $state(0);
-  /** Lets the map be pointed at floors the module does not have, the way the game's own
+  /** Lets the map be pointed at floors the dungeon does not have, the way the game's own
    *  16-bit floor variable can be. */
   let anyFloor = $state(false);
   let cursor = $state<Point | null>(null);
@@ -46,29 +45,29 @@
   let selected = $state<Point | null>(null);
   /** undefined: not asked yet; null: asked, nothing reachable. */
   let route = $state<Route | null | undefined>(undefined);
-  /** Stocked floors by "module:floor", kept while other floors are browsed. */
+  /** Stocked floors by "dungeon:floor", kept while other floors are browsed. */
   let stocked = $state(new Map<string, StockedMonster[]>());
   let floorCanvas: FloorCanvas;
 
-  const floors = $derived(floorsOfModule(moduleIndex));
-  const floorRange = $derived(anyFloor ? { lowest: FLOOR_MIN, highest: FLOOR_MAX } : { lowest: 0, highest: BOTTOM_LEVEL[moduleIndex] });
-  const rows = $derived(bundledDungeon.floor(floor, moduleIndex));
-  const summary = $derived(summarizeFloor(bundledDungeon, floor, moduleIndex, MAP_ROWS));
-  const lookup = $derived(dungeonLookup(bundledDungeon, moduleIndex));
-  const notable = $derived(notableSquares(lookup, floor, rows));
-  const section = $derived(sectionInfo(moduleIndex, floor));
-  const twins = $derived(twinsOf(moduleIndex, floor));
-  const stockKey = $derived(`${moduleIndex}:${floor}`);
-  const canStock = $derived(stockingSection(moduleIndex, floor) !== null);
+  const floors = $derived(floorsOf(game, dungeon));
+  const floorRange = $derived(anyFloor ? { lowest: FLOOR_MIN, highest: FLOOR_MAX } : { lowest: 0, highest: game.bottomFloor(dungeon) });
+  const rows = $derived(game.floor(floor, dungeon));
+  const summary = $derived(summarizeMapFloor(game, rows, floor, dungeon));
+  const lookup = $derived(dungeonLookup(game, dungeon));
+  const notable = $derived(notableSquares(lookup, floor, rows, game.area));
+  const section = $derived(sectionInfo(dungeon, floor));
+  const twins = $derived(twinsOf(dungeon, floor));
+  const stockKey = $derived(`${dungeon}:${floor}`);
+  const canStock = $derived(stockingSection(dungeon, floor) !== null);
   const monsters = $derived(stocked.get(stockKey) ?? []);
-  const beyondMapMonsters = $derived(monsters.filter((monster) => !isOnMap(monster)));
+  const beyondMapMonsters = $derived(monsters.filter((monster) => !isOnMap(monster, game.area)));
   /** Fit frames the floor the game shows plus whatever monsters were stocked beyond it. */
-  const bounds = $derived(boundsIncluding(floorBounds(rows, MAP_ROWS), beyondMapMonsters));
+  const bounds = $derived(boundsIncluding(floorBounds(rows, game.area.rows), beyondMapMonsters));
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
-  const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(bundledDungeon, moduleIndex, floor, cursorSquare, cursor.x, cursor.y) : null);
-  const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, moduleIndex) : null);
+  const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(game, dungeon, floor, cursorSquare, cursor.x, cursor.y) : null);
+  const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, game, dungeon) : null);
   const cursorNotes = $derived(
-    cursor && cursorSquare && isOnMap(cursor) ? squareNotes(lookup, floor, cursorSquare, cursor.x, cursor.y).map(describeNote) : [],
+    cursor && cursorSquare && isOnMap(cursor, game.area) ? squareNotes(lookup, floor, cursorSquare, cursor.x, cursor.y).map(describeNote) : [],
   );
   const cursorMonster = $derived(cursor ? monsterAt(monsters, cursor.x, cursor.y) : null);
   const selectedMonster = $derived(selected ? monsterAt(monsters, selected.x, selected.y) : null);
@@ -82,8 +81,15 @@
         }
       : null,
   );
-  const teleporterModules = $derived(selected && hasTeleporterSide(rows[selected.y][selected.x]) ? teleporterTargets(moduleIndex) : []);
-  const floorHasTeleporter = $derived(teleporterSegments(rows).length > 0);
+  const teleporterModules = $derived(selected && game.modules && game.routeTo.matches(rows[selected.y][selected.x]) ? teleporterTargets(dungeon) : []);
+  /** Whether anything on this floor is worth routing to. */
+  const floorHasTarget = $derived.by(() => {
+    let found = false;
+    forEachShownSquare(rows, game.area, (square) => {
+      if (!square.solid && game.routeTo.matches(square)) found = true;
+    });
+    return found;
+  });
   /** What the map marks: whichever of the legend and the monster list the pointer is over,
    *  and otherwise the one entry a click pinned. */
   const marked = $derived<{ from: 'legend'; kind: LegendKind } | { from: 'monsters'; monsterId: string } | null>(
@@ -97,7 +103,9 @@
             ? { from: 'monsters', monsterId: monsterPinned }
             : null,
   );
-  const marks = $derived(!marked ? [] : marked.from === 'legend' ? squaresOfKind(rows, floor, marked.kind) : squaresOfMonster(marked.monsterId));
+  const marks = $derived(
+    !marked ? [] : marked.from === 'legend' ? squaresOfKind(rows, floor, marked.kind, game.area) : squaresOfMonster(marked.monsterId),
+  );
 
   onMount(() => {
     const state = history.state;
@@ -110,12 +118,17 @@
     return $state.snapshot({ kind: 'moraff-tools', tab: app.tab, index, map: place });
   }
 
+  /** Where the map is looking now, for a history entry that is being written or compared. */
+  function here(square: Point | null): MapPlace {
+    return { dungeon, floor, square, you };
+  }
+
   /** Go to another floor and leave a history entry behind, so the browser's Back button returns to
    *  `fromSquare` on the floor being left. Nothing is recorded while another tab is showing:
    *  Back and Forward belong to the tabs then, not to the map. */
   function travel(place: MapPlace, fromSquare: Point | null) {
     if (app.tab === 'map') {
-      history.replaceState(entry(app.mapHistory.current, { module: moduleIndex, floor, square: fromSquare, you }), '');
+      history.replaceState(entry(app.mapHistory.current, here(fromSquare)), '');
       history.pushState(entry(app.mapHistory.current + 1, place), '');
       app.mapHistory = app.mapHistory.pushed();
     }
@@ -123,9 +136,9 @@
   }
 
   function applyPlace(place: MapPlace) {
-    // A history entry can name a floor the module does not have, and only the override shows one.
-    if (place.floor < 0 || place.floor > BOTTOM_LEVEL[place.module]) anyFloor = true;
-    moduleIndex = place.module;
+    // A history entry can name a floor the dungeon does not have, and only the override shows one.
+    if (place.floor < 0 || place.floor > game.bottomFloor(place.dungeon)) anyFloor = true;
+    dungeon = place.dungeon;
     floor = place.floor;
     you = place.you ?? null;
     highlight = place.square;
@@ -141,28 +154,28 @@
     const place = app.requestedPlace;
     if (!place) return;
     app.requestedPlace = null;
-    if (place.module < 0 || place.module >= BOTTOM_LEVEL.length) return;
-    const square = place.x >= 0 && place.y >= 0 && isOnMap(place) ? { x: place.x, y: place.y } : null;
-    travel({ module: place.module, floor: place.floor, square, you: square }, cursor);
+    if (!game.hasDungeon(place.dungeon)) return;
+    const square = place.x >= 0 && place.y >= 0 && isOnMap(place, game.area) ? { x: place.x, y: place.y } : null;
+    travel({ dungeon: place.dungeon, floor: place.floor, square, you: square }, cursor);
   });
 
   /** Only an entry naming somewhere else moves the map. Every entry carries the map's place,
    *  including the ones a tab switch pushed, and stepping through those must leave it alone. */
   function onPopState(event: PopStateEvent) {
     const place = isAppHistoryState(event.state) ? event.state.map : undefined;
-    if (!place || samePlace(place, { module: moduleIndex, floor, square: highlight, you })) return;
+    if (!place || samePlace(place, here(highlight))) return;
     applyPlace(place);
   }
 
-  function changeModule(event: Event) {
-    const module = Number((event.currentTarget as HTMLSelectElement).value);
-    const level = anyFloor ? floor : Math.min(floor, BOTTOM_LEVEL[module]);
-    travel({ module, floor: level, square: null, you: youOn(module, level) }, cursor);
+  function changeDungeon(event: Event) {
+    const chosen = Number((event.currentTarget as HTMLSelectElement).value);
+    const level = anyFloor ? floor : Math.min(floor, game.bottomFloor(chosen));
+    travel({ dungeon: chosen, floor: level, square: null, you: youOn(chosen, level) }, cursor);
   }
 
   /** A twin is always a floor its own module has, so the override is left alone. */
   function goToTwin(twin: TwinFloor) {
-    travel({ module: twin.module, floor: twin.floor, square: null, you: youOn(twin.module, twin.floor) }, cursor);
+    travel({ dungeon: twin.module, floor: twin.floor, square: null, you: youOn(twin.module, twin.floor) }, cursor);
   }
 
   function changeFloor(event: Event) {
@@ -181,22 +194,22 @@
     if (level !== floor) showFloor(level);
   }
 
-  /** Turning the override off brings the map back to a floor the module has. */
+  /** Turning the override off brings the map back to a floor the dungeon has. */
   function toggleAnyFloor(event: Event) {
     anyFloor = (event.currentTarget as HTMLInputElement).checked;
     if (anyFloor) return;
-    const level = Math.max(0, Math.min(BOTTOM_LEVEL[moduleIndex], floor));
+    const level = Math.max(0, Math.min(game.bottomFloor(dungeon), floor));
     if (level !== floor) showFloor(level);
   }
 
   function showFloor(level: number) {
-    travel({ module: moduleIndex, floor: level, square: null, you: youOn(moduleIndex, level) }, cursor);
+    travel({ dungeon, floor: level, square: null, you: youOn(dungeon, level) }, cursor);
   }
 
   /** Changing floor walks the party to the nearest square it can stand on. It stays nowhere
    *  if it was nowhere. */
-  function youOn(module: number, level: number): Point | null {
-    return you && nearestOpenSquare(bundledDungeon.floor(level, module), you);
+  function youOn(where: number, level: number): Point | null {
+    return you && nearestOpenSquare(game.floor(level, where), you, game.area);
   }
 
   /** Moving yourself by hand also rewrites the current history entry, so Back and Forward
@@ -204,7 +217,7 @@
   function standAt(square: Point) {
     you = square;
     if (app.tab !== 'map') return;
-    history.replaceState(entry(app.mapHistory.current, { module: moduleIndex, floor, square: highlight, you }), '');
+    history.replaceState(entry(app.mapHistory.current, here(highlight)), '');
   }
 
   function imHere() {
@@ -217,7 +230,7 @@
   }
 
   function stockThisFloor() {
-    stocked = new Map(stocked).set(stockKey, stockFloor(rows, moduleIndex, floor, Math.random));
+    stocked = new Map(stocked).set(stockKey, stockFloor(rows, dungeon, floor, Math.random));
   }
 
   function clearMonsters() {
@@ -249,12 +262,12 @@
 
   /** Taking a teleporter lands the party somewhere random in the destination town. */
   function takeTeleporter(module: number) {
-    const landing = randomOpenSquare(bundledDungeon.floor(0, module), Math.random);
-    travel({ module, floor: 0, square: landing, you: landing }, selected);
+    const landing = randomOpenSquare(game.floor(0, module), Math.random);
+    travel({ dungeon: module, floor: 0, square: landing, you: landing }, selected);
   }
 
-  function routeToTeleporter(passWall: boolean) {
-    if (selected) route = pathToNearestTeleporter(rows, selected, passWall);
+  function routeToTarget(passWall: boolean) {
+    if (selected) route = shortestPath(rows, selected, game.routeTo.matches, game.area, passWall);
   }
 
   function stepFloor(delta: number) {
@@ -266,11 +279,11 @@
    *  down beside the cursor instead of moving. */
   function walk(dx: number, dy: number) {
     if (!you) {
-      const start = nearestOpenSquare(rows, cursor ?? { x: MAP_COLUMNS >> 1, y: MAP_ROWS >> 1 });
+      const start = nearestOpenSquare(rows, cursor ?? { x: game.area.columns >> 1, y: game.area.rows >> 1 }, game.area);
       if (start) arriveAt(start);
       return;
     }
-    const next = stepFrom(rows, you, dx, dy);
+    const next = stepFrom(rows, you, dx, dy, game.area);
     if (next) arriveAt(next);
   }
 
@@ -284,7 +297,7 @@
   function climb(direction: 'up' | 'down') {
     const from = you ?? cursor;
     if (!from) return;
-    const target = jumpTarget(bundledDungeon, moduleIndex, floor, rows[from.y][from.x], from.x, from.y);
+    const target = jumpTarget(game, dungeon, floor, rows[from.y][from.x], from.x, from.y);
     if (!target) return;
     if (direction === 'up' ? target.floor >= floor : target.floor <= floor) return;
     jumpTo(target, from);
@@ -318,7 +331,7 @@
    *  first either way: a click on a monster is aimed at the monster, not at the floor below it. */
   function follow(square: Point) {
     const monster = monsterAt(monsters, square.x, square.y);
-    const target = monster ? null : jumpTarget(bundledDungeon, moduleIndex, floor, rows[square.y][square.x], square.x, square.y);
+    const target = monster ? null : jumpTarget(game, dungeon, floor, rows[square.y][square.x], square.x, square.y);
     if (!target) {
       if (!rows[square.y][square.x].solid) {
         selected = square;
@@ -332,7 +345,7 @@
   /** Going where a ladder, chute or trap door leads puts you on the landing square. */
   function jumpTo(target: Destination, from: Point) {
     const landing = { x: target.x, y: target.y };
-    travel({ module: moduleIndex, floor: target.floor, square: landing, you: landing }, from);
+    travel({ dungeon, floor: target.floor, square: landing, you: landing }, from);
   }
 </script>
 
@@ -342,14 +355,16 @@
   <div class="map">
     <div class="floor-header">
       <div class="place">
-        <span class="where">Module {MODULE_NUMERALS[moduleIndex]} · {floor === 0 ? 'Town' : `Floor ${floor}`}</span>
-        <span class="section">
-          {#if section}
-            Section {section.section} · {section.bossName} on floor {section.bossFloor}
-          {:else}
-            Section ?
-          {/if}
-        </span>
+        <span class="where">{game.dungeonName(dungeon)} · {floor === 0 ? 'Town' : `Floor ${floor}`}</span>
+        {#if game.modules}
+          <span class="section">
+            {#if section}
+              Section {section.section} · {section.bossName} on floor {section.bossFloor}
+            {:else}
+              Section ?
+            {/if}
+          </span>
+        {/if}
       </div>
       {#if twins.length}
         <div
@@ -364,12 +379,12 @@
       {/if}
     </div>
     <div class="viewport">
-      <FloorCanvas bind:this={floorCanvas} {rows} {floor} {moduleIndex} {monsters} {bounds} bind:cursor {highlight} {you} {marks} {selected} route={route ?? null} {tooltip} onselect={follow} />
+      <FloorCanvas bind:this={floorCanvas} {game} {rows} {floor} {dungeon} {monsters} {bounds} bind:cursor {highlight} {you} {marks} {selected} route={route ?? null} {tooltip} onselect={follow} />
       <div class="controls">
         <div class="pickers">
           <label>
-            <span>Module</span>
-            <select value={moduleIndex} onchange={changeModule}>
+            <span>{game.dungeonNoun}</span>
+            <select value={dungeon} onchange={changeDungeon}>
               {#each MODULE_NUMERALS as numeral, index}
                 <option value={index}>{numeral}</option>
               {/each}
@@ -400,7 +415,7 @@
           <button class="ghost" onclick={() => floorCanvas.zoomOut()} title="Zoom out">−</button>
           <button class="ghost" onclick={() => floorCanvas.zoomIn()} title="Zoom in">+</button>
           <button class="ghost" onclick={() => floorCanvas.fit()}>Fit</button>
-          <button class="ghost" onclick={() => downloadFloorPng(rows, floor, moduleIndex)}>Export PNG</button>
+          <button class="ghost" onclick={() => downloadFloorPng(rows, floor, dungeon, game)}>Export PNG</button>
         </div>
       </div>
     </div>
@@ -415,24 +430,28 @@
       {selected}
       {route}
       monster={selectedMonster}
-      {floorHasTeleporter}
+      routeNoun={game.routeTo.noun}
+      {floorHasTarget}
       {teleporterModules}
-      onroute={routeToTeleporter}
+      onroute={routeToTarget}
       onhere={imHere}
       onclear={clearSelection}
       ontake={takeTeleporter}
     />
-    <FloorMonsters
-      {monsters}
-      town={floor === 0}
-      {canStock}
-      pinned={monsterPinned}
-      onstock={stockThisFloor}
-      onclear={clearMonsters}
-      onhover={(monsterId) => (monsterHover = monsterId)}
-      onpin={pinMonster}
-    />
+    {#if game.modules}
+      <FloorMonsters
+        {monsters}
+        town={floor === 0}
+        {canStock}
+        pinned={monsterPinned}
+        onstock={stockThisFloor}
+        onclear={clearMonsters}
+        onhover={(monsterId) => (monsterHover = monsterId)}
+        onpin={pinMonster}
+      />
+    {/if}
     <Legend
+      {game}
       {summary}
       pinned={legendPinned?.label ?? null}
       onhover={(kind) => (legendHover = kind)}

@@ -2,9 +2,9 @@
   import { untrack } from 'svelte';
   import { renderMonster } from '../bestiary/pictures';
   import { sectionInfo } from '../game/sections';
-  import type { Square } from '../game/unfmap.js';
   import { drawFloor, drawMarks, drawOutline, drawRoute, drawYou, squareRect } from './draw-floor';
   import { drawMonsters, type MonsterSprites } from './draw-monsters';
+  import type { MapGame, MapSquare } from './game';
   import type { Mark } from './marks';
   import type { Route } from './path';
   import { palette } from './palette';
@@ -22,9 +22,10 @@
   }
 
   interface Props {
-    rows: Square[][];
+    game: MapGame;
+    rows: MapSquare[][];
     floor: number;
-    moduleIndex: number;
+    dungeon: number;
     /** Monsters stocked on this floor, drawn over the squares they stand on. */
     monsters?: StockedMonster[];
     /** Area "Fit" frames: the open squares of the floor. */
@@ -45,7 +46,7 @@
     onselect?: (square: Point) => void;
   }
 
-  let { rows, floor, moduleIndex, monsters = [], bounds, cursor = $bindable(null), highlight = null, you = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
+  let { game, rows, floor, dungeon, monsters = [], bounds, cursor = $bindable(null), highlight = null, you = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -98,9 +99,9 @@
     view = ensureVisible(untrack(() => view), target, width, height);
   });
 
-  const teleporters = $derived(teleporterSegments(rows));
+  const teleporters = $derived(teleporterSegments(rows, game.area));
   // Floors outside every section can hold no monsters, so the fallback part is never drawn with.
-  const part = $derived(sectionInfo(moduleIndex, floor)?.part ?? 1);
+  const part = $derived(sectionInfo(dungeon, floor)?.part ?? 1);
 
   // Monster pictures are drawn once each into an offscreen canvas and kept, since the same
   // few monsters stand all over a floor. A monster looks different in each section, so the
@@ -110,10 +111,10 @@
   const sprites: MonsterSprites = {
     isBoss: (id) => monsterById(id).isBoss,
     picture: (id) => {
-      const key = `${id}:${moduleIndex}:${part}`;
+      const key = `${id}:${dungeon}:${part}`;
       const cached = pictures.get(key);
       if (cached) return cached;
-      const image = renderMonster(monsterById(id), moduleIndex + 1, part);
+      const image = renderMonster(monsterById(id), dungeon + 1, part);
       const sprite = document.createElement('canvas');
       sprite.width = image.width;
       sprite.height = image.height;
@@ -136,7 +137,7 @@
   }
 
   $effect(() => {
-    const next: Scene = { rows, floor, view, width: size.width, height: size.height };
+    const next: Scene = { game, rows, floor, view, width: size.width, height: size.height };
     staticStale = true;
     scene = { ...untrack(overlays), ...next };
     scheduleRender();
@@ -161,7 +162,8 @@
   });
 
   interface Scene {
-    rows: Square[][];
+    game: MapGame;
+    rows: MapSquare[][];
     floor: number;
     view: Viewport;
     width: number;
@@ -186,7 +188,7 @@
 
   function render() {
     if (!scene || !scene.width || !scene.height) return;
-    const { rows, floor, view, width, height, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
+    const { game, rows, floor, view, width, height, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
     const dpr = window.devicePixelRatio || 1;
     const pixelWidth = Math.round(width * dpr);
     const pixelHeight = Math.round(height * dpr);
@@ -199,7 +201,7 @@
       staticLayer.height = pixelHeight;
       const staticCtx = staticLayer.getContext('2d')!;
       staticCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null });
+      drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null, game });
       staticStale = false;
     }
     const ctx = canvas.getContext('2d')!;

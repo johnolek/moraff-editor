@@ -12,8 +12,10 @@
     route: Route | null | undefined;
     /** The stocked monster standing on the selected square, if there is one. */
     monster: StockedMonster | null;
-    /** Whether the floor has a teleporter at all: without one there is nothing to walk to. */
-    floorHasTeleporter: boolean;
+    /** What routing walks to, as the buttons and the answers name it. */
+    routeNoun: string;
+    /** Whether the floor holds one at all: without one there is nothing to walk to. */
+    floorHasTarget: boolean;
     /** Modules the teleporter on the selected square leads to; empty when there is no teleporter. */
     teleporterModules: number[];
     onroute: (passWall: boolean) => void;
@@ -22,7 +24,7 @@
     ontake: (module: number) => void;
   }
 
-  let { selected, route, monster, floorHasTeleporter, teleporterModules, onroute, onhere, onclear, ontake }: Props = $props();
+  let { selected, route, monster, routeNoun, floorHasTarget, teleporterModules, onroute, onhere, onclear, ontake }: Props = $props();
 
   let allowPassWall = $state(false);
 
@@ -57,8 +59,8 @@
       {#if monster}
         <button class="ghost" onclick={openInMonsters}>Open in Monsters</button>
       {/if}
-      <button class="ghost" onclick={() => onroute(allowPassWall)} disabled={!floorHasTeleporter} title={floorHasTeleporter ? undefined : 'No teleporter on this floor.'}>
-        Path to nearest teleporter
+      <button class="ghost" onclick={() => onroute(allowPassWall)} disabled={!floorHasTarget} title={floorHasTarget ? undefined : `No ${routeNoun} on this floor.`}>
+        Path to nearest {routeNoun}
       </button>
       <label class="toggle">
         <input type="checkbox" checked={allowPassWall} onchange={togglePassWall} />
@@ -73,7 +75,7 @@
     {#if route}
       <p>{describeRoute(route)}</p>
     {:else if route === null}
-      <p>No teleporter reachable from here.</p>
+      <p>No {routeNoun} reachable from here.</p>
     {/if}
   </section>
 {/if}

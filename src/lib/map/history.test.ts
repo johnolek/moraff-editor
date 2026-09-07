@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { isMapPlace, samePlace, type MapPlace } from './history';
 
 function place(overrides: Partial<MapPlace> = {}): unknown {
-  return { module: 0, floor: 3, square: { x: 10, y: 20 }, ...overrides };
+  return { dungeon: 0, floor: 3, square: { x: 10, y: 20 }, ...overrides };
 }
 
 describe('isMapPlace', () => {
@@ -15,7 +15,7 @@ describe('isMapPlace', () => {
     expect(isMapPlace(null)).toBe(false);
     expect(isMapPlace(undefined)).toBe(false);
     expect(isMapPlace('map-place')).toBe(false);
-    expect(isMapPlace({ module: 0, floor: 0 })).toBe(false);
+    expect(isMapPlace({ dungeon: 0, floor: 0 })).toBe(false);
   });
 
   it('accepts a place whether or not it says where you stand', () => {
@@ -26,12 +26,12 @@ describe('isMapPlace', () => {
   });
 
   it('rejects modules outside the dungeon', () => {
-    expect(isMapPlace(place({ module: 5 }))).toBe(false);
-    expect(isMapPlace(place({ module: -1 }))).toBe(false);
+    expect(isMapPlace(place({ dungeon: 5 }))).toBe(false);
+    expect(isMapPlace(place({ dungeon: -1 }))).toBe(false);
   });
 
   it('accepts any floor the game could hold, including ones past the bottom of the module', () => {
-    expect(isMapPlace(place({ module: 0, floor: 26 }))).toBe(true);
+    expect(isMapPlace(place({ dungeon: 0, floor: 26 }))).toBe(true);
     expect(isMapPlace(place({ floor: -1 }))).toBe(true);
     expect(isMapPlace(place({ floor: 32767 }))).toBe(true);
     expect(isMapPlace(place({ floor: -32768 }))).toBe(true);
@@ -50,14 +50,14 @@ describe('isMapPlace', () => {
 });
 
 describe('samePlace', () => {
-  const here: MapPlace = { module: 1, floor: 3, square: { x: 10, y: 20 }, you: { x: 11, y: 20 } };
+  const here: MapPlace = { dungeon: 1, floor: 3, square: { x: 10, y: 20 }, you: { x: 11, y: 20 } };
 
   it('is true for a place naming the same floor, square and party', () => {
     expect(samePlace(here, { ...here, square: { x: 10, y: 20 }, you: { x: 11, y: 20 } })).toBe(true);
   });
 
   it('is false once the module or the floor differs', () => {
-    expect(samePlace(here, { ...here, module: 0 })).toBe(false);
+    expect(samePlace(here, { ...here, dungeon: 0 })).toBe(false);
     expect(samePlace(here, { ...here, floor: 4 })).toBe(false);
   });
 
@@ -72,7 +72,7 @@ describe('samePlace', () => {
   });
 
   it('treats a place from before the map tracked the party as one with nobody on it', () => {
-    const nobody: MapPlace = { module: 1, floor: 3, square: null };
+    const nobody: MapPlace = { dungeon: 1, floor: 3, square: null };
     expect(samePlace(nobody, { ...nobody, you: null })).toBe(true);
     expect(samePlace(nobody, { ...nobody, you: { x: 1, y: 1 } })).toBe(false);
   });

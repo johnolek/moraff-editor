@@ -1,4 +1,5 @@
-import { BOTTOM_LEVEL, HEIGHT, WIDTH } from '../game/unfmap.js';
+import { HEIGHT, WIDTH } from '../game/unfmap.js';
+import { UNFORGIVEN_MAP } from './game';
 import type { Point } from './viewport';
 
 /** The game keeps the party's floor in a signed 16-bit variable, and the map's "Any floor"
@@ -6,9 +7,9 @@ import type { Point } from './viewport';
 export const FLOOR_MIN = -32768;
 export const FLOOR_MAX = 32767;
 
-/** Where the map is looking: a floor of a module, and the square arrived at, if any. */
+/** Where the map is looking: a floor of a numbered dungeon, and the square arrived at, if any. */
 export interface MapPlace {
-  module: number;
+  dungeon: number;
   floor: number;
   square: Point | null;
   /** Where the party stands on this floor, if anywhere. Entries pushed before the map tracked
@@ -18,7 +19,7 @@ export interface MapPlace {
 
 /** The two places show the same thing, so moving from one to the other would change nothing. */
 export function samePlace(a: MapPlace, b: MapPlace): boolean {
-  if (a.module !== b.module || a.floor !== b.floor) return false;
+  if (a.dungeon !== b.dungeon || a.floor !== b.floor) return false;
   return samePoint(a.square, b.square) && samePoint(a.you ?? null, b.you ?? null);
 }
 
@@ -35,8 +36,8 @@ function isPoint(value: unknown): value is Point {
 
 export function isMapPlace(value: unknown): value is MapPlace {
   if (typeof value !== 'object' || value === null) return false;
-  const { module, floor, square, you } = value as Partial<MapPlace>;
-  if (!Number.isInteger(module) || module! < 0 || module! >= BOTTOM_LEVEL.length) return false;
+  const { dungeon, floor, square, you } = value as Partial<MapPlace>;
+  if (!UNFORGIVEN_MAP.hasDungeon(dungeon!)) return false;
   if (!Number.isInteger(floor) || floor! < FLOOR_MIN || floor! > FLOOR_MAX) return false;
   if (you !== undefined && you !== null && !isPoint(you)) return false;
   return square === null || isPoint(square);

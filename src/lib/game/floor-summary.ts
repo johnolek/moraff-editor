@@ -1,10 +1,8 @@
-import { BOTTOM_LEVEL, type Dungeon, type Square } from './unfmap.js';
+import type { MapGame, MapSquare } from '../map/game';
+import type { Dungeon } from './unfmap.js';
 
-/** Feature counts for one floor, the same shape as dotu-tools/fixtures/floor-summary.json. */
-export interface FloorSummary {
-  /** 1-based, as shown to the player. */
-  module: number;
-  floor: number;
+/** How many of each thing a floor holds, over the rows that were counted. */
+export interface FloorCounts {
   open: number;
   down: number;
   up: number;
@@ -13,22 +11,49 @@ export interface FloorSummary {
   teleporterSquares: number;
   doors: number;
   secretDoors: number;
-  /** Building squares: store, temple, bank, inn. */
-  town: [number, number, number, number];
+  /** Building squares, in the order the game numbers its buildings from 1. */
+  town: number[];
   /** Trap door count by destination floor. */
   trapdoorDests: Record<string, number>;
+}
+
+/** What the map's legend says about one floor. */
+export interface MapFloorSummary extends FloorCounts {
+  floor: number;
   /** Where trap doors leading to this floor land; absent on floor 0 and on solid floors. */
   trapdoorLanding?: [number, number];
 }
 
+/** Feature counts for one floor, the same shape as dotu-tools/fixtures/floor-summary.json. */
+export interface FloorSummary extends MapFloorSummary {
+  /** 1-based, as shown to the player. */
+  module: number;
+}
+
 /**
- * Counts the features of one floor over its first `rowCount` rows. The map counts only the
- * rows the game itself shows; the fixture check counts every row the generator makes.
+ * Counts the features of one Dungeons of the Unforgiven floor over its first `rowCount` rows.
+ * The fixture check counts every row the generator makes; the map counts only the rows the game
+ * itself shows.
  */
 export function summarizeFloor(dungeon: Dungeon, level: number, moduleIndex: number, rowCount: number): FloorSummary {
-  const summary: FloorSummary = {
-    module: moduleIndex + 1,
-    floor: level,
+  const counts = countFloor(dungeon.floor(level, moduleIndex), rowCount, (square) => square.town ?? 0, 4);
+  const summary: FloorSummary = { module: moduleIndex + 1, floor: level, ...counts };
+  // trapdoorDest() keeps drawing squares until it finds an open one, so asking it about a floor
+  // that is solid all the way through never returns.
+  if (level > 0 && counts.open > 0) summary.trapdoorLanding = dungeon.trapdoorDest(level, moduleIndex);
+  return summary;
+}
+
+/** The same counts for whichever game the map is showing, over the rows that game shows. */
+export function summarizeMapFloor(game: MapGame, rows: MapSquare[][], level: number, dungeon: number): MapFloorSummary {
+  const counts = countFloor(rows, game.area.rows, game.buildingOn, game.buildings.length);
+  const summary: MapFloorSummary = { floor: level, ...counts };
+  if (level > 0 && counts.open > 0) summary.trapdoorLanding = game.trapdoorLanding(level, dungeon);
+  return summary;
+}
+
+function countFloor(rows: MapSquare[][], rowCount: number, buildingOn: (square: MapSquare) => number, buildings: number): FloorCounts {
+  const counts: FloorCounts = {
     open: 0,
     down: 0,
     up: 0,
@@ -37,39 +62,37 @@ export function summarizeFloor(dungeon: Dungeon, level: number, moduleIndex: num
     teleporterSquares: 0,
     doors: 0,
     secretDoors: 0,
-    town: [0, 0, 0, 0],
+    town: Array.from({ length: buildings }, () => 0),
     trapdoorDests: {},
   };
-  for (const row of dungeon.floor(level, moduleIndex).slice(0, rowCount)) {
-    for (const square of row) countSquare(summary, square);
+  for (const row of rows.slice(0, rowCount)) {
+    for (const square of row) countSquare(counts, square, buildingOn);
   }
-  // trapdoorDest() keeps drawing squares until it finds an open one, so asking it about a floor
-  // that is solid all the way through never returns.
-  if (level > 0 && summary.open > 0) summary.trapdoorLanding = dungeon.trapdoorDest(level, moduleIndex);
-  return summary;
+  return counts;
 }
 
-function countSquare(summary: FloorSummary, square: Square): void {
+function countSquare(counts: FloorCounts, square: MapSquare, buildingOn: (square: MapSquare) => number): void {
   if (square.solid) return;
-  summary.open++;
-  if (square.ladder > 0) summary.down++;
-  else if (square.ladder < 0) summary.up++;
-  if (square.chute) summary.chutes++;
+  counts.open++;
+  if (square.ladder > 0) counts.down++;
+  else if (square.ladder < 0) counts.up++;
+  if (square.chute) counts.chutes++;
   if (square.trapdoor >= 0) {
-    summary.trapdoors++;
-    summary.trapdoorDests[square.trapdoor] = (summary.trapdoorDests[square.trapdoor] ?? 0) + 1;
+    counts.trapdoors++;
+    counts.trapdoorDests[square.trapdoor] = (counts.trapdoorDests[square.trapdoor] ?? 0) + 1;
   }
   const sides = [square.n, square.s, square.w, square.e];
-  if (sides.includes(4)) summary.teleporterSquares++;
-  summary.doors += sides.filter((side) => side === 1).length;
-  summary.secretDoors += sides.filter((side) => side === 2).length;
-  if (square.town) summary.town[square.town - 1]++;
+  if (sides.includes(4)) counts.teleporterSquares++;
+  counts.doors += sides.filter((side) => side === 1).length;
+  counts.secretDoors += sides.filter((side) => side === 2).length;
+  const building = buildingOn(square);
+  if (building) counts.town[building - 1]++;
 }
 
 /** Inclusive bounding box of the open squares in the first `rowCount` rows, or the whole floor
  *  when there are none. The rows below that have walls on both their north and south sides, so
  *  the game can never walk into them, although the generator does leave open squares there. */
-export function floorBounds(rows: Square[][], rowCount: number): { minX: number; minY: number; maxX: number; maxY: number } {
+export function floorBounds(rows: MapSquare[][], rowCount: number): { minX: number; minY: number; maxX: number; maxY: number } {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;
@@ -85,8 +108,4 @@ export function floorBounds(rows: Square[][], rowCount: number): { minX: number;
   );
   if (minX === Infinity) return { minX: 0, minY: 0, maxX: rows[0].length - 1, maxY: rows.length - 1 };
   return { minX, minY, maxX, maxY };
-}
-
-export function floorsOfModule(moduleIndex: number): number[] {
-  return Array.from({ length: BOTTOM_LEVEL[moduleIndex] + 1 }, (_, floor) => floor);
 }

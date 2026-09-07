@@ -5,7 +5,7 @@ function state(overrides: Record<string, unknown> = {}): unknown {
   return { kind: 'moraff-tools', tab: 'map', index: 0, ...overrides };
 }
 
-const place = { module: 0, floor: 3, square: { x: 10, y: 20 } };
+const place = { dungeon: 0, floor: 3, square: { x: 10, y: 20 } };
 
 describe('isAppHistoryState', () => {
   it('accepts an entry with or without a map place', () => {
@@ -28,7 +28,7 @@ describe('isAppHistoryState', () => {
   });
 
   it('rejects a map place the map could not be looking at', () => {
-    expect(isAppHistoryState(state({ map: { ...place, module: 5 } }))).toBe(false);
+    expect(isAppHistoryState(state({ map: { ...place, dungeon: 5 } }))).toBe(false);
     expect(isAppHistoryState(state({ map: null }))).toBe(false);
   });
 });

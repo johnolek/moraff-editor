@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import type { Square } from '../game/unfmap.js';
-import { MAP_COLUMNS, MAP_ROWS } from './area';
+import { MAP_COLUMNS, MAP_ROWS, UNFORGIVEN_AREA } from './area';
 import { teleporterColour, teleporterHue, teleporterLineWidth, teleporterSegments } from './teleporters';
 
 function square(overrides: Partial<Square> = {}): Square {
@@ -14,15 +14,15 @@ describe('teleporterSegments', () => {
       [square({ e: 4 }), square({ w: 4, s: 4 })],
       [square(), square({ n: 4 })],
     ];
-    expect(teleporterSegments(rows)).toEqual([
+    expect(teleporterSegments(rows, UNFORGIVEN_AREA)).toEqual([
       { x: 1, y: 0, vertical: true },
       { x: 1, y: 1, vertical: false },
     ]);
   });
 
   it('ignores rock and floors without teleporters', () => {
-    expect(teleporterSegments([[square({ solid: true, w: 4 })]])).toEqual([]);
-    expect(teleporterSegments(bundledDungeon.floor(20, 1))).toEqual([]);
+    expect(teleporterSegments([[square({ solid: true, w: 4 })]], UNFORGIVEN_AREA)).toEqual([]);
+    expect(teleporterSegments(bundledDungeon.floor(20, 1), UNFORGIVEN_AREA)).toEqual([]);
   });
 
   it('leaves out the rows and the column the game never shows', () => {
@@ -31,11 +31,11 @@ describe('teleporterSegments', () => {
     );
     whole[MAP_ROWS][0] = square({ n: 4 });
     whole[0][MAP_COLUMNS] = square({ n: 4 });
-    expect(teleporterSegments(whole)).toEqual([]);
+    expect(teleporterSegments(whole, UNFORGIVEN_AREA)).toEqual([]);
   });
 
   it('matches the fixture count of teleporter squares in spirit: the Module I town has some', () => {
-    expect(teleporterSegments(bundledDungeon.floor(0, 0)).length).toBeGreaterThan(0);
+    expect(teleporterSegments(bundledDungeon.floor(0, 0), UNFORGIVEN_AREA).length).toBeGreaterThan(0);
   });
 });
 

@@ -1,5 +1,5 @@
-import type { Square } from '../game/unfmap.js';
-import { forEachShownSquare, isOnMap } from './area';
+import { forEachShownSquare, isOnMap, type MapArea } from './area';
+import type { MapSquare } from './game';
 import { DIRECTIONS, passable } from './path';
 import type { Point } from './viewport';
 
@@ -11,10 +11,10 @@ const BRIGHTEST = 0.85;
 /** The open square nearest to `from` within the area the game shows, counting steps along the
  *  two axes, or null when that area is solid all the way through. `from` itself wins when it is
  *  open; among equally near squares the northernmost comes first, and then the westernmost. */
-export function nearestOpenSquare(rows: Square[][], from: Point): Point | null {
+export function nearestOpenSquare(rows: MapSquare[][], from: Point, area: MapArea): Point | null {
   let best: Point | null = null;
   let bestDistance = Infinity;
-  forEachShownSquare(rows, (square, x, y) => {
+  forEachShownSquare(rows, area, (square, x, y) => {
     if (square.solid) return;
     const distance = Math.abs(x - from.x) + Math.abs(y - from.y);
     if (distance >= bestDistance) return;
@@ -29,12 +29,12 @@ export function nearestOpenSquare(rows: Square[][], from: Point): Point | null {
  * walk to: a wall or a teleporter side between the two squares, a step off the area the game
  * shows, or a direction that is not one of the four the party can walk in.
  */
-export function stepFrom(rows: Square[][], from: Point, dx: number, dy: number): Point | null {
+export function stepFrom(rows: MapSquare[][], from: Point, dx: number, dy: number, area: MapArea): Point | null {
   const direction = DIRECTIONS.find((candidate) => candidate.dx === dx && candidate.dy === dy);
   if (!direction) return null;
   if (!passable(rows[from.y][from.x][direction.side])) return null;
   const to = { x: from.x + dx, y: from.y + dy };
-  if (to.x < 0 || to.y < 0 || !isOnMap(to)) return null;
+  if (to.x < 0 || to.y < 0 || !isOnMap(to, area)) return null;
   return to;
 }
 

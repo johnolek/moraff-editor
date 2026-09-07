@@ -35,7 +35,7 @@ export interface StatusStat {
 
 /** Where a character stands, for the map explorer. */
 export interface StatusPlace {
-  module: number;
+  dungeon: number;
   floor: number;
   x: number;
   y: number;
@@ -107,7 +107,7 @@ function unforgivenStatus(view: DataView, bytes: Uint8Array): CharacterStatus {
       x: view.getInt16(0x7b0, true),
       y: view.getInt16(0x7b2, true),
       floor: view.getInt16(0x7b4, true),
-      module: view.getInt16(0x7b6, true),
+      dungeon: view.getInt16(0x7b6, true),
     },
   };
 }

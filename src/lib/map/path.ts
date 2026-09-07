@@ -1,5 +1,5 @@
-import type { Square } from '../game/unfmap.js';
-import { isOnMap } from './area';
+import { isOnMap, UNFORGIVEN_AREA, type MapArea } from './area';
+import type { MapSquare } from './game';
 import type { Point } from './viewport';
 
 /** How one square of a route was reached from the one before it. */
@@ -38,16 +38,16 @@ export function passable(side: number): boolean {
   return side === 1 || side === 2 || side === 3;
 }
 
-export function hasTeleporterSide(square: Square): boolean {
+export function hasTeleporterSide(square: MapSquare): boolean {
   return square.n === 4 || square.s === 4 || square.w === 4 || square.e === 4;
 }
 
 /** Where a Pass Wall cast from (x, y) puts you, or null when the spell finds nowhere to land. */
-function passWallLanding(rows: Square[][], x: number, y: number, direction: Direction): Point | null {
+function passWallLanding(rows: MapSquare[][], x: number, y: number, area: MapArea, direction: Direction): Point | null {
   for (let distance = PASS_WALL_NEAREST; distance <= PASS_WALL_FURTHEST; distance++) {
     const nx = x + direction.dx * distance;
     const ny = y + direction.dy * distance;
-    if (nx < 0 || ny < 0 || ny >= rows.length || nx >= rows[ny].length || !isOnMap({ x: nx, y: ny })) return null;
+    if (nx < 0 || ny < 0 || ny >= rows.length || nx >= rows[ny].length || !isOnMap({ x: nx, y: ny }, area)) return null;
     if (!rows[ny][nx].solid) return { x: nx, y: ny };
   }
   return null;
@@ -56,7 +56,7 @@ function passWallLanding(rows: Square[][], x: number, y: number, direction: Dire
 /** Breadth-first search from `start` to the nearest square for which `isTarget` holds. With
  *  `passWall` on, a cast of Pass Wall counts as one move like a step does, so the search stays
  *  breadth-first and still finds the shortest route. */
-export function shortestPath(rows: Square[][], start: Point, isTarget: (square: Square) => boolean, passWall = false): Route | null {
+export function shortestPath(rows: MapSquare[][], start: Point, isTarget: (square: MapSquare) => boolean, area: MapArea, passWall = false): Route | null {
   const height = rows.length;
   const width = rows[0].length;
   const index = (x: number, y: number) => y * width + x;
@@ -86,14 +86,14 @@ export function shortestPath(rows: Square[][], start: Point, isTarget: (square: 
       // The side is a wall or a teleporter, the only thing Pass Wall is any use against: a door
       // or a secret door is opened and walked through instead.
       if (!passWall) continue;
-      const landing = passWallLanding(rows, x, y, direction);
+      const landing = passWallLanding(rows, x, y, area, direction);
       if (landing) enqueue(landing.x, landing.y, current);
     }
   }
   return null;
 }
 
-function buildRoute(rows: Square[][], parent: Int32Array, end: number, width: number): Route {
+function buildRoute(rows: MapSquare[][], parent: Int32Array, end: number, width: number): Route {
   const squares: Point[] = [];
   for (let current = end; ; current = parent[current]) {
     squares.push({ x: current % width, y: Math.trunc(current / width) });
@@ -122,6 +122,6 @@ function buildRoute(rows: Square[][], parent: Int32Array, end: number, width: nu
   return { squares, hops, steps: squares.length - 1, doors, secretDoors, passWalls };
 }
 
-export function pathToNearestTeleporter(rows: Square[][], start: Point, passWall = false): Route | null {
-  return shortestPath(rows, start, hasTeleporterSide, passWall);
+export function pathToNearestTeleporter(rows: MapSquare[][], start: Point, passWall = false): Route | null {
+  return shortestPath(rows, start, hasTeleporterSide, UNFORGIVEN_AREA, passWall);
 }

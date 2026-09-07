@@ -8,6 +8,3 @@ export const GLYPH_LABELS: Record<Glyph, string> = {
   trapdoor: 'Trap door',
   chute: 'Chute',
 };
-
-/** Indexed by Square.town - 1. */
-export const TOWN_BUILDINGS = ['Store', 'Temple', 'Bank', 'Inn'];
