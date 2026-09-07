@@ -541,7 +541,7 @@
           <button class="ghost" onclick={() => floorCanvas.zoomOut()} title="Zoom out">−</button>
           <button class="ghost" onclick={() => floorCanvas.zoomIn()} title="Zoom in">+</button>
           <button class="ghost" onclick={() => floorCanvas.fit()}>Fit</button>
-          <button class="ghost" onclick={() => downloadFloorPng(rows, floor, dungeon, game)}>Export PNG</button>
+          <button class="ghost" onclick={() => downloadFloorPng(rows, floor, dungeon, game, exploredHere)}>Export PNG</button>
         </div>
       </div>
     </div>
