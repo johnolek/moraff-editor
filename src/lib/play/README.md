@@ -13,8 +13,8 @@ something the original does, a comment says so.
 * **`keys.ts`** — the byte `movecontrol` dispatches on for every key, and the browser key events
   they come from.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `trapdoor.ts`, `chute.ts`,
-  `dig.ts`, `modules.ts`, `quit.ts`, `help.ts` — so that two people can add two keys without
-  touching the same file.
+  `dig.ts`, `modules.ts`, `quit.ts`, `help.ts`, `fight.ts`, `kill.ts`, `items.ts` — so that two
+  people can add two keys without touching the same file.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
   memory that decides whether its monsters are rolled again.
 * **`screens.ts`** — where the message box goes, and `notBuiltYet`.
@@ -44,7 +44,7 @@ the loop is where it is taken; call it after anything that might have printed a 
 runs:
 
 ```ts
-[KEY.fight]: { c: 'strike', run: (turn) => notBuiltYet(turn.game, 'SWING AT THE MONSTER YOU FACE') },
+[KEY.fight]: { c: 'strike', run: swingAtMonster },
 ```
 
 Write the handler in its own file, taking the `Turn`, and swap it in. The `Turn` is what
@@ -77,6 +77,19 @@ A menu is a screen and a `choice`:
 showHint(game, TELEPORTER_MENU);                // the lines the menu prints
 const chosen = await session.choice([0x31, 0x32, 0x33]);
 ```
+
+## A fight
+
+`fight.ts` is the F key, one swing, and Ctrl-F, which keeps swinging. `kill.ts` is the check
+movecontrol makes between the key and the step: a monster being fought whose hit points have run
+out is killed there, whatever took them down, so a spell and a hand grenade end the same way as a
+swing. `kill_monster` asks its own menus — what to do with a dropped weapon or suit of armor, and
+which weapon a section boss's orb is used on — through `game.choice`, and the drops, the money
+and the levels all hang off it.
+
+The keys the player presses while the character is swinging are thrown away by `flushKeys`, which
+is the flush the original does at the end of every swing. That is also what stops Ctrl-F: reading
+the keyboard at all puts the repeat-fight flag down.
 
 ## The moment
 
@@ -130,12 +143,11 @@ clocks, the wand and scroll counts are all fields of `session.game.pc`.
 Every one of these keys says so in the message box today. The game functions behind them are
 mostly ported already; what is missing is the key that reaches them.
 
-* **Fights** — F and Ctrl-F. `strike` and `defend` are in `combat.ts` and `killMonster` in
-  `kills.ts`, with the drops and the levels beside them.
 * **The town** — U on a building square. `town.ts` has the store, the temple, the bank and the
   inn, and the inn is where a character ages and gains levels.
-* **The spell and item screens** — C, I, P, L, W, A, 1 and 2. `cast_a_spell` (exe 2000:e017) is
-  the one big function still to port; `magic.ts` already has every spell it dispatches to.
+* **The spell screens** — C, P, W, A, 1 and 2, and the first four lines of the I key's own menu.
+  `cast_a_spell` (exe 2000:e017) is the one big function still to port; `magic.ts` already has
+  every spell it dispatches to.
 * **The hidden numbers and the monster's portrait** — V, E, M, S and the panel beside the map.
 
 ## Where this leaves the original
