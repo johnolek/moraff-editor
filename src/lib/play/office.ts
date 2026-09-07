@@ -1,7 +1,6 @@
 import { showHint } from '../game/port/drops';
 import type { Game } from '../game/port/state';
 import { bossOfficeTaunt, readBossOfficeMessage } from '../game/port/town';
-import { showBox } from './boxes';
 import type { GameSession, Turn } from './engine';
 
 /**
@@ -65,10 +64,10 @@ async function bossOfficeMessage(session: GameSession): Promise<void> {
   const game = session.game;
   const tablet = bossOfficeTaunt(game);
   if (tablet === null) return;
-  showBox(session, () => showHint(game, 123));
+  showHint(game, 123);
   const chosen = await session.choice(MESSAGE_MENU);
   if (chosen !== READ_IT) return;
-  showBox(session, () => readBossOfficeMessage(game, tablet));
+  readBossOfficeMessage(game, tablet);
   await game.key();
   session.box = [];
 }

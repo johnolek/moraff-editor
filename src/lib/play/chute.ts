@@ -1,5 +1,6 @@
 import { bundledDungeon } from '../game/dungeon';
 import type { Game } from '../game/port/state';
+import { sayAsOneBox } from './boxes';
 import type { Turn } from './engine';
 
 /**
@@ -25,10 +26,12 @@ export async function fallDownChute(turn: Turn, destination: number): Promise<vo
   if (destination === game.pc.level) return;
   session.enterFloor(destination);
   session.save();
-  // DS:1a9e, DS:1abc, DS:1ada
-  game.say('UH OH... A SINKING FEELING...');
-  game.say('YOU HAVE FALLEN DOWN A CHUTE!');
-  game.say('  HIT ANY KEY TO CONTINUE...');
+  // Three pfont lines down the message column, DS:1a9e DS:1abc DS:1ada, and one wait at the end.
+  sayAsOneBox(session, () => {
+    game.say('UH OH... A SINKING FEELING...');
+    game.say('YOU HAVE FALLEN DOWN A CHUTE!');
+    game.say('  HIT ANY KEY TO CONTINUE...');
+  });
   await session.key();
   session.box = [];
   game.redrawView = true;

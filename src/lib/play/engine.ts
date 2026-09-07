@@ -6,6 +6,7 @@ import { tabletMessage, townTablet } from '../game/port/hints';
 import { checkDeath } from '../game/port/kills';
 import { arriveSquare, leaveSquare } from '../game/port/moment';
 import { loadPlayer, savePlayer } from '../game/port/record';
+import { clearMenuBlock } from '../game/port/screens';
 import type { Rng } from '../game/port/rng';
 import type { Game, ScreenLine } from '../game/port/state';
 import { newGame, sectionMonsterKinds } from '../game/port/state';
@@ -177,7 +178,7 @@ export class GameSession {
     const said = this.game.say;
     this.game.say = (...lines: string[]) => {
       if (this.sayingBanner) this.banner = [...this.banner, ...lines];
-      else this.box = [...this.box, ...lines].slice(-MESSAGE_BOX_LINES);
+      else this.showBox(lines);
       said(...lines);
     };
     // movecontrol puts the map cursor in the middle of the view before its first pass.
@@ -251,6 +252,17 @@ export class GameSession {
     this.sayingBanner = true;
     engagementTiming(this.game);
     this.sayingBanner = false;
+  }
+
+  /**
+   * FUN_2000_2f5d (exe 2000:2f5d, unf.c "FUN_2000_2f5d"): put a box up. It wipes the menu column
+   * before it draws, so whatever a screen had left down that column goes with it, and it copies
+   * all eight of its strings into the buffer, so a box replaces the box before it rather than
+   * being added to.
+   */
+  showBox(lines: string[]): void {
+    clearMenuBlock(this.game);
+    this.box = lines.slice(0, MESSAGE_BOX_LINES);
   }
 
   /** Arriving on a floor: the floor itself, then its monsters. */

@@ -1,19 +1,12 @@
 import type { GameSession } from './engine';
-import { MESSAGE_BOX_LINES } from './screens';
 
 /**
- * The message box while a building of the town is open, one box at a time.
+ * The boxes a ported function prints, one after another.
  *
  * The game keeps one buffer of eight strings at DS:c694 and every box it shows fills all eight,
- * so nothing of the box before ever shows through. `game.say` drops the empty lines off the end
- * of a box, so a box goes up by emptying the message box first rather than by appending to it.
+ * so nothing of the box before ever shows through; {@link GameSession.showBox} is where one box
+ * goes up. What is here is the several boxes one call can print.
  */
-
-/** Put one box up, with nothing of the box before it left underneath. */
-export function showBox(session: GameSession, print: () => void): void {
-  session.box = [];
-  print();
-}
 
 /**
  * The boxes a ported function printed, one array of lines each.
@@ -39,10 +32,22 @@ export function boxesOf(session: GameSession, print: () => void): string[][] {
   return boxes;
 }
 
+/**
+ * Everything a ported function said, as one box.
+ *
+ * A few of the game's messages are pfont calls down the message column rather than boxes of
+ * their own: chute (exe 2000:b532) draws three lines there and waits once at the end, and strike
+ * (exe 2000:7e36) draws two more under the battle banner and does not wait at all. The port has
+ * them all going through `say`, so this puts them up together the way the screen has them.
+ */
+export function sayAsOneBox(session: GameSession, print: () => void): void {
+  session.showBox(boxesOf(session, print).flat());
+}
+
 /** Every box a ported function printed, shown in turn, each one waiting for a key. */
 export async function printMenus(session: GameSession, print: () => void): Promise<void> {
   for (const box of boxesOf(session, print)) {
-    session.box = box.slice(0, MESSAGE_BOX_LINES);
+    session.showBox(box);
     await session.game.key();
   }
   session.box = [];
@@ -58,8 +63,8 @@ export async function printMenusEndingInAMenu(
 ): Promise<void> {
   const boxes = boxesOf(session, print);
   for (const box of boxes.slice(0, -1)) {
-    session.box = box.slice(0, MESSAGE_BOX_LINES);
+    session.showBox(box);
     await session.game.key();
   }
-  session.box = (boxes[boxes.length - 1] ?? []).slice(0, MESSAGE_BOX_LINES);
+  session.showBox(boxes[boxes.length - 1] ?? []);
 }

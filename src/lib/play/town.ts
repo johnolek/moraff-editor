@@ -17,7 +17,7 @@ import {
   stayTheNight,
   temple,
 } from '../game/port/town';
-import { printMenus, printMenusEndingInAMenu, showBox } from './boxes';
+import { printMenus, printMenusEndingInAMenu } from './boxes';
 import type { GameSession, Turn } from './engine';
 import { KEY } from './keys';
 
@@ -118,7 +118,7 @@ export async function enterBuilding(turn: Turn): Promise<void> {
 async function store(session: GameSession): Promise<void> {
   const game = session.game;
   for (;;) {
-    showBox(session, () => enterStore(game));
+    enterStore(game);
     const chosen = await session.choice(STORE_MENU);
     if (chosen === KEY.escape) return;
     const entry = menuEntry(chosen);
@@ -137,9 +137,7 @@ async function store(session: GameSession): Promise<void> {
 async function buyAWeapon(session: GameSession): Promise<void> {
   const game = session.game;
   // DS:0c8e, the six of DS:0ca6, then DS:0d30 with the money after it
-  showBox(session, () =>
-    game.say('PLEASE SELECT A WEAPON:', ...WEAPONS, `MONEY ON HAND: ${game.pc.money}`),
-  );
+  game.say('PLEASE SELECT A WEAPON:', ...WEAPONS, `MONEY ON HAND: ${game.pc.money}`);
   const chosen = await session.choice(SHELF_MENU);
   if (chosen === KEY.escape) return;
   await printMenus(session, () => buyWeapon(game, menuEntry(chosen)));
@@ -152,9 +150,7 @@ async function buyAWeapon(session: GameSession): Promise<void> {
 async function buyASuitOfArmor(session: GameSession): Promise<void> {
   const game = session.game;
   // DS:0d53, the six of DS:0d68, then DS:0d30 with the money after it
-  showBox(session, () =>
-    game.say('PLEASE SELECT ARMOR:', ...ARMOR, `MONEY ON HAND: ${game.pc.money}`),
-  );
+  game.say('PLEASE SELECT ARMOR:', ...ARMOR, `MONEY ON HAND: ${game.pc.money}`);
   const chosen = await session.choice(SHELF_MENU);
   if (chosen === KEY.escape) return;
   await printMenus(session, () => buyArmor(game, menuEntry(chosen)));
@@ -235,7 +231,7 @@ async function visitTheTemple(session: GameSession): Promise<void> {
   for (;;) {
     // DS:101a with the money after it
     game.draw({ text: `MONEY WITH YOU: ${game.pc.money}`, x: 0x3a2, y: 0x301, font: 0, colour: 8 });
-    showBox(session, () => enterTemple(game));
+    enterTemple(game);
     const chosen = await session.choice(TEMPLE_MENU);
     if (chosen === KEY.escape) return;
     const entry = menuEntry(chosen);
@@ -251,7 +247,7 @@ async function visitTheTemple(session: GameSession): Promise<void> {
 async function visitTheBank(session: GameSession): Promise<void> {
   const game = session.game;
   for (;;) {
-    showBox(session, () => enterBank(game));
+    enterBank(game);
     const chosen = await session.choice(BANK_MENU);
     if (chosen === KEY.escape) return;
     const entry = menuEntry(chosen);

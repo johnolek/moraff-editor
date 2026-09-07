@@ -1,5 +1,6 @@
 import { printBattleHpInfo, spendAttackTime, strike } from '../game/port/combat';
 import { showHint } from '../game/port/drops';
+import { sayAsOneBox } from './boxes';
 import type { GameSession, Turn } from './engine';
 import { KEY } from './keys';
 
@@ -28,8 +29,12 @@ export function swingAtMonster(turn: Turn): void {
     game.pressAnyKey();
     return;
   }
-  const damage = strike(game);
-  if (damage > 0) printBattleHpInfo(game);
+  // strike draws its lines with pfont under the battle banner and waits for nothing, so the
+  // swing and the hit points it left go up together.
+  sayAsOneBox(turn.session, () => {
+    const damage = strike(game);
+    if (damage > 0) printBattleHpInfo(game);
+  });
   // The `while (kbhit()) getch();` strike (exe 2000:7f2b) ends with, which throws away whatever
   // was typed while the swing was on the screen.
   turn.session.flushKeys();

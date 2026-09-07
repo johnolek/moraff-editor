@@ -241,6 +241,19 @@ describe('saving', () => {
   });
 });
 
+describe('the message box', () => {
+  it('replaces the box before it and wipes the menu column it is drawn down', async () => {
+    const session = playing(characterFile({ level: 0, ...townWalk() }));
+    await settle();
+    const game = session.game;
+    game.draw({ text: 'A MENU LINE', x: 0x3a2, y: 0x329, font: 0, colour: 6 });
+    game.say('FIRST BOX');
+    expect(game.screen.some((line) => line.text === 'A MENU LINE')).toBe(false);
+    game.say('SECOND BOX');
+    expect(session.box).toEqual(['SECOND BOX']);
+  });
+});
+
 describe('dying', () => {
   it('marks the character dead and leaves the file alone', async () => {
     const start = townWalk();
