@@ -1,3 +1,4 @@
+import { menuLine } from '../game/port/screens';
 import type { Game, ScreenLine } from '../game/port/state';
 
 /**
@@ -10,31 +11,18 @@ import type { Game, ScreenLine } from '../game/port/state';
  */
 
 /**
- * FUN_2000_2f5d (exe 2000:2f5d, unf.c "FUN_2000_2f5d"): where the eight lines of a message box
- * go. Each is drawn at x = 0x3a2 in the body font in colour 6, fifty apart down the screen; a
- * line of 27 characters or more is spread to reach the right-hand edge at 0x640 instead, which
- * squeezes it in.
+ * FUN_2000_2f5d (exe 2000:2f5d, unf.c "FUN_2000_2f5d"): how many lines a message box holds. The
+ * game copies eight strings into the buffer at DS:c694 and draws all eight every time.
  */
-export const MESSAGE_BOX = {
-  x: 0x3a2,
-  y: 0x329,
-  step: 0x32,
-  lines: 8,
-  colour: 6,
-  right: 0x640,
-  squeezeFrom: 27,
-} as const;
+export const MESSAGE_BOX_LINES = 8;
 
-/** The lines of a message box, ready for the screen renderer. */
+/**
+ * The lines of a message box, ready for the screen renderer. A box line and a menu line are the
+ * same line in the same place: FUN_2000_2f5d and mset_gmenu (exe 2000:2b08) both draw the eight
+ * strings of that buffer, so `menuLine` in `src/lib/game/port/screens.ts` is the geometry.
+ */
 export function messageBoxLines(lines: string[]): ScreenLine[] {
-  return lines.slice(0, MESSAGE_BOX.lines).map((text, index) => ({
-    text,
-    x: MESSAGE_BOX.x,
-    y: MESSAGE_BOX.y + index * MESSAGE_BOX.step,
-    font: 0,
-    colour: MESSAGE_BOX.colour,
-    spreadTo: text.length >= MESSAGE_BOX.squeezeFrom ? MESSAGE_BOX.right : undefined,
-  }));
+  return lines.slice(0, MESSAGE_BOX_LINES).map((text, index) => menuLine(text, index));
 }
 
 /**

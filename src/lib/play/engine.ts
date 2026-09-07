@@ -25,7 +25,7 @@ import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
-import { MESSAGE_BOX, messageBoxLines, notBuiltYet } from './screens';
+import { MESSAGE_BOX_LINES, messageBoxLines, notBuiltYet } from './screens';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
@@ -177,7 +177,7 @@ export class GameSession {
     const said = this.game.say;
     this.game.say = (...lines: string[]) => {
       if (this.sayingBanner) this.banner = [...this.banner, ...lines];
-      else this.box = [...this.box, ...lines].slice(-MESSAGE_BOX.lines);
+      else this.box = [...this.box, ...lines].slice(-MESSAGE_BOX_LINES);
       said(...lines);
     };
     // movecontrol puts the map cursor in the middle of the view before its first pass.

@@ -1,5 +1,5 @@
 import type { GameSession } from './engine';
-import { MESSAGE_BOX } from './screens';
+import { MESSAGE_BOX_LINES } from './screens';
 
 /**
  * The message box while a building of the town is open, one box at a time.
@@ -42,7 +42,7 @@ export function boxesOf(session: GameSession, print: () => void): string[][] {
 /** Every box a ported function printed, shown in turn, each one waiting for a key. */
 export async function printMenus(session: GameSession, print: () => void): Promise<void> {
   for (const box of boxesOf(session, print)) {
-    session.box = box.slice(0, MESSAGE_BOX.lines);
+    session.box = box.slice(0, MESSAGE_BOX_LINES);
     await session.game.key();
   }
   session.box = [];
@@ -58,8 +58,8 @@ export async function printMenusEndingInAMenu(
 ): Promise<void> {
   const boxes = boxesOf(session, print);
   for (const box of boxes.slice(0, -1)) {
-    session.box = box.slice(0, MESSAGE_BOX.lines);
+    session.box = box.slice(0, MESSAGE_BOX_LINES);
     await session.game.key();
   }
-  session.box = (boxes[boxes.length - 1] ?? []).slice(0, MESSAGE_BOX.lines);
+  session.box = (boxes[boxes.length - 1] ?? []).slice(0, MESSAGE_BOX_LINES);
 }

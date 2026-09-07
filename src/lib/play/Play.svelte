@@ -12,14 +12,15 @@
   import Portrait from './Portrait.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
   import { gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
-  import { MESSAGE_BOX } from './screens';
+  import { MENU_LINE_STEP, MENU_SPREAD_TO, MENU_TOP, MENU_X } from '../game/port/screens';
+  import { MESSAGE_BOX_LINES } from './screens';
 
   /** How wide the message box's corner of the game's screen is, in the game's own units. */
   const BOX_WINDOW = {
-    x: MESSAGE_BOX.x,
-    y: MESSAGE_BOX.y - 10,
-    width: MESSAGE_BOX.right - MESSAGE_BOX.x,
-    height: MESSAGE_BOX.step * MESSAGE_BOX.lines + 20,
+    x: MENU_X,
+    y: MENU_TOP - 10,
+    width: MENU_SPREAD_TO - MENU_X,
+    height: MENU_LINE_STEP * MESSAGE_BOX_LINES + 20,
   };
 
   /** How many pixels a square is drawn at when the map is centred on the character. */
