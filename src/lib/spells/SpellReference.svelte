@@ -85,7 +85,7 @@
 <div class="reference">
   <div class="scroll">
     <div class="types">
-      <p class="type-heading"><PixelText font="small" scale={3} text={TYPE_HEADING} /></p>
+      <p class="type-heading">{TYPE_HEADING}</p>
       <div class="type-items">
         {#each lists as entry, index}
           <button
@@ -95,7 +95,7 @@
             aria-pressed={index === listIndex}
             onclick={() => pickList(index)}
           >
-            <PixelText font="small" scale={3} text={typeLabel(entry.label, index)} colour={index === listIndex ? '#000' : undefined} />
+            {typeLabel(entry.label, index)}
           </button>
         {/each}
       </div>
@@ -107,7 +107,7 @@
 
     <div class="book">
       <div class="sheet">
-        <p class="book-heading"><PixelText font="small" scale={3} text={GRID_HEADING} /></p>
+        <p class="book-heading">{GRID_HEADING}</p>
         <div class="grid" bind:this={grid}>
           {#each list.levels as level, row}
             {#each level.spells as spell, column}
@@ -118,12 +118,12 @@
                 aria-pressed={selected === spell}
                 onclick={() => (selected = spell)}
               >
-                <PixelText font="small" scale={3} text={cellLabel(spell, row, column)} colour={selected === spell ? '#000' : undefined} />
+                {cellLabel(spell, row, column)}
               </button>
             {/each}
           {/each}
         </div>
-        <p class="book-footer"><PixelText font="small" scale={3} text={GRID_FOOTER} /></p>
+        <p class="book-footer">{GRID_FOOTER}</p>
       </div>
     </div>
 
@@ -176,9 +176,19 @@
     border-radius: 6px;
     background: #404040;
   }
+  /* The game's own screen is text mode, so its wording is set in a DOS terminal face. */
+  .type-heading,
+  .type-item,
+  .book-heading,
+  .cell,
+  .book-footer {
+    font-family: var(--font-dos);
+    line-height: 1.1;
+    white-space: nowrap;
+  }
   .type-heading {
     margin: 0 0 12px;
-    line-height: 0;
+    font-size: 24px;
     color: var(--mw-green);
   }
   .type-items {
@@ -191,13 +201,14 @@
     border: none;
     border-radius: 3px;
     background: none;
-    line-height: 0;
+    font-size: 22px;
     color: var(--mw-red);
     cursor: pointer;
   }
   /* A DOS menu marks the item you are on by swapping its colours over. */
   .type-item.current {
     background: var(--mw-red);
+    color: #000;
   }
   .type-item:focus-visible,
   .cell:focus-visible {
@@ -224,7 +235,7 @@
   }
   .book-heading {
     margin: 0 0 16px;
-    line-height: 0;
+    font-size: 24px;
     color: var(--accent);
   }
   .grid {
@@ -238,17 +249,18 @@
     border: none;
     border-radius: 3px;
     background: none;
-    line-height: 0;
+    font-size: 22px;
     text-align: left;
     color: var(--mw-green);
     cursor: pointer;
   }
   .cell.current {
     background: var(--mw-green);
+    color: #000;
   }
   .book-footer {
     margin: 0;
-    line-height: 0;
+    font-size: 22px;
     color: var(--mw-red);
   }
   .detail {
