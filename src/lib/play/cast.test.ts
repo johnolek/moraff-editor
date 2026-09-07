@@ -1,0 +1,170 @@
+import { describe, expect, it } from 'vitest';
+import { bundledDungeon } from '../game/dungeon';
+import { spellIndex } from '../game/port/inventory';
+import { savePlayer } from '../game/port/record';
+import { BorlandRng, type Rng } from '../game/port/rng';
+import { newGame, type PlayerCharacter } from '../game/port/state';
+import { UNFORGIVEN_MAP } from '../map/game';
+import { newCharacterFile } from '../roller/save-file';
+import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
+import { KEY } from './keys';
+
+/** A character file that lives in the test rather than in the roster. */
+function characterFile(overrides: Partial<PlayerCharacter> = {}): CharacterFile {
+  const pc = { ...newGame().pc, name: 'MERLIN', hp: 200, maxHp: 200, ...overrides };
+  return {
+    bytes: savePlayer(pc, newCharacterFile(pc)),
+    write(bytes) {
+      this.bytes = bytes;
+    },
+    died() {},
+  };
+}
+
+/** A session with the loop running, waiting for its first key. */
+function playing(file: CharacterFile, rng: Rng = new BorlandRng(3)): GameSession {
+  const session = startGame(file, rng);
+  void runMoveControl(session);
+  return session;
+}
+
+/** Press a key and let the loop get back to waiting for the next one. */
+async function press(session: GameSession, ...keys: number[]): Promise<void> {
+  for (const key of keys) {
+    session.press(key);
+    await new Promise((resolve) => setTimeout(resolve));
+  }
+}
+
+/** A square of the town with nothing on it. */
+function townSquare(): { x: number; y: number } {
+  const rows = UNFORGIVEN_MAP.floor(0, 0);
+  for (let y = 1; y < 100; y++) {
+    for (let x = 1; x < 76; x++) {
+      if (rows[y][x].solid) continue;
+      if (bundledDungeon.ladder(x, y, 0, 0) !== 0) continue;
+      if (bundledDungeon.townFeature(x, y, 0) !== 0) continue;
+      if (bundledDungeon.trapdoor(x, y, 0, 0) !== -1) continue;
+      return { x, y };
+    }
+  }
+  throw new Error('the town has no free square');
+}
+
+/** A wizard standing in the town who knows the spells `owned` names. */
+function wizard(owned: number[], overrides: Partial<PlayerCharacter> = {}): CharacterFile {
+  const spellbook = Array.from({ length: 180 }, () => 0);
+  for (const index of owned) spellbook[index] = 1;
+  return characterFile({ level: 0, cls: 3, sp: 20, maxSp: 20, spellbook, ...townSquare(), ...overrides });
+}
+
+/** The wizard battle spells: Minor Protection on the first line and Pass Wall on the seventh. */
+const MINOR_PROTECTION = spellIndex(2, 0, 2);
+const PASS_WALL = spellIndex(2, 6, 1);
+/** DESCEND, the twelfth preparation spell, which is the fourth line's third slot. */
+const DESCEND = spellIndex(1, 3, 2);
+
+/** The keys those spells sit under in the thirty-spell table. */
+const SPELL_C = 0x63;
+const SPELL_L = 0x6c;
+const SPELL_T = 0x74;
+
+/** The lines of every screen the game has drawn, for asking what is on it. */
+const screenText = (session: GameSession) => session.view().screen.map((line) => line.text);
+
+describe('casting from the spellbook', () => {
+  it('casts the spell the menus pick and charges its level in spell points', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    await press(session, KEY.cast);
+    expect(screenText(session)).toContain('3) WIZARD BATTLE SPELLS');
+    await press(session, 0x33);
+    expect(screenText(session).some((text) => text.includes('MINOR PROTECTION'))).toBe(true);
+    await press(session, SPELL_C);
+    expect(session.game.pc.protection).toBe(1);
+    // The spell lasts 60 moves and the moment the cast itself costs is the first of them.
+    expect(session.game.pc.protectionTime).toBe(59);
+    expect(session.game.pc.sp).toBe(19);
+  });
+
+  it('spends the ten seconds a battle spell takes', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    await press(session, KEY.cast, 0x33, SPELL_C);
+    expect(session.view().seconds).toBe(10);
+  });
+
+  it('shows what the character has none of as NOT YET FOUND and will not cast it', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    await press(session, KEY.cast, 0x33);
+    expect(screenText(session).some((text) => text.includes('NOT YET FOUND'))).toBe(true);
+    // 'A' is Sleep, which this wizard does not have; the menu goes on waiting.
+    await press(session, 0x61);
+    expect(session.game.pc.sleepTimer).toBe(0);
+    await press(session, SPELL_C);
+    expect(session.game.pc.protection).toBe(1);
+  });
+
+  it('turns a fighter away before it draws a menu', async () => {
+    const session = playing(wizard([MINOR_PROTECTION], { cls: 0 }));
+    await press(session, KEY.cast);
+    expect(session.box).toEqual([
+      'FIGHTERS CAN ONLY CAST',
+      '  SPELLS BY USING MAGIC',
+      '  PAPER. KEEP LOOKING.',
+    ]);
+    expect(screenText(session)).not.toContain('1) PERMANENT SPELLS');
+  });
+
+  it('refuses a permanent spell anywhere but the town', async () => {
+    const session = playing(wizard([MINOR_PROTECTION], { level: 3 }));
+    await press(session, KEY.cast, 0x31);
+    expect(session.box[0]).toBe('THESE SPELLS TAKE ONE MONTH');
+  });
+
+  it('refuses a spell there are not the points for', async () => {
+    const session = playing(wizard([PASS_WALL], { sp: 3 }));
+    await press(session, KEY.cast, 0x33, SPELL_T);
+    expect(session.box[0]).toBe('YOU DO NOT HAVE ENOUGH');
+    expect(session.game.pc.sp).toBe(3);
+  });
+
+  it('backs out of the type menu, and out of the spell table', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    // Escaping the type menu leaves it on the screen, exactly as the original does: nothing
+    // wipes the menu column until the next thing drawn in it.
+    await press(session, KEY.cast, KEY.escape);
+    expect(screenText(session)).not.toContain('SELECT A SPELL-SPELLS USE ONE SPELL POINT PER LEVEL:');
+    await press(session, KEY.cast, 0x33, KEY.escape);
+    expect(screenText(session).some((text) => text.includes('MINOR PROTECTION'))).toBe(false);
+    expect(session.game.pc.protection).toBe(0);
+  });
+
+  it('lands on the new floor when the spell moves the character', async () => {
+    const session = playing(wizard([DESCEND]));
+    await press(session, KEY.cast, 0x32, SPELL_L);
+    expect(session.view().place.floor).toBe(1);
+    expect(session.game.pc.level).toBe(1);
+    // load_level_map stocks the floor arrived on, so the monsters are the new floor's.
+    expect(session.view().monsters.length).toBeGreaterThan(0);
+    expect(session.view().seconds).toBe(1);
+  });
+
+  it('reads a spell description off the help list', async () => {
+    // A help list ignores a key for a spell the character has none of, the same as the list it
+    // is a copy of, so only a spell they own can be looked up.
+    const session = playing(wizard([spellIndex(2, 0, 0)]));
+    await press(session, KEY.cast, 0x37, 0x61);
+    expect(screenText(session)).toContain('HIT A KEY WHEN FINISHED');
+    expect(screenText(session).some((text) => text.includes('SLEEP'))).toBe(true);
+    await press(session, KEY.enter);
+    expect(session.game.pc.sp).toBe(20);
+  });
+
+  it('swaps the two layouts of the spell table and ends the spell', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    await press(session, KEY.cast, 0x33, 0x35);
+    expect(session.miniSpellMenu).toBe(true);
+    expect(screenText(session).some((text) => text.includes('MINOR PROTECTION'))).toBe(false);
+    await press(session, KEY.cast, 0x33);
+    expect(screenText(session)).toContain('5) SWITCH TO LARGE, SLOW, CAST SPELL MENU');
+  });
+});

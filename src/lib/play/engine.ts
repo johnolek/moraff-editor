@@ -1,6 +1,7 @@
 import { sectionOf } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
 import { attackTiming, engagementTiming } from '../game/port/combat';
+import { CAST_SPELLBOOK } from '../game/port/inventory';
 import { tabletMessage, townTablet } from '../game/port/hints';
 import { checkDeath } from '../game/port/kills';
 import { arriveSquare, leaveSquare } from '../game/port/moment';
@@ -11,6 +12,7 @@ import { newGame, sectionMonsterKinds } from '../game/port/state';
 import { UNFORGIVEN_AREA } from '../map/area';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
+import { castASpell } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
 import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
@@ -121,6 +123,12 @@ export class GameSession {
   box: string[] = [];
   /** The lines of the battle banner, which the game prints beside the monster. */
   banner: string[] = [];
+  /** DS:034c: the twelve lines view_battle_spells (exe 2000:9417) has showing, which is how it
+   *  knows whether anything has changed since it last drew them. */
+  battleSpellsShown: boolean[] = [];
+  /** DS:041b: whether the spell menu is drawn in the miniature layout. The original keeps it in
+   *  the character record at offset 0x975; the port keeps it for as long as the game is played. */
+  miniSpellMenu = false;
   /** movecontrol has come back: the character has quit or died. */
   over = false;
   dead = false;
@@ -330,7 +338,7 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.f1]: { c: 'FUN_3000_7dfc', run: (turn) => showHelp(turn.session) },
   [KEY.fight]: { c: 'strike', run: swingAtMonster },
   [KEY.repeatFight]: { c: 'movecontrol, the DS:0437 repeat flag', run: keepSwinging },
-  [KEY.cast]: { c: 'cast_a_spell', run: (turn) => notBuiltYet(turn.game, 'CAST A SPELL') },
+  [KEY.cast]: { c: 'cast_a_spell', run: (turn) => castASpell(turn, CAST_SPELLBOOK) },
   [KEY.useItem]: { c: 'movecontrol, case 0x69, and use_magic_item', run: useAnItem },
   [KEY.viewPrepSpells]: { c: 'view_prep_spells', run: (turn) => notBuiltYet(turn.game, 'LIST THE PREPARATION SPELLS IN EFFECT') },
   [KEY.viewBattleSpells]: { c: 'view_battle_spells', run: (turn) => notBuiltYet(turn.game, 'LIST THE BATTLE SPELLS IN EFFECT') },
