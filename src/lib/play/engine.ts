@@ -19,6 +19,7 @@ import { chuteUnder, fallDownChute } from './chute';
 import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { changeArmor, changeWeapon } from './gear';
+import { countTheMoney } from './misc';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
 import { showHelp } from './help';
 import { dropSomething } from './items';
@@ -363,7 +364,7 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.expNeeded]: { c: 'FUN_2000_7bcd', run: showExpNeeded },
   [KEY.viewStats]: { c: 'view_stats', run: showStats },
   [KEY.pockets]: { c: 'FUN_3000_7545', run: lookInPockets },
-  [KEY.money]: { c: 'show_money', run: (turn) => notBuiltYet(turn.game, 'COUNT YOUR MONEY') },
+  [KEY.money]: { c: 'show_money', run: countTheMoney },
   [KEY.loseItem]: { c: 'lose_item', run: dropSomething },
   [KEY.monsterManual]: { c: 'monster_manual', run: (turn) => notBuiltYet(turn.game, 'READ ABOUT THE MONSTERS DOWN HERE') },
   [KEY.options]: { c: 'movecontrol, the 0x6f branch', run: (turn) => notBuiltYet(turn.game, 'OPEN THE OPTIONS MENU') },
