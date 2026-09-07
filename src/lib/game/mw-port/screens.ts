@@ -2,6 +2,7 @@ import { MW_CLASS_NAMES, MW_RACES } from './character';
 import { experienceForKill } from './combat';
 import { MW_FROM_PAPER, MW_FROM_SPELLBOOK, spellHeld as mwSpellHeld } from './magic';
 import { type HelpLine, readHelpScreen } from '../port/hints';
+import type { ScreenLine } from '../port/state';
 import type { MwSpellChoice } from './state';
 import {
   MW_PRIESTLY_CLASSES,
@@ -369,32 +370,49 @@ export function mwSpellTimers(game: MwGame): MwSpellTimer[] {
 const TEXT_COLOUR = 15;
 
 /**
- * FUN_2000_8728 (WORLD.EXE 2000:8728): the monster's hit points, drawn on the side of the play
- * screen the monster stands on.
- *
- * The four corners are worked out from the square rather than passed in, one comparison at a
- * time, so a monster level with the character in both axes would leave the position uninitialised
- * — which cannot happen, because only the four orthogonal neighbours are ever drawn.
- *
- * The original clears a rectangle around the number before printing it. Drawing over the same x
- * and y already replaces the line here, so the port prints and nothing else.
+ * The rectangle FUN_2000_8b3f (WORLD.EXE 2000:8b3f) draws the view straight ahead in when all
+ * four views are on the screen: its FUN_3000_1a08 call for view 0, x 0x2d3 to 0x484 and y 0 to
+ * 600. The other three sit around it.
  */
-export function drawMonsterHitPoints(game: MwGame, x: number, y: number, slot: number): void {
+export const MW_NORTH_VIEW = { x: 0x2d3, y: 0, right: 0x484, bottom: 600 } as const;
+
+/** Where the values over one of the four views go. */
+export interface MwMonsterViewCorner {
+  /** The corner FUN_2000_8b3f hands FUN_2000_892d, which the level and the experience hang off. */
+  x: number;
+  y: number;
+  /** The y FUN_2000_8728 works out for the same side, a few units off the level's. */
+  hpY: number;
+}
+
+/**
+ * The corner of each of the four views: the pairs FUN_2000_8b3f hands FUN_2000_892d, with the
+ * ones FUN_2000_8728 works out for the same side. 8b3f always passes the corner that belongs to
+ * the neighbour it is drawing, so the side is all either of them really takes.
+ */
+export const MW_MONSTER_VIEW_CORNERS = {
+  north: { x: 0x2d4, y: 7, hpY: 4 },
+  south: { x: 0x2d4, y: 0x25f, hpY: 0x260 },
+  west: { x: 0x11d, y: 0x1b5, hpY: 0x1b2 },
+  east: { x: 0x48b, y: 0x1b5, hpY: 0x1b2 },
+} as const satisfies Record<string, MwMonsterViewCorner>;
+
+/**
+ * FUN_2000_8728 (WORLD.EXE 2000:8728): which of the four corners a monster's numbers go in.
+ *
+ * The original works it out from the square rather than taking it, one comparison at a time, so a
+ * monster level with the character in both axes would leave the corner uninitialised — which
+ * cannot happen, because only the four orthogonal neighbours are ever drawn. The port answers the
+ * view ahead for that square, since something has to be returned.
+ */
+export function mwMonsterViewCorner(game: MwGame, x: number, y: number): MwMonsterViewCorner {
   const pc = game.pc;
-  let left = 0;
-  let top = 0;
-  if (y < pc.y) [left, top] = [0x2d4, 4];
-  if (pc.y < y) [left, top] = [0x2d4, 0x260];
-  if (x < pc.x) [left, top] = [0x11d, 0x1b2];
-  if (pc.x < x) [left, top] = [0x48b, 0x1b2];
-  // DS:2bc9 with the hit points on the end
-  game.draw({
-    text: `HP:${game.monsters[slot].hp}`,
-    x: left + 0xdb,
-    y: top,
-    font: 0,
-    colour: TEXT_COLOUR,
-  });
+  let corner: MwMonsterViewCorner = MW_MONSTER_VIEW_CORNERS.north;
+  if (y < pc.y) corner = MW_MONSTER_VIEW_CORNERS.north;
+  if (pc.y < y) corner = MW_MONSTER_VIEW_CORNERS.south;
+  if (x < pc.x) corner = MW_MONSTER_VIEW_CORNERS.west;
+  if (pc.x < x) corner = MW_MONSTER_VIEW_CORNERS.east;
+  return corner;
 }
 
 /**
@@ -409,46 +427,55 @@ function experienceLabel(floor: number): string {
 }
 
 /**
- * FUN_2000_892d (WORLD.EXE 2000:892d): the three lines beside an adjacent monster — its level, its
- * hit points and what killing it is worth.
- *
- * movecontrol calls it once for each of the four sides the character can see through, with the x
- * and y of the corner that side's picture is drawn in: (0x2d4, 7) north, (0x2d4, 0x25f) south,
- * (0x11d, 0x1b5) west and (0x48b, 0x1b5) east. It draws nothing when nothing is standing there.
+ * FUN_2000_892d (WORLD.EXE 2000:892d) and FUN_2000_8728 (exe 2000:8728): the three values printed
+ * over a monster's view — its level at the top left corner, its hit points 0xdb further along the
+ * same line, and what killing it is worth near the bottom.
  *
  * The level is the monster's own depth, which is what both combat formulas use in place of the
  * floor number, and the experience is what {@link experienceForKill} works out for the live
  * monster — the same number monster_killed hands over, before it blanks the slot.
  *
  * The original prints the experience with "%-20.0f", so the number is padded out to twenty
- * characters with the spaces that rub out a longer number underneath it.
+ * characters with the spaces that rub out a longer number underneath it. It also clears a
+ * rectangle around each value first; drawing over the same x and y already replaces the line
+ * here, so the port prints and nothing else.
  */
-export function drawMonsterInfo(
+export function mwMonsterViewLines(
   game: MwGame,
-  x: number,
-  y: number,
-  monsterX: number,
-  monsterY: number,
-): void {
+  slot: number,
+  corner: MwMonsterViewCorner,
+): ScreenLine[] {
+  const monster = game.monsters[slot];
+  return [
+    // DS:26c3 / DS:2bcd with the level on the end
+    {
+      text: `${monster.depth < 10 ? 'LEVEL:' : 'LEV:'}${monster.depth}`,
+      x: corner.x,
+      y: corner.y,
+      font: 0,
+      colour: TEXT_COLOUR,
+    },
+    // DS:2bc9 with the hit points on the end
+    { text: `HP:${monster.hp}`, x: corner.x + 0xdb, y: corner.hpY, font: 0, colour: TEXT_COLOUR },
+    {
+      text: experienceLabel(game.pc.floor) + experienceForKill(game, slot).toFixed(0).padEnd(20),
+      x: corner.x,
+      y: corner.y + (corner.y < 0x24e ? 0x226 : 0x201),
+      font: 0,
+      colour: TEXT_COLOUR,
+    },
+  ];
+}
+
+/**
+ * FUN_2000_8b3f (WORLD.EXE 2000:8b3f) calling FUN_2000_892d: the values over the view of one of
+ * the four squares next to the character. It draws nothing when nothing is standing there.
+ */
+export function drawMonsterInfo(game: MwGame, monsterX: number, monsterY: number): void {
   const slot = mwOccupantAt(game, monsterX, monsterY);
   if (slot === -1) return;
-  const depth = game.monsters[slot].depth;
-  // DS:26c3 / DS:2bcd with the level on the end
-  game.draw({
-    text: `${depth < 10 ? 'LEVEL:' : 'LEV:'}${depth}`,
-    x,
-    y,
-    font: 0,
-    colour: TEXT_COLOUR,
-  });
-  drawMonsterHitPoints(game, monsterX, monsterY, slot);
-  game.draw({
-    text: experienceLabel(game.pc.floor) + experienceForKill(game, slot).toFixed(0).padEnd(20),
-    x,
-    y: y + (y < 0x24e ? 0x226 : 0x201),
-    font: 0,
-    colour: TEXT_COLOUR,
-  });
+  const corner = mwMonsterViewCorner(game, monsterX, monsterY);
+  for (const line of mwMonsterViewLines(game, slot, corner)) game.draw(line);
 }
 
 /**

@@ -9,6 +9,8 @@ import {
   MW_ESCAPE,
   MW_HELP_FILES,
   MW_HELP_TOPICS,
+  MW_MONSTER_VIEW_CORNERS,
+  MW_NORTH_VIEW,
   MW_SPELL_CATEGORY_MENU,
   applySpellCategory,
   drawHelpMenu,
@@ -23,6 +25,7 @@ import {
   mwHelpPages,
   mwLineMenuKey,
   mwMenuKey,
+  mwMonsterViewLines,
   mwSpellTimers,
   showHelp,
   showSpellDescription,
@@ -188,7 +191,7 @@ describe('drawMonsterInfo', () => {
 
   it('gives the level, the hit points and the experience', () => {
     const game = nearby(0, -1);
-    drawMonsterInfo(game, 0x2d4, 7, 20, 29);
+    drawMonsterInfo(game, 20, 29);
     expect(game.messages).toEqual([
       'LEVEL:5',
       'HP:46',
@@ -202,21 +205,21 @@ describe('drawMonsterInfo', () => {
       monsters: [{ x: 20, y: 29, hp: 8, type: 1, depth: 20 }],
     });
     mwSetOccupant(game, 20, 29, 0);
-    drawMonsterInfo(game, 0x2d4, 7, 20, 29);
+    drawMonsterInfo(game, 20, 29);
     expect(game.messages[0]).toBe('LEV:20');
     expect(game.messages[2].startsWith('EXP: ')).toBe(true);
   });
 
   it('puts the hit points on the side of the screen the monster is on', () => {
     const west = nearby(-1, 0);
-    drawMonsterInfo(west, 0x11d, 0x1b5, 19, 30);
+    drawMonsterInfo(west, 19, 30);
     expect(west.screen.find((line) => line.text.startsWith('HP:'))).toMatchObject({
       x: 0x11d + 0xdb,
       y: 0x1b2,
     });
 
     const east = nearby(1, 0);
-    drawMonsterInfo(east, 0x48b, 0x1b5, 21, 30);
+    drawMonsterInfo(east, 21, 30);
     expect(east.screen.find((line) => line.text.startsWith('HP:'))).toMatchObject({
       x: 0x48b + 0xdb,
       y: 0x1b2,
@@ -225,8 +228,38 @@ describe('drawMonsterInfo', () => {
 
   it('draws nothing when the square is empty', () => {
     const game = newMwGame({ pc: { x: 20, y: 30 } });
-    drawMonsterInfo(game, 0x2d4, 7, 20, 29);
+    drawMonsterInfo(game, 20, 29);
     expect(game.messages).toEqual([]);
+  });
+
+  it('hangs the level and the experience off the corner of that side of the screen', () => {
+    const south = nearby(0, 1);
+    drawMonsterInfo(south, 20, 31);
+    expect(south.screen[0]).toMatchObject({ x: 0x2d4, y: 0x25f });
+    expect(south.screen[2]).toMatchObject({ x: 0x2d4, y: 0x25f + 0x201 });
+  });
+});
+
+describe('mwMonsterViewLines', () => {
+  const facing = () => {
+    const game = newMwGame({
+      pc: { x: 20, y: 30, floor: 5 },
+      monsters: [{ x: 20, y: 29, hp: 46, type: 1, depth: 5 }],
+    });
+    mwSetOccupant(game, 20, 29, 0);
+    return game;
+  };
+
+  it('puts the hit points 0xdb along from the level and the experience 0x226 below it', () => {
+    const lines = mwMonsterViewLines(facing(), 0, MW_MONSTER_VIEW_CORNERS.north);
+    expect(lines[0]).toMatchObject({ text: 'LEVEL:5', x: 0x2d4, y: 7, colour: 15 });
+    expect(lines[1]).toMatchObject({ text: 'HP:46', x: 0x2d4 + 0xdb, y: 4 });
+    expect(lines[2]).toMatchObject({ x: 0x2d4, y: 7 + 0x226 });
+  });
+
+  it('leaves the experience above the bottom of the view ahead', () => {
+    const lines = mwMonsterViewLines(facing(), 0, MW_MONSTER_VIEW_CORNERS.north);
+    expect(lines[2].y).toBeLessThan(MW_NORTH_VIEW.bottom);
   });
 });
 

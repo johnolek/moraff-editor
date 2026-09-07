@@ -15,7 +15,8 @@
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import { mwOnMessageLine } from '../../game/mw-port/state';
-  import { mwCorner, MW_CORNER_WIDTH } from './screens';
+  import { mwMonsterViewLines, MW_MONSTER_VIEW_CORNERS, MW_NORTH_VIEW } from '../../game/mw-port/screens';
+  import { mwCorner, MW_CORNER_WIDTH, MW_MESSAGE_BOX } from './screens';
 
   /** How many pixels a square is drawn at when the map is centred on the character. */
   const PLAY_CELL = 22;
@@ -44,6 +45,28 @@
       : mwCorner(screenTakesOver ? [] : view.screen, view.banner, view.box),
   );
   const cornerWindow = $derived({ x: 0, y: 0, width: MW_CORNER_WIDTH, height: corner.height });
+
+  /**
+   * The values over the monster being faced. The game prints them around whichever of its four
+   * views that monster stands in; there is one picture here, so they are always the view ahead's.
+   */
+  const monsterValues = $derived(
+    session === null || view?.engaged == null
+      ? []
+      : mwMonsterViewLines(session.game, view.engaged.slot, MW_MONSTER_VIEW_CORNERS.north),
+  );
+
+  /** How tall a line of the body font is: the message box steps this far between its own. */
+  const LINE_HEIGHT = MW_MESSAGE_BOX.step;
+
+  /** The top and bottom edges of the view ahead, which are the two the values are printed on. */
+  const MONSTER_TOP = {
+    x: MW_NORTH_VIEW.x,
+    y: MW_NORTH_VIEW.y,
+    width: MW_NORTH_VIEW.right - MW_NORTH_VIEW.x,
+    height: LINE_HEIGHT,
+  };
+  const MONSTER_BOTTOM = { ...MONSTER_TOP, y: MW_NORTH_VIEW.bottom - LINE_HEIGHT };
 
   function start() {
     const entry = currentEntry();
@@ -189,6 +212,13 @@
           </div>
         {/if}
         <div class="corner top-right">
+          {#if view.engaged}
+            <div class="monster">
+              <MwPortrait monster={view.engaged} floor={view.place.floor} />
+              <div class="values top"><GameScreen lines={monsterValues} window={MONSTER_TOP} /></div>
+              <div class="values bottom"><GameScreen lines={monsterValues} window={MONSTER_BOTTOM} /></div>
+            </div>
+          {/if}
           {#if view.prompt}
             <div class="status">{view.prompt}</div>
           {/if}
@@ -236,7 +266,6 @@
             {/each}
           </div>
         </div>
-        <MwPortrait monster={view.engaged} floor={view.place.floor} />
         <MwPanel game={session.game} {view} />
       </aside>
     </div>
@@ -323,6 +352,27 @@
     top: 10px;
     align-items: flex-end;
     width: clamp(180px, 26%, 330px);
+  }
+  .monster {
+    position: relative;
+    width: 100%;
+  }
+  /* The strips FUN_2000_8728 clears before it prints, so that white on a light monster reads. */
+  .values {
+    position: absolute;
+    left: 0;
+    right: 0;
+  }
+  .values.top {
+    top: 0;
+  }
+  .values.bottom {
+    bottom: 0;
+  }
+  .values :global(.screen) {
+    background: rgba(0, 0, 0, 0.55);
+    border: none;
+    border-radius: 0;
   }
   /* FUN_2000_a9bd (WORLD.EXE 2000:a9bd) prints this one in colour 5. */
   .status {
