@@ -1,10 +1,10 @@
 <script lang="ts">
   import { app } from '../app-state.svelte';
-  import magicSource from '../game/port/magic.ts?raw';
   import { portedSpell } from '../game/port/spell-index';
+  import SourceLink from '../source/SourceLink.svelte';
+  import { portCode, portFunction } from '../source/ports';
   import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { snippet } from '../ui/source-snippet';
   import { LIST_NOTES, spellCorrection } from './mechanics';
   import { allSpells, gridKey, spellGroups, type Spell } from './spells';
 
@@ -15,6 +15,12 @@
 
   const CODE_NOTE =
     "The game's own code for this spell, ported line for line; the address it came from is in the comment.";
+
+  /** Every spell the port runs is a function of this one file. */
+  const MAGIC = 'src/lib/game/port/magic.ts' as const;
+
+  /** The decompiled function a ported one cites, for the link beside its name. */
+  const citedC = (name: string) => portFunction(MAGIC, name)?.c?.name;
 
   const lists = spellGroups(allSpells());
 
@@ -139,10 +145,11 @@
           {#if code.args}
             <p class="code-note">Called as {code.fn}(game, {code.args}).</p>
           {/if}
-          <pre>{snippet(magicSource, code.fn)}</pre>
+          <p class="fn">{code.fn}<SourceLink ts={{ file: MAGIC, name: code.fn }} c={citedC(code.fn)} /></p>
+          <pre>{portCode(MAGIC, code.fn)}</pre>
           {#each code.helpers as helper}
-            <p class="helper">{helper}</p>
-            <pre>{snippet(magicSource, helper)}</pre>
+            <p class="helper">{helper}<SourceLink ts={{ file: MAGIC, name: helper }} c={citedC(helper)} /></p>
+            <pre>{portCode(MAGIC, helper)}</pre>
           {/each}
         {/if}
       </section>
@@ -283,10 +290,16 @@
     font-size: 13px;
     color: var(--muted);
   }
+  .fn,
   .helper {
-    margin: 20px 0 0;
     font-size: 12px;
     color: var(--muted);
+  }
+  .fn {
+    margin: 6px 0 0;
+  }
+  .helper {
+    margin: 20px 0 0;
   }
   pre {
     margin: 12px 0 0;
