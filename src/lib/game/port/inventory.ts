@@ -1,8 +1,10 @@
 import spellsHelp from '../uspells.hlp?raw';
+import { giveHint } from './hints';
 import { spellEffect } from './magic';
 import {
   clearMessageLine,
   clearRect,
+  clearStatsScreen,
   drawMenu,
   MENU_X,
   MESSAGE_LINE_Y,
@@ -511,4 +513,122 @@ export function showSpellHelp(game: Game, type: number, level: number, slot: num
   const prompt = 'HIT A KEY WHEN FINISHED';
   game.draw({ text: prompt, x: MENU_X, y: MESSAGE_LINE_Y, font: 0, colour: 8 });
   drawMenu(game, lines);
+}
+
+/** Which of UH.BIN's messages the pockets screen opens with (exe: give_hint(0x5b)). */
+export const POCKETS_HINT = 91;
+
+/**
+ * The five lines of that menu, as get_choice numbers them. The first four are the same four
+ * sources cast_a_spell numbers, in the same order, so a line of this menu is a source as it
+ * stands: the switch behind it hands FUN_3000_71e6 the spellbook at DS:b9f7, the scrolls at
+ * DS:baab, the wands at DS:bb5f and the paper at DS:bc13.
+ */
+export const POCKETS_SPELLBOOKS = 1;
+export const POCKETS_SCROLLS = 2;
+export const POCKETS_WANDS = 3;
+export const POCKETS_PAPERS = 4;
+export const POCKETS_MAGIC_ITEMS = 5;
+
+/**
+ * FUN_3000_7545 (exe 3000:7545), its first screen: the menu the P key opens.
+ *
+ * The lines are message 91 of UH.BIN rather than strings in the executable, which is why they
+ * read as a question — "WHICH DO YOU WISH TO SEE?" and then the five things. give_hint (exe
+ * 2000:313a) draws them down the menu column exactly as a menu's own lines are drawn. The caller
+ * reads a key and hands it to `getChoice(1, 5, key)`; anything else closes the screen.
+ */
+export function drawPocketsMenu(game: Game): void {
+  drawMenu(game, giveHint(POCKETS_HINT));
+}
+
+/**
+ * FUN_3000_71e6 (exe 3000:71e6), one of its two pages: thirty rows, each the level of a line of
+ * the book and the two lists' spells for that place on it.
+ *
+ * Page 0 is the permanent and preparation lists and page 1 the wizard and priest ones. A row is
+ * drawn whatever the character has; the spell's name only appears where they have some of it, so
+ * a row can be a level number and nothing else. The colour runs 6, 7, 8 and round again with the
+ * level, so each line of three shares one.
+ *
+ * `source` is which of the four arrays is being looked at, and the two pages are drawn one after
+ * the other with a wait for a key between them.
+ */
+export function drawSpellInventoryPage(game: Game, source: number, page: number): void {
+  game.eraseScreen();
+  const owned = spellsOwned(game.pc, source);
+  // DS:290b 2911 2922 2935 294a
+  const headings =
+    page === 0
+      ? ['PERMANENT SPELLS', 'PREPARATION SPELLS']
+      : ['WIZARD BATTLE SPELLS', 'PRIEST BATTLE SPELLS'];
+  game.draw({ text: 'LEVEL', x: 0, y: 0, font: 0, colour: 4 });
+  game.draw({ text: headings[0], x: 0xb4, y: 0, font: 0, colour: 4 });
+  game.draw({ text: headings[1], x: 900, y: 0, font: 0, colour: 4 });
+  for (let row = 0; row < 30; row += 1) {
+    const level = Math.trunc(row / 3);
+    const colour = (level % 3) + 6;
+    const y = row * 0x26 + 0x3c;
+    game.draw({ text: `${level + 1}`, x: 0x1e, y, font: 0, colour });
+    const left = page * 2;
+    if (owned[spellIndex(left, level, row % 3)] !== 0) {
+      game.draw({ text: SPELL_MENU_NAMES[left][row], x: 0xb4, y, font: 0, colour });
+    }
+    if (owned[spellIndex(left + 1, level, row % 3)] !== 0) {
+      game.draw({ text: SPELL_MENU_NAMES[left + 1][row], x: 900, y, font: 0, colour });
+    }
+  }
+}
+
+/** Where FUN_3000_71be (exe 3000:71be) puts the magic item page's lines: 0x28 apart at x 0x2d3. */
+const MAGIC_ITEM_X = 0x2d3;
+const MAGIC_ITEM_STEP = 0x28;
+
+/**
+ * FUN_3000_7545 (exe 3000:7545), its fifth choice: everything the character carries that is not a
+ * spell, with how many of each.
+ *
+ * The lines are printed through a helper that keeps a running row number, and the number is
+ * stepped an extra time before each of the three headings, which is what leaves a blank line
+ * above them. The numbers in front of the items are the keys the I menu uses to spend them: 1 to
+ * 5 under its fifth line and 6 to 11 under its fourth. The last five are worn or held and cannot
+ * be spent at all.
+ */
+export function drawMagicItems(game: Game): void {
+  const pc = game.pc;
+  clearStatsScreen(game);
+  const rows: (string | null)[] = [
+    // DS:295f 2972 2990 29ab 29c8 29de 29f2
+    'MISC. MAGIC ITEMS:',
+    null,
+    "HIT 'I' AND '5' TO USE THESE:",
+    `1) NUCLEAR HAND GRENADES: ${pc.grenades}`,
+    `2) STONES OF TELEPORTATION: ${pc.teleportStones}`,
+    `3) STONES OF SEEING: ${pc.seeingStones}`,
+    `4) FLOOR SLOSHERS: ${pc.slosher}`,
+    `5) POTION OF HEALING: ${pc.healingPotions}`,
+    null,
+    // DS:2a09 2a27 2a3a 2a4e 2a62 2a73 2a86
+    "HIT 'I' AND '4' TO USE THESE:",
+    `6) GREEN POTIONS: ${pc.potions[1]}`,
+    `7) ORANGE POTIONS: ${pc.potions[0]}`,
+    `8) YELLOW POTIONS: ${pc.potions[5]}`,
+    `9) RED POTIONS: ${pc.potions[3]}`,
+    `10) BLUE POTIONS: ${pc.potions[2]}`,
+    `11) WHITE POTIONS: ${pc.potions[4]}`,
+    null,
+    // DS:2a9a 2aba 2ad6 2af4 2b0f 2b26 2b3a
+    'THESE ARE AUTOMATICALLY IN USE:',
+    `12) RINGS OF REGENERATION: ${pc.regenRings}`,
+    `13) RING OF PROTECTION, PLUS ${pc.protRing}`,
+    `14) ANTI-MAGIC RING, PLUS ${pc.antiMagicRing}`,
+    `15) BODY ARMOR, LEVEL ${pc.bodyArmor}`,
+    `16) GAUNTLET, PLUS ${pc.gauntlet}`,
+    null,
+    'HIT ANY KEY...',
+  ];
+  rows.forEach((text, row) => {
+    if (text === null) return;
+    game.draw({ text, x: MAGIC_ITEM_X, y: row * MAGIC_ITEM_STEP, font: 0, colour: 4 });
+  });
 }

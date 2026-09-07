@@ -8,7 +8,12 @@ import {
   castSpell,
   castTypeAllowed,
   drawCastTypeMenu,
+  drawMagicItems,
+  drawPocketsMenu,
+  drawSpellInventoryPage,
   drawSpellList,
+  POCKETS_PAPERS,
+  POCKETS_SPELLBOOKS,
   printSpellLine,
   spellCharges,
   spellCost,
@@ -334,5 +339,104 @@ describe("a spell's description", () => {
     expect(game.screen[0].text).toBe('HIT A KEY WHEN FINISHED');
     expect(game.screen.slice(1).map((line) => line.text)).toEqual(spellHelp(61));
     expect(game.screen[1].text).toBe('MAGIC ZAP: ZAPS ANY');
+  });
+});
+
+describe('the pockets screen', () => {
+  it('opens on the question UH.BIN asks', () => {
+    const game = newGame();
+    drawPocketsMenu(game);
+    expect(game.screen.map((line) => line.text)).toEqual([
+      'WHICH DO YOU WISH TO SEE?',
+      '1) SPELLBOOKS',
+      '2) SCROLLS',
+      '3) WANDS',
+      '4) PAPERS',
+      '5) MISC. MAGIC ITEMS',
+      '',
+      'ANY OTHER KEY TO RETURNS...',
+    ]);
+  });
+
+  it('numbers its four sources the way cast_a_spell does', () => {
+    expect(POCKETS_SPELLBOOKS).toBe(CAST_SPELLBOOK);
+    expect(POCKETS_PAPERS).toBe(CAST_PAPER);
+  });
+
+  it('lists thirty rows of levels with only the spells the character has', () => {
+    const game = newGame();
+    game.pc.spellbook[spellIndex(0, 0, 0)] = 1;
+    game.pc.spellbook[spellIndex(1, 3, 2)] = 1;
+    drawSpellInventoryPage(game, CAST_SPELLBOOK, 0);
+    expect(game.screen.slice(0, 3).map((line) => [line.text, line.x])).toEqual([
+      ['LEVEL', 0],
+      ['PERMANENT SPELLS', 0xb4],
+      ['PREPARATION SPELLS', 900],
+    ]);
+    const named = game.screen.filter((line) => line.x === 0xb4 || line.x === 900).slice(2);
+    expect(named.map((line) => [line.text, line.x, line.y])).toEqual([
+      ['ENCHANT WEAPON LEVEL 1', 0xb4, 0x3c],
+      ['DESCEND', 900, 11 * 0x26 + 0x3c],
+    ]);
+    const levels = game.screen.filter((line) => line.x === 0x1e);
+    expect(levels.length).toBe(30);
+    expect(levels[0].colour).toBe(6);
+    expect(levels[3].colour).toBe(7);
+    expect(levels[9].colour).toBe(6);
+  });
+
+  it('reads the wizard and priest lists off the second page', () => {
+    const game = newGame();
+    game.pc.wands[spellIndex(3, 0, 0)] = 5;
+    drawSpellInventoryPage(game, CAST_WAND, 1);
+    expect(game.screen[1].text).toBe('WIZARD BATTLE SPELLS');
+    expect(game.screen[2].text).toBe('PRIEST BATTLE SPELLS');
+    const named = game.screen.filter((line) => line.x === 900).slice(1);
+    expect(named.map((line) => line.text)).toEqual(['SLEEP']);
+  });
+
+  it('counts the magic items and leaves a blank line above each heading', () => {
+    const game = newGame({
+      pc: {
+        grenades: 2,
+        teleportStones: 1,
+        seeingStones: 3,
+        slosher: 1,
+        healingPotions: 4,
+        potions: [6, 5, 4, 3, 2, 1],
+        regenRings: 2,
+        protRing: 7,
+        antiMagicRing: 3,
+        bodyArmor: 4,
+        gauntlet: 9,
+      },
+    });
+    drawMagicItems(game);
+    expect(game.screen.map((line) => line.text)).toEqual([
+      'MISC. MAGIC ITEMS:',
+      "HIT 'I' AND '5' TO USE THESE:",
+      '1) NUCLEAR HAND GRENADES: 2',
+      '2) STONES OF TELEPORTATION: 1',
+      '3) STONES OF SEEING: 3',
+      '4) FLOOR SLOSHERS: 1',
+      '5) POTION OF HEALING: 4',
+      "HIT 'I' AND '4' TO USE THESE:",
+      '6) GREEN POTIONS: 5',
+      '7) ORANGE POTIONS: 6',
+      '8) YELLOW POTIONS: 1',
+      '9) RED POTIONS: 3',
+      '10) BLUE POTIONS: 4',
+      '11) WHITE POTIONS: 2',
+      'THESE ARE AUTOMATICALLY IN USE:',
+      '12) RINGS OF REGENERATION: 2',
+      '13) RING OF PROTECTION, PLUS 7',
+      '14) ANTI-MAGIC RING, PLUS 3',
+      '15) BODY ARMOR, LEVEL 4',
+      '16) GAUNTLET, PLUS 9',
+      'HIT ANY KEY...',
+    ]);
+    expect(game.screen.map((line) => line.y)).toEqual(
+      [0, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19, 20, 21, 22, 24].map((row) => row * 0x28),
+    );
   });
 });
