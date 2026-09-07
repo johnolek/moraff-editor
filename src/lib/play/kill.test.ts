@@ -31,15 +31,28 @@ describe('killing the monster being fought', () => {
     expect(session.view().monsters).toEqual([]);
   });
 
-  it('replaces one message line with the next rather than stopping for each of them', async () => {
+  it('holds the kill\'s own line while the drop it runs into is already drawn', async () => {
     const session = await facingAMonster(lowest, { cls: 0 });
     const game = session.game;
     game.monsters[0].hp = 0;
     await press(session, 0x1b);
-    // "YOU KILLED IT!" and "GOOD NEWS..." are drawn at the same x and y, so the drop's line is
-    // standing over the box it belongs to and the kill's is gone.
-    expect(screenText(session)).toEqual(['GOOD NEWS...']);
+    // "YOU KILLED IT!" and "GOOD NEWS..." are drawn at the same x and y, so the game has only
+    // the drop's line left; the tab is still showing the kill's, which the delay behind it holds
+    // there for a second before the drop's heading takes its place.
+    expect(screenText(session)).toEqual(['YOU KILLED IT!']);
+    expect(game.screen.map((line) => line.text)).toEqual(['GOOD NEWS...']);
     expect(session.box).toContain(`YOU FIND A ${WEAPON_NAMES[1]}`);
+  });
+
+  it('gives up the rest of a message\'s delay when a key is pressed', async () => {
+    const session = await facingAMonster(lowest, { cls: 0 });
+    session.game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    expect(screenText(session)).toEqual(['YOU KILLED IT!']);
+    // The key answers the offer standing in the box as well, which is what the original does
+    // with a key typed while it was counting the delay out.
+    await press(session, LEAVE);
+    expect(screenText(session)).not.toContain('YOU KILLED IT!');
   });
 
   it('offers what the monster dropped and takes what the player says to take', async () => {

@@ -36,14 +36,28 @@ const ENHANCE_HEADING_COLOUR = 5;
  * The colour kill_monster draws each of its own three messages in (exe 3000:b164).
  *
  * All three go on the one line above the message box, and each is preceded by FUN_2000_28be
- * (exe 2000:28be) wiping whatever was there. The original wipes the line again afterwards, but
- * only once a few hundred milliseconds have passed, or — for "NOTHING! (HIT ANY KEY)" — as part
- * of the wait at FUN_2000_4054 (exe 2000:4054). There is no clock here, and
- * {@link Game.pressAnyKey} records that a key is owed rather than waiting for it, so wiping the
- * line at either of those points would take it back off before anyone saw it. The port draws
- * each message and leaves it standing; the next thing written on that line replaces it.
+ * (exe 2000:28be) wiping whatever was there.
  */
 const KILL_MESSAGE_COLOUR = 8;
+
+/**
+ * How long kill_monster leaves "YOU KILLED IT!" on the screen before wiping the line
+ * (exe 3000:b18a and 3000:b198): the high speed option picks the shorter of the two.
+ */
+const KILLED_IT_MS = 1050;
+const KILLED_IT_MS_HIGH_SPEED = 400;
+
+/**
+ * The pause kill_monster takes with the line already wiped, before it says anything about what
+ * the monster was carrying (exe 3000:b503).
+ */
+const BEFORE_THE_FIND_MS = 750;
+
+/**
+ * How long "YOU FIND..." stands before the line is wiped and the find itself is worked out
+ * (exe 3000:b536). The high speed option skips this one rather than shortening it.
+ */
+const FIND_MS = 3000;
 
 /**
  * kill_monster (exe 3000:b12d, unf.c "kill_monster"): the menu a section boss's orb puts up, and
@@ -281,6 +295,8 @@ export async function killMonster(game: Game): Promise<void> {
   if (kind.special !== 6) {
     clearMessageLine(game);
     game.draw(messageLine('YOU KILLED IT!', KILL_MESSAGE_COLOUR)); // DS:31b3
+    game.delay(game.highSpeed ? KILLED_IT_MS_HIGH_SPEED : KILLED_IT_MS);
+    clearMessageLine(game);
   }
   pc.exp += expValue(game, slot);
   if (kind.levelDrain > 0) drainerBonus(game);
@@ -300,8 +316,11 @@ export async function killMonster(game: Game): Promise<void> {
     const easier = pc.cls === 0 || pc.cls === 5 ? 400 : 0;
     if (game.rng.random(950 - easier) < pc.level + 40) {
       if (game.rng.random(20) < pc.level) {
+        game.delay(BEFORE_THE_FIND_MS);
         clearMessageLine(game);
         game.draw(messageLine('YOU FIND...', KILL_MESSAGE_COLOUR)); // DS:324b
+        if (!game.highSpeed) game.delay(FIND_MS);
+        clearMessageLine(game);
         if (game.rng.random(3) === 1) {
           game.draw(messageLine('NOTHING! (HIT ANY KEY)', KILL_MESSAGE_COLOUR)); // DS:3257
           game.pressAnyKey();

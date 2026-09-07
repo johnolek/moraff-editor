@@ -6,7 +6,7 @@ import { tabletMessage, townTablet } from '../game/port/hints';
 import { checkDeath } from '../game/port/kills';
 import { arriveSquare, leaveSquare } from '../game/port/moment';
 import { loadPlayer, savePlayer } from '../game/port/record';
-import { clearMenuBlock } from '../game/port/screens';
+import { clearMenuBlock, clearMessageLine } from '../game/port/screens';
 import type { Rng } from '../game/port/rng';
 import type { Game, ScreenLine } from '../game/port/state';
 import { MAP_PLAYER, newGame, sectionMonsterKinds, setMonsterMap } from '../game/port/state';
@@ -528,6 +528,11 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     // pass starts again rather than answering a key with what the character used to be.
     if (key === RECORD_EDITED) continue;
     session.box = [];
+    // The one line above the box goes with it. A message drawn there that the game does not wipe
+    // itself — "NOTHING! (HIT ANY KEY)" is the one that matters — would otherwise stand over the
+    // map for the rest of the game, since this port draws the floor from the map rather than
+    // repainting the screen the way the original does.
+    clearMessageLine(game);
     const handler = KEY_HANDLERS[key];
     if (handler) await handler.run(turn);
     await session.settle();

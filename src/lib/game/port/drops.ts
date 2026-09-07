@@ -90,18 +90,21 @@ export function itemMenu(
 /** The colour FUN_3000_a1c4 draws its line in, which is the white of the fixed UI colours. */
 const GOOD_NEWS_COLOUR = 15;
 
+/** How long FUN_3000_a1c4 leaves its line up (exe 3000:a1ee) before the offer goes in the box. */
+const GOOD_NEWS_MS = 300;
+
 /**
  * FUN_3000_a1c4 (exe 3000:a1c4): the line every drop opens with, on the one line above the
  * message box the offer itself goes in, so it reads as the offer's heading.
  *
- * The original pauses for 300 milliseconds after drawing it unless the high speed option is on,
- * and leaves it there for get_choice (exe 2000:2ea9) to wipe once the offer has been answered.
- * The port has no port of that wipe, so the line stands until the next thing written on it
- * replaces it.
+ * It pauses after drawing it unless the high speed option is on, and leaves it there for
+ * get_choice (exe 2000:2ea9) to wipe once the offer has been answered. The port has no port of
+ * that wipe, so the line stands until the next thing written on it replaces it.
  */
 export function goodNews(game: Game): void {
   clearMessageLine(game);
   game.draw(messageLine('GOOD NEWS...', GOOD_NEWS_COLOUR)); // DS:2f6c
+  if (!game.highSpeed) game.delay(GOOD_NEWS_MS);
 }
 
 /**

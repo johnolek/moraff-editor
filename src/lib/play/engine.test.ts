@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseSave } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
 import { loadPlayer, savePlayer } from '../game/port/record';
+import { messageLine } from '../game/port/screens';
 import { BorlandRng, type Rng } from '../game/port/rng';
 import { MAP_PLAYER, monsterAt, newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
@@ -251,6 +252,15 @@ describe('the message box', () => {
     expect(game.screen.some((line) => line.text === 'A MENU LINE')).toBe(false);
     game.say('SECOND BOX');
     expect(session.box).toEqual(['SECOND BOX']);
+  });
+
+  it('takes the one line above the box off when the loop takes its next key', async () => {
+    const session = playing(characterFile({ level: 0, ...townWalk() }));
+    await settle();
+    const game = session.game;
+    game.draw(messageLine('NOTHING! (HIT ANY KEY)', 8));
+    await press(session, KEY.escape);
+    expect(game.screen).toEqual([]);
   });
 });
 

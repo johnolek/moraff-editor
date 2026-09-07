@@ -46,8 +46,12 @@ const LEAVE = 0x32;
 /** How many times the game under test has asked for a key with mgetch_message. */
 let keysWaitedFor = 0;
 
+/** The delays the game under test asked for, in milliseconds and in the order it asked. */
+let delays: number[] = [];
+
 beforeEach(() => {
   keysWaitedFor = 0;
+  delays = [];
 });
 
 /**
@@ -61,6 +65,9 @@ function killing(rng: Rng, pc: Partial<PlayerCharacter> = {}, type = REGULAR): G
     choice: async () => LEAVE,
     pressAnyKey: () => {
       keysWaitedFor += 1;
+    },
+    delay: (ms) => {
+      delays.push(ms);
     },
   });
   Object.assign(game.monsters[3], { x: 11, y: 12, hp: 0, type, level: 40 });
@@ -80,14 +87,20 @@ describe('killMonster', () => {
     expect(game.pc.exp).toBe(before + worth);
   });
 
-  it('draws the monster is dead on the line above the box, without waiting', async () => {
+  it('draws the monster is dead on the line above the box, and wipes it after a second', async () => {
     const game = killing(always(0));
     await killMonster(game);
     expect(game.messages[0]).toBe('YOU KILLED IT!');
-    expect(game.screen).toEqual([
-      { text: 'YOU KILLED IT!', x: 0x3a2, y: 0x301, font: 0, colour: 8 },
-    ]);
+    expect(delays).toEqual([1050]);
+    expect(game.screen).toEqual([]);
     expect(keysWaitedFor).toBe(0);
+  });
+
+  it('shortens that message in high speed mode', async () => {
+    const game = killing(always(0));
+    game.highSpeed = true;
+    await killMonster(game);
+    expect(delays).toEqual([400]);
   });
 
   it('says nothing when the monster was a puffball, which splits rather than dies', async () => {
@@ -151,8 +164,9 @@ describe('killMonster', () => {
     await killMonster(game);
     expect(game.messages).toContain('YOU FIND...');
     expect(game.messages).toContain('NOTHING! (HIT ANY KEY)');
-    // The two lines share the message line, so the second is all that is left standing, and the
-    // one key the kill asks for is the one this line asks for.
+    // "YOU KILLED IT!" and "YOU FIND..." are each wiped once their delay is up, so the line the
+    // kill leaves behind is the one it waits on, and the one key it asks for is that line's.
+    expect(delays).toEqual([1050, 750, 3000]);
     expect(game.screen).toEqual([
       { text: 'NOTHING! (HIT ANY KEY)', x: 0x3a2, y: 0x301, font: 0, colour: 8 },
     ]);
