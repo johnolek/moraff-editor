@@ -25,16 +25,13 @@ import { mwOccupantAt } from './state';
  *
  * Where a screen reads the keyboard the port splits it in two: a `draw` that fills the screen and
  * an `apply` that takes the key. The play engine draws, waits for a key of its own, and applies.
+ *
+ * The eight-line message box (WORLD.EXE 2000:216b, 2000:22d7 and 2000:22ff) is already
+ * {@link MwGame.say} and is not ported again here: the original copies eight strings into the
+ * buffers at DS:cd80 and prints each at x 0, y `line * 0x32 + 0x28`, font 0, colour 5 — through
+ * print_text when it is shorter than 27 characters and through draw_text_box, which wraps at x
+ * 0x29e, when it is longer. What 2000:22ff adds is the wait for a key and the clear afterwards.
  */
-
-/**
- * The eight lines of the message box (WORLD.EXE 2000:216b, 2000:22d7 and 2000:22ff). The box
- * itself is already {@link MwGame.say}: the original copies eight strings into the buffers at
- * DS:cd80 and prints each at x 0, y `line * 0x32 + 0x28`, font 0, colour 5 — through print_text
- * when it is shorter than 27 characters and through draw_text_box, which wraps at x 0x29e, when
- * it is longer. What 2000:22ff adds is the wait for a key and the clear afterwards.
- */
-export const MW_BOX_LINES = 8;
 
 /** What {@link mwMenuKey} and {@link mwLineMenuKey} hand back for Escape, which is the key code. */
 export const MW_ESCAPE = 0x1b;
