@@ -11,7 +11,7 @@ describe('the tabs a game has', () => {
   });
 
   it('is the Map and Source for Moraff’s Revenge, which is all that game has so far', () => {
-    expect(tabsFor('revenge').map((tab) => tab.id)).toEqual(['map', 'source']);
+    expect(tabsFor('revenge').map((tab) => tab.id)).toEqual(['map', 'monsters', 'source']);
   });
 
   it('gives both games the Play tab, since both of them can be played', () => {

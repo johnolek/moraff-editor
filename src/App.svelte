@@ -14,6 +14,7 @@
   import Play from './lib/play/Play.svelte';
   import MwPlay from './lib/play/mw/MwPlay.svelte';
   import MwMonsters from './lib/mw-bestiary/MwMonsters.svelte';
+  import RevMonsters from './lib/rev-bestiary/RevMonsters.svelte';
   import NewCharacter from './lib/roller/NewCharacter.svelte';
   import Snake from './lib/snake/Snake.svelte';
   import SourceViewer from './lib/source/SourceViewer.svelte';
@@ -72,7 +73,7 @@
       rest is on the way.
     </p>
   {:else if app.game === 'revenge'}
-    <p class="game-note">Moraff's Revenge has the Map and Source so far. The rest is on the way.</p>
+    <p class="game-note">Moraff's Revenge has the Map, the Monsters and Source so far. The rest is on the way.</p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
   <main class:hidden={app.tab !== 'map'}>
@@ -90,6 +91,8 @@
          each brings its own database rather than one being taught both. -->
     {#if app.game === 'moraffsWorld'}
       <MwMonsters />
+    {:else if app.game === 'revenge'}
+      <RevMonsters />
     {:else}
       <Monsters />
     {/if}
