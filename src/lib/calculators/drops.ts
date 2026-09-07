@@ -89,7 +89,7 @@ export function dropTables(hunt: Hunt): DropTables {
       { name: 'Trap door key', chance: keyDrops ? drainers * odds.drainerKey : 0 },
     ],
     spells: [
-      { name: `Spell book roll (up to level ${odds.maxBookLevel})`, chance: odds.spellbookRoll },
+      { name: `Spell book rolled (a random spell up to level ${odds.maxBookLevel})`, chance: odds.spellbookRoll },
       { name: `Scroll (up to level ${odds.maxScrollLevel})`, chance: odds.scroll },
       { name: `Wand (up to level ${odds.maxWandLevel})`, chance: odds.wand },
       { name: `Spell paper (up to level ${odds.maxPaperLevel})`, chance: odds.paper },

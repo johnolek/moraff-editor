@@ -65,7 +65,7 @@ describe('dropTables', () => {
   it('names the highest spell level each source reaches', () => {
     const spells = dropTables(hunt({ floor: 20 })).spells;
     expect(spells.map((row) => row.name)).toEqual([
-      'Spell book roll (up to level 10)',
+      'Spell book rolled (a random spell up to level 10)',
       'Scroll (up to level 10)',
       'Wand (up to level 5)',
       'Spell paper (up to level 3)',

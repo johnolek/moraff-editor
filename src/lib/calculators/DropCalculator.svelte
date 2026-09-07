@@ -168,7 +168,7 @@
       <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'dropOdds' }} c="drop_spellbook" />
     </SectionHeading>
     <DropTable rows={tables.spells} />
-    <p class="note">A spell book only teaches you a spell you do not know yet, and scrolls, wands and papers are only rolled when no book was learned.</p>
+    <p class="note">A spell book only teaches you a spell you do not know yet and your class may learn, and scrolls, wands and papers are only rolled when no book was learned.</p>
     {#if cls === FIGHTER}
       <p class="note">Fighters can only read papers.</p>
     {/if}
