@@ -354,7 +354,7 @@ acts.  `LOCATE 25, 1` is `mov bx,19h; INT 3Eh $42; mov bx,1; INT 3Eh $44`.
 | `$BA` | `9BBB` | `LEN` | BX = the string | 7 | high |
 | `$BB` | `9BC2` | `ASC` | BX = the string | 11 | high |
 | `$BC` | `9B6D` | `PRINT` | start one: output goes to the screen | 289 | high |
-| `$BD` | `9B96` | `PRINT` | start one: output is redirected | 5 | low |
+| `$BD` | `9B96` | `PRINT USING` | start one with a format string; CHCHAR.EXE passes it `Strength:    ### ` and its kin | 5 | high |
 | `$C4` | `C324` | `GET` | far array: read the element at DX into AX | 2 | high |
 | `$C5` | `C378` | `PUT` | far array: write AX into the element at DX | 1 | high |
 | `$C9` | `C443` | `VARPTR` | the array at BX, as a single in the accumulator | 2 | medium |
