@@ -3,7 +3,7 @@ import { isGameId, loadChosenGame, loadLastCharacter, saveChosenGame, saveLastCh
 import { recordTab } from '../history';
 import { tabFor } from '../tabs';
 import { recordName, slotFromFileName } from './record';
-import { loadRoster, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
+import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
 
 /** Put a save file that has just been read on the roster and start working on it. */
 export function importCharacter(game: string, fileName: string, bytes: Uint8Array<ArrayBuffer>): void {
@@ -60,6 +60,14 @@ export function restoreCharacterImport(id: string): void {
 export function characterEdited(): void {
   const entry = currentEntry();
   if (entry) markEdited(entry);
+  app.characterVersion++;
+  remember();
+}
+
+/** The character being played has died. */
+export function characterDied(): void {
+  const entry = currentEntry();
+  if (entry) markDead(entry);
   app.characterVersion++;
   remember();
 }

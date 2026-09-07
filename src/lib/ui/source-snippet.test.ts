@@ -19,6 +19,11 @@ const SOURCE = [
   '',
   'const greeting = (name) => `hello ${name}, welcome {`;',
   '',
+  '/** Waits for a key. */',
+  'export async function waitForKey(game) {',
+  '  return game.key();',
+  '}',
+  '',
   'export class Dungeon {',
   '  /** One side of a square. */',
   '  side(x, y) {',
@@ -32,6 +37,12 @@ const SOURCE = [
 ].join('\n');
 
 describe('snippet', () => {
+  it('takes an exported async function, which the playing loop is full of', () => {
+    expect(snippet(SOURCE, 'waitForKey')).toBe(
+      ['/** Waits for a key. */', 'export async function waitForKey(game) {', '  return game.key();', '}'].join('\n'),
+    );
+  });
+
   it('takes an exported function with its documentation', () => {
     expect(snippet(SOURCE, 'countBraces')).toBe(
       [

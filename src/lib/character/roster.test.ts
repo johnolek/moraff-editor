@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { RosterEntry } from '../app-state.svelte';
-import { loadRoster, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
+import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
 
 /** Enough of the browser's Storage to stand in for it. */
 function fakeStorage(): Storage {
@@ -67,6 +67,25 @@ describe('editing a character', () => {
     markEdited(entry, EDITED_AT);
     expect(entry.editedAt).toBe(EDITED_AT.toISOString());
     expect(entry.createdAt).toBe(ROLLED_AT.toISOString());
+  });
+});
+
+describe('a character that has died', () => {
+  it('is marked and keeps its bytes', () => {
+    const entry = imported();
+    expect(entry.dead).toBe(false);
+    markDead(entry, EDITED_AT);
+    expect(entry.dead).toBe(true);
+    expect([...entry.bytes]).toEqual([1, 2, 3]);
+    expect(entry.editedAt).toBe(EDITED_AT.toISOString());
+  });
+
+  it('is still dead after the roster has been stored and read back', () => {
+    useStorage(fakeStorage());
+    const entry = imported();
+    markDead(entry, EDITED_AT);
+    saveRoster([entry], entry.id);
+    expect(loadRoster().entries[0].dead).toBe(true);
   });
 });
 

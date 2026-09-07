@@ -11,6 +11,7 @@
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import Formulas from './lib/formulas/Formulas.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
+  import Play from './lib/play/Play.svelte';
   import MwMonsters from './lib/mw-bestiary/MwMonsters.svelte';
   import NewCharacter from './lib/roller/NewCharacter.svelte';
   import Snake from './lib/snake/Snake.svelte';
@@ -73,6 +74,9 @@
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
   <main class:hidden={app.tab !== 'map'}>
     <MapExplorer />
+  </main>
+  <main class:hidden={app.tab !== 'play'}>
+    <Play />
   </main>
   <main class:hidden={app.tab !== 'editor'}>
     <SaveEditor />

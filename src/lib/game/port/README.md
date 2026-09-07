@@ -162,6 +162,10 @@ between one screen of the roller and the next. `game.pressAnyKey()` is `mgetch_m
 * `levels.ts` — `go_up_level`, `check_gain_level`, `gain_level` and the level-up screen.
 * `town.ts` — the store, the temple, the bank, the inn and the night's clearing, the boss office
   message and the arrival hints.
+* `moment.ts` — `pass_moment`: the spell timers, the disease and the poison, and every monster's
+  step, with the two halves of a step it belongs between and `relocate`.
+* `record.ts` — `load_player` and `save_player`: the character file the game reads and writes,
+  which is what lets a character played here go back to DOS.
 * `screens.ts` — the menu column: how `mset_gmenu` draws its eight lines and what its reader and
   `get_choice` take, the two rectangles a menu wipes first, the spells-in-effect screens, the V
   screen, the experience-needed screen and the F1 help menu.
@@ -169,8 +173,12 @@ between one screen of the roller and the next. `game.pressAnyKey()` is `mgetch_m
   thirty-spell table in both layouts and what casting one costs, the spell descriptions out of
   USPELLS.HLP, the pockets screen, and the three menus Write Scroll and Enchant Wand walk through.
 
+`movecontrol` itself, the loop all of this is played in, is in `src/lib/play/`, which has a
+README of its own about the keys, the screens and where the rest of the game plugs in.
+
 ## What is not ported yet
 
-* Movement and the moment (`movecontrol`, `pass_moment`) live in `src/lib/play/` once the play
-  engine lands; the dungeon generator is already ported, verbatim from the reference bundle, in
+* The 3-D view (`draw_3d_view`, exe 3000:0f75) and the drawing around it. The map explorer's
+  canvas is what a game being played is drawn on instead.
+* The dungeon generator is not here but is ported: verbatim from the reference bundle, in
   `src/lib/game/unfmap.js`.

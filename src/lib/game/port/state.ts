@@ -202,6 +202,17 @@ export interface PlayerCharacter {
   unread80e: number;
   /** 0x810, DS:c090: zero on every character, and read nowhere. */
   unread810: number;
+  /**
+   * 0x854, DS:c0d4: refill hit points and spell points to the maximum. movecontrol reads it on
+   * its next pass round the loop, fills the character up and writes zero back.
+   */
+  fillOnLoad: number;
+  /**
+   * 0x8f9, DS:c179: the deepest floor the character has reached, which movecontrol raises to
+   * the current floor on every pass round its loop. The snake's greeting in the town is picked
+   * by it.
+   */
+  deepestFloor: number;
   /** 0x816, DS:c096. */
   str: number;
   /** 0x818, DS:c098. */
@@ -519,8 +530,33 @@ export interface Game {
    * mgetch_message (exe 4000:418d, unf.c "mgetch_message"): wait for a key with the screen as it
    * stands, which is what keeps a screen up until the player has read it. {@link newGame} returns
    * at once.
+   *
+   * This one stays synchronous because the functions that call it are: a spell prints its box in
+   * the middle of its own arithmetic. A game being played answers it by remembering that a wait
+   * is owed and doing the waiting with {@link Game.key} once the spell has finished.
    */
   pressAnyKey(): void;
+  /**
+   * getch (exe 4000:417b, unf.c "FUN_4000_417b"): the key movecontrol (exe 2000:c308) stops and
+   * waits for, which is where every turn of the game begins.
+   *
+   * The value is the byte the original ends up dispatching on: a key that produces a character
+   * is that character, and one that does not — an arrow key, a function key — is the negative of
+   * its scan code, which is what movecontrol makes of the zero byte the BIOS sends first.
+   * `src/lib/play/keys.ts` names them all. {@link newGame} has no keyboard and throws.
+   */
+  key(): Promise<number>;
+  /**
+   * get_choice (exe 2000:2d93, unf.c "get_choice"): wait for one of a menu's keys, ignoring
+   * everything else, and hand back the byte.
+   *
+   * The original takes the first and last box of the menu it is under and works the digits out
+   * from those, so what it accepts is always a run of digits from '1'; the port takes the keys
+   * themselves so that a menu lettered rather than numbered can use it too. Escape always ends
+   * it, which is the one answer the original takes outside the run. {@link newGame} has no
+   * keyboard and throws.
+   */
+  choice(allowed: number[]): Promise<number>;
 
   // kills and town
   /**
@@ -556,6 +592,15 @@ export function setMonsterMap(game: Game, x: number, y: number, value: number): 
  */
 export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say' | 'draw' | 'eraseScreen'>> {
   pc?: Partial<PlayerCharacter>;
+}
+
+/**
+ * What {@link newGame} answers a read of the keyboard with. A game built for a test has no
+ * keyboard, and a loop that waits for a key it will never be given would never come back, so
+ * asking says so instead.
+ */
+function noKeyboard(): never {
+  throw new Error('this game has no keyboard: give it a key() to be played');
 }
 
 /** A character to run a ported function against. Fresh each call, arrays and all. */
@@ -631,6 +676,8 @@ function defaultPc(): PlayerCharacter {
     unread80c: 0,
     unread80e: 0,
     unread810: 0,
+    fillOnLoad: 0,
+    deepestFloor: 0,
     str: 20,
     iq: 20,
     wis: 20,
@@ -660,11 +707,16 @@ function defaultPc(): PlayerCharacter {
 }
 
 /**
- * The 27 monster descriptions of section 1. `dotu-data.json` title-cases the names for the
- * bestiary; the game holds them upper case, which is how a battle message prints them.
+ * The 27 monster descriptions the game has loaded while the character is in a section: the 22
+ * built-in ones, then the five load_md_bin (exe 2000:5fec) reads out of `MD.BIN` for that
+ * section, which fill slots 22 to 26. `section` is 1 to 20, the way section_number (exe
+ * 2000:1d23) counts them.
+ *
+ * `dotu-data.json` title-cases the names for the bestiary; the game holds them upper case,
+ * which is how a battle message prints them.
  */
-function sectionMonsterKinds(): MonsterKind[] {
-  return [...data.builtinMonsters, ...data.sections[0].monsters].map((kind) => ({
+export function sectionMonsterKinds(section = 1): MonsterKind[] {
+  return [...data.builtinMonsters, ...data.sections[section - 1].monsters].map((kind) => ({
     name: kind.name.toUpperCase(),
     levelDrain: kind.levelDrain,
     statDrain: kind.statDrain,
@@ -732,6 +784,8 @@ export function newGame(overrides: GameOverrides = {}): Game {
     askName: () => '',
     askClass: () => 0,
     pressAnyKey: () => {},
+    key: noKeyboard,
+    choice: noKeyboard,
 
     // kills and town
     highSpeed: false,

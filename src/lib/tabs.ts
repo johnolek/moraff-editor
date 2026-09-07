@@ -8,6 +8,7 @@ export interface TabEntry {
 /** Every tab the site has, in the order they show. */
 export const TABS: TabEntry[] = [
   { id: 'map', label: 'DotU Map' },
+  { id: 'play', label: 'Play' },
   { id: 'editor', label: 'Save Editor' },
   { id: 'monsters', label: 'Monsters' },
   { id: 'spells', label: 'Spells' },

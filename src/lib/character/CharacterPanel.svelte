@@ -115,7 +115,7 @@
                   <button type="button" class="link" onclick={() => choose(entry.id)}>{entry.name}</button>
                 {/if}
               </td>
-              <td>{levelOf(entry)}</td>
+              <td>{levelOf(entry)}{entry.dead ? ' · dead' : ''}</td>
               <td>{entry.slot ?? '—'}</td>
               <td>{entry.importedBytes ? 'imported' : 'rolled'}</td>
               <td>{editedOn(entry.editedAt)}</td>
@@ -156,6 +156,7 @@
   {:else}
     <div class="identity">
       <strong>{character.name}</strong>
+      {#if character.dead}<span class="dead">Dead</span>{/if}
       <span>{status.cls}</span>
       {#if game}<span>{game.displayName}</span>{/if}
       {#if character.slot !== null}<span>Character {character.slot}</span>{/if}
@@ -207,6 +208,13 @@
 </section>
 
 <style>
+  .dead {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: #5a1020;
+    color: #ffd9df;
+    font-size: 12px;
+  }
   .character-panel {
     position: relative;
     padding: 10px 44px 10px 24px;

@@ -10,6 +10,12 @@ describe('the tabs a game has', () => {
     expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['map', 'editor', 'monsters', 'spells', 'roller', 'source']);
   });
 
+  it('keeps the Play tab to Dungeons of the Unforgiven, which is the game that can be played', () => {
+    expect(tabsFor('unforgiven').map((tab) => tab.id)).toContain('play');
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).not.toContain('play');
+    expect(tabFor('moraffsWorld', 'play')).toBe('editor');
+  });
+
   it('calls the map tab DotU Map under one game and Map under the other', () => {
     expect(TABS.find((tab) => tab.id === 'map')?.label).toBe('DotU Map');
     expect(tabsFor('moraffsWorld').find((tab) => tab.id === 'map')?.label).toBe('Map');

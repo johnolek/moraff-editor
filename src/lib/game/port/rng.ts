@@ -33,3 +33,17 @@ export class BorlandRng implements Rng {
     return this.borland.random(n);
   }
 }
+
+/**
+ * Random (exe 2000:4156, unf.c "Random") over the browser's own generator, which is what a game
+ * being played uses.
+ *
+ * The README's third departure: the original reseeds from the clock before nearly every roll,
+ * which is why its numbers fall into patterns a player can feel. These are as random as the
+ * browser can make them.
+ */
+export class RealRng implements Rng {
+  random(n: number): number {
+    return Math.trunc(Math.random() * n);
+  }
+}

@@ -136,7 +136,7 @@ function cut(source: string, start: number, end: number): string {
  */
 export function snippet(source: string, name: string): string {
   const mask = codeMask(source);
-  const fn = matchInCode(source, mask, new RegExp(`^[ \\t]*(?:export\\s+)?function\\s+${name}\\s*\\(`, 'gm'));
+  const fn = matchInCode(source, mask, new RegExp(`^[ \\t]*(?:export\\s+)?(?:async\\s+)?function\\s+${name}\\s*\\(`, 'gm'));
   if (fn) return cut(source, fn.index, bodyEnd(source, mask, fn.index + fn[0].length));
 
   // A const may carry a type before its `=`, as in `export const TWINS: Twin[][] = [`.

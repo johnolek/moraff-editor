@@ -73,13 +73,23 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  * The game seeds its generator afresh for every square it draws, which makes the monsters
  * land in diagonal stripes; `rnd` is used plainly here, so they spread out evenly instead.
  *
+ * `occupied` is the squares the occupancy grid already holds, as `y * 80 + x`. The game puts the
+ * player on that grid before it rolls, so nothing is ever stocked on top of them; the map
+ * explorer, which has no player, leaves it out.
+ *
  * A floor the game could not stock gets nothing.
  */
-export function stockFloor(rows: MapSquare[][], moduleIndex: number, floor: number, rnd: () => number): StockedMonster[] {
+export function stockFloor(
+  rows: MapSquare[][],
+  moduleIndex: number,
+  floor: number,
+  rnd: () => number,
+  occupied: Iterable<number> = [],
+): StockedMonster[] {
   const section = stockingSection(moduleIndex, floor);
   if (!section) return [];
   const baseLevel = monsterLevelBase(floor, moduleIndex);
-  const taken = new Set<number>();
+  const taken = new Set<number>(occupied);
   const monsters: StockedMonster[] = [];
   for (let slot = 0; slot < MONSTER_SLOTS; slot++) {
     const boss = slot === 0 && floor === section.bossFloor;

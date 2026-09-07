@@ -19,6 +19,7 @@ interface StoredEntry {
   bytes: string;
   createdAt: string;
   editedAt: string;
+  dead?: boolean;
 }
 
 /** What is needed to put a character on the roster. */
@@ -46,6 +47,7 @@ export function newEntry(character: NewCharacter, now = new Date(), id = newId()
     bytes: character.bytes,
     createdAt: stamp,
     editedAt: stamp,
+    dead: false,
   };
 }
 
@@ -55,6 +57,12 @@ export function withEntry(entries: RosterEntry[], entry: RosterEntry): RosterEnt
 
 export function withoutEntry(entries: RosterEntry[], id: string): RosterEntry[] {
   return entries.filter((entry) => entry.id !== id);
+}
+
+/** The character has died. Nothing takes it back: the entry keeps its bytes and is marked. */
+export function markDead(entry: RosterEntry, now = new Date()): void {
+  entry.dead = true;
+  markEdited(entry, now);
 }
 
 /** Stamp the time a character was last changed. */
@@ -86,6 +94,7 @@ export function saveRoster(entries: RosterEntry[], currentId: string | null): vo
       bytes: toBase64(entry.bytes),
       createdAt: entry.createdAt,
       editedAt: entry.editedAt,
+      dead: entry.dead,
     })),
   };
   writeStored(ROSTER_KEY, JSON.stringify(stored));
@@ -112,7 +121,7 @@ export function loadRoster(): { entries: RosterEntry[]; currentId: string | null
 
 function entryFrom(value: unknown): RosterEntry | null {
   if (typeof value !== 'object' || value === null) return null;
-  const { id, game, name, slot, importedBytes, bytes, createdAt, editedAt } = value as Partial<StoredEntry>;
+  const { id, game, name, slot, importedBytes, bytes, createdAt, editedAt, dead } = value as Partial<StoredEntry>;
   if (typeof id !== 'string' || typeof game !== 'string' || typeof name !== 'string') return null;
   if (typeof createdAt !== 'string' || typeof editedAt !== 'string' || typeof bytes !== 'string') return null;
   if (slot !== null && !Number.isInteger(slot)) return null;
@@ -127,5 +136,6 @@ function entryFrom(value: unknown): RosterEntry | null {
     bytes: decoded,
     createdAt,
     editedAt,
+    dead: dead === true,
   };
 }

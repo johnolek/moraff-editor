@@ -484,6 +484,8 @@ export function blankPlayerCharacter(): PlayerCharacter {
     unread80c: 0,
     unread80e: 0,
     unread810: 0,
+    fillOnLoad: 0,
+    deepestFloor: 0,
     str: 0,
     iq: 0,
     wis: 0,
