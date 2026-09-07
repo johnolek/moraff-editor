@@ -3,7 +3,7 @@ import { showHint } from '../game/port/drops';
 import { clearMenuBlock, clearMessageLine } from '../game/port/screens';
 import { showMoney } from '../game/port/town';
 import type { Turn } from './engine';
-import { KEY } from './keys';
+import { KEY, menuEntry, menuKeys } from './keys';
 
 /**
  * movecontrol (exe 2000:c308, unf.c "movecontrol"), the keys that are one branch each: M, the
@@ -14,11 +14,6 @@ import { KEY } from './keys';
  * game's screen, its mouse or its 3-D views, none of which this port has, so the box says so
  * instead and the wording of those boxes is the port's own.
  */
-
-/** The digits get_choice (exe 2000:2d93) takes for a menu of so many entries. */
-function menuKeys(entries: number): number[] {
-  return Array.from({ length: entries }, (unused, index) => 0x31 + index);
-}
 
 /**
  * show_money (exe 2000:438f, unf.c "show_money"), which movecontrol's 0x6d branch calls straight:
@@ -39,7 +34,7 @@ const HIGH_SPEED_ON = 112;
 const HIGH_SPEED_OFF = 113;
 const NO_SOUND = 114;
 
-/** The port's answer for the options this port has nothing to set. */
+/** What the four switches in the middle of the menu are answered with. */
 const NOT_A_PORT_SETTING = [
   'THAT SWITCH IS FOR THE DOS',
   "GAME'S SCREEN AND ITS MOUSE,",
@@ -61,7 +56,7 @@ export async function openOptions(turn: Turn): Promise<void> {
   resetViewCaches(game);
   const chosen = await session.choice(menuKeys(6));
   if (chosen === KEY.escape) return;
-  const entry = chosen - 0x30;
+  const entry = menuEntry(chosen);
   if (entry === 1) {
     game.highSpeed = !game.highSpeed;
     showHint(game, game.highSpeed ? HIGH_SPEED_ON : HIGH_SPEED_OFF);

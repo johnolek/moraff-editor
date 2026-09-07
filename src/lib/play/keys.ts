@@ -51,6 +51,18 @@ export const KEY = {
   arrowDown: -0x50,
 } as const;
 
+/**
+ * The digits get_choice (exe 2000:2d93) takes for a menu of so many lines, which is what
+ * `GameSession.choice` is given, and which line a key it hands back is.
+ */
+export function menuKeys(lines: number): number[] {
+  return Array.from({ length: lines }, (unused, index) => 0x31 + index);
+}
+
+export function menuEntry(chosen: number): number {
+  return chosen - 0x30;
+}
+
 /** What a browser calls the keys that are not one character of text. */
 const NAMED_KEYS: Record<string, number> = {
   ArrowUp: KEY.arrowUp,

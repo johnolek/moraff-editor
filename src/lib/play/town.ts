@@ -19,7 +19,7 @@ import {
 } from '../game/port/town';
 import { printMenus, printMenusEndingInAMenu } from './boxes';
 import type { GameSession, Turn } from './engine';
-import { KEY } from './keys';
+import { KEY, menuEntry, menuKeys } from './keys';
 
 /**
  * movecontrol's 0x75 branch on one of the town's building squares: the store, the temple, the
@@ -36,16 +36,6 @@ import { KEY } from './keys';
  * the unpacked executable. The comment on each say call gives the address of every line it
  * prints, in order; dotu-tools/reference/scripts/exe_strings.py reads them back.
  */
-
-/** The digits get_choice (exe 2000:2d93) takes for a menu of so many entries. */
-function menuKeys(entries: number): number[] {
-  return Array.from({ length: entries }, (unused, index) => 0x31 + index);
-}
-
-/** Which entry of a menu a key from get_choice is, counting from one. */
-function menuEntry(chosen: number): number {
-  return chosen - 0x30;
-}
 
 /** g_store's own menu: four things to buy and a fifth entry that leaves. */
 const STORE_MENU = menuKeys(5);
