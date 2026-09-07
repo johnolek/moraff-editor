@@ -88,9 +88,6 @@ export const SPELL_MENU_NAMES: string[][] = [
   ],
 ];
 
-/** The four lines of the type menu that name a list, in the order the menu numbers them. */
-export const SPELL_LIST_NAMES = ['PERMANENT', 'PREPARATION', 'WIZARD BATTLE', 'PRIEST BATTLE'];
-
 /**
  * The eight lines of cast_a_spell's first menu (exe DS:2507): the four spell lists, and then the
  * same four again for reading a spell's description instead of casting it.
