@@ -410,7 +410,7 @@ const COMBAT: Topic = {
       inputs: 'Your level, strength, luck, weapon and its plus, gauntlet, charms, the difficulty, the floor, and the monster\'s level, armor and speed.',
       origin: 'exe strike 2000:7e36, strike in dotu-tools/decomp/unf.c. RE notes 4.4 and FAQ [COMT].',
       c: 'strike',
-      code: { file: 'src/lib/game/dotu-mech.js', name: 'strike' },
+      code: { file: 'src/lib/game/port/combat.ts', name: 'strike' },
     },
     {
       id: 'to-hit-total',
@@ -441,7 +441,7 @@ const COMBAT: Topic = {
       origin:
         'exe defend 2000:82b7, defend in dotu-tools/decomp/unf.c. RE notes 4.4 and FAQ [COMT], which corrected three errors in the older FAQ; the cap and the one in four roll are in TIDBITS, "Bugs".',
       c: 'defend',
-      code: { file: 'src/lib/game/dotu-mech.js', name: 'defend' },
+      code: { file: 'src/lib/game/port/combat.ts', name: 'defend' },
     },
     {
       id: 'breath',

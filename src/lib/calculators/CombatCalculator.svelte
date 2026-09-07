@@ -298,7 +298,7 @@
 
   <section>
     <SectionHeading title="Your attacks">
-      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'strike' }} c="strike" />
+      <SourceLink ts={{ file: 'src/lib/game/port/combat.ts', name: 'strike' }} c="strike" />
     </SectionHeading>
     <table>
       <tbody>
@@ -327,7 +327,7 @@
 
   <section>
     <SectionHeading title="Its attacks">
-      <SourceLink ts={{ file: 'src/lib/game/dotu-mech.js', name: 'defend' }} c="defend" />
+      <SourceLink ts={{ file: 'src/lib/game/port/combat.ts', name: 'defend' }} c="defend" />
     </SectionHeading>
     <table>
       <tbody>

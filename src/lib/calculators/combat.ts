@@ -6,15 +6,14 @@ import {
   attackSeconds,
   autokillChance,
   breathDamage,
-  defend,
   drainMonsterKills,
   monsterAttackInterval,
   monsterHpRange,
-  POWER_WEAPON_DIE,
   simulate,
   sleepChance,
-  strike,
 } from '../game/dotu-mech.js';
+import { defend, strike } from '../game/port/combat';
+import { newGame, type Game, type MonsterKind } from '../game/port/state';
 
 export type Weapon = (typeof data.weapons)[number];
 export type Armor = (typeof data.armor)[number];
@@ -119,15 +118,6 @@ export function weaponById(id: number): Weapon {
   return WEAPONS.find((weapon) => weapon.id === id) ?? WEAPONS[0];
 }
 
-export function armorById(id: number): Armor {
-  return ARMORS.find((armor) => armor.id === id) ?? ARMORS[0];
-}
-
-/** A power weapon swaps in its own die and leaves the held weapon's to-hit and speed alone. */
-export function damageDie(fighter: Fighter): number {
-  return POWER_WEAPON_DIE[fighter.powerWeapon] ?? weaponById(fighter.weapon).damageDie;
-}
-
 /** The section a fight happens in, which decides whether a boss gets its doubled hit points. */
 export function sectionOfFight(fight: Fight): number {
   const { origin } = fight.monster;
@@ -156,56 +146,74 @@ export function swingsFor(hp: number, meanDamage: number): number | null {
   return meanDamage > 0 ? Math.ceil(hp / meanDamage) : null;
 }
 
+/**
+ * The monster of the fight, described to the port with its breath, its drains and its ailments
+ * taken out. None of those are in the attack roll, so the damage `defend` works out is the
+ * same either way, but a breath replaces that damage and a drain would move the character's
+ * stats between one sample and the next. The report gives the breath numbers of its own.
+ */
+function plainKind(monster: Monster): MonsterKind {
+  return {
+    name: monster.name.toUpperCase(),
+    levelDrain: 0,
+    statDrain: 0,
+    breath: 0,
+    special: 0,
+    type: monster.type.type,
+    expMult: monster.expMult,
+  };
+}
+
+/**
+ * The game the port's `strike` and `defend` are sampled on: the character from the form,
+ * standing on the floor the fight is on, engaging the monster in slot 0.
+ *
+ * Both functions take the damage off the hit points of whoever they hit. Neither reads those
+ * hit points back, so the sampling lets them run down rather than resetting them each trial.
+ */
+function fightingGame(fighter: Fighter, fight: Fight, rnd: () => number): Game {
+  const weaponPlus = Array.from({ length: 8 }, () => 0);
+  weaponPlus[fighter.weapon] = fighter.weaponPlus;
+  const game = newGame({
+    // Random(n) hands back an integer in 0..n-1, which is this fraction times n truncated.
+    rng: { random: (n: number) => Math.trunc(rnd() * n) },
+    monsterKinds: [plainKind(fight.monster)],
+    pc: {
+      cls: fighter.cls,
+      lev: fighter.lev,
+      level: fight.floor,
+      str: fighter.str,
+      iq: fighter.iq,
+      wis: fighter.wis,
+      con: fighter.con,
+      dex: fighter.dex,
+      luck: fighter.luck,
+      luckyCharms: fighter.luckyCharms,
+      weapon: fighter.weapon,
+      weaponPlus,
+      tempWeaponPlus: fighter.tempWeaponPlus,
+      gauntlet: fighter.gauntlet,
+      armor: fighter.armor,
+      tempArmorPlus: fighter.tempArmorPlus,
+      bodyArmor: fighter.bodyArmor,
+      protRing: fighter.protRing,
+      protection: fighter.protection,
+      powerWeapon: fighter.powerWeapon,
+      hard: fighter.hard ? 1 : 0,
+    },
+  });
+  Object.assign(game.monsters[0], { type: 0, level: fight.level });
+  game.engaged = 0;
+  return game;
+}
+
 export function combatReport(fighter: Fighter, fight: Fight, { trials = 20000, rnd = Math.random }: CombatOptions = {}): CombatReport {
   const weapon = weaponById(fighter.weapon);
   const monster = fight.monster;
-  const depth = fight.floor;
 
-  const yours = sampled(
-    () =>
-      strike(
-        {
-          lev: fighter.lev,
-          str: fighter.str,
-          luck: fighter.luck,
-          luckyCharms: fighter.luckyCharms,
-          weaponHit: weapon.hit,
-          gauntlet: fighter.gauntlet,
-          weaponPlus: fighter.weaponPlus,
-          tempWeaponPlus: fighter.tempWeaponPlus,
-          hard: fighter.hard,
-          depth,
-          damageDie: damageDie(fighter),
-        },
-        { level: fight.level, defense: monster.type.defense, speed: monster.type.speed },
-        rnd,
-      ),
-    trials,
-  );
-
-  const its = sampled(
-    () =>
-      defend(
-        {
-          lev: fighter.lev,
-          cls: fighter.cls,
-          iq: fighter.iq,
-          dex: fighter.dex,
-          luck: fighter.luck,
-          luckyCharms: fighter.luckyCharms,
-          armor: armorById(fighter.armor).armor,
-          tempArmorPlus: fighter.tempArmorPlus,
-          bodyArmor: fighter.bodyArmor,
-          protRing: fighter.protRing,
-          protection: fighter.protection,
-          con: fighter.con,
-          depth,
-        },
-        { level: fight.level, damageDie: monster.type.damageDie },
-        rnd,
-      ),
-    trials,
-  );
+  const game = fightingGame(fighter, fight, rnd);
+  const yours = sampled(game, () => strike(game), trials);
+  const its = sampled(game, () => defend(game, 0), trials);
 
   const hp = monsterHpRange(monster.type.hpPerLevel, fight.level, monster.isBoss, sectionOfFight(fight));
   const middleHp = Math.trunc((hp[0] + hp[1]) / 2);
@@ -271,10 +279,12 @@ function breathOf(monster: Monster, ml: number): Breath | null {
 }
 
 /** Runs one of the game's rolls over and over, keeping the damage each hit did for the chart. */
-function sampled(roll: () => number, trials: number): Attack {
+function sampled(game: Game, roll: () => number, trials: number): Attack {
   const hits = new Map<number, number>();
   let hitCount = 0;
   const summary = simulate(() => {
+    // Every roll prints what it did, and there is nobody here to read a battle message.
+    game.messages.length = 0;
     const damage = roll();
     if (damage > 0) {
       hits.set(damage, (hits.get(damage) ?? 0) + 1);

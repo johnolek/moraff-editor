@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { strike } from '../game/dotu-mech.js';
+import { strike } from '../game/port/combat';
+import { newGame } from '../game/port/state';
 import { defenseBeatenChance, hitChance, toHitTotal, totalNeededToBeatDefense, type ToHitFighter } from './to-hit';
 
 /** A repeatable stand-in for Math.random, so a failing sample can be reproduced. */
@@ -33,25 +34,39 @@ const HUGE_DIE = 1_000_000;
 /** The fist's die is 2 and the smallest weapon's is 4; 3 sits between them. */
 const SMALL_DIE = 3;
 
+/**
+ * The share of swings the port's own `strike` calls hits, on a game built to hold nothing but
+ * this fighter, this target and this damage die: one weapon, one monster kind and one row of
+ * the monster type table, so every number the swing reads is one of the arguments.
+ */
 function measured(fighter: ToHitFighter, target: Target, seed: number, damageDie: number): number {
   const rnd = seeded(seed);
-  const swing = {
-    lev: fighter.lev,
-    str: fighter.str,
-    luck: fighter.luck,
-    luckyCharms: fighter.luckyCharms ?? 0,
-    weaponHit: fighter.weaponHit ?? 0,
-    gauntlet: fighter.gauntlet ?? 0,
-    weaponPlus: fighter.weaponPlus ?? 0,
-    tempWeaponPlus: fighter.tempWeaponPlus ?? 0,
-    hard: fighter.hard,
-    // Past floor 75 a swing can roll a bonus the closed form leaves out.
-    depth: 20,
-    damageDie,
-  };
+  const game = newGame({
+    rng: { random: (n: number) => Math.trunc(rnd() * n) },
+    monsterKinds: [{ name: 'TARGET', levelDrain: 0, statDrain: 0, breath: 0, special: 0, type: 0, expMult: 1 }],
+    monsterStats: [{ defense: target.defense, speed: target.speed, damageDie: 1, hpPerLevel: 1, text: '' }],
+    weaponDamage: [damageDie],
+    weaponHit: [fighter.weaponHit ?? 0],
+    pc: {
+      lev: fighter.lev,
+      str: fighter.str,
+      luck: fighter.luck,
+      luckyCharms: fighter.luckyCharms ?? 0,
+      gauntlet: fighter.gauntlet ?? 0,
+      weapon: 0,
+      weaponPlus: [fighter.weaponPlus ?? 0],
+      tempWeaponPlus: fighter.tempWeaponPlus ?? 0,
+      hard: fighter.hard ? 1 : 0,
+      // Past floor 75 a swing can roll a bonus the closed form leaves out.
+      level: 20,
+    },
+  });
+  Object.assign(game.monsters[0], { type: 0, level: target.level });
+  game.engaged = 0;
   let hits = 0;
   for (let i = 0; i < SWINGS; i++) {
-    if (strike(swing, target, rnd) > 0) hits++;
+    game.messages.length = 0;
+    if (strike(game) > 0) hits++;
   }
   return hits / SWINGS;
 }

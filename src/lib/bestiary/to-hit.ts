@@ -1,7 +1,7 @@
 /**
  * What it takes to land a swing, worked out in closed form from the rolls strike() makes.
  *
- * strike() in dotu-mech.js adds random(80) to your to-hit total, subtracts the monster's
+ * The port's strike() adds random(80) to your to-hit total, subtracts the monster's
  * 2 * level + defense + speed, and rolls one weapon damage die for every full 40 points the
  * result is over 40. Nothing in that is random except the one roll and those dice, so the
  * chances can be counted rather than sampled. The 1-in-30 bonus of +40 that a swing past floor
