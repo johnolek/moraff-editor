@@ -3,9 +3,12 @@ import { defenseBeatenChance } from '../../bestiary/to-hit';
 import { monsterDefence, toHitTotal } from '../../mw-bestiary/to-hit';
 import { MONSTERS } from '../../mw-bestiary/monsters';
 import type { Rng } from '../port/rng';
+import type { MwKillChoices } from './combat';
 import {
   attackTiming,
   checkEngagement,
+  experienceForKill,
+  monsterKilled,
   monsterTurn,
   monstersMove,
   puffballStat,
@@ -553,5 +556,147 @@ describe('the occupancy grid', () => {
     expect(mwOccupantAt(game, 20, 101)).toBe(7);
     mwSetOccupant(game, 20, 101, MW_SQUARE_EMPTY);
     expect(mwOccupantAt(game, 100, 100)).toBe(-1);
+  });
+});
+
+describe('experienceForKill', () => {
+  it('is the row\'s multiplier times 5 * 1.23 ^ depth + depth + 1', () => {
+    const game = fightGame([{ x: 5, y: 4, hp: 1, type: 1, depth: 20 }]);
+    expect(experienceForKill(game, 0)).toBeCloseTo(1 * (5 * 1.23 ** 20 + 21), 6);
+  });
+
+  it('pays no more past depth 130', () => {
+    const deep = fightGame([{ x: 5, y: 4, hp: 1, type: 1, depth: 200 }]);
+    const capped = fightGame([{ x: 5, y: 4, hp: 1, type: 1, depth: 130 }]);
+    expect(experienceForKill(deep, 0)).toBe(experienceForKill(capped, 0));
+  });
+
+  it('pays a multiple of the row\'s own word', () => {
+    const ogre = fightGame([{ x: 5, y: 4, hp: 1, type: 0, depth: 10 }]);
+    const werewolf = fightGame([{ x: 5, y: 4, hp: 1, type: 1, depth: 10 }]);
+    expect(experienceForKill(ogre, 0)).toBeCloseTo(2 * experienceForKill(werewolf, 0), 6);
+  });
+});
+
+describe('monsterKilled', () => {
+  const nothing: MwKillChoices = {
+    takeWeapon: false,
+    takeArmor: false,
+    takeStones: 'L',
+    enhanceWeapon: 0,
+  };
+
+  /** A kill where every roll comes out big enough that no drop routine fires. */
+  function killing(overrides: MwGameOverrides = {}) {
+    const monster: MwStockedMonster = { x: 5, y: 4, hp: 0, type: 1, depth: 30 };
+    return fightGame([monster], {
+      rng: always(9999),
+      engaged: 0,
+      pc: { lev: 5, floor: 30, x: 5, y: 5, hp: 100, maxHp: 100, ...overrides.pc },
+      ...overrides,
+    });
+  }
+
+  it('pays the experience before it empties the slot', () => {
+    const game = killing();
+    const worth = experienceForKill(game, 0);
+    monsterKilled(game, nothing);
+    expect(game.pc.exp).toBeCloseTo(worth, 6);
+    expect(worth).toBeGreaterThan(0);
+  });
+
+  it('rewrites the slot as an ogre at (100, 100) and frees the square', () => {
+    const game = killing();
+    monsterKilled(game, nothing);
+    expect(game.monsters[0]).toEqual({ x: 100, y: 100, hp: 0, type: 0, depth: 0 });
+    expect(mwOccupantAt(game, 5, 4)).toBe(-1);
+    expect(game.engaged).toBe(-1);
+    expect(game.redrawView).toBe(true);
+  });
+
+  it('leaves the loot rolls reading a depth of zero', () => {
+    const game = killing({ rng: always(0), pc: { cls: 3, floor: 30, lev: 5, hp: 100, maxHp: 100 } });
+    monsterKilled(game, { ...nothing, takeWeapon: true });
+    // The weapon roll needs random(100) to come in under the depth plus ten; the blanked slot
+    // makes that ten, and a roll of zero clears it.
+    expect(game.messages).toContain('YOU FIND A STICK');
+  });
+
+  it('says "YOU KILLED IT!" for anything but a puffball', () => {
+    const game = killing();
+    monsterKilled(game, nothing);
+    expect(game.messages[0]).toBe('YOU KILLED IT!');
+
+    const puff = killing();
+    puff.monsters[0].type = 72;
+    monsterKilled(puff, nothing);
+    expect(puff.messages[0]).not.toBe('YOU KILLED IT!');
+  });
+
+  it('hands a level drainer\'s trap door key over once, for the floor\'s own ten', () => {
+    const game = killing({ rng: always(0), pc: { lev: 5, floor: 30, hp: 100, maxHp: 100 } });
+    game.monsters[0].type = 26;
+    monsterKilled(game, nothing);
+    expect(game.pc.trapdoorKeys[2]).toBe(1);
+    expect(game.messages).toContain('IS LABELED NUMBER 30.');
+    expect(game.pc.pills[0]).toBe(1);
+  });
+
+  it('never finds the keys for floors 180, 190 and 200', () => {
+    for (const floor of [180, 190, 200]) {
+      const game = killing({ rng: always(0), pc: { lev: 5, floor, hp: 100, maxHp: 100 } });
+      game.monsters[0].type = 26;
+      monsterKilled(game, nothing);
+      expect(game.pc.trapdoorKeys[floor / 10 - 1]).toBe(0);
+    }
+  });
+
+  it('sets a quest boss\'s kill flag and gives its one item', () => {
+    const game = killing({ pc: { lev: 5, floor: 4, hp: 100, maxHp: 100 } });
+    game.monsters[0].type = 0x68;
+    monsterKilled(game, nothing);
+    expect(game.pc.killedBosses).toBe(1);
+    expect(game.pc.bodyArmorLevel).toBe(9);
+    expect(game.messages).toContain('MINI-DRAGON ON LEVEL 8.');
+  });
+
+  it('lets the orb enhance a weapon the character owns, and nothing else', () => {
+    const owned = killing({ pc: { lev: 5, floor: 16, hp: 100, maxHp: 100 } });
+    owned.monsters[0].type = 0x6b;
+    owned.pc.weaponsOwned[3] = 1;
+    monsterKilled(owned, { ...nothing, enhanceWeapon: 4 });
+    expect(owned.pc.weaponPlus[3]).toBe(25);
+    expect(owned.pc.killedBosses).toBe(0b1000);
+
+    const unowned = killing({ pc: { lev: 5, floor: 16, hp: 100, maxHp: 100 } });
+    unowned.monsters[0].type = 0x6b;
+    monsterKilled(unowned, { ...nothing, enhanceWeapon: 4 });
+    expect(unowned.pc.weaponPlus[3]).toBe(0);
+  });
+
+  it('gives the last boss the plus 100 orb and the closing message', () => {
+    const game = killing({ pc: { lev: 5, floor: 200, hp: 100, maxHp: 100 } });
+    game.monsters[0].type = 0x6f;
+    game.pc.weaponsOwned[7] = 1;
+    monsterKilled(game, { ...nothing, enhanceWeapon: 8 });
+    expect(game.pc.weaponPlus[7]).toBe(100);
+    expect(game.pc.killedBosses).toBe(0x80);
+    expect(game.messages).toContain('  YOU HAVE BEATEN THE GREAT');
+  });
+
+  it('tells a wounded level 0 character where the cure is, by class', () => {
+    const fighter = killing({ pc: { cls: 0, lev: 0, floor: 5, hp: 40, maxHp: 100 } });
+    monsterKilled(fighter, nothing);
+    expect(fighter.messages).toContain('SHOULD GO TO THE TEMPLE IN');
+
+    const priest = killing({ pc: { cls: 4, lev: 0, floor: 5, hp: 40, maxHp: 100 } });
+    monsterKilled(priest, nothing);
+    expect(priest.messages).toContain('SHOULD CAST A CURE SPELL TO');
+  });
+
+  it('points a level 0 character at the inn once they are ready', () => {
+    const game = killing({ pc: { lev: 0, floor: 5, hp: 100, maxHp: 100, exp: 1000 } });
+    monsterKilled(game, nothing);
+    expect(game.messages).toContain('GOOD NEWS!');
   });
 });

@@ -1,6 +1,18 @@
 import data from '../mw-data.json';
+import {
+  armorFind,
+  ballOfThought,
+  cupOfHealth,
+  moneyFind,
+  paperFind,
+  scrollFind,
+  specialFind,
+  spellbookFind,
+  wandFind,
+  weaponFind,
+} from './drops';
 import { HINT, loadHBin } from './hints';
-import { experienceNeeded, goDownLevel } from './levels';
+import { canLevelUp, experienceNeeded, goDownLevel } from './levels';
 import type { MwGame } from './state';
 import { MW_SQUARE_EMPTY, MW_SQUARE_PLAYER, mwOccupantAt, mwSetOccupant } from './state';
 import { MONSTER_SLOTS } from './stocking';
@@ -728,4 +740,357 @@ export function startEngagementTimer(game: MwGame): void {
   if (game.engaged === -1) return;
   if (!winsFirstMove(game)) return;
   game.monsterTimers[game.engaged] = game.rng.random(game.pc.dex + 20);
+}
+
+/** experience_for_kill caps the depth here, so nothing deeper is worth any more. */
+const EXP_DEPTH_CAP = 130;
+/** The doubles the kill's experience is worked out from: 1.23 at DS:5df1 and 5 at DS:5df9. */
+const EXP_BASE = 1.23;
+const EXP_SCALE = 5;
+
+/**
+ * experience_for_kill (WORLD.EXE 3000:b8d4, mw.c "experience_for_kill"): what killing the monster
+ * in `slot` is worth. Depths past 130 are all worth the same.
+ *
+ * Ghidra kept the `pow` base and dropped the FPU arithmetic around it; `mw-tools/docs/DUNGEON.md`
+ * writes the whole expression out. `mw-data.json` stores the multiplier one higher than the word
+ * in the table, so the -1 that would mean no experience at all is a 0 here: the original returns
+ * without leaving anything behind and its caller adds whatever was on the floating point stack.
+ * Nothing in the table holds -1.
+ */
+export function experienceForKill(game: MwGame, slot: number): number {
+  const monster = game.monsters[slot];
+  let depth = monster.depth;
+  if (depth > EXP_DEPTH_CAP) depth = EXP_DEPTH_CAP;
+  const kind = MONSTERS[monster.type];
+  if (kind.expMult === 0) return 0;
+  return kind.expMult * (EXP_SCALE * Math.pow(EXP_BASE, depth) + depth + 1);
+}
+
+/** The menus monster_killed reads from the keyboard while it hands out the loot. */
+export interface MwKillChoices {
+  /** "1) TAKE THE WEAPON / 2) LEAVE THE WEAPON". */
+  takeWeapon: boolean;
+  /** "1) TAKE THE ARMOR / 2) LEAVE THE ARMOR". */
+  takeArmor: boolean;
+  /** Which piles of stones to carry: A, L, I, G, P or J. */
+  takeStones: string;
+  /** "SELECT A WEAPON TO ENHANCE:", 1 to 8, for the two orbs the last two bosses drop. */
+  enhanceWeapon: number;
+}
+
+/** The first and last of the eight quest bosses, which are monsters 104 to 111. */
+const FIRST_BOSS = 0x68;
+const LAST_BOSS = 0x6f;
+
+/** The line the enhance-a-weapon menu shows for each of the eight weapons. */
+function weaponMenuLine(game: MwGame, weapon: number): string {
+  const pc = game.pc;
+  if (pc.weaponsOwned[weapon] < 1) return '--------'; // DS:6b82
+  // DS:56af with the plus on the end, after the weapon's own name
+  if (pc.weaponPlus[weapon] === 0) return WEAPONS[weapon].name;
+  return `${WEAPONS[weapon].name}, PLUS ${pc.weaponPlus[weapon]}`;
+}
+
+/**
+ * The orb the fourth and the eighth quest boss drop, in monster_killed (WORLD.EXE 3000:d51c):
+ * it turns one weapon the character owns into a plus 25 or a plus 100 weapon.
+ *
+ * The original keeps asking until the answer names a weapon the character actually owns, so a
+ * choice that names one they do not is no choice at all and nothing is enhanced.
+ */
+function enhanceWeapon(game: MwGame, choice: number, plus: number): void {
+  const pc = game.pc;
+  game.say(...Array.from({ length: 8 }, (_, weapon) => weaponMenuLine(game, weapon)));
+  game.say('SELECT A WEAPON TO ENHANCE:'); // DS:6b8b
+  if (choice < 1 || choice > 8) return;
+  if (pc.weaponsOwned[choice - 1] < 1) return;
+  pc.weaponPlus[choice - 1] = plus;
+}
+
+/**
+ * What a quest boss leaves behind, in monster_killed (WORLD.EXE 3000:d51c, mw.c
+ * "monster_killed"): a kill flag so the boss is never placed again, and the one item that boss
+ * carries.
+ *
+ * The four shallow bosses give plus 9 body armor, plus 12 gauntlets, a plus 15 ring of protection
+ * and the plus 25 orb; the four deep ones give the same four again at 25, 50, 50 and 100. Each
+ * message points at the next boss down.
+ */
+function bossReward(game: MwGame, type: number, choice: number): void {
+  const pc = game.pc;
+  const bit = type - FIRST_BOSS;
+  pc.killedBosses |= 1 << bit;
+  // Every one of these boxes opens with DS:68f9
+  const found = '  YOU HAVE FOUND THE PLUS';
+  if (type === 0x68) {
+    pc.bodyArmorLevel = 9;
+    // DS:6913 692b 6943 4fd1+0x18, DS:6959 6973 698b
+    game.say(
+      found,
+      '9 BODY ARMOR! THIS ITEM',
+      'WILL MAKE IT HARDER FOR',
+      'ENEMY MONSTERS TO HIT',
+      'TO TAKE MORE STRIKES AT YOU.',
+      '  NOW LOOK FOR THE SHADOW',
+      'MINI-DRAGON ON LEVEL 8.',
+      'HE HAS NICE GLOVES.',
+    );
+  }
+  if (type === 0x69) {
+    pc.gauntlet = 12;
+    // DS:699f 69b9 69d0 69e7, DS:6959 69f1 6a0b
+    game.say(
+      found,
+      '12 GAUNTLET! WHEN YOU PUT',
+      'IT ON, YOUR HAND SEEMS',
+      'STRONGER AND MUCH MORE',
+      'ACCURATE.',
+      '  NOW LOOK FOR THE SHADOW',
+      'MAJOR DRAGON ON LEVEL 12.',
+      'HE HAS A NICE RING.',
+    );
+  }
+  if (type === 0x6a) {
+    pc.ringOfProtection = 15;
+    // DS:6a1f 6a39 6a51 6a68, DS:6a70 6a86 6aa2
+    game.say(
+      found,
+      '15 RING OF PROTECTION. IT',
+      'MAKES YOU FEEL LIKE YOU',
+      'CAN DODGE ATTACKS MORE',
+      'EASILY.',
+      '  NOW FIND THE SHADOW',
+      'DRAGON KING ON LEVEL 16. HE',
+      'HAS SOMETHING SPECIAL...',
+    );
+  }
+  if (type === 0x6b) {
+    // DS:6abb 6ad7 6aec 6b06 6b20, DS:6b2f 6b4a 6b67
+    game.say(
+      '  FINALLY! YOU NOW HAVE THE',
+      'MIGHTY ORB OF WEAPON',
+      'ENHANCEMENT. IT WILL TURN',
+      'ANY WEAPON INTO A PLUS 25',
+      'ATTACK WEAPON.',
+      '  THIS WEAPON IS EXTREMELY',
+      'USEFUL IN THE 200 PLUS LEVEL',
+      'ADVANCED VERSION OF WORLD.',
+    );
+    enhanceWeapon(game, choice, 25);
+  }
+  if (type === 0x6c) {
+    pc.bodyArmorLevel = 25;
+    // DS:6ba7 6bc0 6bd9 6bef, DS:6bf8 6c0f 6c29
+    game.say(
+      found,
+      '25 BODY ARMOR! THIS ITEM',
+      'WILL MAKE IT MUCH HARDER',
+      'FOR ENEMY MONSTERS TO',
+      'HIT YOU.',
+      '  NOW LOOK FOR THE RED',
+      'MINI DRAGON ON LEVEL 150.',
+      'HE IS ONE TOUGH COOKIE.',
+    );
+  }
+  if (type === 0x6d) {
+    pc.gauntlet = 50;
+    // DS:6c41 69b9 6c5b 6c73, DS:6bf8 6c82 6a0b
+    game.say(
+      found,
+      '50 GAUNTLET! WHEN YOU PUT',
+      'IT ON, YOUR HAND SEEMS',
+      'STRONGER AND INCREDIBLY',
+      'MORE ACCURATE.',
+      '  NOW LOOK FOR THE RED',
+      'MAJOR DRAGON ON LEVEL 175.',
+      'HE HAS A NICE RING.',
+    );
+  }
+  if (type === 0x6e) {
+    pc.ringOfProtection = 50;
+    // DS:6c9d 6a39 6cb7 6a68, DS:6cd3 6cee 6d0b
+    game.say(
+      found,
+      '50 RING OF PROTECTION. IT',
+      'MAKES YOU FEEL LIKE YOU',
+      'CAN DODGE ATTACKS MUCH MORE',
+      'EASILY.',
+      '  NOW FIND AND DESTROY THE',
+      'MOST POWERFUL MONSTER IN THE',
+      "WORLD! HE'S ON LEVEL 200...",
+    );
+  }
+  if (type === 0x6f) {
+    // DS:6d27 6d44 6d61 6d7e 6d99 6db6 6dd1 6dee
+    game.say(
+      'THE GROUND BEGINS TO RUMBLE,',
+      'AND SUDDENLY THE BODY OF THE',
+      'GREAT DRAGON KING TURNS INTO',
+      'A SMALL RAT WHICH SCURRIES',
+      'OFF INTO A HOLE IN THE WALL.',
+      'YOU HAVE DEFEATED THE MOST',
+      "POWERFUL MONSTER IN MORAFF'S",
+      'WORLD!      HIT ANY KEY...',
+    );
+    // DS:6abb 6e09 6e21 6e3d 6e59, DS:6e6c 6e88 6214
+    game.say(
+      '  FINALLY! YOU NOW HAVE THE',
+      'MIGHTY ORB OF EXPLOSIVE',
+      'WEAPON ENHANCEMENT. IT WILL',
+      'TURN ANY WEAPON INTO A PLUS',
+      '100 ATTACK WEAPON!',
+      '  THIS WEAPON IS BY FAR THE',
+      'MOST POWERFUL WEAPON EVER!',
+      'PERIOD.      HIT ANY KEY...',
+    );
+    enhanceWeapon(game, choice, 100);
+    // DS:6ea3 6ebf 6ed8 6ef3 6f0f 6f29 6f46 6f61
+    game.say(
+      '  YOU HAVE BEATEN THE GREAT',
+      'RED DRAGON KING. YOU MAY',
+      'CONTINUE TO WANDER THROUGH',
+      "MORAFF'S WORLD IN SEARCH OF",
+      'LOOT AND TREASURE, OR YOU',
+      'MAY ATTEMPT TO COMPLETE THIS',
+      'GREAT ADVENTURE WITH A NEW',
+      'AND DIFFERENT CHARACTER.',
+    );
+  }
+}
+
+/** The six vitamin pills a level drainer can carry, in the order the record keeps them. */
+const PILL_NAMES = [
+  'YOU FOUND AN ORANGE PILL!', // DS:679c
+  'YOU FOUND A GREEN PILL!', // DS:67ec
+  'YOU FOUND A BLUE PILL!', // DS:6804
+  'YOU FOUND A RED PILL!', // DS:681b
+  'YOU FOUND A WHITE PILL!', // DS:6831
+  'YOU FOUND A YELLOW PILL!', // DS:6849
+];
+
+/** What a level drainer may be carrying beside its loot, in monster_killed. */
+function levelDrainerExtras(game: MwGame): void {
+  const pc = game.pc;
+  if (game.rng.random(375) < pc.floor + 175) {
+    const pill = game.rng.random(6);
+    pc.pills[pill] += 1;
+    // The pill's own line, then DS:67b6 67d1, then DS:4a75
+    game.say(
+      PILL_NAMES[pill],
+      '',
+      "USE THE 'USE ITEM' MENU TO",
+      "  TAKE THE PILL (HIT 'I').",
+      '',
+      'HIT ANY KEY...',
+    );
+  }
+  // The key is for the floor's own ten, and its flag sits one byte past the start of the array,
+  // so floor 10 writes the first of the twenty. Floors 180, 190 and 200 fall outside the test,
+  // which is why the last three keys can never be found.
+  const key = Math.trunc(pc.floor / 10);
+  if (pc.trapdoorKeys[key - 1] === 1 || pc.floor < 10 || pc.floor > 178) return;
+  // DS:6862, DS:687d with the number and DS:4686, DS:6890 68aa 68c4, DS:6214+7
+  game.say(
+    '  YOU HAVE FOUND A KEY! IT',
+    `IS LABELED NUMBER ${key * 10}.`,
+    '',
+    '  THIS KEY WILL ALLOW YOU',
+    'TO USE TRAP DOORS LABELED',
+    'WITH THIS NUMBER.',
+    '',
+    '      HIT ANY KEY...',
+  );
+  pc.trapdoorKeys[key - 1] = 1;
+}
+
+/**
+ * monster_killed (WORLD.EXE 3000:d51c, mw.c "monster_killed"): the kill.
+ *
+ * The experience is added, a level drainer's pill and trap door key are handed over, the slot is
+ * emptied, and then every loot routine in `./drops.ts` runs in turn. A quest boss adds its kill
+ * flag and its one item on top.
+ *
+ * **The slot is emptied before the loot is rolled**, which is why every routine that reads the
+ * dead monster's depth reads a zero. The experience is worked out first and is not affected.
+ *
+ * A level 0 character gets two pieces of advice at the end: one about the temple if they are
+ * fifteen hit points down, and one about the inn if they are ready for their first level.
+ */
+export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
+  const pc = game.pc;
+  const slot = game.engaged;
+  const monster = game.monsters[slot];
+  const type = monster.type;
+  const kind = MONSTERS[type];
+  if (kind.kind !== PUFFBALL) {
+    game.eraseScreen();
+    game.say('YOU KILLED IT!'); // DS:678d
+  }
+  pc.exp += experienceForKill(game, slot);
+  if (kind.levelDrain > 0) levelDrainerExtras(game);
+  mwSetOccupant(game, monster.x, monster.y, MW_SQUARE_EMPTY);
+  monster.x = 100;
+  monster.y = 100;
+  monster.hp = 0;
+  monster.type = 0;
+  monster.depth = 0;
+  game.redrawView = true;
+  weaponFind(game, choices.takeWeapon);
+  armorFind(game, choices.takeArmor);
+  moneyFind(game, choices.takeStones);
+  cupOfHealth(game);
+  ballOfThought(game);
+  if (pc.cls !== 2 && game.rng.random(950) < pc.floor + 40 && game.rng.random(20) < pc.floor) {
+    game.eraseScreen();
+    game.say('YOU FIND...'); // DS:68d6
+    game.eraseScreen();
+    if (game.rng.random(2) === 0) specialFind(game);
+    else game.say('NOTHING! (HIT ANY KEY)'); // DS:68e2
+  }
+  spellbookFind(game);
+  const writing = game.rng.random(3);
+  if (writing === 0) scrollFind(game);
+  if (writing === 1) wandFind(game);
+  if (writing === 2) paperFind(game);
+  if (type > FIRST_BOSS - 1 && type < LAST_BOSS + 1) bossReward(game, type, choices.enhanceWeapon);
+  game.engaged = -1;
+  if (pc.lev !== 0) return;
+  if (pc.hp + 15 < pc.maxHp) {
+    // DS:6f7a 6f95, then DS:6fae 6fc9 6fe4 6fff 701c 7038 for a fighter and DS:704e 706a 7087
+    // 70a4 70bf 70dc for anyone who can cast
+    game.say(
+      '  YOU KILLED THAT MONSTER,',
+      'BUT YOU ARE INJURED. YOU',
+      ...(pc.cls === 0
+        ? [
+            'SHOULD GO TO THE TEMPLE IN',
+            'TOWN AND BUY A CURE SPELL.',
+            'IF YOUR HEALTH POINTS DROP',
+            'BELOW 0, YOU WILL DIE. CURES',
+            'ARE EXPENSIVE, BUT THEY ARE',
+            'WELL WORTH THE MONEY.',
+          ]
+        : [
+            'SHOULD CAST A CURE SPELL TO',
+            'INCREASE YOUR HEALTH POINTS.',
+            '  IF YOUR HEALTH POINTS FALL',
+            'BELOW 0, YOU WILL DIE. USE',
+            'THE CAST SPELL MENU AND THEN',
+            "SELECT '2' TO CAST A CURE.",
+          ]),
+    );
+  }
+  if (!canLevelUp(game)) return;
+  // DS:70f7 7102 711f 713b 7157 7170 718d 71a9
+  game.say(
+    'GOOD NEWS!',
+    "YOU ARE READY TO BECOME 1'ST",
+    'LEVEL! GO TO THE TOWN, FIND',
+    'AN INN, AND STAY THE NIGHT.',
+    '  WHEN YOU WAKE THE NEXT',
+    "MORNING, YOU'LL BE MUCH MORE",
+    'POWERFUL! THEN THE MONSTERS',
+    'WILL REALLY COME AFTER YOU!',
+  );
 }
