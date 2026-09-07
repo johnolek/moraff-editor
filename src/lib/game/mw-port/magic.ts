@@ -1,5 +1,6 @@
 import data from '../mw-data.json';
 import type { MwGame } from './state';
+import { MW_SQUARE_EMPTY, MW_SQUARE_PLAYER, mwOccupantAt, mwSetOccupant } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
 // the unpacked WORLD.EXE. The comment on each say call gives the address of every line it prints,
@@ -48,6 +49,11 @@ const SPELL_PROOF_KIND = 100;
 
 /** What autokill writes over the hit points of a monster whose brain it explodes. */
 const AUTOKILL_HP = -100;
+
+/** One signed byte, which is how the record stores the two map-cursor fields. */
+function signedByte(value: number): number {
+  return (value << 24) >> 24;
+}
 
 /** say_no_monster (WORLD.EXE 2000:c28a, mw.c "say_no_monster"). */
 export function sayNoMonster(game: MwGame): void {
@@ -572,4 +578,97 @@ export function drainMonster(game: MwGame): boolean {
     monster.hp -= Math.trunc(perFloor / 2) * game.pc.wis;
   }
   return true;
+}
+
+/**
+ * teleport_player (WORLD.EXE 2000:cbdf, mw.c "teleport_player"): Relocate, which rolls a square
+ * of the whole floor over and over until it finds one that is neither rock nor already holding a
+ * monster, and stands the character on it. It never fails, so it always costs.
+ */
+export function teleportPlayer(game: MwGame): boolean {
+  const pc = game.pc;
+  mwSetOccupant(game, pc.x, pc.y, MW_SQUARE_EMPTY);
+  do {
+    do {
+      pc.x = game.rng.random(game.columns);
+      pc.y = game.rng.random(game.rows);
+    } while (game.isSolid(pc.x, pc.y, pc.floor, pc.dungeon));
+  } while (mwOccupantAt(game, pc.x, pc.y) !== -1);
+  mwSetOccupant(game, pc.x, pc.y, MW_SQUARE_PLAYER);
+  game.recenterMap = true;
+  game.redrawView = true;
+  return true;
+}
+
+/**
+ * teleport_monster (WORLD.EXE 2000:cccc, mw.c "teleport_monster"): Go Away, which throws the
+ * engaged monster somewhere else on the floor. There is no roll: every monster but the kind-100
+ * one goes.
+ *
+ * The square it lands on is never checked. The rock test in the loop is handed the character's
+ * own x and y rather than the monster's new ones, so it asks whether the character is standing
+ * in rock, which they never are — the loop runs once and the monster can land inside a wall.
+ */
+export function teleportMonster(game: MwGame): boolean {
+  if (game.engaged === -1) {
+    sayNoMonster(game);
+    return false;
+  }
+  if (spellProof(game)) return false;
+  const monster = game.monsters[game.engaged];
+  mwSetOccupant(game, monster.x, monster.y, MW_SQUARE_EMPTY);
+  do {
+    monster.x = game.rng.random(game.columns);
+    monster.y = game.rng.random(game.rows);
+  } while (game.isSolid(game.pc.x, game.pc.y, game.pc.floor, game.pc.dungeon));
+  mwSetOccupant(game, monster.x, monster.y, game.engaged);
+  return true;
+}
+
+/**
+ * teleport_direction (WORLD.EXE 2000:d195, mw.c "teleport_direction"): Pass Wall, which walks
+ * out from the character in the direction picked and stops on the first square 2 to 19 away that
+ * is inside the map, is not rock and has nobody on it, whatever walls lie between. Finding none,
+ * it does nothing and costs nothing.
+ *
+ * `choice` is the number the player picks off the direction menu: 1 north, 2 south, 3 east, 4
+ * west, 5 cancel. The original prints that menu and reads the key itself; the port is handed the
+ * number instead and prints nothing.
+ */
+export function teleportDirection(game: MwGame, choice: number): boolean {
+  if (choice <= 0 || choice >= 5) return false;
+  const pc = game.pc;
+  let dx = 0;
+  let dy = 0;
+  if (choice === 1) dy = -1;
+  if (choice === 2) dy = 1;
+  if (choice === 3) dx = 1;
+  if (choice === 4) dx = -1;
+  for (let distance = 2; distance < 20; distance++) {
+    const x = pc.x + dx * distance;
+    const y = pc.y + dy * distance;
+    if (x < 0 || x >= game.columns || y < 0 || y >= game.rows) continue;
+    if (game.isSolid(x, y, pc.floor, pc.dungeon)) continue;
+    if (mwOccupantAt(game, x, y) !== -1) continue;
+    // The map cursor is one signed byte of the record, so a long enough walk wraps it and the
+    // view is re-centred for that reason rather than for having left the view.
+    pc.mapCursorX = signedByte(pc.mapCursorX + dx * distance);
+    pc.mapCursorY = signedByte(pc.mapCursorY + dy * distance);
+    if (
+      pc.mapCursorX < 1 ||
+      pc.mapCursorY < 1 ||
+      pc.mapCursorX > game.mapViewColumns - 2 ||
+      pc.mapCursorY > game.mapViewRows - 2
+    ) {
+      game.recenterMap = true;
+    }
+    mwSetOccupant(game, pc.x, pc.y, MW_SQUARE_EMPTY);
+    pc.x = x;
+    pc.y = y;
+    mwSetOccupant(game, x, y, MW_SQUARE_PLAYER);
+    // The redraw of the whole view (exe 2000:8b3f) stands here, and nothing of the screen it
+    // draws is ported.
+    return true;
+  }
+  return false;
 }

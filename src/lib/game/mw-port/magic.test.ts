@@ -9,6 +9,9 @@ import {
   explosion,
   sleepMonster,
   spellProof,
+  teleportDirection,
+  teleportMonster,
+  teleportPlayer,
   antiFire,
   boostAgility,
   boostStrength,
@@ -27,7 +30,13 @@ import {
   resistDrain,
   resistPoison,
 } from './magic';
-import { newMwGame, type MwGameOverrides } from './state';
+import {
+  MW_SQUARE_PLAYER,
+  mwOccupantAt,
+  mwSetOccupant,
+  newMwGame,
+  type MwGameOverrides,
+} from './state';
 
 const game = (overrides: MwGameOverrides = {}) => newMwGame(overrides);
 
@@ -314,5 +323,103 @@ describe('drainMonster', () => {
     expect(drainMonster(world)).toBe(true);
     expect(world.monsters[0].depth).toBe(20);
     expect(world.monsters[0].hp).toBe(450);
+  });
+});
+
+/** A floor with no rock at all except the squares named, which is what the teleports ask about. */
+const rocky = (...squares: [number, number][]) => {
+  const rock = new Set(squares.map(([x, y]) => `${x},${y}`));
+  return (x: number, y: number) => rock.has(`${x},${y}`);
+};
+
+describe('teleportPlayer', () => {
+  it('rolls until it finds a square that is neither rock nor taken', () => {
+    const world = game({ pc: { x: 5, y: 5 }, rng: new BorlandRng(11), isSolid: rocky() });
+    mwSetOccupant(world, 5, 5, MW_SQUARE_PLAYER);
+    expect(teleportPlayer(world)).toBe(true);
+    expect([world.pc.x, world.pc.y]).not.toEqual([5, 5]);
+    expect(mwOccupantAt(world, world.pc.x, world.pc.y)).toBe(MW_SQUARE_PLAYER);
+    expect(mwOccupantAt(world, 5, 5)).toBe(-1);
+    expect(world.recenterMap).toBe(true);
+  });
+
+  it('never lands on a monster', () => {
+    for (let seed = 1; seed < 30; seed++) {
+      const world = game({ monsters: [monster({ x: 1, y: 1 })], rng: new BorlandRng(seed) });
+      mwSetOccupant(world, 1, 1, 0);
+      teleportPlayer(world);
+      expect([world.pc.x, world.pc.y]).not.toEqual([1, 1]);
+    }
+  });
+});
+
+describe('teleportMonster', () => {
+  it('moves the monster and its square of the grid', () => {
+    const world = fight(4, { x: 3, y: 3 });
+    mwSetOccupant(world, 3, 3, 0);
+    expect(teleportMonster(world)).toBe(true);
+    expect([world.monsters[0].x, world.monsters[0].y]).not.toEqual([3, 3]);
+    expect(mwOccupantAt(world, world.monsters[0].x, world.monsters[0].y)).toBe(0);
+    expect(mwOccupantAt(world, 3, 3)).toBe(-1);
+  });
+
+  it('drops the monster in rock, because the loop tests the character\'s own square', () => {
+    // Every square but the character's is rock, and the monster still lands on one of them.
+    const world = fight(4, { x: 3, y: 3 }, { pc: { x: 9, y: 9 }, isSolid: (x, y) => !(x === 9 && y === 9) });
+    expect(teleportMonster(world)).toBe(true);
+    expect(world.isSolid(world.monsters[0].x, world.monsters[0].y, 0, 0)).toBe(true);
+  });
+
+  it('costs nothing against a spell-proof monster', () => {
+    const world = fight(4, { x: 3, y: 3, type: ZEUS });
+    expect(teleportMonster(world)).toBe(false);
+    expect([world.monsters[0].x, world.monsters[0].y]).toEqual([3, 3]);
+  });
+});
+
+describe('teleportDirection', () => {
+  it('takes the first open square two or more away, through the walls between', () => {
+    const world = game({ pc: { x: 10, y: 10 }, isSolid: rocky([10, 9], [10, 8]) });
+    expect(teleportDirection(world, 1)).toBe(true);
+    expect([world.pc.x, world.pc.y]).toEqual([10, 7]);
+  });
+
+  it('leaves the square one away alone, however open it is', () => {
+    const world = game({ pc: { x: 10, y: 10 }, isSolid: rocky() });
+    expect(teleportDirection(world, 2)).toBe(true);
+    expect(world.pc.y).toBe(12);
+  });
+
+  it('steps over a square a monster is standing on', () => {
+    const world = game({ pc: { x: 10, y: 10 }, monsters: [monster({ x: 12, y: 10 })], isSolid: rocky() });
+    mwSetOccupant(world, 12, 10, 0);
+    expect(teleportDirection(world, 3)).toBe(true);
+    expect(world.pc.x).toBe(13);
+  });
+
+  it('does nothing and costs nothing when nothing within 19 qualifies', () => {
+    const world = game({ pc: { x: 10, y: 10 }, isSolid: () => true });
+    expect(teleportDirection(world, 4)).toBe(false);
+    expect([world.pc.x, world.pc.y]).toEqual([10, 10]);
+  });
+
+  it('is cancelled by the fifth line of the direction menu', () => {
+    const world = game({ pc: { x: 10, y: 10 }, isSolid: rocky() });
+    expect(teleportDirection(world, 5)).toBe(false);
+    expect(world.pc.x).toBe(10);
+  });
+
+  it('walks the map cursor by the same distance', () => {
+    const world = game({ pc: { x: 30, y: 30, mapCursorX: 9, mapCursorY: 19 }, isSolid: rocky() });
+    teleportDirection(world, 3);
+    expect(world.pc.mapCursorX).toBe(11);
+    expect(world.recenterMap).toBe(false);
+  });
+
+  it('asks for the view back when the cursor lands outside it', () => {
+    const world = game({ pc: { x: 30, y: 30, mapCursorX: 15, mapCursorY: 19 }, isSolid: rocky() });
+    teleportDirection(world, 3);
+    expect(world.pc.mapCursorX).toBe(17);
+    expect(world.recenterMap).toBe(true);
   });
 });
