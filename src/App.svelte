@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { app, type Tab } from './lib/app-state.svelte';
+  import { app, restoreCharacter, type Tab } from './lib/app-state.svelte';
   import { isAppHistoryState, tabState, type AppHistoryState } from './lib/history';
   import MonsterDatabase from './lib/bestiary/MonsterDatabase.svelte';
   import Calculators from './lib/calculators/Calculators.svelte';
@@ -26,6 +26,7 @@
   ];
 
   onMount(() => {
+    restoreCharacter();
     const state = history.state;
     if (isAppHistoryState(state)) {
       restore(state);

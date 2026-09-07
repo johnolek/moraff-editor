@@ -4,7 +4,7 @@
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { loadedCharacter } from './character';
+  import { currentCharacter } from './character';
   import { drainCost, killRows, levelProgress, type Stats } from './experience';
   import FloorPicker from './FloorPicker.svelte';
 
@@ -20,16 +20,16 @@
   const progress = $derived(levelProgress(character, whole(target, 1)));
   const kills = $derived(killRows(module, floor, progress));
   const drain = $derived(drainCost(character, stats));
-  const canUseLoaded = $derived(Boolean(loadedCharacter()));
+  const canUseLoaded = $derived(Boolean(currentCharacter()));
 
-  // The editor bumps saveVersion when it loads or discards a file; start from that character.
+  // Start from whatever character is current, and follow it when another one is picked.
   $effect(() => {
-    void app.saveVersion;
+    void app.characterVersion;
     useLoadedCharacter();
   });
 
   function useLoadedCharacter() {
-    const record = loadedCharacter();
+    const record = currentCharacter();
     if (!record) return;
     level = record.lev;
     exp = record.exp;

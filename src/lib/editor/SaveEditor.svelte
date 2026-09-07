@@ -1,16 +1,20 @@
 <script lang="ts">
   import './editor.css';
-  import { app } from '../app-state.svelte';
+  import { app, characterEdited, setCharacter, type CurrentCharacter } from '../app-state.svelte';
+  import { characterFileName, recordName, slotFromFileName } from '../character/record';
   import { GAMES, pickGameByFileSize } from './games';
   import type { GameSchema } from './schema';
   import SectionView from './SectionView.svelte';
 
   interface Document {
-    name: string;
+    /** What the app calls this character. */
+    label: string;
+    /** The numbered character file it came from, or null when its file was not a number. */
+    slot: number | null;
     game: GameSchema;
     bytes: Uint8Array<ArrayBuffer>;
     view: DataView;
-    /** Copy of the original file for "Discard changes". */
+    /** Copy of the file as it was opened, for "Discard changes". */
     pristine: Uint8Array<ArrayBuffer>;
   }
 
@@ -30,32 +34,36 @@
     toastTimer = setTimeout(() => (toast = null), 1800);
   }
 
-  /** Hand the loaded bytes to the other tabs. The field components write into these same
-   *  bytes, so a reader that looks again sees the edits. */
+  /** Make what is open here the character the rest of the app works from. The field components
+   *  write into these same bytes, so a reader that looks again sees the edits. */
   function share() {
-    app.save = doc && { game: doc.game.id, bytes: doc.bytes };
-    app.saveVersion++;
+    setCharacter(doc && { game: doc.game.id, name: doc.label, slot: doc.slot, bytes: doc.bytes });
   }
 
-  function open(name: string, game: GameSchema, bytes: Uint8Array<ArrayBuffer>) {
-    doc = { name, game, bytes, view: new DataView(bytes.buffer), pristine: bytes.slice() };
+  function open(label: string, slot: number | null, game: GameSchema, bytes: Uint8Array<ArrayBuffer>) {
+    doc = { label, slot, game, bytes, view: new DataView(bytes.buffer), pristine: bytes.slice() };
     unrecognised = null;
     version++;
-    share();
   }
 
   async function load(file: File, game: GameSchema) {
-    open(file.name, game, new Uint8Array(await file.arrayBuffer()));
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const slot = slotFromFileName(file.name);
+    open(recordName(bytes) || file.name, slot, game, bytes);
+    share();
   }
 
-  // Another tab can hand over a save it built rather than a file the user picked.
+  // The character can be made current somewhere else — rolled in the New Character tab, chosen
+  // in the panel, or brought back from the last visit — and the editor then opens it.
   $effect(() => {
-    const request = app.requestedSave;
-    if (!request) return;
-    app.requestedSave = null;
-    const game = GAMES.find((entry) => entry.id === request.game);
-    if (!game) return;
-    open(request.name, game, request.bytes);
+    const current = app.character;
+    if (!current) {
+      doc = null;
+      return;
+    }
+    if (doc && doc.bytes === current.bytes) return;
+    const game = GAMES.find((entry) => entry.id === current.game);
+    if (game) open(current.name, current.slot, game, current.bytes);
   });
 
   function receive(file: File) {
@@ -78,14 +86,15 @@
 
   function download() {
     if (!doc) return;
+    const fileName = characterFileName(doc.slot, doc.label);
     doc.game.onSave?.(doc.bytes);
     const url = URL.createObjectURL(new Blob([doc.bytes], { type: 'application/octet-stream' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = doc.name;
+    link.download = fileName;
     link.click();
     URL.revokeObjectURL(url);
-    showToast('Downloaded ' + doc.name);
+    showToast('Downloaded ' + fileName);
   }
 
   function discard() {
@@ -166,13 +175,17 @@
         <button type="button" class="ghost" onclick={discard}>Discard changes</button>
         <button type="button" class="ghost" onclick={unload}>Load different file</button>
         <span class="game-badge">{doc.game.displayName}</span>
-        <span class="filename">{doc.name}</span>
+        <span class="filename">{characterFileName(doc.slot, doc.label)}</span>
       </div>
-      {#key version}
-        {#each doc.game.sections as section}
-          <SectionView view={doc.view} {section} />
-        {/each}
-      {/key}
+      <!-- The field components write straight into the bytes without telling anyone. The events
+           their inputs bubble are how the rest of the app hears that the character changed. -->
+      <div oninput={characterEdited} onchange={characterEdited}>
+        {#key version}
+          {#each doc.game.sections as section}
+            <SectionView view={doc.view} {section} />
+          {/each}
+        {/key}
+      </div>
     {/if}
 
     <footer>

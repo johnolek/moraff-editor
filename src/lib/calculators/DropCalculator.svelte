@@ -5,7 +5,7 @@
   import BarChart from '../ui/BarChart.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { loadedCharacter } from './character';
+  import { currentCharacter } from './character';
   import DropTable from './DropTable.svelte';
   import { dropTables, WEAPON_NAMES } from './drops';
   import FloorPicker from './FloorPicker.svelte';
@@ -23,16 +23,16 @@
 
   const tables = $derived(dropTables({ module, floor, cls, ownedWeapons }));
   const levels = $derived(tables.levels.filter(([, chance]) => chance >= RARE_LEVEL));
-  const canUseLoaded = $derived(Boolean(loadedCharacter()));
+  const canUseLoaded = $derived(Boolean(currentCharacter()));
 
-  // The editor bumps saveVersion when it loads or discards a file; start from that character.
+  // Start from whatever character is current, and follow it when another one is picked.
   $effect(() => {
-    void app.saveVersion;
+    void app.characterVersion;
     useLoadedCharacter();
   });
 
   function useLoadedCharacter() {
-    const record = loadedCharacter();
+    const record = currentCharacter();
     if (!record) return;
     cls = Math.min(6, Math.max(0, record.cls));
     module = record.module;

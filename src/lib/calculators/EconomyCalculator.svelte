@@ -6,7 +6,7 @@
   import BarChart from '../ui/BarChart.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { loadedCharacter } from './character';
+  import { currentCharacter } from './character';
   import {
     innBreakEvenChildren,
     moneyPerKill,
@@ -32,16 +32,16 @@
   const byLevel = $derived(restCostByLevel(rest, tableLevels(rest.lev)));
   const innBreakEven = $derived(innBreakEvenChildren(rest.lev));
   const money = $derived(moneyPerKill(floor, cls, hard));
-  const canUseLoaded = $derived(Boolean(loadedCharacter()));
+  const canUseLoaded = $derived(Boolean(currentCharacter()));
 
-  // The editor bumps saveVersion when it loads or discards a file; start from that character.
+  // Start from whatever character is current, and follow it when another one is picked.
   $effect(() => {
-    void app.saveVersion;
+    void app.characterVersion;
     useLoadedCharacter();
   });
 
   function useLoadedCharacter() {
-    const record = loadedCharacter();
+    const record = currentCharacter();
     if (!record) return;
     level = record.lev;
     children = record.children;

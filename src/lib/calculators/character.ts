@@ -3,12 +3,12 @@ import { UNFORGIVEN } from '../editor/games';
 import { parseSave, type SaveRecord } from '../game/dotu-files.js';
 
 /**
- * The Dungeons of the Unforgiven character open in the save editor, or null when the editor
- * holds nothing or holds a Moraff's World file. The editor's fields write straight into the
- * bytes this reads, so calling it again picks up whatever has been edited since.
+ * The current character, or null when there is none or the current one is a Moraff's World
+ * character. The editor's fields write straight into the bytes this reads, so calling it again
+ * picks up whatever has been edited since.
  */
-export function loadedCharacter(): SaveRecord | null {
-  const save = app.save;
-  if (!save || save.game !== UNFORGIVEN.id) return null;
-  return parseSave(save.bytes);
+export function currentCharacter(): SaveRecord | null {
+  const character = app.character;
+  if (!character || character.game !== UNFORGIVEN.id) return null;
+  return parseSave(character.bytes);
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { loadedCharacter } from '../calculators/character';
+  import { currentCharacter } from '../calculators/character';
   import { weaponById } from '../calculators/combat';
   import {
     expValue,
@@ -80,7 +80,7 @@
 
   /** The character open in the save editor, as the pieces of a swing and its die, or null for none. */
   const yours = $derived.by(() => {
-    const record = loadedCharacter();
+    const record = currentCharacter();
     if (!record) return null;
     const fighter: ToHitFighter = {
       lev: record.lev,

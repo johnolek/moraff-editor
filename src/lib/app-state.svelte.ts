@@ -1,3 +1,4 @@
+import { rememberCharacter, storedCharacter } from './character/storage';
 import { HistoryCursor } from './history';
 
 export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'roller' | 'source';
@@ -5,19 +6,18 @@ export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'fo
 /** A function to open in the Source tab: one of the port's, or one of the decompilation's. */
 export type SourceRequest = { kind: 'ts'; file: string; name: string } | { kind: 'c'; name: string };
 
-/** The file open in the save editor, shared so other tabs can read the character out of it. */
-export interface LoadedSave {
-  /** The GameSchema id the editor matched the file to. */
+/**
+ * The one character the whole app works from: the save that was loaded in the editor or the
+ * character that was rolled. The editor's fields write into these same bytes, so anything that
+ * reads them again sees the edits.
+ */
+export interface CurrentCharacter {
+  /** The GameSchema id in `src/lib/editor/games.ts` the bytes belong to. */
   game: string;
-  bytes: Uint8Array;
-}
-
-/** A save to open in the Save Editor, from a tab that built one rather than loaded a file. */
-export interface SaveRequest {
-  /** What to call the downloaded file; for Unforgiven that is the character number. */
+  /** What to call this character in the app. It starts as the name in the record. */
   name: string;
-  /** The GameSchema id the bytes belong to. */
-  game: string;
+  /** Which numbered character file it is, or null when the file it came from was not a number. */
+  slot: number | null;
   bytes: Uint8Array<ArrayBuffer>;
 }
 
@@ -33,12 +33,10 @@ export interface AppState {
   requestedSource: SourceRequest | null;
   /** Set to the id of a formula to open in the Formulas tab; that tab clears it once it has. */
   requestedFormula: string | null;
-  /** Set to open a freshly built save in the editor; the editor clears it once it has. */
-  requestedSave: SaveRequest | null;
-  save: LoadedSave | null;
-  /** Bumped whenever the editor swaps in a different set of bytes. Field edits write into the
-   *  bytes that are already there, so they do not bump it. */
-  saveVersion: number;
+  character: CurrentCharacter | null;
+  /** Bumped whenever the current character changes: a different one is chosen, or a field of
+   *  the one in hand is edited. Everything that reads the record watches this. */
+  characterVersion: number;
 }
 
 export const app = $state<AppState>({
@@ -47,7 +45,25 @@ export const app = $state<AppState>({
   requestedMonsterId: null,
   requestedSource: null,
   requestedFormula: null,
-  requestedSave: null,
-  save: null,
-  saveVersion: 0,
+  character: null,
+  characterVersion: 0,
 });
+
+/** Make a character the current one, and let everything that reads it know. */
+export function setCharacter(character: CurrentCharacter | null): void {
+  app.character = character;
+  app.characterVersion++;
+  rememberCharacter(character);
+}
+
+/** A field of the current character has been edited in place. */
+export function characterEdited(): void {
+  app.characterVersion++;
+  rememberCharacter(app.character);
+}
+
+/** Bring back the character the last visit left behind. */
+export function restoreCharacter(): void {
+  const stored = storedCharacter();
+  if (stored) setCharacter(stored);
+}

@@ -3,7 +3,7 @@
   import data from '../game/dotu-data.json';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { loadedCharacter } from './character';
+  import { currentCharacter } from './character';
   import { allClassRolls, levelUpRoll, type LevelUpStats } from './levelup';
 
   let stats = $state<LevelUpStats>({ cls: 0, con: 10, luck: 10, wis: 10, iq: 10 });
@@ -17,16 +17,16 @@
   });
   const roll = $derived(levelUpRoll(rolled));
   const everyClass = $derived(allClassRolls(rolled));
-  const canUseLoaded = $derived(Boolean(loadedCharacter()));
+  const canUseLoaded = $derived(Boolean(currentCharacter()));
 
-  // The editor bumps saveVersion when it loads or discards a file; start from that character.
+  // Start from whatever character is current, and follow it when another one is picked.
   $effect(() => {
-    void app.saveVersion;
+    void app.characterVersion;
     useLoadedCharacter();
   });
 
   function useLoadedCharacter() {
-    const record = loadedCharacter();
+    const record = currentCharacter();
     if (!record) return;
     stats = {
       cls: Math.min(6, Math.max(0, record.cls)),

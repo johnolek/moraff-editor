@@ -7,7 +7,7 @@
   import BarChart from '../ui/BarChart.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { loadedCharacter } from './character';
+  import { currentCharacter } from './character';
   import { ARMORS, combatReport, WEAPONS, type Fighter } from './combat';
 
   const PROTECTIONS = ['None', 'Minor Protection', 'Protection', 'Major Protection', 'Ultra Protection'];
@@ -65,16 +65,16 @@
     protRing: whole(character.protRing, 0),
   });
   const report = $derived(combatReport(fighter, { monster, level, module, floor }));
-  const canUseLoaded = $derived(Boolean(loadedCharacter()));
+  const canUseLoaded = $derived(Boolean(currentCharacter()));
 
-  // The editor bumps saveVersion when it loads or discards a file; start from that character.
+  // Start from whatever character is current, and follow it when another one is picked.
   $effect(() => {
-    void app.saveVersion;
+    void app.characterVersion;
     useLoadedCharacter();
   });
 
   function useLoadedCharacter() {
-    const record = loadedCharacter();
+    const record = currentCharacter();
     if (!record) return;
     character = {
       lev: record.lev,
