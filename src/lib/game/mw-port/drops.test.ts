@@ -42,6 +42,9 @@ describe('weaponFind', () => {
     weaponFind(game, () => true);
     expect(game.messages).toContain('YOU FIND A STICK');
     expect(game.pc.weaponsOwned[1]).toBe(1);
+    // "GOOD NEWS..." heads the offer on the strip above the box rather than filling a box of
+    // its own, so it is on the screen and not among the eight lines.
+    expect(game.screen).toEqual([{ text: 'GOOD NEWS...', x: 0, y: 0, font: 0, colour: 15 }]);
   });
 
   it('leaves the weapon behind when the menu says so', () => {

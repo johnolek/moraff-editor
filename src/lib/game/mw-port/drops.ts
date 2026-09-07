@@ -1,5 +1,6 @@
 import data from '../mw-data.json';
 import type { MwGame } from './state';
+import { mwClearMessageLine, mwMessageLine } from './state';
 import { financialStatement } from './town';
 
 /**
@@ -39,13 +40,21 @@ function spellIndex(type: number, level: number, slot: number): number {
   return type * SPELLS_PER_TYPE + level * SLOTS_PER_LEVEL + slot;
 }
 
+/** The colour FUN_3000_b99e draws its line in, which is the white of the fixed UI colours. */
+const GOOD_NEWS_COLOUR = 15;
+
 /**
  * The banner in front of a find (WORLD.EXE 3000:b99e, mw.c "FUN_3000_b99e"): a pause, a wiped
- * message line and "GOOD NEWS..." in white.
+ * message line and "GOOD NEWS..." in white on the strip above the message box the find itself
+ * goes in, so it reads as the find's heading.
+ *
+ * The original pauses again after drawing it and never wipes it, so the port leaves it standing
+ * too and the next thing written on that strip replaces it.
  */
 export function goodNews(game: MwGame): void {
-  game.eraseScreen();
-  game.say('GOOD NEWS...'); // DS:5dfb, whose first two bytes are the float in front of it
+  mwClearMessageLine(game);
+  // DS:5dfb, whose first two bytes are the float in front of it
+  game.draw(mwMessageLine('GOOD NEWS...', GOOD_NEWS_COLOUR));
 }
 
 /**

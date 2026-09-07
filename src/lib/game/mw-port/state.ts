@@ -599,6 +599,40 @@ export function mwSetOccupant(game: MwGame, x: number, y: number, value: number)
 }
 
 /**
+ * The strip a kill writes its own messages on, in the game's 1600 by 1200 grid: from the top
+ * left corner across to x 0x2d0, and down as far as y 0x28, which is where the first line of the
+ * message box is drawn.
+ */
+const MW_MESSAGE_LINE_WIDTH = 0x2d0;
+const MW_MESSAGE_LINE_HEIGHT = 0x28;
+
+/**
+ * The line monster_killed (WORLD.EXE 3000:d51c) and FUN_3000_b99e (WORLD.EXE 3000:b99e) write
+ * their own messages on: the top left corner of the screen, in the body font and whatever colour
+ * the print_text call names.
+ *
+ * Drawing over the line replaces what was there, which is how one of those messages follows
+ * another.
+ */
+export function mwMessageLine(text: string, colour: number): ScreenLine {
+  return { text, x: 0, y: 0, font: 0, colour };
+}
+
+/**
+ * The fill_rect (WORLD.EXE 4000:2020) both of them wipe that strip with before they write on it.
+ *
+ * The screen keeps a string's top left corner rather than the box its letters fill, so a line
+ * counts as inside the strip when the point it was drawn at is.
+ */
+export function mwClearMessageLine(game: MwGame): void {
+  for (let at = game.screen.length - 1; at >= 0; at -= 1) {
+    const line = game.screen[at];
+    const inside = line.x < MW_MESSAGE_LINE_WIDTH && line.y < MW_MESSAGE_LINE_HEIGHT;
+    if (inside) game.screen.splice(at, 1);
+  }
+}
+
+/**
  * A game to run the ported roller against. The character starts blank, the way the memset at the
  * top of roll_char leaves it, and every question answers itself so a roll finishes on its own.
  *

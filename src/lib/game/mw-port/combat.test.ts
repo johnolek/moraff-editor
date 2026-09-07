@@ -629,15 +629,39 @@ describe('monsterKilled', () => {
     expect(game.messages).toContain('YOU FIND A STICK');
   });
 
-  it('says "YOU KILLED IT!" for anything but a puffball', () => {
+  it('draws "YOU KILLED IT!" above the box for anything but a puffball', () => {
     const game = killing();
     monsterKilled(game, nothing);
     expect(game.messages[0]).toBe('YOU KILLED IT!');
+    expect(game.screen).toEqual([{ text: 'YOU KILLED IT!', x: 0, y: 0, font: 0, colour: 8 }]);
 
     const puff = killing();
     puff.monsters[0].type = 72;
     monsterKilled(puff, nothing);
     expect(puff.messages[0]).not.toBe('YOU KILLED IT!');
+    expect(puff.screen).toEqual([]);
+  });
+
+  it('draws the find above the box and asks one key when it comes to nothing', () => {
+    // Every gate is refused but the find's own two, and the coin toss after them comes down on
+    // the half that finds nothing.
+    const findsNothing: Rng = { random: (n) => (n === 950 || n === 20 ? 0 : n === 2 ? 1 : 9999) };
+    let keysWaitedFor = 0;
+    const game = killing({
+      rng: findsNothing,
+      pc: { cls: 0, lev: 5, floor: 30, x: 5, y: 5, hp: 100, maxHp: 100 },
+      pressAnyKey: () => {
+        keysWaitedFor += 1;
+      },
+    });
+    monsterKilled(game, nothing);
+    expect(game.messages).toContain('YOU FIND...');
+    expect(game.messages).toContain('NOTHING! (HIT ANY KEY)');
+    // The kill's three messages share the strip above the box, so the last is all that stands.
+    expect(game.screen).toEqual([
+      { text: 'NOTHING! (HIT ANY KEY)', x: 0, y: 0, font: 0, colour: 8 },
+    ]);
+    expect(keysWaitedFor).toBe(1);
   });
 
   it('hands a level drainer\'s trap door key over once, for the floor\'s own ten', () => {

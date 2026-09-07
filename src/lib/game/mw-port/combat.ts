@@ -14,7 +14,14 @@ import {
 import { HINT, loadHBin } from './hints';
 import { canLevelUp, experienceNeeded, goDownLevel } from './levels';
 import type { MwGame } from './state';
-import { MW_SQUARE_EMPTY, MW_SQUARE_PLAYER, mwOccupantAt, mwSetOccupant } from './state';
+import {
+  MW_SQUARE_EMPTY,
+  MW_SQUARE_PLAYER,
+  mwClearMessageLine,
+  mwMessageLine,
+  mwOccupantAt,
+  mwSetOccupant,
+} from './state';
 import { MONSTER_SLOTS } from './stocking';
 
 /**
@@ -1017,6 +1024,20 @@ function levelDrainerExtras(game: MwGame): void {
 }
 
 /**
+ * The colour monster_killed (WORLD.EXE 3000:d51c) draws each of its own three messages in.
+ *
+ * All three go on the strip above the message box, and each is preceded by a fill_rect wiping
+ * whatever was there. "YOU KILLED IT!" is left standing: the fill_rect after it covers the top
+ * of the message box rather than the strip. The other two are wiped, but only after a delay the
+ * original times off the BIOS tick counter, and after the wait_key for "NOTHING! (HIT ANY KEY)".
+ * There is no clock here, and {@link MwGame.pressAnyKey} records that a key is owed rather than
+ * waiting for it, so wiping the strip at either of those points would take the line back off
+ * before anyone saw it. The port leaves all three standing; the next thing written on that strip
+ * replaces them.
+ */
+const KILL_MESSAGE_COLOUR = 8;
+
+/**
  * monster_killed (WORLD.EXE 3000:d51c, mw.c "monster_killed"): the kill.
  *
  * The experience is added, a level drainer's pill and trap door key are handed over, the slot is
@@ -1036,8 +1057,8 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
   const type = monster.type;
   const kind = MONSTERS[type];
   if (kind.kind !== PUFFBALL) {
-    game.eraseScreen();
-    game.say('YOU KILLED IT!'); // DS:678d
+    mwClearMessageLine(game);
+    game.draw(mwMessageLine('YOU KILLED IT!', KILL_MESSAGE_COLOUR)); // DS:678d
   }
   pc.exp += experienceForKill(game, slot);
   if (kind.levelDrain > 0) levelDrainerExtras(game);
@@ -1054,11 +1075,13 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
   cupOfHealth(game);
   ballOfThought(game);
   if (pc.cls !== 2 && game.rng.random(950) < pc.floor + 40 && game.rng.random(20) < pc.floor) {
-    game.eraseScreen();
-    game.say('YOU FIND...'); // DS:68d6
-    game.eraseScreen();
+    mwClearMessageLine(game);
+    game.draw(mwMessageLine('YOU FIND...', KILL_MESSAGE_COLOUR)); // DS:68d6
     if (game.rng.random(2) === 0) specialFind(game);
-    else game.say('NOTHING! (HIT ANY KEY)'); // DS:68e2
+    else {
+      game.draw(mwMessageLine('NOTHING! (HIT ANY KEY)', KILL_MESSAGE_COLOUR)); // DS:68e2
+      game.pressAnyKey();
+    }
   }
   spellbookFind(game);
   const writing = game.rng.random(3);
