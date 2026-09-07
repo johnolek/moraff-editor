@@ -1,22 +1,23 @@
 import { rollChar } from '../game/port/character';
 import type { Rng } from '../game/port/rng';
-import type { Game, PlayerCharacter } from '../game/port/state';
+import type { Game, PlayerCharacter, ScreenLine } from '../game/port/state';
 import { newGame } from '../game/port/state';
 
-/** One of the six questions roll_char stops on. */
-export type Question = 'difficulty' | 'race' | 'keepRerollDesign' | 'designStat' | 'name' | 'class';
+/**
+ * One of the seven places roll_char stops: its six questions, and the key it waits for with a
+ * screen up, which takes any answer at all.
+ */
+export type Question = 'difficulty' | 'race' | 'keepRerollDesign' | 'designStat' | 'name' | 'class' | 'continue';
 
 /** An answer to one of them: the number a menu takes, or the name that was typed. */
 export type Answer = number | string;
 
 /** Where the roller has got to, for a screen to draw. */
 export interface RollerView {
-  /** The lines the game has printed since the last question was answered. */
-  screen: string[];
-  /** The question waiting to be answered, or null once the character is finished. */
+  /** What the game is showing, in the order the lines were drawn. */
+  screen: ScreenLine[];
+  /** What the roller is waiting for, or null once the character is finished. */
   question: Question | null;
-  /** How many of the twenty-four design points are still to be placed. */
-  pointsLeft: number;
   pc: PlayerCharacter;
 }
 
@@ -56,9 +57,6 @@ class NeedsAnswer {
 export class RollerSession {
   private answers: Answer[] = [];
   private readonly drawn: number[] = [];
-  /** How many lines had been printed when each question was reached. */
-  private marks: number[] = [];
-  private asked: Question[] = [];
   private game: Game;
   private question: Question | null = null;
 
@@ -82,35 +80,16 @@ export class RollerSession {
   }
 
   view(): RollerView {
-    // The mark of the last question that was answered is where the screen in front of the player
-    // begins: everything printed since then. A pending question has a mark of its own on the end.
-    const answered = this.question === null ? this.marks.length : this.marks.length - 1;
-    const start = answered >= 1 ? this.marks[answered - 1] : 0;
-    let placed = 0;
-    while (placed < this.asked.length && this.asked[this.asked.length - 1 - placed] === 'designStat') {
-      placed += 1;
-    }
-    return {
-      screen: this.game.messages.slice(start),
-      question: this.question,
-      pointsLeft: 25 - placed,
-      pc: this.game.pc,
-    };
+    return { screen: this.game.screen, question: this.question, pc: this.game.pc };
   }
 
   private run(): Game {
-    const messages: string[] = [];
-    const marks: number[] = [];
-    const asked: Question[] = [];
     let next = 0;
     const take = (question: Question): Answer => {
-      marks.push(messages.length);
-      asked.push(question);
       if (next === this.answers.length) throw new NeedsAnswer(question);
       return this.answers[next++];
     };
     const game = newGame({
-      messages,
       slot: this.slot,
       rng: new RecordedRandom(this.drawn),
       // The map view the game is showing while a character is rolled, which is what it halves to
@@ -123,6 +102,9 @@ export class RollerSession {
       askDesignStat: () => take('designStat') as number,
       askName: () => take('name') as string,
       askClass: () => take('class') as number,
+      pressAnyKey: () => {
+        take('continue');
+      },
     });
     this.question = null;
     try {
@@ -131,8 +113,6 @@ export class RollerSession {
       if (!(thrown instanceof NeedsAnswer)) throw thrown;
       this.question = thrown.question;
     }
-    this.marks = marks;
-    this.asked = asked;
     return game;
   }
 }

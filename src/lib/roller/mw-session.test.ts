@@ -1,18 +1,25 @@
 import { describe, expect, it } from 'vitest';
+import type { MwRollerView } from './mw-session';
 import { MwRollerSession } from './mw-session';
 
+/** The text of everything showing, which is what the old string-only screen used to hand back. */
+function showing(view: MwRollerView): string[] {
+  return view.screen.map((line) => (line.value === undefined ? line.text : line.text + line.value));
+}
+
 describe('MwRollerSession', () => {
-  it('stops on the race menu with the instructions and the race table showing', () => {
+  it('stops on the instructions, which the game holds up until a key is hit', () => {
     const session = new MwRollerSession(0);
     const view = session.view();
-    expect(view.question).toBe('race');
-    expect(view.screen[0]).toBe('CREATING A CHARACTER:');
-    expect(view.screen).toContain('RACE SELECTION:');
-    expect(view.screen).toHaveLength(24);
+    expect(view.question).toBe('continue');
+    expect(showing(view)[0]).toBe('CREATING A CHARACTER:');
+    expect(view.screen).toHaveLength(12);
   });
 
   it('walks the questions in the order roll_char asks them', () => {
     const session = new MwRollerSession(0);
+    expect(session.view().question).toBe('continue');
+    session.answer(0);
     expect(session.view().question).toBe('race');
     session.answer(5);
     expect(session.view().question).toBe('keepRerollDesign');
@@ -21,6 +28,8 @@ describe('MwRollerSession', () => {
     session.answer('BOB');
     expect(session.view().question).toBe('class');
     session.answer(6);
+    expect(session.view().question).toBe('continue');
+    session.answer(0);
     expect(session.view().question).toBe(null);
     expect(session.view().pc.name).toBe('BOB');
     expect(session.view().pc.cls).toBe(6);
@@ -29,6 +38,7 @@ describe('MwRollerSession', () => {
 
   it('keeps the character it showed when the next answer comes in', () => {
     const session = new MwRollerSession(0);
+    session.answer(0);
     session.answer(2);
     const rolled = { ...session.view().pc };
     session.answer(0);
@@ -49,43 +59,52 @@ describe('MwRollerSession', () => {
     expect(kept.sex).toBe(rolled.sex);
   });
 
-  it('shows only what has been printed since the last answer', () => {
+  it('shows one screen at a time, the way the game clears between them', () => {
     const session = new MwRollerSession(0);
     session.answer(0);
+    const race = session.view();
+    expect(showing(race)).toContain('RACE SELECTION:');
+    expect(showing(race)).not.toContain('CREATING A CHARACTER:');
+    session.answer(0);
     const roll = session.view();
-    expect(roll.screen[0]).toBe('RACE: HUMAN');
-    expect(roll.screen).toContain('Y) KEEP THIS CHARACTER');
-    expect(roll.screen).not.toContain('RACE SELECTION:');
+    expect(showing(roll)[0]).toBe('RACE: HUMAN');
+    expect(showing(roll)).toContain('Y) KEEP THIS CHARACTER');
+    expect(showing(roll)).not.toContain('RACE SELECTION:');
   });
 
-  it('counts the design points down from twenty-four', () => {
+  it('counts the design points down from twenty-four on the screen itself', () => {
     const session = new MwRollerSession(0);
+    session.answer(0);
     session.answer(0);
     session.answer(2);
     expect(session.view().question).toBe('designStat');
-    expect(session.view().pointsLeft).toBe(24);
+    expect(showing(session.view())).toContain('24');
     session.answer(0);
-    expect(session.view().pointsLeft).toBe(23);
+    expect(showing(session.view())).toContain('23');
+    expect(showing(session.view())).toContain('CHARACTERISTIC POINTS LEFT: ');
     for (let i = 0; i < 22; i++) session.answer(0);
-    expect(session.view().pointsLeft).toBe(1);
+    expect(showing(session.view())).toContain('1');
     session.answer(0);
     expect(session.view().question).toBe('name');
   });
 
   it('rolls another character when the design screen is escaped', () => {
     const session = new MwRollerSession(0);
+    session.answer(0);
     session.answer(3);
     session.answer(2);
     session.answer(6);
     expect(session.view().question).toBe('keepRerollDesign');
-    expect(session.view().screen).toContain('RACE: HOBBIT');
+    expect(showing(session.view())).toContain('RACE: HOBBIT');
   });
 
   it('records the character against the slot it was told to use', () => {
     const session = new MwRollerSession(7);
     session.answer(0);
     session.answer(0);
+    session.answer(0);
     session.answer('HERO');
+    session.answer(0);
     session.answer(0);
     expect(session.view().question).toBe(null);
     expect(session.slot).toBe(7);
@@ -93,23 +112,25 @@ describe('MwRollerSession', () => {
 
   it('goes back to the first screen when it is restarted', () => {
     const session = new MwRollerSession(0);
+    session.answer(0);
     session.answer(3);
     session.restart();
-    expect(session.view().question).toBe('race');
-    expect(session.view().screen[0]).toBe('CREATING A CHARACTER:');
+    expect(session.view().question).toBe('continue');
+    expect(showing(session.view())[0]).toBe('CREATING A CHARACTER:');
   });
 
-  it('finishes with health and spell points on the last line', () => {
+  it('finishes with health and spell points, and the class list still showing', () => {
     const session = new MwRollerSession(0);
+    session.answer(0);
     session.answer(7);
     session.answer(0);
     session.answer('IMPY');
     session.answer(1);
+    session.answer(0);
     const view = session.view();
     expect(view.question).toBe(null);
-    expect(view.screen[view.screen.length - 1]).toBe(
-      `SPELL POINTS: ${view.pc.maxSp}    HEALTH POINTS: ${view.pc.maxHp}`,
-    );
+    expect(showing(view)).toContain(`SPELL POINTS: ${view.pc.maxSp}    HEALTH POINTS: ${view.pc.maxHp}`);
+    expect(showing(view)).toContain('CLASS: WORSHIPPER');
     expect(view.pc.maxHp).toBe(view.pc.con + view.pc.luck);
   });
 });

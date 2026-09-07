@@ -3,12 +3,13 @@
   import { keepRolledCharacter } from '../character/current';
   import { MW_CLASS_NAMES, MW_RACES, MINUTES_PER_YEAR } from '../game/mw-port/character';
   import type { MwCharacter } from '../game/mw-port/state';
-  import { CLASS_NAMES, RACES } from '../game/port/character';
-  import type { PlayerCharacter } from '../game/port/state';
+  import { CLASS_NAMES, RACES, typedName } from '../game/port/character';
+  import type { PlayerCharacter, ScreenLine } from '../game/port/state';
   import PixelText from '../ui/PixelText.svelte';
   import { MW_SLOTS, mwSlotFileName, newMwCharacterFile } from './mw-save-file';
   import { MwRollerSession } from './mw-session';
   import { newCharacterFile, slotFileName, SLOTS } from './save-file';
+  import { screenSpans } from './screen';
   import { RollerSession } from './session';
 
   const STATS = ['STRENGTH', 'INTELLIGENCE', 'WISDOM', 'CONSTITUTION', 'AGILITY', 'LUCK'];
@@ -41,13 +42,29 @@
   let view = $state.raw<ReturnType<RollerSession['view']> | ReturnType<MwRollerSession['view']> | null>(null);
   let typed = $state('');
   let note = $state('');
+  let screenWidth = $state(0);
 
   const chosen = $derived(GAMES[game]);
   const fileName = $derived(game === 'unforgiven' ? slotFileName(slot) : mwSlotFileName(slot));
-  const sheet = $derived(view === null ? [] : sheetRows(view.pc, view.question === null));
+  const sheet = $derived(view === null ? [] : sheetRows(view.pc));
+  const showing = $derived(
+    view === null ? [] : view.question === 'name' ? [...view.screen, nameBeingTyped()] : view.screen,
+  );
+  const spans = $derived(screenSpans(showing));
 
-  /** The character sheet beside the game's own screen: one label and one value a row. */
-  function sheetRows(pc: PlayerCharacter | MwCharacter, finished: boolean): [string, string][] {
+  /**
+   * The name as it is typed, which typed_name (exe 4000:55b2) draws under the prompt as the keys
+   * come in: eighteen character slots between x = 0 and x = 0x44c, in the big font in yellow. The
+   * port takes the finished name from the tab instead, so the tab draws this one. Both games keep
+   * the same characters of what is typed, so either port's filter shows what will be stored.
+   */
+  function nameBeingTyped(): ScreenLine {
+    const name = typedName(typed);
+    return { text: name, x: 0, y: 1000, spreadTo: Math.round((0x44c / 18) * name.length), font: 2, colour: 4 };
+  }
+
+  /** The finished character under the game's own screen, with the money the screen never shows. */
+  function sheetRows(pc: PlayerCharacter | MwCharacter): [string, string][] {
     const stats: [string, string][] = STATS.map((stat, index) => [
       stat,
       String([pc.str, pc.iq, pc.wis, pc.con, pc.dex, pc.luck][index]),
@@ -60,14 +77,10 @@
         ['HEIGHT', `${pc.height} INCHES`],
         ['WEIGHT', `${pc.weight} POUNDS`],
         ['AGE', `${Math.trunc(pc.ageMinutes / MINUTES_PER_YEAR)} YEARS`],
-        ...(finished
-          ? ([
-              ['CLASS', MW_CLASS_NAMES[pc.cls]],
-              ['HEALTH POINTS', String(pc.maxHp)],
-              ['SPELL POINTS', String(pc.maxSp)],
-              ['JEWELS', String(pc.money)],
-            ] as [string, string][])
-          : []),
+        ['CLASS', MW_CLASS_NAMES[pc.cls]],
+        ['HEALTH POINTS', String(pc.maxHp)],
+        ['SPELL POINTS', String(pc.maxSp)],
+        ['JEWELS', String(pc.money)],
       ];
     }
     return [
@@ -77,15 +90,11 @@
       ['HEIGHT', `${pc.height * 4} INCHES`],
       ['WEIGHT', `${pc.weight} POUNDS`],
       ['AGE', `${pc.age} YEARS`],
-      ...(finished
-        ? ([
-            ['CLASS', CLASS_NAMES[pc.cls]],
-            ['HEALTH POINTS', String(pc.maxHp)],
-            ['SPELL POINTS', String(pc.maxSp)],
-            ['RUBLES', String(pc.money)],
-            ['MAGIC CRYSTALS', String(pc.crystals)],
-          ] as [string, string][])
-        : []),
+      ['CLASS', CLASS_NAMES[pc.cls]],
+      ['HEALTH POINTS', String(pc.maxHp)],
+      ['SPELL POINTS', String(pc.maxSp)],
+      ['RUBLES', String(pc.money)],
+      ['MAGIC CRYSTALS', String(pc.crystals)],
     ];
   }
 
@@ -192,13 +201,23 @@
         <button type="button" class="ghost" onclick={leave}>Pick another number</button>
       </div>
 
-      <div class="screen">
-        {#each view.screen as line}
-          <div class="line">{line || ' '}</div>
+      <!-- The game's own screen: 1600 units across and 1200 down, each line where roll_char draws it. -->
+      <div class="screen" bind:clientWidth={screenWidth} style:--u="{screenWidth / 1600}px">
+        {#each spans as span}
+          <span
+            style:left="calc({span.x} * var(--u))"
+            style:top="calc({span.y} * var(--u))"
+            style:font-size="calc({span.size} * var(--u))"
+            style:letter-spacing="calc({span.spacing} * var(--u))"
+            style:color={span.colour}>{span.text}</span>
         {/each}
       </div>
 
-      {#if view.question === 'difficulty'}
+      {#if view.question === 'continue'}
+        <div class="choices">
+          <button type="button" onclick={() => answer(0)}>Hit any key</button>
+        </div>
+      {:else if view.question === 'difficulty'}
         <div class="choices">
           <button type="button" onclick={() => answer(0)}>1) NORMAL DIFFICULTY</button>
           <button type="button" onclick={() => answer(1)}>2) I CAN HANDLE ANYTHING DIFFICULTY</button>
@@ -216,7 +235,6 @@
           <button type="button" onclick={() => answer(2)}>D) DESIGN YOUR OWN CHARACTER</button>
         </div>
       {:else if view.question === 'designStat'}
-        <p class="hint">CHARACTERISTIC POINTS LEFT: {view.pointsLeft}</p>
         <div class="choices grid">
           {#each STATS as stat, index}
             <button type="button" onclick={() => answer(index)}>{stat}</button>
@@ -244,7 +262,7 @@
         </div>
       {/if}
 
-      {#if view.question === null || view.question === 'keepRerollDesign' || view.question === 'designStat'}
+      {#if view.question === null}
         <section class="sheet">
           <h3><PixelText text={view.pc.name || 'The Character'} /></h3>
           <dl>
@@ -253,9 +271,7 @@
             {/each}
           </dl>
         </section>
-      {/if}
 
-      {#if view.question === null}
         <div class="choices">
           <button type="button" class="go" onclick={openInEditor}>Open in the Save Editor</button>
           <button type="button" onclick={download}>Download file {fileName}</button>
@@ -382,21 +398,22 @@
     font-size: 12px;
     font-weight: 600;
   }
-  /* The game's own screens, in the game's own typeface. */
+  /* The game's own screen, in the game's own typeface, laid out in the game's own coordinates. */
   .screen {
+    position: relative;
+    /* The screen is 1600 by 1200; the extra height is room under the lowest line the game draws,
+       and leaves a unit as tall as it is wide either way. */
+    aspect-ratio: 1600 / 1224;
     background: #000;
     border: 1px solid var(--line);
     border-radius: 10px;
-    padding: 16px 20px;
-    font-family: var(--font-dos);
-    font-size: 20px;
-    line-height: 1.25;
-    color: var(--mw-green);
-    white-space: pre-wrap;
-    overflow-x: auto;
+    overflow: hidden;
   }
-  .line {
-    min-height: 1.25em;
+  .screen span {
+    position: absolute;
+    font-family: var(--font-dos);
+    line-height: 1;
+    white-space: pre;
   }
   .sheet {
     margin-top: 22px;

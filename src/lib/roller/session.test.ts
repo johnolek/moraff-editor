@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import type { RollerView } from './session';
 import { RecordedRandom, RollerSession } from './session';
+
+/** The text of everything showing, which is what the old string-only screen used to hand back. */
+function showing(view: RollerView): string[] {
+  return view.screen.map((line) => (line.value === undefined ? line.text : line.text + line.value));
+}
 
 describe('RecordedRandom', () => {
   it('cuts an integer in 0..n-1 out of each fraction', () => {
@@ -29,13 +35,15 @@ describe('RollerSession', () => {
     const session = new RollerSession(20);
     const view = session.view();
     expect(view.question).toBe('difficulty');
-    expect(view.screen[0]).toBe('PLEASE SELECT ONE:');
+    expect(showing(view)[0]).toBe('PLEASE SELECT ONE:');
     expect(view.screen).toHaveLength(13);
   });
 
   it('walks the questions in the order roll_char asks them', () => {
     const session = new RollerSession(20);
     expect(session.view().question).toBe('difficulty');
+    session.answer(0);
+    expect(session.view().question).toBe('continue');
     session.answer(0);
     expect(session.view().question).toBe('race');
     session.answer(5);
@@ -45,6 +53,8 @@ describe('RollerSession', () => {
     session.answer('BOB');
     expect(session.view().question).toBe('class');
     session.answer(6);
+    expect(session.view().question).toBe('continue');
+    session.answer(0);
     expect(session.view().question).toBe(null);
     expect(session.view().pc.name).toBe('BOB');
     expect(session.view().pc.cls).toBe(6);
@@ -53,6 +63,7 @@ describe('RollerSession', () => {
 
   it('keeps the character it showed when the next answer comes in', () => {
     const session = new RollerSession(20);
+    session.answer(0);
     session.answer(0);
     session.answer(2);
     const rolled = { ...session.view().pc };
@@ -74,26 +85,31 @@ describe('RollerSession', () => {
     expect(kept.sex).toBe(rolled.sex);
   });
 
-  it('shows only what has been printed since the last answer', () => {
+  it('shows one screen at a time, the way the game clears between them', () => {
     const session = new RollerSession(20);
     session.answer(0);
+    const advice = session.view();
+    expect(showing(advice)[0]).toBe('CREATING A CHARACTER:');
+    expect(showing(advice)).not.toContain('PLEASE SELECT ONE:');
+    session.answer(0);
     const race = session.view();
-    expect(race.screen[0]).toBe('CREATING A CHARACTER:');
-    expect(race.screen).toContain('RACE SELECTION:');
-    expect(race.screen).not.toContain('PLEASE SELECT ONE:');
+    expect(showing(race)).toContain('RACE SELECTION:');
+    expect(showing(race)).not.toContain('CREATING A CHARACTER:');
   });
 
-  it('counts the design points down from twenty-four', () => {
+  it('counts the design points down from twenty-four on the screen itself', () => {
     const session = new RollerSession(20);
+    session.answer(0);
     session.answer(0);
     session.answer(0);
     session.answer(2);
     expect(session.view().question).toBe('designStat');
-    expect(session.view().pointsLeft).toBe(24);
+    expect(showing(session.view())).toContain('24');
     session.answer(0);
-    expect(session.view().pointsLeft).toBe(23);
+    expect(showing(session.view())).toContain('23');
+    expect(showing(session.view())).toContain('CHARACTERISTIC POINTS LEFT: ');
     for (let i = 0; i < 22; i++) session.answer(0);
-    expect(session.view().pointsLeft).toBe(1);
+    expect(showing(session.view())).toContain('1');
     session.answer(0);
     expect(session.view().question).toBe('name');
   });
@@ -102,10 +118,11 @@ describe('RollerSession', () => {
     const session = new RollerSession(20);
     session.answer(0);
     session.answer(0);
+    session.answer(0);
     session.answer(2);
     session.answer(6);
     expect(session.view().question).toBe('keepRerollDesign');
-    expect(session.view().screen).toContain('RACE: HUMANOID');
+    expect(showing(session.view())).toContain('RACE: HUMANOID');
   });
 
   it('records the character against the number it was told to use', () => {
@@ -113,18 +130,31 @@ describe('RollerSession', () => {
     session.answer(0);
     session.answer(0);
     session.answer(0);
+    session.answer(0);
     session.answer('HERO');
+    session.answer(0);
     session.answer(0);
     expect(session.view().question).toBe(null);
     expect(session.slot).toBe(27);
   });
 
+  it('leaves the finished character and the class list on the screen at the end', () => {
+    const session = new RollerSession(20);
+    for (const answer of [0, 0, 0, 0, 'HERO', 3, 0]) session.answer(answer);
+    const view = session.view();
+    expect(view.question).toBe(null);
+    expect(showing(view)).toContain('CLASS: WIZARD');
+    expect(showing(view)).toContain(`SPELL POINTS: ${view.pc.maxSp}    HEALTH POINTS: ${view.pc.maxHp}`);
+    expect(showing(view)).toContain("4) WIZARD: DOESN'T FIGHT WELL BUT GETS MORE SPELLS THAN ANY OTHER CLASS.");
+  });
+
   it('goes back to the first screen when it is restarted', () => {
     const session = new RollerSession(20);
+    session.answer(0);
     session.answer(0);
     session.answer(3);
     session.restart();
     expect(session.view().question).toBe('difficulty');
-    expect(session.view().screen[0]).toBe('PLEASE SELECT ONE:');
+    expect(showing(session.view())[0]).toBe('PLEASE SELECT ONE:');
   });
 });
