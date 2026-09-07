@@ -21,12 +21,12 @@ describe('the I key', () => {
     expect(session.view().screen).toEqual([]);
   });
 
-  it('says the scroll, wand and paper are not built yet', async () => {
+  it('casts out of the scrolls when the first line is picked', async () => {
     const session = inTheTown(lowest);
     await settle();
     await press(session, KEY.useItem);
     await press(session, 0x31);
-    expect(session.box).toContain('NOT BUILT YET: CAST THE SPELL ON A SCROLL, WAND OR PAPER');
+    expect(session.box.join('\n')).not.toContain('NOT BUILT YET');
   });
 });
 
