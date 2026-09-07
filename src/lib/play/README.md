@@ -15,6 +15,8 @@ something the original does, a comment says so.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `trapdoor.ts`, `chute.ts`,
   `dig.ts`, `modules.ts`, `quit.ts`, `help.ts`, `town.ts`, `fight.ts`, `kill.ts`, `items.ts` — so
   that two people can add two keys without touching the same file.
+* **`cast.ts`, `spellScreens.ts`, `pockets.ts`** — the spell and item screens: `cast_a_spell` for
+  C and I, the two lists of spells in effect for 1 and 2, the V and E screens, and the P key.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
   memory that decides whether its monsters are rolled again.
 * **`screens.ts`** — where the message box goes, and `notBuiltYet`. **`boxes.ts`** is the rest of
@@ -157,10 +159,10 @@ reading it is what sends the panel back to the record.
 Every one of these keys says so in the message box today. The game functions behind them are
 mostly ported already; what is missing is the key that reaches them.
 
-* **The spell screens** — C, P, W, A, 1 and 2, and the first four lines of the I key's own menu.
-  `cast_a_spell` (exe 2000:e017) is the one big function still to port; `magic.ts` already has
-  every spell it dispatches to.
-* **The hidden numbers and the monster's portrait** — V, E, M, S and the panel beside the map.
+* **Wearing and wielding** — W and A, the two menus movecontrol builds itself for the weapon in
+  hand and the armor worn.
+* **The potions** — the fourth line of the I key's menu (exe 3000:7052).
+* **M and S** — the keys the loop dispatches on that nothing here answers yet.
 
 ## Where this leaves the original
 
