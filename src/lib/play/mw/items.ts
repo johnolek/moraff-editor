@@ -11,7 +11,7 @@ import {
 import type { MwGameSession } from './engine';
 
 /**
- * FUN_3000_e221 (WORLD.EXE 3000:e221): the I key's fifth answer, the six magic items a kill
+ * use_magic_item (WORLD.EXE 3000:e221): the I key's fifth answer, the six magic items a kill
  * turns up — the floor slosher, the potion of healing, the joke behind WIN GAME, the stone of
  * seeing, the stone of teleportation and the holy hand grenade.
  *

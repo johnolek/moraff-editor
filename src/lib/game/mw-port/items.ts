@@ -3,9 +3,9 @@ import { HINT, loadHBin } from './hints';
 import type { MwGame } from './state';
 
 /**
- * The three things a character does with what they are carrying: dropping it (FUN_2000_7756,
- * WORLD.EXE 2000:7756), swallowing a vitamin pill (FUN_3000_9ac0, exe 3000:9ac0) and using one
- * of the six magic items a kill turns up (FUN_3000_e221, exe 3000:e221).
+ * The three things a character does with what they are carrying: dropping it (drop_item,
+ * WORLD.EXE 2000:7756), swallowing a vitamin pill (take_pill, exe 3000:9ac0) and using one
+ * of the six magic items a kill turns up (use_magic_item, exe 3000:e221).
  *
  * Every one of them stops and reads the keyboard between one box and the next, so what is here
  * is the boxes and the effects; the choices are parameters, the way `src/lib/play/mw/` supplies
@@ -17,7 +17,7 @@ import type { MwGame } from './state';
  */
 
 /**
- * FUN_2000_7756's opening box: armor, a weapon or money.
+ * drop_item's opening box: armor, a weapon or money.
  *
  * The choice is read off lines 3 to 5 of it, so the digits it takes are '1' to '3'.
  */
@@ -47,7 +47,7 @@ function sayItWontComeOff(game: MwGame): void {
 }
 
 /**
- * FUN_2000_7756's armor branch: one suit off the pile in the slot picked.
+ * drop_item's armor branch: one suit off the pile in the slot picked.
  *
  * The count and the suit worn are two separate tests, so dropping a slot that holds nothing
  * while wearing it still strips the character back to their skin.
@@ -67,7 +67,7 @@ export function dropArmor(game: MwGame, slot: number): void {
   if (pc.armor === at && pc.armorOwned[at] === 0) pc.armor = 0;
 }
 
-/** FUN_2000_7756's weapon branch, which is the same over the eight weapon slots. */
+/** drop_item's weapon branch, which is the same over the eight weapon slots. */
 export function dropWeapon(game: MwGame, slot: number): void {
   const pc = game.pc;
   if (slot === 1) {
@@ -79,13 +79,13 @@ export function dropWeapon(game: MwGame, slot: number): void {
   if (pc.weapon === at && pc.weaponsOwned[at] === 0) pc.weapon = 0;
 }
 
-/** H.BIN 0x21, the five kinds of coin, which FUN_2000_7756 puts up before it asks. */
+/** H.BIN 0x21, the five kinds of coin, which drop_item puts up before it asks. */
 export function drawDropCoinsMenu(game: MwGame): void {
   loadHBin(game, HINT.dropCoins);
 }
 
 /**
- * FUN_2000_7756's money branch: the whole pile of one kind of coin goes on the floor.
+ * drop_item's money branch: the whole pile of one kind of coin goes on the floor.
  *
  * The menu offers five of the six stone piles, so jewel stones — the ones the store and the
  * temple are paid in — cannot be dropped at all.
@@ -98,7 +98,7 @@ export function dropCoins(game: MwGame, choice: number): void {
 }
 
 /**
- * FUN_3000_9ac0's box: the six vitamin pills, read off lines 1 to 6.
+ * take_pill's box: the six vitamin pills, read off lines 1 to 6.
  */
 export function drawPillMenu(game: MwGame): void {
   // DS:5233 524d 525b 526a 5279 5285 5292 52a0
@@ -114,7 +114,7 @@ export function drawPillMenu(game: MwGame): void {
   );
 }
 
-/** FUN_3000_9a93 (WORLD.EXE 3000:9a93): what a pill the character has none of says. */
+/** say_find_one_first (WORLD.EXE 3000:9a93): what a pill the character has none of says. */
 function sayFindOneFirst(game: MwGame): void {
   // DS:51e6 5203 5221, DS:45cd, DS:4a75
   game.say(
@@ -130,7 +130,7 @@ function sayFindOneFirst(game: MwGame): void {
 /** The six characteristics a pill moves, by the field of the record each is kept in. */
 type MwPillStat = 'str' | 'iq' | 'wis' | 'con' | 'dex' | 'luck';
 
-/** One case of FUN_3000_9ac0's switch. */
+/** One case of take_pill's switch. */
 interface MwPill {
   /** Which of the six bytes at record offset 0x15d this pill is counted in. */
   held: number;
@@ -144,7 +144,7 @@ const PILL_RAISES = 4;
 const PILL_DROPS = 2;
 
 /**
- * The six cases of FUN_3000_9ac0's switch, in the order the menu lists them.
+ * The six cases of take_pill's switch, in the order the menu lists them.
  *
  * The menu reads green, orange, yellow, red, blue, white; the six bytes the pills are counted in
  * run orange, green, blue, red, white, yellow, so no line of the menu is the byte beside it.
@@ -233,7 +233,7 @@ const PILLS: MwPill[] = [
 ];
 
 /**
- * FUN_3000_9ac0 (WORLD.EXE 3000:9ac0, mw.c "FUN_3000_9ac0"): swallow one of the six pills.
+ * take_pill (WORLD.EXE 3000:9ac0, mw.c "take_pill"): swallow one of the six pills.
  *
  * Every pill is four points onto one characteristic and two off another, and the three pairs are
  * swapped between the two halves of the menu: green and white trade intelligence against
@@ -257,13 +257,13 @@ export function takeAPill(game: MwGame, choice: number): void {
   game.pressAnyKey();
 }
 
-/** H.BIN 0x13, the six magic items FUN_3000_e221 opens with. */
+/** H.BIN 0x13, the six magic items use_magic_item opens with. */
 export function drawMagicItemMenu(game: MwGame): void {
   loadHBin(game, HINT.magicItems);
 }
 
 /**
- * What FUN_3000_e221 says for an item the character does not have. Five of the six lines lead
+ * What use_magic_item says for an item the character does not have. Five of the six lines lead
  * here; the third, which is a joke, is free.
  */
 export function sayNoSuchItem(game: MwGame): void {
@@ -288,7 +288,7 @@ const DEEPEST_SLOSH = 0x4c;
 const SLOSH_MARGIN = { inset: 5, from: 2 };
 
 /**
- * FUN_3000_e221's first line: the floor slosher, which drops the character through the floor
+ * use_magic_item's first line: the floor slosher, which drops the character through the floor
  * onto the one below it.
  *
  * The square is the one they were standing on, rolled again until it is not rock. Nothing takes
@@ -323,7 +323,7 @@ export function useFloorSlosher(game: MwGame): boolean {
 }
 
 /**
- * FUN_3000_e221's second line: a potion of healing, which fills the hit points back up to the
+ * use_magic_item's second line: a potion of healing, which fills the hit points back up to the
  * maximum however far down they are.
  *
  * The original draws its one line at the top left of the screen in colour 15, where the fight's
@@ -348,7 +348,7 @@ export function drawWishMenu(game: MwGame): void {
 }
 
 /**
- * FUN_3000_e221's third line: the joke. Any of the four wishes is answered with the address to
+ * use_magic_item's third line: the joke. Any of the four wishes is answered with the address to
  * send a million zillion dollars to and what a stamp costs, and the fifth goes back to the game.
  *
  * @param choice 1 to 5, the digit off the menu.
@@ -362,7 +362,7 @@ export function askForAWish(game: MwGame, choice: number): void {
 }
 
 /**
- * FUN_3000_e221's fourth line: a stone of seeing, which marks every square of the floor that is
+ * use_magic_item's fourth line: a stone of seeing, which marks every square of the floor that is
  * not rock as one the character has walked over.
  *
  * The port has no explored map — the whole floor is drawn from the start — so the loop over
@@ -385,7 +385,7 @@ export function useSeeingStone(game: MwGame): void {
 const TELEPORT_MARGIN = 0x14;
 
 /**
- * FUN_3000_e221's fifth line: a stone of teleportation, which puts the character back in the
+ * use_magic_item's fifth line: a stone of teleportation, which puts the character back in the
  * town.
  *
  * The square they land on is the last open one the search finds rather than the first: the two
@@ -430,7 +430,7 @@ const MONSTER_KINDS = data.monsters.map((monster) => monster.kind);
 const GRENADE_HP = -100;
 
 /**
- * FUN_3000_e221's sixth line: the holy hand grenade, which kills whatever the character is
+ * use_magic_item's sixth line: the holy hand grenade, which kills whatever the character is
  * fighting outright.
  *
  * It writes −100 over the monster's hit points rather than killing it here, so the kill itself

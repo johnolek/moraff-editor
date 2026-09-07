@@ -10,7 +10,7 @@ import type { MwTurn } from './engine';
 import { drawArmorSlotMenu, drawWeaponSlotMenu } from './menus';
 
 /**
- * FUN_2000_7756 (WORLD.EXE 2000:7756): the L key, which puts a suit of armor, a weapon or a pile
+ * drop_item (WORLD.EXE 2000:7756): the L key, which puts a suit of armor, a weapon or a pile
  * of coins on the floor to save the weight of carrying it.
  *
  * Nothing lands anywhere: the count comes down and the thing is gone. The two slot menus are the

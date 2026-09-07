@@ -2,7 +2,7 @@ import { drawPillMenu, takeAPill } from '../../game/mw-port/items';
 import type { MwGameSession } from './engine';
 
 /**
- * FUN_3000_9ac0 (WORLD.EXE 3000:9ac0): the I key's fourth answer, the six vitamin pills a level
+ * take_pill (WORLD.EXE 3000:9ac0): the I key's fourth answer, the six vitamin pills a level
  * drainer leaves behind.
  *
  * The menu is one box and one key, and the pill is swallowed where the player stands: nothing

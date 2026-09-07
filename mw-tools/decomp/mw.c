@@ -1394,7 +1394,7 @@ void __cdecl16far FUN_1000_129c(undefined2 param_1)
 }
 
 
-// ==== N_LXMUL @ 1000:12c8 (size 23) callers: FUN_2000_04ee,FUN_2000_0837,FUN_2000_0ed9,FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_248e,random_n,FUN_2000_3085,financial_statement,inn,bank,set_map_view,main,pick_monster,generate_section,random_walk,roll_dice,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,FUN_2000_7756,monsters_move,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a6fa,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,draw_picture,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_2796,FUN_3000_31f3,roll_char,FUN_3000_5d06,FUN_3000_7e52,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,seeded_pick,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,FUN_3000_e221,FUN_3000_e5f5,FUN_3000_e8ee,FUN_4000_0034,FUN_4000_0699,print_text,print_text_clipped,FUN_4000_2dc1,FUN_4000_2dea,mouse_pick,FUN_4000_3a72,read_string,FUN_4000_4016,draw_text_box  // 32-bit multiply helper: DX:AX * CX:BX
+// ==== N_LXMUL @ 1000:12c8 (size 23) callers: FUN_2000_04ee,FUN_2000_0837,FUN_2000_0ed9,FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_248e,random_n,FUN_2000_3085,financial_statement,inn,bank,set_map_view,main,pick_monster,generate_section,random_walk,roll_dice,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,drop_item,monsters_move,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a6fa,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,draw_picture,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_2796,FUN_3000_31f3,roll_char,FUN_3000_5d06,FUN_3000_7e52,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,seeded_pick,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,use_magic_item,FUN_3000_e5f5,FUN_3000_e8ee,FUN_4000_0034,FUN_4000_0699,print_text,print_text_clipped,FUN_4000_2dc1,FUN_4000_2dea,mouse_pick,FUN_4000_3a72,read_string,FUN_4000_4016,draw_text_box  // 32-bit multiply helper: DX:AX * CX:BX
 
 long __cdecl16far N_LXMUL(long a,long b)
 
@@ -1489,7 +1489,7 @@ void FUN_1000_1325(void)
 }
 
 
-// ==== F_LDIV @ 1000:1328 (size 4) callers: FUN_2000_04ee,FUN_2000_0837,FUN_2000_0ed9,FUN_2000_1485,FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_248e,random_n,recompute_weight,FUN_2000_3085,financial_statement,inn,bank,set_map_view,main,pick_monster,generate_section,random_walk,random_run,roll_dice,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,FUN_2000_7756,FUN_2000_7fb1,monsters_move,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a64b,FUN_2000_a6fa,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,draw_picture,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_31f3,roll_char,FUN_3000_5d06,FUN_3000_7e52,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,seeded_pick,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,FUN_3000_e221,FUN_3000_e5f5,FUN_3000_e8ee,FUN_4000_0699,print_text,print_text_clipped,load_palette,FUN_4000_2dc1,FUN_4000_2dea,mouse_pick,FUN_4000_3a72,read_string,FUN_4000_4016,draw_text_box  // signed 32-bit divide (far entry, retf 8)
+// ==== F_LDIV @ 1000:1328 (size 4) callers: FUN_2000_04ee,FUN_2000_0837,FUN_2000_0ed9,FUN_2000_1485,FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_248e,random_n,recompute_weight,FUN_2000_3085,financial_statement,inn,bank,set_map_view,main,pick_monster,generate_section,random_walk,random_run,roll_dice,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,drop_item,FUN_2000_7fb1,monsters_move,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a64b,FUN_2000_a6fa,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,draw_picture,FUN_3000_0b3b,FUN_3000_12ca,FUN_3000_1a08,FUN_3000_31f3,roll_char,FUN_3000_5d06,FUN_3000_7e52,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,seeded_pick,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,use_magic_item,FUN_3000_e5f5,FUN_3000_e8ee,FUN_4000_0699,print_text,print_text_clipped,load_palette,FUN_4000_2dc1,FUN_4000_2dea,mouse_pick,FUN_4000_3a72,read_string,FUN_4000_4016,draw_text_box  // signed 32-bit divide (far entry, retf 8)
 
 long __stdcall16far F_LDIV(long a,long b)
 
@@ -5433,7 +5433,7 @@ char * __cdecl16far FUN_1000_3c15(char *param_1)
 }
 
 
-// ==== itoa @ 1000:3c74 (size 40) callers: load_world_pic,select_player,load_player,save_player,experience_for_level,strike,monster_turn,FUN_2000_7756,FUN_2000_8728,FUN_2000_892d,show_help,FUN_2000_a791,movecontrol,enchant_weapon,enchant_armour,cast_spell,explosion,spell_effect,show_roll,roll_char,FUN_3000_9cfb,FUN_3000_c8e6,FUN_3000_cd34,monster_killed  // libc
+// ==== itoa @ 1000:3c74 (size 40) callers: load_world_pic,select_player,load_player,save_player,experience_for_level,strike,monster_turn,drop_item,FUN_2000_8728,FUN_2000_892d,show_help,FUN_2000_a791,movecontrol,enchant_weapon,enchant_armour,cast_spell,explosion,spell_effect,show_roll,roll_char,FUN_3000_9cfb,FUN_3000_c8e6,FUN_3000_cd34,monster_killed  // libc
 
 char * __cdecl16far itoa(short v,char *s,short radix)
 
@@ -6011,7 +6011,7 @@ void __cdecl16far FUN_1000_4416(undefined1 *param_1,undefined2 param_2,undefined
 }
 
 
-// ==== strcat @ 1000:4432 (size 57) callers: FUN_1000_15dc,load_world_pic,bank,select_player,FUN_2000_3fcf,check_v_file,experience_for_level,strike,monster_turn,FUN_2000_7756,show_help,FUN_2000_9ed9,FUN_2000_a791,movecontrol,enchant_weapon,enchant_armour,cast_spell,spell_effect,FUN_2000_e94e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_cd34,monster_killed,FUN_4000_426a,FUN_4000_428f,format_two_numbers  // libc
+// ==== strcat @ 1000:4432 (size 57) callers: FUN_1000_15dc,load_world_pic,bank,select_player,FUN_2000_3fcf,check_v_file,experience_for_level,strike,monster_turn,drop_item,show_help,FUN_2000_9ed9,FUN_2000_a791,movecontrol,enchant_weapon,enchant_armour,cast_spell,spell_effect,FUN_2000_e94e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,FUN_3000_cd34,monster_killed,FUN_4000_426a,FUN_4000_428f,format_two_numbers  // libc
 
 char * __cdecl16far strcat(char *dst,char *src)
 
@@ -8053,7 +8053,7 @@ void __cdecl16far FUN_2000_1c23(void)
 }
 
 
-// ==== FUN_2000_1c86 @ 2000:1c86 (size 133) callers: FUN_2000_7756,movecontrol,enchant_weapon,enchant_armour,monster_killed
+// ==== FUN_2000_1c86 @ 2000:1c86 (size 133) callers: drop_item,movecontrol,enchant_weapon,enchant_armour,monster_killed
 
 void __cdecl16far FUN_2000_1c86(void)
 
@@ -8070,7 +8070,7 @@ void __cdecl16far FUN_2000_1c86(void)
 }
 
 
-// ==== FUN_2000_1d0b @ 2000:1d0b (size 684) callers: FUN_2000_20da,FUN_2000_7756,movecontrol,enchant_weapon,enchant_armour,cast_spell,spell_effect,spell_screen,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a
+// ==== FUN_2000_1d0b @ 2000:1d0b (size 684) callers: FUN_2000_20da,drop_item,movecontrol,enchant_weapon,enchant_armour,cast_spell,spell_effect,spell_screen,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a
 
 int __cdecl16far FUN_2000_1d0b(int param_1,int param_2,int param_3)
 
@@ -8191,7 +8191,7 @@ LAB_2000_1f21:
 }
 
 
-// ==== FUN_2000_1fbd @ 2000:1fbd (size 281) callers: store,FUN_2000_3085,inn,bank,FUN_2000_7756,FUN_2000_7b4f,dig_hole,movecontrol,cast_spell,teleport_direction,FUN_3000_9ac0,FUN_3000_a047,FUN_3000_ba27,FUN_3000_bbe1,monster_killed,FUN_3000_e221
+// ==== FUN_2000_1fbd @ 2000:1fbd (size 281) callers: store,FUN_2000_3085,inn,bank,drop_item,FUN_2000_7b4f,dig_hole,movecontrol,cast_spell,teleport_direction,take_pill,FUN_3000_a047,FUN_3000_ba27,FUN_3000_bbe1,monster_killed,use_magic_item
 
 short __cdecl16far FUN_2000_1fbd(int param_1,int param_2)
 
@@ -8283,7 +8283,7 @@ FUN_2000_20da(char *param_1,char *param_2,char *param_3,char *param_4,char *para
 }
 
 
-// ==== FUN_2000_216b @ 2000:216b (size 364) callers: FUN_2000_22d7,store,FUN_2000_3085,inn,bank,monster_turn,FUN_2000_7756,dig_hole,movecontrol,teleport_direction,FUN_3000_8235,FUN_3000_9ac0,FUN_3000_a047
+// ==== FUN_2000_216b @ 2000:216b (size 364) callers: FUN_2000_22d7,store,FUN_2000_3085,inn,bank,monster_turn,drop_item,dig_hole,movecontrol,teleport_direction,FUN_3000_8235,take_pill,FUN_3000_a047
 
 void __cdecl16far
 FUN_2000_216b(char *param_1,char *param_2,char *param_3,char *param_4,char *param_5,char *param_6,
@@ -8348,7 +8348,7 @@ void __cdecl16far FUN_2000_22d7(undefined2 *param_1)
 }
 
 
-// ==== FUN_2000_22ff @ 2000:22ff (size 265) callers: FUN_2000_3085,inn,game_disk_prompt,dig_hole,movecontrol,say_no_monster,say_redundant,say_already_cast,cast_spell,say_feel_good,say_feel_very_good,explosion,sleep_monster,spell_proof,autokill,say_sixty_more_moves,raise_power_weapon,raise_protection,resist_poison,resist_disease,anti_cold,anti_fire,resist_drain,spell_effect,spell_screen,FUN_3000_9a93,FUN_3000_9ac0,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,FUN_3000_e221
+// ==== FUN_2000_22ff @ 2000:22ff (size 265) callers: FUN_2000_3085,inn,game_disk_prompt,dig_hole,movecontrol,say_no_monster,say_redundant,say_already_cast,cast_spell,say_feel_good,say_feel_very_good,explosion,sleep_monster,spell_proof,autokill,say_sixty_more_moves,raise_power_weapon,raise_protection,resist_poison,resist_disease,anti_cold,anti_fire,resist_drain,spell_effect,spell_screen,say_find_one_first,take_pill,FUN_3000_d0b9,FUN_3000_d37f,FUN_3000_d43b,monster_killed,use_magic_item
 
 undefined2 __cdecl16far
 FUN_2000_22ff(char *param_1,char *param_2,char *param_3,char *param_4,char *param_5,char *param_6,
@@ -8391,7 +8391,7 @@ FUN_2000_22ff(char *param_1,char *param_2,char *param_3,char *param_4,char *para
 }
 
 
-// ==== load_h_bin @ 2000:240c (size 130) callers: FUN_2000_248e,game_disk_prompt,FUN_2000_70da,FUN_2000_726f,FUN_2000_7756,FUN_2000_7b4f,monsters_move,FUN_3000_e221  // reads H.BIN
+// ==== load_h_bin @ 2000:240c (size 130) callers: FUN_2000_248e,game_disk_prompt,FUN_2000_70da,FUN_2000_726f,drop_item,FUN_2000_7b4f,monsters_move,use_magic_item  // reads H.BIN
 
 void __cdecl16far load_h_bin(int param_1)
 
@@ -8803,7 +8803,7 @@ void __cdecl16far FUN_2000_2b73(void)
 }
 
 
-// ==== random_n @ 2000:2d36 (size 84) callers: generate_section,monster_turn,FUN_2000_9ed9,movecontrol,explosion,sleep_monster,teleport_player,teleport_monster,autokill,spell_effect,FUN_3000_9383,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,monster_killed,FUN_3000_e221  // reseeds from the clock, then returns rand() * n / 32768
+// ==== random_n @ 2000:2d36 (size 84) callers: generate_section,monster_turn,FUN_2000_9ed9,movecontrol,explosion,sleep_monster,teleport_player,teleport_monster,autokill,spell_effect,FUN_3000_9383,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,monster_killed,use_magic_item  // reseeds from the clock, then returns rand() * n / 32768
 
 undefined2 __cdecl16far random_n(int param_1)
 
@@ -8825,7 +8825,7 @@ undefined2 __cdecl16far random_n(int param_1)
 }
 
 
-// ==== recompute_weight @ 2000:2d8e (size 222) callers: FUN_2000_2e6c,bank,FUN_2000_7756,movecontrol,spell_effect,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5  // the weight carried: coins, weapons and armour, plus the body unless feathered
+// ==== recompute_weight @ 2000:2d8e (size 222) callers: FUN_2000_2e6c,bank,drop_item,movecontrol,spell_effect,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5  // the weight carried: coins, weapons and armour, plus the body unless feathered
 
 void __cdecl16far recompute_weight(void)
 
@@ -10385,9 +10385,9 @@ undefined2 __cdecl16far is_explored(int param_1,int param_2)
 }
 
 
-// ==== FUN_2000_5263 @ 2000:5263 (size 53) callers: movecontrol,FUN_3000_2796,FUN_3000_e221
+// ==== mark_explored @ 2000:5263 (size 53) callers: movecontrol,FUN_3000_2796,use_magic_item  // sets a square's bit in the current floor's explored-squares bitmap
 
-void __cdecl16far FUN_2000_5263(int param_1,int param_2)
+void __cdecl16far mark_explored(int param_1,int param_2)
 
 {
   byte *pbVar1;
@@ -10529,7 +10529,7 @@ void __cdecl16far load_dun(char param_1)
 }
 
 
-// ==== enter_level @ 2000:55fc (size 268) callers: main,FUN_2000_726f,chute,dig_hole,movecontrol,spell_effect,FUN_3000_8235,FUN_3000_e221  // switches floor: monsters, .DUN block and explored map
+// ==== enter_level @ 2000:55fc (size 268) callers: main,FUN_2000_726f,chute,dig_hole,movecontrol,spell_effect,FUN_3000_8235,use_magic_item  // switches floor: monsters, .DUN block and explored map
 
 void __cdecl16far enter_level(int param_1)
 
@@ -11843,9 +11843,9 @@ void __cdecl16far FUN_2000_7421(int param_1)
 }
 
 
-// ==== FUN_2000_7756 @ 2000:7756 (size 960) callers: movecontrol
+// ==== drop_item @ 2000:7756 (size 960) callers: movecontrol  // the L key: drop a suit of armor, a weapon or a pile of coins
 
-void __cdecl16far FUN_2000_7756(void)
+void __cdecl16far drop_item(void)
 
 {
   int iVar1;
@@ -14004,7 +14004,7 @@ undefined2 __cdecl16far movecontrol(void)
     FUN_2000_f853();
     iVar2 = FUN_2000_5196(DAT_6000_c89e,DAT_6000_c8a0);
     if (iVar2 == 0) {
-      FUN_2000_5263(DAT_6000_c89e,DAT_6000_c8a0);
+      mark_explored(DAT_6000_c89e,DAT_6000_c8a0);
       draw_map_square(DAT_6000_c89e,DAT_6000_c8a0,DAT_6000_c8a2,DAT_6000_c8a4,
                     CONCAT11(extraout_AH,DAT_6000_c8a6),CONCAT11(extraout_AH,DAT_6000_c8a7));
     }
@@ -14545,10 +14545,10 @@ LAB_2000_b39b:
           }
         }
         if (local_e == 4) {
-          FUN_3000_9ac0();
+          take_pill();
         }
         if (local_e == 5) {
-          FUN_3000_e221();
+          use_magic_item();
         }
         break;
       case 0x6b:
@@ -14573,7 +14573,7 @@ LAB_2000_b39b:
         }
         break;
       case 0x6c:
-        FUN_2000_7756();
+        drop_item();
         break;
       case 0x6d:
         financial_statement();
@@ -19026,7 +19026,7 @@ FUN_3000_2796(float param_1,float param_2,float param_3,float param_4,undefined2
   if (iVar1 == 0) {
     lVar6 = ftol((double)CONCAT26(uVar11,CONCAT24(uVar10,CONCAT22(unaff_SI,unaff_DI))));
     lVar6 = ftol((double)CONCAT26(uVar10,CONCAT24(unaff_SI,CONCAT22(unaff_DI,(int)lVar6))));
-    FUN_2000_5263((int)lVar6);
+    mark_explored((int)lVar6);
     if (DAT_6000_11a1 == 0) {
       lVar6 = ftol((double)CONCAT26(uVar11,CONCAT24(uVar10,CONCAT22(unaff_SI,unaff_DI))));
       uVar2 = (undefined2)lVar6;
@@ -22233,9 +22233,9 @@ void __cdecl16far FUN_3000_9383(void)
 }
 
 
-// ==== FUN_3000_9a93 @ 3000:9a93 (size 45) callers: FUN_3000_9ac0
+// ==== say_find_one_first @ 3000:9a93 (size 45) callers: take_pill  // prints "DON'T YOU THINK YOU'D BETTER FIND ONE FIRST?"
 
-void __cdecl16far FUN_3000_9a93(void)
+void __cdecl16far say_find_one_first(void)
 
 {
   FUN_2000_22ff((char *)s_DON_T_YOU_THINK_YOU_D_BETTER_6000_51e6,
@@ -22247,9 +22247,9 @@ void __cdecl16far FUN_3000_9a93(void)
 }
 
 
-// ==== FUN_3000_9ac0 @ 3000:9ac0 (size 519) callers: movecontrol
+// ==== take_pill @ 3000:9ac0 (size 519) callers: movecontrol  // one of the six vitamin pills: four onto one characteristic, two off another
 
-void __cdecl16far FUN_3000_9ac0(void)
+void __cdecl16far take_pill(void)
 
 {
   int iVar1;
@@ -22263,7 +22263,7 @@ void __cdecl16far FUN_3000_9ac0(void)
     switch(iVar1) {
     case 0x31:
       if (DAT_6000_c250 < '\x01') {
-        FUN_3000_9a93();
+        say_find_one_first();
       }
       else {
         DAT_6000_c250 = DAT_6000_c250 + -1;
@@ -22278,7 +22278,7 @@ void __cdecl16far FUN_3000_9ac0(void)
       break;
     case 0x32:
       if (DAT_6000_c24f < '\x01') {
-        FUN_3000_9a93();
+        say_find_one_first();
       }
       else {
         DAT_6000_c24f = DAT_6000_c24f + -1;
@@ -22293,7 +22293,7 @@ void __cdecl16far FUN_3000_9ac0(void)
       break;
     case 0x33:
       if (DAT_6000_c254 < '\x01') {
-        FUN_3000_9a93();
+        say_find_one_first();
       }
       else {
         DAT_6000_c254 = DAT_6000_c254 + -1;
@@ -22308,7 +22308,7 @@ void __cdecl16far FUN_3000_9ac0(void)
       break;
     case 0x34:
       if (DAT_6000_c252 < '\x01') {
-        FUN_3000_9a93();
+        say_find_one_first();
       }
       else {
         DAT_6000_c252 = DAT_6000_c252 + -1;
@@ -22323,7 +22323,7 @@ void __cdecl16far FUN_3000_9ac0(void)
       break;
     case 0x35:
       if (DAT_6000_c251 < '\x01') {
-        FUN_3000_9a93();
+        say_find_one_first();
       }
       else {
         DAT_6000_c251 = DAT_6000_c251 + -1;
@@ -22338,7 +22338,7 @@ void __cdecl16far FUN_3000_9ac0(void)
       break;
     case 0x36:
       if (DAT_6000_c253 < '\x01') {
-        FUN_3000_9a93();
+        say_find_one_first();
       }
       else {
         DAT_6000_c253 = DAT_6000_c253 + -1;
@@ -22716,7 +22716,7 @@ void __cdecl16far draw_wall_side(char param_1,int param_2,int param_3,char param
 }
 
 
-// ==== is_solid @ 3000:a854 (size 125) callers: generate_section,chute_target,dig_hole,FUN_2000_a6fa,teleport_player,teleport_monster,teleport_direction,spell_effect,FUN_3000_8235,ladder_delta,FUN_3000_e221  // true when all four sides of a square are walls
+// ==== is_solid @ 3000:a854 (size 125) callers: generate_section,chute_target,dig_hole,FUN_2000_a6fa,teleport_player,teleport_monster,teleport_direction,spell_effect,FUN_3000_8235,ladder_delta,use_magic_item  // true when all four sides of a square are walls
 
 undefined2 __cdecl16far is_solid(int param_1,int param_2,undefined2 param_3,undefined2 param_4)
 
@@ -24900,11 +24900,11 @@ void __cdecl16far monster_killed(void)
 }
 
 
-// ==== FUN_3000_e221 @ 3000:e221 (size 980) callers: movecontrol
+// ==== use_magic_item @ 3000:e221 (size 980) callers: movecontrol  // the floor slosher, the potion, the two stones and the hand grenade
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl16far FUN_3000_e221(void)
+void __cdecl16far use_magic_item(void)
 
 {
   bool bVar1;
@@ -24991,7 +24991,7 @@ void __cdecl16far FUN_3000_e221(void)
         for (iVar5 = 0; iVar5 < DAT_6000_448d; iVar5 = iVar5 + 1) {
           cVar2 = is_solid(iVar4,iVar5,DAT_6000_c8a2,DAT_6000_c8a4);
           if (cVar2 == '\0') {
-            FUN_2000_5263(iVar4,iVar5);
+            mark_explored(iVar4,iVar5);
           }
         }
       }
@@ -25577,7 +25577,7 @@ void __cdecl16far load_font(int param_1)
 }
 
 
-// ==== print_text @ 4000:0b14 (size 507) callers: FUN_2000_03e7,FUN_2000_1d0b,FUN_2000_216b,FUN_2000_3085,financial_statement,bank,select_player,strike,monster_turn,FUN_2000_7421,FUN_2000_7756,FUN_2000_7b86,FUN_2000_8728,FUN_2000_892d,show_help,view_stats,FUN_2000_97b8,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a8d7,movecontrol,spell_screen,FUN_2000_f853,show_roll,roll_char,FUN_3000_5dc1,FUN_3000_6331,FUN_3000_7e52,FUN_3000_8b27,FUN_3000_9383,FUN_3000_9cd3,FUN_3000_9cfb,FUN_3000_b1d6,FUN_3000_b99e,monster_killed,FUN_3000_e221,FUN_4000_3563,read_string,FUN_4000_4547  // one line of text at a scaled x,y in a colour
+// ==== print_text @ 4000:0b14 (size 507) callers: FUN_2000_03e7,FUN_2000_1d0b,FUN_2000_216b,FUN_2000_3085,financial_statement,bank,select_player,strike,monster_turn,FUN_2000_7421,drop_item,FUN_2000_7b86,FUN_2000_8728,FUN_2000_892d,show_help,view_stats,FUN_2000_97b8,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a8d7,movecontrol,spell_screen,FUN_2000_f853,show_roll,roll_char,FUN_3000_5dc1,FUN_3000_6331,FUN_3000_7e52,FUN_3000_8b27,FUN_3000_9383,FUN_3000_9cd3,FUN_3000_9cfb,FUN_3000_b1d6,FUN_3000_b99e,monster_killed,use_magic_item,FUN_4000_3563,read_string,FUN_4000_4547  // one line of text at a scaled x,y in a colour
 
 void __cdecl16far
 print_text(int param_1,int param_2,int param_3,char *param_4,undefined1 param_5)
@@ -26473,7 +26473,7 @@ char * __cdecl16far FUN_4000_1ebd(int param_1,int param_2,int param_3,int param_
 }
 
 
-// ==== fill_rect @ 4000:2020 (size 77) callers: FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_3085,financial_statement,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,FUN_2000_7756,FUN_2000_7c8a,FUN_2000_7d00,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,FUN_3000_1a08,roll_char,FUN_3000_6b5b,FUN_3000_71db,FUN_3000_77b2,FUN_3000_7af1,FUN_3000_7cb2,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,draw_map_square,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,monster_killed,FUN_3000_e221,FUN_4000_3a72  // fills a rectangle with a colour
+// ==== fill_rect @ 4000:2020 (size 77) callers: FUN_2000_1d0b,FUN_2000_1fbd,FUN_2000_216b,FUN_2000_22ff,FUN_2000_3085,financial_statement,strike,monster_turn,FUN_2000_726f,FUN_2000_7421,drop_item,FUN_2000_7c8a,FUN_2000_7d00,FUN_2000_8728,FUN_2000_8aab,FUN_2000_8f95,show_help,FUN_2000_9968,chute,FUN_2000_9ed9,dig_hole,FUN_2000_a57e,FUN_2000_a9bd,movecontrol,spell_screen,FUN_2000_f853,FUN_3000_1a08,roll_char,FUN_3000_6b5b,FUN_3000_71db,FUN_3000_77b2,FUN_3000_7af1,FUN_3000_7cb2,FUN_3000_8235,FUN_3000_8b27,FUN_3000_9383,FUN_3000_a047,draw_map_square,FUN_3000_b066,FUN_3000_b1d6,FUN_3000_b99e,FUN_3000_ba27,FUN_3000_bbe1,FUN_3000_bdb5,monster_killed,use_magic_item,FUN_4000_3a72  // fills a rectangle with a colour
 
 void __cdecl16far
 fill_rect(undefined2 param_1,int param_2,undefined2 param_3,int param_4,undefined1 param_5)
@@ -27183,7 +27183,7 @@ void __cdecl16far FUN_4000_3435(void)
 }
 
 
-// ==== wait_key @ 4000:3452 (size 66) callers: FUN_2000_22ff,load_world_pic,bank,check_v_file,monster_turn,FUN_2000_70da,FUN_2000_726f,FUN_2000_7756,FUN_2000_7b86,monsters_move,show_help,view_stats,FUN_2000_9968,chute,movecontrol,roll_char,FUN_3000_9cfb,FUN_3000_a047,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,monster_killed,FUN_3000_e221  // waits for a key or a mouse button
+// ==== wait_key @ 4000:3452 (size 66) callers: FUN_2000_22ff,load_world_pic,bank,check_v_file,monster_turn,FUN_2000_70da,FUN_2000_726f,drop_item,FUN_2000_7b86,monsters_move,show_help,view_stats,FUN_2000_9968,chute,movecontrol,roll_char,FUN_3000_9cfb,FUN_3000_a047,FUN_3000_bdb5,FUN_3000_c977,FUN_3000_cb7a,FUN_3000_cd34,FUN_3000_cf3a,monster_killed,use_magic_item  // waits for a key or a mouse button
 
 short __cdecl16far wait_key(void)
 

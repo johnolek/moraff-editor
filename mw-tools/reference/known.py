@@ -72,6 +72,7 @@ KNOWN = {
     "2000:4fb4": ("save_mon_map", "writes <slot>MON.MAP: three levels, three monster lists"),
     "2000:507a": ("load_mon_map", "reads <slot>MON.MAP, or stocks the floor if it is missing"),
     "2000:51fd": ("is_explored", "bit test on the current floor's explored-squares bitmap"),
+    "2000:5263": ("mark_explored", "sets a square's bit in the current floor's explored-squares bitmap"),
     "2000:5298": ("save_dun", "writes the <n>.DUN floor file"),
     "2000:542b": ("load_dun", "reads the <n>.DUN floor file"),
     "2000:55fc": ("enter_level", "switches floor: monsters, .DUN block and explored map"),
@@ -90,6 +91,7 @@ KNOWN = {
     "2000:5bef": ("strike", "the player's attack on a monster"),
     "2000:603f": ("puffball_stat", "the puffball's stat drain/raise, by stat number"),
     "2000:615c": ("monster_turn", "the monster's attack, its breath and what a hit drains"),
+    "2000:7756": ("drop_item", "the L key: drop a suit of armor, a weapon or a pile of coins"),
     "2000:7c2d": ("surface_feature", "the terrain 0..5 of a surface square, from its position"),
     "2000:7e4f": ("tick_spell_timers", "counts every spell timer down by the moves taken, undoing what expires"),
     "2000:81cd": ("monsters_move", "the monster movement pass, and the timers that run down with it"),
@@ -141,6 +143,8 @@ KNOWN = {
     "3000:4434": ("read_roll_line", "one line of ROLL.TXT into a buffer, dropping '|'"),
     "3000:4477": ("show_roll", "prints the six characteristics, height, weight, age and sex"),
     "3000:4695": ("roll_char", "character creation: race, stats, name, class, starting kit"),
+    "3000:9a93": ("say_find_one_first", "prints \"DON'T YOU THINK YOU'D BETTER FIND ONE FIRST?\""),
+    "3000:9ac0": ("take_pill", "one of the six vitamin pills: four onto one characteristic, two off another"),
     "3000:a384": ("myrand", "the dungeon hash over (x, y, level, dungeon); DotU's, exactly"),
     "3000:a449": ("ladder_delta", "how far a ladder here leads: + down, - up, 0 no ladder"),
     "3000:a524": ("wall_side", "the wall value 0..3 on one side of a square, from DUNG.BIN"),
@@ -152,6 +156,7 @@ KNOWN = {
     "3000:b7fd": ("load_spell_lines", "SPELLS.HLP record category*30 + level*3 + slot, split at '@' into lines"),
     "3000:b8d4": ("experience_for_kill", "(mult + 1) * (5 * 1.23^depth + depth + 1), depth capped at 130"),
     "3000:d51c": ("monster_killed", "the kill: experience, the drops, and a boss's flag and reward"),
+    "3000:e221": ("use_magic_item", "the floor slosher, the potion, the two stones and the hand grenade"),
 
     # ---- DISP module (segment 4000)
     "4000:0a20": ("load_font", "reads .FNT file n into the three glyph buffers"),

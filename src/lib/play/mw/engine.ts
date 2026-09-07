@@ -422,7 +422,7 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.armor]: { c: 'movecontrol, the 0x61 branch', run: chooseArmor },
   [MW_KEY.save]: { c: 'save_player', run: (turn) => turn.session.save() },
   [MW_KEY.quit]: { c: 'FUN_2000_7b86', run: quitAndSave },
-  [MW_KEY.loseItem]: { c: 'FUN_2000_7756', run: dropSomething },
+  [MW_KEY.loseItem]: { c: 'drop_item', run: dropSomething },
   [MW_KEY.brickSpeed]: { c: 'movecontrol, the 0x62 branch', run: changeTheBrickSpeed },
   [MW_KEY.sound]: { c: 'movecontrol, the 0x6f branch', run: switchTheSound },
   [MW_KEY.expandMap]: { c: 'movecontrol, the 0x78 branch', run: expandTheMap },
