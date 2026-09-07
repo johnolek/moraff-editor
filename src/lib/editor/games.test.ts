@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { parseSave, spellIndex } from '../game/dotu-files.js';
-import { readScalar, writeScalar } from './fields';
+import { readNumber, readScalar, writeNumber, writeScalar } from './fields';
 import { GAMES, MORAFFS_WORLD, pickGameByFileSize, UNFORGIVEN } from './games';
-import type { Field, ScalarField } from './schema';
+import type { Field, ScalarField, SelectField } from './schema';
 
 function lastByte(field: Field): number {
   switch (field.kind) {
@@ -138,5 +138,68 @@ describe("the Moraff's World preparation-spell fields", () => {
     const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize));
     writeScalar(view, field, value);
     expect(readScalar(view, field)).toBe(value);
+  });
+});
+
+describe("the Moraff's World battle-spell timers", () => {
+  const fields = MORAFFS_WORLD.sections.flatMap((section) => section.fields);
+  const fieldAt = (offset: number) => fields.find((entry) => 'offset' in entry && entry.offset === offset);
+
+  // Each value is one the game itself writes: FUN_2000_7e4f (WORLD.EXE 2000:7e4f) ticks all of
+  // these down, the battle spells set 60 moves, and FUN_2000_caba and the dispatcher set the 10
+  // and 15 monster turns Sleep and Hold Monster run for.
+  it.each([
+    ['Strength Timer', 0x07de, 'int16', 60],
+    ['Speed Timer', 0x07e0, 'int16', 60],
+    ['Slow Enemies Timer', 0x07e2, 'int16', 60],
+    ['Power Weapon Level', 0x07e4, 'uint8', 3],
+    ['Power Weapon Timer', 0x07e5, 'int16', 60],
+    ['Protection Timer', 0x07e8, 'int16', 60],
+    ['Resist Poison Timer', 0x07ea, 'int16', 60],
+    ['Resist Disease Timer', 0x07ec, 'int16', 60],
+    ['Anti-Cold Timer', 0x07ee, 'int16', 60],
+    ['Anti-Fire Timer', 0x07f0, 'int16', 60],
+    ['Resist Level Drain Timer', 0x07f2, 'int16', 60],
+    ['Sleep Timer', 0x07f4, 'int16', 10],
+    ['Hold Monster Timer', 0x07f6, 'int16', 15],
+  ])('round-trips %s', (label, offset, kind, value) => {
+    const field = fieldAt(offset as number) as ScalarField;
+    expect(field).toBeDefined();
+    expect(field.label).toBe(label);
+    expect(field.kind).toBe(kind);
+
+    const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize));
+    writeScalar(view, field, value);
+    expect(readScalar(view, field)).toBe(value);
+  });
+
+  it('names the protection level after the four Protection spells', () => {
+    const field = fieldAt(0x07e7) as SelectField;
+    expect(field.kind).toBe('select_uint8');
+    expect(field.label).toBe('Protection Level');
+    expect(field.choices).toEqual([
+      { value: 0, label: 'None' },
+      { value: 1, label: 'Minor Protection' },
+      { value: 2, label: 'Protection' },
+      { value: 3, label: 'Major Protection' },
+      { value: 4, label: 'Ultra Protection' },
+    ]);
+  });
+
+  // Power Weapon and Protection each keep a one-byte level in front of a two-byte timer, so the
+  // run from 0x07ce to 0x07f7 is not all aligned and a width read wrong would show up as one
+  // field eating the next one's bytes.
+  it('gives every enchantment, marker and timer its own bytes', () => {
+    const written = [
+      0x07ce, 0x07cf, 0x07da, 0x07db, 0x07dc, 0x07dd, 0x07de, 0x07e0, 0x07e2, 0x07e4, 0x07e5,
+      0x07e8, 0x07ea, 0x07ec, 0x07ee, 0x07f0, 0x07f2, 0x07f4, 0x07f6,
+    ].map((offset, at) => [fieldAt(offset) as ScalarField, at + 1] as const);
+
+    const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize));
+    for (const [field, value] of written) writeScalar(view, field, value);
+    writeNumber(view, 'uint8', 0x07e7, 4);
+
+    for (const [field, value] of written) expect(readScalar(view, field)).toBe(value);
+    expect(readNumber(view, 'uint8', 0x07e7)).toBe(4);
   });
 });

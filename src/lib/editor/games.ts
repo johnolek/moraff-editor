@@ -224,6 +224,65 @@ export const MORAFFS_WORLD: GameSchema = {
       ],
     },
     {
+      // Every one of these is ticked down by FUN_2000_7e4f (WORLD.EXE 2000:7e4f), which is what
+      // settles the widths, and cleared wholesale by FUN_2000_86b9 (2000:86b9), the inn's. The
+      // spells that set them are FUN_2000_cb43 and FUN_2000_cb6d (strength, speed), FUN_2000_cf08
+      // (power weapon), FUN_2000_cf6c (protection), FUN_2000_cfd0, FUN_2000_d006, FUN_2000_d03c,
+      // FUN_2000_d072 and FUN_2000_d0a8 (the five resists) and FUN_2000_caba (sleep); the
+      // dispatcher FUN_2000_d358 (2000:d358) writes Slow Enemies and Hold Monster itself.
+      // FUN_2000_7421 (2000:7421) is the screen that lists them, and supplied the labels.
+      title: 'Battle Spell Timers',
+      note: 'Moves left on each battle-spell effect; a spell cast again while it runs adds 60 more moves. Set a timer to 0 to clear it. Beware: Power Weapon and Protection each keep a level beside their timer, and the game only clears that level when the timer counts down from above zero — a level left standing over a zero timer stays until a night at the inn.',
+      fields: [
+        {
+          kind: 'int16',
+          offset: 0x07de,
+          label: 'Strength Timer',
+          hint: 'Strength is 7 higher while this runs, and the game takes the 7 back off when it reaches zero.',
+        },
+        {
+          kind: 'int16',
+          offset: 0x07e0,
+          label: 'Speed Timer',
+          hint: 'Agility / Dexterity is 7 higher while this runs, and the game takes the 7 back off when it reaches zero.',
+        },
+        { kind: 'int16', offset: 0x07e2, label: 'Slow Enemies Timer' },
+        { kind: 'uint8', offset: 0x07e4, label: 'Power Weapon Level', hint: 'A level rather than a timer: 1, 2 or 3, one per Power Weapon spell.' },
+        { kind: 'int16', offset: 0x07e5, label: 'Power Weapon Timer' },
+        {
+          kind: 'select_uint8',
+          offset: 0x07e7,
+          label: 'Protection Level',
+          choices: [
+            { value: 0, label: 'None' },
+            { value: 1, label: 'Minor Protection' },
+            { value: 2, label: 'Protection' },
+            { value: 3, label: 'Major Protection' },
+            { value: 4, label: 'Ultra Protection' },
+          ],
+          hint: "Takes 2 × level² off a monster's attack roll, so 2, 8, 18 or 32.",
+        },
+        { kind: 'int16', offset: 0x07e8, label: 'Protection Timer' },
+        { kind: 'int16', offset: 0x07ea, label: 'Resist Poison Timer' },
+        { kind: 'int16', offset: 0x07ec, label: 'Resist Disease Timer' },
+        { kind: 'int16', offset: 0x07ee, label: 'Anti-Cold Timer', hint: 'Halves a cold attack rather than preventing it.' },
+        { kind: 'int16', offset: 0x07f0, label: 'Anti-Fire Timer', hint: 'Halves a fire attack rather than preventing it.' },
+        { kind: 'int16', offset: 0x07f2, label: 'Resist Level Drain Timer' },
+        {
+          kind: 'int16',
+          offset: 0x07f4,
+          label: 'Sleep Timer',
+          hint: "Counts the engaged monster's own turns rather than moves; the spell sets 10 of them.",
+        },
+        {
+          kind: 'int16',
+          offset: 0x07f6,
+          label: 'Hold Monster Timer',
+          hint: "The same count of the monster's turns as Sleep; the spell sets 15 of them.",
+        },
+      ],
+    },
+    {
       title: 'Trapdoor Keys',
       note: 'One key per floor (10, 20, … 200). Each key allows use of trapdoors leading to that floor.',
       fields: [{ kind: 'checkbox_list', offset: 0x081f, names: Array.from({ length: 20 }, (_, i) => `Floor ${(i + 1) * 10}`) }],
