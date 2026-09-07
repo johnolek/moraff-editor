@@ -9939,9 +9939,9 @@ uint __cdecl16far FUN_2000_4538(int param_1,int param_2)
 }
 
 
-// ==== FUN_2000_4575 @ 2000:4575 (size 42) callers: FUN_2000_7d60,monsters_move,FUN_2000_892d,FUN_2000_97b8,movecontrol,teleport_player,teleport_direction
+// ==== occupant_at @ 2000:4575 (size 42) callers: FUN_2000_7d60,monsters_move,FUN_2000_892d,FUN_2000_97b8,movecontrol,teleport_player,teleport_direction  // the monster index on a square of the occupancy grid, 0xff as -1
 
-uint __cdecl16far FUN_2000_4575(int param_1,int param_2)
+uint __cdecl16far occupant_at(int param_1,int param_2)
 
 {
   uint uVar1;
@@ -12131,7 +12131,7 @@ int __cdecl16far FUN_2000_7d60(void)
     }
     iVar2 = iVar2 + 1;
   }
-  iVar2 = FUN_2000_4575(iVar2,iVar3);
+  iVar2 = occupant_at(iVar2,iVar3);
   if ((iVar2 != -1) && (iVar2 != 0xfe)) {
     return iVar2;
   }
@@ -12364,7 +12364,7 @@ void __cdecl16far monsters_move(void)
             uVar3 = wall_side(*(undefined1 *)((int)DAT_6000_cbde + iVar7 * 6),
                                   *(undefined1 *)((int)DAT_6000_cbde + iVar7 * 6 + 1),uVar3 & 0xff00
                                   ,DAT_6000_c8a2), (char)uVar3 != '\0')) &&
-           (uVar3 = FUN_2000_4575(), uVar3 == 0xffff)) {
+           (uVar3 = occupant_at(), uVar3 == 0xffff)) {
           uVar8 = (undefined2)((ulong)DAT_6000_cbde >> 0x10);
           *(char *)((int)DAT_6000_cbde + iVar7 * 6) = *(char *)((int)DAT_6000_cbde + iVar7 * 6) + -1
           ;
@@ -12374,13 +12374,13 @@ void __cdecl16far monsters_move(void)
                  cVar1 = wall_side(*(byte *)((int)DAT_6000_cbde + iVar7 * 6) + 1,
                                        *(undefined1 *)((int)DAT_6000_cbde + iVar7 * 6 + 1),
                                        uVar3 & 0xff00,DAT_6000_c8a2), cVar1 == '\0')) ||
-                (iVar4 = FUN_2000_4575(), iVar4 != -1)) {
+                (iVar4 = occupant_at(), iVar4 != -1)) {
           if ((((int)uVar6 < 0) &&
               (uVar8 = (undefined2)((ulong)DAT_6000_cbde >> 0x10),
               cVar1 = wall_side(*(undefined1 *)((int)DAT_6000_cbde + iVar7 * 6),
                                     *(undefined1 *)((int)DAT_6000_cbde + iVar7 * 6 + 1),1,
                                     DAT_6000_c8a2), cVar1 != '\0')) &&
-             (iVar4 = FUN_2000_4575(), iVar4 == -1)) {
+             (iVar4 = occupant_at(), iVar4 == -1)) {
             uVar8 = (undefined2)((ulong)DAT_6000_cbde >> 0x10);
             *(char *)((int)DAT_6000_cbde + iVar7 * 6 + 1) =
                  *(char *)((int)DAT_6000_cbde + iVar7 * 6 + 1) + -1;
@@ -12390,7 +12390,7 @@ void __cdecl16far monsters_move(void)
                    cVar1 = wall_side(*(undefined1 *)((int)DAT_6000_cbde + iVar7 * 6),
                                          *(byte *)((int)DAT_6000_cbde + iVar7 * 6 + 1) + 1,1,
                                          DAT_6000_c8a2), cVar1 != '\0')) &&
-                  (iVar4 = FUN_2000_4575(), iVar4 == -1)) {
+                  (iVar4 = occupant_at(), iVar4 == -1)) {
             uVar8 = (undefined2)((ulong)DAT_6000_cbde >> 0x10);
             *(char *)((int)DAT_6000_cbde + iVar7 * 6 + 1) =
                  *(char *)((int)DAT_6000_cbde + iVar7 * 6 + 1) + '\x01';
@@ -12537,7 +12537,7 @@ void __cdecl16far FUN_2000_892d(undefined2 param_1,int param_2)
   undefined2 uVar4;
   double dVar5;
   
-  iVar1 = FUN_2000_4575();
+  iVar1 = occupant_at();
   if (iVar1 == -1) {
     return;
   }
@@ -13113,16 +13113,16 @@ void __cdecl16far FUN_2000_97b8(int param_1)
                                DAT_6000_c8a4), cVar1 == '\x03')))) {
       switch(param_1) {
       case 0:
-        unaff_DI = FUN_2000_4575(DAT_6000_c89e,DAT_6000_c8a0 + -1);
+        unaff_DI = occupant_at(DAT_6000_c89e,DAT_6000_c8a0 + -1);
         break;
       case 1:
-        unaff_DI = FUN_2000_4575(DAT_6000_c89e,DAT_6000_c8a0 + 1);
+        unaff_DI = occupant_at(DAT_6000_c89e,DAT_6000_c8a0 + 1);
         break;
       case 2:
-        unaff_DI = FUN_2000_4575(DAT_6000_c89e + -1,DAT_6000_c8a0);
+        unaff_DI = occupant_at(DAT_6000_c89e + -1,DAT_6000_c8a0);
         break;
       case 3:
-        unaff_DI = FUN_2000_4575(DAT_6000_c89e + 1,DAT_6000_c8a0);
+        unaff_DI = occupant_at(DAT_6000_c89e + 1,DAT_6000_c8a0);
       }
       if (unaff_DI != -1) {
         print_text(0x2da,10,1,
@@ -14081,19 +14081,19 @@ undefined2 __cdecl16far movecontrol(void)
             ((undefined1 *)&DAT_6000_d0ee)[iVar13] = 0;
           }
           if ((uVar4 != 3) ||
-             (iVar13 = FUN_2000_4575(DAT_6000_c89e,DAT_6000_c8a0 + -1), iVar13 != -1)) {
+             (iVar13 = occupant_at(DAT_6000_c89e,DAT_6000_c8a0 + -1), iVar13 != -1)) {
             DAT_6000_d0ee = 0xff;
           }
           if ((uVar7 != 3) ||
-             (iVar13 = FUN_2000_4575(DAT_6000_c89e - 1,DAT_6000_c8a0), iVar13 != -1)) {
+             (iVar13 = occupant_at(DAT_6000_c89e - 1,DAT_6000_c8a0), iVar13 != -1)) {
             DAT_6000_d0ef = 0xff;
           }
           if ((uVar5 != 3) ||
-             (iVar13 = FUN_2000_4575(DAT_6000_c89e,DAT_6000_c8a0 + 1), iVar13 != -1)) {
+             (iVar13 = occupant_at(DAT_6000_c89e,DAT_6000_c8a0 + 1), iVar13 != -1)) {
             DAT_6000_d0f0 = 0xff;
           }
           if ((uVar6 != 3) ||
-             (iVar13 = FUN_2000_4575(DAT_6000_c89e + 1,DAT_6000_c8a0), iVar13 != -1)) {
+             (iVar13 = occupant_at(DAT_6000_c89e + 1,DAT_6000_c8a0), iVar13 != -1)) {
             DAT_6000_d0f1 = 0xff;
           }
           DAT_6000_1425 = (DAT_6000_1425 + 1) % 2;
@@ -14137,7 +14137,7 @@ undefined2 __cdecl16far movecontrol(void)
             }
             if (local_e == 0) {
               if ((uVar4 == 3) &&
-                 (iVar2 = FUN_2000_4575(DAT_6000_c89e,DAT_6000_c8a0 + -1), iVar2 != -1)) {
+                 (iVar2 = occupant_at(DAT_6000_c89e,DAT_6000_c8a0 + -1), iVar2 != -1)) {
                 iVar2 = 0x66;
               }
               else {
@@ -14151,7 +14151,7 @@ undefined2 __cdecl16far movecontrol(void)
             }
             if (local_e == 1) {
               if ((uVar7 == 3) &&
-                 (iVar2 = FUN_2000_4575(DAT_6000_c89e - 1,DAT_6000_c8a0), iVar2 != -1)) {
+                 (iVar2 = occupant_at(DAT_6000_c89e - 1,DAT_6000_c8a0), iVar2 != -1)) {
                 iVar2 = 0x66;
               }
               else {
@@ -14165,7 +14165,7 @@ undefined2 __cdecl16far movecontrol(void)
             }
             if (local_e == 2) {
               if ((uVar5 == 3) &&
-                 (iVar2 = FUN_2000_4575(DAT_6000_c89e,DAT_6000_c8a0 + 1), iVar2 != -1)) {
+                 (iVar2 = occupant_at(DAT_6000_c89e,DAT_6000_c8a0 + 1), iVar2 != -1)) {
                 iVar2 = 0x66;
               }
               else {
@@ -14179,7 +14179,7 @@ undefined2 __cdecl16far movecontrol(void)
             }
             if (local_e == 3) {
               if ((uVar6 == 3) &&
-                 (iVar2 = FUN_2000_4575(DAT_6000_c89e + 1,DAT_6000_c8a0), iVar2 != -1)) {
+                 (iVar2 = occupant_at(DAT_6000_c89e + 1,DAT_6000_c8a0), iVar2 != -1)) {
                 iVar2 = 0x66;
               }
               else {
@@ -14811,16 +14811,16 @@ LAB_2000_bd6c:
         FUN_3000_9383();
       }
     }
-    if ((uVar7 == 3) && (iVar2 = FUN_2000_4575(DAT_6000_c89e - 1,DAT_6000_c8a0), iVar2 != -1)) {
+    if ((uVar7 == 3) && (iVar2 = occupant_at(DAT_6000_c89e - 1,DAT_6000_c8a0), iVar2 != -1)) {
       FUN_2000_8728(DAT_6000_c89e - 1,DAT_6000_c8a0,iVar2);
     }
-    if ((uVar6 == 3) && (iVar2 = FUN_2000_4575(DAT_6000_c89e + 1,DAT_6000_c8a0), iVar2 != -1)) {
+    if ((uVar6 == 3) && (iVar2 = occupant_at(DAT_6000_c89e + 1,DAT_6000_c8a0), iVar2 != -1)) {
       FUN_2000_8728(DAT_6000_c89e + 1,DAT_6000_c8a0,iVar2);
     }
-    if ((uVar4 == 3) && (iVar2 = FUN_2000_4575(DAT_6000_c89e,DAT_6000_c8a0 + -1), iVar2 != -1)) {
+    if ((uVar4 == 3) && (iVar2 = occupant_at(DAT_6000_c89e,DAT_6000_c8a0 + -1), iVar2 != -1)) {
       FUN_2000_8728(DAT_6000_c89e,DAT_6000_c8a0 + -1,iVar2);
     }
-    if ((uVar5 == 3) && (iVar2 = FUN_2000_4575(DAT_6000_c89e,DAT_6000_c8a0 + 1), iVar2 != -1)) {
+    if ((uVar5 == 3) && (iVar2 = occupant_at(DAT_6000_c89e,DAT_6000_c8a0 + 1), iVar2 != -1)) {
       FUN_2000_8728(DAT_6000_c89e,DAT_6000_c8a0 + 1,iVar2);
     }
     if ((DAT_6000_4593 != -1) && (*_DAT_6000_cd28 < 1)) {
@@ -14858,7 +14858,7 @@ LAB_2000_bd6c:
       print_text(0,0,0,(char *)s_THE_WALL_REFUSES_TO_MOVE_6000_3509,DAT_6000_1303);
     }
     else {
-      iVar2 = FUN_2000_4575(DAT_6000_c89e + local_4,DAT_6000_c8a0 + local_6);
+      iVar2 = occupant_at(DAT_6000_c89e + local_4,DAT_6000_c8a0 + local_6);
       if (iVar2 == -1) {
         if ((DAT_6000_4593 != -1) && (local_6 != local_4)) {
           iVar2 = random_n(3);
@@ -15477,7 +15477,7 @@ undefined2 __cdecl16far teleport_player(void)
       DAT_6000_c8a0 = random_n(DAT_6000_448d);
       cVar1 = is_solid(DAT_6000_c89e,DAT_6000_c8a0,DAT_6000_c8a2,DAT_6000_c8a4);
     } while (cVar1 != '\0');
-    iVar2 = FUN_2000_4575(DAT_6000_c89e,DAT_6000_c8a0);
+    iVar2 = occupant_at(DAT_6000_c89e,DAT_6000_c8a0);
   } while (iVar2 != -1);
   set_occupant(DAT_6000_c89e,DAT_6000_c8a0,0xfe);
   DAT_6000_123d = 1;
@@ -15829,7 +15829,7 @@ undefined2 __cdecl16far teleport_direction(void)
       if (((((-1 < iVar4) && (iVar4 < DAT_6000_448b)) && (-1 < iVar5)) &&
           ((iVar5 < DAT_6000_448d &&
            (cVar1 = is_solid(iVar4,iVar5,DAT_6000_c8a2,DAT_6000_c8a4), cVar1 == '\0')))) &&
-         (iVar3 = FUN_2000_4575(iVar4,iVar5), iVar3 == -1)) {
+         (iVar3 = occupant_at(iVar4,iVar5), iVar3 == -1)) {
         DAT_6000_c8a6 = DAT_6000_c8a6 + (char)local_8 * (char)iVar2;
         DAT_6000_c8a7 = DAT_6000_c8a7 + (char)local_a * (char)iVar2;
         if (((DAT_6000_c8a6 < '\x01') || (DAT_6000_c8a7 < '\x01')) ||

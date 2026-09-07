@@ -62,6 +62,7 @@ KNOWN = {
     "2000:412b": ("check_v_file", "prints and checksums the file V; the registration check"),
     "2000:4252": ("load_worldmap_bin", "reads WORLDMAP.BIN"),
     "2000:4292": ("main", "argv handling, video setup, then the slot/roll/play loop"),
+    "2000:4575": ("occupant_at", "the monster index on a square of the occupancy grid, 0xff as -1"),
     "2000:45a1": ("set_occupant", "writes a monster index into the 80x110 occupancy grid"),
     "2000:45bd": ("pick_monster", "rolls a monster type the level and WORLD.PIC both allow"),
     "2000:46a4": ("generate_section", "stocks a floor with 145 monsters; never touches the map"),

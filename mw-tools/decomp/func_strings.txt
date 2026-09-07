@@ -282,7 +282,7 @@
 2000:4252 load_worldmap_bin size=64 ncallers=3 | worldmap_bin
 2000:4292 main size=672 ncallers=1 | 
 2000:4538 FUN_2000_4538 size=59 ncallers=2 | 
-2000:4575 FUN_2000_4575 size=42 ncallers=7 | 
+2000:4575 occupant_at size=42 ncallers=7 | 
 2000:45a1 set_occupant size=28 ncallers=8 | 
 2000:45bd pick_monster size=227 ncallers=1 | 
 2000:46a4 generate_section size=2294 ncallers=3 | 

@@ -270,8 +270,8 @@ pushes the oldest out and it is rerolled from scratch next time.
 
 Beside the list the game keeps an occupancy grid, 80 x 110 bytes at `DS:cbe2`,
 holding the index of the monster on each square, 0xff for empty and 0xfe for the
-character.  `set_occupant` (`2000:45a1`) writes it; every routine that needs to
-know what is in front of the character reads it.
+character.  `set_occupant` (`2000:45a1`) writes it and `occupant_at`
+(`2000:4575`) reads it back, turning the 0xff of an empty square into -1.
 
 ## The monsters
 
