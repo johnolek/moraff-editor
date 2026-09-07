@@ -380,6 +380,25 @@ of the game's own 134 functions has been given a name yet.
 
 ## 3. The data
 
+`DUNSMALL.EXE` is the only program that touches a `.NUM` file: it is the only
+one of the five whose image contains the string `.NUM` at all, and its eight
+`BLOAD` statements are at `1000:BF4D` and `1000:BF5C` (1 and 2), `1000:BBD9`
+(7), and `1000:C840`, `C866`, `C889` and `C8A9` (5, 6, 3 and 4, each with `s$`
+in front of the digit). The other four programs load nothing of the sort:
+`NCD.EXE` has no `BLOAD` at all, `CHCHAR.EXE`'s one `BSAVE` at `1557` writes a
+new character's `.BIN`, and the single `BLOAD` in each of `BEGIN.EXE` (`08AC`)
+and `F8.EXE` (`01DD`) reads the hall of fame — `F8.EXE`'s gives the address
+`1856`, which is `F9.EXE`'s own header offset.
+
+`3A`, `4A`, `5A` and `6A` are the second dungeon's copies, chosen together with
+`F7.COM` by `1000:C7BB`. A pair is not a variation on a theme — 2,875 of
+`4.NUM`'s 7,999 bytes differ from `4A.NUM`, 2,197 of `6.NUM`'s 5,129, and 30 and
+31 of the 92 in the two little tables — they are two separate sets of monsters
+with their own pictures.
+
+`read_bsave.py` prints any of them as raw values, and `read_dungeon.py` prints
+each one as what it is.
+
 ### The character: `<n>.EXE` and `<n>.BIN`
 
 A character is two files. `<n>.EXE` is the record, `<n>.BIN` the explored map,

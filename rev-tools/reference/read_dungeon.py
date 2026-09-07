@@ -23,8 +23,9 @@ for the second).  What each one is:
   at DGROUP 8366.  `--formula` recomputes it from the routine the game works the
   feature out with and reports where the two disagree.
 
-`3A`, `4A`, `5A` and `6A` are the second dungeon's; nothing else differs between
-a pair, and no program loads both.
+`3A`, `4A`, `5A` and `6A` are the second dungeon's, and hold different monsters
+with their own pictures rather than a variation on the first dungeon's; the
+routines at 1000:C7A5 and 1000:C7BB pick one set or the other.
 
     python3 read_dungeon.py ~/games/rev2/7.NUM --explored ~/games/rev2/5.BIN
     python3 read_dungeon.py ~/games/rev2/3.NUM ~/games/rev2/4.NUM
