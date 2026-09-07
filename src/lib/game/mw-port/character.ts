@@ -304,6 +304,36 @@ export function startingSpells(game: MwGame): void {
 }
 
 /**
+ * The switch on the class straight after the class menu, in roll_char (WORLD.EXE 3000:4695, mw.c
+ * "roll_char"): how many spell points a character of that class gets.
+ *
+ * A fighter gets none. Every other class divides some mix of wisdom and intelligence by a number
+ * of its own, and the monk adds one to a division so harsh it is nearly always zero. The value is
+ * a whole number, but the record keeps it as a 32-bit float.
+ */
+export function spellPoints(cls: number, wis: number, iq: number): number {
+  switch (cls) {
+    case 0:
+      return 0;
+    case 1:
+      return Math.trunc((wis * 2 + iq) / 4);
+    case 2:
+      return Math.trunc((wis + iq) / 17) + 1;
+    case 3:
+      return Math.trunc((wis + iq * 2) / 7);
+    case 4:
+      return Math.trunc((wis * 2 + iq) / 8);
+    case 5:
+      return Math.trunc((wis + iq) / 18);
+    case 6:
+      return Math.trunc((wis + iq * 2) / 12);
+  }
+  // The original's switch has no default, so a class outside 0 to 6 would keep the zero
+  // roll_char put in the field on the line above it. The class menu cannot produce one.
+  return 0;
+}
+
+/**
  * roll_char (WORLD.EXE 3000:4695, mw.c "roll_char"): create a character, from the instructions
  * to the file the finished character is written out to.
  *
@@ -366,29 +396,9 @@ export function rollChar(game: MwGame): void {
 
   pc.maxSp = 0;
   pc.hp = pc.con + pc.luck;
-  switch (pc.cls) {
-    case 0:
-      pc.maxSp = 0;
-      break;
-    case 1:
-      pc.maxSp = Math.trunc((pc.wis * 2 + pc.iq) / 4);
-      break;
-    case 2:
-      pc.maxSp = Math.trunc((pc.wis + pc.iq) / 17) + 1;
-      break;
-    case 3:
-      pc.maxSp = Math.trunc((pc.wis + pc.iq * 2) / 7);
-      break;
-    case 4:
-      pc.maxSp = Math.trunc((pc.wis * 2 + pc.iq) / 8);
-      break;
-    case 5:
-      pc.maxSp = Math.trunc((pc.wis + pc.iq) / 18);
-      break;
-    case 6:
-      pc.maxSp = Math.trunc((pc.wis + pc.iq * 2) / 12);
-      break;
-  }
+  pc.maxSp = spellPoints(pc.cls, pc.wis, pc.iq);
+  // Current and maximum are the same number on both, which is what a fresh character starts
+  // play with.
   pc.sp = pc.maxSp;
   pc.maxHp = pc.hp;
   // The original prints "PLEASE SELECT A CLASS BY HITTING A NUMBER 1-7:" (DS:48ab) again here in
