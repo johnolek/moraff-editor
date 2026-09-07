@@ -13,12 +13,15 @@ something the original does, a comment says so.
 * **`keys.ts`** — the byte `movecontrol` dispatches on for every key, and the browser key events
   they come from.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `trapdoor.ts`, `chute.ts`,
-  `dig.ts`, `modules.ts`, `quit.ts`, `help.ts` — so that two people can add two keys without
-  touching the same file.
+  `dig.ts`, `modules.ts`, `quit.ts`, `help.ts`, `town.ts` — so that two people can add two keys
+  without touching the same file.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
   memory that decides whether its monsters are rolled again.
-* **`screens.ts`** — where the message box goes, and `notBuiltYet`.
-* **`arrival.ts`** — the hint the snake brings on arriving on a floor.
+* **`screens.ts`** — where the message box goes, and `notBuiltYet`. **`boxes.ts`** is the rest of
+  it: putting one box up at a time, and showing the several boxes a ported function printed in
+  one go one after another, since `print_menu_only` waits for a key after each of them.
+* **`arrival.ts`** — the hint the snake brings on arriving on a floor. **`office.ts`** — the step
+  count `draw_monster_view` keeps, and the taunt the section boss sends every 250 of them.
 * **`Play.svelte`** — the tab: the map, the message box, the screens and the row of keys.
 * **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
   prints, beside the map, and the picture of the monster in front of the character over them.
@@ -143,8 +146,6 @@ mostly ported already; what is missing is the key that reaches them.
 
 * **Fights** — F and Ctrl-F. `strike` and `defend` are in `combat.ts` and `killMonster` in
   `kills.ts`, with the drops and the levels beside them.
-* **The town** — U on a building square. `town.ts` has the store, the temple, the bank and the
-  inn, and the inn is where a character ages and gains levels.
 * **The spell and item screens** — C, I, P, L, W, A, 1 and 2. `cast_a_spell` (exe 2000:e017) is
   the one big function still to port; `magic.ts` already has every spell it dispatches to.
 * **The hidden numbers and the monster's portrait** — V, E, M, S and the panel beside the map.
@@ -166,4 +167,7 @@ mostly ported already; what is missing is the key that reaches them.
   `CharacterFile.write`, which is the real 2,697-byte file with its checksum, so a character can
   be downloaded and played on in DOS. Death writes nothing, which is what the original does; the
   roster marks the entry instead.
+* **The town's pictures are not drawn.** `g_store`, `temple`, `bank` and `flea_inn` fill the
+  screen with `store.pic`, `temple.pic`, `bank.pic` and `inn.pic` behind their menus, and
+  `boss_office_message` draws the boss beside its taunt. The port shows the words alone.
 * **The two hidden keys are left out**: 0xfb turns saving off and 0xfe hands out ten hit points.
