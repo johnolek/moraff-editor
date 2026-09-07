@@ -5,7 +5,8 @@
 // A .DUN file records only which squares the player has stood on; the dungeon itself comes
 // from the hash in mwmap.js.  save_dun/load_dun write:
 //   filename       <slot><block>.DUN, slot 0..9 the character, block = level / 32
-//   byte 0..3      floor-present bitmap, bit i (least significant first) = floor i of the block
+//   byte 0..3      floor-present bitmap: floor f is bit f % 8 of byte 3 - f / 8, because
+//                  save_dun writes the four bytes highest floors first
 //   per present floor, floors 0..31 in order:
 //     16 bytes     row-present bitmap, bit r for rows 0..109
 //     10 bytes     per present row: bit x % 8 of byte x / 8 = square (x, y) explored
@@ -32,7 +33,7 @@ function parseDun(path) {
   const floors = new Map();
   let pos = 4;
   for (let floor = 0; floor < 32; floor++) {
-    if (!((data[floor >> 3] >> (floor & 7)) & 1)) continue;
+    if (!((data[3 - (floor >> 3)] >> (floor & 7)) & 1)) continue;
     const rows = data.subarray(pos, pos + 16);
     pos += 16;
     const squares = [];
