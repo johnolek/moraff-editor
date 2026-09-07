@@ -18,6 +18,7 @@ import { castASpell, useAnItem } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
 import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
+import { changeArmor, changeWeapon } from './gear';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
 import { showHelp } from './help';
 import { dropSomething } from './items';
@@ -357,8 +358,8 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.useItem]: { c: 'movecontrol, case 0x69, and use_magic_item', run: useAnItem },
   [KEY.viewPrepSpells]: { c: 'view_prep_spells', run: showPrepSpells },
   [KEY.viewBattleSpells]: { c: 'view_battle_spells', run: showBattleSpells },
-  [KEY.armor]: { c: 'movecontrol, the 0x61 branch', run: (turn) => notBuiltYet(turn.game, 'CHANGE THE ARMOR YOU WEAR') },
-  [KEY.weapon]: { c: 'movecontrol, the 0x77 branch', run: (turn) => notBuiltYet(turn.game, 'CHANGE THE WEAPON IN YOUR HAND') },
+  [KEY.armor]: { c: 'movecontrol, the 0x61 branch', run: changeArmor },
+  [KEY.weapon]: { c: 'movecontrol, the 0x77 branch', run: changeWeapon },
   [KEY.expNeeded]: { c: 'FUN_2000_7bcd', run: showExpNeeded },
   [KEY.viewStats]: { c: 'view_stats', run: showStats },
   [KEY.pockets]: { c: 'FUN_3000_7545', run: lookInPockets },

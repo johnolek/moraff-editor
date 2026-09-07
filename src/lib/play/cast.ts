@@ -31,6 +31,7 @@ import {
 } from '../game/port/screens';
 import type { Game, SpellChoice } from '../game/port/state';
 import type { Turn } from './engine';
+import { gearMenuLines } from './gear';
 import { notBuiltYet } from './screens';
 
 /**
@@ -302,27 +303,17 @@ async function chooseDirection(game: Game): Promise<number> {
   return chosen === 'escape' ? CANCEL_DIRECTION : chosen;
 }
 
-/** What a weapon or armor slot the character owns nothing in reads as (exe DS:326e). */
-const EMPTY_GEAR_SLOT = '--------';
-
 /**
  * enchant_weapon_perm (exe 3000:d148, unf.c "enchant_weapon_perm") and enchant_armor_perm (exe
- * 3000:d211): the menu of the eight slots, and which one the plus goes on.
- *
- * Each line is the menu's own number, then the name of what is in that slot and the plus already
- * on it, and dashes where the character owns nothing. The decompilation loses the arguments to
- * the strcat calls that build a line, so the dashes are the game's own string and the rest of the
- * wording is this port's.
+ * 3000:d211): the menu of the eight slots, and which one the plus goes on. It is the menu the A
+ * and W keys build, which `gear.ts` holds the lines of.
  */
 async function chooseGear(game: Game, kind: 'weapon' | 'armor'): Promise<number | null> {
   const pc = game.pc;
-  const names = kind === 'weapon' ? WEAPON_NAMES : ARMOR_NAMES;
-  const owned = kind === 'weapon' ? pc.weaponsOwned : pc.armorOwned;
-  const plus = kind === 'weapon' ? pc.weaponPlus : pc.armorPlus;
-  const lines = names.slice(0, 8).map((name, slot) => {
-    if (owned[slot] < 1) return `${slot + 1}) ${EMPTY_GEAR_SLOT}`;
-    return `${slot + 1}) ${name}${plus[slot] === 0 ? '' : ` PLUS ${plus[slot]}`}`;
-  });
+  const lines =
+    kind === 'weapon'
+      ? gearMenuLines(WEAPON_NAMES, pc.weaponsOwned, pc.weaponPlus)
+      : gearMenuLines(ARMOR_NAMES, pc.armorOwned, pc.armorPlus);
   drawMenu(game, lines);
   const chosen = await menuChoice(game, (key) => gmenuChoice(1, 8, key));
   return chosen === 'escape' ? null : chosen;
