@@ -73,7 +73,10 @@
       rest is on the way.
     </p>
   {:else if app.game === 'revenge'}
-    <p class="game-note">Moraff's Revenge has the Map, the Monsters and Source so far. The rest is on the way.</p>
+    <p class="game-note">
+      Moraff's Revenge has the Map, the Save Editor, the Monsters, New Character and Source so far. The rest is on the
+      way.
+    </p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
   <main class:hidden={app.tab !== 'map'}>
