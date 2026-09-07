@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { untrack } from 'svelte';
   import { app, currentEntry } from '../app-state.svelte';
   import { characterDied, replaceCharacterBytes } from '../character/current';
   import { RealRng } from '../game/port/rng';
@@ -57,25 +58,36 @@
     view = null;
   }
 
-  /** The map follows the character: it is centred when they arrive on a floor, and scrolled
-   *  when a step takes them off the edge of what is drawn. */
+  /**
+   * The map follows the character: it is centred when they arrive on a floor, and scrolled when
+   * a step takes them off the edge of what is drawn.
+   *
+   * Only the character's square and the tab being open are watched. Moving the map reads and
+   * writes the canvas's own view, and an effect that watched that as well would move the map
+   * because the map had moved.
+   */
   $effect(() => {
     const place = view?.place;
-    if (app.tab !== 'play' || !place || !canvas) return;
-    if (centredFloor !== place.floor) {
-      if (canvas.centre(place, PLAY_CELL)) centredFloor = place.floor;
-    } else {
-      canvas.reveal(place);
-    }
+    const showing = app.tab === 'play';
+    untrack(() => {
+      if (!showing || !place || !canvas) return;
+      if (centredFloor !== place.floor) {
+        if (canvas.centre(place, PLAY_CELL)) centredFloor = place.floor;
+      } else {
+        canvas.reveal(place);
+      }
+    });
   });
 
   /** Opening the tab puts the character back in the middle, since nothing could be drawn while
    *  it was hidden. */
   $effect(() => {
-    if (app.tab !== 'play' || !session) return;
+    const showing = app.tab === 'play';
+    const playing = session;
+    if (!showing || !playing) return;
     const frame = requestAnimationFrame(() => {
-      const place = session?.view().place;
-      if (place && canvas && canvas.centre(place, PLAY_CELL)) centredFloor = place.floor;
+      const place = playing.view().place;
+      if (canvas && canvas.centre(place, PLAY_CELL)) centredFloor = place.floor;
     });
     return () => cancelAnimationFrame(frame);
   });

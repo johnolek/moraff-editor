@@ -190,6 +190,19 @@ describe('changing floors', () => {
     expect(session.view().place.floor).toBe(3);
   });
 
+  it('walks into a module teleporter and comes out in the next module’s town', async () => {
+    const teleporter = findSquare(1, (square) => square.e === 4 && square.ladder === 0 && square.trapdoor === -1 && square.chute === 0);
+    const file = characterFile({ level: 1, dir: 3, ...teleporter });
+    const session = playing(file);
+    await press(session, KEY.arrowUp);
+    expect(session.box[0]).toBe('YOU HAVE BEEN DETACHED FROM');
+    await press(session, KEY.escape);
+    expect(session.view().place.module).toBe(1);
+    expect(session.view().place.floor).toBe(0);
+    // change_module saves the character where it drops them, before movecontrol loads the town.
+    expect(parseSave(file.bytes).module).toBe(1);
+  });
+
   it('digs through the floor to whatever is under it', async () => {
     const start = findSquare(3, (square) => square.ladder === 0 && square.chute === 0 && square.trapdoor === -1);
     const session = playing(characterFile({ level: 3, ...start, cls: 3 }));
