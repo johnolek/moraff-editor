@@ -27,7 +27,6 @@ BINARY = os.path.join(SCRATCH, PROGRAM)
 CODE_SEGMENT = 0x1000
 DGROUP_SEGMENT = 0x2000  # DS for the whole module
 CODE_END = 0x0C8B0
-ENTRY = 0x30
 
 from ghidra.app.plugin.core.analysis import AutoAnalysisManager
 from ghidra.base.project import GhidraProject
