@@ -25,8 +25,8 @@ describe('describeFeature', () => {
 
 describe('describeSquare', () => {
   it('describes rock and a plain open square', () => {
-    expect(describeSquare(square({ solid: true }), null, 5, 6, UNFORGIVEN_MAP, 0)).toEqual({ title: 'Square 5, 6', rock: true, feature: null, beyondMap: false });
-    expect(describeSquare(square({ n: 0, e: 1 }), null, 5, 6, UNFORGIVEN_MAP, 0)).toEqual({ title: 'Square 5, 6', rock: false, feature: null, beyondMap: false });
+    expect(describeSquare(square({ solid: true }), null, 5, 6, UNFORGIVEN_MAP, 0)).toEqual({ title: 'Square 5, 6', rock: true, feature: null, note: null, beyondMap: false });
+    expect(describeSquare(square({ n: 0, e: 1 }), null, 5, 6, UNFORGIVEN_MAP, 0)).toEqual({ title: 'Square 5, 6', rock: false, feature: null, note: null, beyondMap: false });
   });
 
   it('says only that nothing can reach a square beyond the area the game shows', () => {
@@ -35,8 +35,16 @@ describe('describeSquare', () => {
       title: 'Square 5, 105',
       rock: false,
       feature: "Beyond the game's map: nothing can reach this square.",
+      note: null,
       beyondMap: true,
     });
+  });
+
+  it('adds what a building does, where the game says', () => {
+    const inn = describeSquare(square(), { kind: 'town', building: 1 }, 7, 3, MORAFFS_REVENGE_MAP, 1);
+    expect(inn.feature).toBe('Flea Bag Inn');
+    expect(inn.note).toBe('A room costs 10 JP. You sleep, and wake with one health point more.');
+    expect(describeSquare(square(), { kind: 'town', building: 1 }, 5, 6, UNFORGIVEN_MAP, 0).note).toBeNull();
   });
 
   it('names a teleporter only when the square holds nothing else', () => {

@@ -20,6 +20,9 @@
     {#if line}
       <p class="feature">{line}</p>
     {/if}
+    {#if description.note}
+      <p class="note">{description.note}</p>
+    {/if}
     {#if explored}
       <p class="explored">{explored}</p>
     {/if}

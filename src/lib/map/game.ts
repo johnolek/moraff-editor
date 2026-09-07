@@ -40,6 +40,8 @@ export interface Building {
   label: string;
   /** Fill colour of a square holding it. */
   colour: string;
+  /** What the building does and what it charges, for the panel to print under its name. */
+  note?: string;
 }
 
 /** What "Path to nearest ..." walks to, and the word the panel calls it by. */
@@ -312,15 +314,31 @@ const GENERATION_HIGHEST = 0xffffff;
  * unlike the other two games' buildings these colours are ours: the three the other games have
  * as well keep the colours the site already gives them, and the three inns are a scale of the
  * green Dungeons of the Unforgiven fills an inn with, cheapest first.
+ *
+ * Every charge below is the double the routine subtracts, not the one its menu prints: the two
+ * agree everywhere. The three inns are at 1000:1E0A, 1F3D and 1FCD, the bank at 22F7, the
+ * temple at 2522, the store at 281E and the guild at 2BB8.
  */
 const MORAFFS_REVENGE_BUILDINGS: Building[] = [
-  { label: 'Flea Bag Inn', colour: '#1e7a3c' },
-  { label: 'Yuppydom Inn', colour: '#00cc44' },
-  { label: 'Kings Inn', colour: '#5cff8f' },
-  { label: 'Bank', colour: '#d75100' },
-  { label: 'Temple', colour: '#ffff51' },
-  { label: 'Store', colour: '#51caff' },
-  { label: "Wizard's Guild", colour: '#c060ff' },
+  { label: 'Flea Bag Inn', colour: '#1e7a3c', note: 'A room costs 10 JP. You sleep, and wake with one health point more.' },
+  { label: 'Yuppydom Inn', colour: '#00cc44', note: 'A suite costs 200 JP. You sleep, and wake with three health points more.' },
+  { label: 'Kings Inn', colour: '#5cff8f', note: 'A grand suite costs 6,000 JP, and the hotel cleric heals every wound.' },
+  { label: 'Bank', colour: '#d75100', note: 'Exchanges the treasure you are carrying for jewel pieces, and keeps them for you.' },
+  {
+    label: 'Temple',
+    colour: '#ffff51',
+    note: 'Cures wounds for 75 JP, every wound for 1,000, disease for 400 and poison for 20,000, and sells a level for 500,000.',
+  },
+  {
+    label: 'Store',
+    colour: '#51caff',
+    note: 'Weapons and armour, from a 10 JP knife to field plate at 10,000. The town itself is on the list at 1,000,000, and is a joke.',
+  },
+  {
+    label: "Wizard's Guild",
+    colour: '#c060ff',
+    note: 'Says what the spells and the magic items do: 800 JP for the items, and 220 JP times the spell level to the power 1.75 for one level of spells.',
+  },
 ];
 
 /**

@@ -24,6 +24,8 @@ export interface SquareDescription {
   title: string;
   rock: boolean;
   feature: string | null;
+  /** What the building on the square does, for the panel to print under its name. */
+  note: string | null;
   /** Whether the square is one of those the generator filled outside the area the game shows. */
   beyondMap: boolean;
 }
@@ -35,12 +37,14 @@ const BEYOND_MAP = "Beyond the game's map: nothing can reach this square.";
  *  trap door or building is the more useful thing to say about the square. */
 export function describeSquare(square: MapSquare, feature: Feature, x: number, y: number, game: MapGame, dungeon: number): SquareDescription {
   const title = `Square ${x}, ${y}`;
-  if (!isOnMap({ x, y }, game.area)) return { title, rock: square.solid, feature: BEYOND_MAP, beyondMap: true };
+  if (!isOnMap({ x, y }, game.area)) return { title, rock: square.solid, feature: BEYOND_MAP, note: null, beyondMap: true };
   const named = describeFeature(feature, game);
+  const building = feature?.kind === 'town' ? game.buildings[feature.building - 1] : null;
   return {
     title,
     rock: square.solid,
     feature: named ?? (!square.solid && hasTeleporterSide(square) ? describeTeleporter(dungeon) : null),
+    note: building?.note ?? null,
     beyondMap: false,
   };
 }
