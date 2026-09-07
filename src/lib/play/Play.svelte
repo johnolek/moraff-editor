@@ -8,6 +8,7 @@
   import { FULL_FLOOR } from '../map/viewport';
   import GameScreen from '../ui/GameScreen.svelte';
   import PixelText from '../ui/PixelText.svelte';
+  import Panel from './Panel.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
   import { gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
   import { MESSAGE_BOX } from './screens';
@@ -186,10 +187,7 @@
             {/each}
           </div>
         </div>
-        <div class="numbers">
-          <span>{Math.round(view.seconds)} second{Math.round(view.seconds) === 1 ? '' : 's'} of game time</span>
-          {#if view.engaged}<span>Facing a level {view.engaged.level} monster on {view.engaged.hp} health points</span>{/if}
-        </div>
+        <Panel game={session.game} {view} />
       </aside>
     </div>
   {/if}
@@ -320,8 +318,7 @@
     border-left: 1px solid var(--line);
     overflow-y: auto;
   }
-  .place,
-  .numbers {
+  .place {
     display: flex;
     flex-wrap: wrap;
     gap: 4px 14px;
