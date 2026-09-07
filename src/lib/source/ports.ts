@@ -32,6 +32,7 @@ import twinsSource from '../map/twins.ts?raw';
 import mwCharacterSource from '../game/mw-port/character.ts?raw';
 import mwSpellsSource from '../game/mw-port/spells.ts?raw';
 import mwStateSource from '../game/mw-port/state.ts?raw';
+import mwStockingSource from '../game/mw-port/stocking.ts?raw';
 import mwmapSource from '../game/mwmap.js?raw';
 import mwDungeonSource from '../game/mw-dungeon.ts?raw';
 import mwMonstersSource from '../mw-bestiary/monsters.ts?raw';
@@ -66,6 +67,7 @@ const MORAFFS_WORLD_SOURCES = {
   'src/lib/game/mw-port/character.ts': mwCharacterSource,
   'src/lib/game/mw-port/spells.ts': mwSpellsSource,
   'src/lib/game/mw-port/state.ts': mwStateSource,
+  'src/lib/game/mw-port/stocking.ts': mwStockingSource,
   'src/lib/game/mwmap.js': mwmapSource,
   'src/lib/game/mw-dungeon.ts': mwDungeonSource,
   'src/lib/mw-bestiary/monsters.ts': mwMonstersSource,

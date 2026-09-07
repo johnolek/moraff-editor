@@ -4,6 +4,7 @@ import { sectionOf } from '../game/dotu-files.js';
 import { MONSTER_TYPE_ODDS, monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
 import { bundledDungeon } from '../game/dungeon';
 import { sectionInfo } from '../game/sections';
+import { UNFORGIVEN_AREA } from './area';
 import {
   MONSTER_SLOTS,
   beyondMapCount,
@@ -13,6 +14,7 @@ import {
   monsterCounts,
   stockFloor,
   stockingSection,
+  UNFORGIVEN_STOCKING,
   type StockedMonster,
 } from './stocking';
 
@@ -186,14 +188,14 @@ describe('beyondMapCount', () => {
       { slot: 2, x: 10, y: 104, monsterId: 'builtin-0', level: 5, hp: 20 },
       { slot: 3, x: 10, y: 109, monsterId: 'builtin-0', level: 5, hp: 20 },
     ];
-    expect(beyondMapCount(monsters)).toBe(3);
-    expect(beyondMapCount([])).toBe(0);
+    expect(beyondMapCount(monsters, UNFORGIVEN_AREA)).toBe(3);
+    expect(beyondMapCount([], UNFORGIVEN_AREA)).toBe(0);
   });
 
   it('finds about one monster in twenty beyond it on a stocked floor', () => {
     const monsters = stockFloor(floorOf(0, 12), 0, 12, seeded(41));
-    expect(beyondMapCount(monsters)).toBeGreaterThan(0);
-    expect(beyondMapCount(monsters)).toBeLessThan(monsters.length / 4);
+    expect(beyondMapCount(monsters, UNFORGIVEN_AREA)).toBeGreaterThan(0);
+    expect(beyondMapCount(monsters, UNFORGIVEN_AREA)).toBeLessThan(monsters.length / 4);
   });
 });
 
@@ -204,5 +206,17 @@ describe('monsterAt', () => {
     expect(monsterAt(monsters, first.x, first.y)).toBe(first);
     const free = monsters.reduce((x, monster) => Math.max(x, monster.x), 0) + 1;
     expect(monsterAt(monsters, free, first.y)).toBeNull();
+  });
+});
+
+describe('UNFORGIVEN_STOCKING', () => {
+  it('names a monster with the level and hit points it was stocked with', () => {
+    const monster: StockedMonster = { slot: 3, x: 12, y: 40, monsterId: 'builtin-0', level: 7, hp: 43 };
+    expect(UNFORGIVEN_STOCKING.describe(monster)).toBe('Giant Garbage Can · level 7 · 43 HP');
+  });
+
+  it('stocks the floors the game stocks and no others', () => {
+    expect(UNFORGIVEN_STOCKING.stocks(0, 12)).toBe(true);
+    expect(UNFORGIVEN_STOCKING.stocks(0, 0)).toBe(false);
   });
 });

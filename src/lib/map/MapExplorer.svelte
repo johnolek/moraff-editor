@@ -7,7 +7,7 @@
   import { isAppHistoryState, type AppHistoryState } from '../history';
   import { forEachShownSquare, isOnMap } from './area';
   import { downloadFloorPng } from './export-png';
-  import { describeExplored, describeMonster, describeNote, describeSquare, featureLine } from './describe';
+  import { describeExplored, describeNote, describeSquare, featureLine } from './describe';
   import { addDunFloors, exploredCounts, isExplored, readDunFile, staleFloorWarning, type ExploredFloors } from './explored';
   import ExploredMaps from './ExploredMaps.svelte';
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
@@ -25,7 +25,7 @@
   import Selection from './Selection.svelte';
   import { squaresOfKind, type LegendKind, type Mark } from './marks';
   import SquareInfo from './SquareInfo.svelte';
-  import { monsterAt, stockFloor, stockingSection, type StockedMonster } from './stocking';
+  import { monsterAt, type StockedMonster } from './stocking';
   import { twinsOf, type TwinFloor } from './twins';
   import { boundsIncluding, type Point } from './viewport';
   import { nearestOpenSquare, stepFrom } from './you';
@@ -56,7 +56,8 @@
   let selected = $state<Point | null>(null);
   /** undefined: not asked yet; null: asked, nothing reachable. */
   let route = $state<Route | null | undefined>(undefined);
-  /** Stocked floors by "dungeon:floor", kept while other floors are browsed. */
+  /** Stocked floors by "game:dungeon:floor", kept while other floors are browsed. The game
+   *  keeps only the three floors most recently visited; nothing here is thrown away. */
   let stocked = $state(new Map<string, StockedMonster[]>());
   /** Explored floors from the .DUN files dropped on the map. Nothing is stored, so a reload
    *  starts with none. */
@@ -75,8 +76,7 @@
   // five modules, and mean nothing about a numbered Moraff's World dungeon.
   const section = $derived(game.modules ? sectionInfo(dungeon, floor) : null);
   const twins = $derived(game.modules ? twinsOf(dungeon, floor) : []);
-  const stockKey = $derived(`${dungeon}:${floor}`);
-  const canStock = $derived(game.modules && stockingSection(dungeon, floor) !== null);
+  const stockKey = $derived(`${game.id}:${dungeon}:${floor}`);
   const monsters = $derived(stocked.get(stockKey) ?? []);
   const beyondMapMonsters = $derived(monsters.filter((monster) => !isOnMap(monster, game.area)));
   /** Fit frames the floor the game shows plus whatever monsters were stocked beyond it. */
@@ -95,12 +95,13 @@
   );
   const cursorMonster = $derived(cursor ? monsterAt(monsters, cursor.x, cursor.y) : null);
   const selectedMonster = $derived(selected ? monsterAt(monsters, selected.x, selected.y) : null);
+  const selectedMonsterLine = $derived(selectedMonster && game.stocking.describe(selectedMonster));
   const tooltip = $derived<Tooltip | null>(
     cursorDescription
       ? {
           title: `${cursor!.x}, ${cursor!.y}`,
           feature: featureLine(cursorDescription),
-          monster: cursorMonster && describeMonster(cursorMonster),
+          monster: cursorMonster && game.stocking.describe(cursorMonster),
           notes: cursorNotes,
         }
       : null,
@@ -151,6 +152,8 @@
   function showGame(chosen: GameId) {
     if (chosen === game.id) return;
     left.set(game.id, here(highlight));
+    // A pinned monster type names one game's monster, so the other game cannot mark it.
+    monsterPinned = null;
     const start = { game: chosen, dungeon: rememberedDungeon(MAP_GAMES[chosen]), floor: 0, square: null, you: null };
     applyPlace(left.get(chosen) ?? start);
   }
@@ -300,7 +303,7 @@
   }
 
   function stockThisFloor() {
-    stocked = new Map(stocked).set(stockKey, stockFloor(rows, dungeon, floor, Math.random));
+    stocked = new Map(stocked).set(stockKey, game.stocking.stock(rows, dungeon, floor));
   }
 
   /** Reads the .DUN files given onto the map, naming whichever of them cannot be read. */
@@ -556,6 +559,7 @@
       {selected}
       {route}
       monster={selectedMonster}
+      monsterLine={selectedMonsterLine}
       routeNoun={game.routeTo.noun}
       {floorHasTarget}
       {teleporterModules}
@@ -564,18 +568,18 @@
       onclear={clearSelection}
       ontake={takeTeleporter}
     />
-    {#if game.modules}
-      <FloorMonsters
-        {monsters}
-        town={floor === 0}
-        {canStock}
-        pinned={monsterPinned}
-        onstock={stockThisFloor}
-        onclear={clearMonsters}
-        onhover={(monsterId) => (monsterHover = monsterId)}
-        onpin={pinMonster}
-      />
-    {:else}
+    <FloorMonsters
+      {game}
+      {dungeon}
+      {floor}
+      {monsters}
+      pinned={monsterPinned}
+      onstock={stockThisFloor}
+      onclear={clearMonsters}
+      onhover={(monsterId) => (monsterHover = monsterId)}
+      onpin={pinMonster}
+    />
+    {#if !game.modules}
       <ExploredMaps
         floors={explored}
         errors={dunErrors}

@@ -4,7 +4,6 @@ import type { MapGame, MapSquare } from './game';
 import { GLYPH_LABELS, MODULE_NUMERALS } from './labels';
 import type { Note } from './notes';
 import { hasTeleporterSide } from './path';
-import { monsterById, type StockedMonster } from './stocking';
 
 /** Where the teleporter on a square leads: "Teleporter to Module II or IV". */
 export function describeTeleporter(moduleIndex: number): string {
@@ -18,11 +17,6 @@ export function describeFeature(feature: Feature, game: MapGame): string | null 
   const { floor, x, y } = feature.destination;
   const landing = feature.kind === 'trapdoor' ? `, lands at ${x}, ${y}` : '';
   return `${GLYPH_LABELS[feature.kind]} to floor ${floor}${landing}`;
-}
-
-/** The monster standing on a square: "Gargalon · level 7 · 43 HP". */
-export function describeMonster(monster: StockedMonster): string {
-  return `${monsterById(monster.monsterId).name} · level ${monster.level} · ${monster.hp} HP`;
 }
 
 export interface SquareDescription {

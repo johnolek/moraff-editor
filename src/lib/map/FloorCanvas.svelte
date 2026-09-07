@@ -1,7 +1,5 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { renderMonster } from '../bestiary/pictures';
-  import { sectionInfo } from '../game/sections';
   import { drawFloor, drawMarks, drawOutline, drawRoute, drawYou, squareRect } from './draw-floor';
   import { isExplored, type ExploredSquares } from './explored';
   import { drawMonsters, type MonsterSprites } from './draw-monsters';
@@ -9,7 +7,7 @@
   import type { Mark } from './marks';
   import type { Route } from './path';
   import { palette } from './palette';
-  import { monsterById, type StockedMonster } from './stocking';
+  import type { StockedMonster } from './stocking';
   import { drawTeleporters, teleporterHue, teleporterSegments } from './teleporters';
   import { ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
   import { youAlpha } from './you';
@@ -103,21 +101,21 @@
   });
 
   const teleporters = $derived(teleporterSegments(rows, game.area));
-  // Floors outside every section can hold no monsters, so the fallback part is never drawn with.
-  const part = $derived((game.modules ? sectionInfo(dungeon, floor)?.part : null) ?? 1);
 
-  // Monster pictures are drawn once each into an offscreen canvas and kept, since the same
-  // few monsters stand all over a floor. A monster looks different in each section, so the
-  // section's palette is part of the key.
+  // Monster pictures are drawn once each into an offscreen canvas and kept, since the same few
+  // monsters stand all over a floor. Each game says what its drawing depends on beyond the
+  // monster itself, and that goes in the key.
   const pictures = new Map<string, HTMLCanvasElement>();
 
   const sprites: MonsterSprites = {
-    isBoss: (id) => monsterById(id).isBoss,
+    isBoss: (id) => game.stocking.kind(id).boss,
     picture: (id) => {
-      const key = `${id}:${dungeon}:${part}`;
+      const entry = game.stocking.kind(id);
+      const key = `${game.id}:${id}:${entry.pictureKey(dungeon, floor)}`;
       const cached = pictures.get(key);
       if (cached) return cached;
-      const image = renderMonster(monsterById(id), dungeon + 1, part);
+      const image = entry.picture(dungeon, floor);
+      if (!image) return null;
       const sprite = document.createElement('canvas');
       sprite.width = image.width;
       sprite.height = image.height;

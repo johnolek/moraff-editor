@@ -1,10 +1,13 @@
 import type { GameId } from '../app-state.svelte';
+import type { RenderedImage } from '../bestiary/pictures';
 import { bundledDungeon } from '../game/dungeon';
 import { bundledMwDungeon } from '../game/mw-dungeon';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { MORAFFS_WORLD_AREA, UNFORGIVEN_AREA, type MapArea } from './area';
 import { MODULE_NUMERALS } from './labels';
+import { MORAFFS_WORLD_STOCKING } from './mw-stocking';
 import { hasTeleporterSide } from './path';
+import { UNFORGIVEN_STOCKING, type MonsterCountGroup, type StockedMonster } from './stocking';
 
 /**
  * A square of either game's floor. The two generators fill the same fields apart from the
@@ -41,6 +44,39 @@ export interface RouteTarget {
   matches(square: MapSquare): boolean;
 }
 
+/** What the map needs to know about one type of monster it has put on a floor. */
+export interface StockedKind {
+  name: string;
+  boss: boolean;
+  /** Everything the drawing depends on besides the monster itself, so the map can keep the
+   *  pictures it has already drawn rather than draw them again. */
+  pictureKey(dungeon: number, floor: number): string;
+  /** The monster as the game draws it on this floor, or null when the game has no picture. */
+  picture(dungeon: number, floor: number): RenderedImage | null;
+}
+
+/**
+ * How a game fills a floor with monsters, and what the map says about the ones it put there.
+ * The two games roll from different tables by different rules, so each brings its own.
+ */
+export interface MapStocking {
+  /** Whether the game itself could stock this floor. The floor override reaches ones it could
+   *  not, and those are left alone. */
+  stocks(dungeon: number, floor: number): boolean;
+  /** A fresh roll of the floor's monsters. */
+  stock(rows: MapSquare[][], dungeon: number, floor: number): StockedMonster[];
+  kind(monsterId: string): StockedKind;
+  /** The floor's monsters as the list beside the map groups them. */
+  groups(monsters: StockedMonster[]): MonsterCountGroup[];
+  /** The one line the tooltip and the selection panel print for one monster. */
+  describe(monster: StockedMonster): string;
+  /** What to say about the monsters standing outside the area the game shows. */
+  beyondMap(count: number): string;
+  /** What the panel says under the button about how the game itself rolls a floor, or null
+   *  when there is nothing to add. */
+  note: string | null;
+}
+
 /** Where a floor is: which numbered dungeon it belongs to and how deep it is. */
 export interface MapGame {
   id: GameId;
@@ -63,6 +99,8 @@ export interface MapGame {
   /** The building on a square, 0 when it has none. */
   buildingOn(square: MapSquare): number;
   routeTo: RouteTarget;
+  /** How this game fills a floor with monsters. */
+  stocking: MapStocking;
   /** What an exported PNG of a floor is called. */
   pngName(dungeon: number, floor: number): string;
   /**
@@ -132,6 +170,7 @@ export const UNFORGIVEN_MAP: MapGame = {
   buildings: UNFORGIVEN_BUILDINGS,
   buildingOn: (square) => square.town ?? 0,
   routeTo: { noun: 'teleporter', matches: hasTeleporterSide },
+  stocking: UNFORGIVEN_STOCKING,
   pngName: (dungeon, floor) => `dotu-module-${dungeon + 1}-${floor === 0 ? 'town' : `floor-${numberForFileName(floor)}`}.png`,
   modules: true,
 };
@@ -199,6 +238,7 @@ export const MORAFFS_WORLD_MAP: MapGame = {
   buildings: MORAFFS_WORLD_BUILDINGS,
   buildingOn: (square) => square.surface ?? 0,
   routeTo: { noun: 'ladder', matches: hasLadder },
+  stocking: MORAFFS_WORLD_STOCKING,
   pngName: (dungeon, floor) => `mw-dungeon-${numberForFileName(dungeon)}-floor-${numberForFileName(floor)}.png`,
   modules: false,
 };

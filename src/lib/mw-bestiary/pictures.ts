@@ -64,8 +64,12 @@ export function pictureImageIndex(picture: number): number | null {
  * way every time and picks entries 16 to 31 by `floor % 11`.
  */
 export function floorPalette(floor: number): Rgb[] {
-  return vgaToRgb(mwPalettes.palettes[floor % mwPalettes.palettes.length]);
+  return vgaToRgb(mwPalettes.palettes[floor % FLOOR_PALETTES]);
 }
+
+/** How many palettes set_palette rotates through, which is how far apart two floors have to be
+ *  to be drawn in the same colours. */
+export const FLOOR_PALETTES = mwPalettes.palettes.length;
 
 /**
  * The palette entry a picture pixel is drawn in, or -1 for a pixel that is not drawn (exe

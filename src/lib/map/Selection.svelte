@@ -2,7 +2,6 @@
   import { app } from '../app-state.svelte';
   import { goToTab } from '../history';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { describeMonster } from './describe';
   import { MODULE_NUMERALS } from './labels';
   import type { Route } from './path';
   import type { StockedMonster } from './stocking';
@@ -13,6 +12,8 @@
     route: Route | null | undefined;
     /** The stocked monster standing on the selected square, if there is one. */
     monster: StockedMonster | null;
+    /** The line the game's own stocking has the panel print about it. */
+    monsterLine: string | null;
     /** What routing walks to, as the buttons and the answers name it. */
     routeNoun: string;
     /** Whether the floor holds one at all: without one there is nothing to walk to. */
@@ -25,7 +26,7 @@
     ontake: (module: number) => void;
   }
 
-  let { selected, route, monster, routeNoun, floorHasTarget, teleporterModules, onroute, onhere, onclear, ontake }: Props = $props();
+  let { selected, route, monster, monsterLine, routeNoun, floorHasTarget, teleporterModules, onroute, onhere, onclear, ontake }: Props = $props();
 
   let allowPassWall = $state(false);
 
@@ -53,8 +54,8 @@
 {#if selected}
   <section>
     <SectionHeading title="Selected {selected.x}, {selected.y}" />
-    {#if monster}
-      <p class="monster">{describeMonster(monster)}</p>
+    {#if monsterLine}
+      <p class="monster">{monsterLine}</p>
     {/if}
     <div class="buttons">
       {#if monster}

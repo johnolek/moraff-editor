@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeExplored, describeFeature, describeMonster, describeNote, describeSquare, describeTeleporter, featureLine } from './describe';
+import { describeExplored, describeFeature, describeNote, describeSquare, describeTeleporter, featureLine } from './describe';
 import { UNFORGIVEN_MAP, type MapSquare } from './game';
 
 function square(overrides: Partial<MapSquare> = {}): MapSquare {
@@ -67,12 +67,5 @@ describe('describeNote', () => {
   it('spells out the two note kinds', () => {
     expect(describeNote({ kind: 'oneWayUp', topFloor: 2 })).toBe('One way: no ladder back down from floor 2.');
     expect(describeNote({ kind: 'landsOnChute', chuteFloor: 4 })).toBe('Lands on a chute to floor 4.');
-  });
-});
-
-describe('describeMonster', () => {
-  it('names the monster with the level and hit points it was stocked with', () => {
-    const monster = { slot: 3, x: 12, y: 40, monsterId: 'builtin-0', level: 7, hp: 43 };
-    expect(describeMonster(monster)).toBe('Giant Garbage Can · level 7 · 43 HP');
   });
 });

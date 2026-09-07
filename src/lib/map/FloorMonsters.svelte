@@ -1,13 +1,14 @@
 <script lang="ts">
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import { beyondMapCount, groupedMonsterCounts, type StockedMonster } from './stocking';
+  import { beyondMapCount, type StockedMonster } from './stocking';
+  import type { MapGame } from './game';
 
   interface Props {
+    game: MapGame;
+    dungeon: number;
+    floor: number;
     /** Monsters stocked on the floor, empty when it has not been stocked. */
     monsters: StockedMonster[];
-    town: boolean;
-    /** Whether the game itself could stock this floor; the override reaches ones it could not. */
-    canStock: boolean;
     /** Monster whose squares stay marked until it is clicked again or cleared. */
     pinned: string | null;
     onstock: () => void;
@@ -16,10 +17,11 @@
     onpin: (monsterId: string | null) => void;
   }
 
-  let { monsters, town, canStock, pinned, onstock, onclear, onhover, onpin }: Props = $props();
+  let { game, dungeon, floor, monsters, pinned, onstock, onclear, onhover, onpin }: Props = $props();
 
-  const groups = $derived(groupedMonsterCounts(monsters));
-  const beyondMap = $derived(beyondMapCount(monsters));
+  const canStock = $derived(game.stocking.stocks(dungeon, floor));
+  const groups = $derived(game.stocking.groups(monsters));
+  const beyondMap = $derived(beyondMapCount(monsters, game.area));
 </script>
 
 <section>
@@ -28,7 +30,7 @@
       <button class="clear" onclick={() => onpin(null)}>Clear</button>
     {/if}
   </SectionHeading>
-  {#if town}
+  {#if floor === 0}
     <p class="hint">The town has no monsters.</p>
   {:else}
     <div class="buttons">
@@ -41,13 +43,13 @@
     </div>
     {#if monsters.length}
       <p>{monsters.length} monsters</p>
-      {#if beyondMap === 1}
-        <p class="hint">1 stands beyond the game's map, below row 103, where nothing can reach it.</p>
-      {:else if beyondMap}
-        <p class="hint">{beyondMap} stand beyond the game's map, below row 103, where nothing can reach them.</p>
+      {#if beyondMap}
+        <p class="hint">{game.stocking.beyondMap(beyondMap)}</p>
       {/if}
       {#each groups as group}
-        <h3>{group.label}</h3>
+        {#if group.label}
+          <h3>{group.label}</h3>
+        {/if}
         <ul>
           {#each group.counts as { monsterId, name, count }}
             <li>
@@ -59,8 +61,10 @@
                 onpointerleave={() => onhover(null)}
                 onclick={() => onpin(pinned === monsterId ? null : monsterId)}
               >
-                <span>{name}</span>
-                <span class="count">{count}</span>
+                <span class="line">
+                  <span>{name}</span>
+                  <span class="count">{count}</span>
+                </span>
               </button>
             </li>
           {/each}
@@ -126,7 +130,7 @@
   }
   ul {
     list-style: none;
-    margin: 0;
+    margin: 8px 0 0;
     padding: 0;
     display: flex;
     flex-direction: column;
@@ -134,8 +138,8 @@
   }
   .type {
     display: flex;
-    justify-content: space-between;
-    gap: 8px;
+    flex-direction: column;
+    gap: 1px;
     width: calc(100% + 8px);
     margin: 0 -4px;
     padding: 2px 4px;
@@ -147,6 +151,11 @@
     font-size: 12px;
     text-align: left;
     cursor: pointer;
+  }
+  .line {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
   }
   .type:hover {
     background: var(--panel-2);

@@ -1,11 +1,12 @@
 import { allMonsters, isPuffball, type Monster } from '../bestiary/monsters';
+import { renderMonster } from '../bestiary/pictures';
 import { nudgeLevel, rollHp } from '../bestiary/roll';
 import { sectionOf } from '../game/dotu-files.js';
 import { monsterLevelBase } from '../game/dotu-mech.js';
 import { sectionInfo, type SectionInfo } from '../game/sections';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
-import { isOnMap, UNFORGIVEN_AREA } from './area';
-import type { MapSquare } from './game';
+import { isOnMap, type MapArea } from './area';
+import type { MapSquare, MapStocking, StockedKind } from './game';
 
 /** Monsters the game keeps for one floor, boss included (RE notes 4.1). */
 export const MONSTER_SLOTS = 145;
@@ -99,6 +100,8 @@ export interface MonsterCount {
   monsterId: string;
   name: string;
   count: number;
+  /** A second line about this type's monsters, or null when the game has nothing to add. */
+  detail: string | null;
 }
 
 /** How many of each monster type a stocked floor holds, commonest first, with the Shadow
@@ -107,17 +110,18 @@ export function monsterCounts(monsters: StockedMonster[]): MonsterCount[] {
   const counts = new Map<string, number>();
   for (const monster of monsters) counts.set(monster.monsterId, (counts.get(monster.monsterId) ?? 0) + 1);
   return [...counts]
-    .map(([monsterId, count]) => ({ monsterId, name: monsterById(monsterId).name, count }))
+    .map(([monsterId, count]) => ({ monsterId, name: monsterById(monsterId).name, count, detail: null }))
     .sort((a, b) => Number(monsterById(b.monsterId).isBoss) - Number(monsterById(a.monsterId).isBoss) || b.count - a.count);
 }
 
 /** How many of the floor's monsters stand outside the area the game shows. */
-export function beyondMapCount(monsters: StockedMonster[]): number {
-  return monsters.filter((monster) => !isOnMap(monster, UNFORGIVEN_AREA)).length;
+export function beyondMapCount(monsters: StockedMonster[], area: MapArea): number {
+  return monsters.filter((monster) => !isOnMap(monster, area)).length;
 }
 
 export interface MonsterCountGroup {
-  label: string;
+  /** The heading over this part of the list, or null when the list has only one part. */
+  label: string | null;
   counts: MonsterCount[];
 }
 
@@ -180,4 +184,31 @@ function bossSquare(rows: MapSquare[][], taken: Set<number>, rnd: () => number):
     const y = random(rnd, BOSS_AREA_SIZE) + BOSS_AREA_ORIGIN;
     if (!rows[y][x].solid && !taken.has(y * WIDTH + x)) return { x, y };
   }
+}
+
+/** Dungeons of the Unforgiven's monsters, as the map descriptor asks for them. */
+export const UNFORGIVEN_STOCKING: MapStocking = {
+  stocks: (dungeon, floor) => stockingSection(dungeon, floor) !== null,
+  stock: (rows, dungeon, floor) => stockFloor(rows, dungeon, floor, Math.random),
+  kind: unforgivenKind,
+  groups: groupedMonsterCounts,
+  describe: (monster) => `${monsterById(monster.monsterId).name} · level ${monster.level} · ${monster.hp} HP`,
+  beyondMap: (count) =>
+    count === 1
+      ? "1 stands beyond the game's map, below row 103, where nothing can reach it."
+      : `${count} stand beyond the game's map, below row 103, where nothing can reach them.`,
+  note: null,
+};
+
+/** A monster looks different in each section, so the section's palette is what its picture
+ *  depends on beyond the monster itself. */
+function unforgivenKind(monsterId: string): StockedKind {
+  const entry = monsterById(monsterId);
+  const partOn = (dungeon: number, floor: number) => sectionInfo(dungeon, floor)?.part ?? 1;
+  return {
+    name: entry.name,
+    boss: entry.isBoss,
+    pictureKey: (dungeon, floor) => `${dungeon}:${partOn(dungeon, floor)}`,
+    picture: (dungeon, floor) => renderMonster(entry, dungeon + 1, partOn(dungeon, floor)),
+  };
 }

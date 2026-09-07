@@ -9,8 +9,9 @@ export const PICTURE_MIN_CELL = 16;
 /** The pictures the map draws monsters with, kept by whoever owns the canvas. */
 export interface MonsterSprites {
   isBoss(monsterId: string): boolean;
-  /** The monster's picture, drawn on an offscreen canvas the first time it is asked for. */
-  picture(monsterId: string): HTMLCanvasElement;
+  /** The monster's picture, drawn on an offscreen canvas the first time it is asked for, or
+   *  null for a monster the game has no picture of. */
+  picture(monsterId: string): HTMLCanvasElement | null;
 }
 
 /** The monsters stocked on the floor, over the squares they stand on. The game stocks over a
@@ -23,10 +24,11 @@ export function drawMonsters(
 ): void {
   for (const monster of monsters) {
     const { x0, y0, w, h } = squareRect(view, monster.x, monster.y);
-    if (view.cell < PICTURE_MIN_CELL) {
-      drawMarker(ctx, x0 + 1 + w / 2, y0 + 1 + h / 2, Math.max(2, view.cell / 4), sprites.isBoss(monster.monsterId));
+    const picture = view.cell < PICTURE_MIN_CELL ? null : sprites.picture(monster.monsterId);
+    if (picture) {
+      drawPicture(ctx, picture, x0, y0, w, h);
     } else {
-      drawPicture(ctx, sprites.picture(monster.monsterId), x0, y0, w, h);
+      drawMarker(ctx, x0 + 1 + w / 2, y0 + 1 + h / 2, Math.max(2, view.cell / 4), sprites.isBoss(monster.monsterId));
     }
   }
 }
