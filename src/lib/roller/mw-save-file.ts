@@ -42,13 +42,13 @@ export function newMwCharacterFile(pc: MwCharacter): Uint8Array<ArrayBuffer> {
   view.setInt16(0x7ac, pc.x, true);
   view.setInt16(0x7ae, pc.y, true);
   view.setInt16(0x7b0, pc.floor, true);
-  view.setInt16(0x7b2, pc.module, true);
+  view.setInt16(0x7b2, pc.dungeon, true);
   bytes[0x7b4] = pc.mapCursorX;
   bytes[0x7b5] = pc.mapCursorY;
   view.setInt32(0x7d6, pc.ageMinutes, true);
   view.setInt16(0x7f8, pc.worldX, true);
   view.setInt16(0x7fa, pc.worldY, true);
-  view.setInt16(0x804, pc.returnModule, true);
+  view.setInt16(0x804, pc.returnDungeon, true);
   view.setInt16(0x806, pc.returnX, true);
   view.setInt16(0x808, pc.returnY, true);
   view.setInt32(0x80a, pc.encounterCounter, true);

@@ -39,13 +39,13 @@ function read(bytes: Uint8Array) {
     x: view.getInt16(0x7ac, true),
     y: view.getInt16(0x7ae, true),
     floor: view.getInt16(0x7b0, true),
-    module: view.getInt16(0x7b2, true),
+    dungeon: view.getInt16(0x7b2, true),
     mapCursorX: bytes[0x7b4],
     mapCursorY: bytes[0x7b5],
     ageMinutes: view.getInt32(0x7d6, true),
     worldX: view.getInt16(0x7f8, true),
     worldY: view.getInt16(0x7fa, true),
-    returnModule: view.getInt16(0x804, true),
+    returnDungeon: view.getInt16(0x804, true),
     returnX: view.getInt16(0x806, true),
     returnY: view.getInt16(0x808, true),
     encounterCounter: view.getInt32(0x80a, true),
@@ -102,8 +102,8 @@ describe('newMwCharacterFile', () => {
 
   it('puts the character where the game starts every new one, with fists and skin', () => {
     const save = read(newMwCharacterFile(rolled(9, 2, 1)));
-    expect([save.x, save.y, save.floor, save.module]).toEqual([56, 60, 0, 0]);
-    expect([save.returnModule, save.returnX, save.returnY]).toEqual([0, 56, 60]);
+    expect([save.x, save.y, save.floor, save.dungeon]).toEqual([56, 60, 0, 0]);
+    expect([save.returnDungeon, save.returnX, save.returnY]).toEqual([0, 56, 60]);
     expect([save.worldX, save.worldY]).toEqual([2146, 1431]);
     expect([save.mapCursorX, save.mapCursorY]).toEqual([9, 19]);
     expect(save.encounterCounter).toBe(300);

@@ -362,8 +362,8 @@ describe('rollChar', () => {
 
   it('starts the character on the square the game puts every new character', () => {
     const { pc } = rolled(3, 0, 0);
-    expect([pc.x, pc.y, pc.floor, pc.module]).toEqual([56, 60, 0, 0]);
-    expect([pc.returnX, pc.returnY, pc.returnModule]).toEqual([56, 60, 0]);
+    expect([pc.x, pc.y, pc.floor, pc.dungeon]).toEqual([56, 60, 0, 0]);
+    expect([pc.returnX, pc.returnY, pc.returnDungeon]).toEqual([56, 60, 0]);
     expect([pc.worldX, pc.worldY]).toEqual([2146, 1431]);
     expect(pc.encounterCounter).toBe(300);
   });

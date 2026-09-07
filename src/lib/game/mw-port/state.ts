@@ -53,8 +53,22 @@ export interface MwCharacter {
   y: number;
   /** 0x7b0, DS:c8a2: the floor the character is on, not the character's own level. */
   floor: number;
-  /** 0x7b2, DS:c8a4. */
-  module: number;
+  /**
+   * 0x7b2, DS:c8a4: which dungeon the character is in. The floor hash myrand (exe 3000:a384)
+   * takes it beside x, y and the floor, so every value is a different set of floors.
+   *
+   * roll_char starts a character in 0 and the world-map screen (exe 3000:8235) is the only thing
+   * that ever changes it: on leaving the map it works a number out of the map square the player
+   * stands on, `regionX * regionY * regionX / (regionY + 1) % 31000` over 16-bit ints, then adds
+   * one until floor 0 of that dungeon has a gate square to come back out through. The regions
+   * are {@link MwCharacter.worldX} / 0x100 and {@link MwCharacter.worldY} / 0x80, both 0 to 63,
+   * which puts every reachable value between -3204 and 3528; the modulus never bites.
+   *
+   * Confirmed against the save files in ~/games/mworld: slots 1 and 3 both read 0 here, and
+   * brute-forcing all 31,000 values against the explored squares of their own 11/12/30/31.DUN
+   * leaves 0 as the only dungeon whose floors have no wall where the character has walked.
+   */
+  dungeon: number;
   /**
    * 0x7b4, DS:c8a6: where the character sits in the scrolling map view, not on the floor. The
    * schema has no name for this byte or the one after it.
@@ -74,8 +88,12 @@ export interface MwCharacter {
   worldX: number;
   /** 0x7fa, DS:c8ec. */
   worldY: number;
-  /** 0x804, DS:c8f6: the module to come back to. The schema has no name for it. */
-  returnModule: number;
+  /**
+   * 0x804, DS:c8f6: the dungeon to come back to. The temple (exe 2000:3085) sets it to the one
+   * the character is standing in, and death (exe 2000:726f) puts them back there — throwing away
+   * every explored floor if it is not the dungeon they died in.
+   */
+  returnDungeon: number;
   /**
    * 0x806, DS:c8f8: the square to come back to. The schema has no name for it or the one after
    * it.
@@ -232,13 +250,13 @@ export function blankMwCharacter(): MwCharacter {
     x: 0,
     y: 0,
     floor: 0,
-    module: 0,
+    dungeon: 0,
     mapCursorX: 0,
     mapCursorY: 0,
     ageMinutes: 0,
     worldX: 0,
     worldY: 0,
-    returnModule: 0,
+    returnDungeon: 0,
     returnX: 0,
     returnY: 0,
     encounterCounter: 0,

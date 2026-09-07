@@ -568,7 +568,7 @@ export function rollChar(game: MwGame): void {
   pc.x = 0x38;
   pc.y = 0x3c;
   pc.floor = 0;
-  pc.module = 0;
+  pc.dungeon = 0;
   pc.mapCursorY = game.mapViewRows >> 1;
   pc.mapCursorX = game.mapViewColumns >> 1;
   pc.worldX = 0x862;
@@ -577,7 +577,7 @@ export function rollChar(game: MwGame): void {
   // equipped-weapon and equipped-armor bytes stay 0, so those are what the character is using.
   pc.weaponsOwned[0] = 1;
   pc.armorOwned[0] = 1;
-  pc.returnModule = 0;
+  pc.returnDungeon = 0;
   pc.returnX = 0x38;
   pc.returnY = 0x3c;
   pc.encounterCounter = 300;
