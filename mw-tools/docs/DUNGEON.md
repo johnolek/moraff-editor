@@ -289,19 +289,34 @@ These fields are certain — each one is named for what the code does with it:
 | 0x06 | 2 | lowest floor it appears on | `pick_monster` |
 | 0x08 | 2 | highest floor it appears on | `pick_monster` |
 | 0x0d | 1 | levels drained from the character on a hit | `monster_turn` |
-| 0x0e | 1 | which characteristic a puffball drains or raises, signed | `puffball_stat` |
-| 0x10 | 1 | kind: 6 is a puffball, which pops instead of fighting | `monster_turn` |
+| 0x0e | 1 | which characteristic it drains or raises, signed | `puffball_stat` |
+| 0x0f | 1 | what it breathes, 1 to 5, instead of striking half the time | `monster_turn` |
+| 0x10 | 1 | kind: 1 poisons, 2 diseases, 6 is a puffball, 100 is spell-proof | `monster_turn` |
 | 0x11 | 1 | hit points per floor of depth | `generate_section` |
 | 0x12 | 1 | added to the monster's attack score | `monster_turn` |
 | 0x16 | 1 | subtracted from the character's attack score | `strike` |
 | 0x17 | 1 | subtracted from the character's attack score, and added to the monster's | `strike`, `monster_turn` |
+| 0x1f | 2 | one less than what a kill is worth is multiplied by | `FUN_3000_b8d4` |
 | 0x22 | 1 | picture number, 0 to 47 | the picture table |
 
-The rest is guesswork and is printed raw by `dump_tables.py`: `0x0f` looks like a
-colour group (the dragons run 1 to 5 by colour), `0x19` and `0x1b` look like
-treasure ranges, and `0x1f` rises with the monster's power.  `main` rewrites any
-maximum floor above 120 to 254 at startup, so the 127s in the file mean "as deep
-as you like".
+The rest is guesswork and is printed raw by `dump_tables.py`: `0x19` and `0x1b`
+look like treasure ranges, `0x13` and `0x14` are added together and rolled
+against the character's mind by the spell at `2000:cdc5`, and `0x21` runs 1 to 15
+over the fifteen coloured balls, so it is probably the colour to draw the picture
+in.  `main` rewrites any maximum floor above 120 to 254 at startup — for the 104
+monsters it rolls, not for the eight bosses — so the 127s in the file mean "as
+deep as you like".
+
+The five things a monster can breathe are FIRE, ICE, ACID, GREEN PHLEGM and
+BLACK SLIME, in that order.  Breath does `depth + random(depth)` damage, halved by
+the matching resistance spell; acid destroys the armour the character is wearing,
+phlegm gives them a disease and slime poisons them.
+
+The kind at 0x10 is 99 for an ordinary monster.  A 100 is the one that shows on
+the screen: the four battle spells at `2000:cccc`, `2000:cdc5`, `2000:d0de` and
+`2000:d195` all ask `FUN_2000_cc66` first, and a monster of kind 100 answers them
+with "NO, THAT SILLY SPELL DOESTN'T WORK ON ME" and catches a thrown grenade.
+ZEUS, the DEVIL and the eight quest bosses are the ten that do.
 
 `pick_monster` (`2000:45bd`) rolls the type.  It starts from the floor's group
 number, replaces it with `random(9)` on a coin flip and with `random(104)` one
@@ -372,7 +387,7 @@ per-weapon plus at offset 0x8e.
 w = the equipped weapon; a magic weapon replaces it with POWER WEAPON n (index n + 8)
 score = random(80) + 2 * level + strength + luck + c8b9
       + weapon[equipped].tohit + c938 + enchantment[equipped] + c8c0
-if (level > 75) one time in 30, score += 40
+if (floor > 75) one time in 30, score += 40
 margin = score - 2 * monster.depth - monster[0x02] - monster[0x16] - monster[0x17]
 damage = 0
 while (margin > 40) { damage += random(weapon[w].damage); margin -= 40 }
@@ -390,14 +405,62 @@ score = random(80) + 2 * depth + monster[0x12] + monster[0x17]
       + (the character is a MONK, class byte 2 ? random(intelligence) : 0)
       - 2 * level - agility - luck - c8b9 - armour[worn].ac
       - c8c1 - c1cf - c8c2 - c8c3 - 2 * c8d9 * c8d9
-if (level > 75) score += (level - 75) / 2
+if (floor > 75) score += (floor - 75) / 2
 damage = 0
 while (score > 32) { damage += random(monster[0x04]); score -= 40 }
+if (random(500) < floor) damage += 1
+if (random(4) == 1) damage = random(floor / 2 + 3)     /* whatever the swing did */
+if (damage > 0 && level < floor) {
+    damage += random(floor - level)
+    if (floor > 25)  damage += random(floor * 4)
+    if (floor > 100) damage += random(floor * 5)
+    damage += random(depth)
+    damage = damage * (max(1, 100 - constitution) + 50) / 150
+    if (damage < 1) damage = 1
+}
+if (level == 0 && damage > 4) damage = random(4) + 1
 ```
+
+The four lines under `level < floor` are what makes the dungeon dangerous below
+the character's own level: a floor deeper than the character is worth several
+more rolls of its own number, and Constitution is the only thing that takes any
+of it back — at 100 Constitution a hit does a third of what it would at 0, and
+nothing above 100 helps.
+
+A monster with a byte at 0x0f breathes instead of striking half the time, and
+the whole score above is thrown away when it does: breath is `depth +
+random(depth)`, halved by the resistance spell that matches it.  A hit that lands
+is also what applies the monster's level drain, its stat drain and its poison or
+disease; breath applies none of those, though phlegm and slime carry a disease
+and a poison of their own.
 
 A puffball never gets that far: a monster whose byte at 0x10 is 6 calls
 `puffball_stat` with its byte at 0x0e and vanishes, draining or raising one of
-the character's characteristics.
+the character's characteristics.  The byte names the characteristic and carries
+the sign — 1 is Strength through 6 is Luck — and `puffball_stat` divides it by
+its own number, so every puffball moves its characteristic by exactly one point.
+
+### What a kill is worth
+
+`FUN_3000_b8d4` (`3000:b8d4`), which `FUN_3000_d51c` adds to the character's
+experience whenever a monster dies:
+
+```
+d = min(monster.depth, 130)
+if (monster[0x1f] == -1) return 0
+return (monster[0x1f] + 1) * (5 * pow(1.23, d) + d + 1)
+```
+
+`1.23` is the double at DGROUP `0x5df1` and `5` the float at `0x5df9`.  This is
+the same curve, constant for constant, that Dungeons of the Unforgiven pays for a
+kill.  Nothing in the table holds -1, so every monster in the game is worth
+something; the word at 0x1f runs from 0 for the weakest to 127 for the RED DRAGON
+KING, which is worth 128 times the base.
+
+The other side of it is `FUN_2000_59fd` (`2000:59fd`), which the inn and
+`experience_for_level` (`2000:5a42`) work from: reaching level *n* takes
+`pow(1.36, n - 1) * 250 - 130` experience, where `1.36` is the double at
+`0x269d`, and `250` and `130` are the floats at `0x26a5` and `0x26a9`.
 
 ### Weapons
 
@@ -491,10 +554,8 @@ The palette has not been checked; Moraff's World sets its own.
   every save file in `~/games/mworld` holds 0, including level-200 characters, so
   nothing has ever confirmed it.  Until it is confirmed, a tool that reads a save
   file cannot know which dungeon its map belongs to.
-- **The experience formula.**  `experience_for_level` (`2000:5a42`) is only the
-  table of thresholds; what a kill is worth is somewhere in `monster_turn` or
-  `FUN_3000_d51c`, and was not found.
-- **Monster fields 0x0f, 0x10 apart from the puffball, 0x15 and 0x18 to 0x21.**
+- **Monster fields 0x0a to 0x0c, 0x13 to 0x15, and 0x18 to 0x21.**  The two the
+  code does read, 0x13 and 0x14, are only ever added together.
 - **The spells.**  `SPELLS.HLP` is 120 text records and `cast_spell` offers
   three categories of ten levels of four spells, but the arithmetic from
   (category, level, slot) to a record number, and where the point costs live, are

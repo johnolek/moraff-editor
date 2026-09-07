@@ -77,10 +77,13 @@ KNOWN = {
     "2000:58bf": ("save_player", "fwrite of the 0x928-byte record to slot file <n>"),
     "2000:590b": ("spells_hlp_probe", "opens SPELLS.HLP twice, drops both handles; no callers"),
     "2000:5938": ("load_spell_text", "SPELLS.HLP record n (0..119) into the spell text buffer"),
+    "2000:59fd": ("experience_needed", "pow(1.36, level - 1) * 250 - 130, what a level takes"),
     "2000:5a42": ("experience_for_level", "the level thresholds"),
+    "2000:5ae2": ("can_level_up", "true once the experience covers the next level"),
+    "2000:5b41": ("level_from_experience", "the highest level the experience covers"),
     "2000:5bef": ("strike", "the player's attack on a monster"),
     "2000:603f": ("puffball_stat", "the puffball's stat drain/raise, by stat number"),
-    "2000:615c": ("monster_turn", "the monster's attack and the experience it gives"),
+    "2000:615c": ("monster_turn", "the monster's attack, its breath and what a hit drains"),
     "2000:7c2d": ("surface_feature", "the terrain 0..5 of a surface square, from its position"),
     "2000:8fd8": ("show_help", "prints <n>.HLP a page at a time, in the colours it names"),
     "2000:933a": ("view_stats", "the vital-statistics screen"),
@@ -90,6 +93,7 @@ KNOWN = {
     "2000:a698": ("trapdoor_target", "the level a trap door on this square leads to, or -1"),
     "2000:aad5": ("movecontrol", "the main play loop: keys, movement, menus"),
     "2000:c546": ("cast_spell", "the spell menu"),
+    "2000:cc66": ("spell_proof", "true for the kind-100 monster no battle spell touches"),
 
     # ---- TOWN/CREATE module (segment 3000)
     "3000:4434": ("read_roll_line", "one line of ROLL.TXT into a buffer, dropping '|'"),
@@ -103,6 +107,8 @@ KNOWN = {
     "3000:a932": ("draw_cell_corners", "the four corner dots of a map cell at high zoom"),
     "3000:a97d": ("draw_map_square", "one automap cell: terrain, walls, ladder, trap door, chute"),
     "3000:af6f": ("seeded_pick", "chained srand/rand over (x, y, level, dungeon); no callers"),
+    "3000:b8d4": ("experience_for_kill", "(mult + 1) * (5 * 1.23^depth + depth + 1), depth capped at 130"),
+    "3000:d51c": ("monster_killed", "the kill: experience, the drops, and a boss's flag and reward"),
 
     # ---- DISP module (segment 4000)
     "4000:0a20": ("load_font", "reads .FNT file n into the three glyph buffers"),
