@@ -151,14 +151,14 @@ export const MORAFFS_WORLD: GameSchema = {
     },
     {
       title: 'Vitamin Pills',
-      note: 'Each pill bumps one stat by +2 and another by −2 when consumed.',
+      note: 'Each pill raises one characteristic by 4 and lowers another by 2 when swallowed (take_pill, WORLD.EXE 3000:9ac0).',
       fields: [
-        { kind: 'int8', offset: 0x015d, label: 'Orange  (+2 STR / −2 LCK)' },
-        { kind: 'int8', offset: 0x015e, label: 'Green   (+2 INT / −2 AGI)' },
-        { kind: 'int8', offset: 0x015f, label: 'Blue    (+2 WIS / −2 CON)' },
-        { kind: 'int8', offset: 0x0160, label: 'Red     (+2 CON / −2 WIS)' },
-        { kind: 'int8', offset: 0x0161, label: 'White   (+2 AGI / −2 INT)' },
-        { kind: 'int8', offset: 0x0162, label: 'Yellow  (+2 LCK / −2 STR)' },
+        { kind: 'int8', offset: 0x015d, label: 'Orange  (+4 STR / −2 LCK)' },
+        { kind: 'int8', offset: 0x015e, label: 'Green   (+4 INT / −2 AGI)' },
+        { kind: 'int8', offset: 0x015f, label: 'Blue    (+4 WIS / −2 CON)' },
+        { kind: 'int8', offset: 0x0160, label: 'Red     (+4 CON / −2 WIS)' },
+        { kind: 'int8', offset: 0x0161, label: 'White   (+4 AGI / −2 INT)' },
+        { kind: 'int8', offset: 0x0162, label: 'Yellow  (+4 LCK / −2 STR)' },
       ],
     },
     {
