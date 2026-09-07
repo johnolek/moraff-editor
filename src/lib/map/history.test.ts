@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isMapPlace, type MapPlace } from './history';
+import { isMapPlace, samePlace, type MapPlace } from './history';
 
 function place(overrides: Partial<MapPlace> = {}): unknown {
   return { module: 0, floor: 3, square: { x: 10, y: 20 }, ...overrides };
@@ -46,5 +46,34 @@ describe('isMapPlace', () => {
     expect(isMapPlace(place({ square: { x: 0, y: 110 } }))).toBe(false);
     expect(isMapPlace(place({ square: { x: -1, y: 0 } }))).toBe(false);
     expect(isMapPlace(place({ square: { x: 1.5, y: 0 } }))).toBe(false);
+  });
+});
+
+describe('samePlace', () => {
+  const here: MapPlace = { module: 1, floor: 3, square: { x: 10, y: 20 }, you: { x: 11, y: 20 } };
+
+  it('is true for a place naming the same floor, square and party', () => {
+    expect(samePlace(here, { ...here, square: { x: 10, y: 20 }, you: { x: 11, y: 20 } })).toBe(true);
+  });
+
+  it('is false once the module or the floor differs', () => {
+    expect(samePlace(here, { ...here, module: 0 })).toBe(false);
+    expect(samePlace(here, { ...here, floor: 4 })).toBe(false);
+  });
+
+  it('is false once the square arrived at differs', () => {
+    expect(samePlace(here, { ...here, square: { x: 10, y: 21 } })).toBe(false);
+    expect(samePlace(here, { ...here, square: null })).toBe(false);
+  });
+
+  it('is false once the party stands somewhere else', () => {
+    expect(samePlace(here, { ...here, you: { x: 12, y: 20 } })).toBe(false);
+    expect(samePlace(here, { ...here, you: null })).toBe(false);
+  });
+
+  it('treats a place from before the map tracked the party as one with nobody on it', () => {
+    const nobody: MapPlace = { module: 1, floor: 3, square: null };
+    expect(samePlace(nobody, { ...nobody, you: null })).toBe(true);
+    expect(samePlace(nobody, { ...nobody, you: { x: 1, y: 1 } })).toBe(false);
   });
 });

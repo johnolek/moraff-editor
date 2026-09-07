@@ -12,7 +12,7 @@
   import FloorCanvas, { type Tooltip } from './FloorCanvas.svelte';
   import FloorMonsters from './FloorMonsters.svelte';
   import { jumpTarget, squareFeature, teleporterTargets, type Destination } from './floor-info';
-  import { FLOOR_MAX, FLOOR_MIN, type MapPlace } from './history';
+  import { FLOOR_MAX, FLOOR_MIN, samePlace, type MapPlace } from './history';
   import { keyAction } from './keyboard';
   import { MODULE_NUMERALS } from './labels';
   import Legend from './Legend.svelte';
@@ -99,11 +99,7 @@
 
   onMount(() => {
     const state = history.state;
-    if (isAppHistoryState(state) && state.map) {
-      applyPlace(state.map);
-      return;
-    }
-    history.replaceState(entry(0, { module: moduleIndex, floor, square: null, you }), '');
+    if (isAppHistoryState(state) && state.map) applyPlace(state.map);
   });
 
   /** The browser structured-clones what it stores, and Svelte's state proxies cannot be cloned, so
@@ -113,11 +109,14 @@
   }
 
   /** Go to another floor and leave a history entry behind, so the browser's Back button returns to
-   *  `fromSquare` on the floor being left. */
+   *  `fromSquare` on the floor being left. Nothing is recorded while another tab is showing:
+   *  Back and Forward belong to the tabs then, not to the map. */
   function travel(place: MapPlace, fromSquare: Point | null) {
-    history.replaceState(entry(app.mapHistory.current, { module: moduleIndex, floor, square: fromSquare, you }), '');
-    history.pushState(entry(app.mapHistory.current + 1, place), '');
-    app.mapHistory = app.mapHistory.pushed();
+    if (app.tab === 'map') {
+      history.replaceState(entry(app.mapHistory.current, { module: moduleIndex, floor, square: fromSquare, you }), '');
+      history.pushState(entry(app.mapHistory.current + 1, place), '');
+      app.mapHistory = app.mapHistory.pushed();
+    }
     applyPlace(place);
   }
 
@@ -135,9 +134,12 @@
     }
   }
 
+  /** Only an entry naming somewhere else moves the map. Every entry carries the map's place,
+   *  including the ones a tab switch pushed, and stepping through those must leave it alone. */
   function onPopState(event: PopStateEvent) {
-    if (!isAppHistoryState(event.state) || !event.state.map) return;
-    applyPlace(event.state.map);
+    const place = isAppHistoryState(event.state) ? event.state.map : undefined;
+    if (!place || samePlace(place, { module: moduleIndex, floor, square: highlight, you })) return;
+    applyPlace(place);
   }
 
   function changeModule(event: Event) {
@@ -184,6 +186,7 @@
    *  bring you back to this spot rather than to wherever the last travel left you. */
   function standAt(square: Point) {
     you = square;
+    if (app.tab !== 'map') return;
     history.replaceState(entry(app.mapHistory.current, { module: moduleIndex, floor, square: highlight, you }), '');
   }
 

@@ -16,6 +16,17 @@ export interface MapPlace {
   you?: Point | null;
 }
 
+/** The two places show the same thing, so moving from one to the other would change nothing. */
+export function samePlace(a: MapPlace, b: MapPlace): boolean {
+  if (a.module !== b.module || a.floor !== b.floor) return false;
+  return samePoint(a.square, b.square) && samePoint(a.you ?? null, b.you ?? null);
+}
+
+function samePoint(a: Point | null, b: Point | null): boolean {
+  if (a === null || b === null) return a === b;
+  return a.x === b.x && a.y === b.y;
+}
+
 function isPoint(value: unknown): value is Point {
   if (typeof value !== 'object' || value === null) return false;
   const { x, y } = value as Partial<Point>;
