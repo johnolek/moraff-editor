@@ -13,15 +13,24 @@ something the original does, a comment says so.
 * **`keys.ts`** — the byte `movecontrol` dispatches on for every key, and the browser key events
   they come from.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `trapdoor.ts`, `chute.ts`,
-  `dig.ts`, `modules.ts`, `quit.ts`, `help.ts`, `town.ts`, `fight.ts`, `kill.ts`, `items.ts` — so
-  that two people can add two keys without touching the same file.
-* **`cast.ts`, `spellScreens.ts`, `pockets.ts`** — the spell and item screens: `cast_a_spell` for
-  C and I, the two lists of spells in effect for 1 and 2, the V and E screens, and the P key.
+  `dig.ts`, `modules.ts`, `quit.ts`, `help.ts`, `town.ts`, `fight.ts`, `kill.ts`, `items.ts`,
+  `gear.ts`, `potions.ts`, `manual.ts`, `misc.ts` — so that two people can add two keys without
+  touching the same file.
+* **`cast.ts`, `spellScreens.ts`, `pockets.ts`, `potions.ts`** — the spell and item screens:
+  `cast_a_spell` for C and I, the two lists of spells in effect for 1 and 2, the V and E screens,
+  the P key, and the six potions behind the I key's fourth line.
+* **`gear.ts`** — the eight-line menu of what the character owns that A, W and the enchant spells
+  all build, and the classes each row is refused to. **`manual.ts`** — the S key.
+  **`misc.ts`** — M, O, G, X and Z.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
   memory that decides whether its monsters are rolled again.
-* **`screens.ts`** — where the message box goes, and `notBuiltYet`. **`boxes.ts`** is the rest of
-  it: putting one box up at a time, and showing the several boxes a ported function printed in
-  one go one after another, since `print_menu_only` waits for a key after each of them.
+* **`screens.ts`** — the eight lines of the message box, which are `menuLine` in
+  `src/lib/game/port/screens.ts` drawn in the same place a menu is, and `notBuiltYet`, which
+  nothing here says any more. **`boxes.ts`** is the rest of it: the several boxes a ported
+  function printed shown one after another, since `print_menu_only` waits for a key after each of
+  them — `printMenus` for a synchronous function, `printMenusWhile` for one that asks menus of
+  its own halfway through, and `sayAsOneBox` for the handful of messages the game draws down that
+  column with `pfont` and does not wait on.
 * **`arrival.ts`** — the hint the snake brings on arriving on a floor. **`office.ts`** — the step
   count `draw_monster_view` keeps, and the taunt the section boss sends every 250 of them.
 * **`Play.svelte`** — the tab: the map, the message box, the screens and the row of keys.
@@ -60,8 +69,9 @@ the trap door, the town building, and `retdwall2` for the four sides — plus `s
 a handler asks for a step: set `turn.step = { dx, dy }` and the loop resolves it afterwards, the
 way the original resolves the flag the up arrow raises.
 
-Every key the original dispatches on has an entry. The ones this slice does not run say
-`NOT BUILT YET: <what the game does>` in the message box, so nothing is ever silently nothing.
+Every key the original dispatches on has an entry and every one of them runs. A key added to the
+table before the function behind it is written says `NOT BUILT YET: <what the game does>` in the
+message box, which is `notBuiltYet` in `screens.ts`, so nothing is ever silently nothing.
 
 ## Showing a screen
 
@@ -88,11 +98,15 @@ const chosen = await session.choice([0x31, 0x32, 0x33]);
 ## A fight
 
 `fight.ts` is the F key, one swing, and Ctrl-F, which keeps swinging. `kill.ts` is the check
-movecontrol makes between the key and the step: a monster being fought whose hit points have run
-out is killed there, whatever took them down, so a spell and a hand grenade end the same way as a
-swing. `kill_monster` asks its own menus — what to do with a dropped weapon or suit of armor, and
-which weapon a section boss's orb is used on — through `game.choice`, and the drops, the money
-and the levels all hang off it.
+movecontrol makes at 2000:db6d, between the key and the step: a monster being fought whose hit
+points have run out is killed there, whatever took them down, so a spell and a hand grenade end
+the same way as a swing. `kill_monster` asks its own menus — what to do with a dropped weapon or
+suit of armor, and which weapon a section boss's orb is used on — through `game.choice`, and the
+drops, the money and the levels all hang off it. Every box it prints in between waits for a key,
+which is what `printMenusWhile` is for.
+
+The character's own death is asked about next (2000:dbe9), and the step the key asked for is
+resolved after that, so a key that killed the character never takes the step it wanted.
 
 The keys the player presses while the character is swinging are thrown away by `flushKeys`, which
 is the flush the original does at the end of every swing. That is also what stops Ctrl-F: reading
@@ -156,13 +170,10 @@ reading it is what sends the panel back to the record.
 
 ## What is not built yet
 
-Every one of these keys says so in the message box today. The game functions behind them are
-mostly ported already; what is missing is the key that reaches them.
-
-* **Wearing and wielding** — W and A, the two menus movecontrol builds itself for the weapon in
-  hand and the armor worn.
-* **The potions** — the fourth line of the I key's menu (exe 3000:7052).
-* **M and S** — the keys the loop dispatches on that nothing here answers yet.
+Nothing. Every key movecontrol dispatches on is answered, and the two that are about the screen
+rather than the game — X, which fills the screen with a third of the floor at a time, and Z,
+which swaps the map for the 3-D view ahead — say what the game would have done with a display
+this port does not have.
 
 ## Where this leaves the original
 
@@ -184,4 +195,10 @@ mostly ported already; what is missing is the key that reaches them.
 * **The town's pictures are not drawn.** `g_store`, `temple`, `bank` and `flea_inn` fill the
   screen with `store.pic`, `temple.pic`, `bank.pic` and `inn.pic` behind their menus, and
   `boss_office_message` draws the boss beside its taunt. The port shows the words alone.
+* **The settings menus set almost nothing.** One of the thirteen switches behind O and G is a
+  rule of the game rather than of the screen — the high speed option at DS:00c3, which the port
+  keeps. The rest are the palette, the mouse, the menu highlighting and the 3-D views, and each
+  of those says so in a box.
+* **The monster manual has no pictures.** `monster_manual` fills the top of the screen with the
+  section's five monsters and puts A to E under them; the port draws the letters and the words.
 * **The two hidden keys are left out**: 0xfb turns saving off and 0xfe hands out ten hit points.
