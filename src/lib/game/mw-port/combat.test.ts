@@ -587,10 +587,10 @@ describe('experienceForKill', () => {
 
 describe('monsterKilled', () => {
   const nothing: MwKillChoices = {
-    takeWeapon: false,
-    takeArmor: false,
-    takeStones: 'L',
-    enhanceWeapon: 0,
+    takeWeapon: () => false,
+    takeArmor: () => false,
+    takeStones: () => 'L',
+    enhanceWeapon: () => 0,
   };
 
   /** A kill where every roll comes out big enough that no drop routine fires. */
@@ -623,7 +623,7 @@ describe('monsterKilled', () => {
 
   it('leaves the loot rolls reading a depth of zero', () => {
     const game = killing({ rng: always(0), pc: { cls: 3, floor: 30, lev: 5, hp: 100, maxHp: 100 } });
-    monsterKilled(game, { ...nothing, takeWeapon: true });
+    monsterKilled(game, { ...nothing, takeWeapon: () => true });
     // The weapon roll needs random(100) to come in under the depth plus ten; the blanked slot
     // makes that ten, and a roll of zero clears it.
     expect(game.messages).toContain('YOU FIND A STICK');
@@ -671,13 +671,13 @@ describe('monsterKilled', () => {
     const owned = killing({ pc: { lev: 5, floor: 16, hp: 100, maxHp: 100 } });
     owned.monsters[0].type = 0x6b;
     owned.pc.weaponsOwned[3] = 1;
-    monsterKilled(owned, { ...nothing, enhanceWeapon: 4 });
+    monsterKilled(owned, { ...nothing, enhanceWeapon: () => 4 });
     expect(owned.pc.weaponPlus[3]).toBe(25);
     expect(owned.pc.killedBosses).toBe(0b1000);
 
     const unowned = killing({ pc: { lev: 5, floor: 16, hp: 100, maxHp: 100 } });
     unowned.monsters[0].type = 0x6b;
-    monsterKilled(unowned, { ...nothing, enhanceWeapon: 4 });
+    monsterKilled(unowned, { ...nothing, enhanceWeapon: () => 4 });
     expect(unowned.pc.weaponPlus[3]).toBe(0);
   });
 
@@ -685,7 +685,7 @@ describe('monsterKilled', () => {
     const game = killing({ pc: { lev: 5, floor: 200, hp: 100, maxHp: 100 } });
     game.monsters[0].type = 0x6f;
     game.pc.weaponsOwned[7] = 1;
-    monsterKilled(game, { ...nothing, enhanceWeapon: 8 });
+    monsterKilled(game, { ...nothing, enhanceWeapon: () => 8 });
     expect(game.pc.weaponPlus[7]).toBe(100);
     expect(game.pc.killedBosses).toBe(0x80);
     expect(game.messages).toContain('  YOU HAVE BEATEN THE GREAT');

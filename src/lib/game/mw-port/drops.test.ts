@@ -39,32 +39,32 @@ describe('spellDescription', () => {
 describe('weaponFind', () => {
   it('offers a stick when the roll is under the depth plus ten', () => {
     const game = lootGame(40, { rng: scripted([0, 49]) });
-    weaponFind(game, true);
+    weaponFind(game, () => true);
     expect(game.messages).toContain('YOU FIND A STICK');
     expect(game.pc.weaponsOwned[1]).toBe(1);
   });
 
   it('leaves the weapon behind when the menu says so', () => {
     const game = lootGame(40, { rng: scripted([0, 0]) });
-    weaponFind(game, false);
+    weaponFind(game, () => false);
     expect(game.pc.weaponsOwned[1]).toBe(0);
   });
 
   it('says nothing when the roll beats the depth plus ten', () => {
     const game = lootGame(0, { rng: scripted([0, 11]) });
-    weaponFind(game, true);
+    weaponFind(game, () => true);
     expect(game.messages).toEqual([]);
   });
 
   it('offers nothing the character already owns', () => {
     const game = lootGame(40, { rng: scripted([0, 0]), pc: { weaponsOwned: [0, 1, 0, 0, 0, 0, 0, 0] } });
-    weaponFind(game, true);
+    weaponFind(game, () => true);
     expect(game.messages).toEqual([]);
   });
 
   it('offers a monk nothing at all', () => {
     const game = lootGame(200, { rng: scripted([0, 0]), pc: { cls: 2 } });
-    weaponFind(game, true);
+    weaponFind(game, () => true);
     expect(game.messages).toEqual([]);
   });
 });
@@ -72,14 +72,14 @@ describe('weaponFind', () => {
 describe('armorFind', () => {
   it('offers a suit the character already owns', () => {
     const game = lootGame(40, { rng: scripted([0, 0]), pc: { armorOwned: [0, 3, 0, 0, 0, 0, 0, 0] } });
-    armorFind(game, true);
+    armorFind(game, () => true);
     expect(game.messages).toContain('YOU FIND A SUIT OF LEATHER');
     expect(game.pc.armorOwned[1]).toBe(4);
   });
 
   it('reaches titanium, which the store does not sell', () => {
     const game = lootGame(2000, { rng: scripted([5, 0]) });
-    armorFind(game, true);
+    armorFind(game, () => true);
     expect(game.messages).toContain('YOU FIND A SUIT OF TITANIUM');
     expect(game.pc.armorOwned[6]).toBe(1);
   });
@@ -87,7 +87,7 @@ describe('armorFind', () => {
   it('never offers bare skin, which is armor 0', () => {
     for (let roll = 0; roll < 6; roll++) {
       const game = lootGame(2000, { rng: scripted([roll, 0]) });
-      armorFind(game, false);
+      armorFind(game, () => false);
       expect(game.messages[1]).not.toBe('YOU FIND A SUIT OF SKIN');
     }
   });
@@ -96,14 +96,14 @@ describe('armorFind', () => {
 describe('moneyFind', () => {
   it('says nothing two kills in three', () => {
     const game = lootGame(10, { rng: scripted([1]) });
-    moneyFind(game, 'A');
+    moneyFind(game, () => 'A');
     expect(game.messages).toEqual([]);
   });
 
   it('throws away a find that is only jewel stones', () => {
     // The find roll, then the five piles refused, then the jewel pile taken, then the deep roll.
     const game = lootGame(10, { rng: scripted([0, 1, 1, 1, 1, 1, 0, 4, 3, 2, 5, 1249]), pc: { floor: 20 } });
-    moneyFind(game, 'A');
+    moneyFind(game, () => 'A');
     expect(game.messages).toEqual([]);
     expect(game.pc.stones[5]).toBe(0);
   });
@@ -114,19 +114,19 @@ describe('moneyFind', () => {
     // deep-floor bonus, which 1249 misses.
     const rolls = [0, 0, 3, 2, 400, 0, 3, 2, 60, 0, 3, 2, 20, 0, 3, 2, 10, 0, 3, 2, 0, 2, 3, 4, 5, 1249];
     const all = lootGame(10, { rng: scripted(rolls), pc: { floor: 20, weight: 100, loadedWeight: 100 } });
-    moneyFind(all, 'A');
+    moneyFind(all, () => 'A');
     expect(all.pc.stones.every((count) => count > 0)).toBe(true);
 
     const jewelsOnly = lootGame(10, {
       rng: scripted(rolls),
       pc: { floor: 20, weight: 100, loadedWeight: 100 },
     });
-    moneyFind(jewelsOnly, 'J');
+    moneyFind(jewelsOnly, () => 'J');
     expect(jewelsOnly.pc.stones.slice(0, 5)).toEqual([0, 0, 0, 0, 0]);
     expect(jewelsOnly.pc.stones[5]).toBe(all.pc.stones[5]);
 
     const gold = lootGame(10, { rng: scripted(rolls), pc: { floor: 20, weight: 100, loadedWeight: 100 } });
-    moneyFind(gold, 'G');
+    moneyFind(gold, () => 'G');
     expect(gold.pc.stones.slice(0, 3)).toEqual([0, 0, 0]);
     expect(gold.pc.stones[3]).toBe(all.pc.stones[3]);
   });
@@ -134,7 +134,7 @@ describe('moneyFind', () => {
   it('offers nothing to carry when the load is over three times the naked weight', () => {
     const rolls = [0, 0, 3, 2, 400, 1, 1, 1, 1, 1, 1249];
     const game = lootGame(10, { rng: scripted(rolls), pc: { floor: 20, weight: 100, loadedWeight: 301 } });
-    moneyFind(game, 'A');
+    moneyFind(game, () => 'A');
     expect(game.messages).toContain('IT IS TOO HEAVY FOR YOU');
     expect(game.pc.stones[0]).toBe(0);
   });
@@ -143,7 +143,7 @@ describe('moneyFind', () => {
     // One copper pile of 4 * 100 + 0, and nothing else.
     const rolls = [0, 0, 100, 4, 0, 1, 1, 1, 1, 1, 1249];
     const game = lootGame(10, { rng: scripted(rolls), pc: { floor: 20, weight: 100, loadedWeight: 100 } });
-    moneyFind(game, 'A');
+    moneyFind(game, () => 'A');
     expect(game.pc.stones[0]).toBe(400);
     expect(game.messages[0]).toBe('YOU FIND 2 STONES. THE');
     expect(game.messages[1]).toBe('  PILE WEIGHS ABOUT 25');

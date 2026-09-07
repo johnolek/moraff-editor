@@ -77,9 +77,11 @@ function lootedDepth(game: MwGame): number {
  * beat it. The seven run from a stick to a great sword, which the store does not sell either.
  * A Monk is offered nothing at all.
  *
- * @param take what the "1) TAKE THE WEAPON / 2) LEAVE THE WEAPON" menu answers.
+ * @param take the "1) TAKE THE WEAPON / 2) LEAVE THE WEAPON" menu, which the original reads
+ *   from the keyboard once the box is on the screen, and which is not read at all when nothing
+ *   was found.
  */
-export function weaponFind(game: MwGame, take: boolean): void {
+export function weaponFind(game: MwGame, take: () => boolean): void {
   const pc = game.pc;
   if (pc.cls === MONK) return;
   const row = game.rng.random(7) + 1;
@@ -97,7 +99,7 @@ export function weaponFind(game: MwGame, take: boolean): void {
     'WITH SEVERAL WEAPONS WHICH',
     'WILL WEIGH YOU DOWN.',
   );
-  if (take) {
+  if (take()) {
     pc.weaponsOwned[row] += 1;
     game.events.push({ kind: 'weightRecomputed' });
   }
@@ -111,9 +113,10 @@ export function weaponFind(game: MwGame, take: boolean): void {
  * is why the message warns about ending up with several. The six run from leather to titanium,
  * so a find is the only way to a suit of titanium: the store's menu stops at field plate.
  *
- * @param take what the "1) TAKE THE ARMOR / 2) LEAVE THE ARMOR" menu answers.
+ * @param take the "1) TAKE THE ARMOR / 2) LEAVE THE ARMOR" menu, read where the original reads
+ *   it: after the box, and not at all when nothing was found.
  */
-export function armorFind(game: MwGame, take: boolean): void {
+export function armorFind(game: MwGame, take: () => boolean): void {
   const pc = game.pc;
   if (pc.cls === MONK) return;
   const row = game.rng.random(6) + 1;
@@ -130,7 +133,7 @@ export function armorFind(game: MwGame, take: boolean): void {
     'WITH SEVERAL SUITS OF',
     'ARMOR WEIGHING YOU DOWN.',
   );
-  if (take) {
+  if (take()) {
     pc.armorOwned[row] += 1;
     game.events.push({ kind: 'weightRecomputed' });
   }
@@ -171,10 +174,11 @@ function smaller(a: number, b: number): number {
  * a word; and the line that says which stone the pile is mostly compares the platinum count
  * against the jewel stones' *value* rather than their count.
  *
- * @param take the key the pile menu answers: A all, L or Escape none, I ivory and better,
- *   G gold and better, P platinum and jewel, J jewel stones only.
+ * @param take the pile menu, read where the original reads it: after the box, and not at all
+ *   when nothing was found or the pile was too heavy to lift. A all, L or Escape none, I ivory
+ *   and better, G gold and better, P platinum and jewel, J jewel stones only.
  */
-export function moneyFind(game: MwGame, take: string): void {
+export function moneyFind(game: MwGame, take: () => string): void {
   const pc = game.pc;
   const rng = game.rng;
   // srand(time(NULL)) at 3000:bdd6, deliberately not ported: see the README's third departure.
@@ -265,16 +269,17 @@ export function moneyFind(game: MwGame, take: string): void {
   lines[7] = 'NOTE - SORTING TAKES TIME';
   game.say(...lines);
   // The key loop takes only these six and Escape; Escape leaves the lot behind, like L.
-  if (!'IGPAJL'.includes(take)) return;
-  if (take === 'L') return;
-  if (take === 'A') {
+  const taken = take();
+  if (!'IGPAJL'.includes(taken)) return;
+  if (taken === 'L') return;
+  if (taken === 'A') {
     pc.stones[0] += found.copper;
     pc.stones[1] += found.silver;
   }
-  if (take === 'A' || take === 'I') pc.stones[2] += found.ivory;
-  if ('IGA'.includes(take)) pc.stones[3] += found.gold;
-  if ('IGPA'.includes(take)) pc.stones[4] += found.platinum;
-  if ('IGPAJ'.includes(take)) pc.stones[5] += found.jewel;
+  if (taken === 'A' || taken === 'I') pc.stones[2] += found.ivory;
+  if ('IGA'.includes(taken)) pc.stones[3] += found.gold;
+  if ('IGPA'.includes(taken)) pc.stones[4] += found.platinum;
+  if ('IGPAJ'.includes(taken)) pc.stones[5] += found.jewel;
   game.events.push({ kind: 'weightRecomputed' });
   financialStatement(game);
 }

@@ -773,16 +773,21 @@ export function experienceForKill(game: MwGame, slot: number): number {
   return kind.expMult * (EXP_SCALE * Math.pow(EXP_BASE, depth) + depth + 1);
 }
 
-/** The menus monster_killed reads from the keyboard while it hands out the loot. */
+/**
+ * The menus monster_killed reads from the keyboard while it hands out the loot.
+ *
+ * Each is a function rather than a value because the original reads the keyboard where the menu
+ * is on the screen: a kill that turns up no weapon never asks about one.
+ */
 export interface MwKillChoices {
   /** "1) TAKE THE WEAPON / 2) LEAVE THE WEAPON". */
-  takeWeapon: boolean;
+  takeWeapon(): boolean;
   /** "1) TAKE THE ARMOR / 2) LEAVE THE ARMOR". */
-  takeArmor: boolean;
+  takeArmor(): boolean;
   /** Which piles of stones to carry: A, L, I, G, P or J. */
-  takeStones: string;
+  takeStones(): string;
   /** "SELECT A WEAPON TO ENHANCE:", 1 to 8, for the two orbs the last two bosses drop. */
-  enhanceWeapon: number;
+  enhanceWeapon(): number;
 }
 
 /** The first and last of the eight quest bosses, which are monsters 104 to 111. */
@@ -805,13 +810,14 @@ function weaponMenuLine(game: MwGame, weapon: number): string {
  * The original keeps asking until the answer names a weapon the character actually owns, so a
  * choice that names one they do not is no choice at all and nothing is enhanced.
  */
-function enhanceWeapon(game: MwGame, choice: number, plus: number): void {
+function enhanceWeapon(game: MwGame, choice: () => number, plus: number): void {
   const pc = game.pc;
   game.say(...Array.from({ length: 8 }, (_, weapon) => weaponMenuLine(game, weapon)));
   game.say('SELECT A WEAPON TO ENHANCE:'); // DS:6b8b
-  if (choice < 1 || choice > 8) return;
-  if (pc.weaponsOwned[choice - 1] < 1) return;
-  pc.weaponPlus[choice - 1] = plus;
+  const weapon = choice();
+  if (weapon < 1 || weapon > 8) return;
+  if (pc.weaponsOwned[weapon - 1] < 1) return;
+  pc.weaponPlus[weapon - 1] = plus;
 }
 
 /**
@@ -823,7 +829,7 @@ function enhanceWeapon(game: MwGame, choice: number, plus: number): void {
  * and the plus 25 orb; the four deep ones give the same four again at 25, 50, 50 and 100. Each
  * message points at the next boss down.
  */
-function bossReward(game: MwGame, type: number, choice: number): void {
+function bossReward(game: MwGame, type: number, choice: () => number): void {
   const pc = game.pc;
   const bit = type - FIRST_BOSS;
   pc.killedBosses |= 1 << bit;
@@ -1042,9 +1048,9 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
   monster.type = 0;
   monster.depth = 0;
   game.redrawView = true;
-  weaponFind(game, choices.takeWeapon);
-  armorFind(game, choices.takeArmor);
-  moneyFind(game, choices.takeStones);
+  weaponFind(game, () => choices.takeWeapon());
+  armorFind(game, () => choices.takeArmor());
+  moneyFind(game, () => choices.takeStones());
   cupOfHealth(game);
   ballOfThought(game);
   if (pc.cls !== 2 && game.rng.random(950) < pc.floor + 40 && game.rng.random(20) < pc.floor) {
@@ -1059,7 +1065,7 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
   if (writing === 0) scrollFind(game);
   if (writing === 1) wandFind(game);
   if (writing === 2) paperFind(game);
-  if (type > FIRST_BOSS - 1 && type < LAST_BOSS + 1) bossReward(game, type, choices.enhanceWeapon);
+  if (type > FIRST_BOSS - 1 && type < LAST_BOSS + 1) bossReward(game, type, () => choices.enhanceWeapon());
   game.engaged = -1;
   if (pc.lev !== 0) return;
   if (pc.hp + 15 < pc.maxHp) {
