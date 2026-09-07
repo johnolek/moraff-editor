@@ -83,6 +83,10 @@ const SPELL_C = 0x63;
 const SPELL_L = 0x6c;
 const SPELL_T = 0x74;
 
+/** ENCHANT WEAPON LEVEL 1 and WRITE SCROLL TO LEVEL 3, the first line of the permanent list. */
+const ENCHANT_WEAPON = spellIndex(0, 0, 0);
+const WRITE_SCROLL = spellIndex(0, 0, 2);
+
 /** The lines of every screen the game has drawn, for asking what is on it. */
 const screenText = (session: GameSession) => session.view().screen.map((line) => line.text);
 
@@ -221,5 +225,66 @@ describe('casting out of an item', () => {
     const session = playing(wandCarrier([MINOR_PROTECTION], 1));
     await press(session, KEY.useItem, KEY.escape);
     expect(session.game.pc.wands[MINOR_PROTECTION]).toBe(1);
+  });
+});
+
+describe('the menus a spell puts up of its own', () => {
+  it('walks Pass Wall the way the direction menu picks', async () => {
+    const rows = UNFORGIVEN_MAP.floor(0, 0);
+    const start = townSquare();
+    while (rows[start.y][start.x + 2].solid) start.x += 1;
+    const session = playing(wizard([PASS_WALL], { ...start }));
+    await press(session, KEY.cast, 0x33, SPELL_T);
+    expect(session.box).toContain('3) EAST (RIGHT)');
+    await press(session, 0x33);
+    expect(session.view().place.x).toBe(start.x + 2);
+    expect(session.game.pc.sp).toBe(13);
+  });
+
+  it('gives the spell up when the direction menu is escaped, and charges nothing', async () => {
+    const session = playing(wizard([PASS_WALL]));
+    const start = session.view().place.x;
+    await press(session, KEY.cast, 0x33, SPELL_T, KEY.escape);
+    expect(session.view().place.x).toBe(start);
+    expect(session.game.pc.sp).toBe(20);
+  });
+
+  it('puts the plus Enchant Weapon carries on the weapon its menu picks', async () => {
+    const weaponsOwned = [1, 0, 1, 0, 0, 0, 0, 0];
+    const session = playing(wizard([ENCHANT_WEAPON], { weaponsOwned }));
+    await press(session, KEY.cast, 0x31, 0x61);
+    // The second slot is empty and reads as dashes; the third holds a weapon and is picked.
+    expect(screenText(session)).toContain('2) --------');
+    await press(session, 0x33);
+    expect(session.game.pc.weaponPlus[2]).toBe(1);
+    // A permanent spell cast out of the book costs its level twice: once now, and once off the
+    // spell points the character will ever have again.
+    expect(session.game.pc.sp).toBe(19);
+    expect(session.game.pc.maxSp).toBe(19);
+  });
+
+  it('writes the scroll the three Write Scroll menus pick', async () => {
+    const session = playing(wizard([WRITE_SCROLL]));
+    await press(session, KEY.cast, 0x31, 0x63);
+    expect(screenText(session)).toContain('PLEASE SELECT A TYPE OF SPELL:');
+    await press(session, 0x31);
+    expect(screenText(session)).toContain('MAXIMUM LEVEL: 3');
+    await press(session, 0x32);
+    expect(screenText(session)).toContain('2) RELOCATE');
+    await press(session, 0x32);
+    expect(session.game.pc.scrolls[spellIndex(1, 1, 1)]).toBe(1);
+    expect(session.box).toContain('THE SCROLL HAS BEEN');
+  });
+
+  it('goes back a menu from the level menu and from the slot menu', async () => {
+    const session = playing(wizard([WRITE_SCROLL]));
+    await press(session, KEY.cast, 0x31, 0x63, 0x31, 0x31);
+    expect(screenText(session)).toContain('4) PREVIOUS MENU');
+    await press(session, 0x34);
+    expect(screenText(session)).toContain('MAXIMUM LEVEL: 3');
+    await press(session, KEY.escape);
+    expect(screenText(session)).toContain('PLEASE SELECT A TYPE OF SPELL:');
+    await press(session, KEY.escape);
+    expect(session.game.pc.sp).toBe(20);
   });
 });
