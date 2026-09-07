@@ -12,9 +12,11 @@ import {
   dropWand,
   dropWeapon,
   findItem,
+  loseItem,
   postKillHeal,
   postKillSp,
   spellNameToMenu,
+  useMagicItem,
 } from './drops';
 import { giveHint } from './hints';
 import type { Rng } from './rng';
@@ -437,5 +439,134 @@ describe('dropMoney', () => {
     dropMoney(game);
     expect(game.pc.dollars).toBe(500);
     expect(game.messages).toEqual([]);
+  });
+});
+
+describe('loseItem', () => {
+  it('will not let the character drop their own skin', () => {
+    const game = killing(rolls(), { armorOwned: [1, 0, 0, 0, 0, 0, 0, 0] });
+    loseItem(game, 1, 1);
+    expect(game.pc.armorOwned[0]).toBe(1);
+    expect(game.messages).toContain("OWE! IT JUST WON'T COME OFF!");
+  });
+
+  it('drops one suit of armor and takes off the last of what is worn', () => {
+    const game = killing(rolls(), { armorOwned: [1, 0, 2, 0, 0, 0, 0, 0], armor: 2 });
+    loseItem(game, 1, 3);
+    expect(game.pc.armorOwned[2]).toBe(1);
+    expect(game.pc.armor).toBe(2);
+    loseItem(game, 1, 3);
+    expect(game.pc.armorOwned[2]).toBe(0);
+    expect(game.pc.armor).toBe(0);
+  });
+
+  it('drops a weapon the same way', () => {
+    const game = killing(rolls(), { weaponsOwned: [1, 1, 0, 0, 0, 0, 0, 0], weapon: 1 });
+    loseItem(game, 2, 2);
+    expect(game.pc.weaponsOwned[1]).toBe(0);
+    expect(game.pc.weapon).toBe(0);
+  });
+
+  it('throws all the money away, or keeps it', () => {
+    const thrown = killing(rolls(), { money: 5000 });
+    loseItem(thrown, 3, 1);
+    expect(thrown.pc.money).toBe(0);
+    const kept = killing(rolls(), { money: 5000 });
+    loseItem(kept, 3, 2);
+    expect(kept.pc.money).toBe(5000);
+  });
+
+  it('tells a character who stands on their head to get out more', () => {
+    const game = killing(rolls(), { money: 5000 });
+    loseItem(game, 3, 3);
+    expect(game.pc.money).toBe(5000);
+    expect(game.messages).toContain('  YOU NEED TO GET OUT MORE!');
+  });
+
+  it('works the carried weight out again', () => {
+    const game = killing(rolls(), { weaponsOwned: [1, 1, 0, 0, 0, 0, 0, 0], loadedWeight: 0 });
+    loseItem(game, 2, 2);
+    expect(game.pc.loadedWeight).toBe(game.pc.weight);
+  });
+});
+
+describe('useMagicItem', () => {
+  it('says so when the character has none of what they picked', () => {
+    const game = killing(rolls(), { slosher: 0 });
+    game.engaged = -1;
+    useMagicItem(game, 1);
+    expect(game.messages).toContain('MAGIC ITEMS ARE MUCH MORE');
+  });
+
+  it('slips one floor down and keeps the slosher', () => {
+    const game = killing(rolls(), { slosher: 1, level: 5, module: 0 });
+    useMagicItem(game, 1);
+    expect(game.pc.level).toBe(6);
+    expect(game.pc.slosher).toBe(1);
+    expect(game.events).toEqual([{ kind: 'levelChanged', from: 5, to: 6 }]);
+  });
+
+  it('refuses to slosh past two thirds of the way down the module', () => {
+    // Module I's deepest floor is 25, so the slosher stops working at floor 16.
+    const game = killing(rolls(), { slosher: 1, level: 16, module: 0 });
+    useMagicItem(game, 1);
+    expect(game.pc.level).toBe(16);
+    expect(game.messages).toContain("DOESN'T WORK THIS DEEP!");
+  });
+
+  it('drinks a potion of healing', () => {
+    const game = killing(rolls(), { healingPotions: 2, hp: 5, maxHp: 300 });
+    useMagicItem(game, 2);
+    expect(game.pc.hp).toBe(300);
+    expect(game.pc.healingPotions).toBe(1);
+  });
+
+  it('turns down the job of God', () => {
+    const game = killing(rolls());
+    useMagicItem(game, 3);
+    expect(game.messages).toContain('  SORRY, THAT JOB IS ALREADY');
+  });
+
+  it('spends a stone of seeing', () => {
+    const game = killing(rolls(), { seeingStones: 3 });
+    useMagicItem(game, 4);
+    expect(game.pc.seeingStones).toBe(2);
+    expect(game.recenterMap).toBe(true);
+  });
+
+  it('teleports to the town on a stone of teleportation', () => {
+    const game = killing(rolls(), { teleportStones: 1, level: 40 });
+    useMagicItem(game, 5);
+    expect(game.pc.teleportStones).toBe(0);
+    expect(game.pc.level).toBe(0);
+    expect(game.events).toEqual([{ kind: 'levelChanged', from: 40, to: 0 }]);
+    expect(game.engaged).toBe(-1);
+  });
+
+  it('kills the engaged monster with a grenade', () => {
+    const game = killing(rolls(), { grenades: 1 });
+    game.monsters[0].hp = 90000;
+    useMagicItem(game, 6);
+    expect(game.monsters[0].hp).toBe(-100);
+    expect(game.pc.grenades).toBe(0);
+    expect(game.messages).toContain('A MASSIVE EXPLOSION KILLS');
+  });
+
+  it('has a Shadow boss catch the grenade and hand it back', () => {
+    const game = killing(rolls(), { grenades: 1 });
+    game.monsters[0].type = 22;
+    game.monsters[0].hp = 90000;
+    useMagicItem(game, 6);
+    expect(game.monsters[0].hp).toBe(90000);
+    expect(game.pc.grenades).toBe(1);
+    expect(game.messages).toContain('GRADADE.');
+  });
+
+  it('wastes a grenade on an empty floor', () => {
+    const game = killing(rolls(), { grenades: 1 });
+    game.engaged = -1;
+    useMagicItem(game, 6);
+    expect(game.pc.grenades).toBe(1);
+    expect(game.messages).toContain("  YOU'VE COME UP WITH A VERY");
   });
 });

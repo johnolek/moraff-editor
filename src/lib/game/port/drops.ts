@@ -486,3 +486,147 @@ export function dropMoney(game: Game): void {
     ...comment,
   );
 }
+
+/**
+ * lose_item (exe 2000:98b7, unf.c "lose_item"): throwing something away, which the D key does.
+ * `kind` is the first menu — 1 armor, 2 weapon, 3 money — and `choice` is the second: the line
+ * of the eight-item menu for armor and weapons, or 1 to throw all the money away, 2 to keep it
+ * and 3 for the joke.
+ *
+ * Line 1 of both item menus is the row the character can never be without — bare skin and bare
+ * fists — so picking it says the item will not come off. Throwing away the last of whatever is
+ * in hand or worn puts the character back on that row.
+ */
+export function loseItem(game: Game, kind: number, choice: number): void {
+  const pc = game.pc;
+  // DS:17ba 17d7 06f0 17e7 17f0 17fa 06f0
+  game.say(
+    'WHICH TYPE OF ITEM WOULD YOU',
+    '  LIKE TO DROP:',
+    '',
+    '1) ARMOR',
+    '2) WEAPON',
+    '3) MONEY',
+  );
+  if (kind === 1) {
+    if (choice === 1) {
+      game.say("OWE! IT JUST WON'T COME OFF!", 'HIT ANY KEY...'); // DS:180f 0c5a
+    } else {
+      if (pc.armorOwned[choice - 1] > 0) pc.armorOwned[choice - 1] -= 1;
+      if (pc.armor === choice - 1 && pc.armorOwned[choice - 1] === 0) pc.armor = 0;
+    }
+  }
+  if (kind === 2) {
+    if (choice === 1) {
+      game.say("OWE! IT JUST WON'T COME OFF!", 'HIT ANY KEY...'); // DS:180f 0c5a
+    } else {
+      if (pc.weaponsOwned[choice - 1] > 0) pc.weaponsOwned[choice - 1] -= 1;
+      if (pc.weapon === choice - 1 && pc.weaponsOwned[choice - 1] === 0) pc.weapon = 0;
+    }
+  }
+  if (kind === 3) {
+    showHint(game, 87);
+    if (choice === 1) pc.money = 0;
+    else if (choice === 3) showHint(game, 88);
+  }
+  computeWeight(game);
+}
+
+/**
+ * use_magic_item (exe 2000:b202, unf.c "use_magic_item"): the six-item menu the U key puts up.
+ * `choice` is 1 to 6: the floor slosher, a potion of healing, becoming God, a stone of seeing, a
+ * stone of teleportation and a nuclear hand grenade.
+ *
+ * Where the original reloads the floor around the character the port records a `levelChanged`
+ * event, and where it marks the whole floor explored the port does nothing, the way the ported
+ * floor-changing spells do — see the README's second departure.
+ *
+ * The floor slosher is the one item here that is not used up, which is what its own description
+ * says: it "MAY [BE] USED LIMITLESSLY".
+ */
+export function useMagicItem(game: Game, choice: number): void {
+  const pc = game.pc;
+  let notCarried = false;
+  showHint(game, 23);
+  if (choice === 1) {
+    if (pc.slosher === 0) {
+      notCarried = true;
+    } else if (pc.level < Math.trunc((game.bottomLevel[pc.module] * 2) / 3)) {
+      // DS:19e0 19fd
+      game.say('YOU ARE SLIPPING THROUGH THE', '  FLOOR. HIT ANY KEY...');
+      const from = pc.level;
+      pc.level += 1;
+      while (game.solid(pc.x, pc.y, pc.level, pc.module)) {
+        pc.x = game.rng.random(game.columns - 5) + 2;
+        pc.y = game.rng.random(game.rows - 5) + 2;
+      }
+      game.events.push({ kind: 'levelChanged', from, to: pc.level });
+      game.recenterMap = true;
+    } else {
+      game.say("DOESN'T WORK THIS DEEP!", '', 'HIT ANY KEY...'); // DS:19c8 06f0 0c5a
+    }
+  }
+  if (choice === 2) {
+    if (pc.healingPotions < 1) {
+      notCarried = true;
+    } else {
+      game.say('YOU FEEL GREAT! HIT A KEY...'); // DS:1a15
+      pc.hp = pc.maxHp;
+      pc.healingPotions -= 1;
+    }
+  }
+  if (choice === 3) showHint(game, 24);
+  if (choice === 4) {
+    if (pc.seeingStones === 0) {
+      notCarried = true;
+    } else {
+      pc.seeingStones -= 1;
+      // The original marks every square of the floor that is not rock explored here.
+      game.recenterMap = true;
+      showHint(game, 82);
+    }
+  }
+  if (choice === 5) {
+    if (pc.teleportStones < 1) {
+      notCarried = true;
+    } else {
+      pc.teleportStones -= 1;
+      const from = pc.level;
+      pc.level = 0;
+      game.events.push({ kind: 'levelChanged', from, to: 0 });
+      // The scan keeps the last open square it finds rather than stopping at the first, so the
+      // character always lands in the same corner of the town.
+      for (let x = 20; x < game.columns - 20; x += 1) {
+        for (let y = 20; y < game.rows - 20; y += 1) {
+          if (!game.solid(x, y, pc.level, pc.module)) {
+            pc.x = x;
+            pc.y = y;
+          }
+        }
+      }
+      game.engaged = -1;
+      game.redrawView = true;
+      game.recenterMap = true;
+      showHint(game, 83);
+    }
+  }
+  if (choice === 6) {
+    if (pc.grenades === 0 || game.engaged !== -1) {
+      if (pc.grenades === 0) {
+        notCarried = true;
+      } else if (game.monsterKinds[game.monsters[game.engaged].type].special === 100) {
+        // DS:1a32 1a4d 06f0 06f0 06f0 1a56
+        game.say('   THE MONSTER CATCHES THE', 'GRADADE.', '', '', '', '      HIT ANY KEY...');
+        showHint(game, 84);
+      } else {
+        pc.grenades -= 1;
+        game.monsters[game.engaged].hp = -100;
+        // DS:1a6b 1a85 06f0 0c5a
+        game.say('A MASSIVE EXPLOSION KILLS', '  THE MONSTER INSTANTLY.', '', 'HIT ANY KEY...');
+      }
+    } else {
+      showHint(game, 25);
+    }
+  }
+  if (notCarried) showHint(game, 85);
+}
