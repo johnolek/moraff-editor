@@ -18,6 +18,7 @@ import {
 } from './drops';
 import { sectionNumber } from './hints';
 import { checkGainLevel } from './levels';
+import { MESSAGE_LINE_Y, clearMessageLine, messageLine } from './screens';
 import type { Game } from './state';
 import { MAP_EMPTY, setMonsterMap } from './state';
 
@@ -28,11 +29,21 @@ import { MAP_EMPTY, setMonsterMap } from './state';
 /** The square a dead monster's slot is parked on, off the 80 x 110 floor and out of the way. */
 export const GARBAGE_CAN = 100;
 
+/** The colour kill_monster draws the orb menu's heading in (exe 3000:b72b). */
+const ENHANCE_HEADING_COLOUR = 5;
+
 /**
- * Where kill_monster draws the orb menu's heading (exe 3000:b72b): one line above the message
- * box the eight rows go in, in colour 5.
+ * The colour kill_monster draws each of its own three messages in (exe 3000:b164).
+ *
+ * All three go on the one line above the message box, and each is preceded by FUN_2000_28be
+ * (exe 2000:28be) wiping whatever was there. The original wipes the line again afterwards, but
+ * only once a few hundred milliseconds have passed, or — for "NOTHING! (HIT ANY KEY)" — as part
+ * of the wait at FUN_2000_4054 (exe 2000:4054). There is no clock here, and
+ * {@link Game.pressAnyKey} records that a key is owed rather than waiting for it, so wiping the
+ * line at either of those points would take it back off before anyone saw it. The port draws
+ * each message and leaves it standing; the next thing written on that line replaces it.
  */
-const ENHANCE_HEADING = { x: 0x3a2, y: 0x301, font: 0, colour: 5 } as const;
+const KILL_MESSAGE_COLOUR = 8;
 
 /**
  * kill_monster (exe 3000:b12d, unf.c "kill_monster"): the menu a section boss's orb puts up, and
@@ -50,11 +61,11 @@ async function chooseEnhanced(
 ): Promise<number> {
   for (;;) {
     game.say(...itemMenu(names, owned, plus, false));
-    game.draw({ ...ENHANCE_HEADING, text: heading });
+    game.draw(messageLine(heading, ENHANCE_HEADING_COLOUR));
     const row = (await game.choice(MENU_ROWS)) - 0x31;
     if (row >= 0 && row < MENU_ROWS.length && owned[row] > 0) {
       // erase_message_block (exe 4000:430e) takes the heading back off the screen.
-      game.eraseScreen(ENHANCE_HEADING.y);
+      game.eraseScreen(MESSAGE_LINE_Y);
       return row;
     }
   }
@@ -267,7 +278,10 @@ export async function killMonster(game: Game): Promise<void> {
   const monster = game.monsters[slot];
   const kind = game.monsterKinds[monster.type];
   const kindIndex = monster.type;
-  if (kind.special !== 6) game.say('YOU KILLED IT!'); // DS:31b3
+  if (kind.special !== 6) {
+    clearMessageLine(game);
+    game.draw(messageLine('YOU KILLED IT!', KILL_MESSAGE_COLOUR)); // DS:31b3
+  }
   pc.exp += expValue(game, slot);
   if (kind.levelDrain > 0) drainerBonus(game);
   setMonsterMap(game, monster.x, monster.y, MAP_EMPTY);
@@ -286,9 +300,11 @@ export async function killMonster(game: Game): Promise<void> {
     const easier = pc.cls === 0 || pc.cls === 5 ? 400 : 0;
     if (game.rng.random(950 - easier) < pc.level + 40) {
       if (game.rng.random(20) < pc.level) {
-        game.say('YOU FIND...'); // DS:324b
+        clearMessageLine(game);
+        game.draw(messageLine('YOU FIND...', KILL_MESSAGE_COLOUR)); // DS:324b
         if (game.rng.random(3) === 1) {
-          game.say('NOTHING! (HIT ANY KEY)'); // DS:3257
+          game.draw(messageLine('NOTHING! (HIT ANY KEY)', KILL_MESSAGE_COLOUR)); // DS:3257
+          game.pressAnyKey();
         } else {
           findItem(game);
         }

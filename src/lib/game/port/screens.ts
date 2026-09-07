@@ -72,6 +72,18 @@ export function clearMessageLine(game: Game): void {
   clearRect(game, 0x398, 0x2ff, 0x640, 0x329);
 }
 
+/**
+ * The line every pfont call that writes above the menu draws: at the menu's own x, on
+ * {@link MESSAGE_LINE_Y}, in the body font and whatever colour the call names.
+ *
+ * kill_monster (exe 3000:b12d) writes "YOU KILLED IT!" here in colour 8 and the orb menu's
+ * heading in colour 5, and FUN_3000_a1c4 (exe 3000:a1c4) writes "GOOD NEWS..." in colour 15.
+ * Drawing over the line replaces what was there, which is how one message follows another.
+ */
+export function messageLine(text: string, colour: number): ScreenLine {
+  return { text, x: MENU_X, y: MESSAGE_LINE_Y, font: 0, colour };
+}
+
 // erase_message_block (exe 4000:430e, unf.c "erase_message_block") erases nothing: it reads the
 // keyboard buffer empty and clears the two mouse buttons, so a key pressed while the last screen
 // was up cannot answer the next one. The port has no buffer to drain and no port of it.

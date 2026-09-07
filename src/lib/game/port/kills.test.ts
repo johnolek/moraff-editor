@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { expValue } from './combat';
 import { giveHint } from './hints';
 import { sectionNumber } from './hints';
@@ -43,6 +43,13 @@ const BOSS = 22;
 /** get_choice's answer to the two-line menu a dropped weapon or suit of armor puts up. */
 const LEAVE = 0x32;
 
+/** How many times the game under test has asked for a key with mgetch_message. */
+let keysWaitedFor = 0;
+
+beforeEach(() => {
+  keysWaitedFor = 0;
+});
+
 /**
  * A monk standing over a dead monster. A monk is refused every drop that rolls dice of its own,
  * which leaves the kill itself to be checked without a scripted roll for each drop.
@@ -52,6 +59,9 @@ function killing(rng: Rng, pc: Partial<PlayerCharacter> = {}, type = REGULAR): G
     rng,
     pc: { cls: 2, hp: 100, maxHp: 100, sp: 0, maxSp: 0, ...pc },
     choice: async () => LEAVE,
+    pressAnyKey: () => {
+      keysWaitedFor += 1;
+    },
   });
   Object.assign(game.monsters[3], { x: 11, y: 12, hp: 0, type, level: 40 });
   setMonsterMap(game, 11, 12, 3);
@@ -70,10 +80,14 @@ describe('killMonster', () => {
     expect(game.pc.exp).toBe(before + worth);
   });
 
-  it('says the monster is dead', async () => {
+  it('draws the monster is dead on the line above the box, without waiting', async () => {
     const game = killing(always(0));
     await killMonster(game);
     expect(game.messages[0]).toBe('YOU KILLED IT!');
+    expect(game.screen).toEqual([
+      { text: 'YOU KILLED IT!', x: 0x3a2, y: 0x301, font: 0, colour: 8 },
+    ]);
+    expect(keysWaitedFor).toBe(0);
   });
 
   it('says nothing when the monster was a puffball, which splits rather than dies', async () => {
@@ -137,6 +151,12 @@ describe('killMonster', () => {
     await killMonster(game);
     expect(game.messages).toContain('YOU FIND...');
     expect(game.messages).toContain('NOTHING! (HIT ANY KEY)');
+    // The two lines share the message line, so the second is all that is left standing, and the
+    // one key the kill asks for is the one this line asks for.
+    expect(game.screen).toEqual([
+      { text: 'NOTHING! (HIT ANY KEY)', x: 0x3a2, y: 0x301, font: 0, colour: 8 },
+    ]);
+    expect(keysWaitedFor).toBe(1);
   });
 
   it('finds nothing at all when the gate roll misses the floor plus forty', async () => {

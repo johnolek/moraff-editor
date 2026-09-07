@@ -4,9 +4,14 @@ import { GARBAGE_CAN } from '../game/port/kills';
 import { WEAPON_NAMES } from '../game/port/drops';
 import type { Rng } from '../game/port/rng';
 import { facingAMonster, press, TAKE, LEAVE } from './battle.test-support';
+import type { GameSession } from './engine';
 
 /** A generator that rolls the lowest number it can, which is what makes every drop land. */
 const lowest: Rng = { random: () => 0 };
+
+/** What the game has drawn with pfont, which is where the kill's own four messages go. */
+const screenText = (session: GameSession): string[] =>
+  session.view().screen.map((line) => line.text);
 
 describe('killing the monster being fought', () => {
   it('hands over the experience and parks the slot in the garbage can', async () => {
@@ -16,24 +21,24 @@ describe('killing the monster being fought', () => {
     const worth = expValue(game, 0);
     const before = game.pc.exp;
     monster.hp = 0;
-    // A monk is refused every drop, so the kill has the one box to show.
     await press(session, 0x1b);
     expect(game.pc.exp).toBe(before + worth);
-    expect(session.box).toEqual(['YOU KILLED IT!']);
+    // A monk is refused every drop, so the kill draws its one line and asks for no key at all.
+    expect(screenText(session)).toEqual(['YOU KILLED IT!']);
+    expect(session.box).toEqual([]);
     expect([monster.x, monster.y]).toEqual([GARBAGE_CAN, GARBAGE_CAN]);
     expect(session.view().engaged).toBeNull();
     expect(session.view().monsters).toEqual([]);
   });
 
-  it('shows the boxes the kill prints one at a time, in the order it printed them', async () => {
+  it('replaces one message line with the next rather than stopping for each of them', async () => {
     const session = await facingAMonster(lowest, { cls: 0 });
     const game = session.game;
     game.monsters[0].hp = 0;
     await press(session, 0x1b);
-    expect(session.box).toEqual(['YOU KILLED IT!']);
-    await press(session, 0x1b);
-    expect(session.box).toEqual(['GOOD NEWS...']);
-    await press(session, 0x1b);
+    // "YOU KILLED IT!" and "GOOD NEWS..." are drawn at the same x and y, so the drop's line is
+    // standing over the box it belongs to and the kill's is gone.
+    expect(screenText(session)).toEqual(['GOOD NEWS...']);
     expect(session.box).toContain(`YOU FIND A ${WEAPON_NAMES[1]}`);
   });
 
@@ -42,12 +47,9 @@ describe('killing the monster being fought', () => {
     const game = session.game;
     game.monsters[0].hp = 0;
     await press(session, 0x1b);
-    await press(session, 0x1b);
-    await press(session, 0x1b);
     expect(session.box).toContain('1) TAKE THE WEAPON');
     await press(session, TAKE);
     expect(game.pc.weaponsOwned[1]).toBe(1);
-    await press(session, 0x1b);
     expect(session.box).toContain('1) TAKE THE ARMOR');
     await press(session, LEAVE);
     expect(game.pc.armorOwned[1]).toBe(0);
@@ -57,7 +59,6 @@ describe('killing the monster being fought', () => {
   it('sends a level 0 character who has earned a level to an inn', async () => {
     const session = await facingAMonster(lowest, { cls: 2, lev: 0, exp: 1000000 });
     session.game.monsters[0].hp = 0;
-    await press(session, 0x1b);
     await press(session, 0x1b);
     expect(session.box).toContain('GOOD NEWS!');
     expect(session.box).toContain('LEVEL! GO TO THE TOWN, FIND');
