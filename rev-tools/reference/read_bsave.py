@@ -18,12 +18,22 @@ import sys
 import mbf
 
 # Both map-shaped arrays -- the character's `<n>.BIN` and the shared `7.NUM` --
-# are `DIM x(20, 70)`: BASIC lays a two-dimensional array out column by column,
-# so dungeon level L starts at element 21*L and rows 1..20 follow it, with
-# element 0 of each level unused.  Every row is a bitmask, one bit per column.
+# are `DIM x(20, 71)`: BASIC lays a two-dimensional array out column by column,
+# so dungeon level L starts at element 21*L and rows 0..20 follow it, with row 0
+# unused.  The shape comes from the pair of BSAVE statements at 1000:B583 and
+# 1000:B5FA, which compute their length as `VARPTR(last) - VARPTR(first) + 1`:
+# the map runs from DGROUP 9B06 to B2A2, which is 1511 singles apart, and 1511
+# is element (20, 71).  The two arrays are adjacent -- 7.NUM's is at 8366, 6048
+# bytes below the character's -- and 6048 bytes is 21 * 72 singles.
+#
+# Every row is a bitmask, one bit per column.  The game reads a square with
+# `INT(x(row, level) / 2 ^ (20 - column)) MOD 2` (1000:5449), so column 1 is bit
+# 19 and column 20 is bit 0: the columns run left to right from the top bit
+# down.
 LEVEL_STRIDE = 21
 ROWS_PER_LEVEL = 20
 COLUMNS = 20
+TOP_COLUMN_BIT = 20
 
 
 def read(path):
@@ -45,17 +55,30 @@ def show_values(values, limit):
         print("  %5d: %s" % (start, row))
 
 
+def level_rows(values, level):
+    """Rows 1..20 of one dungeon level."""
+    start = level * LEVEL_STRIDE + 1
+    return values[start:start + ROWS_PER_LEVEL]
+
+
+def is_set(row, column):
+    """True if `column` (1..20) of a map row is set."""
+    return bool(int(row) >> (TOP_COLUMN_BIT - column) & 1)
+
+
+def draw_row(row, mark="#", blank="."):
+    return "".join(mark if is_set(row, c) else blank for c in range(1, COLUMNS + 1))
+
+
 def show_map(values):
     """Draw the levels as the game's automap sees them."""
-    levels = len(values) // LEVEL_STRIDE
-    for level in range(levels):
-        rows = values[level * LEVEL_STRIDE + 1:level * LEVEL_STRIDE + 1 + ROWS_PER_LEVEL]
+    for level in range(len(values) // LEVEL_STRIDE):
+        rows = level_rows(values, level)
         if not any(rows):
             continue
         print("level %d:" % level)
         for row in rows:
-            bits = int(row)
-            print("  " + "".join("#" if bits & (1 << c) else "." for c in range(COLUMNS)))
+            print("  " + draw_row(row))
 
 
 def main():
