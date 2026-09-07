@@ -4,8 +4,6 @@ import {
   antiCold,
   antiFire,
   autokill,
-  battleSpeed,
-  battleStrength,
   drainMonster,
   explosion,
   fastBigCure,
@@ -22,7 +20,9 @@ import {
   minorShock,
   msgNoMonster,
   passWall,
+  powerWeapon,
   priestBattle,
+  protection,
   relocateSpell,
   resistDisease,
   resistDrain,
@@ -295,10 +295,10 @@ describe('relocateSpell', () => {
   });
 });
 
-describe('battleStrength', () => {
+describe('powerWeapon', () => {
   it('sets the power weapon level and 60 moves', () => {
     const game = newGame();
-    expect(battleStrength(game, 1)).toBe(true);
+    expect(powerWeapon(game, 1)).toBe(true);
     expect(game.pc.powerWeapon).toBe(1);
     expect(game.pc.powerWeaponTime).toBe(60);
     expect(game.messages[0]).toBe('YOUR WEAPON BEGINS TO');
@@ -306,29 +306,29 @@ describe('battleStrength', () => {
 
   it('adds 60 moves when the same level is cast again', () => {
     const game = newGame({ pc: { powerWeapon: 2, powerWeaponTime: 15 } });
-    expect(battleStrength(game, 2)).toBe(true);
+    expect(powerWeapon(game, 2)).toBe(true);
     expect(game.pc.powerWeaponTime).toBe(75);
     expect(game.messages).toContain('  60 MOVES LONGER.');
   });
 
   it('restarts the clock at 60 when a stronger one is cast', () => {
     const game = newGame({ pc: { powerWeapon: 1, powerWeaponTime: 55 } });
-    expect(battleStrength(game, 3)).toBe(true);
+    expect(powerWeapon(game, 3)).toBe(true);
     expect(game.pc.powerWeaponTime).toBe(60);
   });
 
   it('refuses a weaker one', () => {
     const game = newGame({ pc: { powerWeapon: 3, powerWeaponTime: 10 } });
-    expect(battleStrength(game, 1)).toBe(false);
+    expect(powerWeapon(game, 1)).toBe(false);
     expect(game.pc.powerWeapon).toBe(3);
     expect(game.messages[0]).toBe('CASTING THIS SPELL WOULD');
   });
 });
 
-describe('battleSpeed', () => {
+describe('protection', () => {
   it('sets the protection level and 60 moves', () => {
     const game = newGame();
-    expect(battleSpeed(game, 2)).toBe(true);
+    expect(protection(game, 2)).toBe(true);
     expect(game.pc.protection).toBe(2);
     expect(game.pc.protectionTime).toBe(60);
     expect(game.messages).toEqual([
@@ -344,10 +344,10 @@ describe('battleSpeed', () => {
 
   it('refuses a weaker one and extends an equal one', () => {
     const weaker = newGame({ pc: { protection: 4, protectionTime: 5 } });
-    expect(battleSpeed(weaker, 1)).toBe(false);
+    expect(protection(weaker, 1)).toBe(false);
 
     const same = newGame({ pc: { protection: 4, protectionTime: 5 } });
-    expect(battleSpeed(same, 4)).toBe(true);
+    expect(protection(same, 4)).toBe(true);
     expect(same.pc.protectionTime).toBe(65);
   });
 });

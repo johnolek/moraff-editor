@@ -73,7 +73,8 @@ at that line. The arithmetic on either side of the reseed is ported exactly.
 
 * One exported function per function of the game, named after the name it has in the function
   catalog, in camelCase: `sleep_monster` becomes `sleepMonster`. Where the catalog has no name
-  for a function, it is named for what it does.
+  for a function, it is named for what it does. Where the catalog's name is demonstrably wrong,
+  the port likewise names the function for what it does and its doc comment says so.
 * A spell whose code the original writes inline inside `spell_effect`, rather than in a function
   of its own, becomes a function here named after the spell: `magicZap`, `minorShock`. Its
   citation names the list, the level and the slot the spell has in the tables of the RE notes —

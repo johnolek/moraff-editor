@@ -67,7 +67,7 @@ Power Weapon I swings the 129-point die of Power Weapon 2 and Power Weapon III s
 399-point die of Power Weapon 4, which no spell was ever meant to reach.
 
 In the code: [strike](source:ts/combat.ts/strike) and
-[battleStrength](source:ts/magic.ts/battleStrength).
+[powerWeapon](source:ts/magic.ts/powerWeapon).
 
 ### Permanent spells are free off a scroll
 
@@ -484,7 +484,7 @@ So the priest's protection goes 2, then 2 again, then straight to Major Protecti
 levels later, and casting the level 5 spell over the level 1 one buys nothing at all.
 
 In the code: [priestBattle](source:ts/magic.ts/priestBattle),
-[battleSpeed](source:ts/magic.ts/battleSpeed) and
+[protection](source:ts/magic.ts/protection) and
 [what protection is worth](formula:protection).
 
 ### The anti-magic ring does nothing

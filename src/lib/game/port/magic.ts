@@ -289,7 +289,10 @@ export function sleepMonster(game: Game): boolean {
   return true;
 }
 
-/** FUN_3000_d990 (exe 3000:d990, unf.c "FUN_3000_d990"): Strength, +7 STR for 60 moves. */
+/**
+ * FUN_3000_d990 (exe 3000:d990, unf.c "FUN_3000_d990"): Strength, +7 STR for 60 moves. The
+ * function catalog leaves this one unnamed; the battle_strength it does name is `powerWeapon`.
+ */
 export function strength(game: Game): boolean {
   if (game.pc.strengthTimer === 0) {
     game.pc.strengthTimer = 60;
@@ -301,7 +304,10 @@ export function strength(game: Game): boolean {
   return false;
 }
 
-/** FUN_3000_d9ba (exe 3000:d9ba, unf.c "FUN_3000_d9ba"): Speed, +7 AGI for 60 moves. */
+/**
+ * FUN_3000_d9ba (exe 3000:d9ba, unf.c "FUN_3000_d9ba"): Speed, +7 AGI for 60 moves. The function
+ * catalog leaves this one unnamed; the battle_speed it does name is `protection`.
+ */
 export function speed(game: Game): boolean {
   if (game.pc.speedTimer === 0) {
     game.pc.speedTimer = 60;
@@ -406,15 +412,15 @@ export function autokill(game: Game): boolean {
 }
 
 /**
- * battle_strength (exe 3000:dd64, unf.c "battle_strength"): Power Weapon I, II and III, which
- * put a 129, 199 or 399 damage die in the player's hands for 60 moves. `level` is 1, 2 or 3;
- * `strike` adds eight to it to reach the weapon table, which lands one row past the row the
- * table labels with the same number.
+ * battle_strength (exe 3000:dd64, unf.c "battle_strength"): Power Weapon I to III. The name is
+ * the function catalog's, and wrong: this sets the power-weapon level and its 60-move clock; the
+ * +7 Strength spell is FUN_3000_d990.
  *
- * The catalog's one-line note calls this "+7 STR for 60 moves", which is wrong: that is
- * FUN_3000_d990. This writes the power weapon level at save offset 0x7e8.
+ * The three spells put a 129, 199 or 399 damage die in the player's hands for 60 moves. `level`
+ * is 1, 2 or 3; `strike` adds eight to it to reach the weapon table, which lands one row past
+ * the row the table labels with the same number. The level is at save offset 0x7e8.
  */
-export function battleStrength(game: Game, level: number): boolean {
+export function powerWeapon(game: Game, level: number): boolean {
   if (level < game.pc.powerWeapon) {
     msgAlreadyInEffect(game);
     return false;
@@ -442,13 +448,13 @@ export function battleStrength(game: Game, level: number): boolean {
 
 /**
  * battle_speed (exe 3000:ddc9, unf.c "battle_speed"): Minor Protection, Protection, Major
- * Protection and Ultra Protection, which take 2, 8, 18 and 32 off a monster's attack roll for 60
- * moves. `level` is 1, 2, 3 or 4.
+ * Protection and Ultra Protection. The name is the function catalog's, and wrong: this sets the
+ * protection level and its 60-move clock; the +7 Agility spell is FUN_3000_d9ba.
  *
- * The catalog's one-line note calls this "+7 AGI for 60 moves", which is wrong: that is
- * FUN_3000_d9ba. This writes the protection level at save offset 0x7eb.
+ * The four spells take 2, 8, 18 and 32 off a monster's attack roll for 60 moves. `level` is 1,
+ * 2, 3 or 4. The level is at save offset 0x7eb.
  */
-export function battleSpeed(game: Game, level: number): boolean {
+export function protection(game: Game, level: number): boolean {
   if (level < game.pc.protection) {
     msgAlreadyInEffect(game);
     return false;
@@ -1385,7 +1391,7 @@ export function wizardBattle(game: Game, levelIndex: number, slot: number): bool
     case 0:
       if (slot === 0) return sleepMonster(game);
       if (slot === 1) return magicZap(game);
-      if (slot === 2) return battleSpeed(game, 1);
+      if (slot === 2) return protection(game, 1);
       break;
     case 1:
       if (slot === 0) return slowEnemies(game);
@@ -1407,11 +1413,11 @@ export function wizardBattle(game: Game, levelIndex: number, slot: number): bool
         relocateSpell(game);
         return true;
       }
-      if (slot === 2) return battleStrength(game, 1);
+      if (slot === 2) return powerWeapon(game, 1);
       break;
     case 4:
       if (slot === 0) return explosion(game, 0);
-      if (slot === 1) return battleSpeed(game, 2);
+      if (slot === 1) return protection(game, 2);
       if (slot === 2) return resistPoison(game);
       break;
     case 5:
@@ -1427,7 +1433,7 @@ export function wizardBattle(game: Game, levelIndex: number, slot: number): bool
     case 7:
       if (slot === 0) return magicBolt(game);
       if (slot === 1) return resistDrain(game);
-      if (slot === 2) return battleStrength(game, 2);
+      if (slot === 2) return powerWeapon(game, 2);
       break;
     case 8:
       if (slot === 0) return holdMonster(game);
@@ -1437,7 +1443,7 @@ export function wizardBattle(game: Game, levelIndex: number, slot: number): bool
     case 9:
       if (slot === 0) return explosion(game, 2);
       if (slot === 1) return autokill(game);
-      if (slot === 2) return battleStrength(game, 3);
+      if (slot === 2) return powerWeapon(game, 3);
       break;
   }
   return false;
@@ -1490,7 +1496,7 @@ export function priestBattle(game: Game, levelIndex: number, slot: number): bool
   switch (levelIndex) {
     case 0:
       if (slot === 0) return sleepMonster(game);
-      if (slot === 1) return battleSpeed(game, 1);
+      if (slot === 1) return protection(game, 1);
       if (slot === 2) return strength(game);
       break;
     case 1:
@@ -1512,13 +1518,13 @@ export function priestBattle(game: Game, levelIndex: number, slot: number): bool
         goAway(game);
         return true;
       }
-      if (slot === 2) return battleStrength(game, 1);
+      if (slot === 2) return powerWeapon(game, 1);
       break;
     case 4:
       // The priest's Protection asks for level 1, the same as the Minor Protection two lines
       // up, so it takes 2 off a monster's roll where the wizard's takes 8. It looks unintended:
       // the priest goes from 2 straight to Major Protection's 18.
-      if (slot === 0) return battleSpeed(game, 1);
+      if (slot === 0) return protection(game, 1);
       if (slot === 1) return antiFire(game);
       if (slot === 2) return passWall(game, game.chooseDirection());
       break;
@@ -1529,21 +1535,21 @@ export function priestBattle(game: Game, levelIndex: number, slot: number): bool
       break;
     case 6:
       if (slot === 0) return holdMonster(game);
-      if (slot === 1) return battleStrength(game, 2);
+      if (slot === 1) return powerWeapon(game, 2);
       if (slot === 2) return shock(game);
       break;
     case 7:
-      if (slot === 0) return battleSpeed(game, 3);
+      if (slot === 0) return protection(game, 3);
       if (slot === 1) return explosion(game, 1);
       if (slot === 2) return magicZot(game);
       break;
     case 8:
       if (slot === 0) return autokill(game);
-      if (slot === 1) return battleStrength(game, 3);
+      if (slot === 1) return powerWeapon(game, 3);
       if (slot === 2) return strengthAndSpeed(game);
       break;
     case 9:
-      if (slot === 0) return battleSpeed(game, 4);
+      if (slot === 0) return protection(game, 4);
       if (slot === 1) return fastHeal(game);
       if (slot === 2) return majorShock(game);
       break;

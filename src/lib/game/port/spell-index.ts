@@ -29,8 +29,8 @@ const HELPERS = {
   relocateSpell: [],
   goAway: ['msgNoMonster', 'bossImmuneCheck'],
   autokill: ['msgNoMonster', 'bossImmuneCheck'],
-  battleStrength: ['msgAlreadyInEffect', 'msgSixtyMovesLonger'],
-  battleSpeed: ['msgAlreadyInEffect', 'msgSixtyMovesLonger'],
+  powerWeapon: ['msgAlreadyInEffect', 'msgSixtyMovesLonger'],
+  protection: ['msgAlreadyInEffect', 'msgSixtyMovesLonger'],
   resistPoison: [],
   resistDisease: [],
   antiCold: [],
@@ -196,7 +196,7 @@ const WIZARD_BATTLE: Case[][] = [
   [
     { fn: 'sleepMonster' },
     { fn: 'magicZap' },
-    { fn: 'battleSpeed', args: '1' },
+    { fn: 'protection', args: '1' },
   ],
   [
     { fn: 'slowEnemies' },
@@ -211,11 +211,11 @@ const WIZARD_BATTLE: Case[][] = [
   [
     { fn: 'goAway' },
     { fn: 'relocateSpell' },
-    { fn: 'battleStrength', args: '1' },
+    { fn: 'powerWeapon', args: '1' },
   ],
   [
     { fn: 'explosion', args: '0' },
-    { fn: 'battleSpeed', args: '2' },
+    { fn: 'protection', args: '2' },
     { fn: 'resistPoison' },
   ],
   [
@@ -231,7 +231,7 @@ const WIZARD_BATTLE: Case[][] = [
   [
     { fn: 'magicBolt' },
     { fn: 'resistDrain' },
-    { fn: 'battleStrength', args: '2' },
+    { fn: 'powerWeapon', args: '2' },
   ],
   [
     { fn: 'holdMonster' },
@@ -241,14 +241,14 @@ const WIZARD_BATTLE: Case[][] = [
   [
     { fn: 'explosion', args: '2' },
     { fn: 'autokill' },
-    { fn: 'battleStrength', args: '3' },
+    { fn: 'powerWeapon', args: '3' },
   ],
 ];
 
 const PRIEST_BATTLE: Case[][] = [
   [
     { fn: 'sleepMonster' },
-    { fn: 'battleSpeed', args: '1' },
+    { fn: 'protection', args: '1' },
     { fn: 'strength' },
   ],
   [
@@ -264,12 +264,12 @@ const PRIEST_BATTLE: Case[][] = [
   [
     { fn: 'antiCold' },
     { fn: 'goAway' },
-    { fn: 'battleStrength', args: '1' },
+    { fn: 'powerWeapon', args: '1' },
   ],
-  // The priest's Protection asks battle_speed for level 1, the same as the Minor Protection two
+  // The priest's Protection asks for protection level 1, the same as the Minor Protection two
   // lines up, so it is the weaker spell of the two the game names Protection.
   [
-    { fn: 'battleSpeed', args: '1' },
+    { fn: 'protection', args: '1' },
     { fn: 'antiFire' },
     { fn: 'passWall', args: 'game.chooseDirection()' },
   ],
@@ -280,21 +280,21 @@ const PRIEST_BATTLE: Case[][] = [
   ],
   [
     { fn: 'holdMonster' },
-    { fn: 'battleStrength', args: '2' },
+    { fn: 'powerWeapon', args: '2' },
     { fn: 'shock' },
   ],
   [
-    { fn: 'battleSpeed', args: '3' },
+    { fn: 'protection', args: '3' },
     { fn: 'explosion', args: '1' },
     { fn: 'magicZot' },
   ],
   [
     { fn: 'autokill' },
-    { fn: 'battleStrength', args: '3' },
+    { fn: 'powerWeapon', args: '3' },
     { fn: 'strengthAndSpeed' },
   ],
   [
-    { fn: 'battleSpeed', args: '4' },
+    { fn: 'protection', args: '4' },
     { fn: 'fastHeal' },
     { fn: 'majorShock' },
   ],
