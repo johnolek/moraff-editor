@@ -1,6 +1,6 @@
 import { HistoryCursor } from './history';
 
-export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'roller' | 'source';
+export type Tab = 'map' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
 
 /** A function to open in the Source tab: one of the port's, or one of the decompilation's. */
 export type SourceRequest = { kind: 'ts'; file: string; name: string } | { kind: 'c'; name: string };
