@@ -30,10 +30,11 @@ tab, the map canvas, the screen renderer and the roster.
 * **`replay.ts`** — how a ported function that stops for a menu is run at all.
 * **`menus.ts`** — the menus `movecontrol` and the spells build themselves.
 * **`advice.ts`** — the little mouse: eight pieces of advice and fourteen lessons.
-* **`panel.ts`, `MwPanel.svelte`, `MwPortrait.svelte`** — the numbers the game keeps and never
-  prints, beside the map, and the picture of the monster in front of the character over them.
-* **`MwPlay.svelte`** — the tab: the map, the message box, the banner, the screens and the row of
-  keys. `src/App.svelte` picks it or Dungeons of the Unforgiven's by the game showing.
+* **`panel.ts`, `MwPanel.svelte`** — the numbers the game keeps and never prints, in the column
+  beside the map. **`MwPortrait.svelte`** — the picture of the monster in front of the character.
+* **`MwPlay.svelte`** — the tab: the map, the four corners of the game's own screen laid over it,
+  the screens and the row of keys. `src/App.svelte` picks it or Dungeons of the Unforgiven's by
+  the game showing.
 
 ## Waiting for a key
 
@@ -71,6 +72,24 @@ Moraff's World writes in two places, and this port keeps them apart the way the 
   `clear_screen`. Anything on `game.screen` is drawn over the map at the game's own coordinates.
   `session.showScreens(...)` is for a ported function that draws a page, waits for a key and then
   clears it: the wait is where the page is kept, so the player sees it before it goes.
+
+## Where the words are drawn
+
+The tab lays the game's own screen over the map, in the corners the game puts it in and at one
+size: each corner is given the share of the map's width it has of the screen's 1600.
+
+| corner | what is in it |
+| --- | --- |
+| top left | the strip a kill and a fight write on, and the message box under it (`mwCorner`) |
+| top right | the picture of the monster faced, with the level, hit points and experience FUN_2000_892d prints over its view, and the line FUN_2000_a9bd puts under the map |
+| bottom left | the character's own level, experience, spell points and health points (`mwStatusLines`) |
+| bottom right | the six characteristics (`mwCharacteristicLines`) |
+
+Two things are not where the original puts them. The strip is drawn over the top of the message
+box in the game — the first line of each is at y 0x28 — which it gets away with because a menu is
+never up while a monster is being swung at; `mwCorner` moves the box down by as much of the strip
+as is in use instead. And a screen with every line inside that corner is drawn there rather than
+taking the whole display over, which is what puts a menu's heading above its own box.
 
 ## A menu in the middle of a ported function
 
@@ -117,8 +136,8 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
   (`../timed.ts`); the flashes while a hole is dug, whose message the port shows as a box rather
   than the strip the original draws it on, are still printed once.
 * **The map is drawn instead of the 3-D view**, and every monster on the floor is drawn, not only
-  the ones a character has seen. The hit points the game draws in the four corners of that view
-  go in the panel instead, along with everything else it keeps to itself.
+  the ones a character has seen. The picture of the monster being faced stands in for the view
+  ahead, with the level, hit points and experience the game prints over that view over it.
 * **No `?MON.MAP`, no `.DUN`.** The explored map is not kept and the three floors of monsters
   live only as long as the tab is open.
 * **The character file is the roster entry.** `save_player` writes the record back through the
