@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseSave, spellIndex } from '../game/dotu-files.js';
-import { readScalar } from './fields';
+import { readScalar, writeScalar } from './fields';
 import { GAMES, MORAFFS_WORLD, pickGameByFileSize, UNFORGIVEN } from './games';
 import type { Field, ScalarField } from './schema';
 
@@ -112,5 +112,31 @@ describe("the Moraff's World dungeon number", () => {
     expect(readScalar(view, field)).toBe(3528);
     view.setInt16(0x07b2, -3204, true);
     expect(readScalar(view, field)).toBe(-3204);
+  });
+});
+
+describe("the Moraff's World preparation-spell fields", () => {
+  const fields = MORAFFS_WORLD.sections.flatMap((section) => section.fields);
+
+  // The record is the flat 0x928 bytes save_player (WORLD.EXE 2000:58bf) writes, so a save
+  // offset is the global's DS address minus the record's own DS:c0f2. Each value below is one
+  // the game itself writes: FUN_2000_c4be and FUN_2000_c49c take the enchant bonuses to 5 and 4,
+  // and the dispatcher FUN_2000_d358 writes 5 for a preparation stat spell and 10 for a super.
+  it.each([
+    ['Enchant Weapon Level', 0x07ce, 'uint8', 5],
+    ['Enchant Armor Level', 0x07cf, 'uint8', 4],
+    ['Preparation Strength', 0x07da, 'uint8', 5],
+    ['Preparation Agility', 0x07db, 'uint8', 5],
+    ['Super Strength', 0x07dc, 'uint8', 10],
+    ['Super Agility', 0x07dd, 'uint8', 10],
+  ])('round-trips %s', (label, offset, kind, value) => {
+    const field = fields.find((entry) => 'offset' in entry && entry.offset === offset) as ScalarField;
+    expect(field).toBeDefined();
+    expect(field.label).toBe(label);
+    expect(field.kind).toBe(kind);
+
+    const view = new DataView(new ArrayBuffer(MORAFFS_WORLD.fileSize));
+    writeScalar(view, field, value);
+    expect(readScalar(view, field)).toBe(value);
   });
 });

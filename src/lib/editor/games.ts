@@ -198,6 +198,32 @@ export const MORAFFS_WORLD: GameSchema = {
       ],
     },
     {
+      // The two enchant bonuses come from FUN_2000_c4be and FUN_2000_c49c (WORLD.EXE 2000:c4be
+      // and 2000:c49c); the four stat markers are written in the spell dispatcher FUN_2000_d358
+      // (2000:d358) and cleared by the inn's FUN_2000_2e6c (2000:2e6c), which subtracts the
+      // bonus it handed out. FUN_2000_7421 (2000:7421) is the screen that lists all six.
+      title: 'Preparation Spells in Effect',
+      note: 'The preparation spells still running. A night at the inn clears every one of them, and for the four stat markers it also takes the bonus back off the stat — so zeroing one here by hand leaves those points on the stat for good.',
+      fields: [
+        {
+          kind: 'uint8',
+          offset: 0x07ce,
+          label: 'Enchant Weapon Level',
+          hint: 'A plus added to the attack roll, on top of whatever the weapon in hand is worth. The preparation Enchant Weapon spells set it to 1 through 5.',
+        },
+        {
+          kind: 'uint8',
+          offset: 0x07cf,
+          label: 'Enchant Armor Level',
+          hint: "A plus taken off a monster's attack roll, on top of whatever the armor worn is worth. The preparation Enchant Armor spells set it to 1 through 4.",
+        },
+        { kind: 'uint8', offset: 0x07da, label: 'Preparation Strength', hint: 'The Strength spell writes 5 here and adds 5 to Strength.' },
+        { kind: 'uint8', offset: 0x07db, label: 'Preparation Agility', hint: 'The Agility spell writes 5 here and adds 5 to Agility / Dexterity.' },
+        { kind: 'uint8', offset: 0x07dc, label: 'Super Strength', hint: 'The Super Strength spell writes 10 here and adds 10 to Strength.' },
+        { kind: 'uint8', offset: 0x07dd, label: 'Super Agility', hint: 'The Super Agility spell writes 10 here and adds 10 to Agility / Dexterity.' },
+      ],
+    },
+    {
       title: 'Trapdoor Keys',
       note: 'One key per floor (10, 20, … 200). Each key allows use of trapdoors leading to that floor.',
       fields: [{ kind: 'checkbox_list', offset: 0x081f, names: Array.from({ length: 20 }, (_, i) => `Floor ${(i + 1) * 10}`) }],
