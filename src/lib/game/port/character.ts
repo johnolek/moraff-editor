@@ -1,10 +1,19 @@
 import urollText from '../uroll.txt?raw';
-import type { Game, PlayerCharacter } from './state';
+import type { Game, PlayerCharacter, ScreenLine } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
-// the unpacked executable. The comment on each say call gives the address of every line it
+// the unpacked executable. The comment on each draw call gives the address of every line it
 // prints, in order; dotu-tools/reference/scripts/exe_strings.py reads them back. The lines that
 // come out of UROLL.TXT are the file's own, one line of the file to a line on screen.
+//
+// Every screen here is drawn with pfont (exe 4000:0bb3) or psfont (exe 4000:0db8), whose last
+// argument is the colour: a palette entry between 1 and 15, which src/lib/game/palettes.json has
+// the same in all forty palettes (PICTURES.md calls 1..15 the fixed UI colours). The ones
+// roll_char uses are 2 blue, 3 light blue, 4 yellow, 5 orange, 6 red, 7 gold, 8 green and 15
+// white. The argument before it picks the font: 0 the body face, 1 the middle one, 2 the big one.
+// Ghidra hangs the colour off the end of the call that produced the string rather than the print
+// call itself, so `read_uroll_line(buffer, file, 4); pfont(0, 0, 1, line)` in unf.c is a pfont
+// call in colour 4.
 
 /**
  * One of the eight rows of the race table (exe DS:0130, fourteen bytes apiece): a pointer to the
@@ -97,6 +106,144 @@ export function readUrollLines(file: UrollFile, count: number): string[] {
   return Array.from({ length: count }, () => readUrollLine(file));
 }
 
+/** Where one line of a screen out of UROLL.TXT goes and how roll_char draws it. */
+type UrollLineStyle = Omit<ScreenLine, 'text'>;
+
+/** Read a screen out of UROLL.TXT and draw each of its lines where roll_char puts it. */
+function drawUrollScreen(game: Game, file: UrollFile, screen: UrollLineStyle[]): void {
+  for (const style of screen) game.draw({ ...style, text: readUrollLine(file) });
+}
+
+/** The difficulty menu, the first thirteen lines of UROLL.TXT (exe 3000:4cf1 to 3000:4e0e). */
+const DIFFICULTY_MENU: UrollLineStyle[] = [
+  { x: 0, y: 0, font: 1, colour: 4 },
+  { x: 100, y: 100, font: 1, colour: 4 },
+  { x: 0xa0, y: 0xbe, font: 1, colour: 5 },
+  { x: 0xa0, y: 0xfa, font: 1, colour: 5 },
+  { x: 0xa0, y: 0x136, font: 1, colour: 5 },
+  { x: 0xa0, y: 0x172, font: 1, colour: 5 },
+  { x: 100, y: 0x1ea, font: 1, colour: 4 },
+  { x: 0xa0, y: 0x244, font: 1, colour: 5 },
+  { x: 0xa0, y: 0x280, font: 1, colour: 5 },
+  { x: 0xa0, y: 700, font: 1, colour: 5 },
+  { x: 0xa0, y: 0x2f8, font: 1, colour: 5 },
+  { x: 0xa0, y: 0x334, font: 1, colour: 5 },
+  { x: 0xa0, y: 0x370, font: 1, colour: 5 },
+];
+
+/** The shareware contest screen, which the registered game reads past and never shows. */
+const CONTEST_SCREEN: UrollLineStyle[] = [
+  { x: 10, y: 10, font: 1, colour: 4 },
+  { x: 10, y: 100, font: 1, colour: 4 },
+  { x: 10, y: 0xbe, font: 1, colour: 4 },
+  { x: 10, y: 0x118, font: 1, colour: 4 },
+  { x: 10, y: 0x172, font: 1, colour: 4 },
+  { x: 10, y: 0x1cc, font: 1, colour: 4 },
+  { x: 10, y: 0x226, font: 1, colour: 4 },
+  { x: 10, y: 0x280, font: 1, colour: 4 },
+  { x: 10, y: 0x2da, font: 1, colour: 4 },
+  { x: 10, y: 0x334, font: 1, colour: 4 },
+  { x: 10, y: 0x38e, font: 1, colour: 4 },
+  { x: 10, y: 0x44c, font: 1, colour: 6 },
+];
+
+/** The CREATING A CHARACTER screen: a big light blue title over two paragraphs and a prompt. */
+const ADVICE_SCREEN: UrollLineStyle[] = [
+  { x: 0, y: 0, font: 2, colour: 3 },
+  { x: 0, y: 0x78, font: 0, colour: 5 },
+  { x: 0, y: 0xdc, font: 0, colour: 5 },
+  { x: 0, y: 0x140, font: 0, colour: 5 },
+  { x: 0, y: 0x1a4, font: 0, colour: 5 },
+  { x: 0, y: 0x208, font: 0, colour: 5 },
+  { x: 0, y: 0x26c, font: 0, colour: 5 },
+  { x: 0, y: 0x2d0, font: 0, colour: 5 },
+  { x: 0, y: 0x334, font: 0, colour: 8 },
+  { x: 0, y: 0x398, font: 0, colour: 8 },
+  { x: 0, y: 0x3fc, font: 0, colour: 8 },
+  { x: 0, y: 0x47e, font: 0, colour: 4 },
+];
+
+/** The race table: the title, two lines of instructions, the column headers and the eight rows. */
+const RACE_SCREEN: UrollLineStyle[] = [
+  { x: 0, y: 0, font: 2, colour: 3 },
+  { x: 0, y: 100, font: 0, colour: 4 },
+  { x: 0, y: 0x96, font: 0, colour: 4 },
+  { x: 0, y: 0xdc, font: 0, colour: 5 },
+  { x: 0, y: 0x140, font: 0, colour: 8 },
+  { x: 0, y: 0x1a4, font: 0, colour: 8 },
+  { x: 0, y: 0x208, font: 0, colour: 8 },
+  { x: 0, y: 0x26c, font: 0, colour: 8 },
+  { x: 0, y: 0x2d0, font: 0, colour: 8 },
+  { x: 0, y: 0x334, font: 0, colour: 8 },
+  { x: 0, y: 0x398, font: 0, colour: 8 },
+  { x: 0, y: 0x3fc, font: 0, colour: 8 },
+];
+
+/**
+ * The class menu: the question, then a colour for each of the seven classes — light blue, yellow,
+ * orange, red, green, gold and blue — over the one or two lines that describe it. Every line is
+ * spread out to the right edge the way psfont does it.
+ */
+const CLASS_SCREEN: UrollLineStyle[] = [
+  { x: 0, y: 0x1e0, spreadTo: 0x5dc, font: 1, colour: 2 },
+  { x: 0, y: 0x226, spreadTo: 0x640, font: 0, colour: 3 },
+  { x: 0x5a, y: 0x24e, spreadTo: 0x640, font: 0, colour: 3 },
+  { x: 0, y: 0x280, spreadTo: 0x640, font: 0, colour: 4 },
+  { x: 0x5a, y: 0x2a8, spreadTo: 0x640, font: 0, colour: 4 },
+  { x: 0, y: 0x2da, spreadTo: 0x640, font: 0, colour: 5 },
+  { x: 0x5a, y: 0x302, spreadTo: 0x640, font: 0, colour: 5 },
+  { x: 0, y: 0x334, spreadTo: 0x640, font: 0, colour: 6 },
+  { x: 0x5a, y: 0x35c, spreadTo: 0x640, font: 0, colour: 6 },
+  { x: 0, y: 0x38e, spreadTo: 0x640, font: 0, colour: 8 },
+  { x: 0x5a, y: 0x3b6, spreadTo: 0x640, font: 0, colour: 8 },
+  { x: 0, y: 1000, spreadTo: 0x640, font: 0, colour: 7 },
+  { x: 0x5a, y: 0x410, spreadTo: 0x640, font: 0, colour: 7 },
+  { x: 0x5a, y: 0x438, spreadTo: 0x640, font: 0, colour: 7 },
+  { x: 0, y: 0x465, spreadTo: 0x640, font: 0, colour: 2 },
+  { x: 0x5a, y: 0x48d, spreadTo: 0x640, font: 0, colour: 2 },
+];
+
+/**
+ * The six characteristics on the character screen. roll_char draws each label at x = 0 in colour
+ * 6 (DS:2670 267a 2688 2690 269e 26a7) and show_rolled_character draws its number in the same
+ * colour at x = 0x212, which is what lines the numbers up in a column. The port draws the two as
+ * one line, so both ends of it live here.
+ */
+const CHARACTERISTIC_LINES = [
+  { label: 'STRENGTH: ', y: 100 },
+  { label: 'INTELLIGENCE: ', y: 0xa0 },
+  { label: 'WISDOM: ', y: 0xdc },
+  { label: 'CONSTITUTION: ', y: 0x118 },
+  { label: 'AGILITY: ', y: 0x154 },
+  { label: 'LUCK: ', y: 400 },
+];
+
+/** One of the six characteristics, in the order the design menu numbers them. */
+function characteristic(pc: PlayerCharacter, stat: number): number {
+  return [pc.str, pc.iq, pc.wis, pc.con, pc.dex, pc.luck][stat];
+}
+
+/**
+ * One characteristic's line of the character screen, label and number together.
+ *
+ * `on` is show_rolled_character's argument: 1 draws the number in colour 6 and 0 draws it in the
+ * background, which is how the game rubs out a roll the player has turned down. Because the port
+ * has the label and the number in one line, the erasing pass takes the label off the screen too,
+ * where the original leaves it standing.
+ */
+export function drawCharacteristic(game: Game, stat: number, on: number): void {
+  const line = CHARACTERISTIC_LINES[stat];
+  game.draw({
+    text: line.label,
+    value: String(characteristic(game.pc, stat)),
+    x: 0,
+    valueX: 0x212,
+    y: line.y,
+    font: 1,
+    colour: on * 6,
+  });
+}
+
 /**
  * show_rolled_character (exe 3000:4a67, unf.c "show_rolled_character"): draw the numbers of the
  * character that has just been rolled — the six characteristics, the height, the weight, the age
@@ -104,30 +251,28 @@ export function readUrollLines(file: UrollFile, count: number): string[] {
  *
  * The original draws each number at a fixed column beside a label roll_char has already put on
  * the screen, and `on` picks the colour it draws in: 1 for the text colour and 0 for the
- * background, which is how a rejected roll is rubbed out again. A message log has nothing to rub
- * out, so the erasing pass prints nothing and the drawing pass prints each number joined to the
- * label it lands beside.
+ * background, which is how a rejected roll is rubbed out again. The port draws each number joined
+ * to the label it lands beside, so a pass with `on` at 0 takes the whole line off the screen and
+ * prints nothing at all in the message log.
  *
  * The height is drawn as four times the field, so a character whose record says 21 stands 84
  * inches tall.
  */
 export function showRolledCharacter(game: Game, on: number): void {
-  if (on === 0) return;
   const pc = game.pc;
-  // DS:2670 267a 2688 2690 269e 26a7, each with its number drawn after it at x = 0x212
-  game.say(
-    `STRENGTH: ${pc.str}`,
-    `INTELLIGENCE: ${pc.iq}`,
-    `WISDOM: ${pc.wis}`,
-    `CONSTITUTION: ${pc.con}`,
-    `AGILITY: ${pc.dex}`,
-    `LUCK: ${pc.luck}`,
+  for (let stat = 0; stat < CHARACTERISTIC_LINES.length; stat++) drawCharacteristic(game, stat, on);
+  // DS:26ad 26c2 26d7 at x = 0x2ee in colour 8, whose blank runs are where the numbers at
+  // x = 0x438 land. The port has the number in the line rather than in a column of its own.
+  game.draw({ text: `HEIGHT: ${pc.height * 4} INCHES`, x: 0x2ee, y: 100, font: 1, colour: on * 8 });
+  game.draw({ text: `WEIGHT: ${pc.weight} POUNDS`, x: 0x2ee, y: 0xaa, font: 1, colour: on * 8 });
+  game.draw({ text: `AGE: ${pc.age} YEARS`, x: 0x2ee, y: 0xf0, font: 1, colour: on * 8 });
+  // DS:2615 / DS:2609, the whole line either way, in the big font in colour 15. The original
+  // draws the two at different columns, 900 for the male one and 0x2ee for the female one.
+  game.draw(
+    pc.sex === 0
+      ? { text: 'SEX: MALE', x: 900, y: 0, font: 2, colour: on * 15 }
+      : { text: 'SEX: FEMALE', x: 0x2ee, y: 0, font: 2, colour: on * 15 },
   );
-  // DS:26ad 26c2 26d7, whose blank runs are where the numbers at x = 0x438 land
-  game.say(`HEIGHT: ${pc.height * 4} INCHES`, `WEIGHT: ${pc.weight} POUNDS`, `AGE: ${pc.age} YEARS`);
-  // DS:2615 / DS:2609, the whole line either way. The original draws the two at different
-  // columns, 900 for the male one and 750 for the female one.
-  game.say(pc.sex === 0 ? 'SEX: MALE' : 'SEX: FEMALE');
 }
 
 /**
@@ -194,6 +339,8 @@ export function rollCharacteristics(game: Game): void {
  */
 export function designYourOwn(game: Game): boolean {
   const pc = game.pc;
+  // fill_rect(0, 0x2b2, ...) in colour 0, which takes the keep, reroll and design menu away.
+  game.eraseScreen(0x2b2);
   showRolledCharacter(game, 0);
   pc.str -= 4;
   pc.iq -= 4;
@@ -202,23 +349,33 @@ export function designYourOwn(game: Game): boolean {
   pc.dex -= 4;
   pc.luck -= 4;
   showRolledCharacter(game, 1);
-  // DS:2756 2770 2794 27b2 27cf 27f9 2818, then DS:2836, which the original only prints when a
-  // mouse is attached. The port has no mouse flag and prints it either way.
-  game.say(
-    'ESC-CANCEL THIS CHARACTER',
-    'YOU MAY ASSIGN 24 ADDITIONAL POINTS',
-    'TO THE ABOVE CHARACTERISTICS.',
-    'CHARACTERISTIC POINTS LEFT: ',
-    "PRESS 'S', 'I', 'W', 'C', 'D', OR 'L' FOR",
-    'STRENGTH, INTELLIGENCE, WISDOM',
-    'CONSTITUTION, AGILITY OR LUCK',
-    'OR POINT THE MOUSE TO A CHARACTERISTIC AND PRESS THE BUTTON',
-  );
+  // DS:2756 in colour 4, then DS:2770 2794 in colour 3, DS:27b2 in colour 6 and DS:27cf 27f9
+  // 2818 in colour 4, every one of them spread out by psfont. DS:2836 the original only prints
+  // when a mouse is attached; the port has no mouse flag and prints it either way.
+  game.draw({ text: 'ESC-CANCEL THIS CHARACTER', x: 0x96, y: 0x226, font: 1, colour: 4 });
+  game.draw({ text: 'YOU MAY ASSIGN 24 ADDITIONAL POINTS', x: 0, y: 700, spreadTo: 0x63f, font: 1, colour: 3 });
+  game.draw({ text: 'TO THE ABOVE CHARACTERISTICS.', x: 200, y: 0x302, spreadTo: 0x578, font: 1, colour: 3 });
+  game.draw({ text: 'CHARACTERISTIC POINTS LEFT: ', x: 0, y: 0x348, spreadTo: 1000, font: 1, colour: 6 });
+  game.draw({ text: "PRESS 'S', 'I', 'W', 'C', 'D', OR 'L' FOR", x: 0, y: 0x3a2, spreadTo: 0x63f, font: 1, colour: 4 });
+  game.draw({ text: 'STRENGTH, INTELLIGENCE, WISDOM', x: 0x78, y: 1000, spreadTo: 0x63f, font: 1, colour: 4 });
+  game.draw({ text: 'CONSTITUTION, AGILITY OR LUCK', x: 0x78, y: 0x42e, spreadTo: 0x63f, font: 1, colour: 4 });
+  game.draw({
+    text: 'OR POINT THE MOUSE TO A CHARACTERISTIC AND PRESS THE BUTTON',
+    x: 0,
+    y: 0x47e,
+    spreadTo: 0x63f,
+    font: 0,
+    colour: 4,
+  });
   for (let left = 24; left > 0; left--) {
-    // The original rubs out the last count and draws this one on the end of the label above.
-    game.say(String(left));
+    // The original rubs the last count out with a fill_rect and draws this one in its place, on
+    // the end of the label above.
+    game.draw({ text: String(left), x: 1000, y: 0x348, font: 1, colour: 6 });
     const stat = game.askDesignStat();
-    if (stat === 6) return false;
+    if (stat === 6) {
+      game.eraseScreen();
+      return false;
+    }
     switch (stat) {
       case 0:
         pc.str += 1;
@@ -239,6 +396,8 @@ export function designYourOwn(game: Game): boolean {
         pc.luck += 1;
         break;
     }
+    // The original rubs the old number out and draws the new one in its place at x = 0x212.
+    drawCharacteristic(game, stat, 1);
   }
   return true;
 }
@@ -409,8 +568,9 @@ export function rollChar(game: Game): void {
   const pc = game.pc;
   // The original zeroes the module at DS:c036 first, which the memset on the next line does too.
   Object.assign(pc, blankPlayerCharacter());
+  game.eraseScreen();
   const uroll = openUroll();
-  game.say(...readUrollLines(uroll, 13));
+  drawUrollScreen(game, uroll, DIFFICULTY_MENU);
   // UROLL.TXT describes a third difficulty, the shareware contest, over the next three lines.
   // This is the registered game, whose menu only takes 1 or 2, so it reads them and throws them
   // away and there is no way to pick it.
@@ -426,31 +586,37 @@ export function rollChar(game: Game): void {
     contest = difficulty === 1 ? 0 : 1;
   }
   if (contest === 1) {
-    game.say(...readUrollLines(uroll, 12));
+    game.eraseScreen();
+    drawUrollScreen(game, uroll, CONTEST_SCREEN);
+    game.pressAnyKey();
+    // The erase_menu_block after the key clears the screen for the tablet, which this port does
+    // not draw; the same goes for the two later ones.
     game.events.push({ kind: 'tabletShown', entry: 0x55 });
   } else {
     readUrollLines(uroll, 12);
   }
-  game.say(...readUrollLines(uroll, 12));
+  game.eraseScreen();
+  drawUrollScreen(game, uroll, ADVICE_SCREEN);
+  game.pressAnyKey();
+  game.eraseScreen();
   // The srand(clock()) between the advice screen and the race screen, deliberately not
   // ported: see the README's third departure. It is the only reseed in the whole roller.
-  game.say(...readUrollLines(uroll, 12));
+  drawUrollScreen(game, uroll, RACE_SCREEN);
   pc.race = game.askRace();
+  game.eraseScreen();
 
   for (;;) {
     let choice = 0;
     for (;;) {
-      // DS:266a with the race's name drawn after it at x = 0x14a
-      game.say(`RACE: ${RACES[pc.race].name}`);
+      // DS:266a in the big font in colour 5, with the race's name drawn after it at x = 0x14a
+      game.draw({ text: 'RACE: ', value: RACES[pc.race].name, x: 0, valueX: 0x14a, y: 0, font: 2, colour: 5 });
       rollCharacteristics(game);
       showRolledCharacter(game, 1);
-      // DS:26eb 2702 271a 2737
-      game.say(
-        'Y) KEEP THIS CHARACTER',
-        'N) ROLL A NEW CHARACTER',
-        'D) DESIGN YOUR OWN CHARACTER',
-        'PLEASE SELECT ONE OF THE ABOVE',
-      );
+      // DS:26eb 2702 271a 2737, all four indented to x = 0xbe in colour 4
+      game.draw({ text: 'Y) KEEP THIS CHARACTER', x: 0xbe, y: 700, font: 1, colour: 4 });
+      game.draw({ text: 'N) ROLL A NEW CHARACTER', x: 0xbe, y: 0x302, font: 1, colour: 4 });
+      game.draw({ text: 'D) DESIGN YOUR OWN CHARACTER', x: 0xbe, y: 0x348, font: 1, colour: 4 });
+      game.draw({ text: 'PLEASE SELECT ONE OF THE ABOVE', x: 0xbe, y: 0x44c, font: 1, colour: 4 });
       choice = game.askKeepRerollDesign();
       if (choice === 0) break;
       if (choice === 1) showRolledCharacter(game, 0);
@@ -461,15 +627,31 @@ export function rollChar(game: Game): void {
     if (designYourOwn(game)) break;
   }
 
-  game.say('PLEASE TYPE YOUR NAME:'); // DS:2872
+  // fill_rect(0, 0x212, ...) in colour 0, leaving only the top of the character screen standing.
+  game.eraseScreen(0x212);
+  game.draw({ text: 'PLEASE TYPE YOUR NAME:', x: 0, y: 700, font: 1, colour: 7 }); // DS:2872
+  // typed_name draws the letters as they are typed at x = 0 y = 0x44c, in the big font in colour
+  // 4. The port takes the finished name from the hook, so nothing of it is drawn on the way.
   pc.name = typedName(game.askName());
-  // DS:2872 + 17, which is the tail of the same string, with the name drawn after it
-  game.say(`NAME: ${pc.name}`);
-  game.say(...readUrollLines(uroll, 16));
+  // fill_rect(0, 0x2b2, ...) over the prompt and the name. In the two smallest video modes the
+  // original draws both strings again in colour 0 instead, which comes to the same thing.
+  game.eraseScreen(0x2b2);
+  // DS:2872 + 17, which is the tail of the same string, with the name drawn after it at x = 0x38e
+  game.draw({ text: 'NAME: ', value: pc.name, x: 700, spreadTo: 0x370, valueX: 0x38e, y: 0x136, font: 1, colour: 8 });
+  drawUrollScreen(game, uroll, CLASS_SCREEN);
   pc.cls = game.askClass();
   startingSpells(game);
-  // DS:2889 with the class name drawn after it at x = 0x3d4
-  game.say(`CLASS: ${CLASS_NAMES[pc.cls]}`);
+  // DS:2889 in colour 8 with the class name drawn after it at x = 0x3d4
+  game.draw({
+    text: 'CLASS: ',
+    value: CLASS_NAMES[pc.cls],
+    x: 700,
+    spreadTo: 0x398,
+    valueX: 0x3d4,
+    y: 0x17c,
+    font: 1,
+    colour: 8,
+  });
 
   pc.maxSp = 0;
   pc.hp = pc.con + Math.trunc(pc.con / 2) + Math.trunc(pc.luck / 2) + game.rng.random(7);
@@ -509,8 +691,25 @@ export function rollChar(game: Game): void {
   }
   pc.sp = pc.maxSp;
   pc.hp = pc.maxHp;
-  // DS:28bf and DS:28ce, whose four leading spaces are the gap between the two numbers
-  game.say(`SPELL POINTS: ${Math.trunc(pc.sp)}    HEALTH POINTS: ${pc.maxHp}`);
+  // The class menu's question again in colour 0, which is how the game takes it off the screen
+  // and leaves the seven descriptions standing under the finished character.
+  game.draw({
+    text: 'PLEASE SELECT A CLASS BY HITTING A NUMBER 1-7:',
+    x: 0,
+    y: 0x1e0,
+    spreadTo: 0x5dc,
+    font: 1,
+    colour: 0,
+  });
+  // DS:28bf and DS:28ce in colour 4, whose four leading spaces are the gap between the two numbers
+  game.draw({
+    text: `SPELL POINTS: ${Math.trunc(pc.sp)}    HEALTH POINTS: ${pc.maxHp}`,
+    x: 0,
+    y: 0x1cc,
+    font: 1,
+    colour: 4,
+  });
+  game.pressAnyKey();
   game.events.push({ kind: 'tabletShown', entry: pc.cls + 0x34 });
 
   pc.x = 0x3a;

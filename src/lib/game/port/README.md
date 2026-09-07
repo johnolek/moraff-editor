@@ -108,6 +108,28 @@ comment on each `say` call lists the address of every line the call prints, in o
 can be checked against it. Do not read the text off Ghidra's labels for the string table:
 those replace every character that is not a letter or a digit with an underscore.
 
+## The screens
+
+The roller does not print through `print_menu_only`; it draws string by string with `pfont` (exe
+4000:0bb3) and `psfont` (exe 4000:0db8), each call naming an x, a y, one of the three fonts and a
+colour. That is `game.draw(...)` here, which appends the line to `game.messages` the way `say`
+does and also keeps `game.screen`, the lines that are showing. `pfont` works in a grid 1600
+across and 1200 down that the game scales to whatever video mode is running, so the coordinates
+in the port are the game's own numbers.
+
+The colour is a palette entry between 1 and 15 — what `dotu-tools/docs/PICTURES.md` calls the
+fixed UI colours, the same in all forty palettes of `src/lib/game/palettes.json`. Ghidra hangs
+that last argument off the end of the call that produced the string rather than the print call
+itself, so `read_uroll_line(buffer, file, 4); pfont(0, 0, 1, line)` in `unf.c` is a `pfont` call
+in colour 4.
+
+Two things the screen keeps that a log cannot. Drawing over a string already at the same x and y
+replaces it, which is how the game puts the next number where the last one was; and colour 0 is
+the background, so a call in colour 0 rubs a string out. `game.eraseScreen(fromY)` is
+`erase_menu_block` (exe 4000:42b4) and the `fill_rect` calls that clear the bottom of the screen
+between one screen of the roller and the next. `game.pressAnyKey()` is `mgetch_message` (exe
+4000:418d), the wait that keeps a screen up until the player has read it.
+
 ## What is ported
 
 * `state.ts` — the `Game` state, the monster and item tables, and `newGame()` for tests.

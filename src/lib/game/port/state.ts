@@ -9,6 +9,37 @@ export const MAP_EMPTY = 0xff;
 export const MAP_PLAYER = 0xfe;
 
 /**
+ * One string on the screen, with everything the game's two text routines are told about it.
+ *
+ * `pfont` (exe 4000:0bb3, unf.c "pfont") takes an x, a y, one of the three fonts, the string and
+ * a colour; `psfont` (exe 4000:0db8, unf.c "psfont") takes a second x as well and spreads the
+ * string out until it reaches it. Both work in a grid 1600 across and 1200 down that they scale
+ * to whatever video mode is running, so the numbers here are the game's own.
+ */
+export interface ScreenLine {
+  /** The string, the exact bytes the game prints. */
+  text: string;
+  /** The left edge, out of 1600. */
+  x: number;
+  /** The top, out of 1200. */
+  y: number;
+  /** Which font: 0 the body face, 1 the middle one, 2 the big one. */
+  font: number;
+  /** The colour: a palette entry, 1 to 15 of the fixed UI colours, or 0 to rub the line out. */
+  colour: number;
+  /** psfont's second x, which the string is spread out to reach. A pfont line has none. */
+  spreadTo?: number;
+  /**
+   * A second string drawn on the same line at its own x, in the same font and colour. The game
+   * draws "RACE: " and the race's name, or a characteristic's label and its number, as two calls
+   * so that the numbers line up in a column; the message log gets the two joined into one line.
+   */
+  value?: string;
+  /** The x that second string is drawn at. */
+  valueX?: number;
+}
+
+/**
  * The fields of the character record the battle spells read or write. Each is one field of the
  * save file, and the name is the one `src/lib/game/dotu-files.js` already gives that offset;
  * fields that file does not parse are named after their label in `src/lib/editor/games.ts`.
@@ -352,6 +383,8 @@ export interface Game {
   monsterStatusLine: string;
   /** Every line the game has printed, oldest first. */
   messages: string[];
+  /** What is on the screen now, in the order it was drawn. */
+  screen: ScreenLine[];
   /** Every side effect the port declined to carry out, oldest first. */
   events: GameEvent[];
   rng: Rng;
@@ -415,6 +448,28 @@ export interface Game {
    * blanks are dropped here, blank lines between two printed ones are kept.
    */
   say(...lines: string[]): void;
+  /**
+   * pfont (exe 4000:0bb3) and psfont (exe 4000:0db8): draw one string on the screen and append it
+   * to `messages` as well.
+   *
+   * Drawing over a string already at the same x and y replaces it, which is how the game puts the
+   * next number where the last one was. Colour 0 is the background: the game rubs a string out by
+   * drawing it again in it, so a call in colour 0 takes the line off the screen and prints
+   * nothing.
+   */
+  draw(line: ScreenLine): void;
+  /**
+   * erase_menu_block (exe 4000:42b4, unf.c "erase_menu_block") and the fill_rect (exe 4000:2a36)
+   * calls roll_char wipes the bottom of the screen with: everything drawn at `fromY` or below it
+   * goes, and everything by default. What `messages` has already recorded stays.
+   */
+  eraseScreen(fromY?: number): void;
+  /**
+   * mgetch_message (exe 4000:418d, unf.c "mgetch_message"): wait for a key with the screen as it
+   * stands, which is what keeps a screen up until the player has read it. {@link newGame} returns
+   * at once.
+   */
+  pressAnyKey(): void;
 }
 
 /**
@@ -433,10 +488,10 @@ export function setMonsterMap(game: Game, x: number, y: number, value: number): 
 }
 
 /**
- * The overrides {@link newGame} accepts: any field of a {@link Game} except `say`, which it
- * always supplies itself, and `pc`, which it takes field by field.
+ * The overrides {@link newGame} accepts: any field of a {@link Game} except `pc`, which it takes
+ * field by field, and the three printing methods, which it always supplies itself.
  */
-export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say'>> {
+export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say' | 'draw' | 'eraseScreen'>> {
   pc?: Partial<PlayerCharacter>;
 }
 
@@ -552,6 +607,7 @@ function emptySlots(): Monster[] {
 export function newGame(overrides: GameOverrides = {}): Game {
   const { pc: pcOverrides, ...rest } = overrides;
   const messages = overrides.messages ?? [];
+  const screen = overrides.screen ?? [];
   return {
     pc: { ...defaultPc(), ...pcOverrides },
     events: [],
@@ -595,12 +651,29 @@ export function newGame(overrides: GameOverrides = {}): Game {
     askDesignStat: () => 6,
     askName: () => '',
     askClass: () => 0,
+    pressAnyKey: () => {},
     ...rest,
     messages,
+    screen,
     say(...lines: string[]): void {
       let last = lines.length;
       while (last > 0 && lines[last - 1] === '') last--;
       for (let i = 0; i < last; i++) messages.push(lines[i]);
+    },
+    draw(line: ScreenLine): void {
+      const at = screen.findIndex((drawn) => drawn.x === line.x && drawn.y === line.y);
+      if (line.colour === 0) {
+        if (at !== -1) screen.splice(at, 1);
+        return;
+      }
+      messages.push(line.value === undefined ? line.text : line.text + line.value);
+      if (at === -1) screen.push(line);
+      else screen[at] = line;
+    },
+    eraseScreen(fromY = 0): void {
+      for (let at = screen.length - 1; at >= 0; at--) {
+        if (screen[at].y >= fromY) screen.splice(at, 1);
+      }
     },
   };
 }

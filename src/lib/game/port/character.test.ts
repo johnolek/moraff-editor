@@ -11,8 +11,15 @@ import {
   showRolledCharacter,
 } from './character';
 import { BorlandRng } from './rng';
-import type { Game } from './state';
+import type { Game, ScreenLine } from './state';
 import { newGame } from './state';
+
+/** The line of a screen that starts with `text`, for a test that is about how it is drawn. */
+function drawn(screen: ScreenLine[], text: string): ScreenLine {
+  const line = screen.find((candidate) => candidate.text.startsWith(text));
+  if (line === undefined) throw new Error(`no line starting "${text}" on the screen`);
+  return line;
+}
 
 describe('reading UROLL.TXT', () => {
   it('hands back the first line of the file without its newline', () => {
@@ -510,5 +517,111 @@ describe('the screens roll_char shows', () => {
     expect(game.messages[game.messages.length - 1]).toBe(
       `SPELL POINTS: ${pc.maxSp}    HEALTH POINTS: ${pc.maxHp}`,
     );
+  });
+});
+
+describe('the colours the screens are drawn in', () => {
+  /** The screen as it stands the first time `question` is asked. */
+  function screenWhenAsked(question: keyof Game, overrides: Parameters<typeof roller>[0] = {}): ScreenLine[] {
+    const game = roller(overrides);
+    const ask = game[question] as () => number;
+    let snapshot: ScreenLine[] | null = null;
+    Object.assign(game, {
+      [question]: () => {
+        snapshot ??= game.screen.map((line) => ({ ...line }));
+        return ask();
+      },
+    });
+    rollChar(game);
+    if (snapshot === null) throw new Error(`roll_char never asked ${question}`);
+    return snapshot;
+  }
+
+  it('puts the difficulty menu up in yellow with its paragraphs indented in orange', () => {
+    const screen = screenWhenAsked('askDifficulty');
+    expect(drawn(screen, 'PLEASE SELECT ONE:')).toMatchObject({ x: 0, y: 0, font: 1, colour: 4 });
+    expect(drawn(screen, '1) NORMAL DIFFICULTY')).toMatchObject({ colour: 4 });
+    expect(drawn(screen, 'NORMAL CHARACTERS')).toMatchObject({ x: 0xa0, colour: 5 });
+    expect(drawn(screen, '2) I CAN HANDLE')).toMatchObject({ colour: 4 });
+  });
+
+  it('clears each screen before the next one, so the race table stands on its own', () => {
+    const screen = screenWhenAsked('askRace');
+    expect(screen.map((line) => line.text)).toHaveLength(12);
+    expect(drawn(screen, 'RACE SELECTION:')).toMatchObject({ font: 2, colour: 3 });
+    expect(drawn(screen, '   PLEASE SELECT A RACE')).toMatchObject({ colour: 4 });
+    expect(drawn(screen, '   RACE   STRENGTH')).toMatchObject({ colour: 5 });
+    expect(drawn(screen, '1) HUMANOID')).toMatchObject({ colour: 8 });
+    expect(drawn(screen, '8) SHRIMP')).toMatchObject({ colour: 8 });
+  });
+
+  it('shows the advice screen on its own, waiting for a key before the race table', () => {
+    let screen: ScreenLine[] = [];
+    const game = roller({});
+    game.pressAnyKey = () => {
+      if (screen.length === 0) screen = game.screen.map((line) => ({ ...line }));
+    };
+
+    rollChar(game);
+    expect(drawn(screen, 'CREATING A CHARACTER:')).toMatchObject({ font: 2, colour: 3 });
+    expect(drawn(screen, '  DIFFERENT CHARACTERS')).toMatchObject({ colour: 5 });
+    expect(drawn(screen, '  ADVANCED PLAYERS')).toMatchObject({ colour: 8 });
+    expect(drawn(screen, 'HIT ANY KEY')).toMatchObject({ colour: 4 });
+  });
+
+  it('draws the rolled character in two columns, the numbers lined up in one of their own', () => {
+    const screen = screenWhenAsked('askKeepRerollDesign', { race: 1 });
+    expect(drawn(screen, 'RACE: ')).toMatchObject({ x: 0, y: 0, font: 2, colour: 5, value: 'APE', valueX: 0x14a });
+    for (const label of ['STRENGTH: ', 'INTELLIGENCE: ', 'WISDOM: ', 'CONSTITUTION: ', 'AGILITY: ', 'LUCK: ']) {
+      expect(drawn(screen, label)).toMatchObject({ x: 0, valueX: 0x212, font: 1, colour: 6 });
+    }
+    for (const label of ['HEIGHT: ', 'WEIGHT: ', 'AGE: ']) {
+      expect(drawn(screen, label)).toMatchObject({ x: 0x2ee, font: 1, colour: 8 });
+    }
+    expect(drawn(screen, 'SEX: ')).toMatchObject({ y: 0, font: 2, colour: 15 });
+    for (const line of ['Y) KEEP', 'N) ROLL', 'D) DESIGN', 'PLEASE SELECT ONE OF THE ABOVE']) {
+      expect(drawn(screen, line)).toMatchObject({ x: 0xbe, font: 1, colour: 4 });
+    }
+  });
+
+  it('leaves only the top of the character screen standing under the name prompt', () => {
+    const screen = screenWhenAsked('askName');
+    expect(drawn(screen, 'PLEASE TYPE YOUR NAME:')).toMatchObject({ x: 0, y: 700, font: 1, colour: 7 });
+    expect(screen.some((line) => line.text.startsWith('Y) KEEP'))).toBe(false);
+    expect(drawn(screen, 'STRENGTH: ')).toMatchObject({ colour: 6 });
+  });
+
+  it('puts the design screen up in cyan, red and yellow with the count beside its label', () => {
+    const screen = screenWhenAsked('askDesignStat', { keep: [2], design: [0] });
+    expect(drawn(screen, 'ESC-CANCEL THIS CHARACTER')).toMatchObject({ x: 0x96, colour: 4 });
+    expect(drawn(screen, 'YOU MAY ASSIGN')).toMatchObject({ colour: 3, spreadTo: 0x63f });
+    expect(drawn(screen, 'TO THE ABOVE')).toMatchObject({ colour: 3 });
+    expect(drawn(screen, 'CHARACTERISTIC POINTS LEFT: ')).toMatchObject({ y: 0x348, colour: 6 });
+    expect(drawn(screen, '24')).toMatchObject({ x: 1000, y: 0x348, colour: 6 });
+    expect(drawn(screen, "PRESS 'S'")).toMatchObject({ colour: 4 });
+  });
+
+  it('gives each of the seven classes its own colour', () => {
+    const screen = screenWhenAsked('askClass');
+    expect(drawn(screen, 'PLEASE SELECT A CLASS')).toMatchObject({ font: 1, colour: 2 });
+    expect(drawn(screen, 'NAME: ')).toMatchObject({ x: 700, y: 0x136, colour: 8 });
+    const colours = ['1) FIGHTER', '2) WORSHIPPER', '3) MONK', '4) WIZARD', '5) PRIEST', '6) SAGE', '7) MAGE'].map(
+      (line) => drawn(screen, line).colour,
+    );
+    expect(colours).toEqual([3, 4, 5, 6, 8, 7, 2]);
+  });
+
+  it('ends on the sheet and the class list, the question rubbed out and the points in yellow', () => {
+    const game = roller({ cls: 6, name: 'ZOG' });
+    rollChar(game);
+    expect(drawn(game.screen, 'CLASS: ')).toMatchObject({ x: 700, y: 0x17c, colour: 8, value: 'MAGE' });
+    expect(drawn(game.screen, 'SPELL POINTS: ')).toMatchObject({ x: 0, y: 0x1cc, font: 1, colour: 4 });
+    expect(drawn(game.screen, '7) MAGE')).toMatchObject({ colour: 2 });
+    expect(game.screen.some((line) => line.text.startsWith('PLEASE SELECT A CLASS'))).toBe(false);
+  });
+
+  it('shows no spell or health points until the class has been picked', () => {
+    const screen = screenWhenAsked('askClass');
+    expect(screen.some((line) => line.text.startsWith('SPELL POINTS: '))).toBe(false);
   });
 });
