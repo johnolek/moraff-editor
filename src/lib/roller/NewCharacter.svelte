@@ -1,20 +1,105 @@
 <script lang="ts">
   import { app } from '../app-state.svelte';
+  import { MW_CLASS_NAMES, MW_RACES, MINUTES_PER_YEAR } from '../game/mw-port/character';
+  import type { MwCharacter } from '../game/mw-port/state';
   import { CLASS_NAMES, RACES } from '../game/port/character';
+  import type { PlayerCharacter } from '../game/port/state';
   import PixelText from '../ui/PixelText.svelte';
+  import { MW_SLOTS, mwSlotFileName, newMwCharacterFile } from './mw-save-file';
+  import { MwRollerSession } from './mw-session';
   import { newCharacterFile, slotFileName, SLOTS } from './save-file';
   import { RollerSession } from './session';
 
   const STATS = ['STRENGTH', 'INTELLIGENCE', 'WISDOM', 'CONSTITUTION', 'AGILITY', 'LUCK'];
 
+  /** Everything about the tab that is one game's rather than the other's. */
+  const GAMES = {
+    unforgiven: {
+      name: 'Dungeons of the Unforgiven',
+      slots: SLOTS,
+      races: RACES.map((race) => race.name),
+      classes: CLASS_NAMES,
+      numbers: 'The game keeps ten characters, in files named 20 to 29. Pick the one you want to write over — the game picks it before it rolls, and so does this.',
+      folder: 'Back up the file you are replacing first. Drop the download into your game folder next to UNF.EXE, keeping the name, and the character is waiting on the select screen.',
+    },
+    moraffsWorld: {
+      name: "Moraff's World",
+      slots: MW_SLOTS,
+      races: MW_RACES.map((race) => race.name),
+      classes: MW_CLASS_NAMES,
+      numbers: 'The game keeps ten characters, in files named 0 to 9. Pick the one you want to write over — the game picks it before it rolls, and so does this.',
+      folder: 'Back up the file you are replacing first. Drop the download into your game folder next to WORLD.EXE, keeping the name, and the character is waiting on the select screen.',
+    },
+  };
+
+  type GameId = keyof typeof GAMES;
+
+  let game = $state<GameId>('unforgiven');
   let slot = $state(20);
-  let session = $state.raw<RollerSession | null>(null);
-  let view = $state.raw(null as ReturnType<RollerSession['view']> | null);
+  let session = $state.raw<RollerSession | MwRollerSession | null>(null);
+  let view = $state.raw<ReturnType<RollerSession['view']> | ReturnType<MwRollerSession['view']> | null>(null);
   let typed = $state('');
   let note = $state('');
 
+  const chosen = $derived(GAMES[game]);
+  const fileName = $derived(game === 'unforgiven' ? slotFileName(slot) : mwSlotFileName(slot));
+  const sheet = $derived(view === null ? [] : sheetRows(view.pc, view.question === null));
+
+  /** The character sheet beside the game's own screen: one label and one value a row. */
+  function sheetRows(pc: PlayerCharacter | MwCharacter, finished: boolean): [string, string][] {
+    const stats: [string, string][] = STATS.map((stat, index) => [
+      stat,
+      String([pc.str, pc.iq, pc.wis, pc.con, pc.dex, pc.luck][index]),
+    ]);
+    if ('ageMinutes' in pc) {
+      return [
+        ['RACE', MW_RACES[pc.race].name],
+        ['SEX', pc.sex === 0 ? 'MALE' : 'FEMALE'],
+        ...stats,
+        ['HEIGHT', `${pc.height} INCHES`],
+        ['WEIGHT', `${pc.weight} POUNDS`],
+        ['AGE', `${Math.trunc(pc.ageMinutes / MINUTES_PER_YEAR)} YEARS`],
+        ...(finished
+          ? ([
+              ['CLASS', MW_CLASS_NAMES[pc.cls]],
+              ['HEALTH POINTS', String(pc.maxHp)],
+              ['SPELL POINTS', String(pc.maxSp)],
+              ['JEWELS', String(pc.money)],
+            ] as [string, string][])
+          : []),
+      ];
+    }
+    return [
+      ['RACE', RACES[pc.race].name],
+      ['SEX', pc.sex === 0 ? 'MALE' : 'FEMALE'],
+      ...stats,
+      ['HEIGHT', `${pc.height * 4} INCHES`],
+      ['WEIGHT', `${pc.weight} POUNDS`],
+      ['AGE', `${pc.age} YEARS`],
+      ...(finished
+        ? ([
+            ['CLASS', CLASS_NAMES[pc.cls]],
+            ['HEALTH POINTS', String(pc.maxHp)],
+            ['SPELL POINTS', String(pc.maxSp)],
+            ['RUBLES', String(pc.money)],
+            ['MAGIC CRYSTALS', String(pc.crystals)],
+          ] as [string, string][])
+        : []),
+    ];
+  }
+
+  /** The bytes of the slot file, which is the whole record for either game. */
+  function characterFile(pc: PlayerCharacter | MwCharacter): Uint8Array<ArrayBuffer> {
+    return 'ageMinutes' in pc ? newMwCharacterFile(pc) : newCharacterFile(pc);
+  }
+
+  function pickGame(id: GameId) {
+    game = id;
+    slot = GAMES[id].slots[0];
+  }
+
   function start() {
-    const started = new RollerSession(slot);
+    const started = game === 'unforgiven' ? new RollerSession(slot) : new MwRollerSession(slot);
     session = started;
     view = started.view();
     typed = '';
@@ -48,24 +133,19 @@
 
   function openInEditor() {
     if (!view) return;
-    app.requestedSave = {
-      name: slotFileName(slot),
-      game: 'unforgiven',
-      bytes: newCharacterFile(view.pc),
-    };
+    app.requestedSave = { name: fileName, game, bytes: characterFile(view.pc) };
     app.tab = 'editor';
   }
 
   function download() {
     if (!view) return;
-    const name = slotFileName(slot);
-    const url = URL.createObjectURL(new Blob([newCharacterFile(view.pc)], { type: 'application/octet-stream' }));
+    const url = URL.createObjectURL(new Blob([characterFile(view.pc)], { type: 'application/octet-stream' }));
     const link = document.createElement('a');
     link.href = url;
-    link.download = name;
+    link.download = fileName;
     link.click();
     URL.revokeObjectURL(url);
-    note = `Downloaded ${name}`;
+    note = `Downloaded ${fileName}`;
   }
 </script>
 
@@ -81,20 +161,20 @@
       <section>
         <h3><PixelText text="Game" /></h3>
         <div class="row">
-          <button type="button" class="picked">Dungeons of the Unforgiven</button>
-          <button type="button" disabled>Moraff's World</button>
+          <button type="button" class:picked={game === 'unforgiven'} onclick={() => pickGame('unforgiven')}>
+            Dungeons of the Unforgiven
+          </button>
+          <button type="button" class:picked={game === 'moraffsWorld'} onclick={() => pickGame('moraffsWorld')}>
+            Moraff's World
+          </button>
         </div>
-        <p class="hint">Moraff's World is coming with MORF-71, once its roller has been decompiled.</p>
       </section>
 
       <section>
         <h3><PixelText text="Character Number" /></h3>
-        <p class="hint">
-          The game keeps ten characters, in files named 20 to 29. Pick the one you want to write over — the game picks it
-          before it rolls, and so does this.
-        </p>
+        <p class="hint">{chosen.numbers}</p>
         <div class="row">
-          {#each SLOTS as number}
+          {#each chosen.slots as number}
             <button type="button" class:picked={slot === number} onclick={() => (slot = number)}>{number}</button>
           {/each}
         </div>
@@ -105,7 +185,7 @@
       </div>
     {:else}
       <div class="toolbar">
-        <span class="badge">Dungeons of the Unforgiven</span>
+        <span class="badge">{chosen.name}</span>
         <span class="badge">Character {slot}</span>
         <button type="button" class="ghost" onclick={restart}>Start again</button>
         <button type="button" class="ghost" onclick={leave}>Pick another number</button>
@@ -124,8 +204,8 @@
         </div>
       {:else if view.question === 'race'}
         <div class="choices grid">
-          {#each RACES as race, index}
-            <button type="button" onclick={() => answer(index)}>{index + 1}) {race.name}</button>
+          {#each chosen.races as race, index}
+            <button type="button" onclick={() => answer(index)}>{index + 1}) {race}</button>
           {/each}
         </div>
       {:else if view.question === 'keepRerollDesign'}
@@ -157,7 +237,7 @@
         </div>
       {:else if view.question === 'class'}
         <div class="choices grid">
-          {#each CLASS_NAMES as name, index}
+          {#each chosen.classes as name, index}
             <button type="button" onclick={() => answer(index)}>{index + 1}) {name}</button>
           {/each}
         </div>
@@ -167,24 +247,9 @@
         <section class="sheet">
           <h3><PixelText text={view.pc.name || 'The Character'} /></h3>
           <dl>
-            <div><dt>RACE</dt><dd>{RACES[view.pc.race].name}</dd></div>
-            <div><dt>SEX</dt><dd>{view.pc.sex === 0 ? 'MALE' : 'FEMALE'}</dd></div>
-            {#each STATS as stat, index}
-              <div>
-                <dt>{stat}</dt>
-                <dd>{[view.pc.str, view.pc.iq, view.pc.wis, view.pc.con, view.pc.dex, view.pc.luck][index]}</dd>
-              </div>
+            {#each sheet as [label, value]}
+              <div><dt>{label}</dt><dd>{value}</dd></div>
             {/each}
-            <div><dt>HEIGHT</dt><dd>{view.pc.height * 4} INCHES</dd></div>
-            <div><dt>WEIGHT</dt><dd>{view.pc.weight} POUNDS</dd></div>
-            <div><dt>AGE</dt><dd>{view.pc.age} YEARS</dd></div>
-            {#if view.question === null}
-              <div><dt>CLASS</dt><dd>{CLASS_NAMES[view.pc.cls]}</dd></div>
-              <div><dt>HEALTH POINTS</dt><dd>{view.pc.maxHp}</dd></div>
-              <div><dt>SPELL POINTS</dt><dd>{view.pc.maxSp}</dd></div>
-              <div><dt>RUBLES</dt><dd>{view.pc.money}</dd></div>
-              <div><dt>MAGIC CRYSTALS</dt><dd>{view.pc.crystals}</dd></div>
-            {/if}
           </dl>
         </section>
       {/if}
@@ -192,12 +257,9 @@
       {#if view.question === null}
         <div class="choices">
           <button type="button" class="go" onclick={openInEditor}>Open in the Save Editor</button>
-          <button type="button" onclick={download}>Download file {slotFileName(slot)}</button>
+          <button type="button" onclick={download}>Download file {fileName}</button>
         </div>
-        <p class="hint">
-          Back up the file you are replacing first. Drop the download into your game folder next to UNF.EXE, keeping the
-          name, and the character is waiting on the select screen.
-        </p>
+        <p class="hint">{chosen.folder}</p>
         {#if note}<p class="note">{note}</p>{/if}
       {/if}
     {/if}
