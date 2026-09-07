@@ -2,25 +2,40 @@
   import type { ScreenLine } from '../game/port/state';
   import { screenSpans } from '../roller/screen';
 
+  /** A part of the game's screen, in the game's own units. */
+  export interface ScreenWindow {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }
+
+  /** The whole screen: 1600 units across and 1200 down, plus room under the lowest line. */
+  const WHOLE_SCREEN: ScreenWindow = { x: 0, y: 0, width: 1600, height: 1224 };
+
   interface Props {
     /** What the game has drawn, in the order it drew it. */
     lines: ScreenLine[];
-    /** Whether to keep the game's own 1600 by 1200 shape, or fill whatever room there is. */
-    fill?: boolean;
+    /** The part of the screen to show, for a panel that holds one corner of it. */
+    window?: ScreenWindow;
   }
 
-  let { lines, fill = false }: Props = $props();
+  let { lines, window: shown = WHOLE_SCREEN }: Props = $props();
 
   let width = $state(0);
   const spans = $derived(screenSpans(lines));
 </script>
 
-<!-- The game's own screen: 1600 units across and 1200 down, every line where the game drew it. -->
-<div class="screen" class:fill bind:clientWidth={width} style:--u="{width / 1600}px">
+<!-- The game's own screen: every line at the coordinates the game drew it at. -->
+<div
+  class="screen"
+  bind:clientWidth={width}
+  style:--u="{width / shown.width}px"
+  style:aspect-ratio="{shown.width} / {shown.height}">
   {#each spans as span}
     <span
-      style:left="calc({span.x} * var(--u))"
-      style:top="calc({span.y} * var(--u))"
+      style:left="calc({span.x - shown.x} * var(--u))"
+      style:top="calc({span.y - shown.y} * var(--u))"
       style:font-size="calc({span.size} * var(--u))"
       style:letter-spacing="calc({span.spacing} * var(--u))"
       style:color={span.colour}>{span.text}</span>
@@ -30,19 +45,10 @@
 <style>
   .screen {
     position: relative;
-    /* The screen is 1600 by 1200; the extra height is room under the lowest line the game draws,
-       and leaves a unit as tall as it is wide either way. */
-    aspect-ratio: 1600 / 1224;
     background: #000;
     border: 1px solid var(--line);
     border-radius: 10px;
     overflow: hidden;
-  }
-  .screen.fill {
-    aspect-ratio: auto;
-    height: 100%;
-    border: none;
-    border-radius: 0;
   }
   .screen span {
     position: absolute;

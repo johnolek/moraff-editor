@@ -9,7 +9,7 @@
   import { palette } from './palette';
   import type { StockedMonster } from './stocking';
   import { drawTeleporters, teleporterHue, teleporterSegments } from './teleporters';
-  import { ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
+  import { centerOn, ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
   import { youAlpha } from './you';
 
   export interface Tooltip {
@@ -270,6 +270,17 @@
 
   export function reveal(square: Point) {
     view = ensureVisible(view, square, size.width, size.height);
+  }
+
+  /**
+   * Put a square in the middle of the canvas, at a cell size of its own when one is given.
+   * Returns whether there was a canvas to do it on: a tab that is not showing has no width yet.
+   */
+  export function centre(square: Point, cell?: number): boolean {
+    if (!size.width) return false;
+    fitted = true;
+    view = centerOn(cell === undefined ? view : { ...view, cell }, square, size.width, size.height);
+    return true;
   }
 </script>
 
