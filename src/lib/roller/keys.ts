@@ -1,10 +1,11 @@
 import { typedName } from '../game/port/character';
 import type { MwQuestion } from './mw-session';
+import type { RevQuestion } from './rev-session';
 import type { Question } from './session';
 
 /** A screen the roller waits at: one of the game's own, or the character number the tab asks
  *  for before a roll starts. */
-export type RollerScreen = Question | MwQuestion | 'number';
+export type RollerScreen = Question | MwQuestion | RevQuestion | 'number';
 
 /** What a key does at the screen showing. */
 export type RollerAction =
@@ -15,7 +16,9 @@ export type RollerAction =
   /** Enter: take the name that is typed, or roll the character number that is picked. */
   | { kind: 'accept' }
   /** Which of the character numbers to write over. */
-  | { kind: 'pick'; index: number };
+  | { kind: 'pick'; index: number }
+  /** Move a menu's pointer, which is what the arrow keys do in Moraff's Revenge. */
+  | { kind: 'move'; step: number };
 
 /** How many lines the menus have, which the tab reads out of the game it is showing. */
 export interface RollerMenus {
@@ -30,6 +33,13 @@ export interface RollerMenus {
  * D does nothing there at all.
  */
 export const DESIGN_STAT_KEYS = ['S', 'I', 'W', 'C', 'A', 'L'];
+
+/** Moraff's Revenge asks the keep question as "Do you want it (Y, N, OR ESC)?" and reads the two
+ *  letters; Escape leaves the roller altogether, which the tab's own button stands in for. */
+const REV_KEEP_KEYS = ['Y', 'N'];
+
+/** How many races that game's menu goes round. */
+const REV_RACES = 4;
 
 /** The answer that leaves the design screen and rolls another character. */
 const DESIGN_CANCELLED = 6;
@@ -56,11 +66,27 @@ export function rollerKey(screen: RollerScreen, key: string, typed: string, menu
     case 'designStat':
       if (key === 'Escape') return { kind: 'answer', value: DESIGN_CANCELLED };
       return letter(key, DESIGN_STAT_KEYS);
+    case 'revRace':
+      if (key === 'ArrowRight' || key === 'ArrowDown') return { kind: 'move', step: 1 };
+      if (key === 'ArrowLeft' || key === 'ArrowUp') return { kind: 'move', step: -1 };
+      if (key === 'Enter') return { kind: 'accept' };
+      return numbered(key, REV_RACES);
+    case 'revKeep':
+      return letter(key, REV_KEEP_KEYS);
+    case 'revClass':
+      return numbered(key, 2);
     case 'name':
       return name(key, typed);
     default:
       return null;
   }
+}
+
+/** A menu whose answer is the number the player typed rather than the line it picks: Moraff's
+ *  Revenge reads its class menu with VAL, so 1 means 1. */
+function numbered(key: string, lines: number): RollerAction | null {
+  const value = digit(key);
+  return value !== null && value >= 1 && value <= lines ? { kind: 'answer', value } : null;
 }
 
 /** A menu line, which the game numbers from one. */

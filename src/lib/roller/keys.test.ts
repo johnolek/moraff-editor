@@ -102,3 +102,30 @@ describe('the character number', () => {
     expect(key('number', 'Escape')).toBeNull();
   });
 });
+
+describe('the Moraff’s Revenge screens', () => {
+  it('moves the race menu with the arrows and takes it on Return', () => {
+    expect(key('revRace', 'ArrowRight')).toEqual({ kind: 'move', step: 1 });
+    expect(key('revRace', 'ArrowLeft')).toEqual({ kind: 'move', step: -1 });
+    expect(key('revRace', 'Enter')).toEqual({ kind: 'accept' });
+  });
+
+  it('also takes the race a number names, since the menu has four', () => {
+    expect(key('revRace', '1')).toEqual({ kind: 'answer', value: 1 });
+    expect(key('revRace', '4')).toEqual({ kind: 'answer', value: 4 });
+    expect(key('revRace', '5')).toBeNull();
+    expect(key('revRace', '0')).toBeNull();
+  });
+
+  it('reads the keep prompt as the two letters it offers', () => {
+    expect(key('revKeep', 'y')).toEqual({ kind: 'answer', value: 0 });
+    expect(key('revKeep', 'N')).toEqual({ kind: 'answer', value: 1 });
+    expect(key('revKeep', 'd')).toBeNull();
+  });
+
+  it('reads the class menu as the number typed, which is what VAL gives it', () => {
+    expect(key('revClass', '1')).toEqual({ kind: 'answer', value: 1 });
+    expect(key('revClass', '2')).toEqual({ kind: 'answer', value: 2 });
+    expect(key('revClass', '3')).toBeNull();
+  });
+});
