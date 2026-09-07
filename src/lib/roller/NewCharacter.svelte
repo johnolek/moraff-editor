@@ -7,6 +7,7 @@
   import { CLASS_NAMES, RACES, typedName } from '../game/port/character';
   import type { PlayerCharacter, ScreenLine } from '../game/port/state';
   import PixelText from '../ui/PixelText.svelte';
+  import { DESIGN_STAT_KEYS, rollerKey, type RollerScreen } from './keys';
   import { MW_SLOTS, mwSlotFileName, newMwCharacterFile } from './mw-save-file';
   import { MwRollerSession } from './mw-session';
   import { newCharacterFile, slotFileName, SLOTS } from './save-file';
@@ -43,6 +44,9 @@
   let screenWidth = $state(0);
 
   const chosen = $derived(GAMES[app.game]);
+  /** The screen a key would answer: the game's own, or the character number asked for first. */
+  const screen = $derived<RollerScreen | null>(session && view ? view.question : 'number');
+  const menus = $derived({ races: chosen.races.length, classes: chosen.classes.length, numbers: chosen.slots.length });
   const fileName = $derived(app.game === 'unforgiven' ? slotFileName(slot) : mwSlotFileName(slot));
   const sheet = $derived(view === null ? [] : sheetRows(view.pc));
   const showing = $derived(
@@ -148,6 +152,27 @@
     goToTab(app, 'editor');
   }
 
+  /** The game is answered from the keyboard while the tab is showing, the same keys its own
+   *  screens ask for. A key belongs to whatever is being typed into, and a shortcut belongs to
+   *  the browser. */
+  function onKeyDown(event: KeyboardEvent) {
+    if (app.tab !== 'roller' || screen === null) return;
+    if (event.ctrlKey || event.metaKey || event.altKey || isTyping(event.target)) return;
+    const action = rollerKey(screen, event.key, typed, menus);
+    if (!action) return;
+    event.preventDefault();
+    if (action.kind === 'answer') answer(action.value);
+    else if (action.kind === 'typing') typed = action.typed;
+    else if (action.kind === 'pick') slot = chosen.slots[action.index];
+    else if (screen === 'name') enterName();
+    else start();
+  }
+
+  function isTyping(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return false;
+    return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+  }
+
   function download() {
     if (!view) return;
     const url = URL.createObjectURL(new Blob([characterFile(view.pc)], { type: 'application/octet-stream' }));
@@ -159,6 +184,8 @@
     note = `Downloaded ${fileName}`;
   }
 </script>
+
+<svelte:window onkeydown={onKeyDown} />
 
 <div class="roller">
   <div class="page">
@@ -172,6 +199,7 @@
       <section>
         <h3><PixelText text="Character Number" /></h3>
         <p class="hint">{chosen.numbers}</p>
+        <p class="hint">The keyboard picks them too: 0 to 9 for the ten numbers, then Enter to roll.</p>
         <div class="row">
           {#each chosen.slots as number}
             <button type="button" class:picked={slot === number} onclick={() => (slot = number)}>{number}</button>
@@ -226,7 +254,7 @@
       {:else if view.question === 'designStat'}
         <div class="choices grid">
           {#each STATS as stat, index}
-            <button type="button" onclick={() => answer(index)}>{stat}</button>
+            <button type="button" onclick={() => answer(index)}>{DESIGN_STAT_KEYS[index]}) {stat}</button>
           {/each}
         </div>
         <div class="choices">
