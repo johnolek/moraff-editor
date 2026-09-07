@@ -1,5 +1,6 @@
 import rollText from '../roll.txt?raw';
 import type { MwGame } from './state';
+import { blankMwCharacter } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
 // the unpacked WORLD.EXE. The comment on each say call gives the address of every line it prints,
@@ -300,4 +301,121 @@ export function startingSpells(game: MwGame): void {
   if (pc.cls !== 0) pc.spellbook[1 * 45 + 0 * 3 + 2] = 1;
   if (pc.cls === 3 || pc.cls === 5 || pc.cls === 6) pc.spellbook[2 * 45 + 0 * 3 + 1] = 1;
   if (pc.cls === 1 || pc.cls === 4 || pc.cls === 5) pc.spellbook[3 * 45 + 0 * 3 + 2] = 1;
+}
+
+/**
+ * roll_char (WORLD.EXE 3000:4695, mw.c "roll_char"): create a character, from the instructions
+ * to the file the finished character is written out to.
+ *
+ * It reads three screens out of ROLL.TXT — the instructions, the race table and the class
+ * descriptions — asks five questions, and rolls the character once the race has been picked. The
+ * player never chooses a sex; the roll picks one. The class is chosen after the characteristics
+ * are settled and the name is typed, so no class requirement can influence the roll.
+ *
+ * Where the original writes the character to its file, through save_player (exe 2000:58bf), and
+ * builds the floor it starts on, through generate_section (exe 2000:46a4), the port records an
+ * event instead.
+ *
+ * A character comes out of here at level 0 with no experience: nothing in the roller writes the
+ * level field the memset zeroed.
+ */
+export function rollChar(game: MwGame): void {
+  const pc = game.pc;
+  Object.assign(pc, blankMwCharacter());
+  const roll = openRoll();
+  game.say(...readRollLines(roll, 12));
+  // The srand(time(NULL)) between the instructions and the race screen, deliberately not
+  // ported: see the README's third departure. It is the only reseed in the whole roller.
+  game.say(...readRollLines(roll, 12));
+  pc.race = game.askRace();
+
+  for (;;) {
+    let choice = 0;
+    for (;;) {
+      // DS:4688 with the race's name drawn after it at x = 0x14a, then the labels the numbers
+      // show_roll draws land beside.
+      game.say(`RACE: ${MW_RACES[pc.race].name}`);
+      rollCharacteristics(game);
+      showRoll(game, 1);
+      // DS:4706 471d 4735 4752
+      game.say(
+        'Y) KEEP THIS CHARACTER',
+        'N) ROLL A NEW CHARACTER',
+        'D) DESIGN YOUR OWN CHARACTER',
+        'PLEASE SELECT ONE OF THE ABOVE',
+      );
+      choice = game.askKeepRerollDesign();
+      if (choice === 0) break;
+      if (choice === 1) showRoll(game, 0);
+      if (choice === 2) break;
+    }
+    if (choice === 0) break;
+    // A designed character is kept without being asked again; Escape rolls another one.
+    if (designYourOwn(game)) break;
+  }
+
+  game.say('PLEASE TYPE YOUR NAME:'); // DS:488d
+  pc.name = typedName(game.askName());
+  // DS:488d + 0x11, which is the tail of the same string, with the name drawn after it
+  game.say(`NAME: ${pc.name}`);
+  game.say(...readRollLines(roll, 16));
+  pc.cls = game.askClass();
+  startingSpells(game);
+  // DS:48a4 with the class name drawn after it at x = 0x3d4
+  game.say(`CLASS: ${MW_CLASS_NAMES[pc.cls]}`);
+
+  pc.maxSp = 0;
+  pc.hp = pc.con + pc.luck;
+  switch (pc.cls) {
+    case 0:
+      pc.maxSp = 0;
+      break;
+    case 1:
+      pc.maxSp = Math.trunc((pc.wis * 2 + pc.iq) / 4);
+      break;
+    case 2:
+      pc.maxSp = Math.trunc((pc.wis + pc.iq) / 17) + 1;
+      break;
+    case 3:
+      pc.maxSp = Math.trunc((pc.wis + pc.iq * 2) / 7);
+      break;
+    case 4:
+      pc.maxSp = Math.trunc((pc.wis * 2 + pc.iq) / 8);
+      break;
+    case 5:
+      pc.maxSp = Math.trunc((pc.wis + pc.iq) / 18);
+      break;
+    case 6:
+      pc.maxSp = Math.trunc((pc.wis + pc.iq * 2) / 12);
+      break;
+  }
+  pc.sp = pc.maxSp;
+  pc.maxHp = pc.hp;
+  // The original prints "PLEASE SELECT A CLASS BY HITTING A NUMBER 1-7:" (DS:48ab) again here in
+  // the background colour, to rub the heading of the class screen out. Nothing to rub out here.
+  // DS:48da and DS:48e9, whose four leading spaces are the gap between the two numbers
+  game.say(`SPELL POINTS: ${pc.sp}    HEALTH POINTS: ${pc.maxHp}`);
+
+  pc.x = 0x38;
+  pc.y = 0x3c;
+  pc.floor = 0;
+  pc.module = 0;
+  pc.mapCursorY = game.mapViewRows >> 1;
+  pc.mapCursorX = game.mapViewColumns >> 1;
+  pc.worldX = 0x862;
+  pc.worldY = 0x597;
+  // The kit: bare fists and bare skin, which are the first row of each of the two tables. The
+  // equipped-weapon and equipped-armor bytes stay 0, so those are what the character is using.
+  pc.weaponsOwned[0] = 1;
+  pc.armorOwned[0] = 1;
+  pc.returnModule = 0;
+  pc.returnX = 0x38;
+  pc.returnY = 0x3c;
+  pc.encounterCounter = 300;
+
+  pc.money = pc.luck * 2 + game.rng.random(pc.luck * 2);
+  // The original throws away everything it has cached about the view it is showing, so the next
+  // frame is drawn from nothing. All of it is display state this port does not keep.
+  game.events.push({ kind: 'characterCreated', slot: game.slot, pc });
+  game.events.push({ kind: 'sectionGenerated', section: 0 });
 }
