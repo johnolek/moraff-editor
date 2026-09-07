@@ -12,6 +12,7 @@ import { adviseTheWalker, type MwLessons } from './advice';
 import { fallDownAChute, chuteUnder } from './chute';
 import { mwDie } from './death';
 import { castAtTheSpellScreen, useAnItem } from './cast';
+import { dropSomething } from './drop';
 import { swingAtMonster } from './fight';
 import { MwFloorMonsters, mwDrawnMonsters, mwEnterLevel } from './floor';
 import { killTheDead } from './kill';
@@ -414,7 +415,7 @@ export const MW_KEY_HANDLERS: Record<number, MwKeyHandler> = {
   [MW_KEY.armor]: { c: 'movecontrol, the 0x61 branch', run: chooseArmor },
   [MW_KEY.save]: { c: 'save_player', run: (turn) => turn.session.save() },
   [MW_KEY.quit]: { c: 'FUN_2000_7b86', run: quitAndSave },
-  [MW_KEY.loseItem]: { c: 'FUN_2000_7756', run: (turn) => mwNotBuiltYet(turn.game, 'DROP A WEAPON, A SUIT OF ARMOR OR SOME MONEY') },
+  [MW_KEY.loseItem]: { c: 'FUN_2000_7756', run: dropSomething },
   [MW_KEY.brickSpeed]: { c: 'movecontrol, the 0x62 branch', run: (turn) => mwNotBuiltYet(turn.game, 'CHANGE HOW FAST THE WALLS ARE DRAWN') },
   [MW_KEY.sound]: { c: 'movecontrol, the 0x6f branch', run: (turn) => mwNotBuiltYet(turn.game, 'TURN THE SOUND ON AND OFF') },
   [MW_KEY.expandMap]: { c: 'movecontrol, the 0x78 branch', run: (turn) => mwNotBuiltYet(turn.game, 'SHOW THE MAP A THIRD AT A TIME') },

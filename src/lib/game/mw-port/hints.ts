@@ -48,6 +48,8 @@ export const HINT = {
   buyAnotherContract: 0x1f,
   /** "I THINK YOU'RE DEAD!" — no contract, and the character's files are deleted. */
   noContract: 0x20,
+  /** "DROP WHICH KIND OF COINS?" — the five piles the L key's money branch offers. */
+  dropCoins: 0x21,
 } as const;
 
 /**
