@@ -81,6 +81,11 @@ def feature(column, row, level):
     is asked in turn (1000:55A6), and a ladder goes down that far when that
     level's folded code equals the distance.  The town skips straight to that
     loop.
+
+    The town asks a looser question.  1000:55DD is a branch only level 0 takes,
+    and it takes the ladder when the level below folds to at least the distance
+    rather than exactly it, which is ten ladders down out of the town instead of
+    three -- exactly the ten squares `7.NUM` marks on level 0.
     """
     if level > 0:
         code = read_dungeon.feature_code(column, row, level)
@@ -92,7 +97,10 @@ def feature(column, row, level):
         if level + step > LEVELS:
             break
         code = read_dungeon.feature_code(column, row, level, step)
-        if 1 <= code <= 9 and fold(code) == step:
+        if not 1 <= code <= 9:
+            continue
+        span = fold(code)
+        if step <= span if level == 0 else step == span:
             return ("down", step)
     return None
 

@@ -205,7 +205,7 @@ describe('feature', () => {
   });
 
   it('always pairs a ladder down with a ladder up of the same span', () => {
-    for (const level of [0, 5, 40]) {
+    for (const level of [5, 40]) {
       for (let row = 1; row <= ROWS; row++) {
         for (let column = 1; column <= COLUMNS; column++) {
           const here = feature(column, row, level);
@@ -222,6 +222,38 @@ describe('feature', () => {
         expect(feature(column, row, 0)?.kind ?? 'down').toBe('down');
       }
     }
+  });
+
+  // The town takes a ladder that reaches further than the step it asked about, so the square it
+  // lands on can hold a ladder up that climbs back past level 0. Seven of the town's ten do.
+  it('does not pair the town ladders with the ladders up they land beside', () => {
+    expect(feature(11, 6, 0)).toEqual({ kind: 'down', span: 1 });
+    expect(feature(11, 6, 1)).toEqual({ kind: 'up', span: 2 });
+  });
+
+  // 1000:55DD takes the ladder when the level below folds to at least the distance rather than
+  // exactly it, and these ten squares are exactly the ten `7.NUM` marks on level 0. Asking for
+  // an exact match, as every other level does, leaves only (5, 10), (15, 5) and (16, 19).
+  it('takes ten ladders down out of the town, one for every square 7.NUM marks there', () => {
+    const found: [number, number, number][] = [];
+    for (let row = 1; row <= ROWS; row++) {
+      for (let column = 1; column <= COLUMNS; column++) {
+        const here = feature(column, row, 0);
+        if (here) found.push([column, row, here.span]);
+      }
+    }
+    expect(found).toEqual([
+      [1, 2, 2],
+      [15, 5, 2],
+      [18, 5, 2],
+      [11, 6, 1],
+      [4, 10, 2],
+      [5, 10, 1],
+      [13, 13, 1],
+      [7, 14, 1],
+      [20, 15, 1],
+      [16, 19, 1],
+    ]);
   });
 
   it('reads a code of 0 as a chute', () => {

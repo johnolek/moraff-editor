@@ -329,9 +329,12 @@ export function fold(code) {
  * in turn (1000:55A6), and a ladder goes down that far when that level's folded code equals the
  * distance.  The town skips straight to that loop, which is why it can only hold ladders down.
  *
- * What else the town holds has not been worked out: `7.NUM` marks ten squares of level 0 that
- * the formula does not produce, and 1000:55DD takes a branch there that reads the feature code
- * out of the variable at B7B8 rather than from a constant.
+ * The town asks a looser question than the rest of the dungeon.  1000:55DD is a branch only
+ * level 0 takes, and it takes the ladder when the level below folds to *at least* the distance
+ * rather than exactly it: `IF (level + step) - code < 1 THEN code = step`, with the step in the
+ * compiler's temporary at B7B8, which 1000:55F9 filled two instructions earlier.  That is the
+ * difference between three ladders down out of the town and ten, and ten is what `7.NUM` marks
+ * on level 0 -- exactly these squares and no others.
  *
  * @returns {{ kind: 'up' | 'down' | 'chute', span: number } | null}
  */
@@ -345,7 +348,9 @@ export function feature(column, row, level) {
   for (const step of [1, 2, 3]) {
     if (level + step > LEVELS) break;
     const code = featureCode(column, row, level, step);
-    if (code >= 1 && code <= 9 && fold(code) === step) return { kind: 'down', span: step };
+    if (code < 1 || code > 9) continue;
+    const span = fold(code);
+    if (level === 0 ? step <= span : step === span) return { kind: 'down', span: step };
   }
   return null;
 }
