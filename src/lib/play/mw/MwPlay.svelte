@@ -11,7 +11,8 @@
   import MwPanel from './MwPanel.svelte';
   import MwPortrait from './MwPortrait.svelte';
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
-  import { mwGameKey, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
+  import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
+  import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import { MW_MESSAGE_BOX } from './screens';
 
   /** How wide the corner of the game's screen the message box and the banner share is, in the
@@ -33,6 +34,7 @@
   let view = $state.raw<MwPlayView | null>(null);
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
+  let style = $state<MovementStyle>(readMovementStyle(MORAFFS_WORLD_MAP.id));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -109,13 +111,30 @@
   });
 
   function onKeyDown(event: KeyboardEvent) {
-    const playing = session;
-    if (app.tab !== 'play' || !playing || playing.over) return;
+    if (app.tab !== 'play' || !session || session.over) return;
     if (isTyping(event.target)) return;
     const key = mwGameKey(event);
     if (key === null) return;
     event.preventDefault();
-    playing.press(key);
+    press(key);
+  }
+
+  /** The style is picked with the mouse, and the arrow keys belong to the game rather than to a
+   *  radio button, so the control hands the keyboard back as soon as it has been answered. */
+  function chooseStyle(input: HTMLInputElement) {
+    writeMovementStyle(MORAFFS_WORLD_MAP.id, style);
+    input.blur();
+  }
+
+  /** A key on its way to the game. Under Dungeons of the Unforgiven's arrows the up arrow steps
+   *  the way the character faces and the other three turn them where they stand. */
+  function press(key: number) {
+    const playing = session;
+    if (!playing) return;
+    const arrow = style === MORAFFS_WORLD_MAP.id ? null : mwFacingArrow(key, playing.game.pc.dir);
+    if (!arrow) playing.press(key);
+    else if (arrow.step) playing.press(mwStepKey(arrow.dir));
+    else mwTurn(playing, arrow.dir);
   }
 
   function isTyping(target: EventTarget | null): boolean {
@@ -189,16 +208,26 @@
         {/if}
         <GameScreen lines={view.box} window={BOX_WINDOW} />
         <div class="keys">
+          <div class="key-note">Arrow keys:</div>
+          <div class="styles">
+            {#each MOVEMENT_STYLES as choice}
+              <label>
+                <input type="radio" value={choice.id} bind:group={style} onchange={(event) => chooseStyle(event.currentTarget)} />
+                <span>{choice.label}</span>
+                <span class="how">{choice.how}</span>
+              </label>
+            {/each}
+          </div>
           <div class="key-note">The browser takes these, so here they are as buttons:</div>
           <div class="key-row">
             {#each MW_INTERCEPTED_KEYS as button}
-              <button type="button" title={button.label} onclick={() => session?.press(button.key)}>{button.cap}</button>
+              <button type="button" title={button.label} onclick={() => press(button.key)}>{button.cap}</button>
             {/each}
           </div>
           <div class="key-note">Every key the game reads:</div>
           <div class="key-row">
             {#each MW_KEY_BUTTONS as button}
-              <button type="button" title={button.label} onclick={() => session?.press(button.key)}>{button.cap}</button>
+              <button type="button" title={arrowLabel(style, button.key) ?? button.label} onclick={() => press(button.key)}>{button.cap}</button>
             {/each}
           </div>
         </div>
@@ -386,5 +415,30 @@
     flex-wrap: wrap;
     gap: 4px;
     margin-bottom: 10px;
+  }
+  .styles {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .styles label {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0 6px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .styles input {
+    grid-row: span 2;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+  .styles .how {
+    grid-column: 2;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
   }
 </style>

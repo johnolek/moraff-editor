@@ -12,9 +12,10 @@ import { drawMonsterView } from './office';
  * four comparisons rather than working it out, and the tables here are those comparisons.
  */
 
-/** Which way the character ends up facing after each of the three turns. Two of them are
- *  exported because `keys.ts` works out which turn a compass direction wants from them. */
-const AROUND = [1, 0, 3, 2];
+/** Which way the character ends up facing after each of the three turns. They are exported
+ *  because both games' key modules work out from them which turn an arrow is asking for: either
+ *  game can be played with either game's arrows. */
+export const AROUND = [1, 0, 3, 2];
 export const LEFT = [2, 3, 1, 0];
 export const RIGHT = [3, 2, 0, 1];
 

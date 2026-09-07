@@ -12,6 +12,9 @@
  * hit points.
  */
 
+import { AROUND, LEFT, RIGHT } from '../move';
+import type { MwGameSession } from './engine';
+
 /** Every key movecontrol reads, by the byte it dispatches on. */
 export const MW_KEY = {
   /** Backspace, which read_string (WORLD.EXE 4000:3db9) rubs the last character out with. */
@@ -87,6 +90,47 @@ export function mwGameKey(event: KeyboardEvent): number | null {
   if (named !== undefined) return named;
   if (event.key.length === 1) return event.key.toLowerCase().charCodeAt(0);
   return null;
+}
+
+/** The arrow that faces the character a way and steps them that way, by the facing it leaves
+ *  them with: 0 north, 1 south, 2 west, 3 east. */
+const ARROWS = [MW_KEY.arrowUp, MW_KEY.arrowDown, MW_KEY.arrowLeft, MW_KEY.arrowRight];
+
+/**
+ * What an arrow does when Moraff's World is played with Dungeons of the Unforgiven's arrows:
+ * which way it leaves a character who is facing `facing`, and whether they step that way as
+ * well. The up arrow steps the way they already face; the other three only turn them, by that
+ * game's own turns.
+ *
+ * Anything but the four arrows is null, since the rest of the keyboard is the same either way.
+ */
+export function mwFacingArrow(key: number, facing: number): { dir: number; step: boolean } | null {
+  if (key === MW_KEY.arrowUp) return { dir: facing, step: true };
+  if (key === MW_KEY.arrowLeft) return { dir: LEFT[facing], step: false };
+  if (key === MW_KEY.arrowRight) return { dir: RIGHT[facing], step: false };
+  if (key === MW_KEY.arrowDown) return { dir: AROUND[facing], step: false };
+  return null;
+}
+
+/** The key that faces the character a way and steps them that way, which is what a step is
+ *  asked for with here. */
+export function mwStepKey(dir: number): number {
+  return ARROWS[dir];
+}
+
+/**
+ * Turn the character where they stand. Moraff's World has no key that turns without stepping,
+ * so the turn Dungeons of the Unforgiven's arrows ask for is made here rather than by
+ * movecontrol, and it spends no time, which is what a turn costs in the game those arrows come
+ * from.
+ *
+ * The next key runs attack_timing first, and that turns the character towards a monster standing
+ * beside them whatever they were facing: turning away from a fight is the game's to undo.
+ */
+export function mwTurn(session: MwGameSession, dir: number): void {
+  session.game.pc.dir = dir;
+  session.game.redrawView = true;
+  session.changed();
 }
 
 /** One key on the row of buttons under the game. */
