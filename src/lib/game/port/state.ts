@@ -191,7 +191,10 @@ export interface PlayerCharacter {
   unread7fe: number;
   /** 0x808, DS:c088: zero on every character, and read nowhere. */
   unread808: number;
-  /** 0x80a, DS:c08a: 56 on every character, and read nowhere. */
+  /**
+   * 0x80a, DS:c08a: 56 on every character. draw_monster_view reads it once and compares it with
+   * -1, so the note that comparison guards can never be shown.
+   */
   unread80a: number;
   /** 0x80c, DS:c08c: 60 on every character, and read nowhere. */
   unread80c: number;
