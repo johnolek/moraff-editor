@@ -37,6 +37,9 @@
     highlight?: Point | null;
     /** Where the party stands, when it stands on this floor. */
     you?: Point | null;
+    /** The square the map opens on, and how big to draw a square while it does. The map explorer
+     *  opens on the whole floor; a game being played opens close in on the character. */
+    focus?: (Point & { cell: number }) | null;
     /** Squares emphasised while a legend entry is hovered. */
     marks?: Mark[];
     /** Square picked by clicking, and a route drawn from it. */
@@ -47,7 +50,7 @@
     onselect?: (square: Point) => void;
   }
 
-  let { game, rows, floor, dungeon, monsters = [], bounds, explored = null, cursor = $bindable(null), highlight = null, you = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
+  let { game, rows, floor, dungeon, monsters = [], bounds, explored = null, cursor = $bindable(null), highlight = null, you = null, focus = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -75,7 +78,9 @@
     const observer = new ResizeObserver(([entry]) => {
       size = { width: entry.contentRect.width, height: entry.contentRect.height };
       if (!fitted && size.width > 0) {
-        view = fitFloor(size.width, size.height, bounds);
+        view = focus
+          ? centerOn({ cell: focus.cell, originX: 0, originY: 0 }, focus, size.width, size.height)
+          : fitFloor(size.width, size.height, bounds);
         fitted = true;
       }
     });

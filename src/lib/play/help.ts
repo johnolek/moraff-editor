@@ -15,19 +15,6 @@ import { KEY } from './keys';
 /** How many rows the menu has; the topics fill the left column first. */
 const MENU_ROWS = 14;
 
-/** Where the snake's own four lines go, from FUN_3000_9026 (exe 3000:9026). */
-const SNAKE_X = 100;
-const SNAKE_Y = 0x159;
-const SNAKE_STEP = 0x50;
-
-/** The snake's greeting, which is four strings rather than one (exe DS:2d57). */
-const SNAKE_LINES = [
-  'A little snake scurries up and says',
-  "'Smarty is my name, and information",
-  'is my game! Learning means earning,',
-  'so what can I do for you?',
-];
-
 /** Where the two columns of the menu start and how far each line is spread. */
 const LEFT_X = 0x6e;
 const LEFT_TO = 0x2b2;
@@ -60,13 +47,14 @@ export async function showHelp(session: GameSession): Promise<void> {
   }
 }
 
-/** The snake, its question, and the two columns of topics. */
+/**
+ * The two columns of topics. The original draws the snake's own box first — "A little snake
+ * scurries up and says: 'Smarty is my name, and information is my game!'" — and then fills the
+ * whole screen over the top of it to draw this, so nobody has ever read it there.
+ */
 function drawMenu(game: Game): void {
   game.eraseScreen();
   game.draw({ text: EXIT_LINE, x: EXIT_X, y: EXIT_Y, spreadTo: EXIT_TO, font: 1, colour: 5 });
-  SNAKE_LINES.forEach((text, index) => {
-    game.draw({ text, x: SNAKE_X, y: SNAKE_Y + index * SNAKE_STEP, font: 1, colour: 15 });
-  });
   HELP_TOPICS.forEach((topic, index) => {
     const right = index >= MENU_ROWS;
     game.draw({

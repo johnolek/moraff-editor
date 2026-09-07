@@ -130,6 +130,7 @@
           monsters={view.monsters}
           bounds={FULL_FLOOR}
           you={{ x: view.place.x, y: view.place.y }}
+          focus={{ x: view.place.x, y: view.place.y, cell: PLAY_CELL }}
         />
         {#if view.screen.length > 0}
           <div class="overlay"><GameScreen lines={view.screen} /></div>
