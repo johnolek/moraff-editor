@@ -499,13 +499,13 @@ Wizard battle (type 2):
 | 1 | Sleep: works if `Random(Lm) < 3` (25 moves) | Magic zap: `2·lev + 2` dmg | Minor protection (1) |
 | 2 | Slow enemies (60 moves) | Strength +7 | Minor shock: 25 |
 | 3 | Lightning: `4·lev + 4` | Magic missile: 50 | Speed +7 AGI |
-| 4 | Go away: monster teleported, always | Relocate | Power weapon I (69-die, +4) |
+| 4 | Go away: monster teleported, always | Relocate | Power weapon I (129-die) |
 | 5 | Minor explosion: `Random(101)+75` | Protection (2) | Resist poison |
 | 6 | Magic zot: Σ over lev+1 of `Random(5)+4` | Shock: 125 | Anti-cold |
 | 7 | Explosion: `Random(101)+125` | Pass wall | Anti-fire |
-| 8 | Magic bolt: Σ over lev+1 of `Random(5)+7` | Resist level drain | Power weapon II (129-die, +6) |
+| 8 | Magic bolt: Σ over lev+1 of `Random(5)+7` | Resist level drain | Power weapon II (199-die) |
 | 9 | Hold monster (15 moves) | Drain monster | Major shock: 300 |
-| 10 | Major explosion: `Random(301)+200` | Autokill | Power weapon III (199-die, +10) |
+| 10 | Major explosion: `Random(301)+200` | Autokill | Power weapon III (399-die) |
 
 Priest battle (type 3):
 
@@ -663,7 +663,10 @@ Weapons (DS:01a0):
 | 10 | POWER WEAPON 3 | 199 | +10 | 8 | 0 |
 | 11 | POWER WEAPON 4 | 399 | +20 | 8 | 0 |
 
-(Power weapon 4 exists in the table but no spell casts it.) Armor (DS:01f4):
+(`strike()` indexes this table with `8 + power_weapon`, so Power weapon I swings row 9 and
+Power weapon III swings row 11: every level gets the row after the one it is named for, the
+to-hit and time columns of these four rows are never read, and row 8 is unreachable.)
+Armor (DS:01f4):
 
 | # | name | AC bonus | time | weight |
 |--:|---|--:|--:|--:|

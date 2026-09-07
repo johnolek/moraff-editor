@@ -259,7 +259,9 @@ export const damageSpells = lev => ({
   minorExplosion: [75, 175], explosion: [125, 225], majorExplosion: [200, 500],
 });
 export const PROTECTION_BONUS = [0, 2, 8, 18, 32];      // subtracted from monster attack roll, by protection level
-export const POWER_WEAPON_DIE = [null, 69, 129, 199];
+// strike() indexes the weapon table with the power weapon level plus 8, and row 8 is the one
+// labelled POWER WEAPON 1, so each level swings the row after the one it is named for.
+export const POWER_WEAPON_DIE = [null, 129, 199, 399];
 
 // ---------------------------------------------------------------- self-test (node dotu-mech.js)
 if (typeof process !== "undefined" && process.argv[1] && process.argv[1].endsWith("dotu-mech.js")) {
@@ -278,6 +280,7 @@ if (typeof process !== "undefined" && process.argv[1] && process.argv[1].endsWit
     ["sleep 20", near(sleepChance(20), 0.15, 1e-9)],
     ["monster interval speed 55", monsterAttackInterval(55) === 20],
     ["move seconds giant", moveSeconds(400, 0) === 6],
+    ["power weapon dice", POWER_WEAPON_DIE.join() === [null, 129, 199, 399].join()],
   ];
   let bad = 0;
   for (const [name, ok] of checks) { console.log((ok ? "ok   " : "FAIL ") + name); if (!ok) bad++; }

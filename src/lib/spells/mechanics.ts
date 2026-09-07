@@ -46,11 +46,11 @@ export const SPELL_CORRECTIONS: Record<string, string> = {
   'Wizard battle/Go Away':
     'Teleports the monster away every single time. There is no level ratio check at all, whatever the help text says, but it does nothing to a Shadow boss.',
   'Wizard battle/Power Weapon I':
-    'Your damage die becomes 69 for 60 moves. The to-hit bonus, magic plus and speed of the weapon in your hand still apply; the plus 3 in the help text is used nowhere.',
+    'Your damage die becomes 129 for 60 moves, the row after the one the weapon table labels POWER WEAPON 1. The to-hit bonus, magic plus and speed of the weapon in your hand still apply; the plus 3 in the help text is used nowhere.',
   'Wizard battle/Power Weapon II':
-    'Your damage die becomes 129 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed.',
+    'Your damage die becomes 199 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed.',
   'Wizard battle/Power Weapon III':
-    'Your damage die becomes 199 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed. Power Weapon IV, a 399 die, is in the weapon table but no spell, scroll, wand or paper casts it.',
+    'Your damage die becomes 399 for 60 moves, the biggest die in the weapon table; the weapon in your hand keeps its to-hit bonus, magic plus and speed.',
   'Wizard battle/Resist Poison':
     'Blocks poison completely for 60 moves — 100%, not the 95% the help text claims — and pauses the counter of a poison you already carry.',
   'Wizard battle/Resist Level Drain':
@@ -61,11 +61,11 @@ export const SPELL_CORRECTIONS: Record<string, string> = {
   'Priest battle/Go Away':
     'Teleports the monster away every single time. There is no level ratio check at all, whatever the help text says, but it does nothing to a Shadow boss.',
   'Priest battle/Power Weapon I':
-    'Your damage die becomes 69 for 60 moves. The to-hit bonus, magic plus and speed of the weapon in your hand still apply; the plus 3 in the help text is used nowhere.',
+    'Your damage die becomes 129 for 60 moves, the row after the one the weapon table labels POWER WEAPON 1. The to-hit bonus, magic plus and speed of the weapon in your hand still apply; the plus 3 in the help text is used nowhere.',
   'Priest battle/Power Weapon II':
-    'Your damage die becomes 129 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed.',
+    'Your damage die becomes 199 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed.',
   'Priest battle/Power Weapon III':
-    'Your damage die becomes 199 for 60 moves; the weapon in your hand keeps its to-hit bonus, magic plus and speed. Power Weapon IV, a 399 die, is in the weapon table but no spell, scroll, wand or paper casts it.',
+    'Your damage die becomes 399 for 60 moves, the biggest die in the weapon table; the weapon in your hand keeps its to-hit bonus, magic plus and speed.',
   'Priest battle/Resist Poison':
     'Blocks poison completely for 60 moves — 100%, not the 95% the help text claims — and pauses the counter of a poison you already carry.',
   'Priest battle/Resist Disease':

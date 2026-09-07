@@ -407,7 +407,9 @@ export function autokill(game: Game): boolean {
 
 /**
  * battle_strength (exe 3000:dd64, unf.c "battle_strength"): Power Weapon I, II and III, which
- * put a 69, 129 or 199 damage die in the player's hands for 60 moves. `level` is 1, 2 or 3.
+ * put a 129, 199 or 399 damage die in the player's hands for 60 moves. `level` is 1, 2 or 3;
+ * `strike` adds eight to it to reach the weapon table, which lands one row past the row the
+ * table labels with the same number.
  *
  * The catalog's one-line note calls this "+7 STR for 60 moves", which is wrong: that is
  * FUN_3000_d990. This writes the power weapon level at save offset 0x7e8.

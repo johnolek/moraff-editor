@@ -192,9 +192,8 @@ describe('strike', () => {
     expect(missing.game.messages).toEqual(['YOU MISSED THE MONSTER']);
   });
 
-  // dotu-mech's POWER_WEAPON_DIE reads the levels off the rows the weapon table labels POWER
-  // WEAPON 1, 2 and 3, so it says 69, 129 and 199. The exe indexes the table with the power
-  // weapon level plus eight, which lands one row further on every time.
+  // The exe indexes the weapon table with the power weapon level plus eight, and row 8 is the
+  // one labelled POWER WEAPON 1, so every level swings the row after the one it is named for.
   it.each([1, 2, 3])('rolls weapon table row %i + 8 for that power weapon level', (level) => {
     // Only one row of the table carries a die; every other row rolls Random(0), which is 0.
     // With a level 1 character whose strength is 3, nothing but that die can do any damage.

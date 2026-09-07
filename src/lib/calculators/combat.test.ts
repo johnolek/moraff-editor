@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { allMonsters, homeFloor, type Monster } from '../bestiary/monsters';
+import data from '../game/dotu-data.json';
 import {
   breathProfile,
   combatReport,
@@ -105,9 +106,15 @@ describe('combatReport', () => {
 describe('the power weapon', () => {
   it('swaps the weapon damage die for its own', () => {
     expect(damageDie(fighter())).toBe(weaponById(MACE).damageDie);
-    expect(damageDie(fighter({ powerWeapon: 1 }))).toBe(69);
-    expect(damageDie(fighter({ powerWeapon: 2 }))).toBe(129);
-    expect(damageDie(fighter({ powerWeapon: 3 }))).toBe(199);
+    expect(damageDie(fighter({ powerWeapon: 1 }))).toBe(129);
+    expect(damageDie(fighter({ powerWeapon: 2 }))).toBe(199);
+    expect(damageDie(fighter({ powerWeapon: 3 }))).toBe(399);
+  });
+
+  // strike() reaches the weapon table with the spell's level plus eight, and row 8 is the one
+  // labelled POWER WEAPON 1, so each level swings the row after the one it is named for.
+  it.each([1, 2, 3])('takes level %i from the weapon table row eight past it', (level) => {
+    expect(damageDie(fighter({ powerWeapon: level }))).toBe(data.weapons[level + 8].damageDie);
   });
 
   it('hits far harder while it is up', () => {
