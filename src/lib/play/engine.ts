@@ -16,6 +16,7 @@ import { digHole } from './dig';
 import { swingAtMonster } from './fight';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
 import { showHelp } from './help';
+import { killTheDead } from './kill';
 import { KEY } from './keys';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
@@ -383,6 +384,7 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     if (handler) await handler.run(turn);
     await session.settle();
     if (session.over) return;
+    await killTheDead(session);
     await resolveStep(turn);
     await session.settle();
     if (checkDeath(game)) {
