@@ -30,6 +30,9 @@ function moves(count: number): string {
   return `${count} move${count === 1 ? '' : 's'}`;
 }
 
+/** The two of FUN_2000_7421's lines that are afflictions rather than spells. */
+const AILMENTS = ['DISEASE', 'POISON'];
+
 /**
  * Every spell in force, with the number behind the line FUN_2000_7421 draws for it.
  *
@@ -37,15 +40,20 @@ function moves(count: number): string {
  * number means. The battle spells count moves down to zero, Sleep and Hold Monster count the
  * engaged monster's turns, and the preparation markers have no clock at all — the level or the
  * flag stands there and only a night at the inn takes it off.
+ *
+ * A line whose number is zero is one the game does not draw at all, and the poison and disease
+ * clocks are on the list but have a section of their own.
  */
 export function mwSpellsInForce(game: MwGame): MwPanelLine[] {
-  return mwSpellTimers(game).map((timer) => ({
-    label: timer.label,
-    value: timerValue(timer.label, timer.turns),
-  }));
+  return mwSpellTimers(game)
+    .filter((timer) => timer.turns > 0 && !AILMENTS.includes(timer.label))
+    .map((timer) => ({ label: timer.label, value: timerValue(timer.label, timer.turns) }));
 }
 
-/** The spells whose number is a marker rather than a clock, by the label the panel gives them. */
+/**
+ * The nine preparation spells whose number is a level or a flag rather than a clock. Protection
+ * and Power Weapon have a level too, but the panel's number for them is their timer.
+ */
 const MARKERS = [
   'WEAPONS, PLUS',
   'ARMOR, PLUS',
@@ -56,12 +64,10 @@ const MARKERS = [
   'AGILITY (PREP)',
   'SUPER STRENGTH',
   'SUPER AGILITY',
-  'PROTECT, LEVEL',
-  'POWER WEAPON',
 ];
 
 function timerValue(label: string, turns: number): string {
-  if (MARKERS.some((marker) => label.startsWith(marker))) return 'until you sleep';
+  if (MARKERS.includes(label)) return 'until you sleep';
   if (label === 'STOP MONSTER' || label === 'HOLD MONSTER') {
     return `${turns} monster turn${turns === 1 ? '' : 's'}`;
   }
