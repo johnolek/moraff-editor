@@ -230,3 +230,149 @@ suit you are wearing to zero, takes one of that suit away and leaves you in your
 
 In the code: [monster_turn](source:c/monster_turn) and
 [describeEffects](source:ts/monsters.ts/describeEffects).
+
+## Magic
+
+### Go Away never fails, and charges you when it refuses
+
+The help text for Teleport Monster talks about your level against the monster's. There is no such
+test anywhere in the spell. Against anything but the ten spell-proof monsters it works every
+single time.
+
+The other half of that is worse. The dispatcher throws away the answer the spell gives it and
+reports success regardless, and the spell points are taken once the effect has reported success —
+so a spell-proof monster that laughs it off, or casting it with nothing engaged at all, costs the
+full price for nothing.
+
+In the code: [teleport_monster](source:c/teleport_monster), [spell_effect](source:c/spell_effect)
+and [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
+
+### Go Away can drop a monster inside solid rock
+
+The spell rolls a new square for the monster and then checks whether it is solid before accepting
+it. It checks the wrong square: it asks about the square **you** are standing on, not the one the
+monster just landed on. You are never standing in rock, so the check passes on the first roll
+every time and the monster can end up sealed inside a wall where nothing can reach it.
+
+Dungeons of the Unforgiven has exactly the same mistake in exactly the same spell.
+
+In the code: [teleport_monster](source:c/teleport_monster).
+
+### The three resistances are absolute while they last
+
+Resist Poison, Resist Disease and Resist Level Drain read as percentages in the help text — 95,
+95 and 90. They are not chances at all. While the timer is running the poisoning, the disease and
+the level drain do not happen, with no roll anywhere, and a poison or disease you are already
+carrying stops counting down towards its next point.
+
+Each cast adds 60 moves to the timer rather than replacing it, so casting one again while it is up
+is not wasted.
+
+Anti-Fire and Anti-Cold, which sound like the strongest of the set, are the weakest. They do not
+stop a breath weapon; they divide its damage by two and do nothing else at all. Nothing in the
+game stops a dragon's breath outright, and nothing whatever answers acid.
+
+In the code: [resist_poison](source:c/resist_poison), [resist_drain](source:c/resist_drain),
+[anti_fire](source:c/anti_fire) and [monster_turn](source:c/monster_turn).
+
+### The anti-magic ring does nothing
+
+The Anti-Magic Ring is bought with four permanent spells, kept in the save file, shown on the
+inventory screen, and refused by the spell when you already have a better one. No line anywhere
+in the game ever reads the field back. It protects against nothing.
+
+The levels give it away as unfinished: the ring goes 1, 2, 3 and then straight to 5, with no level
+4 anywhere in the list — which is the gap Dungeons of the Unforgiven's identical ring has too.
+
+In the code: [raise_ring_antimagic](source:c/raise_ring_antimagic) and
+[MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
+
+### Priest Protection is Minor Protection again
+
+Protection takes `2 * level * level` off a monster's attack roll, so level 1 is 2 and level 2 is
+8. The priestly list's Protection, on spell level 5, asks for protection level 1 — which is what
+the level 1 Minor Protection asks for. The wizard's Protection, on the same spell level, asks for
+2.
+
+So a priest goes 2, then 2 again, and then straight to Major Protection's 18 three levels later,
+and casting the level 5 spell over the level 1 one buys nothing but sixty more moves. The other
+game's priests have the same complaint.
+
+In the code: [raise_protection](source:c/raise_protection) and
+[MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
+
+### The permanent Invisibility is the weaker one
+
+Both Invisibilities write the same field: the preparation one writes 1 and the permanent one
+writes 100, which is what keeps a night at the inn from clearing it. The monster movement pass
+tests that field for **exactly** 1 before it skips a move.
+
+So the cheap version stops every monster on the floor one move in four, and the expensive
+permanent version does not. What the permanent one keeps is the other half of the spell, the roll
+that decides whether a monster you have just met gets its free first strike, which tests the field
+for anything at all.
+
+In the code: [monsters_move](source:c/monsters_move) and
+[MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
+
+### Fast Move and Invisibility stack
+
+Each of them skips the whole monster movement pass one move in four, and they are two separate
+rolls made a few lines apart rather than one roll used twice. Running both gives you nine moves in
+sixteen where nothing on the floor follows you and nothing swings.
+
+Dungeons of the Unforgiven's pair are the same roll and do not stack. This one is the better deal
+and nothing says so.
+
+In the code: [monsters_move](source:c/monsters_move).
+
+### Youth halves your age
+
+The help text offers ten years off. What the spell does is halve the age field outright, with a
+floor at about thirty days, and give back nothing of the strength and constitution that ageing
+took.
+
+Age is kept as a count of minutes — years times 525,600 — and everything that prints it divides by
+525,600 again, which is why a character who has been played has an age like 37.5 years. Halving it
+is a fortune to an old character and almost nothing to a young one, and the deal only gets better
+the longer you leave it.
+
+In the code: [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS),
+[show_roll](source:c/show_roll) and
+[MINUTES_PER_YEAR](source:ts/character.ts/MINUTES_PER_YEAR).
+
+### Ascend and Descend put you anywhere on the floor
+
+All six of the floor-changing spells describe themselves as moving you straight up or straight
+down, into the open space above or below where you stand. None of them does. Each one rolls
+squares of the destination floor until it finds one that is not rock and drops you there, so a
+Descend is a Relocate with a floor change attached and you can arrive anywhere at all.
+
+The depth limits are not what the messages say either. Descend is refused on floor 124 and deeper;
+Ascend is refused from floor 66 down while the message names the 64th; and Major Descend is twenty
+five floors exactly rather than the "at least 25" it advertises, which with the floor 66 refusal
+means it is only ever castable between floors 1 and 65.
+
+In the code: [spell_effect](source:c/spell_effect) and
+[MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
+
+### Permanent spells are free off a scroll
+
+Casting a permanent spell out of your spell book takes its level off your current spell points and
+the same number off your maximum, for good. That is the price of the improvement, and it is why
+nobody casts the deep ones.
+
+Cast the very same spell off a scroll, a wand or a piece of magic paper and it costs nothing at
+all: the screen takes the points only for a spell cast from memory, and one charge comes off the
+item instead. The improvement lands either way. Writing the scroll is itself a permanent spell, so
+it costs its own level — but the deepest Write Scroll is a level 4 permanent spell and it writes a
+scroll of anything up to level 10.
+
+The time is free as well. A permanent spell hands the movement loop 36,096 moves as what it cost
+you — `SPELLS.HLP` calls that a month, and at the sixty moves the loop counts to a minute it is
+about ten hours. It is neither. The loop spends anything under 60 in one go and anything under
+30,000 a minute at a time, and 36,096 falls through both tests, so no time passes at all.
+
+In the code: [spell_screen](source:c/spell_screen),
+[mwMaximumSpellPointCost](source:ts/spells.ts/mwMaximumSpellPointCost),
+[cast_spell](source:c/cast_spell) and [movecontrol](source:c/movecontrol).
