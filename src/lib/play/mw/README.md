@@ -23,7 +23,9 @@ tab, the map canvas, the screen renderer and the roster.
   touching the same file.
 * **`moment.ts`** — the two halves of a moment, which every step and the wait key go between.
 * **`floor.ts`** — `enter_level` and `generate_section`'s three monster tables: arriving on a
-  floor and the memory that decides whether its monsters are rolled again.
+  floor and the memory that decides whether its monsters are rolled again. The map the character
+  has discovered is `../memory.ts`, since that part of `enter_level` is the same engine as
+  Dungeons of the Unforgiven's.
 * **`record.ts`** — `load_player` and `save_player` over the whole 2,344-byte record.
 * **`screens.ts`** — where the message box goes, and `mwNotBuiltYet`. **`boxes.ts`** is the rest
   of it: showing the several boxes a ported function printed in one go one after another.
@@ -149,10 +151,11 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
   screen alone, so a kill's own messages are held for theirs by the Play tab's display timer
   (`../timed.ts`); the flashes while a hole is dug, whose message the port shows as a box rather
   than the strip the original draws it on, are still printed once.
-* **The map is drawn instead of the 3-D view**, and in speedrun and in debug every monster on the
-  floor is drawn, not only the ones a character has seen (`../mode.ts`). The picture of the
-  monster being faced stands in for the view ahead in every mode, with the level, hit points and
-  experience the game prints over that view over it.
+* **The map is drawn instead of the 3-D view.** What the four views would have shown is still
+  worked out, since it is what the map remembers and what says which monsters can be seen
+  (`../memory.ts`); in speedrun and in debug the whole floor and every monster on it are drawn
+  instead (`../mode.ts`). The picture of the monster being faced stands in for the view ahead in
+  every mode, with the level, hit points and experience the game prints over that view over it.
 * **No `?MON.MAP`, no `.DUN`.** The explored map is not kept and the three floors of monsters
   live only as long as the tab is open.
 * **The character file is the roster entry.** `save_player` writes the record back through the

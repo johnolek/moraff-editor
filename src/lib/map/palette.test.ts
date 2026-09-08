@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { UNFORGIVEN_MAP, type MapSquare } from './game';
 import { glyphDestination } from './draw-floor';
-import { palette, sideStroke, squareFill, squareGlyph } from './palette';
+import { gameSideStroke, palette, sideStroke, squareFill, squareGlyph } from './palette';
 
 function square(overrides: Partial<MapSquare> = {}): MapSquare {
   return { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
@@ -39,6 +39,14 @@ describe('sideStroke', () => {
     expect(sideStroke(2)).toBe('secretDoor');
     expect(sideStroke(3)).toBeNull();
     expect(sideStroke(4)).toBe('teleporter');
+  });
+
+  it('draws a secret door and a module teleporter as plain walls where the game does', () => {
+    expect(gameSideStroke(0)).toBe('wall');
+    expect(gameSideStroke(1)).toBe('door');
+    expect(gameSideStroke(2)).toBe('wall');
+    expect(gameSideStroke(3)).toBeNull();
+    expect(gameSideStroke(4)).toBe('wall');
   });
 });
 

@@ -58,6 +58,16 @@ export function sideStroke(side: number): SideStroke | null {
   }
 }
 
+/**
+ * The same, as the game's own map draws it: draw_side (exe 3000:8432) puts a plain line under
+ * anything retdwall does not call open and adds the door ticks only for a door, so a secret door
+ * is a wall to look at and so is a module teleporter.
+ */
+export function gameSideStroke(side: number): SideStroke | null {
+  const stroke = sideStroke(side);
+  return stroke === 'secretDoor' || stroke === 'teleporter' ? 'wall' : stroke;
+}
+
 export function squareFill(square: MapSquare, game: MapGame): string | null {
   if (square.solid) return null;
   const building = game.buildingOn(square);

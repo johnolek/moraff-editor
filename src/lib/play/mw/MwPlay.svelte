@@ -15,7 +15,7 @@
   import { actionWords, milestoneNote, milestoneWords, RunRecorder } from '../run';
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
-  import { monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from '../mode';
+  import { mapDrawn, monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from '../mode';
   import { mwOnMessageLine } from '../../game/mw-port/state';
   import {
     mwCharacteristicLines,
@@ -130,6 +130,17 @@
     playingId = null;
     view = null;
   }
+
+  /**
+   * The map the floor is drawn from: in faithful mode the one the character has discovered, and
+   * none in the other two, where the whole floor is drawn. The view is read so that the map is
+   * drawn again as the character learns more of the floor.
+   */
+  const discoveredMap = $derived.by(() => {
+    void view;
+    const playing = session;
+    return playing ? mapDrawn(mode, playing.memory) : null;
+  });
 
   /** The mode belongs to the tab; the session carries it so that anything keeping a record of
    *  the run can say which mode it was played in. */
@@ -261,6 +272,7 @@
           floor={view.place.floor}
           dungeon={view.place.dungeon}
           monsters={monstersDrawn(mode, view)}
+          discovered={discoveredMap}
           bounds={FULL_FLOOR}
           you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
           focus={{ x: view.place.x, y: view.place.y, cell: PLAY_CELL }}

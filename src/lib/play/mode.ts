@@ -1,6 +1,8 @@
 import type { PortedGameId } from '../app-state.svelte';
 import { readStored, writeStored } from '../character/storage';
+import type { DiscoveredMap } from '../map/draw-floor';
 import type { StockedMonster } from '../map/stocking';
+import type { MapMemory } from './memory';
 
 /**
  * How much of the game a Play tab shows, which is a choice the tab offers and the browser
@@ -9,9 +11,10 @@ import type { StockedMonster } from '../map/stocking';
  * Both games keep a great deal to themselves — a monster's hit points, the charges left on a
  * wand, the turns left on a spell, where the monsters on the floor are standing — and the tabs
  * were built showing all of it. This is the switch: **faithful** shows nothing the game does not
- * show, **speedrun** adds the whole map and every monster standing on it so that a run need not
- * be planned against the maps elsewhere on this site, and **debug** shows everything the port
- * knows.
+ * show, which is the map the character has discovered and the monsters its 3-D views would have
+ * drawn; **speedrun** adds the whole floor and every monster standing on it, so that a run need
+ * not be planned against the maps elsewhere on this site; and **debug** shows everything the
+ * port knows.
  */
 export type PlayMode = 'faithful' | 'speedrun' | 'debug';
 
@@ -27,17 +30,17 @@ export const PLAY_MODES: { id: PlayMode; label: string; how: string }[] = [
   {
     id: 'faithful',
     label: 'Faithful',
-    how: 'Only what the game shows: no hidden numbers, and no monster on the map but the one you face.',
+    how: 'Only what the game shows: the map you have discovered, the monsters its views would draw, and no hidden numbers.',
   },
   {
     id: 'speedrun',
     label: 'Speedrun',
-    how: 'Every monster on the map, so a route can be planned, but still none of the hidden numbers.',
+    how: 'The whole floor and every monster on it, so a route can be planned, but still none of the hidden numbers.',
   },
   {
     id: 'debug',
     label: 'Debug',
-    how: 'Everything: every monster, and the panel of numbers the game never prints.',
+    how: 'Everything: the whole floor, every monster, and the panel of numbers the game never prints.',
   },
 ];
 
@@ -65,22 +68,35 @@ export function panelVisible(mode: PlayMode): boolean {
   return mode === 'debug';
 }
 
-/** What a tab knows about the monsters on the floor: every one standing on it, and the one the
- *  character is facing. Both games' views have these. */
+/** What a tab knows about the monsters on the floor: every one standing on it, the ones the
+ *  3-D views have just drawn, and the one the character is facing. Both games' views have
+ *  these. */
 export interface MonstersInSight {
   monsters: StockedMonster[];
+  visible: StockedMonster[];
   engaged: StockedMonster | null;
 }
 
 /**
- * The monsters the map draws. Faithful draws the one the character is fighting, which the game
- * names itself beside the picture; the other two modes draw the whole floor.
+ * The monsters the map draws.
  *
- * Which monsters a faithful map may show is MORF-151's to settle, along with how much of the map
- * itself is drawn. Until it does, the one being fought is the only monster the game has told the
- * player about.
+ * Faithful draws the ones the 3-D views drew this turn, which is every monster standing on a
+ * square any of the four views reached, and the one being fought whether or not it is among
+ * them: the game names that one itself, beside its picture, and Moraff's World points at it
+ * without any line of sight at all. The other two modes draw the whole floor.
  */
 export function monstersDrawn(mode: PlayMode, sight: MonstersInSight): StockedMonster[] {
   if (mode !== 'faithful') return sight.monsters;
-  return sight.engaged === null ? [] : [sight.engaged];
+  const seen = [...sight.visible];
+  const engaged = sight.engaged;
+  if (engaged !== null && !seen.some((monster) => monster.slot === engaged.slot)) seen.push(engaged);
+  return seen;
+}
+
+/**
+ * The map the floor is drawn from: the one the character has discovered in faithful, and none in
+ * the other two modes, where the whole floor is drawn.
+ */
+export function mapDrawn(mode: PlayMode, memory: MapMemory): DiscoveredMap | null {
+  return mode === 'faithful' ? memory.discovered() : null;
 }

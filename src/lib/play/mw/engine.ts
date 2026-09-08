@@ -108,6 +108,9 @@ export interface MwPlayView {
   place: { x: number; y: number; floor: number; dungeon: number; dir: number };
   rows: MapSquare[][];
   monsters: StockedMonster[];
+  /** The monsters standing on a square the four 3-D views drew this turn, which is exactly the
+   *  ones the character can see. */
+  visible: StockedMonster[];
   /** The eight-line message box, as the game draws it. */
   box: ScreenLine[];
   /** A screen the game has taken the whole display over with; empty when there is none. */
@@ -511,6 +514,7 @@ export class MwGameSession {
       place: { x: pc.x, y: pc.y, floor: pc.floor, dungeon: pc.dungeon, dir: pc.dir },
       rows: this.rows,
       monsters: drawn,
+      visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
       box: mwMessageBoxLines(this.box),
       screen: this.timed.showing(game.screen),
       prompt: ladderPrompt(

@@ -78,14 +78,18 @@ describe('the panel of numbers the game never prints', () => {
 });
 
 describe('the monsters the map draws', () => {
-  const sight = { monsters: [monster(0), monster(1), monster(2)], engaged: monster(1) };
+  const sight = { monsters: [monster(0), monster(1), monster(2)], visible: [monster(2)], engaged: monster(1) };
 
-  it('is the one being fought and no other in faithful', () => {
-    expect(monstersDrawn('faithful', sight)).toEqual([sight.engaged]);
+  it('is the ones the views drew, and the one being fought besides, in faithful', () => {
+    expect(monstersDrawn('faithful', sight)).toEqual([monster(2), sight.engaged]);
   });
 
-  it('is none at all in faithful with nothing being fought', () => {
-    expect(monstersDrawn('faithful', { ...sight, engaged: null })).toEqual([]);
+  it('does not draw the one being fought twice when the views drew it too', () => {
+    expect(monstersDrawn('faithful', { ...sight, visible: [monster(1)] })).toEqual([monster(1)]);
+  });
+
+  it('is none at all in faithful with nothing in sight and nothing being fought', () => {
+    expect(monstersDrawn('faithful', { ...sight, visible: [], engaged: null })).toEqual([]);
   });
 
   it('is every monster on the floor in speedrun and in debug', () => {

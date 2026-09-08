@@ -1,4 +1,5 @@
 import { DUN_COLUMNS, DUN_ROWS, EXPLORED_STRIDE, FLOORS_PER_BLOCK, type ExploredSquares } from '../map/explored';
+import type { DiscoveredMap } from '../map/draw-floor';
 import type { MapSquare } from '../map/game';
 
 /**
@@ -136,6 +137,14 @@ export class MapMemory {
    *  drawsquare's chute branch (unf.c:21910) is its one caller. */
   wasKnownOnArrival(x: number, y: number): boolean {
     return bitSet(this.arrival, x, y);
+  }
+
+  /** The floor as the game's own map draws it. */
+  discovered(): DiscoveredMap {
+    return {
+      known: (x, y) => this.isKnown(x, y),
+      knownOnArrival: (x, y) => this.wasKnownOnArrival(x, y),
+    };
   }
 
   /** Every known square of the floor being played, for a caller that wants the whole set rather

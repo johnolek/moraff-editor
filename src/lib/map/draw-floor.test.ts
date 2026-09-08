@@ -55,6 +55,51 @@ describe('drawFloor', () => {
   });
 });
 
+describe('drawFloor over the map a character has discovered', () => {
+  const options = { cell: 1, originX: 0, originY: 0, width: WIDTH, height: HEIGHT, floor: 1, teleporterHue: null, game: UNFORGIVEN_MAP };
+  const knows = (squares: [number, number][]) => ({
+    known: (x: number, y: number) => squares.some(([sx, sy]) => sx === x && sy === y),
+    knownOnArrival: () => true,
+  });
+
+  it('draws the known squares and nothing whatsoever for the rest', () => {
+    const fills: { x: number; y: number }[] = [];
+    drawFloor(recordingContext(fills), openFloor(), { ...options, discovered: knows([[2, 3], [3, 3]]) });
+    // The first fill is the background, and each known square is filled one pixel in.
+    expect(fills.slice(1)).toEqual([
+      { x: 3, y: 4 },
+      { x: 4, y: 4 },
+    ]);
+  });
+
+  it('holds the chute glyph back until the square was known on arrival', () => {
+    const withChute = openFloor();
+    withChute[3][2] = { ...withChute[3][2], chute: 4 };
+    const strokes: string[] = [];
+    const ctx = new Proxy(
+      {},
+      { get: (_target, name) => (name === 'stroke' ? () => strokes.push('stroke') : () => {}), set: () => true },
+    ) as unknown as CanvasRenderingContext2D;
+    drawFloor(ctx, withChute, { ...options, discovered: { known: (x, y) => x === 2 && y === 3, knownOnArrival: () => false } });
+    expect(strokes).toHaveLength(0);
+    strokes.length = 0;
+    drawFloor(ctx, withChute, { ...options, discovered: { known: (x, y) => x === 2 && y === 3, knownOnArrival: () => true } });
+    expect(strokes.length).toBeGreaterThan(0);
+  });
+
+  it('draws a secret door and a module teleporter as the plain walls the game draws them as', () => {
+    const secret = openFloor();
+    secret[3][2] = { ...secret[3][2], n: 2, e: 4 };
+    const dashes: number[][] = [];
+    const ctx = new Proxy(
+      {},
+      { get: (_target, name) => (name === 'setLineDash' ? (dash: number[]) => dashes.push(dash) : () => {}), set: () => true },
+    ) as unknown as CanvasRenderingContext2D;
+    drawFloor(ctx, secret, { ...options, discovered: { known: (x, y) => x === 2 && y === 3, knownOnArrival: () => true } });
+    expect(dashes.every((dash) => dash.length === 0)).toBe(true);
+  });
+});
+
 describe('drawYou', () => {
   /** A canvas context that remembers the rectangle it filled and the corners of the path it was
    *  given, which is the whole difference between the two markers. */

@@ -14,7 +14,7 @@
   import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder } from './run';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
-  import { monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from './mode';
+  import { mapDrawn, monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from './mode';
   import { MENU_LINE_STEP, MENU_SPREAD_TO, MENU_TOP, MENU_X } from '../game/port/screens';
   import { MESSAGE_BOX_LINES } from './screens';
 
@@ -73,6 +73,17 @@
     playingId = null;
     view = null;
   }
+
+  /**
+   * The map the floor is drawn from: in faithful mode the one the character has discovered, and
+   * none in the other two, where the whole floor is drawn. The view is read so that the map is
+   * drawn again as the character learns more of the floor.
+   */
+  const discoveredMap = $derived.by(() => {
+    void view;
+    const playing = session;
+    return playing ? mapDrawn(mode, playing.memory) : null;
+  });
 
   /** The mode belongs to the tab; the session carries it so that anything keeping a record of
    *  the run can say which mode it was played in. */
@@ -204,6 +215,7 @@
           floor={view.place.floor}
           dungeon={view.place.module}
           monsters={monstersDrawn(mode, view)}
+          discovered={discoveredMap}
           bounds={FULL_FLOOR}
           you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
           focus={{ x: view.place.x, y: view.place.y, cell: PLAY_CELL }}

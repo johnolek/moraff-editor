@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte';
-  import { drawFloor, drawMarks, drawOutline, drawRoute, drawYou, squareRect } from './draw-floor';
+  import { drawFloor, drawMarks, drawOutline, drawRoute, drawYou, squareRect, type DiscoveredMap } from './draw-floor';
   import { isExplored, type ExploredSquares } from './explored';
   import { drawMonsters, type MonsterSprites } from './draw-monsters';
   import type { MapGame, MapSquare } from './game';
@@ -34,6 +34,10 @@
     bounds: Bounds;
     /** Squares of this floor a loaded explored map has seen. */
     explored?: ExploredSquares | null;
+    /** The map the character being played has discovered, when the floor is drawn as the game's
+     *  own map draws it: an unknown square draws nothing, and neither does a module teleporter,
+     *  which the game's map has as a plain wall. */
+    discovered?: DiscoveredMap | null;
     /** The square the info panel describes: follows the pointer, moved by the keyboard. */
     cursor?: Point | null;
     /** Landing square after a jump. */
@@ -55,7 +59,7 @@
     onselect?: (square: Point) => void;
   }
 
-  let { game, rows, floor, dungeon, monsters = [], bounds, explored = null, cursor = $bindable(null), highlight = null, you = null, focus = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
+  let { game, rows, floor, dungeon, monsters = [], bounds, explored = null, discovered = null, cursor = $bindable(null), highlight = null, you = null, focus = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -110,7 +114,7 @@
     view = ensureVisible(untrack(() => view), target, width, height);
   });
 
-  const teleporters = $derived(teleporterSegments(rows, game.area));
+  const teleporters = $derived(discovered ? [] : teleporterSegments(rows, game.area));
 
   // Monster pictures are drawn once each into an offscreen canvas and kept, since the same few
   // monsters stand all over a floor. Each game says what its drawing depends on beyond the
@@ -149,7 +153,7 @@
   }
 
   $effect(() => {
-    const next: Scene = { game, rows, floor, view, width: size.width, height: size.height, explored };
+    const next: Scene = { game, rows, floor, view, width: size.width, height: size.height, explored, discovered };
     staticStale = true;
     scene = { ...untrack(overlays), ...next };
     scheduleRender();
@@ -181,6 +185,7 @@
     width: number;
     height: number;
     explored?: ExploredSquares | null;
+    discovered?: DiscoveredMap | null;
     cursor?: Point | null;
     highlight?: Point | null;
     you?: YouHere | null;
@@ -202,7 +207,7 @@
   function render() {
     // The effect can run once more after the tab hides and bind:this has gone back to null.
     if (!canvas || !scene || !scene.width || !scene.height) return;
-    const { game, rows, floor, view, width, height, explored, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
+    const { game, rows, floor, view, width, height, explored, discovered, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
     const dpr = window.devicePixelRatio || 1;
     const pixelWidth = Math.round(width * dpr);
     const pixelHeight = Math.round(height * dpr);
@@ -215,7 +220,7 @@
       staticLayer.height = pixelHeight;
       const staticCtx = staticLayer.getContext('2d')!;
       staticCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null, game, explored: explored ? (x, y) => isExplored(explored, x, y) : undefined });
+      drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null, game, discovered, explored: explored ? (x, y) => isExplored(explored, x, y) : undefined });
       staticStale = false;
     }
     const ctx = canvas.getContext('2d')!;

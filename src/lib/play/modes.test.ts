@@ -25,15 +25,28 @@ async function facingOneOfMany() {
 }
 
 describe('the monsters the map draws', () => {
-  it('is the one being fought alone in faithful, and the whole floor otherwise', async () => {
+  it('is the ones in sight in faithful, and the whole floor otherwise', async () => {
     const view = await facingOneOfMany();
-    expect(monstersDrawn('faithful', view)).toEqual([view.engaged]);
+    const faithful = monstersDrawn('faithful', view);
+    expect(faithful).toContain(view.engaged);
+    expect(faithful).toEqual(view.visible);
+    expect(faithful.length).toBeLessThan(view.monsters.length);
     expect(monstersDrawn('speedrun', view)).toEqual(view.monsters);
     expect(monstersDrawn('debug', view)).toEqual(view.monsters);
   });
 
-  it('is what the tab hands the map', () => {
+  it('is every monster standing where the views reach, and no other', async () => {
+    const view = await facingOneOfMany();
+    for (const monster of view.monsters) {
+      const inSight = view.visible.some((seen) => seen.slot === monster.slot);
+      expect(monstersDrawn('faithful', view).includes(monster)).toBe(inSight);
+    }
+  });
+
+  it('is what the tab hands the map, along with the map itself', () => {
     expect(source).toContain('monsters={monstersDrawn(mode, view)}');
+    expect(source).toContain('discovered={discoveredMap}');
+    expect(source).toContain('mapDrawn(mode, playing.memory)');
   });
 });
 

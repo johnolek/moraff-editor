@@ -23,7 +23,9 @@ something the original does, a comment says so.
   all build, and the classes each row is refused to. **`manual.ts`** — the S key.
   **`misc.ts`** — M, O, G, X and Z.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
-  memory that decides whether its monsters are rolled again.
+  memory that decides whether its monsters are rolled again. **`memory.ts`** — the other half of
+  arriving on a floor: the map the character has discovered, which is the same engine in both
+  games and so is shared with Moraff's World.
 * **`screens.ts`** — the eight lines of the message box, which are `menuLine` in
   `src/lib/game/port/screens.ts` drawn in the same place a menu is, and `notBuiltYet`, which
   nothing here says any more. **`boxes.ts`** is the rest of it: the several boxes a ported
@@ -184,15 +186,17 @@ that has been killed and taken off the grid stops being drawn without anything e
 which both tabs offer as three radio buttons:
 
 * **faithful**, which is what a game is played in until the player says otherwise — nothing the
-  game itself does not show. No panel of hidden numbers, and no monster on the map but the one
-  being fought.
-* **speedrun** — every monster on the map, so that a run need not be planned against the maps
-  elsewhere on this site, and still none of the hidden numbers.
-* **debug** — everything: every monster on the map, and the panel of numbers below.
+  game itself does not show. The map is the one the character has discovered (`memory.ts`), drawn
+  the way the game's own map draws it: an unknown square is nothing at all, a secret door and a
+  module teleporter are plain walls, and a chute is marked only once the floor has been left and
+  come back to. No panel of hidden numbers, and no monster but the ones the four 3-D views drew
+  this turn, plus the one being fought, which the game names itself.
+* **speedrun** — the whole floor and every monster on it, so that a run need not be planned
+  against the maps elsewhere on this site, and still none of the hidden numbers.
+* **debug** — everything: the whole floor, every monster on it, and the panel of numbers below.
 
-Two functions are all a tab asks of it: `panelVisible(mode)` and `monstersDrawn(mode, view)`. The
-map itself is fully revealed in every mode; which monsters a faithful map may show is MORF-151's
-to settle along with the map a character has discovered.
+Three functions are all a tab asks of it: `panelVisible(mode)`, `monstersDrawn(mode, view)` and
+`mapDrawn(mode, memory)`, which hands `FloorCanvas` the discovered map or nothing.
 
 The picture of the monster in front of the character stays in all three modes. Moraff's World's
 is the game's own, with the values it prints over it; this game's is an addition, and is kept
@@ -250,8 +254,9 @@ this port does not have.
   the port has are kept as a display timer (`timed.ts`); the flashes while a hole is dug, whose
   message the port shows as a box rather than the one line the original draws it on, are still
   printed once.
-* **The map is drawn instead of the 3-D view**, and in speedrun and in debug every monster on the
-  floor is drawn, not only the ones a character has seen.
+* **The map is drawn instead of the 3-D view.** What the views would have shown is still worked
+  out, since it is what the map remembers and what says which monsters can be seen (`memory.ts`);
+  in speedrun and in debug the whole floor and every monster on it are drawn instead.
 * **No `?MON.MAP`, no `.DUN`.** The original reads the floor a character is loaded onto out of
   their monster map file and writes the explored map out beside it; a browser has neither, so a
   floor is stocked afresh on arrival and the whole map is revealed.

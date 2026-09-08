@@ -107,6 +107,9 @@ export interface PlayView {
   place: { x: number; y: number; floor: number; module: number; dir: number };
   rows: MapSquare[][];
   monsters: StockedMonster[];
+  /** The monsters standing on a square the four 3-D views drew this turn, which is exactly the
+   *  ones the character can see. */
+  visible: StockedMonster[];
   /** The eight-line message box, as the game draws it. */
   box: ScreenLine[];
   /** A screen the game has taken the whole display over with; empty when there is none. */
@@ -452,6 +455,7 @@ export class GameSession {
       place: { x: pc.x, y: pc.y, floor: pc.level, module: pc.module, dir: pc.dir },
       rows: this.rows,
       monsters: drawn,
+      visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
       box: messageBoxLines(this.box),
       screen: this.timed.showing(game.screen),
       banner: this.banner,

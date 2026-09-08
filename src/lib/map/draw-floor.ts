@@ -1,7 +1,7 @@
 import type { MapGame, MapSquare } from './game';
 import type { Mark } from './marks';
 import type { Hop, Route } from './path';
-import { palette, sideStroke, squareFill, squareGlyph } from './palette';
+import { gameSideStroke, palette, sideStroke, squareFill, squareGlyph, type SideStroke } from './palette';
 import { teleporterColour, teleporterLineWidth } from './teleporters';
 import type { Point, Viewport } from './viewport';
 import { youArrow } from './you';
@@ -18,6 +18,22 @@ export interface DrawOptions extends Viewport {
   teleporterHue: number | null;
   /** Whether a loaded explored map has seen a square, when one is loaded. */
   explored?: (x: number, y: number) => boolean;
+  /** The map a character being played has discovered, when the floor is drawn as the game's own
+   *  map draws it rather than whole. */
+  discovered?: DiscoveredMap | null;
+}
+
+/**
+ * What the game's own map knows about a square, which is what FUN_3000_8e75 (exe 3000:8e75) asks
+ * before it draws one.
+ */
+export interface DiscoveredMap {
+  /** Whether the character's map remembers the square. An unknown square draws nothing at all,
+   *  its walls included. */
+  known(x: number, y: number): boolean;
+  /** Whether it remembered the square when they arrived on this floor, which is the only thing
+   *  the chute glyph is drawn from. */
+  knownOnArrival(x: number, y: number): boolean;
 }
 
 /** Cell size from which destination floor numbers are drawn inside the glyph squares. */
@@ -43,6 +59,8 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: MapSquare[][], op
     const h = Math.round(originY + (y + 1) * cell) - y0;
     for (let x = firstX; x <= lastX; x++) {
       const square = rows[y][x];
+      const discovered = options.discovered;
+      if (discovered && !discovered.known(x, y)) continue;
       const seen = options.explored?.(x, y) ?? false;
       if (square.solid && !seen) continue;
       const x0 = Math.round(originX + x * cell);
@@ -51,10 +69,17 @@ export function drawFloor(ctx: CanvasRenderingContext2D, rows: MapSquare[][], op
         drawExploredRock(ctx, x0, y0, w, h);
         continue;
       }
-      drawSquare(ctx, square, x0, y0, w, h, options.floor, options.teleporterHue, game);
+      drawSquare(ctx, square, x0, y0, w, h, options.floor, options.teleporterHue, game, discovered ? { chuteKnown: discovered.knownOnArrival(x, y) } : null);
       if (seen) drawExplored(ctx, x0, y0, w, h);
     }
   }
+}
+
+/** What the game's own map draws differently on a square it knows. */
+export interface AsTheGameDrawsIt {
+  /** Whether the square was known when the character arrived on the floor, which is what
+   *  drawsquare's chute branch (unf.c:21910) asks before it marks a chute. */
+  chuteKnown: boolean;
 }
 
 /** One square whose top-left corner pixel is (x0, y0) and whose sides are `w` and `h` apart. */
@@ -68,14 +93,16 @@ export function drawSquare(
   floor: number,
   teleporterHue: number | null,
   game: MapGame,
+  asTheGame: AsTheGameDrawsIt | null = null,
 ): void {
   ctx.fillStyle = squareFill(square, game)!;
   ctx.fillRect(x0 + 1, y0 + 1, w, h);
-  drawSide(ctx, square.w, x0, y0, h, true, teleporterHue);
-  drawSide(ctx, square.n, x0, y0, w, false, teleporterHue);
-  drawSide(ctx, square.e, x0 + w, y0, h, true, teleporterHue);
-  drawSide(ctx, square.s, x0, y0 + h, w, false, teleporterHue);
-  drawGlyph(ctx, square, x0, y0, w, h, floor);
+  const stroke = asTheGame ? gameSideStroke : sideStroke;
+  drawSide(ctx, stroke(square.w), x0, y0, h, true, teleporterHue);
+  drawSide(ctx, stroke(square.n), x0, y0, w, false, teleporterHue);
+  drawSide(ctx, stroke(square.e), x0 + w, y0, h, true, teleporterHue);
+  drawSide(ctx, stroke(square.s), x0, y0 + h, w, false, teleporterHue);
+  drawGlyph(ctx, square, x0, y0, w, h, floor, asTheGame);
 }
 
 /** The wash over a square a loaded explored map has seen. It goes on after the square is
@@ -95,8 +122,7 @@ export function drawExploredRock(ctx: CanvasRenderingContext2D, x0: number, y0: 
 /** One side, as draw_side does it: a line that stops one pixel short of both corners,
  *  and for doors a bar across the middle. `vertical` sides sit on the square's west edge,
  *  horizontal ones on its north edge; `length` is the square's size along the side. */
-function drawSide(ctx: CanvasRenderingContext2D, side: number, x0: number, y0: number, length: number, vertical: boolean, teleporterHue: number | null): void {
-  const stroke = sideStroke(side);
+function drawSide(ctx: CanvasRenderingContext2D, stroke: SideStroke | null, x0: number, y0: number, length: number, vertical: boolean, teleporterHue: number | null): void {
   if (!stroke) return;
   if (stroke === 'teleporter') {
     if (teleporterHue === null) return;
@@ -134,9 +160,10 @@ function drawDoorBar(ctx: CanvasRenderingContext2D, x0: number, y0: number, leng
   }
 }
 
-function drawGlyph(ctx: CanvasRenderingContext2D, square: MapSquare, x0: number, y0: number, w: number, h: number, floor: number): void {
+function drawGlyph(ctx: CanvasRenderingContext2D, square: MapSquare, x0: number, y0: number, w: number, h: number, floor: number, asTheGame: AsTheGameDrawsIt | null = null): void {
   const glyph = squareGlyph(square);
   if (!glyph) return;
+  if (asTheGame && !asTheGame.chuteKnown && (glyph === 'chute' || glyph === 'falseFloor')) return;
   const x1 = x0 + w + 1;
   const y1 = y0 + h + 1;
   const size = Math.min(w, h);
