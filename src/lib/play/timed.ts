@@ -25,6 +25,8 @@ export class TimedScreens {
   private queue: Frame[] = [];
   private current: Frame | null = null;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  /** The one pause that is not a frame: see {@link after}. */
+  private pause: ReturnType<typeof setTimeout> | null = null;
 
   /** @param changed tell the tab to draw, which is how a frame reaches the screen. */
   constructor(private readonly changed: () => void) {}
@@ -72,12 +74,37 @@ export class TimedScreens {
     this.changed();
   }
 
-  /** Drop the timer without drawing, for a session that is finished with. */
+  /**
+   * The other pause the original holds the screen for, which changes what is on it rather than
+   * keeping what was: `FUN_2000_3e73` (exe 2000:3e73) blanks the HIT ANY KEY plaque's rectangle,
+   * counts 330 ms out in `delay` (exe 1000:2789) with that hole in the screen, and draws the
+   * plaque on it afterwards.
+   *
+   * It lives here because it is a display timer like the frames are — the game runs straight past
+   * it — and because a session that is finished with then drops it along with them. Only one is
+   * ever running, so a second replaces the first.
+   */
+  after(ms: number, then: () => void): void {
+    this.cancelAfter();
+    this.pause = setTimeout(() => {
+      this.pause = null;
+      then();
+    }, ms);
+  }
+
+  /** Give up a pause that has not finished, because what it was waiting to show is not wanted. */
+  cancelAfter(): void {
+    if (this.pause !== null) clearTimeout(this.pause);
+    this.pause = null;
+  }
+
+  /** Drop the timers without drawing, for a session that is finished with. */
   stop(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
     this.current = null;
     this.queue = [];
+    this.cancelAfter();
   }
 
   /** Show the next frame, or hand the screen back to the game when there are none left. */
