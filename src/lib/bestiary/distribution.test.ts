@@ -20,16 +20,14 @@ const total = (distribution: { p: number }[]) => distribution.reduce((sum, { p }
 /** Every hit point total rollHp can return, by walking both rolls over all their values. */
 function everyRoll(entry: Monster, baseLevel: number): Map<number, number> {
   const out = new Map<number, number>();
-  for (const { level, p } of levelDistribution(baseLevel)) {
-    const span = hpSpan(entry, level);
-    for (let a = 0; a < span; a++) {
-      for (let b = 0; b < span; b++) {
-        // random(rnd, span) truncates rnd() * span, so the midpoint of a slice picks that value.
-        const rolls = [(a + 0.5) / span, (b + 0.5) / span];
-        let i = 0;
-        const hp = rollHp(entry, level, () => rolls[i++]);
-        out.set(hp, (out.get(hp) ?? 0) + p / (span * span));
-      }
+  const span = hpSpan(entry, baseLevel);
+  for (let a = 0; a < span; a++) {
+    for (let b = 0; b < span; b++) {
+      // random(rnd, span) truncates rnd() * span, so the midpoint of a slice picks that value.
+      const rolls = [(a + 0.5) / span, (b + 0.5) / span];
+      let i = 0;
+      const hp = rollHp(entry, baseLevel, () => rolls[i++]);
+      out.set(hp, (out.get(hp) ?? 0) + 1 / (span * span));
     }
   }
   return out;
@@ -65,11 +63,10 @@ describe('hpDistribution', () => {
 
   it('ends where rollHp does for a boss that gets the bonus and the doubling', () => {
     const entry = named('Shadow Stone Giant');
-    const levels = levelDistribution(3);
     const computed = hpDistribution(entry, 3);
     // Both rolls at their lowest, then both at their highest.
-    expect(computed[0].hp).toBe(rollHp(entry, levels[0].level, () => 0));
-    expect(computed[computed.length - 1].hp).toBe(rollHp(entry, levels[levels.length - 1].level, () => 0.999999));
+    expect(computed[0].hp).toBe(rollHp(entry, 3, () => 0));
+    expect(computed[computed.length - 1].hp).toBe(rollHp(entry, 3, () => 0.999999));
   });
 
   it('matches what rolling monsters actually produces', () => {
@@ -79,7 +76,10 @@ describe('hpDistribution', () => {
     const rounds = 200_000;
     const seen = new Map<number, number>();
     for (let i = 0; i < rounds; i++) {
-      const hp = rollHp(entry, nudgeLevel(baseLevel, rnd), rnd);
+      // The nudge is rolled and thrown away, so that this walks the generator the way a floor
+      // being stocked does.
+      const hp = rollHp(entry, baseLevel, rnd);
+      nudgeLevel(baseLevel, rnd);
       seen.set(hp, (seen.get(hp) ?? 0) + 1);
     }
     for (const { hp, p } of hpDistribution(entry, baseLevel)) {

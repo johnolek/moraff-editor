@@ -26,19 +26,17 @@ export function levelDistribution(baseLevel: number): LevelChance[] {
 }
 
 /**
- * How often each hit point total turns up for this monster on a floor with this base level,
- * over every level the nudge can reach, weighted by how often it reaches them.
+ * How often each hit point total turns up for this monster on a floor with this base level.
+ * The nudge does not come into it: the game rolls the hit points from the base level and only
+ * then moves the level it stores.
  */
 export function hpDistribution(entry: Monster, baseLevel: number): HpChance[] {
   const weights = new Float64Array(MAX_HP + 1);
-  for (const { level, p } of levelDistribution(baseLevel)) {
-    const span = hpSpan(entry, level);
-    // The game averages two rolls of 0..span-1, and trunc((sum + 2) / 2) is floor(sum / 2) + 1,
-    // so an average of `raw` comes from a sum of 2·raw−2 or 2·raw−1.
-    for (let raw = 1; raw <= span; raw++) {
-      const chance = sumChance(2 * raw - 2, span) + sumChance(2 * raw - 1, span);
-      weights[stockedHp(entry, level, raw)] += p * chance;
-    }
+  const span = hpSpan(entry, baseLevel);
+  // The game averages two rolls of 0..span-1, and trunc((sum + 2) / 2) is floor(sum / 2) + 1,
+  // so an average of `raw` comes from a sum of 2·raw−2 or 2·raw−1.
+  for (let raw = 1; raw <= span; raw++) {
+    weights[stockedHp(entry, baseLevel, raw)] += sumChance(2 * raw - 2, span) + sumChance(2 * raw - 1, span);
   }
   const out: HpChance[] = [];
   for (let hp = 0; hp <= MAX_HP; hp++) if (weights[hp] > 0) out.push({ hp, p: weights[hp] });
