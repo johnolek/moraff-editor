@@ -31,10 +31,6 @@ const SLEEPING = 'You are sleeping...';
 const ROBBED = 'I think that you were robbed.';
 const SICK = ['sick.  You throw up on    ', '   the bed.  I think you should see a   ', '   doctor.   '];
 
-/** Value 144, the fourth of the two hundred singles at DGROUP 1B92, which the Flea Bag Inn sets
- *  when the room makes the character ill (1000:1ED6). */
-const DISEASED_VALUE = 144;
-
 const YES = 'Y'.charCodeAt(0);
 const NO = 'N'.charCodeAt(0);
 const LEAVE = 'L'.charCodeAt(0);
@@ -92,7 +88,7 @@ export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDe
   // 1000:1E7B: the Flea Bag's own second roll, which the two better inns do not make.
   if (which === 0 && game.rng.random(10) === 1) {
     pc.stats[3] -= 1;
-    setRevValue(pc, DISEASED_VALUE, 1);
+    setRevValue(pc, REV_VALUE.disease, 1);
     game.say(...SICK);
   }
 }
@@ -204,7 +200,7 @@ export async function revVisitTemple(game: RevGame, desk: RevTownDesk): Promise<
       pc.hp = pc.maxHp;
       game.say('You feel perfect.');
     } else if (spell === 2) {
-      setRevValue(pc, DISEASED_VALUE, 0);
+      setRevValue(pc, REV_VALUE.disease, 0);
       game.say("You don't feel sick anymore.");
     } else if (spell === 3) {
       setRevValue(pc, POISONED_VALUE, 0);
