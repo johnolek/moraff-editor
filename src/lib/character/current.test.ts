@@ -5,6 +5,7 @@ import {
   chooseCharacter,
   forgetCharacter,
   importCharacter,
+  importRevExploredMap,
   keepRolledCharacter,
   renameCharacter,
   restoreCharacterImport,
@@ -13,6 +14,7 @@ import {
   switchGame,
   unloadCharacter,
 } from './current';
+import { RevMapMemory, revCharacterMap } from '../play/rev/memory';
 
 /** Enough of the browser's Storage to stand in for it. */
 function fakeStorage(): Storage {
@@ -84,6 +86,27 @@ describe('importing a save file', () => {
     const entry = currentEntry()!;
     entry.bytes[0x816] = 99;
     expect(entry.importedBytes![0x816]).toBe(0);
+  });
+});
+
+describe('an explored map dropped beside the character', () => {
+  /** A Moraff's Revenge record holds no name, so the roster falls back to the file name. */
+  const revenge = () => new Uint8Array(0) as Uint8Array<ArrayBuffer>;
+
+  it('brings the squares the character walked in DOS across to the site', () => {
+    importCharacter('revenge', '1.EXE', revenge());
+    const walked = new RevMapMemory();
+    walked.markStep(5, 7, 3);
+
+    const kept = importRevExploredMap(walked.bytes());
+
+    expect(kept?.name).toBe('1.EXE');
+    expect(new RevMapMemory(revCharacterMap(kept!.id)).isKnown(5, 7, 3)).toBe(true);
+  });
+
+  it('is refused when the character being worked on belongs to another game', () => {
+    importCharacter('unforgiven', '21', saveFile('SAGEY'));
+    expect(importRevExploredMap(new RevMapMemory().bytes())).toBeNull();
   });
 });
 

@@ -1,6 +1,8 @@
-import { app, currentEntry, type GameId } from '../app-state.svelte';
+import { app, currentEntry, type GameId, type RosterEntry } from '../app-state.svelte';
+import { MORAFFS_REVENGE } from '../editor/games';
 import { isGameId, loadChosenGame, loadLastCharacter, saveChosenGame, saveLastCharacter } from '../game-choice';
 import { recordTab } from '../history';
+import { revCharacterMap } from '../play/rev/memory';
 import { tabFor } from '../tabs';
 import { recordName, slotFromFileName } from './record';
 import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
@@ -16,6 +18,24 @@ export function importCharacter(game: string, fileName: string, bytes: Uint8Arra
   });
   app.roster = withEntry(app.roster, entry);
   chooseEntry(entry.id);
+}
+
+/**
+ * Keep a `<n>.BIN` dropped beside a character as the map that character has discovered, the way
+ * Moraff's Revenge keeps one beside `<n>.EXE`.
+ *
+ * It goes to the character being worked on. The file says which character it belongs to only in
+ * its name, and dropping it with the record makes that character the current one, so the two
+ * come to the same thing.
+ *
+ * Returns the character it was kept beside, or null when the one being worked on is not a
+ * Moraff's Revenge character.
+ */
+export function importRevExploredMap(bytes: Uint8Array): RosterEntry | null {
+  const entry = currentEntry();
+  if (!entry || entry.game !== MORAFFS_REVENGE.id) return null;
+  revCharacterMap(entry.id).write(bytes);
+  return entry;
 }
 
 /** Put a character that has just been rolled on the roster and start working on it. */
