@@ -8,7 +8,7 @@ import { MAP_PLAYER, monsterAt, newGame, type PlayerCharacter } from '../game/po
 import { EXPLORED_STRIDE } from '../map/explored';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
-import { facingAMonster, inTheTown, press, startPlaying } from './battle.test-support';
+import { facingAMonster, inTheTown, startPlaying } from './battle.test-support';
 import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
 import { PLAQUE_DELAY_MS } from './plaque';

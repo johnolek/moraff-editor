@@ -22,6 +22,7 @@ something the original does, a comment says so.
 * **`gear.ts`** — the eight-line menu of what the character owns that A, W and the enchant spells
   all build, and the classes each row is refused to. **`manual.ts`** — the S key.
   **`misc.ts`** — M, O, G, X and Z. **`section-screen.ts`** — the pictures on the S key's screen.
+  **`plaque.ts`** — the HIT ANY KEY plaque every message box waits behind.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
   memory that decides whether its monsters are rolled again. **`memory.ts`** — the other half of
   arriving on a floor: the map the character has discovered, which is the same engine in both
@@ -164,6 +165,18 @@ game drew them at:
   is its own DS:c694, so `clearMenuBlock` takes them with it.
 * **A screen** — `game.draw(line)` and `game.eraseScreen()`, which are `pfont` and
   `erase_menu_block`. `help.ts` is the worked example: draw, `await game.key()`, erase.
+* **The plaque behind the wait** — `plaque.ts` and `FUN_2000_3e73` (exe 2000:3e73). The wait a box
+  asks for is not a bare `getch`: `FUN_2000_4054` blanks a rectangle beside the status block, holds
+  the screen with that hole in it for 330 ms, and draws a little stone plaque on it — a slab of the
+  section's wall material with HIT ANY KEY NOW cut across it and four ten-pixel bands round it.
+  Those bands are exclusive-ORed into the screen in the palette's gradient bank, and
+  `FUN_2000_2a2e` rotates that bank once for every poll of the keyboard, which sets them crawling.
+  `session.plaque` says how far along that wait the screen is; the delay is a display timer like
+  the frames are and is kept in `timed.ts` with them. Two departures: the original's rotation is of
+  the palette, so the whole screen's gradient bank crawls with the plaque — the walls' distance
+  shading as much as the frame — and it runs wherever else the game polls the keyboard,
+  `movecontrol`'s own wait included; the port turns the bank inside the plaque's rectangle alone,
+  once a frame the browser draws, so a message box does not set the dungeon strobing.
 * **A screen the game leaves up for a moment** — `game.delay(ms)`, which is the `delay` at
   1000:2789 the original busy-waits in. The screen as it stands at that call is kept as a frame
   by `timed.ts`, and the frames are shown in turn for as long as each asked for, so a kill's
