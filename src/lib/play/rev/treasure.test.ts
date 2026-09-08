@@ -125,3 +125,60 @@ describe('the spellbook a kill drops', () => {
 function emptyPile() {
   return { copper: 0, silver: 0, ivory: 0, gold: 0, platinum: 0, jewels: 0, weight: 0, value: 0 };
 }
+
+describe('the wand and the pill a kill can leave', () => {
+  /** The rolls a kill makes with nothing else to hand over: the drop, the spellbook, then the
+   *  wand's and the pill's own. */
+  const upToTheDrops = [0, 0];
+
+  it('leaves a wand for a kind 5 and a kind 7, with a charge or two', async () => {
+    const pc = revCharacter({ dungeonLevel: 10 });
+    const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheDrops, 49, 8, 1, 159]));
+    game.dropsAWand = true;
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toContain('You have found a BLUE wand!');
+    expect(revValue(pc, 176)).toBe(2);
+    expect(game.scratch).toBe(9);
+  });
+
+  it('leaves the wand alone for a kind the kill allows none', async () => {
+    const pc = revCharacter({ dungeonLevel: 10 });
+    const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheDrops, 49, 8, 1, 159]));
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toEqual([REV_HIT_RETURN]);
+  });
+
+  it('spends the two rolls whatever the kind was', async () => {
+    const drawn: number[] = [];
+    const pc = revCharacter({ dungeonLevel: 10 });
+    const rng = { random: (n: number) => (drawn.push(n), 0) };
+    const { game, desk, keys } = revTestGame(pc, rng);
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(drawn).toContain(300);
+    expect(drawn).toContain(160);
+  });
+
+  it('leaves one pill of a colour for a kind 5', async () => {
+    const pc = revCharacter({ dungeonLevel: 10 });
+    const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheDrops, 299, 34, 1]));
+    game.dropsAPill = true;
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toContain('You have found a RED pill!');
+    expect(revValue(pc, 163)).toBe(1);
+    expect(game.scratch).toBe(2);
+  });
+
+  it('refuses both on a roll the depth cannot reach', async () => {
+    const pc = revCharacter({ dungeonLevel: 1 });
+    const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheDrops, 41, 26]));
+    game.dropsAWand = true;
+    game.dropsAPill = true;
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toEqual([REV_HIT_RETURN]);
+  });
+});

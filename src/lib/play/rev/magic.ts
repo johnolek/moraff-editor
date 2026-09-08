@@ -100,6 +100,11 @@ export function revSpendPill(pc: RevPc, colour: number): void {
   setRevValue(pc, FIRST_PILL_VALUE + colour - 1, revPillsHeld(pc, colour) - 1);
 }
 
+/** One more pill of a colour, which is what a kill leaves (1000:B14F). */
+export function revGainPill(pc: RevPc, colour: number): void {
+  setRevValue(pc, FIRST_PILL_VALUE + colour - 1, revPillsHeld(pc, colour) + 1);
+}
+
 /** How many charges a wand of a colour has left (1000:7ACB). */
 export function revWandCharges(pc: RevPc, colour: number): number {
   return revValue(pc, FIRST_WAND_VALUE + colour - 1);
@@ -107,6 +112,11 @@ export function revWandCharges(pc: RevPc, colour: number): number {
 
 export function revSpendWandCharge(pc: RevPc, colour: number): void {
   setRevValue(pc, FIRST_WAND_VALUE + colour - 1, revWandCharges(pc, colour) - 1);
+}
+
+/** Charges added to a wand of a colour, which is what a kill leaves (1000:B1D8). */
+export function revGainWandCharges(pc: RevPc, colour: number, many: number): void {
+  setRevValue(pc, FIRST_WAND_VALUE + colour - 1, revWandCharges(pc, colour) + many);
 }
 
 /**

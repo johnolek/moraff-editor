@@ -60,6 +60,14 @@ export interface RevGame {
   /** DGROUP B726: the monster was sent away rather than killed, which is why `Go Away!' does
    *  not say "YOU KILLED IT!!" (1000:A4CD). */
   monsterLeft: boolean;
+  /**
+   * DGROUP B748 and B746: this kill can leave a wand behind, and a pill.
+   *
+   * 1000:A335 reads them off the monster's kind while the fight is still up — kind 5 leaves
+   * either, kind 7 a wand alone — and 1000:ABB5 and 1000:ABF4 spend them once it is down.
+   */
+  dropsAWand: boolean;
+  dropsAPill: boolean;
   /** The monster died on this key, whichever of the weapon, the spell and the grenade killed it,
    *  so that the loop knows to offer what it dropped (1000:A4E7). */
   killed: boolean;
@@ -175,6 +183,8 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     spellLevel: 0,
     swingBonus: 0,
     monsterLeft: false,
+    dropsAWand: false,
+    dropsAPill: false,
     killed: false,
     seconds: 0,
     feature: 50,

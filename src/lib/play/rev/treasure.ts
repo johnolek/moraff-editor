@@ -1,6 +1,13 @@
 import type { RevMagicDesk } from './desk';
 import { REV_KEY } from './keys';
-import { revBasicNumber, revFraction } from './magic';
+import {
+  revBasicNumber,
+  revFraction,
+  revGainPill,
+  revGainWandCharges,
+  revPillColour,
+  revWandColour,
+} from './magic';
 import { revValue, setRevValue } from './record';
 import { REV_SPELL_LEVEL_COUNT } from './tables';
 import type { RevGame } from './state';
@@ -156,6 +163,49 @@ export async function revTreasureFromAKill(game: RevGame, desk: RevMagicDesk): P
   await waitForReturn(game, desk);
   if (revDropsTreasure(game)) await offerTheCoins(game, desk);
   await offerASpellbook(game, desk);
+  theRestOfTheDrops(game);
+}
+
+/**
+ * 1000:AB7F: the three more rolls a kill makes once the coins and the spellbook are out of the
+ * way.
+ *
+ * Every one of them rolls whether or not the test in front of it could have passed, so a kill
+ * costs the run's generator the same three numbers however it went.
+ */
+function theRestOfTheDrops(game: RevGame): void {
+  const depth = game.pc.dungeonLevel;
+  // 1000:ABB5 and 1000:ABF4: the wand and the pill the monster's own kind allows, each on a roll
+  // the depth widens — a wand comes off about one such kill in seven on the first level and
+  // better than one in three on the seventieth.
+  const wandRoll = game.rng.random(300);
+  if (game.dropsAWand && wandRoll < depth + 40) aWand(game);
+  const pillRoll = game.rng.random(160);
+  if (game.dropsAPill && pillRoll < depth + 25) aPill(game);
+}
+
+/** 1000:B112 and 1000:B185: what a found pill and a found wand are announced with. */
+const YOU_HAVE_FOUND_A = 'You have found a ';
+
+/**
+ * 1000:B156: a wand, which a kill of kind 5 or kind 7 can leave.
+ *
+ * The colour is one of nine and the wand arrives with one charge or two. `revWandColour` is what
+ * reads the colour list backwards, so wand 1 is purple and wand 9 blue.
+ */
+function aWand(game: RevGame): void {
+  const colour = game.rng.random(9) + 1;
+  game.scratch = colour;
+  game.say(`${YOU_HAVE_FOUND_A}${revWandColour(colour)} wand!`);
+  revGainWandCharges(game.pc, colour, game.rng.random(2) + 1);
+}
+
+/** 1000:B0E3: a pill, which only a kill of kind 5 can leave. One pill of one of six colours. */
+function aPill(game: RevGame): void {
+  const colour = game.rng.random(6) + 1;
+  game.scratch = colour;
+  game.say(`${YOU_HAVE_FOUND_A}${revPillColour(colour)} pill!`);
+  revGainPill(game.pc, colour);
 }
 
 async function offerTheCoins(game: RevGame, desk: RevMagicDesk): Promise<void> {

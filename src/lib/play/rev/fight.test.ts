@@ -152,6 +152,19 @@ describe('a kill', () => {
     expect(game.monsters.slotOn(back.column, back.row)).toBe(3);
     expect(game.monsters.strengths[3]).toBeGreaterThan(0);
   });
+
+  it("reads off the monster's kind what it can leave behind past the coins", () => {
+    const kinds = (kind: number) => {
+      const game = started();
+      revMeetMonster(game, 3);
+      (game.fight as { kind: number }).kind = kind;
+      revKillMonster(game);
+      return { wand: game.dropsAWand, pill: game.dropsAPill };
+    };
+    expect(kinds(5)).toEqual({ wand: true, pill: true });
+    expect(kinds(7)).toEqual({ wand: true, pill: false });
+    expect(kinds(1)).toEqual({ wand: false, pill: false });
+  });
 });
 
 describe('what a swing says', () => {

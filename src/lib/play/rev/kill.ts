@@ -18,6 +18,10 @@ export function revKillMonster(game: RevGame): void {
   if (!fight) return;
   const pc = game.pc;
   const slot = fight.slot;
+  // 1000:A335: what this kill can leave behind past the coins is read off the monster's kind
+  // here, while the fight is still up, and spent by the treasure once it is down.
+  game.dropsAWand = fight.kind === 5 || fight.kind === 7;
+  game.dropsAPill = fight.kind === 5;
   setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE) + fight.experience);
   game.fight = null;
   game.monsters.grid[GRID_STRIDE * pc.row + pc.column] = 0;
