@@ -12,6 +12,22 @@ export type Rgb = [number, number, number];
 /** 6-bit VGA palette entries (0..63 each) to 8-bit RGB. */
 export function vgaToRgb(pal: number[][]): Rgb[];
 
+/** How many settings the options menu's "SUBDUED-BRIGHT COLOR SWITCH" cycles through. */
+export const COLOUR_SETTINGS: 4;
+
+/** The setting a new character is given: the colours at full strength. */
+export const BRIGHT_COLOURS: 0;
+
+/** The sections drawn with the water flag, 1-based. */
+export const WATER_SECTIONS: number[];
+
+/**
+ * The wall colours blended toward grey the way the options menu's colour setting blends them.
+ * Setting 0 is a copy of the palette; 1, 2 and 3 mix in more of the other channels each time.
+ * Takes and returns 6-bit entries.
+ */
+export function dimPalette(pal: number[][], setting: number, water: boolean): number[][];
+
 /**
  * Palette index for one picture pixel, or -1 when the pixel is not drawn. `base` is the
  * colour-set base (a monster's is colorSet << 4) and `row` is the row the pixel lands on,
@@ -52,4 +68,5 @@ export function dungeonPalette(
   buildingBankB: number[][] | null,
   module: number,
   part: number,
+  setting?: number,
 ): Rgb[];

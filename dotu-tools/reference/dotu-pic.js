@@ -44,6 +44,58 @@ export function parsePic(bytes) {
 /** Map a 6-bit VGA palette ([r,g,b] 0..63 each, 256 entries) to 8-bit RGB. */
 export const vgaToRgb = pal => pal.map(([r, g, b]) => [r * 255 / 63 | 0, g * 255 / 63 | 0, b * 255 / 63 | 0]);
 
+/** The four settings of the options menu's "SUBDUED-BRIGHT COLOR SWITCH" (DS:4df2). */
+export const COLOUR_SETTINGS = 4;
+
+/** What a new character is given, by roll_char (exe 3000:4c77): the colours at full strength. */
+export const BRIGHT_COLOURS = 0;
+
+/** The three sections `load_section_pictures` (exe 2000:372c) sets the water flag for, 1-based. */
+export const WATER_SECTIONS = [4, 8, 20];
+
+/** The wall banks the switch reaches: the section's own colours, then the 3-D walls' bank. */
+const SECTION_COLOURS = [16, 32];
+const WALL_BANK = [80, 96];
+
+/**
+ * The end of `set_palette` (exe 4000:12c3, unf.c "set_palette"), where the options menu's colour
+ * setting blends the wall colours toward grey.  Settings 1, 2 and 3 mix in more of the other two
+ * channels each time; setting 0 leaves the palette alone.
+ *
+ * Each channel is worked out from the channels already rewritten, not from the entry the loop
+ * started with, so red feeds the new green and both feed the new blue.  A water section's loop
+ * stops before the 3-D walls' bank, which keeps its random components whatever the setting is.
+ *
+ * This is the dungeon palette only.  Inside a building `set_palette` copies its own table over
+ * entries 32..95 after the loop has run, so the setting never shows on the walls of a shop.
+ *
+ * `pal` is 6-bit entries and is not modified; the returned palette is a fresh copy.
+ */
+export function dimPalette(pal, setting, water) {
+  const out = pal.map(c => c.slice());
+  if (setting === BRIGHT_COLOURS) return out;
+  const banks = water ? [SECTION_COLOURS] : [SECTION_COLOURS, WALL_BANK];
+  for (const [from, to] of banks) {
+    for (let i = from; i < to; i++) {
+      const [r, g, b] = out[i];
+      if (setting === 1) {
+        const nr = ((r + r + r + g + b) / 5) | 0;
+        const ng = ((nr + g + g + g + b) / 5) | 0;
+        out[i] = [nr, ng, ((nr + ng + b + b + b) / 5) | 0];
+      } else if (setting === 2) {
+        const nr = (r + r + g + b) >> 2;
+        const ng = (nr + g + g + b) >> 2;
+        out[i] = [nr, ng, (nr + ng + b + b) >> 2];
+      } else {
+        const nr = ((r + g + b) / 3) | 0;
+        const ng = ((nr + g + b) / 3) | 0;
+        out[i] = [nr, ng, ((nr + ng + b) / 3) | 0];
+      }
+    }
+  }
+  return out;
+}
+
 /** The drawer's second tint, DS:4fbf, which it substitutes for pixel value 18 (exe 4000:4eb0).
  *  Nothing in the executable ever writes that word, so it keeps the initial value 0 and pixel
  *  value 18 always ends up on the colour set's base entry, exactly like pixel value 16. */
@@ -124,8 +176,9 @@ export const sectionPictureIndex = picnum => picnum - 7;
 /** Dungeon palette for a section.  Entries 64..79 are only ever written by the building
  *  palette: pass buildingBankB to get the "after visiting a shop" look (the usual one), or
  *  null for the fresh-session look where those entries are still black. */
-export function dungeonPalette(palettes, buildingBankB, module, part) {
-  const p = palettes[`m${module}_s${part}_dungeon`].map(c => c.slice());
+export function dungeonPalette(palettes, buildingBankB, module, part, setting = BRIGHT_COLOURS) {
+  const water = WATER_SECTIONS.includes((module - 1) * 4 + part);
+  const p = dimPalette(palettes[`m${module}_s${part}_dungeon`], setting, water);
   if (buildingBankB) for (let i = 0; i < 16; i++) p[64 + i] = buildingBankB[i];
   return vgaToRgb(p);
 }

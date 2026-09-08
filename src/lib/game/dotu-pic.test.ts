@@ -1,13 +1,31 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BRIGHT_COLOURS,
   PIC_H,
   PIC_W,
   buildingPixelIndex,
+  dimPalette,
   monsterPixelIndex,
   renderImage,
+  vgaToRgb,
   type PicImage,
   type Rgb,
 } from './dotu-pic.js';
+import palettes from './palettes.json';
+
+const range = (from: number, to: number): number[] =>
+  Array.from({ length: to - from }, (_, i) => from + i);
+
+/** A six-bit palette whose entry n is (n % 64, (n * 5) % 64, (n * 11) % 64), so no two of the
+ *  entries the switch reaches share a colour and a moved entry is easy to spot. */
+const sixBitRamp = (): number[][] =>
+  Array.from({ length: 256 }, (_, i) => [i % 64, (i * 5) % 64, (i * 11) % 64]);
+
+/** Which entries of that ramp one setting rewrote. No entry of it blends to itself. */
+const movedBy = (setting: number, water: boolean): number[] => {
+  const dimmed = dimPalette(sixBitRamp(), setting, water);
+  return dimmed.flatMap((entry, i) => (entry.join() === sixBitRamp()[i].join() ? [] : [i]));
+};
 
 /** What the render leaves transparent, and what the rule returns for a pixel it does not draw. */
 const NOT_DRAWN = -1;
@@ -102,5 +120,54 @@ describe('the drawer colour rule, over a picture holding every pixel value', () 
     const overlay = drawnRow(renderImage(RAMP, NAMING_PALETTE, (value) => buildingPixelIndex(value, 1)).data, 0);
     expect(background).toEqual(table(0x20, {}));
     expect(overlay).toEqual(table(0x3f, {}));
+  });
+});
+
+describe('the palette', () => {
+  it('turns a six-bit entry into the byte a VGA card shows', () => {
+    expect(vgaToRgb([[0, 0, 0], [63, 63, 63], [32, 16, 8]])).toEqual([
+      [0, 0, 0],
+      [255, 255, 255],
+      [129, 64, 32],
+    ]);
+  });
+
+  it('leaves the palette alone on the setting a new character is given', () => {
+    const pal = sixBitRamp();
+    expect(dimPalette(pal, BRIGHT_COLOURS, false)).toEqual(pal);
+  });
+
+  it('blends the wall colours toward grey on every other setting', () => {
+    // Module I section 1's wall material, entry 17, and the vivid lime of entry 30. What each
+    // setting turns them into was read out of set_palette by the emulation in EmuPalette.py.
+    const pal = sixBitRamp();
+    pal[17] = [35, 43, 35];
+    pal[30] = [0, 47, 0];
+    expect(dimPalette(pal, 1, false)[17]).toEqual([36, 40, 36]);
+    expect(dimPalette(pal, 2, false)[17]).toEqual([37, 39, 36]);
+    expect(dimPalette(pal, 3, false)[17]).toEqual([37, 38, 36]);
+    expect(dimPalette(pal, 1, false)[30]).toEqual([9, 30, 7]);
+    expect(dimPalette(pal, 2, false)[30]).toEqual([11, 26, 9]);
+    expect(dimPalette(pal, 3, false)[30]).toEqual([15, 20, 11]);
+  });
+
+  it('reads Module I section 1 out of the shipped palette at full strength', () => {
+    const pal = palettes.m1_s1_dungeon;
+    expect(pal[17]).toEqual([35, 43, 35]);
+    expect(pal[30]).toEqual([0, 47, 0]);
+  });
+
+  it('reaches the section colours and the walls bank and nothing else', () => {
+    expect(movedBy(3, false)).toEqual([...range(16, 32), ...range(80, 96)]);
+  });
+
+  it('stops before the walls bank in a water section', () => {
+    expect(movedBy(3, true)).toEqual(range(16, 32));
+  });
+
+  it('does not modify the palette it is given', () => {
+    const pal = sixBitRamp();
+    dimPalette(pal, 3, false);
+    expect(pal[17]).toEqual(sixBitRamp()[17]);
   });
 });
