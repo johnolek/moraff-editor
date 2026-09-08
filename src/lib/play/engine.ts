@@ -40,6 +40,7 @@ import {
   messageBoxScreen,
   screenTakenOver,
 } from './screens';
+import type { SectionScreen } from './section-screen';
 import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
@@ -156,6 +157,9 @@ export interface PlayView {
   expandedMap: boolean;
   /** The four lines of the stone tablet the snake's words are read on, or null when none is up. */
   tablet: string[] | null;
+  /** The S key's screen, or null when it is not up: the section's five monsters in their panels
+   *  and the slab its words are read off (`section-screen.ts`). */
+  sectionScreen: SectionScreen | null;
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
@@ -203,6 +207,11 @@ export class GameSession {
   /** The lines of the stone tablet showing, or null. FUN_3000_9026 (exe 3000:9026) draws it and
    *  waits for a key, and the key it is given is what takes it down again. */
   tablet: string[] | null = null;
+  /**
+   * The S key's screen while it is up (`manual.ts`), which the tab draws the pictures of: the
+   * five panels of the section's wall material with its monsters standing in them.
+   */
+  sectionScreen: SectionScreen | null = null;
   /**
    * How much of the game the tab is showing (`mode.ts`). Nothing the game does reads it; it is
    * here so that anything keeping a record of the run can say which mode it was played in.
@@ -611,6 +620,7 @@ export class GameSession {
       viewsDrawn: this.viewsDrawn,
       expandedMap: this.expandedMap,
       tablet: this.tablet,
+      sectionScreen: this.sectionScreen,
       over: this.over,
       dead: this.dead,
       run: this.run?.summary() ?? null,
