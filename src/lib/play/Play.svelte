@@ -28,6 +28,7 @@
     readPlayDisplay,
     readPlayMode,
     writePlayMode,
+    zoomMapMonsters,
     type PlayDisplay,
     type PlayMode,
   } from './mode';
@@ -252,6 +253,7 @@
             monsters={monstersDrawn(mode, view)}
             box={view.box}
             discovered={zoomMap}
+            mapMonsters={zoomMapMonsters(mode, view)}
             prompt={view.prompt} />
         {:else}
           {#if view.place.floor > 0}

@@ -1,18 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../game/port/state';
+import type { MapSquare } from '../map/game';
+import type { StockedMonster } from '../map/stocking';
+import { zoomMapMonsters } from './mode';
+import { newFrame, pixelAt } from './view3d/frame';
 import { FOUR_VIEWS } from './view3d/views';
+import { ZOOM_MONSTER_COLOUR } from './zoom-monsters';
 import {
   arrowPixel,
+  drawScreenFurniture,
   keyMenuLines,
   KEY_MENU_LINES,
   MESSAGE_BAR_BOX,
   MESSAGE_BOX,
   SCREEN_BOXES,
   statusLines,
+  SCREEN_PIXELS,
+  ZOOM_CELL,
   ZOOM_COLUMNS,
   ZOOM_ROWS,
   zoomMapLeft,
   zoomMapSquare,
+  zoomMapWindow,
 } from './display';
 
 describe('the boxes on the screen', () => {
@@ -123,5 +132,46 @@ describe('the zoom map', () => {
     expect(arrowPixel(1, 100, 100, 3, 0)).toEqual({ x: 102, y: 105 });
     expect(arrowPixel(2, 100, 100, 3, 0)).toEqual({ x: 99, y: 102 });
     expect(arrowPixel(3, 100, 100, 3, 0)).toEqual({ x: 105, y: 102 });
+  });
+});
+
+describe('the monsters debug mode marks on the zoom map', () => {
+  /** A floor of open squares, big enough for the whole window of the map. */
+  const open = (): MapSquare => ({ n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1 });
+  const rows: MapSquare[][] = Array.from({ length: 80 }, () => Array.from({ length: 80 }, open));
+  const at = { x: 40, y: 50, dir: 0 };
+
+  /** Two monsters standing where the character cannot see them: neither is in any of the four
+   *  views, so faithful draws neither and only the map's own mark would show them. */
+  const outOfSight: StockedMonster[] = [
+    { slot: 0, x: 43, y: 47, monsterId: '1', level: 3, hp: 20 },
+    { slot: 1, x: 38, y: 54, monsterId: '1', level: 4, hp: 25 },
+  ];
+
+  /** The colour in the middle of each monster's cell, after a screen drawn in that mode. */
+  function marks(mode: 'faithful' | 'speedrun' | 'debug'): number[] {
+    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    drawScreenFurniture(frame, {
+      rows,
+      at,
+      known: () => true,
+      monsters: zoomMapMonsters(mode, { monsters: outOfSight }),
+    });
+    const map = zoomMapWindow(frame.width);
+    return outOfSight.map((monster) => {
+      const column = monster.x - at.x + (ZOOM_COLUMNS >> 1);
+      const row = monster.y - at.y + (ZOOM_ROWS >> 1);
+      return pixelAt(frame, map.left + column * ZOOM_CELL + 3, row * ZOOM_CELL + 3);
+    });
+  }
+
+  it('marks both of them in debug', () => {
+    expect(marks('debug')).toEqual([ZOOM_MONSTER_COLOUR, ZOOM_MONSTER_COLOUR]);
+  });
+
+  it('marks neither in faithful, where the map is the one the game draws', () => {
+    // The square itself is drawn, in the black the game fills a known square with.
+    expect(marks('faithful')).toEqual([0, 0]);
+    expect(marks('speedrun')).toEqual([0, 0]);
   });
 });

@@ -25,11 +25,14 @@
     box: ScreenLine[];
     /** The map the character has discovered, which is all the zoom map draws. */
     discovered: DiscoveredMap;
+    /** The monsters marked on the zoom map, which is every one on the floor in debug mode and
+     *  none at all in the modes that show only what the game showed. */
+    mapMonsters?: StockedMonster[];
     /** The HIT U/D box, where draw_ladder_prompt puts it. */
     prompt: ScreenLine[] | null;
   }
 
-  let { game, rows, place, monsters, box, discovered, prompt }: Props = $props();
+  let { game, rows, place, monsters, box, discovered, prompt, mapMonsters = [] }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
 
@@ -92,6 +95,7 @@
       rows,
       at: { x: place.x, y: place.y, dir: place.dir },
       known: (x, y) => discovered.known(x, y),
+      monsters: mapMonsters,
     });
     const rgba = toRgba(frame, sectionPalette(place.module + 1, part));
     context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);

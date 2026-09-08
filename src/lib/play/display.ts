@@ -3,6 +3,7 @@ import type { MapSquare } from '../map/game';
 import { ARMOR_NAMES, WEAPON_NAMES } from '../game/port/drops';
 import type { PlayerCharacter, ScreenLine } from '../game/port/state';
 import { drawLine, fillRect, plot, type Frame } from './view3d/frame';
+import { drawZoomMonsters, type ZoomMapWindow } from './zoom-monsters';
 
 /**
  * The whole screen `movecontrol` (exe 2000:c308) keeps up while the game is played: the four 3-D
@@ -182,7 +183,18 @@ export interface ZoomMapFloor {
   at: { x: number; y: number; dir: number };
   /** The map the character has discovered: a square it does not know is not drawn at all. */
   known(x: number, y: number): boolean;
+  /** The monsters to mark on the map, which the game never marks and debug mode always does. */
+  monsters?: { x: number; y: number }[];
 }
+
+/** Where the map is drawn on a frame of this width, and how much of the floor it shows. */
+export const zoomMapWindow = (frameWidth: number): ZoomMapWindow => ({
+  left: zoomMapLeft(frameWidth),
+  top: 0,
+  cell: ZOOM_CELL,
+  columns: ZOOM_COLUMNS,
+  rows: ZOOM_ROWS,
+});
 
 /**
  * The boxes and the zoom map, painted into the frame the four views are drawn on. The text over
@@ -196,6 +208,7 @@ export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
     fillRect(frame, toX(box.left), toY(box.top), toX(box.right), toY(box.bottom), box.colour);
   }
   drawZoomMap(frame, floor);
+  drawZoomMonsters(frame, zoomMapWindow(frame.width), floor.at, floor.monsters ?? []);
 }
 
 /** `drawsquare` (exe 3000:87de) and `draw_side` (exe 3000:8432) for every square of the window. */

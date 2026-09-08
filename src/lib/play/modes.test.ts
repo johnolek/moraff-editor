@@ -43,6 +43,10 @@ describe('the monsters the map draws', () => {
     }
   });
 
+  it("is what the tab hands the game's own zoom map in debug", () => {
+    expect(source).toContain('mapMonsters={zoomMapMonsters(mode, view)}');
+  });
+
   it('is what the tab hands the map, along with the map itself', () => {
     expect(source).toContain('monsters={monstersDrawn(mode, view)}');
     expect(source).toContain('discovered={discoveredMap}');
