@@ -68,15 +68,21 @@ export function pictureImageIndex(picture: number): number | null {
 
 /**
  * The palette a floor is drawn in. set_palette (exe 4000:10ee) writes entries 1 to 15 the same
- * way every time and picks entries 16 to 31 by `floor % 11`.
+ * way every time, picks entries 16 to 31 by `floor % 11`, writes entries 32 to 47 the same way
+ * every time as well, and picks the sixteen the 1024 by 768 ground is painted in — entries 48 to
+ * 63 — by `floor % 7`. Only a 256-colour mode gets anything above entry 31.
  */
 export function floorPalette(floor: number): Rgb[] {
-  return vgaToRgb(mwPalettes.palettes[floor % FLOOR_PALETTES]);
+  const ground = mwPalettes.grounds[floor % GROUND_PALETTES];
+  return vgaToRgb([...mwPalettes.palettes[floor % FLOOR_PALETTES], ...ground]);
 }
 
 /** How many palettes set_palette rotates through, which is how far apart two floors have to be
  *  to be drawn in the same colours. */
 export const FLOOR_PALETTES = mwPalettes.palettes.length;
+
+/** How many grounds it rotates through, which is the other period. */
+export const GROUND_PALETTES = mwPalettes.grounds.length;
 
 /**
  * The palette entry a picture pixel is drawn in, or -1 for a pixel that is not drawn (exe

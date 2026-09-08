@@ -2,12 +2,21 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parsePic } from '../game/dotu-pic.js';
 import { MONSTERS } from './monsters';
-import { floorPalette, pictureImageIndex, pictureImages, pixelIndex, renderMonster } from './pictures';
+import {
+  floorPalette,
+  GROUND_PALETTES,
+  pictureImageIndex,
+  pictureImages,
+  pixelIndex,
+  renderMonster,
+} from './pictures';
 
 /** The pixel value the drawer paints in the monster's colour byte. */
 const TINT_VALUE = 17;
 /** How many wall colour sets set_palette (exe 4000:10ee) chooses between. */
 const WALL_SETS = 11;
+/** The first palette entry the 1024 by 768 ground is painted from. */
+const GROUND_FIRST = 48;
 
 const named = (name: string) => MONSTERS.find((monster) => monster.name === name)!;
 
@@ -79,8 +88,16 @@ describe('floorPalette', () => {
   });
 
   it('picks the wall colours by the floor modulo eleven', () => {
-    expect(floorPalette(3)).toEqual(floorPalette(3 + WALL_SETS));
+    const walls = (floor: number) => floorPalette(floor).slice(0, GROUND_FIRST);
+    expect(walls(3)).toEqual(walls(3 + WALL_SETS));
     expect(floorPalette(6)[18]).not.toEqual(floorPalette(9)[18]);
+  });
+
+  it('picks the ground the 1024 by 768 mode paints by the floor modulo seven', () => {
+    const ground = (floor: number) => floorPalette(floor).slice(GROUND_FIRST);
+    expect(ground(3)).toHaveLength(16);
+    expect(ground(3)).toEqual(ground(3 + GROUND_PALETTES));
+    expect(ground(3)).not.toEqual(ground(4));
   });
 
   it('holds a colour for every colour byte in the monster table', () => {
