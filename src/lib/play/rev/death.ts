@@ -21,6 +21,10 @@ const RAISED_AT = { column: 14, row: 12 };
 export function revDie(game: RevGame): boolean {
   const pc = game.pc;
   game.say(YOURE_DEAD, ...CARRIED_OUT);
+  // 1000:A034 and 1000:A047: a level or an experience total a drain pushed below zero is put
+  // back to zero on the way out.
+  if (pc.level < 0) pc.level = 0;
+  if (pc.experience < 0) pc.experience = 0;
   pc.hp = pc.maxHp;
   if (game.rng.random(23) + 1 > pc.stats[3]) {
     game.say(RAISE_FAILED);

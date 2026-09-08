@@ -231,3 +231,31 @@ describe('a fight', () => {
     session.finish();
   });
 });
+
+describe('walking away from a fight', () => {
+  it('ends it and writes what is left of the monster back into the file', async () => {
+    const { session } = await playing(9, record({ 25: 2, 23: 10, 24: 10, 142: 1 }));
+    session.enterLevel(2);
+    session.game.monsters.grid[22 * 10 + 10] = 41;
+    session.game.monsters.positions[41] = 32 * 10 + 10;
+    session.press(REV_KEY.stats);
+    await settled();
+    session.press(REV_KEY.sword);
+    await settled();
+    const fight = session.game.fight;
+    if (!fight) {
+      session.finish();
+      return;
+    }
+    const left = fight.hitPoints;
+    // Step off the square, whichever way the walls allow.
+    for (const arrow of [REV_KEY.arrowUp, REV_KEY.arrowDown, REV_KEY.arrowLeft, REV_KEY.arrowRight]) {
+      session.press(arrow);
+      await settled();
+      if (session.game.fight === null) break;
+    }
+    expect(session.game.fight).toBeNull();
+    expect(session.game.monsters.strengths[41]).toBe(Math.round(left));
+    session.finish();
+  });
+});

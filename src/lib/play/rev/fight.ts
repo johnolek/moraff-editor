@@ -158,3 +158,16 @@ export function revMonsterAnswers(game: RevGame): boolean {
   if (!fight) return false;
   return game.rng.random(50) + fight.attackBonus + 1 > game.pc.stats[4];
 }
+
+/**
+ * 1000:8FB2: the character is no longer standing on the monster, so the fight is over.
+ *
+ * What is left of the monster is written back into `2.NUM` when it is over zero, which is why a
+ * monster you ran away from is still wounded when you find it again.
+ */
+export function revLeaveTheFight(game: RevGame): void {
+  const fight = game.fight;
+  if (!fight) return;
+  if (fight.hitPoints > 0) game.monsters.strengths[fight.slot] = Math.round(fight.hitPoints);
+  game.fight = null;
+}

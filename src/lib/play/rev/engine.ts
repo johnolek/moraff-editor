@@ -3,7 +3,7 @@ import type { Rng } from '../../game/port/rng';
 import { REV_POLLS_PER_TICK, REV_TICK_MS, revPoll } from './clock';
 import { revFallDownAChute } from './chute';
 import { revDie } from './death';
-import { revMeetMonster, revMonsterAnswers, revOwnsWeapon, revSwing, revWeaponFor, NO_SUCH_WEAPON } from './fight';
+import { revLeaveTheFight, revMeetMonster, revMonsterAnswers, revOwnsWeapon, revSwing, revWeaponFor, NO_SUCH_WEAPON } from './fight';
 import { revMonsterAttack } from './attack';
 import { revKillMonster } from './kill';
 import { REV_KEY, revArrowMode, revCompassArrow, revTurningArrow, revWrapFacing } from './keys';
@@ -493,13 +493,18 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     game.banner = [];
     session.run?.dispatched(key);
     if (game.fight !== null) {
-      await fightKey(session, key);
-      if (session.over) return;
-      continue;
+      // 1000:8701 and 1000:871F: the fight prompt hands Escape and the four arrows to the same
+      // two routines the dungeon does, so a character can turn and walk away from a monster.
+      if (key === REV_KEY.escape) switchArrows(turn);
+      else if (revCompassArrow(key) !== 0 || revTurningArrow(key) !== null) await stepOrTurn(session, key);
+      else await fightKey(session, key);
+    } else {
+      const handler = REV_KEY_HANDLERS[key];
+      if (handler) await handler.run(turn);
+      else await stepOrTurn(session, key);
     }
-    const handler = REV_KEY_HANDLERS[key];
-    if (handler) await handler.run(turn);
-    else await stepOrTurn(session, key);
+    // The fight is over the moment the character is no longer standing on the monster.
+    if (game.fight !== null && session.monsterHere() !== game.fight.slot) revLeaveTheFight(game);
     if (session.over) return;
   }
 }
