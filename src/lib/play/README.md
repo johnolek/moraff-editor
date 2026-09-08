@@ -206,8 +206,10 @@ this port does not have.
 
 ## Where this leaves the original
 
-* **Real random numbers.** `RealRng` in `src/lib/game/port/rng.ts`, per the port's third
-  departure. A test hands the session a seeded one instead.
+* **Random numbers from a seed of the run's own.** `SeededRng` in `src/lib/game/port/rng.ts`,
+  which is mulberry32 under the game's own `Random(n)`, per the port's third departure. The seed
+  is drawn once when the game starts and kept in the run log with every key that follows
+  (`run.ts`), so a run can be played again exactly. A test hands the session its own seed.
 * **No clock in the game.** The game is turn based: a moment passes per action and nothing
   happens while the player thinks, and the seconds `call_check_eng` counts are game time and are
   kept exactly. The `delay` calls the original busy-waits in are about the screen alone, so those

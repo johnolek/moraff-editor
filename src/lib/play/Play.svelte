@@ -2,7 +2,6 @@
   import { untrack } from 'svelte';
   import { app, currentEntry } from '../app-state.svelte';
   import { characterDied, replaceCharacterBytes } from '../character/current';
-  import { RealRng } from '../game/port/rng';
   import FloorCanvas from '../map/FloorCanvas.svelte';
   import { UNFORGIVEN_MAP } from '../map/game';
   import { FULL_FLOOR } from '../map/viewport';
@@ -11,6 +10,7 @@
   import Panel from './Panel.svelte';
   import Portrait from './Portrait.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
+  import { RunRecorder } from './run';
   import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
   import { monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from './mode';
@@ -55,7 +55,9 @@
       },
       died: characterDied,
     };
-    const started = startGame(file, new RealRng());
+    // Every game is a run: a seed of its own, and every key that follows written down beside it.
+    const run = new RunRecorder({ game: 'unforgiven', name: entry.name, record: entry.bytes });
+    const started = startGame(file, run.rng, run);
     started.onChange = () => (view = started.view());
     centredFloor = null;
     session = started;
@@ -65,6 +67,7 @@
   }
 
   function leave() {
+    session?.finish();
     session = null;
     playingId = null;
     view = null;

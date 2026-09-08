@@ -31,6 +31,7 @@ import { DEFAULT_PLAY_MODE, type PlayMode } from './mode';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
+import type { RunRecorder } from './run';
 import { MESSAGE_BOX_LINES, messageBoxLines } from './screens';
 import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
@@ -184,6 +185,8 @@ export class GameSession {
   constructor(
     readonly file: CharacterFile,
     rng: Rng,
+    /** The run log this game is being written down in, or null for a game nobody is recording. */
+    readonly run: RunRecorder | null = null,
   ) {
     const pc = loadPlayer(file.bytes);
     this.known = file.bytes.slice();
@@ -249,11 +252,29 @@ export class GameSession {
     // down: anything that reads the keyboard stops the character swinging on its own.
     this.repeatFight = false;
     const queued = this.queued.shift();
-    if (queued !== undefined) return Promise.resolve(queued);
+    if (queued !== undefined) {
+      this.took(queued);
+      return Promise.resolve(queued);
+    }
     this.changed();
     return new Promise((resolve) => {
-      this.waiting = resolve;
+      this.waiting = (key) => {
+        this.took(key);
+        resolve(key);
+      };
     });
+  }
+
+  /**
+   * A key the game has just read, which is where it reaches the run log.
+   *
+   * The log is what the game read rather than what the player pressed, because the two differ:
+   * a key typed while the character was swinging is thrown away by {@link flushKeys} and the game
+   * never sees it, so a replay that pressed it would act on a key this run did not.
+   * {@link RECORD_EDITED} is not a key at all.
+   */
+  private took(key: number): void {
+    if (key !== RECORD_EDITED) this.run?.input(key);
   }
 
   /** get_choice (exe 2000:2d93): keys until one of the menu's own, or Escape. */
@@ -272,9 +293,17 @@ export class GameSession {
    * one place a record written outside the game is safe to take.
    */
   async keyOrEdit(): Promise<number> {
+    // A replay takes Ctrl-F's swings from the log rather than making them again, and the flag is
+    // what would have the loop take an F of its own here.
+    if (this.run?.replaying) this.repeatFight = false;
+    const repeating = this.repeatFight;
     this.betweenActions = true;
     try {
-      return await readKey(this);
+      const key = await readKey(this);
+      // With the flag up the loop takes F without reading the keyboard, so that swing reaches the
+      // run log here rather than through press.
+      if (repeating) this.run?.input(key);
+      return key;
     } finally {
       this.betweenActions = false;
     }
@@ -391,6 +420,12 @@ export class GameSession {
     this.onChange?.();
   }
 
+  /** Nothing is going to draw this session again, so the message timer is dropped rather than
+   *  left holding the page — or a replay under Node — open. */
+  finish(): void {
+    this.timed.stop();
+  }
+
   view(): PlayView {
     const game = this.game;
     const pc = game.pc;
@@ -423,8 +458,8 @@ function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
 }
 
 /** Start playing a character. */
-export function startGame(file: CharacterFile, rng: Rng): GameSession {
-  const session = new GameSession(file, rng);
+export function startGame(file: CharacterFile, rng: Rng, run: RunRecorder | null = null): GameSession {
+  const session = new GameSession(file, rng, run);
   greetTheTown(session);
   return session;
 }

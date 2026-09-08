@@ -42,6 +42,7 @@ import { loadMwPlayer, saveMwPlayer } from './record';
 import { mwMessageBoxLines, MW_MESSAGE_BOX } from './screens';
 import { TimedScreens } from '../timed';
 import { quitAndSave } from './quit';
+import type { RunRecorder } from '../run';
 import { buildingUnder } from './town';
 import { explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
@@ -182,6 +183,8 @@ export class MwGameSession {
   constructor(
     readonly file: MwCharacterFile,
     rng: Rng,
+    /** The run log this game is being written down in, or null for a game nobody is recording. */
+    readonly run: RunRecorder | null = null,
   ) {
     const pc = loadMwPlayer(file.bytes);
     this.known = file.bytes.slice();
@@ -248,11 +251,29 @@ export class MwGameSession {
   /** getch (WORLD.EXE 1000:28b4): the next key, once there is one. */
   key(): Promise<number> {
     const queued = this.queued.shift();
-    if (queued !== undefined) return Promise.resolve(queued);
+    if (queued !== undefined) {
+      this.took(queued);
+      return Promise.resolve(queued);
+    }
     this.changed();
     return new Promise((resolve) => {
-      this.waiting = resolve;
+      this.waiting = (key) => {
+        this.took(key);
+        resolve(key);
+      };
     });
+  }
+
+  /**
+   * A key the game has just read, which is where it reaches the run log.
+   *
+   * The log is what the game read rather than what the player pressed, because the two differ: a
+   * key typed while the game was busy is thrown away by {@link flushKeys} and never seen, so a
+   * replay that pressed it would act on a key this run did not. {@link MW_RECORD_EDITED} is not a
+   * key at all.
+   */
+  private took(key: number): void {
+    if (key !== MW_RECORD_EDITED) this.run?.input(key);
   }
 
   /**
@@ -460,6 +481,12 @@ export class MwGameSession {
     this.onChange?.();
   }
 
+  /** Nothing is going to draw this session again, so the message timer is dropped rather than
+   *  left holding the page — or a replay under Node — open. */
+  finish(): void {
+    this.timed.stop();
+  }
+
   view(): MwPlayView {
     const game = this.game;
     const pc = game.pc;
@@ -505,8 +532,8 @@ function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
 }
 
 /** Start playing a character. */
-export function startMwGame(file: MwCharacterFile, rng: Rng): MwGameSession {
-  return new MwGameSession(file, rng);
+export function startMwGame(file: MwCharacterFile, rng: Rng, run: RunRecorder | null = null): MwGameSession {
+  return new MwGameSession(file, rng, run);
 }
 
 /**

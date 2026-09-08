@@ -128,6 +128,7 @@ export function mwStepKey(dir: number): number {
  * beside them whatever they were facing: turning away from a fight is the game's to undo.
  */
 export function mwTurn(session: MwGameSession, dir: number): void {
+  session.run?.turned(dir);
   session.game.pc.dir = dir;
   session.game.redrawView = true;
   session.changed();

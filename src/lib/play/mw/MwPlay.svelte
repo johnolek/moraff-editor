@@ -2,7 +2,6 @@
   import { untrack } from 'svelte';
   import { app, currentEntry } from '../../app-state.svelte';
   import { characterDied, replaceCharacterBytes } from '../../character/current';
-  import { RealRng } from '../../game/port/rng';
   import FloorCanvas from '../../map/FloorCanvas.svelte';
   import { MORAFFS_WORLD_MAP } from '../../map/game';
   import { FULL_FLOOR } from '../../map/viewport';
@@ -12,6 +11,7 @@
   import MwPanel from './MwPanel.svelte';
   import MwPortrait from './MwPortrait.svelte';
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
+  import { RunRecorder } from '../run';
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import { monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from '../mode';
@@ -112,7 +112,9 @@
       },
       died: characterDied,
     };
-    const started = startMwGame(file, new RealRng());
+    // Every game is a run: a seed of its own, and every key that follows written down beside it.
+    const run = new RunRecorder({ game: 'moraffsWorld', name: entry.name, record: entry.bytes });
+    const started = startMwGame(file, run.rng, run);
     started.onChange = () => (view = started.view());
     centredFloor = null;
     session = started;
@@ -122,6 +124,7 @@
   }
 
   function leave() {
+    session?.finish();
     session = null;
     playingId = null;
     view = null;

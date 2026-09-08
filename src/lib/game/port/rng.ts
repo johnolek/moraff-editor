@@ -66,16 +66,3 @@ export class SeededRng implements Rng {
     return Math.trunc((this.rand() * n) / 0x8000);
   }
 }
-
-/**
- * Random (exe 2000:4156, unf.c "Random") over the browser's own generator.
- *
- * Nothing plays through this any more — a run is played through {@link SeededRng} so that it can
- * be played again — and it is what the port's third departure originally meant by real
- * randomness.
- */
-export class RealRng implements Rng {
-  random(n: number): number {
-    return Math.trunc(Math.random() * n);
-  }
-}
