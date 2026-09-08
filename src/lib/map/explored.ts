@@ -75,14 +75,18 @@ export function dunFileName(name: string): { slot: number; block: number } | nul
 export function readDunFile(name: string, bytes: Uint8Array): DunFile {
   const named = dunFileName(name);
   if (!named) throw new Error(`${name} is not named <slot><block>.DUN, like 30.DUN.`);
-  const floors = bytes.length > HEADER_BYTES ? readFloors(bytes, named.block) : null;
+  const floors = bytes.length > HEADER_BYTES ? readDunFloors(bytes, named.block) : null;
   if (!floors) throw new Error(`${name} is ${bytes.length} bytes, which is not the size of the floors it lists.`);
   return { name, slot: named.slot, block: named.block, floors };
 }
 
-/** The floors a file holds, or null when the layout runs off the end of the file or stops
- *  short of it, which means these are not the bytes of an explored map. */
-function readFloors(bytes: Uint8Array, block: number): ExploredFloor[] | null {
+/**
+ * The floors a `.DUN` holds, or null when the layout runs off the end of the file or stops short
+ * of it, which means these are not the bytes of an explored map. The layout is the same in both
+ * C games; only the name of the file differs, so a Dungeons of the Unforgiven `.DUN` is read
+ * with this rather than with {@link readDunFile}.
+ */
+export function readDunFloors(bytes: Uint8Array, block: number): ExploredFloor[] | null {
   const floors: ExploredFloor[] = [];
   let at = HEADER_BYTES;
   for (let index = 0; index < FLOORS_PER_BLOCK; index++) {
