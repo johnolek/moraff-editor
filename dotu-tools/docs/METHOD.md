@@ -127,7 +127,10 @@ instead, which takes three steps:
 2. Patch Borland's emulated-8087 interrupts back into real FPU opcodes with
    `../decomp/ghidra-scripts/unemu87.py unf.000.exe unf.fpu.exe 0x30a00` — the third
    argument is where the data segment starts, so only code is patched.  Without this a
-   disassembler shows `int 39h` where the float instruction should be.
+   disassembler shows `int 39h` where the float instruction should be.  The script walks
+   the instructions from every function in `../decomp/functions.txt` rather than scanning
+   for bytes, because the same pairs occur as data inside other instructions; it needs
+   `capstone`, as `adis.py` does.
 3. Print a function with `../reference/scripts/adis.py --exe unf.fpu.exe 3000 342d 5617`
    (segment, offset, size; the size is in `../decomp/functions.txt`).  Every `lcall` is
    named from that file and every data-segment operand is annotated with the word and the

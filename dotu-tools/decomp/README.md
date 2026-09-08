@@ -89,7 +89,12 @@ The two scripts that produced the dumps, `Setup.py` and `ExportDecomp.py`, are i
   near branches against the linear address, so a segment straddling a 64 KB
   boundary gets them wrong. The result is for analysis only; it will not run.
 - `unemu87.py` — rewrites the Borland 80x87 emulator interrupts (`INT 34h`–`3Dh`)
-  back into real FPU instructions so the floating-point code disassembles.
+  back into real FPU instructions so the floating-point code disassembles. The
+  same byte pairs occur as data inside other instructions — 0xCD is the high byte
+  of many DGROUP addresses — so it walks the instructions from the entry point
+  and from every function in `functions.txt` and rewrites only an `int` that
+  lands on an instruction boundary. An optional fourth argument names the
+  function list; it defaults to the `functions.txt` beside it. Needs `capstone`.
 
 The scripts above are the Ghidra 11 originals, written for Jython. Ghidra 12
 dropped Jython, so the ones used for the re-run below are PyGhidra ports:

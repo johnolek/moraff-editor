@@ -61,6 +61,22 @@ Three transformations then produce the file Ghidra analyses:
    decompiler at the first `swi(0x3b)` but produces bogus call targets — twelve
    functions that do not exist, and `roll_char` split into three.
 
+   The substitution has to fire on genuine instructions and on nothing else.
+   `CD 34`-`CD 3D` also turns up as data in the middle of ordinary instructions,
+   because 0xCD is the high byte of a lot of DGROUP addresses: `mov [0xcd5a],ax`
+   is `a3 5a cd`, and the first byte of whatever follows finishes the pair.
+   Rewriting one of those corrupts the code around it.  So the script
+   disassembles rather than scans: it walks the instructions from the entry point
+   in the MZ header and from every function entry in `functions.txt`, following
+   calls, jumps and the switch tables, and rewrites only an `int` that lands on
+   an instruction boundary.  Fifteen of the 1,103 byte pairs in `WORLD.EXE`'s
+   code turn out to be data inside another instruction; another 28 are in
+   Borland's runtime and the 80x87 emulator itself, which the walk never reaches
+   because nothing calls into them.  The script prints both lists.  Seeding the
+   walk from the committed `functions.txt` means the analysis feeds the next run
+   of the patch, which is a circle, but a stable one: the file the current
+   analysis produces gives the same patched image.
+
 The result is `world_pages_87.exe`.  It is for analysis only; it will not run.
 
 ## The segment layout
@@ -141,7 +157,9 @@ python3 rename_mw.py mw.c ../reference/known.py
 ## Ghidra scripts
 
 - `relayout.py` — the standalone MZ rewriter described above.
-- `unemu87.py` — the 80x87 emulator interrupt rewriter, also described above.
+- `unemu87.py` — the 80x87 emulator interrupt rewriter, also described above.  An
+  optional fourth argument names the function list it walks from; it defaults to
+  the `functions.txt` beside it.  Needs `capstone`.
 - `runtime.py` — everything binary-specific: the DGROUP segment, the real length
   of each code segment, and the Borland runtime helpers with their signatures.
 - `build.py` — rebuilds the whole analysis: MZ import as 16-bit real mode, the
