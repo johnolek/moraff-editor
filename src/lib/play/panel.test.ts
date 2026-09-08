@@ -171,7 +171,9 @@ describe('the monster being faced', () => {
     expect(engaged.name).toBe(kind.name);
     expect(engaged.level).toBe(12);
     expect(engaged.hp).toBe(90);
-    expect(engaged.mostHp).toBe(stats.hpPerLevel * 12 + 1);
+    // The character is on floor 6 of Module I, and the ceiling follows that floor rather than
+    // the level 12 the nudge left the monster at.
+    expect(engaged.mostHp).toBe(stats.hpPerLevel * 6 + 1);
   });
 
   it('works the hit chance out of the same pieces to-hit.ts takes', () => {

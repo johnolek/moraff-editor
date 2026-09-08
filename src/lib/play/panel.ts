@@ -1,7 +1,7 @@
 import { hitChance, toHitTotal, type ToHitFighter } from '../bestiary/to-hit';
 import { NAMED_SLOTS, SLOTS_PER_SUBCATEGORY, SPELL_NAMES, SPELL_SUBCATEGORIES } from '../editor/spell-names';
 import { sectionOf } from '../game/dotu-files.js';
-import { monsterHpRange } from '../game/dotu-mech.js';
+import { monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
 import type { Game, PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { monsterById, type StockedMonster } from '../map/stocking';
@@ -202,7 +202,7 @@ export interface EngagedMonster {
   name: string;
   level: number;
   hp: number;
-  /** The most a monster of this kind and level is ever stocked with. */
+  /** The most a monster of this kind is ever stocked with on this floor. */
   mostHp: number;
   /** The share of swings the game itself calls hits, 0 to 1. */
   hitChance: number;
@@ -250,7 +250,10 @@ export function engagedMonster(game: Game): EngagedMonster | null {
   };
   const damageRow = pc.powerWeapon !== 0 ? pc.powerWeapon + FIRST_POWER_WEAPON_ROW : pc.weapon;
   const boss = kind.special === SHADOW_BOSS_SPECIAL;
-  const [, mostHp] = monsterHpRange(stats.hpPerLevel, monster.level, boss, sectionOf(pc.module, pc.level));
+  // The hit points were rolled from the floor's base level, before the nudge that gave this
+  // monster the level it stands at, so the ceiling is the floor's and not the monster's.
+  const baseLevel = monsterLevelBase(pc.level, pc.module);
+  const [, mostHp] = monsterHpRange(stats.hpPerLevel, baseLevel, boss, sectionOf(pc.module, pc.level));
   return {
     name: kind.name,
     level: monster.level,
