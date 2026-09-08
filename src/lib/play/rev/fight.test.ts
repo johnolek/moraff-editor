@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SeededRng, type Rng } from '../../game/port/rng';
 import { HIT_POINTS_PER_LEVEL, monsterLevelOf } from '../../rev-bestiary/monsters';
-import { revMeetMonster, revMonsterAnswers, revOwnsWeapon, revSwing } from './fight';
+import { revMeetMonster, revMonsterAnswers, revOwnsWeapon, revSwing, revSwingWords } from './fight';
 import { revKillMonster } from './kill';
 import { revMonsterAttack } from './attack';
 import { REV_VALUE, setRevValue, type RevPc } from './record';
@@ -145,5 +145,19 @@ describe('a kill', () => {
     const back = game.monsters.squareOf(3);
     expect(game.monsters.slotOn(back.column, back.row)).toBe(3);
     expect(game.monsters.strengths[3]).toBeGreaterThan(0);
+  });
+});
+
+describe('what a swing says', () => {
+  it('picks one of the five misses when nothing landed and one of the five hits when it did', () => {
+    const game = started({ random: () => 0 });
+    expect(revSwingWords(game, { roll: 1, target: 9, damage: 0 })[0]).toBe('HA HA, YOU MISSED!');
+    expect(revSwingWords(game, { roll: 9, target: 1, damage: 4 })[0]).toBe('NICE SWING!');
+  });
+
+  it('says one point rather than one points', () => {
+    const game = started({ random: () => 0 });
+    expect(revSwingWords(game, { roll: 9, target: 1, damage: 1 })[1]).toBe('YOU DID 1 POINT.');
+    expect(revSwingWords(game, { roll: 9, target: 1, damage: 2 })[1]).toBe('YOU DID 2 POINTS.');
   });
 });

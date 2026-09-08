@@ -88,6 +88,39 @@ export function revWeaponFor(key: number): RevWeapon | null {
 /** 1000:89B4: the two lines a swing with a weapon the character does not own prints. */
 export const NO_SUCH_WEAPON = ['YOU DO NOT HAVE THAT', '   WEAPON!!   '];
 
+/**
+ * The fifteen lines a fight draws on, read at start-up into the array at DGROUP 5FE0 and held in
+ * `F2.COM` — the last fifteen lines of that file, after the magic items it describes.
+ *
+ * A miss picks one of the first five (`INT(RND * 5) + 1`, 1000:8D60), a hit one of the next five
+ * (`INT(RND * 5) + 6`, 1000:8D94), and the last five belong to the drains the monster's attack
+ * hands out (1000:9E72).
+ */
+export const REV_FIGHT_LINES = [
+  'HA HA, YOU MISSED!',
+  'YOU MISSED',
+  'GET A REAL WEAPON',
+  'LEARN HOW TO FIGHT!',
+  'YOU MISSED, YOU FOOL!',
+  'NICE SWING!',
+  'I WANT YOU FOR U.S. ARMY!',
+  'RIGHT IN THE -----!',
+  'BULLSEYE!',
+  'SMACK!',
+  'YOU FEEL COLD',
+  'D R A I N ...',
+  'YOU FEEL WEAK',
+  'UH OH...',
+  'OH SHIT!',
+];
+
+/** 1000:8D38 and 1000:8D86: what the swing says, which is one of five either way. */
+export function revSwingWords(game: RevGame, swing: RevSwing): string[] {
+  const said = REV_FIGHT_LINES[game.rng.random(5) + (swing.damage === 0 ? 0 : 5)];
+  const points = `YOU DID ${swing.damage} POINT${swing.damage === 1 ? '.' : 'S.'}`;
+  return [said, points];
+}
+
 /** Whether the character owns the weapon (1000:87DB, 8805, 8830). */
 export function revOwnsWeapon(pc: RevPc, weapon: RevWeapon): boolean {
   const value = OWNED[weapon];

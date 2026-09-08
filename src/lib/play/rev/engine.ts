@@ -3,7 +3,16 @@ import type { Rng } from '../../game/port/rng';
 import { REV_POLLS_PER_TICK, REV_TICK_MS, revPoll } from './clock';
 import { revFallDownAChute } from './chute';
 import { revDie } from './death';
-import { revLeaveTheFight, revMeetMonster, revMonsterAnswers, revOwnsWeapon, revSwing, revWeaponFor, NO_SUCH_WEAPON } from './fight';
+import {
+  revLeaveTheFight,
+  revMeetMonster,
+  revMonsterAnswers,
+  revOwnsWeapon,
+  revSwing,
+  revSwingWords,
+  revWeaponFor,
+  NO_SUCH_WEAPON,
+} from './fight';
 import { revMonsterAttack } from './attack';
 import { revKillMonster } from './kill';
 import { REV_KEY, revArrowMode, revCompassArrow, revTurningArrow, revWrapFacing } from './keys';
@@ -448,7 +457,7 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
     return;
   }
   const swing = revSwing(game, weapon);
-  game.banner = [swing.damage === 0 ? 'YOU MISSED' : 'NICE SWING!', `YOU DID ${swing.damage} POINT${swing.damage === 1 ? '.' : 'S.'}`];
+  game.banner = revSwingWords(game, swing);
   const fight = game.fight;
   if (fight && fight.hitPoints < 1) {
     revKillMonster(game);
