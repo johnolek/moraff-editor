@@ -55,13 +55,8 @@ export interface RevGame {
   /** DGROUP B5B2: the spell level last typed at a cast prompt, which the wands that cast a
    *  spell for nothing charge the character for again (1000:9555). */
   spellLevel: number;
-  /** DGROUP B6CC: how many more of the monster's turns a wand has taken away (1000:9A2F). */
-  monsterHeld: number;
   /** DGROUP B6CE: what a wand has put on the character's next swing, once (1000:8CC5). */
   swingBonus: number;
-  /** DGROUP B706: the armour the potion of shielding gives for the rest of a fight
-   *  (1000:9971), which the monster's own swing reads. */
-  shielding: number;
   /** DGROUP B726: the monster was sent away rather than killed, which is why `Go Away!' does
    *  not say "YOU KILLED IT!!" (1000:A4CD). */
   monsterLeft: boolean;
@@ -111,8 +106,8 @@ export interface RevGame {
    *  1000:05CB that reads it). */
   sound: number;
   /**
-   * DGROUP B6CC: how many more of the monster's swings the pills the character has swallowed
-   * will hold off. A pill adds ten (1000:7C3C) and a swing counts one off (1000:9A2F).
+   * DGROUP B6CC: how many more of the monster's swings are held off. The fourth wand adds ten
+   * (1000:7C3C) and a swing counts one off (1000:9A2F).
    */
   paralysis: number;
   /**
@@ -125,8 +120,8 @@ export interface RevGame {
    */
   monsterSwing: { roll: number; armourClass: number; damage: number };
   /**
-   * DGROUP B706: what the spell at 1000:9971 adds for a hundred seconds to the number the
-   * monster's swing has to beat. The spells are not built, so nothing here ever raises it.
+   * DGROUP B706: what the potion of shielding (1000:9971) adds for a hundred seconds to the
+   * number the monster's swing has to beat.
    */
   shield: number;
   /**
@@ -166,9 +161,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     arrowMode: 0,
     steps: 1,
     spellLevel: 0,
-    monsterHeld: 0,
     swingBonus: 0,
-    shielding: 0,
     monsterLeft: false,
     killed: false,
     seconds: 0,

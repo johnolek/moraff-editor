@@ -245,7 +245,7 @@ function potionOfShielding(game: RevGame): void {
   const pc = game.pc;
   setRevValue(pc, REV_MAGIC.shieldingUntil, game.seconds + POTION_SECONDS);
   revSpendItem(pc, 7);
-  game.shielding = 15;
+  game.shield = 15;
 }
 
 /** 1000:0303: what a potion of health points says. */
@@ -392,7 +392,7 @@ const REV_WANDS: RevItem[] = [
     },
   },
   // 1000:7C3C: ten more turns the monster cannot strike on.
-  { c: '1000:7C3C, the fourth wand', use: (game) => void (game.monsterHeld += 10) },
+  { c: '1000:7C3C, the fourth wand', use: (game) => void (game.paralysis += 10) },
   // 1000:7C42: 240 points on the character's next swing.
   { c: '1000:7C42, the fifth wand', use: (game) => void (game.swingBonus = 240) },
 ];

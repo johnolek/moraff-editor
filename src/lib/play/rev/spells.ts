@@ -617,16 +617,3 @@ export async function revCastInAFight(game: RevGame, desk: RevMagicDesk): Promis
   if (choice === NO_SPELL) return;
   await REV_BATTLE_SPELLS[2 * level + choice - 2 - 1].cast(game, desk, level);
 }
-
-/**
- * 1000:9A2F: a wand can take the monster's turn away from it, ten turns at a time.
- *
- * The count is spent one turn at a time and the last one is never reached — the test is `> 1`,
- * so ten charges hold the monster off for nine turns.
- */
-export function revMonsterCannotStrike(game: RevGame): boolean {
-  if (game.monsterHeld <= 1) return false;
-  game.monsterHeld -= 1;
-  game.say("IT CAN'T STRIKE        ");
-  return true;
-}

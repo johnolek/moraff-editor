@@ -6,7 +6,6 @@ import {
   REV_BATTLE_SPELLS,
   revCastInAFight,
   revCountDownBattleSpells,
-  revMonsterCannotStrike,
 } from './spells';
 import { revCharacter, revRolls, revTestGame } from './spells.test-support';
 
@@ -163,17 +162,6 @@ describe("the fight prompt's twelve spells", () => {
     game.monsters.grid[22 * pc.row + pc.column] = 401;
     REV_BATTLE_SPELLS[11].cast(game, desk, 6);
     expect(game.fight).toBeNull();
-  });
-});
-
-describe('the wand that holds the monster off', () => {
-  it('spends one charge a turn and never reaches the last one', () => {
-    const pc = revCharacter();
-    const { game } = revTestGame(pc);
-    game.monsterHeld = 2;
-    expect(revMonsterCannotStrike(game)).toBe(true);
-    expect(game.monsterHeld).toBe(1);
-    expect(revMonsterCannotStrike(game)).toBe(false);
   });
 });
 

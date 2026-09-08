@@ -516,16 +516,22 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
       const breath = revBreatheFire(game);
       if (breath === null) return;
       game.banner = revSwingWords(game, breath);
-      monsterAnswers(game);
+      monsterAnswers(session);
       return;
     }
-    if (key === REV_KEY.pause) game.say(...REV_NOT_BUILT('stop everything until a key'));
-    else if (key === REV_KEY.cast) {
+    // 1000:884A: the fight prompt's P is the same pause screen as the dungeon's, not a prayer.
+    if (key === REV_KEY.pause) {
+      await revPause(game, session.desk(), () => {
+        session.save();
+        session.over = true;
+        game.over = true;
+      });
+    } else if (key === REV_KEY.cast) {
       await revCastInAFight(game, desk);
-      monsterAnswers(game);
+      monsterAnswers(session);
     } else if (key === REV_KEY.item) {
       await revUseAnItemInAFight(game, desk);
-      monsterAnswers(game);
+      monsterAnswers(session);
     } else if (key === REV_KEY.pill) await revTakeAPill(game, desk);
     else if (key === REV_KEY.wand) await revUseAWandInAFight(game, desk);
     return;
@@ -536,12 +542,13 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
   }
   const swing = revSwing(game, weapon);
   game.banner = revSwingWords(game, swing);
-  monsterAnswers(game);
+  monsterAnswers(session);
 }
 
 /** 1000:9A2F and 1000:8E44: the monster's own turn, which is only ever reached from the far side
  *  of a key of the character's. */
-function monsterAnswers(game: RevGame): void {
+function monsterAnswers(session: RevGameSession): void {
+  const game = session.game;
   const fight = game.fight;
   if (fight && fight.hitPoints < 1) {
     revKillMonster(game);

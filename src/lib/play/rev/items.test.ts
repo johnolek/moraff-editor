@@ -152,7 +152,7 @@ describe('the six items used in a fight', () => {
     setRevValue(pc, 53, 1);
     const { game, desk } = revTestGame(pc);
     REV_BATTLE_ITEMS[2].use(game, desk);
-    expect(game.shielding).toBe(15);
+    expect(game.shield).toBe(15);
   });
 
   it('A POTION OF HEALTH POINTS is worth seventy-five, capped at the maximum', () => {
@@ -275,7 +275,7 @@ describe('the wands', () => {
     keys.push(KEY('4'), KEY('5'));
     await revUseAWand(game, desk);
     await revUseAWand(game, desk);
-    expect(game.monsterHeld).toBe(10);
+    expect(game.paralysis).toBe(10);
     expect(game.swingBonus).toBe(240);
   });
 });
