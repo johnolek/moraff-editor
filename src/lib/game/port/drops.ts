@@ -614,8 +614,9 @@ export async function loseItem(game: Game): Promise<void> {
  * seeing, a stone of teleportation and a nuclear hand grenade.
  *
  * Where the original reloads the floor around the character the port records a `levelChanged`
- * event, and where it marks the whole floor explored the port does nothing, the way the ported
- * floor-changing spells do — see the README's second departure.
+ * event, the way the ported floor-changing spells do — see the README's second departure. The
+ * stone of seeing is not one of those: its walk over the floor is here, and each square it
+ * reaches goes through `game.markKnown`, which is whatever is keeping this game's map.
  *
  * The floor slosher is the one item here that is not used up, which is what its own description
  * says: it "MAY [BE] USED LIMITLESSLY".
