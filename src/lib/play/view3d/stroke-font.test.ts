@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newFrame, pixelAt } from './frame';
 import {
   drawStrokeLine,
+  drawStrokeScreenLine,
   strokeAdvance,
   strokeEllipse,
   strokeLineHeight,
@@ -89,5 +90,38 @@ describe('the arcs the letters are curved with', () => {
     const frame = newFrame(64, 64);
     strokeEllipse(frame, 32, 32, 0, 10, 15, 15);
     expect(marks(frame, 15)).toHaveLength(0);
+  });
+});
+
+describe('a line that went straight to FUN_4000_069a', () => {
+  const box = (colour: number, line: Parameters<typeof drawStrokeScreenLine>[3]) => {
+    const frame = newFrame(SVGA.width, SVGA.height);
+    drawStrokeScreenLine(frame, SVGA, 'dotu', line);
+    const on = marks(frame, colour);
+    return {
+      right: Math.max(...on.map((p) => p.x)),
+      bottom: Math.max(...on.map((p) => p.y)),
+    };
+  };
+
+  const DEAD = { text: 'DEAD', x: 0x19, y: 0x352, font: 1, colour: 15 };
+
+  it('keeps the box it was given rather than the one psfont would work out', () => {
+    // The monster manual's stamp is spread to 0x113 and stands down to 0x3a2 (exe 3000:c39d);
+    // psfont would pull the right edge in by half a character and end the line a font's height
+    // below its top instead.
+    const own = box(15, { ...DEAD, spreadTo: 0x113, strokeBottom: 0x3a2 });
+    const psfont = box(15, { ...DEAD, spreadTo: 0x113 });
+    expect(own.right).toBeGreaterThan(psfont.right);
+    expect(own.bottom).toBeGreaterThan(psfont.bottom);
+  });
+
+  it('draws with the pen it was given', () => {
+    const frame = newFrame(SVGA.width, SVGA.height);
+    drawStrokeScreenLine(frame, SVGA, 'dotu', { ...DEAD, spreadTo: 0x113, strokeBottom: 0x3a2, pen: 9 });
+    const fat = marks(frame, 15).length;
+    const thin = newFrame(SVGA.width, SVGA.height);
+    drawStrokeScreenLine(thin, SVGA, 'dotu', { ...DEAD, spreadTo: 0x113, strokeBottom: 0x3a2, pen: 5 });
+    expect(fat).toBeGreaterThan(marks(thin, 15).length);
   });
 });

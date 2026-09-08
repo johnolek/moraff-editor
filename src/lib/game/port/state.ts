@@ -31,6 +31,18 @@ export interface ScreenLine {
   /** psfont's second x, which the string is spread out to reach. A pfont line has none. */
   spreadTo?: number;
   /**
+   * The bottom edge and the pen `FUN_4000_069a` (exe 4000:069a) is given, for the handful of
+   * lines a screen hands that function directly instead of going through pfont or psfont.
+   *
+   * Those two work both out for themselves — psfont pulls the right edge in by half a character
+   * and takes the height from the font — so a line without this is placed the way they place
+   * one. A line with it spreads to `spreadTo` exactly and stands as tall as it says, which is
+   * how the monster manual's row of letters and its DEAD stamp come out the size they do.
+   */
+  strokeBottom?: number;
+  /** The pen width that same call is given, as a length in the 1600 by 1200 grid. */
+  pen?: number;
+  /**
    * A second string drawn on the same line at its own x, in the same font and colour. The game
    * draws "RACE: " and the race's name, or a characteristic's label and its number, as two calls
    * so that the numbers line up in a column; the message log gets the two joined into one line.

@@ -74,21 +74,35 @@ const round = (value: number): number => Math.trunc(value + 0.5);
  *
  * `print_text` works the right edge out from the string's own length. `print_text_clipped` is
  * given one and pulls it in by half a character, so that the last glyph's box ends on it rather
- * than starting there.
+ * than starting there. A line carrying a bottom edge of its own went to `FUN_4000_069a` without
+ * passing through either, so it keeps the box and the pen it was given.
  */
 export function drawStrokeScreenLine(
   frame: Frame,
   screen: StrokeScreen,
   game: StrokeGame,
-  line: { text: string; x: number; y: number; font: number; colour: number; spreadTo?: number },
+  line: {
+    text: string;
+    x: number;
+    y: number;
+    font: number;
+    colour: number;
+    spreadTo?: number;
+    strokeBottom?: number;
+    pen?: number;
+  },
 ): void {
-  const { text, x, y, font, colour, spreadTo } = line;
+  const { text, x, y, font, colour, spreadTo, strokeBottom } = line;
   if (text.length === 0) return;
+  const ownBox = strokeBottom !== undefined;
   const right =
     spreadTo === undefined
       ? x + strokeAdvance(game, font) * text.length
-      : spreadTo - Math.trunc(Math.trunc((spreadTo - x) / text.length) / 2);
-  drawStrokeLine(frame, screen, game, text, x, y, right, y + strokeLineHeight(font), colour);
+      : ownBox
+        ? spreadTo
+        : spreadTo - Math.trunc(Math.trunc((spreadTo - x) / text.length) / 2);
+  const bottom = strokeBottom ?? y + strokeLineHeight(font);
+  drawStrokeLine(frame, screen, game, text, x, y, right, bottom, colour, line.pen);
 }
 
 /**
