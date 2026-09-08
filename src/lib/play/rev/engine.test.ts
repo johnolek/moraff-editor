@@ -121,9 +121,17 @@ describe('the loop', () => {
 
   it('says what a key it has not built would have done', async () => {
     const { session } = await playing();
-    session.press(REV_KEY.cast);
+    session.press(REV_KEY.abandon);
     await settled();
     expect(session.view().box.join(' ')).toContain('NOT BUILT YET');
+    session.finish();
+  });
+
+  it('opens the spell prompt on C and waits there for the level', async () => {
+    const { session } = await playing();
+    session.press(REV_KEY.cast);
+    await settled();
+    expect(session.view().box).toEqual(['WHAT LEVEL SPELL (1-6)?', 'ESC-CAST NO SPELL']);
     session.finish();
   });
 });

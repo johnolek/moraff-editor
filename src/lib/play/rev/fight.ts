@@ -177,6 +177,10 @@ export function revSwing(game: RevGame, weapon: RevWeapon): RevSwing {
   if (weapon === 'knife') damage = Math.trunc(0.5 * damage) + 1;
   if (weapon === 'fists') damage = Math.trunc(damage / 3) + 1;
   if (fight.kind === 2 && weapon === 'sword') damage = Math.trunc(0.5 * damage + 1);
+  // 1000:8CC5: a wand can put 240 points on one swing, and the next swing is the one that gets
+  // them, whatever it is thrown with.
+  damage += game.swingBonus;
+  game.swingBonus = 0;
   if (damage < 0) damage = 0;
   fight.hitPoints -= damage;
   return { roll, target, damage };

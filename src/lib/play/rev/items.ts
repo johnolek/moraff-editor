@@ -1,4 +1,5 @@
 import type { RevMagicDesk } from './desk';
+import type { RevSwing } from './fight';
 import { revKillMonster } from './kill';
 import {
   REV_MAGIC,
@@ -491,3 +492,27 @@ const YOU_HAVE = 'YOU HAVE ';
 
 /** 1000:3CD1's own thirteen: how far the list of counted items runs. */
 const ITEMS_LISTED = 13;
+
+/**
+ * 1000:8977: whether the potion of fire is still burning.
+ *
+ * The B key of the fight prompt is not even looked for otherwise, so a character whose potion
+ * has run out presses it and nothing at all happens.
+ */
+export function revCanBreatheFire(game: RevGame): boolean {
+  return revValue(game.pc, REV_MAGIC.fireUntil) > game.seconds;
+}
+
+/**
+ * 1000:8993: the breath, which is between 10 and 39 points and cannot miss.
+ *
+ * It goes through the swing's own damage arithmetic (1000:8CEE) and prints one of the five lines
+ * a hit prints, so the words are the sword's words.
+ */
+export function revBreatheFire(game: RevGame): RevSwing | null {
+  if (!revCanBreatheFire(game)) return null;
+  const damage = game.rng.random(30) + 10;
+  const fight = game.fight;
+  if (fight) fight.hitPoints -= damage;
+  return { roll: 0, target: 0, damage };
+}

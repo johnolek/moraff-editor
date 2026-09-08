@@ -65,6 +65,9 @@ export interface RevGame {
   /** DGROUP B726: the monster was sent away rather than killed, which is why `Go Away!' does
    *  not say "YOU KILLED IT!!" (1000:A4CD). */
   monsterLeft: boolean;
+  /** The monster died on this key, whichever of the weapon, the spell and the grenade killed it,
+   *  so that the loop knows to offer what it dropped (1000:A4E7). */
+  killed: boolean;
   /** `TIMER`: how long this game has been played, in seconds, which is what the three potions
    *  that wear off are timed against (1000:8977). The original reads the wall clock; here it is
    *  the monsters' own clock, so it runs while the level does. */
@@ -167,6 +170,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     swingBonus: 0,
     shielding: 0,
     monsterLeft: false,
+    killed: false,
     seconds: 0,
     feature: 50,
     chuteLanding: null,

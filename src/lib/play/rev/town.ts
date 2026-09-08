@@ -1,5 +1,8 @@
 import { townBuilding } from '../../game/revmap.js';
+import type { RevMagicDesk } from './desk';
+import { revItemMenu } from './items';
 import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue } from './record';
+import { REV_ITEM_TABLE, revSpellsAt } from './tables';
 import type { RevGame } from './state';
 
 /**
@@ -305,14 +308,33 @@ export function revSpellLevelPrice(level: number): number {
 /** What the magic-item list costs (the literal at 1000:2C38). */
 export const REV_MAGIC_ITEM_LIST_PRICE = 800;
 
+/** 1000:2C52 and 1000:2DF0: what the guild asks once it has been paid. */
+const GUILD_ITEM_SETS = [
+  'P=Prep items (used while not fighting)',
+  'B=Battle items   L=Leave',
+];
+const GUILD_SPELL_SETS = [
+  'P=Prep spells (used while not fighting)',
+  'B=Battle spells   L=Leave',
+];
+
+/** 1000:2EF3: what it says to a character who cannot pay. */
+const CANNOT_PAY = [
+  'You do not have enough money. You find',
+  '   yourself floating out of the guild...',
+];
+
+const PREP = 'P'.charCodeAt(0);
+const BATTLE = 'B'.charCodeAt(0);
+
 /**
  * 1000:2BB8: the wizard's guild, which sells what things do rather than the things.
  *
- * What it sells is the text of `F1.COM` and `F2.COM`, which this port does not show — the spells
- * and the magic items are not built. The prices are charged and the guild says so, which is the
- * whole of what the transaction does to the character.
+ * Everything it reads out is the text of `F1.COM` and `F2.COM`. A level of spells costs
+ * `INT(level ^ 1.75 * 220)` and the list of what one magic item does costs a flat 800, and both
+ * are charged only where something was actually read out.
  */
-export async function revVisitGuild(game: RevGame, desk: RevTownDesk): Promise<void> {
+export async function revVisitGuild(game: RevGame, desk: RevTownDesk, magic: RevMagicDesk): Promise<void> {
   const pc = game.pc;
   for (;;) {
     game.say(...GUILD_OPENS);
@@ -320,8 +342,11 @@ export async function revVisitGuild(game: RevGame, desk: RevTownDesk): Promise<v
     if (key === LEAVE) return;
     if (key === '2'.charCodeAt(0)) {
       game.say('This will cost you 800 JP.');
-      if (pc.money >= REV_MAGIC_ITEM_LIST_PRICE) pc.money -= REV_MAGIC_ITEM_LIST_PRICE;
-      game.say(...REV_GUILD_NOT_BUILT);
+      if (pc.money < REV_MAGIC_ITEM_LIST_PRICE) {
+        game.say(...CANNOT_PAY);
+        return;
+      }
+      await readOutAnItem(game, desk, magic);
       continue;
     }
     if (key !== '1'.charCodeAt(0)) continue;
@@ -329,13 +354,43 @@ export async function revVisitGuild(game: RevGame, desk: RevTownDesk): Promise<v
     if (level === null || level < 1 || level > 6) continue;
     const price = revSpellLevelPrice(level);
     game.say(`That will cost you ${price} JP.`);
-    if (pc.money >= price) pc.money -= price;
-    game.say(...REV_GUILD_NOT_BUILT);
+    if (price > pc.money) {
+      game.say(...CANNOT_PAY);
+      return;
+    }
+    await readOutASpell(game, desk, level, price);
   }
 }
 
-/** What the guild says in place of the pages of `F1.COM` and `F2.COM` it would have shown. */
-export const REV_GUILD_NOT_BUILT = [
-  'NOT BUILT YET: the guild reads out what',
-  '   the spells and the magic items do.',
-];
+/** 1000:2C4F: the guild runs one of the two item menus and reads out what the chosen item
+ *  does. */
+async function readOutAnItem(game: RevGame, desk: RevTownDesk, magic: RevMagicDesk): Promise<void> {
+  game.say(...GUILD_ITEM_SETS);
+  const key = await desk.key();
+  if (key !== PREP && key !== BATTLE) return;
+  const which = key === PREP ? 'prep' : 'battle';
+  // 1000:2C86: it puts the menu up with the fight prompt's own flag set, so every line is
+  // offered whether the character owns it or not and "L = LEAVE" is on the bottom.
+  const item = await revItemMenu(game, magic, which, true);
+  if (item === 0) return;
+  game.pc.money -= REV_MAGIC_ITEM_LIST_PRICE;
+  const text = which === 'prep' ? REV_ITEM_TABLE.prepText : REV_ITEM_TABLE.battleText;
+  game.say(text[item - 1] ?? '');
+}
+
+/** 1000:2DED: the two sentences a level of spells buys. */
+async function readOutASpell(game: RevGame, desk: RevTownDesk, level: number, price: number): Promise<void> {
+  game.say(...GUILD_SPELL_SETS);
+  const key = await desk.key();
+  if (key !== PREP && key !== BATTLE) return;
+  const which = key === PREP ? 'prep' : 'battle';
+  const spells = revSpellsAt(level, which);
+  game.say(
+    which === 'prep' ? 'PREP SPELLS' : 'BATTLE SPELLS',
+    '',
+    spells[0]?.text ?? '',
+    '',
+    spells[1]?.text ?? '',
+  );
+  game.pc.money -= price;
+}

@@ -38,4 +38,5 @@ export function revKillMonster(game: RevGame): void {
   // else, so the kill it runs says nothing.
   if (game.monsterLeft) game.monsterLeft = false;
   else game.say(YOU_KILLED_IT);
+  game.killed = true;
 }

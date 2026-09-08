@@ -2,7 +2,31 @@ import { LEVELS } from '../../game/revmap.js';
 import type { Rng } from '../../game/port/rng';
 import { REV_POLLS_PER_TICK, REV_TICK_MS, revPoll } from './clock';
 import { revFallDownAChute } from './chute';
-import { revNeedsAFountain, revRollTheFountain } from './fountain';
+import type { RevMagicDesk } from './desk';
+import {
+  REV_FOUNTAIN_PROMPT,
+  revAtTheFountain,
+  revDrinkFromTheFountain,
+  revNeedsAFountain,
+  revRollTheFountain,
+} from './fountain';
+import {
+  revBreatheFire,
+  revMagicItemsOwned,
+  revTakeAPill,
+  revUseAWandInAFight,
+  revUseAWandInTheDungeon,
+  revUseAnItem,
+  revUseAnItemInAFight,
+} from './items';
+import { revFloorStats } from './magic';
+import {
+  revCastInAFight,
+  revCastInTheDungeon,
+  revCountDownBattleSpells,
+  revEndPreppedSpells,
+} from './spells';
+import { revTreasureFromAKill } from './treasure';
 import { revDie } from './death';
 import {
   revLeaveTheFight,
@@ -195,6 +219,8 @@ export class RevGameSession {
     if (this.game.over || this.game.pc.dungeonLevel === 0) return;
     this.run?.input(REV_CLOCK_TICK);
     this.ticks += 1;
+    // `TIMER`, which the three potions that wear off are timed against.
+    this.game.seconds = (this.ticks * REV_TICK_MS) / 1000;
     const walker = revWalker(this.game);
     for (let pass = 0; pass < REV_POLLS_PER_TICK; pass++) revPoll(this.game.monsters, walker, this.game.lastMonsterLevel, this.game.rng);
     // 1000:08F6: a monster that has reached the character's square opens a fight at once.
@@ -248,8 +274,12 @@ export class RevGameSession {
     const from = pc.dungeonLevel;
     pc.dungeonLevel = Math.min(Math.max(level, 0), LEVELS);
     this.game.monsters.stock(pc.dungeonLevel, this.game.rng);
-    // 1000:3F4E: coming back to the town is one of the five moments the character is saved.
-    if (pc.dungeonLevel === 0 && from !== 0) this.save();
+    // 1000:3F42: the spells that last until the town are taken off when the character reaches
+    // it, and 1000:3F4E is one of the five moments the character is saved.
+    if (pc.dungeonLevel === 0 && from !== 0) {
+      revEndPreppedSpells(this.game);
+      this.save();
+    }
   }
 
   /** The save editor has written the record while the game is being played. */
@@ -284,6 +314,34 @@ export class RevGameSession {
   /** Nothing is going to draw this session again. */
   finish(): void {
     this.stopClock();
+  }
+
+  /**
+   * 1000:7DC9 and 1000:2F71: how a spell, an item, a pill or a wand asks its questions.
+   *
+   * The poll runs the monsters' clock the way the original's does, and a tick is not a key: the
+   * original's `INKEY$` gives it an empty string and it asks again. What it does hand back
+   * instead of a key is a space, once a monster is standing on the character's square
+   * (1000:7E4A), and that is the null here.
+   */
+  magic(): RevMagicDesk {
+    return {
+      poll: async () => {
+        for (;;) {
+          if (this.monsterHere() > 0 && this.game.fight === null) return null;
+          const key = await this.poll();
+          if (key !== REV_CLOCK_TICK && key !== REV_RECORD_EDITED) return key;
+        }
+      },
+      wait: async () => {
+        const key = await this.key();
+        revFloorStats(this.game.pc);
+        return key;
+      },
+      enterLevel: (level) => this.enterLevel(level),
+      stats: () => showStats({ session: this, game: this.game, building: 0 }),
+      save: () => this.save(),
+    };
   }
 
   /** The town desk, which is how a building asks its questions. */
@@ -371,16 +429,16 @@ export const REV_KEY_HANDLERS: Record<number, RevKeyHandler> = {
   [REV_KEY.stats]: { c: '1000:19F7, view_stats', run: showStats },
   [REV_KEY.quit]: { c: '1000:0D7D, the save and the chain back to BEGIN', run: quitAndSave },
   [REV_KEY.escape]: { c: '1000:10BE, the movement-mode switch', run: switchArrows },
-  [REV_KEY.cast]: { c: '1000:35AC, cast a spell', run: (turn) => notBuiltYet(turn, 'cast a spell') },
-  [REV_KEY.magic]: { c: '1000:3B16, the magic items owned', run: (turn) => notBuiltYet(turn, 'list the magic items you own') },
-  [REV_KEY.item]: { c: '1000:1340, use an item', run: (turn) => notBuiltYet(turn, 'use a magic item') },
+  [REV_KEY.cast]: { c: '1000:35AC, cast a spell', run: (turn) => revCastInTheDungeon(turn.game, turn.session.magic()) },
+  [REV_KEY.magic]: { c: '1000:3B16, the magic items owned', run: (turn) => turn.game.say(...revMagicItemsOwned(turn.game)) },
+  [REV_KEY.item]: { c: '1000:1340, use an item', run: (turn) => revUseAnItem(turn.game, turn.session.magic()) },
   [REV_KEY.abandon]: { c: '1000:1918, drop all the coins', run: (turn) => notBuiltYet(turn, 'drop all of your coins') },
   [REV_KEY.help]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
   [REV_KEY.f1]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
   [REV_KEY.pause]: { c: '1000:7FFB, the pause screen', run: (turn) => revPause(turn.game, turn.session.desk(), () => quitAndSave(turn)) },
   [REV_KEY.enterDelay]: { c: '1000:0F00, the enter delay', run: (turn) => revSetEnterDelay(turn.game, turn.session.desk()) },
-  [REV_KEY.pill]: { c: '1000:7C49, take a pill', run: (turn) => notBuiltYet(turn, 'take a pill') },
-  [REV_KEY.wand]: { c: '1000:7AA1, use a wand', run: (turn) => notBuiltYet(turn, 'use a wand') },
+  [REV_KEY.pill]: { c: '1000:7C49, take a pill', run: (turn) => revTakeAPill(turn.game, turn.session.magic()) },
+  [REV_KEY.wand]: { c: '1000:7AA1, use a wand', run: (turn) => revUseAWandInTheDungeon(turn.game, turn.session.magic()) },
   [REV_KEY.background]: { c: '1000:0FF5, the background colour', run: (turn) => revStepBackground(turn.game) },
   [REV_KEY.palette]: { c: '1000:102A, the palette', run: (turn) => revStepPalette(turn.game) },
   [REV_KEY.sound]: { c: '1000:1055, the sound', run: (turn) => revToggleSound(turn.game) },
@@ -399,6 +457,12 @@ function notBuiltYet(turn: RevTurn, what: string): void {
 /** 1000:0DE0: D takes a ladder down, and the false floor a chute left behind. */
 function goDown(turn: RevTurn): void {
   const game = turn.game;
+  // 1000:0CE0: the fountain of youth is asked about before the ladder is, so D drinks where a
+  // character is standing on it.
+  if (revAtTheFountain(game)) {
+    revDrinkFromTheFountain(game, turn.session.magic());
+    return;
+  }
   if (game.feature < 1 || game.feature > 3) return;
   turn.session.enterLevel(game.pc.dungeonLevel + game.feature);
 }
@@ -421,7 +485,7 @@ async function enterBuilding(turn: RevTurn, building: number): Promise<void> {
   else if (building === 4) await revVisitBank(turn.game, desk);
   else if (building === 5) await revVisitTemple(turn.game, desk);
   else if (building === 6) await revVisitStore(turn.game, desk);
-  else if (building === 7) await revVisitGuild(turn.game, desk);
+  else if (building === 7) await revVisitGuild(turn.game, desk, turn.session.magic());
 }
 
 /** 1000:19F7: the statistics screen. */
@@ -449,14 +513,27 @@ function quitAndSave(turn: RevTurn): void {
 /** The keys the fight prompt takes and the dungeon does not (1000:87CA onwards). */
 async function fightKey(session: RevGameSession, key: number): Promise<void> {
   const game = session.game;
+  const desk = session.magic();
   const weapon = revWeaponFor(key);
   if (weapon === null) {
-    if (key === REV_KEY.breathe) game.say(...REV_NOT_BUILT('breathe fire while the potion holds'));
-    else if (key === REV_KEY.pause) game.say(...REV_NOT_BUILT('pray'));
-    else if (key === REV_KEY.cast) game.say(...REV_NOT_BUILT('cast a spell'));
-    else if (key === REV_KEY.item) game.say(...REV_NOT_BUILT('use a magic item'));
-    else if (key === REV_KEY.pill) game.say(...REV_NOT_BUILT('take a pill'));
-    else if (key === REV_KEY.wand) game.say(...REV_NOT_BUILT('use a wand'));
+    // 1000:8985: the breath is a swing that cannot miss, and it is only looked for while the
+    // potion of fire is still burning.
+    if (key === REV_KEY.breathe) {
+      const breath = revBreatheFire(game);
+      if (breath === null) return;
+      game.banner = revSwingWords(game, breath);
+      monsterAnswers(game);
+      return;
+    }
+    if (key === REV_KEY.pause) game.say(...REV_NOT_BUILT('stop everything until a key'));
+    else if (key === REV_KEY.cast) {
+      await revCastInAFight(game, desk);
+      monsterAnswers(game);
+    } else if (key === REV_KEY.item) {
+      await revUseAnItemInAFight(game, desk);
+      monsterAnswers(game);
+    } else if (key === REV_KEY.pill) await revTakeAPill(game, desk);
+    else if (key === REV_KEY.wand) await revUseAWandInAFight(game, desk);
     return;
   }
   if (!revOwnsWeapon(game.pc, weapon)) {
@@ -465,6 +542,12 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
   }
   const swing = revSwing(game, weapon);
   game.banner = revSwingWords(game, swing);
+  monsterAnswers(game);
+}
+
+/** 1000:9A2F and 1000:8E44: the monster's own turn, which is only ever reached from the far side
+ *  of a key of the character's. */
+function monsterAnswers(game: RevGame): void {
   const fight = game.fight;
   if (fight && fight.hitPoints < 1) {
     revKillMonster(game);
@@ -502,6 +585,9 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
       continue;
     }
     revLookDown(game);
+    // 1000:0A4F: the top of every pass wraps the step counter and takes off the two spells a
+    // fight casts on the character when it has come round to them.
+    revCountDownBattleSpells(game);
     game.advice = revAdvice(game);
     const turn: RevTurn = { session, game, building: revBuildingUnder(pc.column, pc.row, pc.dungeonLevel) };
     // 1000:08F6 and 1000:0946: a monster on the character's own square opens a fight.
@@ -523,6 +609,11 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
       const handler = REV_KEY_HANDLERS[key];
       if (handler) await handler.run(turn);
       else await stepOrTurn(session, key);
+    }
+    // 1000:A4E7: whatever killed the monster, what it dropped is offered before the next key.
+    if (game.killed) {
+      game.killed = false;
+      await revTreasureFromAKill(game, session.magic());
     }
     // The fight is over the moment the character is no longer standing on the monster.
     if (game.fight !== null && session.monsterHere() !== game.fight.slot) revLeaveTheFight(game);
