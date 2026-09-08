@@ -1,3 +1,4 @@
+import { dungeonForLevel } from '../../rev-bestiary/monsters';
 import { REV_ARMOUR_VALUE, REV_VALUE, revValue } from './record';
 import type { RevGame } from './state';
 
@@ -119,6 +120,14 @@ export function revMonsterAttack(game: RevGame): RevMonsterSwing {
   if (damage === 0) {
     game.banner.push(IT_MISSED);
     return { ...cells };
+  }
+  const dungeon = dungeonForLevel(pc.dungeonLevel).number;
+  // 1000:9D72: the second dungeon's stomper takes a quarter of what the character has left on
+  // top of everything else.
+  if (fight.name === 18 && dungeon === 2) {
+    damage += Math.trunc(pc.hp * 0.25);
+    cells.damage = damage;
+    game.banner.push(SQUASH);
   }
   pc.hp -= damage;
   game.banner.push(`IT DID ${damage} POINTS  `);

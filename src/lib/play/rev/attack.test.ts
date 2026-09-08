@@ -182,3 +182,19 @@ describe('a monster held off by a pill', () => {
     expect(game.paralysis).toBe(1);
   });
 });
+
+describe("the second dungeon's stomper", () => {
+  it('adds a quarter of what the character has left and squashes them', () => {
+    const game = attacking(draws({ 4: 3 }), 15, { dungeonLevel: 40, hp: 200 }, { name: 18 });
+    const swing = revMonsterAttack(game);
+    expect(swing.damage).toBe(4 + 50);
+    expect(game.banner).toContain('SQUASH!!');
+    expect(game.pc.hp).toBe(200 - (4 + 50));
+  });
+
+  it('leaves the first dungeon alone', () => {
+    const game = attacking(draws({ 4: 3 }), 15, { dungeonLevel: 5, hp: 200 }, { name: 18 });
+    expect(revMonsterAttack(game).damage).toBe(4);
+    expect(game.banner).not.toContain('SQUASH!!');
+  });
+});
