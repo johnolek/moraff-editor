@@ -34,14 +34,22 @@ export function monsterPictureFile(entry: Monster): string {
   return entry.origin.kind === 'builtin' ? 'ufmon.pic' : `ufmon${entry.origin.section}.pic`;
 }
 
-/** The images of one .pic file, decoded on first use. */
-export function pictureImages(file: string): PicImage[] {
+/** The images of one .pic file, decoded on first use, or null for a file the site does not
+ *  bundle. */
+export function bundledPictureImages(file: string): PicImage[] | null {
   const cached = parsed.get(file);
   if (cached) return cached;
   const url = picUrls[`../game/pics/${file}`];
-  if (!url) throw new Error(`no bundled picture ${file}`);
+  if (!url) return null;
   const { images } = parsePic(decodeDataUrl(url));
   parsed.set(file, images);
+  return images;
+}
+
+/** The images of one .pic file, decoded on first use. */
+export function pictureImages(file: string): PicImage[] {
+  const images = bundledPictureImages(file);
+  if (!images) throw new Error(`no bundled picture ${file}`);
   return images;
 }
 

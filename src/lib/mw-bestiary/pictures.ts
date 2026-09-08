@@ -38,11 +38,18 @@ const picUrls = import.meta.glob('../game/pics/mw/*.pic', {
 }) as Record<string, string>;
 
 let parsed: PicImage[] | null = null;
+let walls: PicImage[] | null = null;
 
 /** The 37 images of WORLD.PIC, decoded on first use. */
 export function pictureImages(): PicImage[] {
   if (!parsed) parsed = parsePic(decodeDataUrl(picUrls['../game/pics/mw/world.pic'])).images;
   return parsed;
+}
+
+/** The two images of WALL.PIC, the door and the wall, decoded on first use. */
+export function wallImages(): PicImage[] {
+  if (!walls) walls = parsePic(decodeDataUrl(picUrls['../game/pics/mw/wall.pic'])).images;
+  return walls;
 }
 
 /**
