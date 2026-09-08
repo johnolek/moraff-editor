@@ -561,6 +561,80 @@ export function mwCharacteristicLines(game: MwGame): ScreenLine[] {
 }
 
 /**
+ * FUN_4000_3a72 (WORLD.EXE 4000:3a72, mw.c "FUN_4000_3a72"): the menu of keys down the top right
+ * of the play screen.
+ *
+ * Every line is drawn twice through print_text_clipped, which spreads a string evenly between two
+ * x values rather than clipping it: first the words with the key letters blanked out, in colour 8,
+ * then a string of the same length holding only the key letters, in colour 4, on top. Both halves
+ * are spread over the same span, so the letters drop into the holes.
+ *
+ * The rows are not evenly spaced — 40, 39, 39, 39, 39, 38, 42, 39, 39, 38 apart — and the strings
+ * are the executable's own bytes, trailing spaces and all.
+ */
+export const MW_KEY_MENU = { x: 0x48c, spreadTo: 0x63f, body: 8, key: 4 } as const;
+
+const MW_KEY_MENU_ROWS = [0, 0x28, 0x4f, 0x76, 0x9d, 0xc4, 0xea, 0x114, 0x13b, 0x162, 0x188];
+
+/**
+ * The sound line offers to do the opposite of what the sound is doing, and both strings are
+ * seventeen bytes so that the one O of the yellow pass lands on the O of ON and of OFF alike.
+ */
+const MW_SOUND_ON = 'TURN SOUND  FF   '; // DS:857d, shown while the sound is on
+const MW_SOUND_OFF = 'TURN SOUND  N    '; // DS:858f
+
+/** The words, with every key letter blanked (DS:84f1 onwards). */
+const MW_KEY_MENU_BODY = [
+  ' RICKS   VIEW  ONEY',
+  ' EAPONS   IEW STATS',
+  ' OOM      AST SPELL',
+  'USE  TEM E PAND MAP',
+  ' RMOR     OSE ITEM ',
+  ' IGHT     OCKETS   ',
+  'WAI       XP NEEDED',
+  MW_SOUND_ON,
+  'SPELLS IN EFFECT  ',
+  'SPELLS IN EFFECT  ',
+  ' UIT-SAVE  ELP (  )',
+];
+
+/** Which row of the menu the sound line is, since it is the one that changes. */
+const MW_SOUND_ROW = 7;
+
+/** Only the key letters, at the positions the words leave for them (DS:85c8 onwards). */
+const MW_KEY_MENU_KEYS = [
+  'B             M    ',
+  'W        V         ',
+  'Z        C         ',
+  '    I     X        ',
+  'A        L         ',
+  'F        P         ',
+  '   T     E         ',
+  '           O     ',
+  '                 1',
+  '                 2',
+  'Q         H     F1 ',
+];
+
+/**
+ * The menu, as the two passes the game draws it in. Only the T of WAIT is a key letter, not the
+ * whole word.
+ */
+export function mwKeyMenuLines(soundOn: boolean): ScreenLine[] {
+  const lines: ScreenLine[] = [];
+  for (const [row, y] of MW_KEY_MENU_ROWS.entries()) {
+    const body = row === MW_SOUND_ROW && !soundOn ? MW_SOUND_OFF : MW_KEY_MENU_BODY[row];
+    for (const [text, colour] of [
+      [body, MW_KEY_MENU.body],
+      [MW_KEY_MENU_KEYS[row], MW_KEY_MENU.key],
+    ] as const) {
+      lines.push({ text, x: MW_KEY_MENU.x, y, font: 0, colour, spreadTo: MW_KEY_MENU.spreadTo });
+    }
+  }
+  return lines;
+}
+
+/**
  * The eight lines of the spell screen's first menu (exe DS:4583). The first four cast a spell out
  * of the category and the last four show its SPELLS.HLP paragraph and cast nothing.
  */
