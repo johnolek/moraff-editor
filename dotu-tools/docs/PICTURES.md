@@ -156,8 +156,9 @@ screen, so it uses the picture's own row.
 
 Value 29 appears in no monster picture.  Values 30 and 31 appear only in the Gargalon, the
 Squishy Cube, the Khagistoll, the Rotten Swamp Plant and the Shadow bosses that share those
-pictures — all colour set 2.  Every colour set 0 and colour set 1 monster picture uses 16,
-17 or 18, and so does the wall material image of `ufwall1`..`ufwall4`.
+pictures — all colour set 2.  Every colour set 0 and colour set 1 monster picture but five
+(the Mummy, the Flesh Eater, the Foot Stomper, the Vampire and the Titan) uses 16, 17 or 18,
+and so does the wall material image of `ufwall1`..`ufwall4`.
 
 The drawer has two more paths that only run in 16-colour modes: it dithers odd rows when the
 resolution mode at DS:c6a8 is 0, and darkens entries 33..47 on odd columns when the colour
