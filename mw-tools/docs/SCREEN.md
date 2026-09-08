@@ -23,6 +23,11 @@ rectangles win where they differ.
 The views have no labels. The four are the same drawing; front and back are a little
 taller than they are wide, west and east a little wider.
 
+Nothing in the executable draws the green square in the message box's corner: every
+`fill_rect` and `print_text` call site was checked and none of them fills a small rectangle
+near the origin. It is most likely the mouse driver's own block cursor parked at 0,0, so
+the port does not draw it.
+
 ## The key menu
 
 ```
@@ -91,7 +96,8 @@ two read as one line with a gap.
 
 `EXP. VALUE:` is spelled out in full only on floors up to ten; from eleven it is `EXP: `,
 from forty-one `EX:`, and from eighty-one nothing at all — so the character in the
-screenshot is no deeper than floor ten.
+screenshot is no deeper than floor ten. With the walls putting them on a floor where
+`floor % 11` is 3, that makes it **floor 3**.
 
 ## The numbers
 
