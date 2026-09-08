@@ -74,17 +74,35 @@ function column(frame: Frame, x: number, from: number, to: number, colour: numbe
 
 /** How a 5-bit picture value becomes a palette index for a wall. */
 export interface WallColours {
-  /** DS:4fc3: the bank wall pixels are lifted into in 256-colour modes. */
+  /** DS:4fc3: the bank a value below 16 is lifted into in 256-colour modes. */
   base: number;
-  /** DS:4fbd: what value 0x11 is drawn in. The wall drawer sets it per face. */
+  /** DS:4fbd: what value 17 is drawn in. The wall drawer sets it per face. */
   tint: number;
+  /**
+   * The first entry of the gradient bank values 18 and 19 read. Dungeons of the Unforgiven's
+   * drawer adds 0x80 (exe 4000:5419) and Moraff's World's adds 0x40 (mw.c "draw_wall_picture").
+   */
+  gradient: number;
 }
 
-/** `FUN_4000_4f8f`'s colour substitutions. */
-export function wallPixelIndex(value: number, colours: WallColours): number {
+/**
+ * `FUN_4000_4f8f`'s colour rule in 256-colour modes (exe 4000:53d1 to 4000:54a1). Only a value
+ * below 16 is lifted into the bank; everything above is a palette entry in its own right, with
+ * no base added. 16 is black, 17 is the face's tint, and 18 and 19 take no colour from the
+ * picture at all — they read the gradient bank by the screen column the pixel lands in.
+ *
+ * `x` is that column and `screenWidth` the width of the screen it is on: the game shifts the
+ * column one place less on a screen wider than a thousand pixels, which is the last column at
+ * DS:c6aa tested at exe 4000:5407 and 4000:5450.
+ */
+export function wallPixelIndex(value: number, x: number, screenWidth: number, colours: WallColours): number {
+  if (value < 0x10) return (value + colours.base) & 0xff;
   if (value === 0x10) return 0;
   if (value === 0x11) return colours.tint;
-  return (value + colours.base) & 0xff;
+  const wide = screenWidth - 1 > 1000;
+  if (value === 0x12) return ((x >> (wide ? 1 : 2)) & 0x7f) + colours.gradient;
+  if (value === 0x13) return (((0x400 - x) >> (wide ? 3 : 2)) & 0x7f) + colours.gradient;
+  return value;
 }
 
 /**
@@ -143,7 +161,7 @@ export function drawWallFace(
     for (const run of line.runs) {
       runEndAt = runEndAt + run.length - 1;
       const y2 = top + ((runEndAt * height) >> 8);
-      column(frame, xLeft + c, y, y2, wallPixelIndex(run.colour, colours));
+      column(frame, xLeft + c, y, y2, wallPixelIndex(run.colour, xLeft + c, frame.width, colours));
       runEndAt += 1;
       y = y2;
     }

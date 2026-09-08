@@ -16,6 +16,13 @@ export const WALL_MATERIALS = [3, 4, 5] as const;
 export const FLOOR_TILES = [6, 7, 8, 9] as const;
 
 /**
+ * The first entry of the gradient bank the wall drawer reads for picture values 18 and 19, which
+ * `FUN_4000_4f8f` adds after shifting the screen column (exe 4000:5419). Only the teleporter sign
+ * has any pixel that high; the doors and the three wall materials stop at 15.
+ */
+export const WALL_GRADIENT = 0x80;
+
+/**
  * Which of the two pairs a square is laid with: 0 for images 6 and 7, 2 for 8 and 9. The pair
  * turns over with every step, and the way the character faces is added in so that the floor does
  * not change when they only turn on the spot (exe 3000:1698).

@@ -57,7 +57,7 @@ describe('reading a .PIC as rows of runs', () => {
 
 describe('painting a wall face', () => {
   const pic = parsePicRows(buildPic(solid(9)))[0];
-  const colours = { base: 0x50, tint: 12 };
+  const colours = { base: 0x50, tint: 12, gradient: 0x80 };
 
   it('fills a square-on face with the picture', () => {
     const frame = newFrame(40, 40);
@@ -97,13 +97,34 @@ describe('painting a wall face', () => {
 });
 
 describe('the colours a wall pixel can take', () => {
-  it('drops value 16 to black and gives value 17 the face tint', () => {
-    expect(wallPixelIndex(0x10, { base: 0x50, tint: 12 })).toBe(0);
-    expect(wallPixelIndex(0x11, { base: 0x50, tint: 12 })).toBe(12);
+  const colours = { base: 0x50, tint: 12, gradient: 0x80 };
+  const NARROW = 320;
+  const WIDE = 1024;
+
+  it('lifts a value below 16 into the wall bank', () => {
+    expect(wallPixelIndex(0, 0, WIDE, colours)).toBe(0x50);
+    expect(wallPixelIndex(1, 0, WIDE, colours)).toBe(0x51);
+    expect(wallPixelIndex(15, 0, WIDE, colours)).toBe(0x5f);
   });
 
-  it('lifts every other value into the wall bank', () => {
-    expect(wallPixelIndex(1, { base: 0x50, tint: 12 })).toBe(0x51);
-    expect(wallPixelIndex(31, { base: 0x50, tint: 12 })).toBe(0x6f);
+  it('drops value 16 to black and gives value 17 the face tint, neither of them lifted', () => {
+    expect(wallPixelIndex(0x10, 0, WIDE, colours)).toBe(0);
+    expect(wallPixelIndex(0x11, 0, WIDE, colours)).toBe(12);
+  });
+
+  it('reads the gradient bank for values 18 and 19, by the column and not by the picture', () => {
+    expect(wallPixelIndex(0x12, 40, WIDE, colours)).toBe(0x80 + 20);
+    expect(wallPixelIndex(0x13, 40, WIDE, colours)).toBe(0x80 + ((0x400 - 40) >> 3));
+    expect(wallPixelIndex(0x12, 40, WIDE, colours)).not.toBe(wallPixelIndex(0x12, 400, WIDE, colours));
+  });
+
+  it('shifts the column further on a screen no wider than a thousand pixels', () => {
+    expect(wallPixelIndex(0x12, 40, NARROW, colours)).toBe(0x80 + 10);
+    expect(wallPixelIndex(0x13, 40, NARROW, colours)).toBe(0x80 + (((0x400 - 40) >> 2) & 0x7f));
+  });
+
+  it('leaves values 20 to 31 as palette entries of their own', () => {
+    expect(wallPixelIndex(20, 0, WIDE, colours)).toBe(20);
+    expect(wallPixelIndex(31, 0, WIDE, colours)).toBe(31);
   });
 });

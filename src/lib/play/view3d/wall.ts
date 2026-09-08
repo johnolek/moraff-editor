@@ -1,7 +1,7 @@
 import type { MapSquare } from '../../map/game';
 import { drawLine, type Frame } from './frame';
 import type { WallFace } from './flood';
-import { WALL_DOOR, WALL_MATERIALS, WALL_TELEPORTER_SIGN, type ViewPictures } from './pictures';
+import { WALL_DOOR, WALL_GRADIENT, WALL_MATERIALS, WALL_TELEPORTER_SIGN, type ViewPictures } from './pictures';
 import { drawWallFace, type PicRowImage } from './texture';
 
 /**
@@ -228,7 +228,11 @@ export function drawWall(frame: Frame, scene: WallScene, face: WallFace): boolea
 
   function paint(picture: PicRowImage | null, from: number, to: number, tint: number): void {
     if (!picture) return;
-    drawWallFace(frame, xL, xR, topL, topR, botL, botR, picture, from, to, { base: 0x50, tint });
+    drawWallFace(frame, xL, xR, topL, topR, botL, botR, picture, from, to, {
+      base: 0x50,
+      tint,
+      gradient: WALL_GRADIENT,
+    });
   }
 
   /**

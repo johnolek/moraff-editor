@@ -7,6 +7,7 @@ import {
   STONE_REPEAT,
   WALL_BASE,
   WALL_DOOR,
+  WALL_GRADIENT,
   WALL_STONE,
   WALL_TINT,
   type MwViewPictures,
@@ -237,6 +238,7 @@ export function drawMwWall(frame: Frame, scene: MwWallScene, face: WallFace): bo
       drawWallFace(frame, xL, xR, topL, topR, botL, botR, picture, low * repeat, high * repeat, {
         base: WALL_BASE,
         tint: WALL_TINT,
+        gradient: WALL_GRADIENT,
       });
     }
     return false;

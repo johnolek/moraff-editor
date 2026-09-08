@@ -39,6 +39,12 @@ export const WALL_BASE = 16;
  */
 export const WALL_TINT = 12;
 
+/**
+ * The first entry of the gradient bank values 18 and 19 read (`draw_wall_picture` adds 0x40).
+ * WALL.PIC has no pixel above 15, so nothing in this game is ever drawn from it.
+ */
+export const WALL_GRADIENT = 0x40;
+
 /** Everything the view draws that comes out of a `.PIC` file. */
 export interface MwViewPictures {
   /** WALL.PIC's two images, or null when the bundle has no wall picture. */
