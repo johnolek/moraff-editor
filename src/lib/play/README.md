@@ -226,10 +226,13 @@ drops, the money and the levels all hang off it. Every box it prints in between 
 which is what `printMenusWhile` is for.
 
 A monster whose hit points have run out gets a skull and crossbones painted over it first (exe
-2000:dafb), into the rectangle the view drew its picture in, and it stands there through every
-box the kill prints. `dotu-tools/docs/SCREEN.md` has where the rectangle comes from;
-`session.killed` is what carries it to the tab, and the loop clears it where the original clears
-DS:049d.
+2000:dafb), into the rectangle the view drew its picture in — whichever of the four views the
+monster was standing in, which DS:049d names — and it stands there through every box the kill
+prints and every message it holds. `dotu-tools/docs/SCREEN.md` has where the rectangle comes
+from; `session.killed` is what carries it to the tab, and the loop clears it where the original
+clears DS:049d. The frames the kill's delays leave up carry the skull as it stood when each was
+taken, since the original's own screen keeps it there as surely as it keeps the words beside it,
+and a kill that asks no menu would otherwise be past it before the tab had drawn it once.
 
 The character's own death is asked about next (2000:dbe9), and the step the key asked for is
 resolved after that, so a key that killed the character never takes the step it wanted.

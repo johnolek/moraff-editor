@@ -204,6 +204,16 @@ export class GameSession {
   /** The monster the skull is standing over, until the loop draws the views again. */
   killed: KilledOnScreen | null = null;
   /**
+   * The skull as it stood when the message timer was last asked to hold a screen.
+   *
+   * The original's skull is pixels on the screen, so it stands there through the delays
+   * `kill_monster` counts out as surely as the words beside it do. The tab draws the skull from
+   * the game as it is now rather than from the frame, and the loop is past the kill and has
+   * cleared it long before those delays are up, so a kill that asks no menu would lose the skull
+   * before the tab had drawn it once. This is what the frames are drawn with instead.
+   */
+  private killedWhileHeld: KilledOnScreen | null = null;
+  /**
    * How many times the loop has drawn the four views, which is what the coin flip mirroring the
    * monster ahead is drawn from.
    *
@@ -267,7 +277,10 @@ export class GameSession {
       pressAnyKey: () => {
         this.waitOwed = true;
       },
-      delay: (ms) => this.timed.hold(this.game.screen, ms),
+      delay: (ms) => {
+        this.killedWhileHeld = this.killed;
+        this.timed.hold(this.game.screen, ms);
+      },
     });
     // What the game says goes through print_menu_only, which is the message box; what it draws
     // with pfont is a screen. The two are kept apart here the way they are on the screen.
@@ -569,7 +582,7 @@ export class GameSession {
       seconds: game.secondsElapsed,
       engaged: facing === -1 ? null : (drawn.find((monster) => monster.slot === facing) ?? null),
       ahead: game.engagedAhead !== -1,
-      killed: this.killed,
+      killed: this.timed.holding ? this.killedWhileHeld : this.killed,
       viewsDrawn: this.viewsDrawn,
       over: this.over,
       dead: this.dead,

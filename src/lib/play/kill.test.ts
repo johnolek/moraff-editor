@@ -4,7 +4,7 @@ import { GARBAGE_CAN } from '../game/port/kills';
 import { WEAPON_NAMES } from '../game/port/drops';
 import { MENU_LINE_STEP, MENU_TOP, MENU_X, MESSAGE_LINE_Y } from '../game/port/screens';
 import type { Rng } from '../game/port/rng';
-import { facingAMonster, press, TAKE, LEAVE } from './battle.test-support';
+import { facingAMonster, inTheTown, press, townSquare, TAKE, LEAVE } from './battle.test-support';
 import type { GameSession } from './engine';
 import { KEY } from './keys';
 
@@ -154,6 +154,43 @@ describe('the skull the kill paints over the monster', () => {
 
     await press(session, LEAVE);
     expect(session.view().killed).toBeNull();
+  });
+
+  it("stands through the kill's own message when nothing stops for a key", async () => {
+    const session = await facingAMonster(lowest, { cls: 2 });
+    const monsterId = session.view().monsters[0].monsterId;
+    const dir = session.game.enemyDir;
+    session.game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    // A monk is refused every drop, so the kill asks no menu at all and the loop is back on the
+    // player's key with "YOU KILLED IT!" still being held. The original is still inside its
+    // delay here, with the skull on the screen it drew, so the tab draws it on that screen too.
+    expect(boxText(session)).toContain('YOU KILLED IT!');
+    expect(session.view().killed).toEqual({ dir, monsterId });
+    // The key gives up the rest of the delay, which is where the original has come round and
+    // drawn the views again.
+    await press(session, 0x1b);
+    expect(session.view().killed).toBeNull();
+  });
+
+  it('names the view a monster killed beside the character was standing in', async () => {
+    const start = townSquare('w');
+    const session = inTheTown(lowest, { lev: 10, str: 60, cls: 0, ...start, dir: 0 });
+    const planted = session.game.monsters[0];
+    Object.assign(planted, { x: start.x - 1, y: start.y, hp: 50, level: 1, type: 0 });
+    session.game.monsterMap[planted.y * 80 + planted.x] = 0;
+    // A pass with a key nothing is bound to, which is where attack_timing meets the monster and
+    // takes it up: it is engaged from the west rather than from straight ahead.
+    await press(session, 0x1b);
+    expect(session.game.engaged).toBe(0);
+    expect(session.view().ahead).toBe(false);
+    const monsterId = session.view().monsters[0].monsterId;
+
+    session.game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    // West is 2, which for a character facing north is the LEFT ARROW view: that is the view the
+    // four are drawn into with the skull over the monster's own picture.
+    expect(session.view().killed).toEqual({ dir: 2, monsterId });
   });
 
   it('is not painted for a monster that was never drawn in a view', async () => {

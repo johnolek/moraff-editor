@@ -39,13 +39,14 @@ export async function press(session: GameSession, key: number): Promise<void> {
 /** Let the loop run without pressing anything, for a turn that starts by itself. */
 export const settle = (): Promise<unknown> => new Promise((resolve) => setTimeout(resolve));
 
-/** The first square of the town with a way out to the north and nothing else on it. */
-export function townSquare(): { x: number; y: number } {
+/** The first square of the town with a way out on `side` and nothing else on it: north for a
+ *  character to walk or fight straight ahead, west for one fighting to their left. */
+export function townSquare(side: 'n' | 'w' = 'n'): { x: number; y: number } {
   const rows: MapSquare[][] = UNFORGIVEN_MAP.floor(0, 0);
   for (let y = 1; y < 100; y++) {
     for (let x = 1; x < 76; x++) {
       const square = rows[y][x];
-      if (square.solid || square.n !== 3) continue;
+      if (square.solid || square[side] !== 3) continue;
       if (bundledDungeon.ladder(x, y, 0, 0) !== 0) continue;
       if (bundledDungeon.townFeature(x, y, 0) !== 0) continue;
       if (bundledDungeon.trapdoor(x, y, 0, 0) !== -1) continue;
