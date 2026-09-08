@@ -175,8 +175,9 @@ game drew them at:
   the frames are and is kept in `timed.ts` with them. Two departures: the original's rotation is of
   the palette, so the whole screen's gradient bank crawls with the plaque — the walls' distance
   shading as much as the frame — and it runs wherever else the game polls the keyboard,
-  `movecontrol`'s own wait included; the port turns the bank inside the plaque's rectangle alone,
-  once a frame the browser draws, so a message box does not set the dungeon strobing.
+  `movecontrol`'s own wait included; the port turns the bank for the whole screen while the
+  plaque is up, once a frame the browser draws, so the dungeon shimmers behind every box as it
+  does in the game.
 * **A screen the game leaves up for a moment** — `game.delay(ms)`, which is the `delay` at
   1000:2789 the original busy-waits in. The screen as it stands at that call is kept as a frame
   by `timed.ts`, and the frames are shown in turn for as long as each asked for, so a kill's

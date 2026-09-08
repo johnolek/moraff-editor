@@ -154,7 +154,7 @@ function drawPlaqueFrame(frame: Frame, rect: PlaqueRect): void {
  * The original rotates the palette itself, so the whole screen's gradient bank crawls with the
  * plaque's frame — the distance shading on the walls as much as the plaque — and it does the same
  * wherever else it polls the keyboard, `movecontrol`'s own wait included. The port turns the bank
- * only inside the plaque's own rectangle, so that a message box does not set the dungeon strobing.
+ * for the whole screen while the plaque is up, once a frame the browser draws.
  */
 export function cycleGradientBank(palette: Rgb[], steps: number): Rgb[] {
   const turned = palette.slice();
@@ -164,38 +164,4 @@ export function cycleGradientBank(palette: Rgb[], steps: number): Rgb[] {
     turned[entry] = palette[from];
   }
   return turned;
-}
-
-/** The plaque's rectangle, ready to be put back over the screen the tab has already painted. */
-export interface PlaqueImage {
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-  rgba: Uint8ClampedArray<ArrayBuffer>;
-}
-
-/**
- * The plaque's own rectangle in a palette whose gradient bank has been turned `steps` times, which
- * is the one part of the screen the port lets the rotation reach.
- */
-export function plaqueImage(frame: Frame, palette: Rgb[], screen: PlaqueScreen, steps: number): PlaqueImage {
-  const rect = plaqueRect(screen);
-  const left = Math.max(0, rect.left);
-  const top = Math.max(0, rect.top);
-  const width = Math.min(frame.width - 1, rect.right) - left + 1;
-  const height = Math.min(frame.height - 1, rect.bottom) - top + 1;
-  const turned = cycleGradientBank(palette, steps);
-  const rgba = new Uint8ClampedArray(new ArrayBuffer(width * height * 4));
-  for (let row = 0; row < height; row++) {
-    for (let column = 0; column < width; column++) {
-      const [r, g, b] = turned[frame.pixels[(top + row) * frame.width + left + column]] ?? [0, 0, 0];
-      const at = (row * width + column) * 4;
-      rgba[at] = r;
-      rgba[at + 1] = g;
-      rgba[at + 2] = b;
-      rgba[at + 3] = 255;
-    }
-  }
-  return { left, top, width, height, rgba };
 }

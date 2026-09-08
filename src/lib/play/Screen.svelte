@@ -21,7 +21,7 @@
     statusLines,
   } from './display';
   import type { PlaqueState } from './engine';
-  import { blankPlaque, drawPlaque, plaqueImage } from './plaque';
+  import { blankPlaque, cycleGradientBank, drawPlaque } from './plaque';
   import { drawSectionScreen, type SectionScreen } from './section-screen';
   import { drawTablet } from './tablet';
   import { viewPictures } from './view3d/browser';
@@ -235,9 +235,10 @@
 
   /**
    * The plaque's frame crawling: FUN_2000_2a2e (exe 2000:2a2e) turns the palette's gradient bank
-   * once for every poll of the keyboard while it waits, and the frame is drawn in that bank. The
-   * port turns it once a frame the browser draws, and only over the plaque's own rectangle, so
-   * that a message box does not set the whole dungeon strobing.
+   * once for every poll of the keyboard while it waits, and everything drawn in that bank crawls
+   * with it, the distance shading on the walls as much as the plaque's frame. The port turns it
+   * once a frame the browser draws and repaints the whole screen in the turned palette, which is
+   * what the game's own display shows.
    */
   $effect(() => {
     const holding = painted;
@@ -249,8 +250,8 @@
     let request = 0;
     const tick = (): void => {
       steps += 1;
-      const image = plaqueImage(holding.frame, holding.palette, SCREEN_PIXELS, steps);
-      context.putImageData(new ImageData(image.rgba, image.width, image.height), image.left, image.top);
+      const turned = cycleGradientBank(holding.palette, steps);
+      context.putImageData(new ImageData(toRgba(holding.frame, turned), SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
       request = requestAnimationFrame(tick);
     };
     request = requestAnimationFrame(tick);
