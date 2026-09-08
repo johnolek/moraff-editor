@@ -116,6 +116,11 @@ Moraff's World writes in two places, and this port keeps them apart the way the 
   square takes it down, which is the `fill_rect` FUN_2000_a57e starts with. The one thing a fight
   says that really is a box — the notice a level drain, a poisoning or a disease brings — is the
   last thing said before `wait_key`, so it comes out of the banner and into the box.
+  A delay taken while a fight is being drawn keeps the banner with the frame (`../timed.ts`) and
+  starts a fresh one afterwards, because the original wipes that whole corner before it writes
+  there again. That is what lets a turn two monsters both get be read one message at a time:
+  `monster_turn` ends on a hold of its own, so the first stands alone before the second replaces
+  it.
 * **A screen** — `game.draw(line)` and `game.eraseScreen()`, which are `print_text` and
   `clear_screen`. Anything on `game.screen` is drawn over the map at the game's own coordinates.
   `session.showScreens(...)` is for a ported function that draws a page, waits for a key and then
@@ -130,6 +135,11 @@ size: each corner is given the share of the map's width it has of the screen's 1
 | --- | --- |
 | top left | the strip a kill and a fight write on, and the message box under it (`mwCorner`) |
 | top right | the picture of the monster faced, with the level, hit points and experience FUN_2000_892d prints over its view, and the line FUN_2000_a9bd puts under the map |
+
+With the game's own screen up rather than the map, those three values go over every view a
+monster is standing in rather than over the one being faced, which is what FUN_2000_8b3f does
+after it has drawn the four views; `view3d/monster-bar.ts` is the bar FUN_2000_8728 puts the hit
+points on.
 | bottom left | the character's own level, experience, spell points and health points (`mwStatusLines`) |
 | bottom right | the six characteristics (`mwCharacteristicLines`) |
 
