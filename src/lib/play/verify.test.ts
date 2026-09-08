@@ -179,7 +179,7 @@ describe('reading a run log out of a file', () => {
     expect(readRunLog('null')).toBeNull();
     expect(readRunLog('{}')).toBeNull();
     expect(readRunLog(JSON.stringify({ ...log, version: log.version + 1 }))).toBeNull();
-    expect(readRunLog(JSON.stringify({ ...log, game: 'revenge' }))).toBeNull();
+    expect(readRunLog(JSON.stringify({ ...log, game: 'snake' }))).toBeNull();
     expect(readRunLog(JSON.stringify({ ...log, inputs: ['up'] }))).toBeNull();
     expect(readRunLog(JSON.stringify({ ...log, milestones: [{ kind: 'boss' }] }))).toBeNull();
   });

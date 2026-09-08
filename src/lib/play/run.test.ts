@@ -449,7 +449,8 @@ describe('the games a run can be played in', () => {
   it('names the games a log can name', () => {
     expect(isRunGame('unforgiven')).toBe(true);
     expect(isRunGame('moraffsWorld')).toBe(true);
-    expect(isRunGame('revenge')).toBe(false);
+    expect(isRunGame('revenge')).toBe(true);
+    expect(isRunGame('moraffsDungeonOfTheUnforgiven')).toBe(false);
     expect(isRunGame(2)).toBe(false);
   });
 
@@ -458,6 +459,8 @@ describe('the games a run can be played in', () => {
     expect(RUN_GAMES.unforgiven.clockWords(12)).toBe('12 seconds');
     expect(RUN_GAMES.moraffsWorld.clockWords(1.4)).toBe('1 move');
     expect(RUN_GAMES.moraffsWorld.clockWords(12.5)).toBe('13 moves');
+    expect(RUN_GAMES.revenge.clockWords(1)).toBe('1 tick');
+    expect(RUN_GAMES.revenge.clockWords(12)).toBe('12 ticks');
   });
 });
 
