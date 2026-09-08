@@ -22,8 +22,10 @@
     place: { x: number; y: number; floor: number; module: number; dir: number };
     /** The monsters stocked on the floor; the views draw the ones they can see. */
     monsters: StockedMonster[];
-    /** The eight lines of the message box. */
+    /** The message box: its eight lines and whatever the game drew on the bar above them. */
     box: ScreenLine[];
+    /** A screen the game has taken the whole display over with, at its own coordinates. */
+    screen: ScreenLine[];
     /** The map the character has discovered, which is all the zoom map draws. */
     discovered: DiscoveredMap;
     /** The monsters marked on the zoom map, which is every one on the floor in debug mode and
@@ -36,7 +38,7 @@
     prompt: ScreenLine[] | null;
   }
 
-  let { game, rows, place, monsters, box, discovered, prompt, mapMonsters = [], debug = false }: Props = $props();
+  let { game, rows, place, monsters, box, screen, discovered, prompt, mapMonsters = [], debug = false }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
 
@@ -50,6 +52,7 @@
     ...viewLabels(game.pc.exp, height),
     ...box,
     ...(prompt ?? []),
+    ...screen,
     ...(debug ? debugMonsterLines(game) : []),
   ]);
 

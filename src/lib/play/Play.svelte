@@ -8,6 +8,7 @@
   import WallTexture from '../map/WallTexture.svelte';
   import GameScreen from '../ui/GameScreen.svelte';
   import PixelText from '../ui/PixelText.svelte';
+  import MessageBox from './MessageBox.svelte';
   import Panel from './Panel.svelte';
   import Portrait from './Portrait.svelte';
   import Screen from './Screen.svelte';
@@ -33,17 +34,6 @@
     type PlayDisplay,
     type PlayMode,
   } from './mode';
-  import { MENU_LINE_STEP, MENU_SPREAD_TO, MENU_TOP, MENU_X } from '../game/port/screens';
-  import { MESSAGE_BOX_LINES } from './screens';
-
-  /** How wide the message box's corner of the game's screen is, in the game's own units. */
-  const BOX_WINDOW = {
-    x: MENU_X,
-    y: MENU_TOP - 10,
-    width: MENU_SPREAD_TO - MENU_X,
-    height: MENU_LINE_STEP * MESSAGE_BOX_LINES + 20,
-  };
-
   /** How many pixels a square is drawn at when the map is centred on the character. */
   const PLAY_CELL = 22;
 
@@ -253,6 +243,7 @@
             place={view.place}
             monsters={monstersDrawn(mode, view)}
             box={view.box}
+            screen={view.screen}
             discovered={zoomMap}
             mapMonsters={zoomMapMonsters(mode, view)}
             debug={debugDrawn(mode)}
@@ -280,9 +271,12 @@
           {#if view.prompt}
             <div class="prompt">{#each view.prompt as line}<div>{line.text}</div>{/each}</div>
           {/if}
-        {/if}
-        {#if view.screen.length > 0}
-          <div class="overlay"><GameScreen lines={view.screen} /></div>
+          <!-- The game's screen draws these across the four views; with the map in their place
+               there is nowhere on it to put them, so they cover the map the way they cover the
+               views. -->
+          {#if view.screen.length > 0}
+            <div class="overlay"><GameScreen lines={view.screen} /></div>
+          {/if}
         {/if}
         {#if view.over}
           <div class="over">
@@ -313,12 +307,7 @@
           <button type="button" onclick={exportMaps}>Export maps</button>
         </div>
         {#if display === 'map'}
-          <GameScreen lines={view.box} window={BOX_WINDOW} />
-        {/if}
-        {#if view.banner.length > 0}
-          <div class="banner">
-            {#each view.banner as line}<div>{line}</div>{/each}
-          </div>
+          <MessageBox lines={view.box} />
         {/if}
         <div class="keys">
           <ScreenSwitch game="unforgiven" bind:display />
@@ -550,16 +539,6 @@
     gap: 4px 14px;
     color: var(--muted);
     font-size: 12px;
-  }
-  .banner {
-    padding: 8px 10px;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    background: #000;
-    font-family: var(--font-dos);
-    font-size: 17px;
-    line-height: 1.15;
-    color: #ffd200;
   }
   .key-note {
     margin-bottom: 4px;
