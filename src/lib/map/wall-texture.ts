@@ -1,10 +1,12 @@
 import type { GameId } from '../app-state.svelte';
 import { bundledPictureImages, sectionPalette, type RenderedImage } from '../bestiary/pictures';
-import { monsterPixelIndex, renderImage, vgaToRgb, type PicImage, type Rgb } from '../game/dotu-pic.js';
+import { PIC_W, renderImage, vgaToRgb, type PicImage, type Rgb } from '../game/dotu-pic.js';
 import mwPalettes from '../game/mw-palettes.json';
 import { sectionInfo } from '../game/sections';
 import { wallImages as moraffsWorldWallImages } from '../mw-bestiary/pictures';
 import { wallPictureFile } from '../game/port/pictures';
+import { WALL_BASE, WALL_GRADIENT } from '../play/view3d/pictures';
+import { wallPixelIndex } from '../play/view3d/texture';
 
 /**
  * The texture the 3-D view would draw this floor's walls with.
@@ -39,11 +41,15 @@ export interface WallTexture {
  */
 const UNFORGIVEN_WALL_IMAGE = 3;
 
-/** Walls are drawn from colour set 5, palette entries 80 to 95 (exe 3000:342d writes 0x50). */
-const UNFORGIVEN_WALL_COLOUR_SET = 5;
-
 /** The tint FUN_3000_342d (exe 3000:342d) sets before it draws a wall face. */
 const UNFORGIVEN_WALL_TINT = 12;
+
+/**
+ * The drawer reads the screen column for picture values 18 and 19, and the swatch is not on a
+ * screen. It is one of the three wall materials, whose pixels are all below 16, so no pixel of
+ * it ever asks.
+ */
+const NO_COLUMN = 0;
 
 /**
  * WALL.PIC holds a door and a wall, and FUN_3000_31f3 (exe 3000:31f3, mw.c) draws the second on
@@ -71,7 +77,12 @@ function unforgivenWallTexture(module: number, floor: number): WallTexture | nul
     caption: `Section ${section.section} walls, from ${file}`,
     key: `unforgiven:${file}:${module}:${section.part}`,
     palette: sectionPalette(module + 1, section.part),
-    pixelIndex: (value, row) => monsterPixelIndex(value, UNFORGIVEN_WALL_TINT, UNFORGIVEN_WALL_COLOUR_SET, row),
+    pixelIndex: (value) =>
+      wallPixelIndex(value, NO_COLUMN, PIC_W, {
+        base: WALL_BASE,
+        tint: UNFORGIVEN_WALL_TINT,
+        gradient: WALL_GRADIENT,
+      }),
     images: () => bundledPictureImages(file),
   };
 }

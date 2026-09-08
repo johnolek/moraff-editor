@@ -81,6 +81,20 @@ describe("the wall texture of a Moraff's World floor", () => {
 });
 
 describe('renderWallTexture', () => {
+  it("draws Dungeons of the Unforgiven's wall in the section's own colours", () => {
+    // The wall drawer adds DS:4fc3, which holds 16 and is never written, so every pixel of a
+    // wall material lands in palette entries 16 to 31 (exe 4000:549d).
+    const texture = wallTexture('unforgiven', 0, 1)!;
+    const bank = new Set(texture.palette.slice(16, 32).map((colour) => colour.join()));
+    const { data } = renderWallTexture(texture)!;
+    const used = new Set<string>();
+    for (let at = 0; at < data.length; at += 4) {
+      if (data[at + 3] === 255) used.add([data[at], data[at + 1], data[at + 2]].join());
+    }
+    expect(used.size).toBeGreaterThan(1);
+    expect([...used].filter((colour) => !bank.has(colour))).toEqual([]);
+  });
+
   it("draws a whole 256 by 200 wall of Moraff's World", () => {
     const image = renderWallTexture(wallTexture('moraffsWorld', 0, 1)!)!;
     expect([image.width, image.height]).toEqual([256, 200]);
