@@ -1,8 +1,9 @@
 <script lang="ts">
   import './editor.css';
   import { app, currentEntry } from '../app-state.svelte';
-  import { characterEdited, importCharacter, replaceCharacterBytes, unloadCharacter } from '../character/current';
+  import { characterEdited, importCharacter, importRevExploredMap, replaceCharacterBytes, unloadCharacter } from '../character/current';
   import { characterFileName } from '../character/record';
+  import { isRevExploredFile } from '../map/explored';
   import { GAME_SCHEMAS, GAMES, pickGameForFile } from './games';
   import type { GameSchema, TextRecord } from './schema';
   import SectionView from './SectionView.svelte';
@@ -77,6 +78,28 @@
     if (game) open(game, current.bytes);
   });
 
+  interface DroppedFile {
+    name: string;
+    bytes: Uint8Array<ArrayBuffer>;
+  }
+
+  /**
+   * Everything dropped at once, the records before the maps. A Moraff's Revenge explored map
+   * belongs to the character being worked on, so dropping <n>.BIN with <n>.EXE has to open the
+   * record before the map arrives — and the browser hands the files over in whatever order it
+   * pleases.
+   */
+  async function receive(files: FileList | null | undefined) {
+    const dropped = await Promise.all(
+      [...(files ?? [])].map(async (file) => ({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) })),
+    );
+    const records: DroppedFile[] = [];
+    const maps: DroppedFile[] = [];
+    for (const file of dropped) (isRevExploredFile(file.name, file.bytes) ? maps : records).push(file);
+    records.forEach(openRecord);
+    maps.forEach(keepExploredMap);
+  }
+
   /**
    * The file says which game it belongs to — its size for the two games whose record is a fixed
    * run of bytes, and whether it reads as a character for the one whose record is text — and
@@ -84,22 +107,26 @@
    * of theirs is read as the game the switch is on. It joins the roster and becomes the character
    * being worked on, which is what opens it here.
    */
-  async function receive(file: File) {
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const game = pickGameForFile(bytes) ?? GAME_SCHEMAS[app.game];
-    if (game) importCharacter(game.id, file.name, bytes);
+  function openRecord(file: DroppedFile) {
+    const game = pickGameForFile(file.bytes) ?? GAME_SCHEMAS[app.game];
+    if (game) importCharacter(game.id, file.name, file.bytes);
+  }
+
+  /** A `<n>.BIN`, which is not a character but the map one has walked. */
+  function keepExploredMap(file: DroppedFile) {
+    const kept = importRevExploredMap(file.bytes);
+    if (kept) showToast(`Explored map loaded for ${kept.name}`);
+    else showToast(`${file.name} is an explored map. Open the character it belongs to first.`, true);
   }
 
   function onFileChosen() {
-    const file = fileInput?.files?.[0];
-    if (file) receive(file);
+    receive(fileInput?.files);
   }
 
   function onDrop(event: DragEvent) {
     event.preventDefault();
     dragover = false;
-    const file = event.dataTransfer?.files[0];
-    if (file) receive(file);
+    receive(event.dataTransfer?.files);
   }
 
   function download() {
@@ -130,7 +157,27 @@
   }
 </script>
 
-<div class="save-editor">
+<!-- The whole page takes a drop, so that a Moraff's Revenge explored map can be dropped on a
+     character that is already open, as well as with the record it belongs to. -->
+<div
+  class="save-editor"
+  class:dragover
+  role="region"
+  aria-label="Drop save files here"
+  ondragenter={(event) => {
+    event.preventDefault();
+    dragover = true;
+  }}
+  ondragover={(event) => {
+    event.preventDefault();
+    dragover = true;
+  }}
+  ondragleave={(event) => {
+    event.preventDefault();
+    dragover = false;
+  }}
+  ondrop={onDrop}
+>
   <div class="page">
     <p class="lead">Edit Moraff's World, Moraff's Revenge and Dungeons of the Unforgiven character files in your browser. Nothing is uploaded — all editing happens locally.</p>
 
@@ -142,7 +189,8 @@
             <strong>Upload your save file.</strong> These are plain, numbered files in your game directory — named <code>1</code>, <code>2</code>,
             <code>3</code>, etc. in Moraff's World, <code>21</code>, <code>22</code>, <code>23</code>, etc. in Dungeons of the Unforgiven, and
             <code>1.EXE</code>, <code>2.EXE</code>, etc. in Moraff's Revenge, where they are text files despite the extension (one file per
-            character).
+            character). Moraff's Revenge keeps the map your character has walked in a second file beside the record —
+            <code>1.BIN</code>, <code>2.BIN</code>, etc. — and dropping that with the character brings the walked squares across.
           </li>
           <li><strong>Make your changes</strong> using the editor that appears.</li>
           <li><strong>Download the new file</strong> and overwrite the original in your game directory.</li>
@@ -153,25 +201,9 @@
         </p>
       </div>
 
-      <label
-        class="drop-zone"
-        class:dragover
-        ondragenter={(event) => {
-          event.preventDefault();
-          dragover = true;
-        }}
-        ondragover={(event) => {
-          event.preventDefault();
-          dragover = true;
-        }}
-        ondragleave={(event) => {
-          event.preventDefault();
-          dragover = false;
-        }}
-        ondrop={onDrop}
-      >
+      <label class="drop-zone" class:dragover>
         <div><strong>Click to choose</strong> or drag a save file here</div>
-        <input type="file" bind:this={fileInput} onchange={onFileChosen} />
+        <input type="file" multiple bind:this={fileInput} onchange={onFileChosen} />
       </label>
     {/if}
 
@@ -281,6 +313,10 @@
     cursor: pointer;
     color: var(--muted);
     transition: all 0.15s ease;
+  }
+  .save-editor.dragover {
+    outline: 2px dashed var(--accent);
+    outline-offset: -8px;
   }
   .drop-zone:hover,
   .drop-zone.dragover {
