@@ -7,7 +7,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
  * The commit this build was made from, which every run log names: a replay has to run the engine
  * that produced the run. A working tree with no git around it says so rather than failing.
  */
-function engineCommit(): string {
+export function engineCommit(): string {
   try {
     return execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
   } catch {

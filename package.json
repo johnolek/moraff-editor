@@ -20,6 +20,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
+    "verify-run": "vite build --config vite.verify.config.ts --logLevel warn && node dist-cli/verify-run.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

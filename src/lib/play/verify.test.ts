@@ -142,8 +142,9 @@ describe('verifying a run', () => {
     const verdict = await verifyRun({ ...log, engine: 'aaaaaaa' });
 
     expect(verdict.status).toBe('verified');
-    expect(verdict.notes).toHaveLength(1);
-    expect(verdict.notes[0]).toContain('aaaaaaa');
+    expect(verdict.notes).toEqual([
+      'The run was played on an engine other than this build, so a replay is only as good as the two agreeing.',
+    ]);
     expect(verdict.engine).toEqual({ log: 'aaaaaaa', build: log.engine });
   });
 

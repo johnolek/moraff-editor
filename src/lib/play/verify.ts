@@ -86,7 +86,7 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
   };
   if (log.engine !== ENGINE_COMMIT) {
     verdict.notes.push(
-      `The run was played on engine ${log.engine} and this build is ${ENGINE_COMMIT}, so a replay is only as good as the two agreeing.`,
+      'The run was played on an engine other than this build, so a replay is only as good as the two agreeing.',
     );
   }
   if (log.edits > 0) {
