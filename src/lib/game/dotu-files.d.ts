@@ -109,4 +109,5 @@ export interface MonsterNameData {
 export function monsterName(data: MonsterNameData, module: number, floor: number, type: number): string;
 /** Section 1..20 for a module 0..4 and floor. */
 export function sectionOf(module: number, floor: number): number;
+/** Index into bossX/bossY for the boss of (module 0..4, section 0..3 within the module). */
 export function bossIndex(module: number, sectionInModule: number): number;

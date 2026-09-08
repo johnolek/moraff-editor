@@ -106,5 +106,6 @@ export function sectionOf(module, floor) {
   if (floor > (module + 1) * 19) return module * 4 + 4;
   return Math.trunc((floor - 1) / (5 * (module + 1))) + module * 4 + 1;   // floor 0 -> section 1 (C division)
 }
-/** Index into save.bossX/bossY for the boss of (module, section 1..4 within the module). */
+/** Index into save.bossX/bossY for the boss of (module 0..4, section 0..3 within the module),
+ *  which is section_number2() in UNF.CPP. */
 export const bossIndex = (module, sectionInModule) => module * 8 + sectionInModule;
