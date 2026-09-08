@@ -2,7 +2,10 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { MW_SQUARE_EMPTY, mwSetOccupant } from '../../game/mw-port/state';
 import { BorlandRng } from '../../game/port/rng';
-import { monstersDrawn, panelVisible } from '../mode';
+import { monstersDrawn, panelVisible, zoomMapMonsters } from '../mode';
+import { newFrame, pixelAt } from '../view3d/frame';
+import { drawZoomMonsters, ZOOM_MONSTER_COLOUR } from '../zoom-monsters';
+import { MW_SCREEN_PIXELS, MW_ZOOM_MAP } from './view3d/screen';
 import type { MwGameSession } from './engine';
 import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
 import { MW_KEY } from './keys';
@@ -60,6 +63,10 @@ describe('the monsters the map draws', () => {
     }
   });
 
+  it("is what the tab hands the game's own map in the corner in debug", () => {
+    expect(source).toContain('mapMonsters={zoomMapMonsters(mode, view)}');
+  });
+
   it('is what the tab hands the map, along with the map itself', () => {
     expect(source).toContain('monsters={monstersDrawn(mode, view)}');
     expect(source).toContain('discovered={discoveredMap}');
@@ -76,5 +83,35 @@ describe('the panel of numbers the game never prints', () => {
 
   it('is what the tab puts the panel behind', () => {
     expect(source).toContain('{#if panelVisible(mode)}');
+  });
+});
+
+describe("the monsters debug mode marks on the map in the screen's corner", () => {
+  const at = { x: 40, y: 50 };
+  /** Two monsters standing where no view of the character's reaches them. */
+  const outOfSight = [
+    { slot: 0, x: 43, y: 47, monsterId: '1', level: 3, hp: 20 },
+    { slot: 1, x: 38, y: 54, monsterId: '1', level: 4, hp: 25 },
+  ];
+
+  function marks(mode: 'faithful' | 'speedrun' | 'debug'): number[] {
+    const frame = newFrame(MW_SCREEN_PIXELS.width, MW_SCREEN_PIXELS.height);
+    drawZoomMonsters(frame, MW_ZOOM_MAP, at, zoomMapMonsters(mode, { monsters: outOfSight }));
+    return outOfSight.map((monster) => {
+      const column = monster.x - at.x + (MW_ZOOM_MAP.columns >> 1);
+      const row = monster.y - at.y + (MW_ZOOM_MAP.rows >> 1);
+      const x = MW_ZOOM_MAP.left + column * MW_ZOOM_MAP.cell + 3;
+      const y = MW_ZOOM_MAP.top + row * MW_ZOOM_MAP.cell + 3;
+      return pixelAt(frame, x, y);
+    });
+  }
+
+  it('marks both of them in debug', () => {
+    expect(marks('debug')).toEqual([ZOOM_MONSTER_COLOUR, ZOOM_MONSTER_COLOUR]);
+  });
+
+  it('marks neither in faithful or in speedrun', () => {
+    expect(marks('faithful')).toEqual([0, 0]);
+    expect(marks('speedrun')).toEqual([0, 0]);
   });
 });

@@ -11,6 +11,7 @@
   import { mwHorizonWeight } from './view3d/geometry';
   import { renderMwView, type MwViewMonster, type MwViewScene } from './view3d/render';
   import { drawMwScreenText } from './view3d/text';
+  import { drawZoomMonsters } from '../zoom-monsters';
   import {
     MW_COLOURS,
     MW_KEY_MENU_RECT,
@@ -25,6 +26,7 @@
     MW_SCREEN_UNITS_Y,
     MW_VIEWS,
     MW_WHOLE_SCREEN_VIEW,
+    MW_ZOOM_MAP,
   } from './view3d/screen';
 
   interface Props {
@@ -39,6 +41,9 @@
     ladderAt: (x: number, y: number) => number;
     /** The map the character has discovered, or null to draw the whole floor. */
     discovered: DiscoveredMap | null;
+    /** The monsters marked on the map in the corner, which is every one on the floor in debug
+     *  mode and none at all in the modes that show only what the game showed. */
+    mapMonsters?: StockedMonster[];
     /** The text the game draws over the screen, in its own 1600 by 1200 units. */
     lines: ScreenLine[];
     /** One view over the whole screen, the way the Z key zooms one; null draws all four. */
@@ -55,6 +60,7 @@
     ladderAt,
     discovered,
     lines,
+    mapMonsters = [],
     zoomed = null,
     engagedCorner = null,
   }: Props = $props();
@@ -97,6 +103,7 @@
     if (zoomed === null) {
       for (const [view, rect] of MW_VIEWS.entries()) renderMwView(frame, scene, rect, view);
       drawBoxes(frame);
+      drawZoomMonsters(frame, MW_ZOOM_MAP, place, mapMonsters);
     } else {
       renderMwView(frame, scene, MW_WHOLE_SCREEN_VIEW, zoomed);
     }

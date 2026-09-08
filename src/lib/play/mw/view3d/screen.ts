@@ -1,4 +1,5 @@
 import type { ViewRect } from '../../view3d/geometry';
+import type { ZoomMapWindow } from '../../zoom-monsters';
 
 /**
  * Where everything Moraff's World draws while it is being played goes, in the 1600 by 1200 grid
@@ -77,6 +78,15 @@ export const MW_MAP_ROWS = 30;
 export const MW_MAP_LEFT = 4;
 /** DS:cd7e and DS:4491, both `0x1ae * height / 0x4b0`, which is 171 rows down a 480-row screen. */
 export const MW_MAP_TOP_PIXELS = 171;
+
+/** The same map as one window, for anything drawn on top of it. */
+export const MW_ZOOM_MAP: ZoomMapWindow = {
+  left: MW_MAP_LEFT,
+  top: MW_MAP_TOP_PIXELS,
+  cell: MW_MAP_CELL,
+  columns: MW_MAP_COLUMNS,
+  rows: MW_MAP_ROWS,
+};
 
 /** The colours the screen is drawn in. Entries 1 to 15 are the same in all eleven floor palettes,
  *  so a floor never changes any of these. */

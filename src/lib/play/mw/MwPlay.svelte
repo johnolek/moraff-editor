@@ -31,6 +31,7 @@
     readPlayDisplay,
     readPlayMode,
     writePlayMode,
+    zoomMapMonsters,
     type PlayDisplay,
     type PlayMode,
   } from '../mode';
@@ -349,6 +350,7 @@
               height={session.game.pc.height}
               {ladderAt}
               discovered={discoveredMap}
+              mapMonsters={zoomMapMonsters(mode, view)}
               lines={screenLines}
               engagedCorner={view.engaged === null ? null : monsterCorner}
             />
