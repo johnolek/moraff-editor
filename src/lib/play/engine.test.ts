@@ -10,7 +10,7 @@ import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
 import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
-import { VIEW_DEPTH } from './memory';
+import { VIEW_DEPTH, viewedSquares } from './memory';
 
 /** A character file that lives in the test rather than in the roster. */
 function characterFile(overrides: Partial<PlayerCharacter> = {}): CharacterFile & { dead: boolean } {
@@ -444,6 +444,46 @@ describe('the map the character discovers', () => {
       const x = index % EXPLORED_STRIDE;
       const y = (index - x) / EXPLORED_STRIDE;
       expect(Math.max(Math.abs(x - start.x), Math.abs(y - start.y))).toBeLessThanOrEqual(VIEW_DEPTH);
+    }
+  });
+
+  it('knows the town a game starts in before the loop has taken a pass', () => {
+    const start = townWalk();
+    const session = startGame(characterFile({ ...start, level: 0 }), new BorlandRng(3));
+    expect(session.memory.isKnown(start.x, start.y)).toBe(true);
+    expect(session.memory.knownSquares().size).toBeGreaterThan(1);
+  });
+
+  it('knows the town the snake greets the character in, behind its greeting', async () => {
+    const ladder = findSquare(1, (square) => square.ladder < 0);
+    const session = playing(characterFile({ level: 1, ...ladder }));
+    await press(session, KEY.up);
+    expect(session.view().place.floor).toBe(0);
+    expect(session.box[0]).toBe('YOU ARE IN THE TOWN!');
+    expect(session.memory.knownSquares().size).toBeGreaterThan(1);
+  });
+
+  it('knows where a chute has dropped the character, behind its own message', async () => {
+    const chute = findSquare(3, (square) => square.chute !== 0 && square.ladder === 0 && square.trapdoor === -1);
+    const session = playing(characterFile({ level: 3, ...chute }));
+    await settle();
+    expect(session.view().place.floor).toBe(bundledDungeon.chute(chute.x, chute.y, 3, 0));
+    expect(session.memory.isKnown(chute.x, chute.y)).toBe(true);
+    expect(session.memory.knownSquares().size).toBeGreaterThan(1);
+  });
+
+  it('knows the town a module teleporter comes out in, behind its greeting', async () => {
+    const teleporter = findSquare(1, (square) => square.e === 4 && square.ladder === 0 && square.trapdoor === -1 && square.chute === 0);
+    const session = playing(characterFile({ level: 1, dir: 3, ...teleporter }));
+    await press(session, KEY.arrowUp);
+    const place = session.view().place;
+    expect(place).toMatchObject({ module: 1, floor: 0 });
+    expect(session.box[0]).toBe('YOU HAVE BEEN DETACHED FROM');
+    // The teleporter drops the character on any square of the town it comes out in, and seventy
+    // of that town's squares are cells whose only ways out are doors, which no view sees through.
+    expect(session.memory.isKnown(place.x, place.y)).toBe(true);
+    for (const square of viewedSquares(session.rows, place.x, place.y)) {
+      expect(session.memory.knownSquares().has(square)).toBe(true);
     }
   });
 

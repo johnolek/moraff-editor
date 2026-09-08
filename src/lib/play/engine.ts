@@ -281,6 +281,7 @@ export class GameSession {
     this.rows = UNFORGIVEN_MAP.floor(pc.level, pc.module);
     loadLevelMap(this.game, this.floors, this.rows, pc.level, this.game.rng);
     this.memory.enterFloor(pc.module, pc.level);
+    this.memory.markArrival(this.rows, pc.x, pc.y);
     run?.watch(this.game.events, () => ({
       time: this.game.secondsElapsed,
       floor: this.game.pc.level,
@@ -444,6 +445,7 @@ export class GameSession {
     this.rows = UNFORGIVEN_MAP.floor(level, game.pc.module);
     loadLevelMap(game, this.floors, this.rows, level, game.rng);
     this.memory.enterFloor(game.pc.module, level);
+    this.memory.markArrival(this.rows, game.pc.x, game.pc.y);
     game.recenterMap = true;
   }
 
