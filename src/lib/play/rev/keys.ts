@@ -19,6 +19,9 @@
 
 /** Every key the dungeon loop dispatches on, by the byte it compares. */
 export const REV_KEY = {
+  /** Return, which no key of the loop's is: it is what the kill waits at before it hands over
+   *  what the monster dropped (1000:A51D). */
+  enter: 0x0d,
   /** Escape, which switches between the two ways the arrows move (1000:10BE). */
   escape: 0x1b,
   /** The background colour, one of sixteen (1000:0FF5). */
@@ -137,6 +140,7 @@ export function revWrapFacing(facing: number): number {
 
 /** What a browser calls the keys that are not one character of text. */
 const NAMED_KEYS: Record<string, number> = {
+  Enter: REV_KEY.enter,
   ArrowUp: REV_KEY.arrowUp,
   ArrowDown: REV_KEY.arrowDown,
   ArrowLeft: REV_KEY.arrowLeft,

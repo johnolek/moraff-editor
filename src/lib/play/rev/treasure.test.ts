@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { revValue, setRevValue } from './record';
+import { REV_KEY } from './keys';
 import {
+  REV_HIT_RETURN,
   REV_TAKE_OR_LEAVE,
   REV_TOO_HEAVY,
   revDropsTreasure,
@@ -56,7 +58,7 @@ describe('the treasure a kill drops', () => {
       revRolls([1, FRACTION(0.25), FRACTION(0.5), FRACTION(0.5), 0, 0]),
     );
     game.lastMonsterLevel = 1;
-    keys.push(KEY('T'));
+    keys.push(REV_KEY.enter, KEY('T'));
     await revTreasureFromAKill(game, desk);
     expect(pc.weight).toBe(282);
     expect(pc.treasure).toBe(21);
@@ -70,10 +72,33 @@ describe('the treasure a kill drops', () => {
       revRolls([1, FRACTION(0.25), FRACTION(0.5), FRACTION(0.5), 0, 0]),
     );
     game.lastMonsterLevel = 1;
-    keys.push(KEY(' '));
+    keys.push(REV_KEY.enter, KEY(' '));
     await revTreasureFromAKill(game, desk);
     expect(game.said).toContain(REV_TOO_HEAVY);
     expect(pc.weight).toBe(300);
+  });
+});
+
+describe('the HIT RETURN a kill waits at', () => {
+  it('throws the keyboard away and takes nothing but Return', async () => {
+    const pc = revCharacter();
+    const { game, desk, keys } = revTestGame(pc, revRolls([0, 0]));
+    let flushes = 0;
+    game.flushKeys = () => {
+      flushes += 1;
+    };
+    keys.push(KEY('T'), KEY('L'), REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toEqual([REV_HIT_RETURN]);
+    expect(flushes).toBe(1);
+    expect(keys).toEqual([]);
+  });
+
+  it('gives up rather than spinning while a monster stands on the square', async () => {
+    const pc = revCharacter();
+    const { game, desk } = revTestGame(pc, revRolls([0, 0]));
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toEqual([REV_HIT_RETURN]);
   });
 });
 
@@ -81,18 +106,19 @@ describe('the spellbook a kill drops', () => {
   it("teaches one of the level's two spells and says which level it is", async () => {
     const pc = revCharacter({ dungeonLevel: 6 });
     const { game, desk, keys } = revTestGame(pc, revRolls([0, 1, FRACTION(0.5), 0, 0]));
-    keys.push(KEY(' '));
+    keys.push(REV_KEY.enter, KEY(' '));
     await revTreasureFromAKill(game, desk);
     expect(revValue(pc, 122)).toBe(1);
-    expect(game.said[0]).toBe('YOU FIND A LEVEL  3  SPELLBOOK     ');
+    expect(game.said[1]).toBe('YOU FIND A LEVEL  3  SPELLBOOK     ');
   });
 
   it('says nothing for a spell the character already knows', async () => {
     const pc = revCharacter({ dungeonLevel: 6 });
     setRevValue(pc, 122, 1);
-    const { game, desk } = revTestGame(pc, revRolls([0, 1, FRACTION(0.5), 0, 0]));
+    const { game, desk, keys } = revTestGame(pc, revRolls([0, 1, FRACTION(0.5), 0, 0]));
+    keys.push(REV_KEY.enter);
     await revTreasureFromAKill(game, desk);
-    expect(game.said).toEqual([]);
+    expect(game.said).toEqual([REV_HIT_RETURN]);
   });
 });
 

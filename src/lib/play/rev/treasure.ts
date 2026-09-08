@@ -1,4 +1,5 @@
 import type { RevMagicDesk } from './desk';
+import { REV_KEY } from './keys';
 import { revBasicNumber, revFraction } from './magic';
 import { revValue, setRevValue } from './record';
 import { REV_SPELL_LEVEL_COUNT } from './tables';
@@ -122,14 +123,37 @@ export const REV_TAKE_OR_LEAVE = 'T=TAKE COINS  L=LEAVE COINS';
 const TAKE_KEYS = ['T'.charCodeAt(0), 't'.charCodeAt(0)];
 const LEAVE_KEYS = ['L'.charCodeAt(0), 'l'.charCodeAt(0)];
 
+/** 1000:A508: what the kill waits at before it hands anything over. */
+export const REV_HIT_RETURN = 'HIT RETURN';
+
+/**
+ * 1000:A505: the kill waits at HIT RETURN.
+ *
+ * The keyboard is thrown away first (1000:2FCB), so whatever was typed while the monster was
+ * dying is not what answers this; then nothing but Return will do, and 1000:A514 asks again for
+ * every other key.
+ */
+async function waitForReturn(game: RevGame, desk: RevMagicDesk): Promise<void> {
+  game.say(REV_HIT_RETURN);
+  game.flushKeys();
+  for (;;) {
+    const key = await desk.poll();
+    // The original asks again for the space the poll hands back while a monster stands on the
+    // character's square, which is a wait that never ends; a browser cannot spin there, so the
+    // drops are handed over rather than the game stopping.
+    if (key === null || key === REV_KEY.enter) return;
+  }
+}
+
 /**
  * 1000:A4E7: everything the kill hands over.
  *
- * The coins are offered and can be turned down; a pile that would put the character over 350
- * pounds is not offered at all. Then, whatever happened to the coins, the same kill rolls for a
- * spellbook.
+ * It waits at HIT RETURN first. The coins are offered and can be turned down; a pile that would
+ * put the character over 350 pounds is not offered at all. Then, whatever happened to the coins,
+ * the same kill rolls for a spellbook.
  */
 export async function revTreasureFromAKill(game: RevGame, desk: RevMagicDesk): Promise<void> {
+  await waitForReturn(game, desk);
   if (revDropsTreasure(game)) await offerTheCoins(game, desk);
   await offerASpellbook(game, desk);
 }
