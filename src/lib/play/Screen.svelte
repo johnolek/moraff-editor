@@ -19,6 +19,7 @@
     SCREEN_WINDOW,
     statusLines,
   } from './display';
+  import { drawSectionScreen, type SectionScreen } from './section-screen';
   import { drawTablet } from './tablet';
   import { viewPictures } from './view3d/browser';
   import { newFrame, toRgba } from './view3d/frame';
@@ -58,6 +59,8 @@
     expandedMap?: boolean;
     /** The four lines of the stone tablet the snake's words are read on, or null when none is up. */
     tablet?: string[] | null;
+    /** The S key's screen, or null when it is not up: the section's monsters in their panels. */
+    sectionScreen?: SectionScreen | null;
   }
 
   let {
@@ -76,6 +79,7 @@
     viewsDrawn = 0,
     expandedMap = false,
     tablet = null,
+    sectionScreen = null,
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
@@ -159,6 +163,14 @@
     // the slab and its four lines and nothing else.
     if (tablet) {
       drawTablet(frame, SCREEN_PIXELS, tablet, viewPictures(section?.section ?? 1).wall);
+      paint();
+      return;
+    }
+    // The S key's screen (monster_manual, exe 3000:c39d): the section's five monsters in their
+    // panels and the slab its words are read off, with the lines the manual printed over them.
+    if (sectionScreen) {
+      drawSectionScreen(frame, SCREEN_PIXELS, sectionScreen, viewPictures(sectionScreen.section));
+      drawDotuScreenText(frame, SCREEN_PIXELS, text);
       paint();
       return;
     }

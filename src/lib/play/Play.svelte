@@ -252,7 +252,8 @@
             killed={view.killed}
             viewsDrawn={view.viewsDrawn}
             expandedMap={view.expandedMap}
-            tablet={view.tablet} />
+            tablet={view.tablet}
+            sectionScreen={view.sectionScreen} />
         {:else}
           <FloorCanvas
             bind:this={canvas}
