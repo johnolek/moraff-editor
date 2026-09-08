@@ -438,11 +438,37 @@ that routine beside the map drawing and `H3.OVL`:
   that writes those three, and it is the end of the chute at `1000:3428`. So the
   "False floor." at `1000:567C` is a chute continuing: land at the bottom of one
   and the square you land on lets you go down again.
-* **A chute drops exactly one level, onto the same square.** Ghidra ends the
-  enclosing function at `340C`, so `dunsmall.c` has nothing for it; the listing
-  does: `1000:3428` prints "YOU FELL DOWN A CHUTE!", `1000:3491` adds 1 to the
-  level at `B48C` and leaves the column and row alone, and `1000:356F` remembers
-  the square. The site's map draws the false floor as that landing square.
+* **A chute drops one, two or three levels, onto the same square.** Ghidra ends
+  the enclosing function at `340C`, so `dunsmall.c` has nothing for it; the
+  listing does. `1000:3428` prints "YOU FELL DOWN A CHUTE!", `1000:348B` saves
+  the character, and then `1000:3491` to `1000:355A` works out how far the fall
+  goes, in three nested tests over the square you fell through, each of which
+  adds another level and gates the one after it:
+
+  1. `1000:3491` adds one, always.
+  2. `1000:34A0`: when the column plus the row is even, add another. An odd
+     column plus row therefore always falls exactly one.
+  3. `1000:34D6`: when the level you have now reached plus the column is even,
+     and that level is over 25, add another.
+  4. `1000:351F`: when that level is over 40 and — this fourth test can never
+     pass. `1000:352F` compares `INT(the level * .5)` against the level itself
+     where the two above it compare against the halved value, so it wants a
+     level that is its own half.
+
+  The column and the row are never touched, so the landing is the same square
+  one, two or three levels down. `1000:356F` remembers it. Nothing caps the
+  result at level 70: a chute on level 68 or 69 lands past the deepest level,
+  where `1.NUM` has no monsters to read.
+
+  The even tests are all written `INT(n * .5) = n * .5`, which is why the
+  arithmetic reads as a chain of multiplies rather than a modulo.
+
+* **A chute does not fire on the square the last one landed on.** `1000:3434`
+  compares the column, the row and the level against `B4CE`, `B4D6` and `B4DA`
+  and returns without falling when all three match, which is what leaves the
+  false floor of `1000:064D` for the player to take with `D`. Level 0 is refused
+  the same way at `1000:3428`, and `1000:555D` refuses level 70 before the fall
+  is reached at all.
 
 ## 9. The town
 

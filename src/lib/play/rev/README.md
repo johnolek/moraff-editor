@@ -174,7 +174,10 @@ rather than the pages.
   not a hash: it is the wall rule itself, with the character's own generation as the divisor and
   the same threshold the player's move test uses at `1000:314C`. A monster is stopped by a wall and
   walks through a door exactly as the character is. The document is corrected.
-* **`rev-tools/docs/DUNGEON.md` has a chute as one level onto the same square.** `1000:34A0` to
-  `1000:355A` works further arithmetic over the level, the column and the row between the drop at
-  `1000:3491` and the landing square being remembered at `1000:356F`, and what it comes to has not
-  been read out. `chute.ts` does what the document says and says so.
+* **`rev-tools/docs/DUNGEON.md` had a chute as one level onto the same square.** `1000:34A0` to
+  `1000:355A` is three nested tests over the square you fell through, each adding another level:
+  one always, a second when the column plus the row is even, a third when the level reached plus
+  the column is even and that level is over 25, and a fourth that can never pass because
+  `1000:352F` compares the halved level against the level rather than against the halved level.
+  The column and the row are never touched, so a chute is a fall of one, two or three levels onto
+  the same square. The document is corrected.

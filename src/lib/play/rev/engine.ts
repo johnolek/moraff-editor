@@ -488,9 +488,9 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     pc.facing = revWrapFacing(pc.facing);
     game.memory.markStep(pc.column, pc.row, pc.dungeonLevel);
     game.feature = revFeatureUnder(pc.column, pc.row, pc.dungeonLevel);
-    if (game.feature === 0) {
-      // 1000:552B sends a chute straight to the fall rather than putting a prompt up.
-      revFallDownAChute(game, () => session.save());
+    // 1000:552B sends a chute straight to the fall rather than putting a prompt up. The fall
+    // refuses the square it last landed on, which is where the false floor prompt comes from.
+    if (game.feature === 0 && revFallDownAChute(game, () => session.save())) {
       session.enterLevel(pc.dungeonLevel);
       continue;
     }
