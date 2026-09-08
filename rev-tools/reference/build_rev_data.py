@@ -9,6 +9,7 @@ per dungeon and two shared ones, and all six are data rather than code:
 * `5.NUM` / `5A.NUM`   the same for `6.NUM`'s distant pictures.
 * `4.NUM` / `4A.NUM`   fifteen close-up pictures, 36 by 24 pixels.
 * `6.NUM` / `6A.NUM`   eighteen distant pictures, 20 by 14 pixels.
+* `H1.OVL` .. `H8.OVL`  the eight help pages, plain text.
 * `1.NUM` and `2.NUM`  where every monster on all seventy levels is, and its
   hit points.  These two are shared by both dungeons and by every character on
   the disk, and the game writes them back as you play, so the numbers here are
@@ -246,6 +247,24 @@ def slot_array(path):
     return values + [0] * (SLOTS_PER_LEVEL * DEEPEST_LEVEL + 1 - len(values))
 
 
+# The eight help pages of `H1.OVL` .. `H8.OVL`, which the routine at 1000:C332
+# reads a line at a time with LINE INPUT and paints on an 80-column text screen.
+# Nothing is overlaid: they are plain CP437 with CRLF line endings.  A leading
+# `~` marks a line the game draws in its highlight colour and strips before
+# printing (1000:C465), and it is kept here so the site strips it the same way.
+HELP_PAGES = 8
+
+
+def help_pages(folder):
+    """`H1.OVL` .. `H8.OVL`, one list of lines each."""
+    pages = []
+    for number in range(1, HELP_PAGES + 1):
+        path = os.path.join(folder, "H%d.OVL" % number)
+        text = open(path, "rb").read().decode("cp437").replace("\x1a", "")
+        pages.append(text.replace("\r\n", "\n").rstrip("\n").split("\n"))
+    return pages
+
+
 def build(folder):
     positions = slot_array(os.path.join(folder, "1.NUM"))
     strengths = slot_array(os.path.join(folder, "2.NUM"))
@@ -280,6 +299,8 @@ def build(folder):
             "defaultPalette": DEFAULT_PALETTE,
         },
         "palettes": CGA_PALETTES,
+        # H1.OVL .. H8.OVL as they are read, `~` markers and all.
+        "help": help_pages(folder),
         # The two shared arrays as they stand, so the site can work every slot
         # out for itself with the same rules the game uses.  Element 0 is unused.
         "slots": {"positions": positions, "strengths": strengths},
