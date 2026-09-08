@@ -1,5 +1,5 @@
 import { BATTLE_HP_Y, BATTLE_TEXT_COLOUR, BLOW_Y, MENU_X, menuLine } from '../game/port/screens';
-import type { Game, ScreenLine } from '../game/port/state';
+import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
 import { BATTLE_SPELLS_BOX } from './display';
 
 /**
@@ -31,18 +31,19 @@ export const MESSAGE_BOX_RECT = { x: 0x398, y: 0x2ff, right: 0x640, bottom: 0x4b
 export const MESSAGE_BOX_LINES_TOP = 0x324;
 
 /**
- * Whether a drawn line stands in the message box.
+ * Whether a drawn line stands inside a rectangle of the screen.
  *
  * The screen keeps a string's top left corner rather than the box its letters fill, so a line
- * counts as inside when the point it was drawn at is — which is the same test the two wipes make.
+ * counts as inside when the point it was drawn at is — which is the test every one of the game's
+ * own wipes makes.
  */
+export function inRect(rect: ScreenRect, line: ScreenLine): boolean {
+  return line.x >= rect.x && line.x < rect.right && line.y >= rect.y && line.y < rect.bottom;
+}
+
+/** Whether a drawn line stands in the message box. */
 export function onMessageBox(line: ScreenLine): boolean {
-  return (
-    line.x >= MESSAGE_BOX_RECT.x &&
-    line.x < MESSAGE_BOX_RECT.right &&
-    line.y >= MESSAGE_BOX_RECT.y &&
-    line.y < MESSAGE_BOX_RECT.bottom
-  );
+  return inRect(MESSAGE_BOX_RECT, line);
 }
 
 /**

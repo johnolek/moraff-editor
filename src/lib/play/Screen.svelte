@@ -9,6 +9,7 @@
   import GameScreen from '../ui/GameScreen.svelte';
   import { SeededRng } from '../game/port/rng';
   import { debugMonsterLines } from './debug-screen';
+  import { inRect } from './screens';
   import type { KilledOnScreen } from './engine';
   import { drawScreenFurniture, keyMenuLines, SCREEN_PIXELS, SCREEN_WINDOW, statusLines } from './display';
   import { viewPictures } from './view3d/browser';
@@ -67,13 +68,29 @@
   const section = $derived(sectionInfo(place.module, place.floor));
   const part = $derived(section?.part ?? 1);
   const height = $derived(game.pc.height);
-  const text = $derived([
+  /** What a screen whose own fill the port does not know blacks out, which is all of it. */
+  const WHOLE_DISPLAY: ScreenRect = { x: 0, y: 0, right: SCREEN_WINDOW.width, bottom: SCREEN_WINDOW.height };
+
+  /** The rectangle a screen that is up has been drawn on black, and null when none is up. */
+  const cleared = $derived(screen.length === 0 ? null : (screenCleared ?? WHOLE_DISPLAY));
+
+  /**
+   * Everything the tab paints afresh every pass. None of these is a line the game has printed —
+   * it draws them itself, and puts them back when movecontrol comes round — so the wipe a screen
+   * makes cannot take them off the way it takes a printed line off. The tab leaves out the ones
+   * that stand where the wipe reached instead.
+   */
+  const standing = $derived([
     ...keyMenuLines(),
     ...battleSpellLines(game),
     ...statusLines(game.pc),
     ...viewLabels(game.pc.exp, height),
     ...box,
     ...(prompt ?? []),
+  ]);
+
+  const text = $derived([
+    ...(cleared === null ? standing : standing.filter((line) => !inRect(cleared, line))),
     ...screen,
     ...(debug ? debugMonsterLines(game) : []),
   ]);
@@ -106,13 +123,12 @@
     return one ? { dir: killed.dir, monster: one } : null;
   });
 
-  /** The black rectangle behind the screen, as a CSS inset off the same 1600 by 1200 grid the
-   *  lines over it are placed in. */
+  /** That rectangle as a CSS inset off the same 1600 by 1200 grid the lines over it are placed in. */
   const clearedInset = $derived.by(() => {
-    const box = screenCleared ?? { x: 0, y: 0, right: SCREEN_WINDOW.width, bottom: SCREEN_WINDOW.height };
+    const rect = cleared ?? WHOLE_DISPLAY;
     const across = (value: number) => `${(100 * value) / SCREEN_WINDOW.width}%`;
     const down = (value: number) => `${(100 * value) / SCREEN_WINDOW.height}%`;
-    return [down(box.y), across(SCREEN_WINDOW.width - box.right), down(SCREEN_WINDOW.height - box.bottom), across(box.x)].join(' ');
+    return [down(rect.y), across(SCREEN_WINDOW.width - rect.right), down(SCREEN_WINDOW.height - rect.bottom), across(rect.x)].join(' ');
   });
 
   $effect(() => {
