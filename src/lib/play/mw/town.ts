@@ -4,7 +4,6 @@ import { MW_ESCAPE } from '../../game/mw-port/screens';
 import type { MwGame } from '../../game/mw-port/state';
 import { bank, inn, store, temple } from '../../game/mw-port/town';
 import type { MwGameSession, MwTurn } from './engine';
-import { mwNotBuiltYet } from './screens';
 
 /**
  * The five things a square of floor 0 can hold, which the U key opens: the store, the temple,
@@ -120,20 +119,91 @@ async function stayAtTheInn(session: MwGameSession): Promise<void> {
 
 /**
  * FUN_2000_7b4f (WORLD.EXE 2000:7b4f, mw.c "FUN_2000_7b4f"): the gate on top of the town, which
- * leads out to the world map. The overworld is not built, so the first answer says so.
+ * leads out to the world map.
+ *
+ * The overworld itself is not built. All the game does with it in the end is pick a dungeon out
+ * of where the player stopped walking, so this port runs the rest of that -- the return path of
+ * {@link gateArrival} and {@link walkIntoTheDungeon} -- with the number it started from.
  */
 async function leaveByTheGate(session: MwGameSession): Promise<void> {
   const game = session.game;
   const menu = session.takeBoxes(() => loadHBin(game, WORLD_MAP_HINT));
   await session.showBoxes(menu);
   if ((await session.menuKey(2, 3)) !== 0x31) return;
-  mwNotBuiltYet(game, 'WALK OUT ONTO THE WORLD MAP AND FIND ANOTHER DUNGEON');
-  await session.settle();
-  await session.key();
+  walkIntoTheDungeon(session, game.pc.dungeon);
+}
+
+/**
+ * The last of FUN_3000_8235 (WORLD.EXE 3000:8235), which is what the game does with the dungeon
+ * it has just picked: the character stands on its gate square, on floor 0, and enter_level puts
+ * them there.
+ *
+ * The original also throws away the explored map -- it deletes the eight `.DUN` files, blanks
+ * all 32 floors in memory and forgets which block is loaded -- and this port keeps no explored
+ * map to throw away. What it does not do is forget the monsters: the two floors behind the one
+ * in play still belong to the dungeon being left, so climbing down a ladder soon after can find
+ * the floor as the old dungeon left it. That is the original's own behaviour, since nothing
+ * between here and generate_section clears those two tables.
+ */
+function walkIntoTheDungeon(session: MwGameSession, chosen: number): void {
+  const pc = session.game.pc;
+  const arrival = gateArrival(chosen);
+  pc.dungeon = arrival.dungeon;
+  pc.x = arrival.x;
+  pc.y = arrival.y;
+  session.enterFloor(0);
+  // DS:123d: the map has been left behind by the character, so it is drawn again around them.
+  session.game.recenterMap = true;
 }
 
 /** H.BIN record 34: "YOU ARE STANDING ON TOP OF THE TOWN." and its two choices. */
 const WORLD_MAP_HINT = 0x22;
+
+/** How far the scan for a gate square runs: x from 1 to 78, y from 1 to 108. */
+const GATE_SCAN_COLUMNS = 0x4f;
+const GATE_SCAN_ROWS = 0x6d;
+
+/**
+ * The square of a dungeon's town that the world map drops the character on, or null for a town
+ * with no gate at all.
+ *
+ * The scan writes the character's position at every gate square it passes and never stops early,
+ * so the last one it meets is the one they arrive on rather than the first.
+ */
+function gateSquare(dungeon: number): { x: number; y: number } | null {
+  let found: { x: number; y: number } | null = null;
+  for (let x = 1; x < GATE_SCAN_COLUMNS; x++) {
+    for (let y = 1; y < GATE_SCAN_ROWS; y++) {
+      if (bundledMwDungeon.surface(x, y, 0, dungeon) !== 5) continue;
+      if (bundledMwDungeon.solid(x, y, 0, dungeon)) continue;
+      found = { x, y };
+    }
+  }
+  return found;
+}
+
+/**
+ * FUN_3000_8235 (WORLD.EXE 3000:8235, mw.c "FUN_3000_8235") where it comes off the world map:
+ * the dungeon the character walks into, and the square of its town they arrive on.
+ *
+ * The game works the number out of the overworld cell the player stopped walking on --
+ * `(cx * cy * cx) / (abs(cy) + 1) % 31000` -- and then counts it up until floor 0 of that
+ * dungeon has a gate square that is not rock, so wherever they stop there is a way back off the
+ * surface. `chosen` is where that count starts, which is the number this port asks the player
+ * for instead of the overworld.
+ *
+ * The number is a signed 16-bit field of the character record, and the count wraps at 32767 the
+ * way the original's does. Every dungeon the generator draws has gate squares -- the fewest in
+ * the first few hundred is thirteen -- so in practice the count never moves at all.
+ */
+function gateArrival(chosen: number): { dungeon: number; x: number; y: number } {
+  let dungeon = chosen;
+  for (;;) {
+    const square = gateSquare(dungeon);
+    if (square) return { dungeon, x: square.x, y: square.y };
+    dungeon = ((dungeon + 1) << 16) >> 16;
+  }
+}
 
 /**
  * read_string (WORLD.EXE 4000:3db9) as the bank calls it: digits typed until Enter, which the

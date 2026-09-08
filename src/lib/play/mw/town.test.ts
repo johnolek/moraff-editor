@@ -91,13 +91,29 @@ describe('the bank', () => {
 });
 
 describe('the gate out to the world map', () => {
-  it('says the wilderness is not built', async () => {
-    const session = playingMw(mwCharacterFile({ floor: 0, ...surface(5) }));
+  /** The last gate square of dungeon 0's town, which is where its own world map drops you. */
+  const DUNGEON_0_GATE = { x: 74, y: 74 };
+
+  it('walks out onto the gate square the world map drops you on', async () => {
+    const start = surface(5);
+    const session = playingMw(mwCharacterFile({ floor: 0, ...start }));
     await pressMw(session, MW_KEY.up);
     expect(session.box).toContain('1) EXPLORE THE WILDERNESS');
     await pressMw(session, 0x31);
-    expect(session.box).toEqual([
-      'NOT BUILT YET: WALK OUT ONTO THE WORLD MAP AND FIND ANOTHER DUNGEON',
-    ]);
+    // The scan keeps the last gate square of the floor rather than the first, so it is not the
+    // one the character was standing on to use the gate.
+    expect(start).not.toEqual(DUNGEON_0_GATE);
+    expect(session.view().place).toMatchObject({ ...DUNGEON_0_GATE, floor: 0, dungeon: 0 });
+  });
+
+  it('arrives on floor 0 the way enter_level does', async () => {
+    const session = playingMw(mwCharacterFile({ floor: 0, ...surface(5) }));
+    const before = session.game.monsters;
+    const remembered = [...session.floors.remembered];
+    await pressMw(session, MW_KEY.up);
+    await pressMw(session, 0x31);
+    // generate_section rotates its three monster tables and puts a fresh, empty floor 0 in play.
+    expect(session.game.monsters).not.toBe(before);
+    expect(session.floors.remembered).toEqual([0, remembered[0], remembered[1]]);
   });
 });
