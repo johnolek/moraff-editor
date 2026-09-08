@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { revValue, setRevValue } from './record';
+import { REV_VALUE, revValue, setRevValue } from './record';
 import { REV_KEY } from './keys';
 import {
   REV_HIT_RETURN,
   REV_TAKE_OR_LEAVE,
   REV_TOO_HEAVY,
+  REV_YOU_FIND_A_MACE,
+  REV_YOU_FIND_A_SWORD,
   revDropsTreasure,
   revRollTreasure,
   revTreasureFound,
@@ -127,9 +129,8 @@ function emptyPile() {
 }
 
 describe('the wand and the pill a kill can leave', () => {
-  /** The rolls a kill makes with nothing else to hand over: the drop, the spellbook, then the
-   *  wand's and the pill's own. */
-  const upToTheDrops = [0, 0];
+  /** Everything a kill rolls before the wand's turn: the coins, the spellbook and the armour. */
+  const upToTheDrops = [0, 0, 0];
 
   it('leaves a wand for a kind 5 and a kind 7, with a charge or two', async () => {
     const pc = revCharacter({ dungeonLevel: 10 });
@@ -177,6 +178,64 @@ describe('the wand and the pill a kill can leave', () => {
     const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheDrops, 41, 26]));
     game.dropsAWand = true;
     game.dropsAPill = true;
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toEqual([REV_HIT_RETURN]);
+  });
+});
+
+describe('the armour or weapon the shallow levels hand out', () => {
+  /** Everything up to the first of the three rolls: the drop, the spellbook, then that roll. */
+  const upToTheKit = [0, 0, 1];
+
+  it('offers the next suit of armour up from the one worn', async () => {
+    const pc = revCharacter({ dungeonLevel: 5 });
+    setRevValue(pc, 11, 1);
+    const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheKit, 2]));
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toContain('You find chain armor. ');
+    expect(revValue(pc, 11)).toBe(2);
+  });
+
+  it('stops at plate, which is what leaves field plate to be bought or found', async () => {
+    const pc = revCharacter({ dungeonLevel: 5 });
+    setRevValue(pc, 11, 3);
+    const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheKit, 2]));
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toEqual([REV_HIT_RETURN]);
+    expect(revValue(pc, 11)).toBe(3);
+  });
+
+  it('offers a sword on a four and a mace to a character who has one', async () => {
+    const pc = revCharacter({ dungeonLevel: 5 });
+    const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheKit, 3]));
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toContain(REV_YOU_FIND_A_SWORD);
+    expect(revValue(pc, REV_VALUE.sword)).toBe(1);
+
+    const armed = revCharacter({ dungeonLevel: 5 });
+    setRevValue(armed, REV_VALUE.sword, 1);
+    const second = revTestGame(armed, revRolls([...upToTheKit, 3]));
+    second.keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(second.game, second.desk);
+    expect(second.game.said).toContain(REV_YOU_FIND_A_MACE);
+    expect(revValue(armed, REV_VALUE.mace)).toBe(1);
+  });
+
+  it('hands a wizard none of it', async () => {
+    const pc = revCharacter({ dungeonLevel: 5, cls: 2 });
+    const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheKit, 3]));
+    keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game, desk);
+    expect(game.said).toEqual([REV_HIT_RETURN]);
+  });
+
+  it('offers nothing at all past the eighth level', async () => {
+    const pc = revCharacter({ dungeonLevel: 9 });
+    const { game, desk, keys } = revTestGame(pc, revRolls([...upToTheKit, 3]));
     keys.push(REV_KEY.enter);
     await revTreasureFromAKill(game, desk);
     expect(game.said).toEqual([REV_HIT_RETURN]);

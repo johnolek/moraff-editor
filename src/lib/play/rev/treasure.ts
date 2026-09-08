@@ -8,7 +8,7 @@ import {
   revPillColour,
   revWandColour,
 } from './magic';
-import { revValue, setRevValue } from './record';
+import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue } from './record';
 import { REV_SPELL_LEVEL_COUNT } from './tables';
 import type { RevGame } from './state';
 
@@ -175,6 +175,10 @@ export async function revTreasureFromAKill(game: RevGame, desk: RevMagicDesk): P
  */
 function theRestOfTheDrops(game: RevGame): void {
   const depth = game.pc.dungeonLevel;
+  // 1000:AB7F: the plain weapon or suit of armour a character is meant to be kitted out with,
+  // which only the first eight levels of the dungeon hand over.
+  const kitRoll = game.rng.random(8);
+  if (depth < 9 && kitRoll === 1) armourOrAWeapon(game);
   // 1000:ABB5 and 1000:ABF4: the wand and the pill the monster's own kind allows, each on a roll
   // the depth widens — a wand comes off about one such kill in seven on the first level and
   // better than one in three on the seventieth.
@@ -182,6 +186,60 @@ function theRestOfTheDrops(game: RevGame): void {
   if (game.dropsAWand && wandRoll < depth + 40) aWand(game);
   const pillRoll = game.rng.random(160);
   if (game.dropsAPill && pillRoll < depth + 25) aPill(game);
+}
+
+/** 1000:B292 and 1000:B2BA: the two weapons the shallow levels hand out. */
+export const REV_YOU_FIND_A_SWORD = 'You find a sword.';
+export const REV_YOU_FIND_A_MACE = 'You find a mace.';
+
+/**
+ * 1000:024C: the five suits of armour by the number the record keeps them as, which is what the
+ * store sells as its lines 4 to 7 and what a character with none is wearing.
+ *
+ * The trailing spaces are the game's own: each of the four is a name joined to the ` armor. ' at
+ * 1000:0202.
+ */
+const ARMOUR_WORN = [
+  'robes.    ',
+  'leather armor. ',
+  'chain armor. ',
+  'plate armor. ',
+  'field plate armor. ',
+];
+
+/**
+ * 1000:B1DF: the next suit of armour up, or a sword, or a mace.
+ *
+ * A wizard is handed none of it, the way the store refuses them everything but the knife. Three
+ * rolls in five offer armour, and what is offered is the **next suit up from the one worn**
+ * rather than a rolled one — so this stops at plate, and field plate is only ever bought or
+ * turned up by 1000:AC87.
+ *
+ * A roll of four offers a sword; a five, or a four to a character who has a sword already, falls
+ * through to the mace (1000:B2A6).
+ */
+function armourOrAWeapon(game: RevGame): void {
+  const pc = game.pc;
+  if (pc.cls === 2) return;
+  const roll = game.rng.random(5) + 1;
+  game.scratch = roll;
+  if (roll <= 3) {
+    const next = revValue(pc, REV_ARMOUR_VALUE) + 1;
+    game.scratch = next;
+    if (next > 3) return;
+    game.say(`You find ${ARMOUR_WORN[next]}`);
+    setRevValue(pc, REV_ARMOUR_VALUE, next);
+    return;
+  }
+  if (roll === 4 && revValue(pc, REV_VALUE.sword) === 0) {
+    game.say(REV_YOU_FIND_A_SWORD);
+    setRevValue(pc, REV_VALUE.sword, 1);
+    return;
+  }
+  if (revValue(pc, REV_VALUE.mace) === 0) {
+    game.say(REV_YOU_FIND_A_MACE);
+    setRevValue(pc, REV_VALUE.mace, 1);
+  }
 }
 
 /** 1000:B112 and 1000:B185: what a found pill and a found wand are announced with. */
