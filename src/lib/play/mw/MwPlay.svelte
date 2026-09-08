@@ -14,7 +14,6 @@
   import MwScreen from './MwScreen.svelte';
   import { bundledMwDungeon } from '../../game/mw-dungeon';
   import { MW_DIG_PROMPT } from './view3d/screen';
-  import { readStored, writeStored } from '../../character/storage';
   import type { ScreenLine } from '../../game/port/state';
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
   import { downloadMapFiles, mwMapFiles } from '../export-maps';
@@ -23,7 +22,19 @@
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import { characterMaps } from '../memory';
-  import { mapDrawn, monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from '../mode';
+  import ScreenSwitch from '../ScreenSwitch.svelte';
+  import {
+    mapDrawn,
+    monstersDrawn,
+    panelVisible,
+    PLAY_MODES,
+    readPlayDisplay,
+    readPlayMode,
+    resetPlayDisplay,
+    writePlayMode,
+    type PlayDisplay,
+    type PlayMode,
+  } from '../mode';
   import { mwOnMessageLine } from '../../game/mw-port/state';
   import {
     mwCharacteristicLines,
@@ -49,20 +60,9 @@
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
   let style = $state<MovementStyle>(readMovementStyle('moraffsWorld'));
-  let mode = $state<PlayMode>(readPlayMode('moraffsWorld'));
-
-  /**
-   * Which of the two ways of showing the floor the tab is using: the game's own screen, with the
-   * four 3-D views and everything the game draws around them, or the top-down map the tab was
-   * built on. The screen is what the game shows; the map is easier to plan a route on.
-   */
-  const DISPLAY_KEY = 'moraff-tools.play.moraffsWorld.display';
-  let display = $state<'screen' | 'map'>(readStored(DISPLAY_KEY) === 'map' ? 'map' : 'screen');
-
-  function chooseDisplay(which: 'screen' | 'map') {
-    display = which;
-    writeStored(DISPLAY_KEY, which);
-  }
+  const storedMode = readPlayMode('moraffsWorld');
+  let mode = $state<PlayMode>(storedMode);
+  let display = $state<PlayDisplay>(readPlayDisplay('moraffsWorld', storedMode));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -273,9 +273,11 @@
     input.blur();
   }
 
-  /** The mode is picked with the mouse, and hands the keyboard back the same way. */
+  /** The mode is picked with the mouse, and hands the keyboard back the same way. A new mode
+   *  shows what that mode shows, until the switch says otherwise. */
   function chooseMode(input: HTMLInputElement) {
     writePlayMode('moraffsWorld', mode);
+    display = resetPlayDisplay('moraffsWorld', mode);
     input.blur();
   }
 
@@ -424,17 +426,7 @@
           <button type="button" onclick={exportMaps}>Export maps</button>
         </div>
         <div class="keys">
-          <div class="key-note">Show:</div>
-          <div class="key-row">
-            <button
-              type="button"
-              class:chosen={display === 'screen'}
-              onclick={() => chooseDisplay('screen')}>The game's screen</button>
-            <button
-              type="button"
-              class:chosen={display === 'map'}
-              onclick={() => chooseDisplay('map')}>The map</button>
-          </div>
+          <ScreenSwitch game="moraffsWorld" bind:display />
           <div class="key-note">Play mode:</div>
           <div class="styles">
             {#each PLAY_MODES as choice}
@@ -669,10 +661,6 @@
     font-size: 16px;
   }
   .keys button:hover {
-    color: var(--accent);
-  }
-  .keys button.chosen {
-    border-color: var(--accent);
     color: var(--accent);
   }
   /* The game's screen keeps its own 4:3 shape and sits in the middle of the space the map had. */
