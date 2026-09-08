@@ -17,12 +17,91 @@ import type { Game, ScreenLine } from '../game/port/state';
 export const MESSAGE_BOX_LINES = 8;
 
 /**
+ * The rectangle the message box fills, which is the two rectangles the game wipes it with:
+ * FUN_2000_28be (exe 2000:28be) takes the strip along the top and FUN_2000_2820 (exe 2000:2820)
+ * takes the eight lines under it. Together they run from x 0x398 to the right edge and from y
+ * 0x2ff to the bottom of the screen. `dotu-tools/docs/SCREEN.md` measures the same box off a
+ * screenshot: dark grey, with a green bar across its top.
+ */
+export const MESSAGE_BOX_RECT = { x: 0x398, y: 0x2ff, right: 0x640, bottom: 0x4b0 };
+
+/** Where the eight lines start, which is the top of FUN_2000_2820's own rectangle. The strip
+ *  above it is the green bar, and is the one line a prompt is drawn on. */
+export const MESSAGE_BOX_LINES_TOP = 0x324;
+
+/**
+ * Whether a drawn line stands in the message box.
+ *
+ * The screen keeps a string's top left corner rather than the box its letters fill, so a line
+ * counts as inside when the point it was drawn at is — which is the same test the two wipes make.
+ */
+export function onMessageBox(line: ScreenLine): boolean {
+  return (
+    line.x >= MESSAGE_BOX_RECT.x &&
+    line.x < MESSAGE_BOX_RECT.right &&
+    line.y >= MESSAGE_BOX_RECT.y &&
+    line.y < MESSAGE_BOX_RECT.bottom
+  );
+}
+
+/**
  * The lines of a message box, ready for the screen renderer. A box line and a menu line are the
  * same line in the same place: FUN_2000_2f5d and mset_gmenu (exe 2000:2b08) both draw the eight
  * strings of that buffer, so `menuLine` in `src/lib/game/port/screens.ts` is the geometry.
  */
 export function messageBoxLines(lines: string[]): ScreenLine[] {
   return lines.slice(0, MESSAGE_BOX_LINES).map((text, index) => menuLine(text, index));
+}
+
+/** What the game has drawn and where it stands, for {@link messageBoxScreen}. */
+export interface MessageBoxShowing {
+  /** The eight strings the last box filled the buffer with. */
+  box: string[];
+  /** The battle banner's own lines, which the session collects out of the box. */
+  banner: string[];
+  /** Every line the game has drawn with pfont, wherever it drew it. */
+  drawn: ScreenLine[];
+}
+
+/**
+ * The message box as the screen has it.
+ *
+ * The eight lines hold whichever of the game's two ways of filling them came last, and the game
+ * makes that easy to tell: everything that draws its own lines down that block — mset_gmenu, the
+ * pockets menu, view_prep_spells — wipes the block with FUN_2000_2820 first, and so does
+ * FUN_2000_2f5d before it copies a box in. So a line drawn on the block is newer than the box,
+ * and with nothing drawn there the box shows; with no box either, the battle banner does.
+ *
+ * The strip above the eight lines is drawn either way: it is where kill_monster puts "YOU KILLED
+ * IT!" and FUN_3000_a1c4 puts "GOOD NEWS...", over whatever the block holds.
+ *
+ * The banner is engagement_timing (exe 2000:b782), which prints in that same block: it wipes the
+ * eight lines with FUN_2000_2820 and draws its five over them, and movecontrol wipes the block
+ * again as soon as there is no monster ahead any more (exe 2000:c308, the DS:c657 branch). Which
+ * y each of the five goes on cannot be read back — pfont takes its coordinates as floats and the
+ * decompilation loses every one of them, and the one call that does survive,
+ * print_battle_hp_info's pfont(0x3a2, 0x379) for the last of the five, falls between the second
+ * and the third of the block's own lines — so the port draws them on the block's own lines rather
+ * than inventing a spacing for them.
+ */
+export function messageBoxScreen(showing: MessageBoxShowing): ScreenLine[] {
+  const drawn = showing.drawn.filter(onMessageBox);
+  const filled = drawn.some((line) => line.y >= MESSAGE_BOX_LINES_TOP);
+  const lines = filled
+    ? []
+    : showing.box.length > 0
+      ? messageBoxLines(showing.box)
+      : messageBoxLines(showing.banner);
+  return [...lines, ...drawn];
+}
+
+/**
+ * The lines the game has drawn anywhere but the message box, which is it taking the whole display
+ * over: the help, the V screen, the monster manual and the pages behind the P key all draw across
+ * the four views.
+ */
+export function screenTakenOver(drawn: ScreenLine[]): ScreenLine[] {
+  return drawn.filter((line) => !onMessageBox(line));
 }
 
 /**
