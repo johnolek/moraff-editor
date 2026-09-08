@@ -271,20 +271,28 @@ export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
   drawZoomMonsters(frame, zoomMapWindow(frame.width), floor.at, floor.monsters ?? []);
 }
 
-/** The white `draw_side` (exe 3000:8432) lines every side of a cell that is not open. */
+/**
+ * The colours `drawsquare` (exe 3000:87de) draws a square's own marks in.
+ *
+ * The white is `draw_side`'s (exe 3000:8432) for every side and every door tick; the red is the
+ * four corner dots, which the game plots on every screen above the 640 by 350 one; the yellow is
+ * the ladder and trap door diagonals, and the pale blue the chute's, which the chute branch swaps
+ * in for the yellow.
+ */
 export const ZOOM_SIDE_COLOUR = 15;
-
-/** The red the four corners of every cell are plotted in, which the game does on every screen
- *  above the 640 by 350 one (exe 3000:899e). */
 export const ZOOM_CORNER_COLOUR = 6;
-
-/** The cell size from which a door's tick is drawn as a pair of long lines as well. */
-const DOOR_TICK_PAIR_FROM_CELL = 8;
-
-/** The yellow of the ladder and trap door diagonals, and the pale blue the chute branch swaps in
- *  for it (exe 3000:8a85). */
 export const ZOOM_MARK_COLOUR = 4;
 export const ZOOM_CHUTE_COLOUR = 3;
+
+/**
+ * The colour a square with one of the town's four buildings on it is filled with: the building's
+ * own number plus two, except that the inn's 6 is moved on to 8 (exe 3000:8864). Six is the red
+ * the corner dots are plotted in, and eight a dark grey.
+ */
+export function zoomBuildingColour(building: number): number {
+  const colour = building + 2;
+  return colour === 6 ? 8 : colour;
+}
 
 /** A square with neither a trap door nor a chute on it, which is what the game leaves the
  *  destination floor at and what stops both diagonals being drawn. */
@@ -295,6 +303,9 @@ const NOTHING_CROSSED = -1;
  * (exe 3000:8c02). The play screen is 1024 across, so its map always draws them thick.
  */
 const THICK_MARK_ABOVE_WIDTH = 1000;
+
+/** The cell size from which a door's tick is drawn as a pair of long lines as well. */
+const DOOR_TICK_PAIR_FROM_CELL = 8;
 
 /** `drawsquare` (exe 3000:87de) and `draw_side` (exe 3000:8432) for every square of the window. */
 function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
@@ -332,12 +343,13 @@ function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
  * One square of the map, in the order `drawsquare` (exe 3000:87de) draws it: the fill, the four
  * sides, the four corner dots, and the marks for what the square holds.
  *
- * The marks say what the square holds, and the routine asks about them in order, each only on a
- * square the last one left alone: a ladder down is one diagonal and a ladder up the other, a trap
- * door is both, and a chute is both with a plus sign through them, in pale blue rather than
- * yellow. The chute is asked about only on a square that was already known when the character
- * arrived on the floor, which is why a chute shows on the map after they have left and come back
- * and not before.
+ * A square is filled black unless one of the town's four buildings stands on it, which is all the
+ * map ever says about a building — no mark goes over the colour. The marks belong to the other
+ * three things a square can hold, and the routine asks about them in order, each only on a square
+ * the last one left alone: a ladder down is one diagonal and a ladder up the other, a trap door is
+ * both, and a chute is both with a plus sign through them, in pale blue rather than yellow. The
+ * chute is asked about only on a square that was already known when the character arrived on the
+ * floor, which is why a chute shows on the map after they have left and come back and not before.
  */
 function drawZoomSquare(
   frame: Frame,
@@ -347,7 +359,8 @@ function drawZoomSquare(
   asTheGame: { chuteKnown: boolean },
 ): void {
   const ladder = square.ladder;
-  fillRect(frame, x + 1, y + 1, x + ZOOM_CELL, y + ZOOM_CELL, 0);
+  const building = ladder === 0 ? (square.town ?? 0) : 0;
+  fillRect(frame, x + 1, y + 1, x + ZOOM_CELL, y + ZOOM_CELL, building === 0 ? 0 : zoomBuildingColour(building));
 
   drawZoomSide(frame, square.w, x, y, false);
   drawZoomSide(frame, square.n, x, y, true);
@@ -360,7 +373,7 @@ function drawZoomSquare(
 
   // The trap door's own destination floor, which the square is crossed for whatever it is, and
   // which the chute branch borrows when it claims the square instead.
-  let crossed = ladder === 0 ? square.trapdoor : NOTHING_CROSSED;
+  let crossed = building === 0 && ladder === 0 ? square.trapdoor : NOTHING_CROSSED;
   let colour = ZOOM_MARK_COLOUR;
   if (ladder === 0 && crossed === NOTHING_CROSSED && asTheGame.chuteKnown && square.chute !== 0) {
     crossed = square.chute;
