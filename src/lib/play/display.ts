@@ -275,9 +275,13 @@ export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
  * The colours `drawsquare` (exe 3000:87de) draws a square's own marks in.
  *
  * The white is `draw_side`'s (exe 3000:8432) for every side and every door tick; the red is the
- * four corner dots, which the game plots on every screen above the 640 by 350 one; the yellow is
- * the ladder and trap door diagonals, and the pale blue the chute's, which the chute branch swaps
- * in for the yellow.
+ * four corner dots, which the game plots in every video mode from the 640 by 350 one up and in
+ * none of the five below it; the yellow is the ladder and trap door diagonals, and the pale blue
+ * the chute's, which the chute branch swaps in for the yellow.
+ *
+ * The two marks are white instead when DS:00c7 is set, which is the switch the game takes from a
+ * negative video mode number on its command line (exe 2000:6337). The mode the game is played in
+ * here is a positive 9, so that switch is off.
  */
 export const ZOOM_SIDE_COLOUR = 15;
 export const ZOOM_CORNER_COLOUR = 6;
