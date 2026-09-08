@@ -63,6 +63,12 @@ export interface ScaleOptions {
   /** DS:4fc5: how many of the picture's 200 rows to stretch over the rectangle. */
   rows?: number;
   colours: PixelColours;
+  /**
+   * The palette entry a picture value comes out as, or {@link SKIP}. Moraff's World's own blitter
+   * (`draw_picture`, WORLD.EXE 3000:0105) stretches a picture exactly the way this one does but
+   * substitutes colours by a simpler rule of its own, so it passes that rule in here.
+   */
+  pixel?: (value: number, row: number, colours: PixelColours) => number;
 }
 
 /**
@@ -133,7 +139,7 @@ export function scaleImage(
       previousEnd = b;
 
       if (runEnd >= srcX1) {
-        const index = picturePixelIndex(run.colour, destY, options.colours);
+        const index = (options.pixel ?? picturePixelIndex)(run.colour, destY, options.colours);
         if (index !== SKIP) {
           const from = flipX ? xR - (b - xL) : a;
           const to = flipX ? xR - (a - xL) : b;
