@@ -680,3 +680,129 @@ hit more for it, and the little mouse will eventually notice and tell them to fi
 
 In the code: [recompute_weight](source:c/recompute_weight),
 [the step cost](source:c/FUN_2000_9cb8) and [the mouse](source:c/FUN_3000_9383).
+
+## Bugs the game has
+
+### An enchanted suit of armour protects no better than a plain one
+
+The permanent plus on the armour you are wearing appears nowhere in the sum that decides whether a
+monster hits you. Only the suit's own armour class is subtracted, along with the temporary Enchant
+Armor bonus, which is a different field.
+
+So the plus is printed on your sheet, and acid destroys it, and that is the whole of what it does.
+The weapon's plus, in the same position on the other side of the fight, is added properly. This is
+the same bug, in the same place, that Dungeons of the Unforgiven has.
+
+Two more things in the same sum do nothing for a different reason. Your swing adds a byte at
+record offset `0x7c7` and a monster's attack subtracts it again; a monster's attack also
+subtracts a byte at `0xdd`. Neither byte is written anywhere in the executable — not by the
+roller, not by a spell, not by a find. The other game counts a lucky charm in one of those places
+and a shield in the other.
+
+In the code: [monster_turn](source:c/monster_turn) and [strike](source:c/strike).
+
+### Escaping the drop menu reads a byte that is not a count
+
+Pressing Escape at the list of armour slots hands the drop branch a -1. It subtracts one and uses
+the answer as an index, which lands on an unlabelled byte in front of the eight armour counts
+rather than on one of them. That byte is zero in every save there has ever been, so the branch
+decides you own no such suit and does nothing. The cancel you expect is a bug that happens to
+behave.
+
+The branch itself does two separate things: if you own any of the suit it takes one away, and if
+you are wearing that suit and now own none of it, it puts you back in your skin. The two tests are
+not connected, so a slot that already held nothing still strips you.
+
+The money branch of the same menu is short a line. It offers copper, silver, ivory, gold and
+platinum; there are six piles of stones, and the sixth — the jewel stones, which the bank pays
+out one for one — is not on it, nor are the jewels in your pocket. You can throw away the copper
+you were carrying for weight, and you can never put down anything that matters.
+
+In the code: [drop_item](source:c/drop_item).
+
+### The dig gives up after however many floors were on the stack
+
+Digging a hole in the floor searches downwards for the first floor whose square under you is not
+rock, turning round at floor 124 and again at floor 1, and gives up after a set number of tries by
+rescuing you onto any open square it can find.
+
+The counter it compares against is never initialised. How many floors a hole tries before the
+rescue is whatever happened to be on the stack at that moment, which makes it one of the few
+things in the game that genuinely differs from run to run for no reason at all.
+
+Before any of that, the dig enters the floor it is already standing on. That floor is in the front
+slot of the three-floor monster cache and the entering code only recognises the second and third,
+so it treats it as somewhere new: all three slots rotate, the oldest is thrown away, and the floor
+you have not left yet is stocked with 145 fresh monsters. The floor is then in the cache twice,
+under one number, with two different sets of monsters.
+
+In the code: [dig_hole](source:c/dig_hole) and
+[generate_section](source:c/generate_section).
+
+### The EXP NEEDED screen is one level out
+
+The E key lists what the next several levels will cost. It labels each line with your level plus
+one, plus two, and so on, and works the number out for your level plus none, plus one, and so on.
+
+So a level 3 character reads `4)` beside the experience that level 3 wanted — which they already
+have — and every figure on the screen belongs to the line above it.
+
+In the code: [experience_for_level](source:c/experience_for_level) and
+[experience_needed](source:c/experience_needed).
+
+### Three of the fourteen lessons say nothing at all
+
+A character below their third level gets a lesson from a little mouse now and then, taken in turn
+from a list of fourteen. The routine that prints them has a case for the first eleven and nothing
+whatever for the last three.
+
+So three steps in fourteen that reach the lesson code print an empty box and move the counter on,
+and the eleven real lessons come round in a cycle three slots longer than they need to be.
+
+The fourth lesson, when it does arrive, says `LEFT IS EAST, RIGHT IS WEST`.
+
+In the code: [the lessons](source:c/FUN_3000_8b27) and [the mouse](source:c/FUN_3000_9383).
+
+### The design screen asks for a key it does not read
+
+Designing your own character takes four points off each of the six characteristics and gives you
+twenty-four to put back where you like. The screen lists the keys: S, I, W, C, D or L, for
+strength, intelligence, wisdom, constitution, agility or luck. The key the code compares against
+for agility is A.
+
+The line underneath says AGILITY in the right place, so it is the letter in the prompt that is
+wrong. Pressing D does nothing at all, and the screen looks frozen until you guess A. Dungeons of
+the Unforgiven's design screen has the identical mistake, letter for letter.
+
+In the code: [designYourOwn](source:ts/character.ts/designYourOwn) and
+[roll_char](source:c/roll_char).
+
+### A priest cannot even read about a wizard spell
+
+The spell screen's first menu has eight lines: four to cast with and four that print the
+`SPELLS.HLP` description instead. The gate that decides which categories your class may use covers
+all eight.
+
+So a priest opening their own spell book cannot look up what a wizard spell does, only cast one
+they do not have. The grid behind a help line reads the same four arrays as the casting one as
+well, so a spell you do not hold cannot be read about either — the only way to find out what a
+spell does is to own it.
+
+The write-scroll menus lose a line of their own. The third of them copies `SELECT ONE OF THE
+ABOVE` into the sixth line of its box and then runs the loop that clears the last three, which
+clears the line it has just written; and it never clears the fifth line, so the level menu's
+`HIT 0 FOR 10'TH LEVEL` is still sitting under the three spells you are choosing between.
+
+In the code: [spell_screen](source:c/spell_screen), [cast_spell](source:c/cast_spell) and
+[mwCanCast](source:ts/spells.ts/mwCanCast).
+
+### The teleport stone always lands on the same square
+
+The stone of teleportation puts you back in the town on the first open square its search finds —
+except that the two loops it searches with never stop early. Every open square inside the border
+overwrites the one before it, so what you get is the last square searched rather than the first.
+
+It is the same square every time, for every character, in every dungeon whose town has an open
+square there.
+
+In the code: [use_magic_item](source:c/use_magic_item).
