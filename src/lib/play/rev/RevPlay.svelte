@@ -10,7 +10,19 @@
   import { downloadMapFiles, revMapFile } from '../export-maps';
   import { downloadRunLog } from '../export-run';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder } from '../run';
-  import { mapDrawn, monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from '../mode';
+  import ScreenSwitch from '../ScreenSwitch.svelte';
+  import {
+    mapDrawn,
+    monstersDrawn,
+    panelVisible,
+    PLAY_MODES,
+    readPlayDisplay,
+    readPlayMode,
+    resetPlayDisplay,
+    writePlayMode,
+    type PlayDisplay,
+    type PlayMode,
+  } from '../mode';
   import RevPanel from './RevPanel.svelte';
   import {
     runRevDungeon,
@@ -42,9 +54,9 @@
   let view = $state.raw<RevPlayView | null>(null);
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredLevel = $state.raw<number | null>(null);
-  let mode = $state<PlayMode>(readPlayMode('revenge'));
-  /** Whether the tab shows the game's own screen or the site's top-down map. */
-  let showScreen = $state(true);
+  const storedMode = readPlayMode('revenge');
+  let mode = $state<PlayMode>(storedMode);
+  let display = $state<PlayDisplay>(readPlayDisplay('revenge', storedMode));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -174,8 +186,10 @@
     session.press(key);
   }
 
+  /** A new mode shows what that mode shows, until the switch says otherwise. */
   function chooseMode(input: HTMLInputElement) {
     writePlayMode('revenge', mode);
+    display = resetPlayDisplay('revenge', mode);
     input.blur();
   }
 
@@ -226,7 +240,7 @@
   {:else}
     <div class="stage">
       <div class="map">
-        {#if showScreen && gameScreen}
+        {#if display === 'screen' && gameScreen}
           <RevScreenCanvas screen={gameScreen} />
         {:else}
         <FloorCanvas
@@ -296,6 +310,7 @@
           <button type="button" onclick={exportMaps}>Export maps</button>
         </div>
         <div class="keys">
+          <ScreenSwitch game="revenge" bind:display />
           <div class="key-note">Play mode:</div>
           <div class="styles">
             {#each PLAY_MODES as choice}
@@ -305,19 +320,6 @@
                 <span class="how">{choice.how}</span>
               </label>
             {/each}
-          </div>
-          <div class="key-note">What the tab draws:</div>
-          <div class="styles">
-            <label>
-              <input type="radio" value={true} bind:group={showScreen} />
-              <span>Game screen</span>
-              <span class="how">The screen the game itself draws: the four views, the map it remembers and its own words.</span>
-            </label>
-            <label>
-              <input type="radio" value={false} bind:group={showScreen} />
-              <span>Top-down map</span>
-              <span class="how">This site's map of the floor, which zooms and scrolls.</span>
-            </label>
           </div>
           <div class="key-note">Arrow keys, which Escape switches between:</div>
           <div class="how">{ARROW_NOTE[view.arrows]}</div>
