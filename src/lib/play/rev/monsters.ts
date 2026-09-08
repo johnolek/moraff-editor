@@ -1,5 +1,5 @@
 import { blocked } from '../../game/revmap.js';
-import { REV_POSITIONS, REV_STRENGTHS, SLOTS_PER_LEVEL, monsterLevelOf } from '../../rev-bestiary/monsters';
+import { REV_POSITIONS, REV_STRENGTHS, SLOTS_PER_LEVEL } from '../../rev-bestiary/monsters';
 import type { Rng } from '../../game/port/rng';
 
 /**
@@ -57,6 +57,9 @@ export interface RevWalker {
   invisible: number;
   /** The slot the character is fighting, or 0 for no fight (DGROUP B50E with B69C). */
   fighting: number;
+  /** The level of the last monster the character met, or 0 until they have met one (DGROUP
+   *  B6B4). The wander roll reads this rather than the level of the monster taking the turn. */
+  lastMonsterLevel: number;
 }
 
 /** The monsters of one dungeon, as the session holds them. */
@@ -197,15 +200,19 @@ export class RevMonsters {
 
   /**
    * 1000:73AA: the direction the monster picks. One that is not awake wanders, and so does an
-   * awake one some of the time — `INT(RND * (its level + 35)) < 15`, so a deeper monster chases
-   * more of the time.
+   * awake one some of the time — `INT(RND * (L + 35)) < 15`.
+   *
+   * `L` is DGROUP B6B4, the level of the last monster the character met, which 1000:73BC loads
+   * straight into the roll. It is not the level of the monster taking the turn, and it is zero
+   * until the character has met anybody, so until then every awake monster chases the same
+   * fraction of the time whatever its own level is. The clock's own odds read the same variable,
+   * and the slip is the original's both times.
    *
    * An awake one that is lined up with the character closes along the axis they share; one that
    * is not moves across the way the character is facing.
    */
   private chooseDirection(slot: number, at: RevStanding, walker: RevWalker, state: { awake: boolean; lined: boolean }, rng: Rng): number {
-    const level = monsterLevelOf(slot);
-    if (!state.awake || rng.random(level + 35) < 15) return rng.random(4) + 1;
+    if (!state.awake || rng.random(walker.lastMonsterLevel + 35) < 15) return rng.random(4) + 1;
     if (!state.lined) {
       if (walker.facing === NORTH || walker.facing === SOUTH) return at.column > walker.column ? WEST : EAST;
       return at.row > walker.row ? NORTH : SOUTH;

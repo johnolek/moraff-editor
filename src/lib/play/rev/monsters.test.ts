@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { blocked } from '../../game/revmap.js';
 import type { Rng } from '../../game/port/rng';
-import { SLOTS_PER_LEVEL } from '../../rev-bestiary/monsters';
+import { SLOTS_PER_LEVEL, monsterLevelOf } from '../../rev-bestiary/monsters';
 import { GRID_STRIDE, RevMonsters, type RevWalker } from './monsters';
 
 /** A generator that hands back the numbers a test names, and then zeroes. */
@@ -14,7 +14,10 @@ function scripted(...numbers: number[]): Rng {
 const highest: Rng = { random: (n) => n - 1 };
 
 function walker(fields: Partial<RevWalker> = {}): RevWalker {
-  return { column: 10, row: 10, facing: 1, level: 1, generation: 1, weight: 150, invisible: 0, fighting: 0, ...fields };
+  return {
+    column: 10, row: 10, facing: 1, level: 1, generation: 1, weight: 150, invisible: 0, fighting: 0,
+    lastMonsterLevel: 0, ...fields,
+  };
 }
 
 describe('stocking a level', () => {
@@ -86,6 +89,40 @@ describe('a monster acting', () => {
     const before = monsters.squareOf(1);
     monsters.act(1, walker({ weight: 0 }), scripted(699));
     expect(monsters.squareOf(1)).toEqual(before);
+  });
+
+  it('rolls the wander against the last monster met, not the one moving', () => {
+    // The notice roll comes first and has to pass; every draw after it is the top of its range.
+    const ranges: number[] = [];
+    const watching: Rng = {
+      random: (n) => {
+        ranges.push(n);
+        return ranges.length === 1 ? 0 : n - 1;
+      },
+    };
+    const monsters = new RevMonsters();
+    monsters.positions[3] = 32 * 10 + 11;
+    monsters.stock(1, highest);
+    monsters.awake1 = 3;
+    monsters.act(3, walker({ lastMonsterLevel: 12 }), watching);
+    expect(monsterLevelOf(3)).toBe(1);
+    expect(ranges.slice(0, 2)).toEqual([700, 12 + 35]);
+  });
+
+  it('rolls the wander against 35 alone until a monster has been met', () => {
+    const ranges: number[] = [];
+    const watching: Rng = {
+      random: (n) => {
+        ranges.push(n);
+        return ranges.length === 1 ? 0 : n - 1;
+      },
+    };
+    const monsters = new RevMonsters();
+    monsters.positions[3] = 32 * 10 + 11;
+    monsters.stock(1, highest);
+    monsters.awake1 = 3;
+    monsters.act(3, walker(), watching);
+    expect(ranges.slice(0, 2)).toEqual([700, 35]);
   });
 
   it('steps the monster being fought straight onto the character', () => {

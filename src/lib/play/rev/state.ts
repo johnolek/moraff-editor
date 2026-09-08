@@ -179,6 +179,7 @@ export function revWalker(game: RevGame): RevWalker {
     weight: pc.weight,
     invisible: revValue(pc, REV_VALUE.invisibility),
     fighting: game.fight?.slot ?? 0,
+    lastMonsterLevel: game.lastMonsterLevel,
   };
 }
 
