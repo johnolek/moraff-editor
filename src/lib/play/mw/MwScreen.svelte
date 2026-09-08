@@ -12,6 +12,7 @@
   import { renderMwView, type MwViewMonster, type MwViewScene } from './view3d/render';
   import { drawMwScreenText } from './view3d/text';
   import { drawZoomMonsters } from '../zoom-monsters';
+  import { drawMwMonsterBars } from './view3d/monster-bar';
   import {
     MW_COLOURS,
     MW_KEY_MENU_RECT,
@@ -57,8 +58,9 @@
     cleared?: boolean;
     /** One view over the whole screen, the way the Z key zooms one; null draws all four. */
     zoomed?: number | null;
-    /** The corner of the view the monster being fought stands in, or null when none is. */
-    engagedCorner?: MwMonsterViewCorner | null;
+    /** The corner of every view with a monster standing beside the character, which is where a
+     *  hit-point bar goes. */
+    barCorners?: MwMonsterViewCorner[];
   }
 
   let {
@@ -73,7 +75,7 @@
     mapMonsters = [],
     cleared = false,
     zoomed = null,
-    engagedCorner = null,
+    barCorners = [],
   }: Props = $props();
 
   const WIDTH = MW_SCREEN_PIXELS.width;
@@ -118,32 +120,13 @@
     } else {
       renderMwView(frame, scene, MW_WHOLE_SCREEN_VIEW, zoomed);
     }
-    if (engagedCorner) drawMonsterBar(frame, engagedCorner);
+    drawMwMonsterBars(frame, barCorners, place.floor);
     // A page that takes the display over (the help, the statistics) is drawn on a cleared
     // screen, so the frame goes black before its lines are painted.
     if (cleared) fillRect(frame, 0, 0, WIDTH, HEIGHT, 0);
     drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
     context.putImageData(new ImageData(toRgba(frame, floorPalette(place.floor)), WIDTH, HEIGHT), 0, 0);
   });
-
-  /**
-   * FUN_2000_8728 (WORLD.EXE 2000:8728): the light grey bar the engaged monster's hit points are
-   * printed on. It covers only the `HP:` half of the line — the level beside it is drawn straight
-   * over the monster with nothing behind it.
-   */
-  function drawMonsterBar(frame: Frame, corner: MwMonsterViewCorner): void {
-    const toX = (x: number) => Math.trunc(((WIDTH - 1) * x) / 0x63f);
-    const toY = (y: number) => Math.trunc(((HEIGHT - 1) * y) / 0x4af);
-    fillRect(
-      frame,
-      toX(corner.x + 0xdb),
-      toY(corner.hpY),
-      toX(corner.x + 0x18a),
-      toY(corner.hpY + 0x28),
-      // DS:4396, which is 3 on the surface and the light grey 14 anywhere below it.
-      place.floor === 0 ? 3 : MW_COLOURS.monsterBar,
-    );
-  }
 
   /** The message box, the key menu and the zoom map, which sit around the four views. */
   function drawBoxes(frame: Frame): void {

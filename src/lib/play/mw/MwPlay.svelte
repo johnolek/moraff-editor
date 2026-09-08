@@ -43,6 +43,8 @@
     mwKeyMenuLines,
     mwMonsterViewCorner,
     mwMonsterViewLines,
+    mwMonsterViewSideLines,
+    mwMonsterViewSides,
     mwStatusLines,
     MW_MONSTER_VIEW_CORNERS,
     MW_NORTH_VIEW,
@@ -100,6 +102,15 @@
       : mwMonsterViewLines(session.game, view.engaged.slot, monsterCorner),
   );
 
+  /** The same three values for every monster standing beside the character, which the game draws
+   *  over all four views at once. The top-down map has only the one picture to put them on. */
+  const sideMonsters = $derived(
+    session === null || view === null ? [] : mwMonsterViewSides(session.game),
+  );
+  const sideMonsterValues = $derived(
+    session === null || view === null ? [] : mwMonsterViewSideLines(session.game),
+  );
+
   /** The chance the next swing lands, which debug mode adds under the hit points the game
    *  prints for itself. */
   const debugMonsterValues = $derived(
@@ -118,7 +129,8 @@
   /**
    * Everything the game prints on the play screen, each line where the game prints it: the
    * message box down the left, the menu of keys down the right, the numbers along the bottom, the
-   * line under the two stacked views, and the engaged monster's own three values.
+   * line under the two stacked views, and the three values of every monster standing beside the
+   * character.
    */
   const screenLines = $derived.by((): ScreenLine[] => {
     if (view === null || session === null) return [];
@@ -128,7 +140,7 @@
       ...mwKeyMenuLines(false),
       ...statusLines,
       ...characteristicLines,
-      ...monsterValues,
+      ...sideMonsterValues,
       ...debugMonsterValues,
       ...(view.prompt === null
         ? []
@@ -374,7 +386,7 @@
               mapMonsters={zoomMapMonsters(mode, view)}
               lines={screenLines}
               cleared={screenTakesOver}
-              engagedCorner={view.engaged === null ? null : monsterCorner}
+              barCorners={sideMonsters.map((side) => side.corner)}
             />
           </div>
         {:else}
