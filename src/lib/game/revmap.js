@@ -395,20 +395,68 @@ export function feature(column, row, level) {
   return null;
 }
 
+/** 1000:34BA, 34E9 and 352A: `INT(n * .5) = n * .5`, which is how the fall asks whether n is
+ *  even. */
+function even(n) {
+  return Math.floor(n * 0.5) === n * 0.5;
+}
+
+/** The level over which a fall can gain its third level (1000:34F8). */
+const THIRD_LEVEL_BELOW = 25;
+
+/** How many levels one fall can span, which is how far above a landing a chute can be. */
+const DEEPEST_FALL = 3;
+
+/**
+ * The level a chute on this square drops the player to.
+ *
+ * 1000:3491 to 1000:355A, in three nested tests over the square fallen through, each of which
+ * adds another level and gates the one after it:
+ *
+ * * one level always (1000:3491);
+ * * a second when the column plus the row is even (1000:34A0), so an odd column plus row always
+ *   falls exactly one;
+ * * a third when the level then reached plus the column is even and that level is over 25
+ *   (1000:34D6).
+ *
+ * A fourth test at 1000:351F can never pass: 1000:352F compares INT(the level * .5) against the
+ * level itself where the two above it compare against the halved value, so it wants a level
+ * that is its own half.  The column and the row are never touched, so the landing is the same
+ * square one, two or three levels down.
+ *
+ * Nothing in the module caps the result -- a chute on level 68 or 69 lands past the deepest
+ * level, where 1.NUM has no monsters to read and DOS would fault -- so this port stops at the
+ * deepest.
+ */
+export function chuteLanding(column, row, level) {
+  let landing = level + 1;
+  if (even(column + row)) {
+    landing += 1;
+    if (even(landing + column) && landing > THIRD_LEVEL_BELOW) landing += 1;
+  }
+  return landing > LEVELS ? LEVELS : landing;
+}
+
 /**
  * Whether the square is where a chute drops the player and lets the fall go on.
  *
- * The chute at 1000:3428 prints "YOU FELL DOWN A CHUTE!", adds one to the level (1000:3491)
- * without touching the column or the row, and remembers the square it left the player on
- * (1000:356F).  1000:064D asks for the code of the square just stepped onto, and where that is
- * over 3 -- no ladder and no chute of its own -- and the square is the one the chute dropped
- * the player on, it prints "   False floor.   " (1000:567C) with the D-GO DOWN prompt and the
- * fall goes on another level.
+ * The chute at 1000:3428 prints "YOU FELL DOWN A CHUTE!", drops the player one, two or three
+ * levels without touching the column or the row ({@link chuteLanding}), and remembers the
+ * square it left the player on (1000:356F).  1000:064D asks for the code of the square just
+ * stepped onto, and where that is over 3 -- no ladder and no chute of its own -- and the square
+ * is the one the chute dropped the player on, it prints "   False floor.   " (1000:567C) with
+ * the D-GO DOWN prompt and the fall goes on another level.
+ *
+ * The bottom level is left out: the fall from a false floor there would have nowhere to go.
  */
 export function falseFloor(column, row, level) {
   if (level < 1 || level >= LEVELS) return false;
-  const above = feature(column, row, level - 1);
-  return above !== null && above.kind === 'chute' && feature(column, row, level) === null;
+  if (feature(column, row, level) !== null) return false;
+  for (let above = level - 1; above >= level - DEEPEST_FALL && above >= 1; above--) {
+    const chute = feature(column, row, above);
+    if (chute !== null && chute.kind === 'chute' && chuteLanding(column, row, above) === level) return true;
+  }
+  return false;
 }
 
 /**
@@ -462,7 +510,7 @@ export function squareOn(column, row, level, generation = 1) {
   square.town = level === 0 ? townBuilding(column, row) : 0;
   const here = feature(column, row, level);
   if (here === null) square.falseFloor = falseFloor(column, row, level);
-  else if (here.kind === 'chute') square.chute = level + 1;
+  else if (here.kind === 'chute') square.chute = chuteLanding(column, row, level);
   else square.ladder = here.kind === 'up' ? -here.span : here.span;
   return square;
 }

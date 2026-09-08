@@ -68,7 +68,8 @@ export interface Square extends Sides {
   town: number;
 }
 
-/** What a ladder or a chute is, and how many levels it spans. */
+/** What a ladder or a chute is, and how many levels a ladder spans. A chute's span is always 1;
+ *  how far it drops is {@link chuteLanding}. */
 export type Feature = { kind: 'up' | 'down' | 'chute'; span: number } | null;
 
 /** The wall value of one side of a square, 0 to 9. */
@@ -85,6 +86,8 @@ export function featureCode(column: number, row: number, level: number, step?: n
 /** Take 3 off twice while the code is over 3, which leaves how many levels a ladder spans. */
 export function fold(code: number): number;
 export function feature(column: number, row: number, level: number): Feature;
+/** The level a chute on this square drops the player to: one, two or three below it. */
+export function chuteLanding(column: number, row: number, level: number): number;
 /** Whether a chute drops the player here and the fall goes on. */
 export function falseFloor(column: number, row: number, level: number): boolean;
 /** How many kinds of building the town holds. */

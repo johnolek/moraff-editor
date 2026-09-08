@@ -10,6 +10,7 @@ import {
   TOWN_BUILDINGS,
   WALL,
   blocked,
+  chuteLanding,
   falseFloor,
   feature,
   featureCode,
@@ -310,11 +311,44 @@ describe('feature', () => {
   });
 });
 
+describe('chuteLanding', () => {
+  it('drops one level where the column plus the row is odd', () => {
+    expect(chuteLanding(7, 16, 1)).toBe(2);
+  });
+
+  it('drops a second level where the column plus the row is even', () => {
+    expect(chuteLanding(8, 16, 4)).toBe(6);
+  });
+
+  it('drops a third where the level reached plus the column is even and that level is over 25', () => {
+    expect(chuteLanding(9, 17, 25)).toBe(28);
+    // The same square higher up gains the second level and stops: 25 is not over 25.
+    expect(chuteLanding(9, 17, 23)).toBe(25);
+  });
+
+  it('stops at the deepest level, which the module itself falls past', () => {
+    expect(chuteLanding(8, 16, 69)).toBe(LEVELS);
+  });
+});
+
 describe('falseFloor', () => {
   it('is the square a chute drops you on, when that square holds nothing itself', () => {
     expect(feature(7, 16, 1)).toEqual({ kind: 'chute', span: 1 });
     expect(feature(7, 16, 2)).toBeNull();
     expect(falseFloor(7, 16, 2)).toBe(true);
+  });
+
+  it('follows the fall the whole way down, not one level', () => {
+    expect(falseFloor(8, 16, 6)).toBe(true);
+    expect(falseFloor(9, 17, 28)).toBe(true);
+  });
+
+  it('is not a level the fall goes straight past', () => {
+    // The chute on (5, 3) of level 6 lands on level 8, so level 7 of that square is never
+    // landed on, although nothing at all is on it.
+    expect(chuteLanding(5, 3, 6)).toBe(8);
+    expect(feature(5, 3, 7)).toBeNull();
+    expect(falseFloor(5, 3, 7)).toBe(false);
   });
 
   it('is nowhere a chute does not land', () => {
@@ -413,9 +447,13 @@ describe('floor', () => {
     expect(floor(2)[4][14].ladder).toBe(-2);
   });
 
-  it('drops a chute one level, which is what 1000:3491 does to the level', () => {
+  it('drops a chute as far as the fall carries it, and marks where it lands', () => {
     expect(floor(1)[15][6].chute).toBe(2);
     expect(floor(2)[15][6].falseFloor).toBe(true);
+    expect(floor(4)[15][7].chute).toBe(6);
+    expect(floor(6)[15][7].falseFloor).toBe(true);
+    // Level 7 of (5, 3) is a level the fall from level 6 goes past.
+    expect(floor(7)[2][4].falseFloor).toBe(false);
   });
 
   it('agrees with the square the generator answers for on its own', () => {
