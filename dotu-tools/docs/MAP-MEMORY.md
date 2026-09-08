@@ -232,9 +232,13 @@ next `save_maps` writes them out under the new character's slot letter
   in the game folder are 1,120, 2,236, 3,352, 17,860 and 32,368 bytes — 4 + n ×
   1,116 to the byte. `load_maps` still honours a sparse row key, so a file
   written by hand may use one.
-* **The Stone of Seeing misses a strip.** Its loops are `<` not `<=`
-  (`unf.c:14605`, `unf.c:14606`), so column 79 and rows 104..109 are never marked. Rows
-  105..109 are outside the dungeon anyway, but column 79 is not.
+* **The Stone of Seeing stops one short on each axis, harmlessly.** Its loops
+  are `<` not `<=` (`unf.c:14605`, `unf.c:14606`), so they cover `x` 0..78 and
+  `y` 0..103 rather than the full 79 and 104. Nothing reachable is lost:
+  `solidcheck` calls every square of column 79 rock in every module and floor
+  (checked against `unfmap.js` for all five modules), and rows 104..109 are
+  sealed off by `retdwall`'s northern edge rule and lie outside `is_known`'s own
+  `y <= 104` bound.
 * **`mark_known` has no bounds check** while `is_known` caps y at 104. A mark
   outside the bounds would corrupt the neighbouring floor's bitmap; nothing in
   the game gets there, because the dungeon itself stops at 79 × 104.
