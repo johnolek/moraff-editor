@@ -51,19 +51,25 @@ const SECOND_TINT = 0;
 
 /** Final palette index for a MONSTER picture pixel (the game's picture drawer, scale_image2
  *  at exe 4000:4818, with colour set < 0x100).  Returns -1 for "not drawn".
- *  tint = monster.color, colorSet = monster.colorSet, base = colorSet << 4.
- *  In the 0x20 and 0x40 banks the tint pixel is value 28; it is skipped when the tint equals
- *  the base and is otherwise a palette entry in its own right, with no base added.
+ *  tint = monster.color, colorSet = monster.colorSet, base = colorSet << 4, row = the screen
+ *  row the pixel is drawn on.
+ *  The 0x20 and 0x40 banks pass values 1..27 straight through to v + base.  Value 28 is the
+ *  tint: skipped when the tint equals the base, and otherwise a palette entry in its own
+ *  right, with no base added.  Values 29 to 31 ignore the picture entirely and take their
+ *  colour from the screen row, out of the 96..255 gradient bank: 30 counts up it and 29 and
+ *  31 count down it.
  *  Every other bank substitutes in turn: 17 becomes the tint (skipped when the tint is 0),
  *  then 16 becomes 0, then 18 becomes the second tint.  The steps run in that order, so a
  *  tint of 16 falls through the next one and lands on the base entry.
  *  Every value that was not replaced lands at v + base. */
-export function monsterPixelIndex(v, tint, colorSet) {
+export function monsterPixelIndex(v, tint, colorSet, row) {
   if (v === 0) return -1;
   const base = colorSet << 4;
   if (base === 0x20 || base === 0x40) {
+    if (v < 28) return v + base;
     if (v === 28) return tint === base ? -1 : tint & 0xff;
-    return (v + base) & 0xff;
+    const gradientRow = row % 160;
+    return v === 30 ? gradientRow + 0x60 : 0xff - gradientRow;
   }
   if (v === 17 && tint === 0) return -1;
   if (v === 17) v = tint;
@@ -74,11 +80,13 @@ export function monsterPixelIndex(v, tint, colorSet) {
 /** Final palette index for a BUILDING picture pixel: layer 0/2 use +0x20, layers 1/3 use +0x3f. */
 export const buildingPixelIndex = (v, layer) => (v === 0 ? -1 : (v + (layer & 1 ? 0x3f : 0x20)) & 0xff);
 
-/** Render one image into an ImageData-like {width,height,data: Uint8ClampedArray}. */
+/** Render one image into an ImageData-like {width,height,data: Uint8ClampedArray}.
+ *  indexFn is given the pixel's value and its row, which some pixel values take their colour
+ *  from; the picture is drawn at the top of the screen, so the row is the picture's own. */
 export function renderImage(img, pal8, indexFn) {
   const data = new Uint8ClampedArray(PIC_W * PIC_H * 4);
   for (let i = 0; i < PIC_W * PIC_H; i++) {
-    const idx = indexFn(img[i]);
+    const idx = indexFn(img[i], (i / PIC_W) | 0);
     if (idx < 0) continue;
     const [r, g, b] = pal8[idx];
     data[i * 4] = r; data[i * 4 + 1] = g; data[i * 4 + 2] = b; data[i * 4 + 3] = 255;

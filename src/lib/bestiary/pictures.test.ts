@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { builtinPictureIndex, monsterPixelIndex, parsePic } from '../game/dotu-pic.js';
 import { allMonsters } from './monsters';
-import { monsterPictureFile, pictureImages, renderMonster, sectionPalette } from './pictures';
+import { PICTURE_WIDTH, monsterPictureFile, pictureImages, renderMonster, sectionPalette } from './pictures';
 
 /** The pixel value the game replaces with the monster's tint when the colour set is 2. */
 const TINT_VALUE = 28;
@@ -39,35 +39,48 @@ describe('monsterPixelIndex', () => {
   it("adds the colour set's base to the tint outside the 0x20 and 0x40 banks", () => {
     const giantBallColour = 5;
     const giantBallColourSet = 1;
-    expect(monsterPixelIndex(17, giantBallColour, giantBallColourSet)).toBe(0x15);
+    expect(monsterPixelIndex(17, giantBallColour, giantBallColourSet, 0)).toBe(0x15);
 
     const wallTint = 12;
     const wallColourSet = 5;
-    expect(monsterPixelIndex(17, wallTint, wallColourSet)).toBe(0x5c);
+    expect(monsterPixelIndex(17, wallTint, wallColourSet, 0)).toBe(0x5c);
   });
 
   it('leaves the tint pixel undrawn when the tint is 0', () => {
-    expect(monsterPixelIndex(17, 0, 0)).toBe(-1);
+    expect(monsterPixelIndex(17, 0, 0, 0)).toBe(-1);
   });
 
   it("sends values 16 and 18 to the colour set's base entry", () => {
     const giantBallColour = 5;
     const giantBallColourSet = 1;
-    expect(monsterPixelIndex(16, giantBallColour, giantBallColourSet)).toBe(0x10);
-    expect(monsterPixelIndex(18, giantBallColour, giantBallColourSet)).toBe(0x10);
+    expect(monsterPixelIndex(16, giantBallColour, giantBallColourSet, 0)).toBe(0x10);
+    expect(monsterPixelIndex(18, giantBallColour, giantBallColourSet, 0)).toBe(0x10);
   });
 
   it('sends a tint of 16 on to the base entry as well', () => {
     const blackPuffballColour = 16;
-    expect(monsterPixelIndex(17, blackPuffballColour, 0)).toBe(0);
-    expect(monsterPixelIndex(16, 9, 0)).toBe(0);
+    expect(monsterPixelIndex(17, blackPuffballColour, 0, 0)).toBe(0);
+    expect(monsterPixelIndex(16, 9, 0, 0)).toBe(0);
   });
 
   it('leaves values 16 and 18 alone in the 0x20 bank', () => {
     const ogerothColour = 52;
     const ogerothColourSet = 2;
-    expect(monsterPixelIndex(16, ogerothColour, ogerothColourSet)).toBe(0x30);
-    expect(monsterPixelIndex(18, ogerothColour, ogerothColourSet)).toBe(0x32);
+    expect(monsterPixelIndex(16, ogerothColour, ogerothColourSet, 0)).toBe(0x30);
+    expect(monsterPixelIndex(18, ogerothColour, ogerothColourSet, 0)).toBe(0x32);
+  });
+
+  it('reads values 29 to 31 of the 0x20 bank off the row', () => {
+    const gargalonColour = 52;
+    const gargalonColourSet = 2;
+    expect(monsterPixelIndex(30, gargalonColour, gargalonColourSet, 0)).toBe(96);
+    expect(monsterPixelIndex(30, gargalonColour, gargalonColourSet, 159)).toBe(255);
+    expect(monsterPixelIndex(31, gargalonColour, gargalonColourSet, 0)).toBe(255);
+    expect(monsterPixelIndex(29, gargalonColour, gargalonColourSet, 10)).toBe(245);
+  });
+
+  it('starts the gradient over every 160 rows', () => {
+    expect(monsterPixelIndex(30, 52, 2, 160)).toBe(96);
   });
 });
 
@@ -101,8 +114,8 @@ describe('renderMonster', () => {
   it('draws the Ogeroth with its tint as a raw palette entry', () => {
     const ogeroth = named('Ogeroth');
     const palette = sectionPalette(5, 4);
-    expect(monsterPixelIndex(TINT_VALUE, ogeroth.color, ogeroth.colorSet)).toBe(52);
-    expect(monsterPixelIndex(17, ogeroth.color, ogeroth.colorSet)).toBe(49);
+    expect(monsterPixelIndex(TINT_VALUE, ogeroth.color, ogeroth.colorSet, 0)).toBe(52);
+    expect(monsterPixelIndex(17, ogeroth.color, ogeroth.colorSet, 0)).toBe(49);
 
     const picture = pictureImages('ufmon20.pic')[0];
     const image = renderMonster(ogeroth, 5, 4);
@@ -125,5 +138,20 @@ describe('renderMonster', () => {
     const colours = new Set(tinted.map((i) => [...image.data.slice(i * 4, i * 4 + 3)].join()));
     expect([...colours]).toEqual([palette[0].join()]);
     expect(palette[0]).toEqual([0, 0, 0]);
+  });
+
+  it("draws the Gargalon's gradient pixels from the row each one lands on", () => {
+    const gargalon = named('Gargalon');
+    const palette = sectionPalette(1, 1);
+    const picture = pictureImages('ufmon1.pic')[0];
+    const image = renderMonster(gargalon, 1, 1);
+
+    const gradientPixels = [...picture].flatMap((v, i) => (v === 30 ? [i] : []));
+    expect(gradientPixels.length).toBeGreaterThan(100);
+    const wrong = gradientPixels.filter((i) => {
+      const row = Math.floor(i / PICTURE_WIDTH);
+      return [...image.data.slice(i * 4, i * 4 + 3)].join() !== palette[96 + (row % 160)].join();
+    });
+    expect(wrong).toEqual([]);
   });
 });

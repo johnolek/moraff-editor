@@ -66,8 +66,8 @@ export function renderMonster(entry: Monster, module: number, part: number): Ren
   const images = pictureImages(monsterPictureFile(entry));
   const index =
     entry.origin.kind === 'builtin' ? builtinPictureIndex(entry.picnum) : sectionPictureIndex(entry.picnum);
-  return renderImage(images[index], sectionPalette(module, part), (v) =>
-    monsterPixelIndex(v, entry.color, entry.colorSet),
+  return renderImage(images[index], sectionPalette(module, part), (v, row) =>
+    monsterPixelIndex(v, entry.color, entry.colorSet, row),
   );
 }
 

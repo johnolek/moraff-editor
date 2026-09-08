@@ -24,8 +24,8 @@ export interface WallTexture {
   key: string;
   /** The palette the game draws it in. */
   palette: Rgb[];
-  /** The palette entry one pixel value takes, or -1 where the pixel is not drawn. */
-  pixelIndex: (value: number) => number;
+  /** The palette entry one pixel value takes on one row, or -1 where the pixel is not drawn. */
+  pixelIndex: (value: number, row: number) => number;
   /** The images of the file, or null when the site does not bundle it. */
   images: () => PicImage[] | null;
 }
@@ -71,7 +71,7 @@ function unforgivenWallTexture(module: number, floor: number): WallTexture | nul
     caption: `Section ${section.section} walls, from ${file}`,
     key: `unforgiven:${file}:${module}:${section.part}`,
     palette: sectionPalette(module + 1, section.part),
-    pixelIndex: (value) => monsterPixelIndex(value, UNFORGIVEN_WALL_TINT, UNFORGIVEN_WALL_COLOUR_SET),
+    pixelIndex: (value, row) => monsterPixelIndex(value, UNFORGIVEN_WALL_TINT, UNFORGIVEN_WALL_COLOUR_SET, row),
     images: () => bundledPictureImages(file),
   };
 }
