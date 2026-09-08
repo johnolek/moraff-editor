@@ -139,6 +139,10 @@ never up while a monster is being swung at; `mwCorner` moves the box down by as 
 as is in use instead. And a screen with every line inside that corner is drawn there rather than
 taking the whole display over, which is what puts a menu's heading above its own box.
 
+A screen that does take the display over is drawn on the game's screen at the coordinates the
+game drew it at, over everything else the screen has. Only the tab showing the top-down map has
+it cover the map instead, since the views it draws across are not there to draw it on.
+
 ## A menu in the middle of a ported function
 
 Four spells and four moments of a kill stop and read the keyboard. The port takes those choices
