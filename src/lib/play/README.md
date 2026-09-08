@@ -33,7 +33,9 @@ something the original does, a comment says so.
   function printed shown one after another, since `print_menu_only` waits for a key after each of
   them — `printMenus` for a synchronous function, `printMenusWhile` for one that asks menus of
   its own halfway through, and `sayAsOneBox` for the handful of messages the game draws down that
-  column with `pfont` and does not wait on.
+  column with `pfont` and does not wait on. A fight draws its own: `strike`,
+  `print_battle_hp_info` and `defend` all call `pfont` and none of them waits, so they go through
+  `game.draw` rather than through any of these.
 * **`arrival.ts`** — the hint the snake brings on arriving on a floor. **`office.ts`** — the step
   count `draw_monster_view` keeps, and the taunt the section boss sends every 250 of them.
 * **`Play.svelte`** — the tab: the game's screen or the top-down map, the screens and the row of
@@ -164,13 +166,25 @@ game drew them at:
   1000:2789 the original busy-waits in. The screen as it stands at that call is kept as a frame
   by `timed.ts`, and the frames are shown in turn for as long as each asked for, so a kill's
   four messages arrive one after another rather than the last one alone. Nothing about the game
-  waits: the loop runs straight past. Any key gives up the frames still to come.
+  waits: the loop runs straight past. Any key gives up the frames still to come. The message box
+  the tab draws is the one the game has now rather than the one the frame was kept with, so a box
+  going up takes the eight lines off the frames as well; the strip above them is left, which is
+  what keeps a kill's own line showing over the box its drop printed.
 
 `screens.ts` is where the two are put back together, since the game does not keep them apart on
 the screen: `messageBoxScreen` is what stands in the message box — the eight lines the last box or
 menu filled, or the battle banner when nothing has been said, and over them whatever `pfont` has
-drawn inside the box's own rectangle, which is where a kill puts "YOU KILLED IT!" and a drop puts
-"GOOD NEWS...". `screenTakenOver` is the rest of what was drawn, which is the help, the V screen,
+drawn inside the box's own rectangle, which is where a kill puts "YOU KILLED IT!", a drop puts
+"GOOD NEWS...", a monster's swing puts what it did, and a swing of the character's own puts the
+blow and the monster's hit points.
+
+The banner and the blow stand together because of what each of them wipes. Everything that fills
+the eight lines wipes the whole block first, so a line drawn there means the block was filled
+again and neither the box nor the banner shows. `strike` and `print_battle_hp_info` are the two
+exceptions: each wipes only the strip its own lines stand on, so the banner is still there around
+them and a box that was up loses only the lines those strips cover.
+
+`screenTakenOver` is the rest of what was drawn, which is the help, the V screen,
 the monster manual and the pages behind the P key, all of which draw across the four 3-D views.
 
 Everything goes through `src/lib/ui/GameScreen.svelte`, the same renderer the character roller
