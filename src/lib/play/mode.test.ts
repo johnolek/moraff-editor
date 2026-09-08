@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { StockedMonster } from '../map/stocking';
 import {
   DEFAULT_PLAY_MODE,
+  debugDrawn,
   defaultPlayDisplay,
   monstersDrawn,
   panelVisible,
@@ -11,6 +12,7 @@ import {
   readPlayMode,
   writePlayDisplay,
   writePlayMode,
+  zoomMapMonsters,
 } from './mode';
 
 /** Enough of the browser's Storage to stand in for it. */
@@ -100,6 +102,25 @@ describe('the monsters the map draws', () => {
     expect(monstersDrawn('speedrun', sight)).toEqual(sight.monsters);
     expect(monstersDrawn('debug', sight)).toEqual(sight.monsters);
     expect(monstersDrawn('debug', { ...sight, engaged: null })).toEqual(sight.monsters);
+  });
+});
+
+describe("the marks debug mode puts on the game's own screen", () => {
+  const sight = { monsters: [monster(0), monster(1), monster(2)], visible: [monster(2)], engaged: monster(1) };
+
+  it('is drawn in debug alone', () => {
+    expect(debugDrawn('faithful')).toBe(false);
+    expect(debugDrawn('speedrun')).toBe(false);
+    expect(debugDrawn('debug')).toBe(true);
+  });
+
+  it('marks every monster on the floor on the zoom map in debug', () => {
+    expect(zoomMapMonsters('debug', sight)).toEqual(sight.monsters);
+  });
+
+  it('marks none at all in faithful or in speedrun, which no game ever did', () => {
+    expect(zoomMapMonsters('faithful', sight)).toEqual([]);
+    expect(zoomMapMonsters('speedrun', sight)).toEqual([]);
   });
 });
 

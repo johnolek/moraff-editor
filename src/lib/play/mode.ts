@@ -105,6 +105,17 @@ export function panelVisible(mode: PlayMode): boolean {
   return mode === 'debug';
 }
 
+/**
+ * Whether debug mode's own marks are drawn over the game's own screen: the engaged monster's
+ * numbers on its view, and a mark on every monster the zoom map's window reaches.
+ *
+ * Nothing here is a port of anything the game draws, so faithful and speedrun leave the screen
+ * exactly as the game would have it.
+ */
+export function debugDrawn(mode: PlayMode): boolean {
+  return mode === 'debug';
+}
+
 /** What a tab knows about the monsters on the floor: every one standing on it, the ones the
  *  3-D views have just drawn, and the one the character is facing. Both games' views have
  *  these. */
@@ -128,6 +139,18 @@ export function monstersDrawn(mode: PlayMode, sight: MonstersInSight): StockedMo
   const engaged = sight.engaged;
   if (engaged !== null && !seen.some((monster) => monster.slot === engaged.slot)) seen.push(engaged);
   return seen;
+}
+
+/**
+ * The monsters the game's own zoom map marks, which is every one on the floor in debug and none
+ * at all otherwise.
+ *
+ * The three games draw the same small map of the squares around the character and not one of
+ * them ever puts a monster on it, so this is a mark of the site's own: showing it in faithful or
+ * in speedrun would be showing something no game ever showed.
+ */
+export function zoomMapMonsters(mode: PlayMode, sight: { monsters: StockedMonster[] }): StockedMonster[] {
+  return debugDrawn(mode) ? sight.monsters : [];
 }
 
 /**
