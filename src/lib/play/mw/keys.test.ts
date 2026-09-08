@@ -24,6 +24,10 @@ describe('mwGameKey', () => {
     expect(press('F1')).toBe(MW_KEY.f1);
   });
 
+  it('hands over the space bar, so any key answers a box waiting for one', () => {
+    expect(press(' ')).toBe(MW_KEY.space);
+  });
+
   it('leaves a key held with a modifier to the browser', () => {
     expect(press('f', { ctrlKey: true })).toBe(null);
     expect(press('Tab')).toBe(null);

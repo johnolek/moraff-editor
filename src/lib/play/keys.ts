@@ -79,26 +79,24 @@ const NAMED_KEYS: Record<string, number> = {
   Escape: KEY.escape,
 };
 
-const LETTER = /^[A-Za-z]$/;
-const DIGIT = /^[0-9]$/;
-
 /**
  * The byte the game would have read for a browser key event, or null for a key it reads nothing
  * for.
  *
- * A letter is handed over in lower case. The original dispatches on the lower-case bytes only,
- * so a capital does nothing at all there; here it is the same key on the same keyboard, and
- * holding shift or leaving caps lock on is not meant to stop the game working. Ctrl-F is the
- * one key the game reads as a control character, and it is the only one a modifier belongs to:
- * any other combination is the browser's.
+ * Any key that types one character is handed over as that character's code, which is what getch
+ * gives movecontrol: the space bar arrives as 0x20 and so does every mark of punctuation, so a
+ * box that is waiting for any key is answered by any key. A letter is handed over in lower case,
+ * since the original dispatches on the lower-case bytes only and holding shift or leaving caps
+ * lock on is not meant to stop the game working. Ctrl-F is the one key the game reads as a
+ * control character, and it is the only one a modifier belongs to: any other combination is the
+ * browser's, and so is every key that types nothing and is not named above.
  */
 export function gameKey(event: KeyboardEvent): number | null {
   if (event.altKey || event.metaKey) return null;
   if (event.ctrlKey) return event.key.toLowerCase() === 'f' ? KEY.repeatFight : null;
   const named = NAMED_KEYS[event.key];
   if (named !== undefined) return named;
-  if (LETTER.test(event.key)) return event.key.toLowerCase().charCodeAt(0);
-  if (DIGIT.test(event.key)) return event.key.charCodeAt(0);
+  if (event.key.length === 1) return event.key.toLowerCase().charCodeAt(0);
   return null;
 }
 

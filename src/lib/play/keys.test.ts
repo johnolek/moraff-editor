@@ -46,10 +46,26 @@ describe('the key the game reads', () => {
     expect(gameKey(press('ArrowUp', { altKey: true }))).toBeNull();
   });
 
-  it('reads nothing for a key the game has no byte for', () => {
+  it('reads the space bar and the marks of punctuation as their own bytes', () => {
+    expect(gameKey(press(' '))).toBe(0x20);
+    expect(gameKey(press('-'))).toBe(0x2d);
+    expect(gameKey(press('/'))).toBe(0x2f);
+  });
+
+  it('reads nothing for a key that types nothing the game has a byte for', () => {
     expect(gameKey(press('Tab'))).toBeNull();
     expect(gameKey(press('F5'))).toBeNull();
-    expect(gameKey(press('-'))).toBeNull();
+    expect(gameKey(press('Shift'))).toBeNull();
+  });
+
+  it('answers a box waiting for any key with the space bar', async () => {
+    const session = inTheTown(new BorlandRng(3), { money: 1200 });
+    session.press(KEY.money);
+    await settle();
+    expect(session.box).toContain('LIST OF ASSETS:');
+    session.press(gameKey(press(' ')) as number);
+    await settle();
+    expect(session.box).toEqual([]);
   });
 });
 

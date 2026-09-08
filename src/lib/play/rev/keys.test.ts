@@ -33,6 +33,10 @@ describe('revGameKey', () => {
     expect(revGameKey(press('Escape'))).toBe(REV_KEY.escape);
   });
 
+  it('reads the space bar, so any key answers a screen waiting for one', () => {
+    expect(revGameKey(press(' '))).toBe(0x20);
+  });
+
   it('reads nothing for a key held with a modifier or one that types no character', () => {
     expect(revGameKey(press('d', { ctrlKey: true }))).toBeNull();
     expect(revGameKey(press('Shift'))).toBeNull();
