@@ -198,7 +198,7 @@ const MONSTERS: Topic = {
       id: 'monster-level-nudge',
       title: 'The nudge on a monster\'s level',
       explanation:
-        'The floor\'s level is not what gets stored. For each monster the game keeps tossing a one-in-three chance, and every time it comes up the level shifts by minus one, nothing or plus one. Two thirds of monsters therefore stand exactly at the floor\'s level and the rest tail away either side, so a level 45 floor is mostly level 45 with a scattering from about 41 to 49. Whatever comes out is held between 1 and 210.',
+        'The floor\'s level is not what gets stored. For each monster the game keeps tossing a one-in-three chance, and every time it comes up the level shifts by minus one, nothing or plus one. Two thirds of monsters therefore stand exactly at the floor\'s level and the rest tail away either side, so a level 45 floor is mostly level 45 with a scattering from about 41 to 49. Whatever comes out is held between 1 and 210. The hit points are already rolled by this point, so the nudge moves what a monster hits and is hit like without touching what it can take.',
       inputs: 'The floor\'s base level, and the rolls.',
       origin: 'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1 and FAQ [MGEN].',
       c: 'stock_level',
@@ -208,8 +208,8 @@ const MONSTERS: Topic = {
       id: 'monster-hp',
       title: 'A monster\'s hit points',
       explanation:
-        'Hit points are the average of two rolls, each between zero and the monster type\'s hit points per level times the monster\'s level. Averaging two rolls rather than taking one is why monsters cluster around the middle of their range instead of spreading evenly: an average joe, worth ten hit points a level, comes to about 226 at level 45, but can be anything from 1 to 451. The type\'s hit points per level is the whole difference between a fragile thing and a wall, running from 2 for a puffball to 50 for a Shadow boss.',
-      inputs: 'The monster type\'s hit points per level, the level it was stocked at, and the two rolls.',
+        'Hit points are the average of two rolls, each between zero and the monster type\'s hit points per level times the floor\'s base level. That is the floor\'s level and not the monster\'s own: the game rolls the hit points first and nudges the level it stores afterwards, so a monster standing a level or two below its floor still carries the floor\'s hit points. Averaging two rolls rather than taking one is why monsters cluster around the middle of their range instead of spreading evenly: an average joe, worth ten hit points a level, comes to about 226 on a level 45 floor, but can be anything from 1 to 451. The type\'s hit points per level is the whole difference between a fragile thing and a wall, running from 2 for a puffball to 50 for a Shadow boss.',
+      inputs: 'The monster type\'s hit points per level, the floor\'s base level, and the two rolls.',
       origin: 'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1 and FAQ [MGEN].',
       c: 'stock_level',
       code: { file: 'src/lib/bestiary/roll.ts', name: 'rollHp' },
@@ -218,8 +218,8 @@ const MONSTERS: Topic = {
       id: 'boss-hp',
       title: 'Why a Shadow boss takes so long',
       explanation:
-        'A Shadow boss rolls its hit points like anything else and then adds twenty for each of its levels, and in the last three sections the whole total is doubled afterwards. The Shadow boss on floor 50 of Module V is stocked at level 110, which means it rolls about 2,750 hit points, takes 2,200 more for its levels, and then has the whole total doubled because its section is one of the last three: it arrives with close to 9,900 where the same rolls without the bonus would have given 2,750. Nothing in the game can hold more than 32,000.',
-      inputs: 'The rolled hit points, the boss\'s level, and the section it guards.',
+        'A Shadow boss rolls its hit points like anything else and then adds twenty for each level of its floor, and in the last three sections the whole total is doubled afterwards. The Shadow boss on floor 50 of Module V is stocked at level 110, which means it rolls about 2,750 hit points, takes 2,200 more for its levels, and then has the whole total doubled because its section is one of the last three: it arrives with close to 9,900 where the same rolls without the bonus would have given 2,750. Nothing in the game can hold more than 32,000.',
+      inputs: 'The rolled hit points, the floor\'s base level, and the section it guards.',
       origin: 'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1 and TIDBITS, "Monsters".',
       c: 'stock_level',
       code: { file: 'src/lib/bestiary/roll.ts', name: 'stockedHp' },
@@ -248,7 +248,7 @@ const MONSTERS: Topic = {
       id: 'stocking',
       title: 'The 145 monsters on a floor',
       explanation:
-        'A floor is stocked with exactly 145 monsters, each dropped on a random open square that nothing else is standing on, each given its own kind, level and hit points. On the last floor of a section the very first slot is the Shadow boss instead, placed somewhere in the middle fifty squares of each direction, and once you have beaten it the game stops placing it. The game only remembers three floors of monsters at a time, so a floor you come back to later is stocked fresh; and because the original reseeds its generator for every square it draws, its monsters land in diagonal stripes, which this app does not imitate.',
+        'A floor is stocked with exactly 145 monsters, each dropped on a random open square that nothing else is standing on, each given its own kind, hit points and level, in that order. On the last floor of a section the very first slot is the Shadow boss instead, placed somewhere in the middle fifty squares of each direction, and once you have beaten it the game stops placing it. The game only remembers three floors of monsters at a time, so a floor you come back to later is stocked fresh; and because the original reseeds its generator for every square it draws, its monsters land in diagonal stripes, which this app does not imitate.',
       inputs: 'The floor\'s open squares, its section and its base level, and the rolls.',
       origin:
         'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1; the stripes are in TIDBITS, "Random numbers that are not random".',
