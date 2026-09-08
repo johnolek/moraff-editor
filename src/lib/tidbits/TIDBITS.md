@@ -912,7 +912,16 @@ are still alive. And the play loop has a hidden key that sets the flag anyway, r
 that hands out ten hit points: byte 251, which is most likely Alt and 251 on the number pad.
 
 The flag lives past the end of the character record, so it is never saved and is clear again on
-every launch.
+every launch. While it is set the game writes nothing to disk at all, character creation
+included, so a contestant exists only in memory; the one way out is the quit key, which warns
+that quitting disqualifies you, clears the flag and only then saves.
+
+And nothing hands out the code. Killing the Shadow Demon Queen with the flag set does exactly
+what killing her without it does: the same hint and the same +25 armour enhancement, and the
+word CODE appears nowhere in the executable. The contest named the 1993 shareware Module I; the
+only build on hand is the registered one from 1996, which drops nothing else from the shareware
+version, so a code screen would still be in it if one had ever been written. The whole search is
+in `dotu-tools/docs/CONTEST.md`.
 
 In the code: [rollChar](source:ts/character.ts/rollChar), [roll_char](source:c/roll_char) and
 [movecontrol](source:c/movecontrol).
