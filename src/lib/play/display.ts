@@ -206,7 +206,12 @@ function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
       const square = zoomMapSquare(floor.at, column, row);
       if (!floor.known(square.x, square.y)) continue;
       const here = floor.rows[square.y]?.[square.x];
-      if (!here) continue;
+      // Rock is never drawn. solidcheck calls a square rock when it has a wall on all four
+      // sides, and nothing ever stands on one: a step cannot reach it and no 3-D view sees
+      // into it, so the character's own map never marks one. The test only bites on a floor
+      // the site has revealed whole, where it keeps the rock blank instead of drawing it as a
+      // square somebody could be standing in.
+      if (!here || here.solid) continue;
       const x = left + column * ZOOM_CELL;
       const y = row * ZOOM_CELL;
       fillRect(frame, x + 1, y + 1, x + ZOOM_CELL, y + ZOOM_CELL, 0);
