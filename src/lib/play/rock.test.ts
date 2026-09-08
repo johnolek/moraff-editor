@@ -83,12 +83,15 @@ describe('the zoom map of a revealed floor', () => {
 
   it('leaves a pocket of rock blank and still draws the squares beside it', () => {
     const frame = screenOf(floorWithRock([[42, 55], [43, 55], [42, 56], [43, 56]]), at);
-    // The pocket is two squares east of the character and one row down from them.
-    for (const [column, row] of [[9, 13], [10, 13], [9, 14], [10, 14]]) {
-      expect(cellColours(frame, column, row), `cell ${column}, ${row}`).toEqual(new Set([ZOOM_MAP_BOX.colour]));
+    // The pocket is two squares east of the character and one row down from them, and the
+    // character's own cell is the middle of the window whatever the screen's size.
+    const column = ZOOM_COLUMNS >> 1;
+    const row = ZOOM_ROWS >> 1;
+    for (const [c, r] of [[column + 2, row], [column + 3, row], [column + 2, row + 1], [column + 3, row + 1]]) {
+      expect(cellColours(frame, c, r), `cell ${c}, ${r}`).toEqual(new Set([ZOOM_MAP_BOX.colour]));
     }
-    expect(cellColours(frame, 8, 13)).toContain(0);
-    expect(cellColours(frame, 11, 13)).toContain(0);
+    expect(cellColours(frame, column + 1, row)).toContain(0);
+    expect(cellColours(frame, column + 4, row)).toContain(0);
   });
 
   it('draws every square of a floor with no rock on it', () => {

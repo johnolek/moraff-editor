@@ -17,7 +17,6 @@ import {
   SCREEN_MODE,
   SCREEN_PIXELS,
   statusLines,
-  SCREEN_PIXELS,
   VIDEO_MODES,
   ZOOM_CELL,
   ZOOM_COLUMNS,
