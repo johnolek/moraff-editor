@@ -1,4 +1,5 @@
 import { DUN_COLUMNS, DUN_ROWS, EXPLORED_STRIDE, FLOORS_PER_BLOCK, type ExploredSquares } from '../map/explored';
+import type { MapSquare } from '../map/game';
 
 /**
  * The map a character has discovered.
@@ -10,6 +11,17 @@ import { DUN_COLUMNS, DUN_ROWS, EXPLORED_STRIDE, FLOORS_PER_BLOCK, type Explored
  * addresses below are Dungeons of the Unforgiven's, and `mw/memory.ts` has the handful of
  * places where Moraff's World differs.
  */
+
+/** A side a view can see through: retdwall's 3 (exe 3000:8360). A wall, a door, a secret door
+ *  and a module teleporter all stop it, which is `if (cVar1 == '\x03') return 1;` in
+ *  FUN_3000_342d (exe 3000:342d, unf.c:19241). */
+export const SIDE_OPEN = 3;
+
+/**
+ * How far a 3-D view reaches, in squares: `DS 0x2316 / 20 + 3` = 650 / 20 + 3 (unf.c:18277).
+ * Moraff's World's FUN_3000_1a08 stops at the same number out of its own DS 0x43a8.
+ */
+export const VIEW_DEPTH = 35;
 
 /** Bytes of one floor's bitmap: 110 rows of 10 bytes, which is the 0x44c the allocator
  *  (exe 2000:3bc7) cuts one block of memory into 32 of. */
@@ -51,6 +63,9 @@ export class MapMemory {
   private held: { dungeon: number; block: number } | null = null;
   /** DS:c4c5: the floor being played. */
   private live = emptyFloor();
+  /** The squares the four views drew on the last turn, which is exactly the set of squares a
+   *  monster standing on one can be seen on. */
+  private drawn: Set<number> = new Set();
 
   /**
    * load_level_map (exe 2000:7687): arrive on a floor. All 32 floors of a block are resident at
@@ -69,12 +84,36 @@ export class MapMemory {
       this.resident.set(floor, bitmap);
     }
     this.live = bitmap;
+    this.drawn = new Set();
   }
 
   /** movecontrol (exe 2000:c308, unf.c:15405): the square under the character's feet, and no
    *  neighbour of it. */
   markStep(x: number, y: number): void {
     setBit(this.live, x, y);
+  }
+
+  /**
+   * draw_map_square (exe 3000:2848): every square any of the four 3-D views draws is marked,
+   * which is where nearly all of the map comes from. The set is kept as well as marked, since a
+   * monster is visible exactly when it stands on a square the views drew this turn.
+   */
+  markViews(rows: MapSquare[][], x: number, y: number): void {
+    this.drawn = viewedSquares(rows, x, y);
+    for (const index of this.drawn) {
+      const column = index % EXPLORED_STRIDE;
+      setBit(this.live, column, (index - column) / EXPLORED_STRIDE);
+    }
+  }
+
+  /** The squares the four views drew on the last turn. */
+  get visible(): ReadonlySet<number> {
+    return this.drawn;
+  }
+
+  /** Whether a monster standing here is one the views have just drawn. */
+  isVisible(x: number, y: number): boolean {
+    return this.drawn.has(squareIndex(x, y));
   }
 
   /** FUN_2000_7210 (exe 2000:7210). */
@@ -92,5 +131,151 @@ export class MapMemory {
       }
     }
     return squares;
+  }
+}
+
+/**
+ * Every square the four 3-D views draw from (x, y), which is every square the turn marks.
+ *
+ * Each view is a 90-degree frustum flooded through openings alone, out to {@link VIEW_DEPTH}
+ * squares: draw_3d_view (exe 3000:0f75) walks forward and hands each depth to FUN_3000_0837 and
+ * FUN_3000_00a8, the left and right halves of the cone, which test each side with FUN_3000_342d
+ * and recurse into the square beyond when it is open. The cone is +/-0.5 of a square across at
+ * the near face of the character's own square, half a square away, so the four of them together
+ * are the full circle whichever way the character faces — Dungeons of the Unforgiven's views
+ * turn with the character and Moraff's World's are the fixed compass directions, and the union
+ * is the same either way.
+ *
+ * The original clips the frustum in floating point that Ghidra did not recover, so the exact
+ * edge of a view is not known; this is an integer shadowcast over the same frustum instead. A
+ * beam is an interval of slopes, narrowed by every opening it passes through, and a square is
+ * drawn when some ray still reaches it. Two grazing cases follow from that: a beam that has
+ * narrowed to a single slope is empty, so a square seen only through the point where two walls
+ * meet is not drawn, and a square the cone's own edge merely touches is not drawn either. The
+ * `.DUN` files in the game folder do not tell the two models apart.
+ */
+export function viewedSquares(rows: MapSquare[][], x: number, y: number, depth = VIEW_DEPTH): Set<number> {
+  const drawn = new Set<number>();
+  for (const quadrant of QUADRANTS) floodQuadrant(rows, x, y, quadrant, depth, drawn);
+  return drawn;
+}
+
+/** One view: the way it looks, and the way to its right. */
+interface Quadrant {
+  fx: number;
+  fy: number;
+  rx: number;
+  ry: number;
+}
+
+const QUADRANTS: Quadrant[] = [
+  { fx: 0, fy: -1, rx: 1, ry: 0 },
+  { fx: 0, fy: 1, rx: -1, ry: 0 },
+  { fx: -1, fy: 0, rx: 0, ry: -1 },
+  { fx: 1, fy: 0, rx: 0, ry: 1 },
+];
+
+/**
+ * A direction as a fraction across the view: the offset to the side over the depth ahead, both
+ * doubled so that a square's edges are whole numbers. The depth is always positive.
+ */
+interface Slope {
+  across: number;
+  ahead: number;
+}
+
+/** The slopes a beam still covers, from one edge to the other. */
+interface Beam {
+  lo: Slope;
+  hi: Slope;
+}
+
+function slopeBelow(left: Slope, right: Slope): boolean {
+  return left.across * right.ahead < right.across * left.ahead;
+}
+
+/** The beams narrowed to the opening between `lo` and `hi`, dropping any that closes. */
+function throughOpening(beams: Beam[], lo: Slope, hi: Slope): Beam[] {
+  const narrowed: Beam[] = [];
+  for (const beam of beams) {
+    const left = slopeBelow(beam.lo, lo) ? lo : beam.lo;
+    const right = slopeBelow(hi, beam.hi) ? hi : beam.hi;
+    if (slopeBelow(left, right)) narrowed.push({ lo: left, hi: right });
+  }
+  return narrowed;
+}
+
+/**
+ * Beams that came through several openings as one set, with the overlapping ones joined.
+ *
+ * Without this a square in an open room would keep one beam per way round to it and the count
+ * would double every square; joined, a square holds one beam per separate opening it is seen
+ * through, which is a handful at most.
+ */
+function joined(beams: Beam[]): Beam[] {
+  if (beams.length < 2) return beams;
+  const sorted = [...beams].sort((left, right) => (slopeBelow(left.lo, right.lo) ? -1 : 1));
+  const merged: Beam[] = [sorted[0]];
+  for (const beam of sorted.slice(1)) {
+    const last = merged[merged.length - 1];
+    if (slopeBelow(last.hi, beam.lo)) merged.push(beam);
+    else if (slopeBelow(last.hi, beam.hi)) last.hi = beam.hi;
+  }
+  return merged;
+}
+
+/** The side of a square facing the given step, as retdwall returns it. */
+function sideTowards(square: MapSquare, dx: number, dy: number): number {
+  if (dy < 0) return square.n;
+  if (dy > 0) return square.s;
+  if (dx < 0) return square.w;
+  return square.e;
+}
+
+function floodQuadrant(rows: MapSquare[][], px: number, py: number, quadrant: Quadrant, depth: number, drawn: Set<number>): void {
+  const width = 2 * depth + 1;
+  // The cone through the near face of the character's own square: half a square away and half a
+  // square either side of the middle, which is 45 degrees each way.
+  let behind: Beam[][] = Array.from({ length: width }, () => []);
+  behind[depth] = [{ lo: { across: -1, ahead: 1 }, hi: { across: 1, ahead: 1 } }];
+  for (let ahead = 1; ahead <= depth; ahead++) {
+    const row: Beam[][] = Array.from({ length: width }, () => []);
+    // Outward from the middle, so that a square is reached before the one beside it is asked
+    // whether the beam comes through their shared side.
+    for (let step = 0; step <= ahead; step++) {
+      for (const across of step === 0 ? [0] : [step, -step]) {
+        const wx = px + across * quadrant.rx + ahead * quadrant.fx;
+        const wy = py + across * quadrant.ry + ahead * quadrant.fy;
+        const square = rows[wy]?.[wx];
+        if (!square) continue;
+        const beams: Beam[] = [];
+        const nearer = behind[across + depth];
+        if (nearer.length > 0 && sideTowards(square, -quadrant.fx, -quadrant.fy) === SIDE_OPEN) {
+          beams.push(
+            ...throughOpening(nearer, { across: 2 * across - 1, ahead: 2 * ahead - 1 }, { across: 2 * across + 1, ahead: 2 * ahead - 1 }),
+          );
+        }
+        if (across > 0) {
+          const inner = row[across - 1 + depth];
+          if (inner.length > 0 && sideTowards(square, -quadrant.rx, -quadrant.ry) === SIDE_OPEN) {
+            beams.push(
+              ...throughOpening(inner, { across: 2 * across - 1, ahead: 2 * ahead + 1 }, { across: 2 * across - 1, ahead: 2 * ahead - 1 }),
+            );
+          }
+        }
+        if (across < 0) {
+          const inner = row[across + 1 + depth];
+          if (inner.length > 0 && sideTowards(square, quadrant.rx, quadrant.ry) === SIDE_OPEN) {
+            beams.push(
+              ...throughOpening(inner, { across: 2 * across + 1, ahead: 2 * ahead - 1 }, { across: 2 * across + 1, ahead: 2 * ahead + 1 }),
+            );
+          }
+        }
+        if (beams.length === 0) continue;
+        row[across + depth] = joined(beams);
+        drawn.add(squareIndex(wx, wy));
+      }
+    }
+    behind = row;
   }
 }
