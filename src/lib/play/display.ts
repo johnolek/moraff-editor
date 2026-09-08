@@ -18,8 +18,40 @@ import { drawZoomMonsters, type ZoomMapWindow } from './zoom-monsters';
 /** The whole of it, for a `GameScreen` that lies over the drawing. */
 export const SCREEN_WINDOW = { x: 0, y: 0, width: 1600, height: 1200 };
 
-/** The pixels the game's 640 x 480 mode has, which is what the drawing is done at. */
-export const SCREEN_PIXELS = { width: 640, height: 480 };
+/** One of the twelve screens the game can run in. */
+export interface VideoMode {
+  /** The number DS:c6a8 holds, which the game takes from its fourth command-line argument. */
+  mode: number;
+  width: number;
+  height: number;
+  colours: number;
+}
+
+/**
+ * The twelve video modes, from the jump table at `FUN_2000_1598` (exe 2000:1598, dispatched at
+ * 2000:15ac). Each arm sets the screen's last column at DS:c6aa and its last row at DS:c6ae —
+ * one less than the sizes below — and the number of colours at DS:c6e9.
+ *
+ * The G key does not choose between them: it only cycles the view size and the wall detail.
+ */
+export const VIDEO_MODES: VideoMode[] = [
+  { mode: 0, width: 720, height: 348, colours: 2 },
+  { mode: 1, width: 320, height: 200, colours: 4 },
+  { mode: 2, width: 320, height: 200, colours: 16 },
+  { mode: 3, width: 320, height: 200, colours: 256 },
+  { mode: 4, width: 360, height: 480, colours: 256 },
+  { mode: 5, width: 640, height: 350, colours: 16 },
+  { mode: 6, width: 640, height: 480, colours: 16 },
+  { mode: 7, width: 800, height: 600, colours: 16 },
+  { mode: 8, width: 1024, height: 768, colours: 16 },
+  { mode: 9, width: 1024, height: 768, colours: 256 },
+  { mode: 10, width: 1024, height: 768, colours: 256 },
+  { mode: 11, width: 640, height: 480, colours: 256 },
+];
+
+/** The mode the game is played in here: 1024 by 768 in 256 colours. */
+export const SCREEN_MODE = VIDEO_MODES[9];
+export const SCREEN_PIXELS = { width: SCREEN_MODE.width, height: SCREEN_MODE.height };
 
 /** A box on the screen, in those same units. Both edges are inside it. */
 export interface ScreenBox {
@@ -130,12 +162,14 @@ export function statusLines(pc: PlayerCharacter): ScreenLine[] {
  * `FUN_3000_8e75` (exe 3000:8e75, unf.c "FUN_3000_8e75"): the small map in the top right corner,
  * drawn in the screen's own pixels rather than the 1600 x 1200 grid.
  *
- * `FUN_2000_59c0` (exe 2000:59c0) sets the three numbers below for a 640 x 480 mode. The window
- * is centred on the character, who stands at column `columns >> 1` and row `rows >> 1`.
+ * `FUN_2000_59c0` (exe 2000:59c0) sets the three numbers below out of a table the video mode
+ * indexes: 8 pixels in 15 columns by 26 rows on a 640 x 480 screen, and 10 in 19 by 33 on a
+ * 1024 x 768 one. The window is centred on the character, who stands at column `columns >> 1`
+ * and row `rows >> 1`.
  */
-export const ZOOM_CELL = 8;
-export const ZOOM_COLUMNS = 15;
-export const ZOOM_ROWS = 26;
+export const ZOOM_CELL = 10;
+export const ZOOM_COLUMNS = 19;
+export const ZOOM_ROWS = 33;
 
 /** The left edge of the map, as DS:0411 works it out from the screen's width. */
 export const zoomMapLeft = (screenWidth: number): number =>

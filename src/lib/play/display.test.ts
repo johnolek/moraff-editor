@@ -116,14 +116,15 @@ describe('the status block', () => {
 });
 
 describe('the zoom map', () => {
-  it('is fifteen squares across and twenty-six down, with the character in the middle', () => {
-    expect(zoomMapSquare({ x: 40, y: 50 }, 7, 13)).toEqual({ x: 40, y: 50 });
-    expect(zoomMapSquare({ x: 40, y: 50 }, 0, 0)).toEqual({ x: 33, y: 37 });
-    expect(zoomMapSquare({ x: 40, y: 50 }, ZOOM_COLUMNS - 1, ZOOM_ROWS - 1)).toEqual({ x: 47, y: 62 });
+  it('is nineteen squares across and thirty-three down, with the character in the middle', () => {
+    expect(zoomMapSquare({ x: 40, y: 50 }, ZOOM_COLUMNS >> 1, ZOOM_ROWS >> 1)).toEqual({ x: 40, y: 50 });
+    expect(zoomMapSquare({ x: 40, y: 50 }, 0, 0)).toEqual({ x: 31, y: 34 });
+    expect(zoomMapSquare({ x: 40, y: 50 }, ZOOM_COLUMNS - 1, ZOOM_ROWS - 1)).toEqual({ x: 49, y: 66 });
   });
 
-  it('starts where the game puts it on a 640-pixel screen', () => {
+  it('starts where the game puts it, whatever the screen is wide', () => {
     expect(zoomMapLeft(640)).toBe(521);
+    expect(zoomMapLeft(1024)).toBe(834);
   });
 
   it('turns the arrow by the way the character faces', () => {
