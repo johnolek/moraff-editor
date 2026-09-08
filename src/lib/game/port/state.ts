@@ -48,6 +48,17 @@ export interface ScreenLine {
 }
 
 /**
+ * A rectangle of the screen in that same grid, as `fill_rect` (exe 4000:2a36) is given one: the
+ * top left corner, and the column and row past its far edge.
+ */
+export interface ScreenRect {
+  x: number;
+  y: number;
+  right: number;
+  bottom: number;
+}
+
+/**
  * The fields of the character record the battle spells read or write. Each is one field of the
  * save file, and the name is the one `src/lib/game/dotu-files.js` already gives that offset;
  * fields that file does not parse are named after their label in `src/lib/editor/games.ts`.
@@ -485,6 +496,17 @@ export interface Game {
   messages: string[];
   /** What is on the screen now, in the order it was drawn. */
   screen: ScreenLine[];
+  /**
+   * The rectangle the game last filled with colour 0 for a screen to be drawn on, and null where
+   * the port does not know one.
+   *
+   * A screen that takes the display over is drawn over the four 3-D views, and the game fills the
+   * part of the screen it is about to draw on first. Most of those fills are not in the
+   * decompilation, so the tab blacks the whole display out behind such a screen; the ones that
+   * are get their own rectangle recorded here instead. Anything that wipes the screen without
+   * filling it black takes the record down again, which leaves the tab back on the whole display.
+   */
+  blackedOut: ScreenRect | null;
   /** Every side effect the port declined to carry out, oldest first. */
   events: GameEvent[];
   rng: Rng;
@@ -806,7 +828,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
   const { pc: pcOverrides, ...rest } = overrides;
   const messages = overrides.messages ?? [];
   const screen = overrides.screen ?? [];
-  return {
+  const game: Game = {
     pc: { ...defaultPc(), ...pcOverrides },
     events: [],
     monsters: emptySlots(),
@@ -863,6 +885,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     ...rest,
     messages,
     screen,
+    blackedOut: null,
     say(...lines: string[]): void {
       let last = lines.length;
       while (last > 0 && lines[last - 1] === '') last--;
@@ -882,6 +905,8 @@ export function newGame(overrides: GameOverrides = {}): Game {
       for (let at = screen.length - 1; at >= 0; at--) {
         if (screen[at].y >= fromY) screen.splice(at, 1);
       }
+      game.blackedOut = null;
     },
   };
+  return game;
 }

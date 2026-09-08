@@ -68,6 +68,20 @@ export function clearRect(game: Game, x0: number, y0: number, x1: number, y1: nu
     const line = game.screen[at];
     if (line.x >= x0 && line.x < x1 && line.y >= y0 && line.y < y1) game.screen.splice(at, 1);
   }
+  game.blackedOut = null;
+}
+
+/**
+ * The same fill in colour 0, which is the black a screen that takes the display over is drawn on.
+ *
+ * The lines inside the rectangle go the way {@link clearRect} takes them off, and the rectangle
+ * itself is remembered so that the tab can black exactly that much of the display out under what
+ * is drawn there next. Every other wipe leaves nothing remembered, and the tab blacks the whole
+ * display out instead.
+ */
+export function clearToBlack(game: Game, x0: number, y0: number, x1: number, y1: number): void {
+  clearRect(game, x0, y0, x1, y1);
+  game.blackedOut = { x: x0, y: y0, right: x1, bottom: y1 };
 }
 
 /**
