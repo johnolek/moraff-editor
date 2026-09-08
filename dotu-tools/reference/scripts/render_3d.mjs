@@ -3,7 +3,7 @@
 // can be put beside it pixel for pixel.
 //
 //   node dotu-tools/reference/scripts/render_3d.mjs --module 0 --floor 1 --x 40 --y 50 --dir 0 \
-//        --out shot.png [--width 320] [--height 200] [--height-of 21] [--whole-screen]
+//        --out shot.png [--width 1024] [--height 768] [--height-of 21] [--whole-screen]
 //
 // The floor is generated from the same UNFDUNG.BIN the site ships, so no save file is needed.
 // If src/lib/game/pics/ufwall<part>.pic is present the walls are textured; if it is not, the
@@ -30,6 +30,7 @@ const { newFrame, toRgba } = await load('play/view3d/frame.ts');
 const { parsePicRows } = await load('play/view3d/texture.ts');
 const { renderView } = await load('play/view3d/render.ts');
 const { AHEAD_VIEW, WHOLE_SCREEN_VIEW } = await load('play/view3d/geometry.ts');
+const { SCREEN_PIXELS } = await load('play/display.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
 
 const args = {};
@@ -47,7 +48,10 @@ const moduleIndex = num('module', 0);
 const floor = num('floor', 1);
 const at = { x: num('x', 40), y: num('y', 50) };
 const dir = num('dir', 0);
-const screen = { width: num('width', 320), height: num('height', 200) };
+const screen = {
+  width: num('width', SCREEN_PIXELS.width),
+  height: num('height', SCREEN_PIXELS.height),
+};
 const horizonWeight = num('height-of', 21);
 const out = args.out ?? 'view.png';
 

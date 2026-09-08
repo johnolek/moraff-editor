@@ -3,6 +3,7 @@
   import type { MapSquare } from '../map/game';
   import { sectionInfo } from '../game/sections';
   import { sectionPalette } from '../bestiary/pictures';
+  import { SCREEN_PIXELS } from './display';
   import { viewPictures } from './view3d/browser';
   import { newFrame, toRgba } from './view3d/frame';
   import { WHOLE_SCREEN_VIEW } from './view3d/geometry';
@@ -20,9 +21,8 @@
 
   let { rows, place, monsters, height }: Props = $props();
 
-  /** The game's own 320 x 200, which everything else is scaled up from. */
-  const WIDTH = 320;
-  const HEIGHT = 200;
+  const WIDTH = SCREEN_PIXELS.width;
+  const HEIGHT = SCREEN_PIXELS.height;
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
 
@@ -77,14 +77,18 @@
   });
 </script>
 
-<canvas class="view" bind:this={canvas} width={WIDTH} height={HEIGHT}></canvas>
+<canvas
+  class="view"
+  style:aspect-ratio="{WIDTH} / {HEIGHT}"
+  bind:this={canvas}
+  width={WIDTH}
+  height={HEIGHT}></canvas>
 
 <style>
   .view {
     display: block;
     width: 100%;
     height: auto;
-    aspect-ratio: 320 / 200;
     background: #000;
     border: 1px solid var(--line);
     border-radius: 6px;

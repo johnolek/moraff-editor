@@ -110,7 +110,7 @@
   });
 </script>
 
-<div class="screen">
+<div class="screen" style:aspect-ratio="{SCREEN_PIXELS.width} / {SCREEN_PIXELS.height}">
   <canvas bind:this={canvas} width={SCREEN_PIXELS.width} height={SCREEN_PIXELS.height}></canvas>
   <!-- A screen that takes the display over fills the rectangles it draws in with colour 0 before
        it draws them: FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way. Which
@@ -126,7 +126,6 @@
   .screen {
     position: relative;
     width: 100%;
-    aspect-ratio: 640 / 480;
     background: #000;
   }
   canvas {

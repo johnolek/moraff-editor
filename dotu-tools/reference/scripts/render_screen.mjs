@@ -43,6 +43,7 @@ const D = await load('play/display.ts');
 const { SCREEN_PIXELS } = D;
 const { newGame } = await load('game/port/state.ts');
 const { FONT_ADVANCE } = await load('roller/screen.ts');
+const { drawStrokeScreenLine, STROKE_ABOVE_WIDTH } = await load('play/view3d/stroke-font.ts');
 const { battleSpellLines } = await load('game/port/screens.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
 const fonts = JSON.parse(readFileSync(src('game/dotu-fonts.json'), 'utf8'));
@@ -136,10 +137,16 @@ await server.close();
  * One line of the screen, drawn the way pfont (exe 4000:0bb3) and psfont (exe 4000:0db8) draw it:
  * the string's x, y and character step are in the 1600 x 1200 grid, scaled onto the frame.
  *
- * The site sets its screens in a web font at the step the game's own face would have used; here
- * the face itself is drawn, at whatever whole scale comes nearest that step.
+ * Above 730 pixels across both routines hand the line to the vector font instead, which is what
+ * the 1024 x 768 mode gets. Below that the bitmap face is drawn, stretched to the step.
+ *
+ * The site itself sets these screens in a web font over the drawing rather than in either face.
  */
 function drawLine(line) {
+  if (frame.width - 1 > STROKE_ABOVE_WIDTH) {
+    drawStrokeScreenLine(frame, frame, 'dotu', line);
+    return;
+  }
   const toX = (x) => Math.trunc((frame.width * x) / 1600);
   const toY = (y) => Math.trunc((frame.height * y) / 1200);
   const advance = line.spreadTo === undefined ? FONT_ADVANCE[line.font] : (line.spreadTo - line.x) / line.text.length;
