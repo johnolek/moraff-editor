@@ -17,7 +17,7 @@ import type { MapSquare } from '../map/game';
 /** A side a view can see through: retdwall's 3 (exe 3000:8360). A wall, a door, a secret door
  *  and a module teleporter all stop it, which is `if (cVar1 == '\x03') return 1;` in
  *  FUN_3000_342d (exe 3000:342d, unf.c:19241). */
-export const SIDE_OPEN = 3;
+const SIDE_OPEN = 3;
 
 /**
  * How far a 3-D view reaches, in squares: `DS 0x2316 / 20 + 3` = 650 / 20 + 3 (unf.c:18277).
@@ -161,11 +161,6 @@ export class MapMemory {
       const column = index % EXPLORED_STRIDE;
       setBit(this.live, column, (index - column) / EXPLORED_STRIDE);
     }
-  }
-
-  /** The squares the four views drew on the last turn. */
-  get visible(): ReadonlySet<number> {
-    return this.drawn;
   }
 
   /** Whether a monster standing here is one the views have just drawn. */
