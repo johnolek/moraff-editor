@@ -405,6 +405,9 @@
     position: relative;
     flex: 1;
     min-width: 0;
+    /* The screen is 4:3 and as wide as this column, so on a wide window the column stops
+       growing where the screen would run under the character panel at the foot of the page. */
+    max-width: min(100%, calc((100dvh - 22rem) * 4 / 3));
   }
   .overlay {
     position: absolute;
