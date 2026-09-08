@@ -29,6 +29,38 @@ export function fillRect(frame: Frame, left: number, top: number, right: number,
   for (let y = y1; y <= y2; y++) frame.pixels.fill(colour, y * frame.width + x1, y * frame.width + x2 + 1);
 }
 
+/** Set one pixel, ignoring anything off the screen. The game's own drivers mostly do not clip. */
+export function plot(frame: Frame, x: number, y: number, colour: number): void {
+  if (x < 0 || y < 0 || x >= frame.width || y >= frame.height) return;
+  frame.pixels[y * frame.width + x] = colour;
+}
+
+/** `draw_line` (exe 5000:07eb): a Bresenham line, both ends included. */
+export function drawLine(frame: Frame, x1: number, y1: number, x2: number, y2: number, colour: number): void {
+  let x = Math.round(x1);
+  let y = Math.round(y1);
+  const endX = Math.round(x2);
+  const endY = Math.round(y2);
+  const stepX = x < endX ? 1 : -1;
+  const stepY = y < endY ? 1 : -1;
+  const spanX = Math.abs(endX - x);
+  const spanY = -Math.abs(endY - y);
+  let error = spanX + spanY;
+  for (;;) {
+    plot(frame, x, y, colour);
+    if (x === endX && y === endY) return;
+    const twice = 2 * error;
+    if (twice >= spanY) {
+      error += spanY;
+      x += stepX;
+    }
+    if (twice <= spanX) {
+      error += spanX;
+      y += stepY;
+    }
+  }
+}
+
 /** The frame as RGBA bytes, ready for an `ImageData` or a PNG. */
 export function toRgba(frame: Frame, palette: Rgb[]): Uint8ClampedArray {
   const out = new Uint8ClampedArray(frame.width * frame.height * 4);
