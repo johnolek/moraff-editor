@@ -38,6 +38,13 @@ export interface ScreenLine {
   value?: string;
   /** The x that second string is drawn at. */
   valueX?: number;
+  /**
+   * Set on the lines psfont draws with DS:4dec cleared, which are the key menu's thirteen and
+   * nothing else. Those come out as .FNT glyphs at their own size even at 1024 by 768, where
+   * every other line is drawn with the vector font. Only the renderers that draw real pixels
+   * look at this; the site sets all of these screens in a web font.
+   */
+  bitmapFace?: true;
 }
 
 /**

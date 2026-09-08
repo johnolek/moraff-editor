@@ -11,6 +11,8 @@ import {
   drawScreenFurniture,
   keyMenuLines,
   KEY_MENU_LINES,
+  KEY_MENU_SPREAD_TO,
+  KEY_MENU_X,
   MESSAGE_BAR_BOX,
   MESSAGE_BOX,
   SCREEN_BOXES,
@@ -70,16 +72,39 @@ describe('the key menu', () => {
     expect(lines[lines.length - 1].text).toBe('S) SECTION INFO');
   });
 
-  it('pairs each line with a key string of its own length, so the letters land in the holes', () => {
-    for (const line of KEY_MENU_LINES) expect(line.keys.length).toBe(line.body.length);
+  it('reads as the words the game shows once the two passes are laid over each other', () => {
+    // The passes are spread separately, and two of them are a shorter string over a wider
+    // spread, so a key letter belongs to the body slot its middle is nearest.
+    const middles = (text: string, spreadTo: number): number[] =>
+      [...text].map((_, i) => KEY_MENU_X + ((spreadTo - KEY_MENU_X) * (i + 0.5)) / text.length);
+
+    const merged = KEY_MENU_LINES.map((line) => {
+      const slots = [...line.body];
+      const bodyMiddles = middles(line.body, KEY_MENU_SPREAD_TO);
+      const keyMiddles = middles(line.keys, line.keysSpreadTo ?? KEY_MENU_SPREAD_TO);
+      [...line.keys].forEach((char, j) => {
+        if (char === ' ') return;
+        let nearest = 0;
+        bodyMiddles.forEach((middle, i) => {
+          if (Math.abs(middle - keyMiddles[j]) < Math.abs(bodyMiddles[nearest] - keyMiddles[j])) nearest = i;
+        });
+        expect(slots[nearest]).toBe(' ');
+        slots[nearest] = char;
+      });
+      return slots.join('').trimEnd();
+    });
+
+    expect(merged.slice(0, 4)).toEqual(['1) PREP SPELLS', 'VIEW MONEY', 'VIEW STATS', 'CAST SPELL']);
+    expect(merged[9]).toBe('ARMOR WEAPONS');
+    expect(merged[merged.length - 1]).toBe('QUIT  USE ITEM');
   });
 
-  it('reads as the words the game shows once the two passes are laid over each other', () => {
-    const merged = KEY_MENU_LINES.map((line) =>
-      [...line.body].map((char, i) => (char === ' ' ? line.keys[i] : char)).join('').trimEnd(),
-    );
-    expect(merged.slice(0, 4)).toEqual(['1) PREP SPELLS', 'VIEW MONEY', 'VIEW STATS', 'CAST SPELL']);
-    expect(merged[merged.length - 1]).toBe('QUIT  USE ITEM');
+  it('draws the menu words in the .FNT face and the key letters in strokes', () => {
+    const lines = keyMenuLines();
+    const bitmap = lines.filter((line) => line.bitmapFace);
+    expect(bitmap).toHaveLength(13);
+    expect(bitmap[0].text).toBe(' ) PREP SPELLS');
+    expect(lines.filter((line) => !line.bitmapFace)).toHaveLength(14);
   });
 
   it('draws the key letters in yellow and every line above the section box', () => {

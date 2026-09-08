@@ -52,6 +52,7 @@ const { SCREEN_PIXELS } = D;
 const { newGame } = await load('game/port/state.ts');
 const { FONT_ADVANCE } = await load('roller/screen.ts');
 const { drawStrokeScreenLine, STROKE_ABOVE_WIDTH } = await load('play/view3d/stroke-font.ts');
+const { drawMenuLine } = await load('play/view3d/menu-font.ts');
 const { battleSpellLines } = await load('game/port/screens.ts');
 const { engagementTiming, printBattleHpInfo, strike } = await load('game/port/combat.ts');
 const { messageBoxScreen } = await load('play/screens.ts');
@@ -197,13 +198,16 @@ function fightLines() {
  * the string's x, y and character step are in the 1600 x 1200 grid, scaled onto the frame.
  *
  * Above 730 pixels across both routines hand the line to the vector font instead, which is what
- * the 1024 x 768 mode gets. Below that the bitmap face is drawn, stretched to the step.
+ * the 1024 x 768 mode gets — every line but the key menu's own words, which the menu asks for by
+ * clearing DS:4dec and which stay .FNT glyphs at their own size. Below 730 the bitmap face is
+ * drawn for everything, stretched to the step.
  *
  * The site itself sets these screens in a web font over the drawing rather than in either face.
  */
 function drawLine(line) {
   if (frame.width - 1 > STROKE_ABOVE_WIDTH) {
-    drawStrokeScreenLine(frame, frame, 'dotu', line);
+    if (line.bitmapFace) drawMenuLine(frame, frame, line);
+    else drawStrokeScreenLine(frame, frame, 'dotu', line);
     return;
   }
   const toX = (x) => Math.trunc((frame.width * x) / 1600);

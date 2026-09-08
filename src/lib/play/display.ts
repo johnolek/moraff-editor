@@ -89,20 +89,32 @@ export const SCREEN_BOXES: ScreenBox[] = [
 /**
  * `FUN_4000_667b` (exe 4000:667b, unf.c "FUN_4000_667b"): the thirteen lines of the key menu.
  *
- * Every line is drawn twice at the same place, once in green and once in yellow, and the two
- * strings are the same length with a space wherever the other one has a letter — so the yellow
- * pass puts the key letter into the hole the green pass left. `psfont` (exe 4000:0db8) steps by
- * the width it is given divided by the string's own length, which is what makes the two line up.
- * The strings below are the bytes of the data segment, spaces and all.
+ * Every line is drawn twice, once in green and once in yellow, and the yellow pass puts the key
+ * letter into a hole the green pass left. `psfont` (exe 4000:0db8) steps by the width it is
+ * given divided by the string's own length, so a pass lands its letters where it does by how
+ * long it is and how far it is spread; two of the lines are given a shorter string and a wider
+ * spread above 1000 pixels across, which is what `keysSpreadTo` below is. The strings are the
+ * bytes of the data segment, spaces and all.
+ *
+ * The two passes are not drawn in the same face. `FUN_4000_667b` clears DS:4dec around the green
+ * pass, which stops `psfont` handing those lines to the vector font, so the menu's own words come
+ * out as .FNT glyphs while the key letters over them are strokes — see `view3d/menu-font.ts`.
  */
 export const KEY_MENU_X = 9;
 export const KEY_MENU_SPREAD_TO = 0x126;
 /** The colour of the key letter in every line. */
 export const KEY_MENU_KEY_COLOUR = 4;
 
-export const KEY_MENU_LINES: { y: number; body: string; keys: string; colour: number }[] = [
+export const KEY_MENU_LINES: {
+  y: number;
+  body: string;
+  keys: string;
+  colour: number;
+  /** The x the key letters are spread out to, where it is not the body's own. */
+  keysSpreadTo?: number;
+}[] = [
   { y: 0x00a, body: ' ) PREP SPELLS', keys: '1             ', colour: 8 },
-  { y: 0x02f, body: 'VIEW  ONEY    ', keys: '     M        ', colour: 8 },
+  { y: 0x02f, body: 'VIEW  ONEY    ', keys: '   M     ', colour: 8, keysSpreadTo: 0x134 },
   { y: 0x054, body: ' IEW STATS    ', keys: 'V             ', colour: 8 },
   { y: 0x079, body: ' AST SPELL    ', keys: 'C             ', colour: 8 },
   { y: 0x09e, body: 'E PAND MAP    ', keys: ' X            ', colour: 8 },
@@ -111,7 +123,7 @@ export const KEY_MENU_LINES: { y: number; body: string; keys: string; colour: nu
   { y: 0x0e8, body: ' PTIONS MENU  ', keys: 'O             ', colour: 3 },
   { y: 0x10c, body: 'DIG  UNNEL    ', keys: '    T         ', colour: 8 },
   { y: 0x131, body: ' IGHT  OSE ITEM', keys: 'F     L        ', colour: 8 },
-  { y: 0x156, body: ' RMOR  EAPONS ', keys: 'A     W       ', colour: 8 },
+  { y: 0x156, body: ' RMOR  EAPONS ', keys: 'A   W    ', colour: 8, keysSpreadTo: 0x119 },
   { y: 0x17b, body: ' OOM   OCKETS ', keys: 'Z     P       ', colour: 8 },
   { y: 0x19f, body: ' ELP   RAPHICS', keys: 'H     G       ', colour: 8 },
   { y: 0x1c4, body: ' UIT  USE  TEM', keys: 'Q         I   ', colour: 8 },
@@ -120,12 +132,24 @@ export const KEY_MENU_LINES: { y: number; body: string; keys: string; colour: nu
 /** The white line under the menu, in the same box (DS:6779). */
 export const SECTION_INFO = { text: 'S) SECTION INFO', y: 0x1ea, colour: 15 };
 
+/**
+ * How far down its own line the game drops the body pass, which is twice the font index it
+ * passes for it: 4 at 1024 by 768, where that index is 2.
+ */
+export const KEY_MENU_BODY_DROP = 4;
+
 /** The thirteen lines and the line under them, as the screen renderer takes them. */
 export function keyMenuLines(): ScreenLine[] {
   const place = { x: KEY_MENU_X, spreadTo: KEY_MENU_SPREAD_TO, font: 0 };
-  const lines = KEY_MENU_LINES.flatMap((line) => [
-    { ...place, text: line.body, y: line.y, colour: line.colour },
-    { ...place, text: line.keys, y: line.y, colour: KEY_MENU_KEY_COLOUR },
+  const lines = KEY_MENU_LINES.flatMap((line): ScreenLine[] => [
+    { ...place, text: line.body, y: line.y + KEY_MENU_BODY_DROP, colour: line.colour, bitmapFace: true },
+    {
+      ...place,
+      spreadTo: line.keysSpreadTo ?? KEY_MENU_SPREAD_TO,
+      text: line.keys,
+      y: line.y,
+      colour: KEY_MENU_KEY_COLOUR,
+    },
   ]);
   return [...lines, { ...place, text: SECTION_INFO.text, y: SECTION_INFO.y, colour: SECTION_INFO.colour }];
 }
