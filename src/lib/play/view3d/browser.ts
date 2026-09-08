@@ -24,23 +24,23 @@ function images(file: string): PicRowImage[] | null {
   return decoded;
 }
 
-/** The picture set for a section, by 1..4 within the module. */
-export function viewPictures(part: number): ViewPictures {
+/** The picture set for a section, by section 1..20. */
+export function viewPictures(section: number): ViewPictures {
   const builtin = images('ufmon.pic');
-  const section = images(`ufmon${part}.pic`);
+  const own = images(`ufmon${section}.pic`);
   return {
-    wall: images(wallPictureFile(part)),
+    wall: images(wallPictureFile(section)),
     overlay: images('overlay.pic'),
     // A built-in monster's picture number counts from ufmon.pic's third image; a section
     // monster's counts from 7 into its own file.
     monster: (picnum, isBuiltin) =>
-      isBuiltin ? (builtin?.[picnum + 2] ?? null) : (section?.[picnum - 7] ?? null),
+      isBuiltin ? (builtin?.[picnum + 2] ?? null) : (own?.[picnum - 7] ?? null),
     ladder: (down) => builtin?.[down ? 0 : 1] ?? null,
   };
 }
 
 /** Whether the bundle has the wall pictures, which decide whether the walls are drawn textured. */
-export const hasWallPictures = (part: number): boolean => images(wallPictureFile(part)) !== null;
+export const hasWallPictures = (section: number): boolean => images(wallPictureFile(section)) !== null;
 
 function decodeDataUrl(url: string): Uint8Array {
   const binary = atob(url.slice(url.indexOf(',') + 1));

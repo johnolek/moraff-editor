@@ -58,13 +58,10 @@ const screen = { width: num('width', 320), height: num('height', 200) };
 const horizonWeight = num('height-of', 21);
 const out = args.out ?? 'view.png';
 
-/** The section a floor belongs to, which says which palette and which wall file it uses. */
-function sectionOf(moduleIndex, floor) {
-  const first = [1, 21, 41, 61, 81][moduleIndex] ?? 1;
-  const within = Math.min(3, Math.floor((floor - first) / 5));
-  return { part: Math.max(0, within) + 1 };
-}
-const part = sectionOf(moduleIndex, floor).part;
+// The section a floor belongs to says which palette it uses and which wall file it loads.
+const part = Math.max(0, Math.min(3, Math.floor((floor - (moduleIndex * 20 + 1)) / 5))) + 1;
+const section = moduleIndex * 4 + part;
+const { wallPictureFile } = await load('play/view3d/pictures.ts');
 
 const dungeon = new Dungeon(Uint8Array.from(Buffer.from(UNFDUNG_B64, 'base64')));
 const rows = dungeon.floor(floor, moduleIndex);
@@ -76,9 +73,9 @@ function picture(name) {
     return null;
   }
 }
-const wall = picture(`ufwall${part}.pic`);
+const wall = picture(wallPictureFile(section));
 const builtin = picture('ufmon.pic');
-if (!wall) console.warn(`no src/lib/game/pics/ufwall${part}.pic — drawing the walls as the game does without them`);
+if (!wall) console.warn(`no src/lib/game/pics/${wallPictureFile(section)} — drawing the walls as the game does without them`);
 
 const pictures = {
   wall,
@@ -99,7 +96,7 @@ const scene = {
   videoClass: 2,
   horizonWeight,
   monsters: [],
-  water: [4, 8, 20].includes((moduleIndex * 4 + part)),
+  water: [4, 8, 20].includes(section),
 };
 
 const frame = newFrame(screen.width, screen.height);

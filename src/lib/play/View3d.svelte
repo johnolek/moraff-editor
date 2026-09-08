@@ -26,7 +26,8 @@
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
 
-  const part = $derived(sectionInfo(place.module, place.floor)?.part ?? 1);
+  const section = $derived(sectionInfo(place.module, place.floor));
+  const part = $derived(section?.part ?? 1);
 
   const drawn = $derived.by((): ViewMonster[] =>
     monsters.flatMap((monster) => {
@@ -60,13 +61,13 @@
         floor: place.floor,
         module: place.module,
         moduleCarried: place.module,
-        pictures: viewPictures(part),
+        pictures: viewPictures(section?.section ?? 1),
         detail: 0,
         screen: { width: WIDTH, height: HEIGHT },
         videoClass: 2,
         horizonWeight: height,
         monsters: drawn,
-        water: [4, 8, 20].includes((sectionInfo(place.module, place.floor)?.section ?? 0)),
+        water: [4, 8, 20].includes(section?.section ?? 0),
       },
       WHOLE_SCREEN_VIEW,
       place.dir,
