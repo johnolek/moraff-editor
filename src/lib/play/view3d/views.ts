@@ -69,15 +69,17 @@ export const VIEW_LABELS: Record<ViewName, string>[] = [
 export const LABEL_COLOUR = 4;
 
 /**
- * Experience of 40 or more and the labels stop being drawn (`fcomp dword [0x197d]` at exe
- * 2000:ae9c), so they are help for a character who has not killed anything yet.
+ * Experience of 40 or more and the labels stop being drawn, so they are help for a character who
+ * has not killed anything yet. The test is `fld qword [c024]; fcomp dword [197d]` at exe
+ * 2000:ae97, and DS:c024 is the experience field of the character record, which starts at
+ * DS:b880 and holds it at offset 0x7a4.
  */
 export const LABEL_EXP_LIMIT = 40;
 
 /**
- * A character whose height (DS:b8bd) is this or more gets the labels above the big view and
- * below the small ones; a shorter one, who sees a lower horizon, gets them the other way up
- * (`cmp word [b8bd], 0xe` at exe 2000:aeaf).
+ * A character whose height (DS:b8bd, the record's own height field) is this or more gets the
+ * labels above the big view and below the small ones; a shorter one, who sees a lower horizon,
+ * gets them the other way up (`cmp word [b8bd], 0xe` at exe 2000:aeaf).
  */
 export const TALL_ENOUGH = 15;
 
