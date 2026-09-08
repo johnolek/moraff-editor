@@ -2,18 +2,26 @@ import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import { UNFORGIVEN_MAP } from '../map/game';
 import { characterFile, press, settle, townSquare } from './battle.test-support';
-import { runMoveControl, startGame, type GameSession } from './engine';
+import { runMoveControl, startGame, type CharacterFile, type GameSession } from './engine';
 import { KEY } from './keys';
-import { runMwMoveControl, startMwGame, type MwGameSession } from './mw/engine';
+import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
 import { mwCharacterFile } from './mw/engine.test';
 import { MW_KEY, mwTurn } from './mw/keys';
-import { countsAsAction, decodeRecord, ENGINE_COMMIT, RunRecorder, RUN_LOG_VERSION, TURN_INPUTS } from './run';
+import {
+  countsAsAction,
+  decodeRecord,
+  ENGINE_COMMIT,
+  replayRun,
+  RunRecorder,
+  RUN_LOG_VERSION,
+  TURN_INPUTS,
+} from './run';
 
 /** A game of Dungeons of the Unforgiven being recorded, with a seed of the test's own. */
 function recordedGame(
   overrides: Parameters<typeof characterFile>[0] = {},
   seed = 12345,
-): { run: RunRecorder; session: GameSession; record: Uint8Array } {
+): { run: RunRecorder; session: GameSession; record: Uint8Array; file: CharacterFile } {
   const file = characterFile(overrides);
   const record = file.bytes.slice();
   const run = new RunRecorder({
@@ -25,16 +33,16 @@ function recordedGame(
   });
   const session = startGame(file, run.rng, run);
   void runMoveControl(session);
-  return { run, session, record };
+  return { run, session, record, file };
 }
 
 /** The same in Moraff's World. */
-function recordedMwGame(seed = 7): { run: RunRecorder; session: MwGameSession } {
+function recordedMwGame(seed = 7): { run: RunRecorder; session: MwGameSession; file: MwCharacterFile } {
   const file = mwCharacterFile();
   const run = new RunRecorder({ game: 'moraffsWorld', name: 'GRIMWALD', record: file.bytes, seed });
   const session = startMwGame(file, run.rng, run);
   void runMwMoveControl(session);
-  return { run, session };
+  return { run, session, file };
 }
 
 describe('the run log', () => {
@@ -170,6 +178,28 @@ function plantAMonster(session: GameSession, start: { x: number; y: number }, mo
   session.game.monsterMap[planted.y * 80 + planted.x] = 0;
 }
 
+/** The town square the Flea Bag Inn stands on. */
+function innSquare(): { x: number; y: number } {
+  for (let y = 1; y < 100; y++) {
+    for (let x = 1; x < 76; x++) {
+      if (bundledDungeon.townFeature(x, y, 0) === 4 && bundledDungeon.ladder(x, y, 0, 0) === 0) return { x, y };
+    }
+  }
+  throw new Error('no inn in the town');
+}
+
+/** The first walkable square of a floor with a way out to the north. A replay is only exact when
+ *  everything the run met came out of the seed, so a test that replays plants nothing. */
+function floorSquare(level: number): { x: number; y: number } {
+  const rows = UNFORGIVEN_MAP.floor(level, 0);
+  for (let y = 1; y < 100; y++) {
+    for (let x = 1; x < 76; x++) {
+      if (!rows[y][x].solid && rows[y][x].n === 3) return { x, y };
+    }
+  }
+  throw new Error(`no square with a way north on floor ${level}`);
+}
+
 /** The first square of the town whose north side is a module teleporter. */
 function teleporterSquare(): { x: number; y: number } {
   const rows = UNFORGIVEN_MAP.floor(0, 0);
@@ -216,17 +246,9 @@ describe('the milestones a run records', () => {
   });
 
   it('records the level a night at the inn handed over', async () => {
-    const inn = (() => {
-      for (let y = 1; y < 100; y++) {
-        for (let x = 1; x < 76; x++) {
-          if (bundledDungeon.townFeature(x, y, 0) === 4 && bundledDungeon.ladder(x, y, 0, 0) === 0) return { x, y };
-        }
-      }
-      throw new Error('no inn in the town');
-    })();
     const { run, session } = recordedGame({
       level: 0,
-      ...inn,
+      ...innSquare(),
       lev: 1,
       money: 100,
       exp: 100000,
@@ -261,5 +283,101 @@ describe('the milestones a run records', () => {
     const modules = run.log().milestones.filter((milestone) => milestone.kind === 'dungeon');
     expect(modules.length).toBe(1);
     expect(modules[0].which).toBe(1);
+  });
+});
+
+describe('replaying a run', () => {
+  it('arrives at the state the run itself ended in', async () => {
+    const { run, session, file } = recordedGame({ level: 3, dir: 0, ...floorSquare(3), lev: 20, str: 60 });
+    for (const key of [KEY.arrowUp, KEY.arrowLeft, KEY.arrowUp, KEY.enter, KEY.fight, KEY.arrowUp]) {
+      await press(session, key);
+    }
+    session.save();
+    session.finish();
+    const log = run.log();
+
+    const again = await replayRun(log);
+    expect(again.record).toEqual(file.bytes);
+    expect(again.place).toEqual({
+      x: session.game.pc.x,
+      y: session.game.pc.y,
+      floor: session.game.pc.level,
+      dungeon: session.game.pc.module,
+      dir: session.game.pc.dir,
+    });
+    expect(again.time).toBe(session.game.secondsElapsed);
+    expect(again.time).toBeGreaterThan(0);
+    expect(again.actions).toBe(log.actions);
+    // The turn costs the character nothing, and a key spent clearing a box the floor put up is
+    // not an action either, so the count is under the six keys.
+    expect(log.actions).toBeGreaterThan(2);
+    expect(again.milestones).toEqual(log.milestones);
+    expect(again.dead).toBe(false);
+  });
+
+  it('reaches the same milestones, at the same actions and the same game time', async () => {
+    const { run, session } = recordedGame({
+      level: 0,
+      ...innSquare(),
+      lev: 1,
+      money: 100,
+      exp: 100000,
+      cultureStock: 10,
+      crystals: 10,
+      sp: 0,
+      maxSp: 5,
+    });
+    for (const key of [KEY.up, KEY.escape, KEY.escape, KEY.escape, 0x31, KEY.enter]) await press(session, key);
+    session.finish();
+    const log = run.log();
+
+    expect(log.milestones.some((milestone) => milestone.kind === 'level')).toBe(true);
+    expect((await replayRun(log)).milestones).toEqual(log.milestones);
+  });
+
+  it('ends somewhere else when the keys have been tampered with', async () => {
+    const start = townSquare();
+    const { run, session, file } = recordedGame({ level: 0, dir: 0, ...start });
+    for (const key of [KEY.arrowUp, KEY.arrowUp, KEY.arrowLeft, KEY.arrowUp]) await press(session, key);
+    session.save();
+    session.finish();
+    const log = run.log();
+
+    const tampered = { ...log, inputs: [...log.inputs, KEY.arrowUp, KEY.arrowUp] };
+    const again = await replayRun(tampered);
+    expect(again.record).not.toEqual(file.bytes);
+    expect(again.place).not.toEqual({
+      x: session.game.pc.x,
+      y: session.game.pc.y,
+      floor: session.game.pc.level,
+      dungeon: session.game.pc.module,
+      dir: session.game.pc.dir,
+    });
+  });
+
+  it("replays Moraff's World, turns where the character stands and all", async () => {
+    const { run, session, file } = recordedMwGame();
+    session.press(MW_KEY.arrowUp);
+    await settle();
+    mwTurn(session, 2);
+    session.press(MW_KEY.arrowLeft);
+    await settle();
+    session.press(MW_KEY.wait);
+    await settle();
+    session.save();
+    session.finish();
+    const log = run.log();
+
+    const again = await replayRun(log);
+    expect(again.record).toEqual(file.bytes);
+    expect(again.place).toEqual({
+      x: session.game.pc.x,
+      y: session.game.pc.y,
+      floor: session.game.pc.floor,
+      dungeon: session.game.pc.dungeon,
+      dir: session.game.pc.dir,
+    });
+    expect(again.time).toBe(session.game.movesTaken);
+    expect(again.actions).toBe(log.actions);
   });
 });

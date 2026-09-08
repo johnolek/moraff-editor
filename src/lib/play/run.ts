@@ -1,7 +1,9 @@
 import type { PortedGameId } from '../app-state.svelte';
 import { SeededRng, type Rng } from '../game/port/rng';
+import { runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
-import { MW_KEY } from './mw/keys';
+import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine';
+import { MW_KEY, mwTurn } from './mw/keys';
 
 /**
  * The run log: everything a game played here was, written down as it is played.
@@ -329,4 +331,112 @@ export class RunRecorder {
       milestones: this.milestones.map((milestone) => ({ ...milestone })),
     };
   }
+}
+
+/** Where a run ended: what a claim about it is checked against. */
+export interface RunReplay {
+  /** The character's record as the game would save it, which is the whole of what they are. */
+  record: Uint8Array;
+  place: { x: number; y: number; floor: number; dungeon: number; dir: number };
+  /** The game's own clock: seconds in Dungeons of the Unforgiven, moves in Moraff's World. */
+  time: number;
+  actions: number;
+  milestones: Milestone[];
+  /** The loop came back: the character quit or died. */
+  over: boolean;
+  dead: boolean;
+}
+
+/**
+ * Play a run log through the engine again and hand back where it ended.
+ *
+ * This is the check MORF-145 is for: a claimed ending is believed because the same engine, given
+ * the same record, the same seed and the same keys, arrives at the same place. It runs under Node
+ * as well as in a browser, since nothing here draws.
+ *
+ * The engine it runs is this build's. A log whose `engine` is not {@link ENGINE_COMMIT} was made
+ * by another one and its ending is only as good as the two engines agreeing; the caller is what
+ * compares them.
+ */
+export async function replayRun(log: RunLog): Promise<RunReplay> {
+  const record = decodeRecord(log.record);
+  const run = new RunRecorder({
+    game: log.game,
+    name: log.name,
+    record,
+    seed: log.seed,
+    startedAt: log.startedAt,
+    mode: log.mode,
+    replaying: true,
+  });
+  return log.game === 'unforgiven' ? replayUnforgiven(log, run) : replayMoraffsWorld(log, run);
+}
+
+/** Let the loop take what it has been given and come back to waiting for the next key. */
+function loopRuns(): Promise<unknown> {
+  return new Promise((resolve) => setTimeout(resolve));
+}
+
+async function replayUnforgiven(log: RunLog, run: RunRecorder): Promise<RunReplay> {
+  const file: CharacterFile = {
+    bytes: run.record.slice(),
+    write(bytes) {
+      this.bytes = bytes;
+    },
+    died() {},
+  };
+  const session = startGame(file, run.rng, run);
+  void runMoveControl(session);
+  await loopRuns();
+  for (const input of log.inputs) {
+    if (session.over) break;
+    session.press(input);
+    await loopRuns();
+  }
+  // save_player is what turns the character back into a record, and the record is what a claim
+  // about a run is made of. It writes nothing outside this replay.
+  session.save();
+  session.finish();
+  const pc = session.game.pc;
+  return {
+    record: file.bytes,
+    place: { x: pc.x, y: pc.y, floor: pc.level, dungeon: pc.module, dir: pc.dir },
+    time: session.game.secondsElapsed,
+    actions: run.actions,
+    milestones: run.log().milestones,
+    over: session.over,
+    dead: session.dead,
+  };
+}
+
+async function replayMoraffsWorld(log: RunLog, run: RunRecorder): Promise<RunReplay> {
+  const file: MwCharacterFile = {
+    bytes: run.record.slice(),
+    write(bytes) {
+      this.bytes = bytes;
+    },
+    died() {},
+  };
+  const session = startMwGame(file, run.rng, run);
+  void runMwMoveControl(session);
+  await loopRuns();
+  for (const input of log.inputs) {
+    if (session.over) break;
+    const dir = turnedTo(input);
+    if (dir === -1) session.press(input);
+    else mwTurn(session, dir);
+    await loopRuns();
+  }
+  session.save();
+  session.finish();
+  const pc = session.game.pc;
+  return {
+    record: file.bytes,
+    place: { x: pc.x, y: pc.y, floor: pc.floor, dungeon: pc.dungeon, dir: pc.dir },
+    time: session.game.movesTaken,
+    actions: run.actions,
+    milestones: run.log().milestones,
+    over: session.over,
+    dead: session.dead,
+  };
 }
