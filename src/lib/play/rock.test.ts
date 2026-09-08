@@ -13,6 +13,10 @@ import {
 } from './display';
 import { newFrame, pixelAt, type Frame } from './view3d/frame';
 
+/** How much of the floor the map beside the views shows, which is what a cell is counted in. */
+const SIDE_MAP = { columns: ZOOM_COLUMNS, rows: ZOOM_ROWS };
+
+
 /**
  * What the zoom map on the game's own screen draws of the rock, on a floor the site has revealed
  * whole.
@@ -106,7 +110,7 @@ describe('the zoom map of a revealed floor', () => {
     const frame = screenOf(rows, at);
     let rock = 0;
     for (const { column, row } of cells()) {
-      const square = zoomMapSquare(at, column, row);
+      const square = zoomMapSquare(at, SIDE_MAP, column, row);
       if (rows[square.y][square.x].solid) {
         rock += 1;
         expect(cellColours(frame, column, row), `rock at ${square.x}, ${square.y}`).toEqual(new Set([ZOOM_MAP_BOX.colour]));

@@ -34,6 +34,10 @@ import {
 } from './display';
 import { MW_VIDEO_MODES } from './mw/view3d/screen';
 
+/** How much of the floor the map beside the views shows, which is what a cell is counted in. */
+const SIDE_MAP = { columns: ZOOM_COLUMNS, rows: ZOOM_ROWS };
+
+
 describe('the boxes on the screen', () => {
   it('keeps every one inside the screen', () => {
     for (const box of SCREEN_BOXES) {
@@ -194,9 +198,9 @@ describe('the black a screen is drawn on', () => {
 
 describe('the zoom map', () => {
   it('is nineteen squares across and thirty-three down, with the character in the middle', () => {
-    expect(zoomMapSquare({ x: 40, y: 50 }, ZOOM_COLUMNS >> 1, ZOOM_ROWS >> 1)).toEqual({ x: 40, y: 50 });
-    expect(zoomMapSquare({ x: 40, y: 50 }, 0, 0)).toEqual({ x: 31, y: 34 });
-    expect(zoomMapSquare({ x: 40, y: 50 }, ZOOM_COLUMNS - 1, ZOOM_ROWS - 1)).toEqual({ x: 49, y: 66 });
+    expect(zoomMapSquare({ x: 40, y: 50 }, SIDE_MAP, ZOOM_COLUMNS >> 1, ZOOM_ROWS >> 1)).toEqual({ x: 40, y: 50 });
+    expect(zoomMapSquare({ x: 40, y: 50 }, SIDE_MAP, 0, 0)).toEqual({ x: 31, y: 34 });
+    expect(zoomMapSquare({ x: 40, y: 50 }, SIDE_MAP, ZOOM_COLUMNS - 1, ZOOM_ROWS - 1)).toEqual({ x: 49, y: 66 });
   });
 
   it('starts where the game puts it, whatever the screen is wide', () => {

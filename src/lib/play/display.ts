@@ -202,8 +202,13 @@ export const zoomMapLeft = (screenWidth: number): number =>
   Math.trunc(((screenWidth - 1) * ZOOM_MAP_BOX.left) / 0x63f);
 
 /** Which square of the floor a cell of the map shows. */
-export function zoomMapSquare(at: { x: number; y: number }, column: number, row: number): { x: number; y: number } {
-  return { x: at.x + column - (ZOOM_COLUMNS >> 1), y: at.y + row - (ZOOM_ROWS >> 1) };
+export function zoomMapSquare(
+  centre: { x: number; y: number },
+  window: { columns: number; rows: number },
+  column: number,
+  row: number,
+): { x: number; y: number } {
+  return { x: centre.x + column - (window.columns >> 1), y: centre.y + row - (window.rows >> 1) };
 }
 
 /** What the drawing half of the screen needs to know about the floor the character stands on. */
@@ -224,6 +229,36 @@ export const zoomMapWindow = (frameWidth: number): ZoomMapWindow => ({
   cell: ZOOM_CELL,
   columns: ZOOM_COLUMNS,
   rows: ZOOM_ROWS,
+});
+
+/**
+ * `FUN_2000_59c0(0)` (exe 2000:59c0): the map the X key fills the screen with, which is the same
+ * drawing at seven pixels a square over the whole eighty by a hundred and ten floor, from the
+ * screen's own top left corner — the branch sets DS:0411 and DS:0413 to zero before it draws.
+ */
+export const EXPANDED_CELL = 7;
+export const EXPANDED_COLUMNS = 80;
+export const EXPANDED_ROWS = 110;
+
+/**
+ * The square the X branch centres the map on (exe 2000:d349 and 2000:d34d): column 40 and row 55,
+ * which with a window of the floor's own size shows the floor from its first square.
+ */
+export const EXPANDED_CENTRE = { x: 40, y: 55 };
+
+/**
+ * The colour `FUN_3000_8e75` (exe 3000:8e75) fills the screen with before it draws the squares —
+ * 10 in a 256-colour mode, which is the maroon the corner map's own box is drawn in.
+ */
+export const EXPANDED_GROUND = 10;
+
+/** Where the expanded map is drawn, which is the whole screen from its top left corner. */
+export const expandedMapWindow = (): ZoomMapWindow => ({
+  left: 0,
+  top: 0,
+  cell: EXPANDED_CELL,
+  columns: EXPANDED_COLUMNS,
+  rows: EXPANDED_ROWS,
 });
 
 /**
@@ -253,9 +288,39 @@ export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
     const [left, top] = [fillX(frame, box.left), fillY(frame, box.top)];
     fillRect(frame, left, top, fillX(frame, box.right), fillY(frame, box.bottom), box.colour);
   }
-  drawZoomMap(frame, floor);
-  drawZoomMonsters(frame, zoomMapWindow(frame.width), floor.at, floor.monsters ?? []);
+  const window = zoomMapWindow(frame.width);
+  drawZoomMap(frame, floor, window, floor.at);
+  drawFacingArrow(frame, window, floor.at.dir);
+  drawZoomMonsters(frame, window, floor.at, floor.monsters ?? []);
 }
+
+/**
+ * The X key's map (exe 2000:d341): the whole screen filled and the floor drawn over it at the
+ * expanded size, with the character's own square filled on top.
+ *
+ * `FUN_2000_a068` (exe 2000:a068) is that last square, which the original redraws in a new colour
+ * every time round the loop it waits for a key in, so it flickers; nothing here waits, so it is
+ * drawn once in the white the loop's own marker flashes in (exe 2000:c799).
+ */
+export function drawExpandedMap(frame: Frame, floor: ZoomMapFloor): void {
+  fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, EXPANDED_GROUND);
+  const window = expandedMapWindow();
+  drawZoomMap(frame, floor, window, EXPANDED_CENTRE);
+  const cell = window.cell;
+  fillRect(
+    frame,
+    window.left + cell * floor.at.x + 2,
+    window.top + cell * floor.at.y + 2,
+    window.left + cell * (floor.at.x + 1),
+    window.top + cell * (floor.at.y + 1),
+    EXPANDED_MARKER,
+  );
+  drawZoomMonsters(frame, window, EXPANDED_CENTRE, floor.monsters ?? []);
+}
+
+/** The colour the character's own square is left in, which is what movecontrol's marker flashes
+ *  in on the map beside the views. */
+const EXPANDED_MARKER = 15;
 
 /**
  * The colours `drawsquare` (exe 3000:87de) draws a square's own marks in.
@@ -297,12 +362,22 @@ const THICK_MARK_ABOVE_WIDTH = 1000;
 /** The cell size from which a door's tick is drawn as a pair of long lines as well. */
 const DOOR_TICK_PAIR_FROM_CELL = 8;
 
-/** `drawsquare` (exe 3000:87de) and `draw_side` (exe 3000:8432) for every square of the window. */
-function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
-  const left = zoomMapLeft(frame.width);
-  for (let column = 0; column < ZOOM_COLUMNS; column++) {
-    for (let row = 0; row < ZOOM_ROWS; row++) {
-      const square = zoomMapSquare(floor.at, column, row);
+/**
+ * `drawsquare` (exe 3000:87de) and `draw_side` (exe 3000:8432) for every square of the window.
+ *
+ * `FUN_3000_8e75` (exe 3000:8e75) is the loop: it walks the window's own columns and rows and
+ * asks for the square `centre + cell - window / 2`, so the same drawing serves the map beside the
+ * views, centred on the character, and the X key's map, centred on the middle of the floor.
+ */
+function drawZoomMap(
+  frame: Frame,
+  floor: ZoomMapFloor,
+  window: ZoomMapWindow,
+  centre: { x: number; y: number },
+): void {
+  for (let column = 0; column < window.columns; column++) {
+    for (let row = 0; row < window.rows; row++) {
+      const square = zoomMapSquare(centre, window, column, row);
       if (!floor.map.known(square.x, square.y)) continue;
       const here = floor.rows[square.y]?.[square.x];
       // Rock is never drawn. solidcheck calls a square rock when it has a wall on all four
@@ -311,19 +386,22 @@ function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
       // the site has revealed whole, where it keeps the rock blank instead of drawing it as a
       // square somebody could be standing in.
       if (!here || here.solid) continue;
-      drawZoomSquare(frame, here, left + column * ZOOM_CELL, row * ZOOM_CELL, {
+      drawZoomSquare(frame, here, window.left + column * window.cell, window.top + row * window.cell, window.cell, {
         chuteKnown: floor.map.knownOnArrival(square.x, square.y),
       });
     }
   }
+}
 
-  // The original flashes the arrow white six times a second; the port draws it steadily.
-  const originX = left + (ZOOM_COLUMNS >> 1) * ZOOM_CELL + 2;
-  const originY = (ZOOM_ROWS >> 1) * ZOOM_CELL + 2;
+/** The arrow on the character's own square, which the original flashes white six times a second
+ *  and the port draws steadily. */
+function drawFacingArrow(frame: Frame, window: ZoomMapWindow, dir: number): void {
+  const originX = window.left + (window.columns >> 1) * window.cell + 2;
+  const originY = window.top + (window.rows >> 1) * window.cell + 2;
   FACING_ARROW.forEach((line, row) => {
     for (let column = 0; column < line.length; column++) {
       if (line[column] !== 'X') continue;
-      const at = arrowPixel(floor.at.dir, originX, originY, column, row);
+      const at = arrowPixel(dir, originX, originY, column, row);
       plot(frame, at.x, at.y, 15);
     }
   });
@@ -346,19 +424,20 @@ function drawZoomSquare(
   square: MapSquare,
   x: number,
   y: number,
+  cell: number,
   asTheGame: { chuteKnown: boolean },
 ): void {
   const ladder = square.ladder;
   const building = ladder === 0 ? (square.town ?? 0) : 0;
-  fillRect(frame, x + 1, y + 1, x + ZOOM_CELL, y + ZOOM_CELL, building === 0 ? 0 : zoomBuildingColour(building));
+  fillRect(frame, x + 1, y + 1, x + cell, y + cell, building === 0 ? 0 : zoomBuildingColour(building));
 
-  drawZoomSide(frame, square.w, x, y, false);
-  drawZoomSide(frame, square.n, x, y, true);
-  drawZoomSide(frame, square.e, x + ZOOM_CELL, y, false);
-  drawZoomSide(frame, square.s, x, y + ZOOM_CELL, true);
-  for (const corner of [x, x + ZOOM_CELL]) {
+  drawZoomSide(frame, square.w, x, y, cell, false);
+  drawZoomSide(frame, square.n, x, y, cell, true);
+  drawZoomSide(frame, square.e, x + cell, y, cell, false);
+  drawZoomSide(frame, square.s, x, y + cell, cell, true);
+  for (const corner of [x, x + cell]) {
     plot(frame, corner, y, ZOOM_CORNER_COLOUR);
-    plot(frame, corner, y + ZOOM_CELL, ZOOM_CORNER_COLOUR);
+    plot(frame, corner, y + cell, ZOOM_CORNER_COLOUR);
   }
 
   // The trap door's own destination floor, which the square is crossed for whatever it is, and
@@ -368,19 +447,19 @@ function drawZoomSquare(
   if (ladder === 0 && crossed === NOTHING_CROSSED && asTheGame.chuteKnown && square.chute !== 0) {
     crossed = square.chute;
     colour = ZOOM_CHUTE_COLOUR;
-    const middle = Math.trunc(ZOOM_CELL / 2);
-    drawLine(frame, x + middle, y, x + middle, y + ZOOM_CELL, colour);
-    drawLine(frame, x, y + middle, x + ZOOM_CELL, y + middle, colour);
+    const middle = Math.trunc(cell / 2);
+    drawLine(frame, x + middle, y, x + middle, y + cell, colour);
+    drawLine(frame, x, y + middle, x + cell, y + middle, colour);
   }
 
   const thick = frame.width - 1 > THICK_MARK_ABOVE_WIDTH;
   if (ladder > 0 || crossed !== NOTHING_CROSSED) {
-    drawLine(frame, x, y, x + ZOOM_CELL, y + ZOOM_CELL, colour);
-    if (thick) drawLine(frame, x, y + 1, x + ZOOM_CELL, y + ZOOM_CELL + 1, colour);
+    drawLine(frame, x, y, x + cell, y + cell, colour);
+    if (thick) drawLine(frame, x, y + 1, x + cell, y + cell + 1, colour);
   }
   if (ladder < 0 || crossed !== NOTHING_CROSSED) {
-    drawLine(frame, x, y + ZOOM_CELL, x + ZOOM_CELL, y, colour);
-    if (thick) drawLine(frame, x, y + ZOOM_CELL + 1, x + ZOOM_CELL, y + 1, colour);
+    drawLine(frame, x, y + cell, x + cell, y, colour);
+    if (thick) drawLine(frame, x, y + cell + 1, x + cell, y + 1, colour);
   }
 }
 
@@ -396,15 +475,22 @@ function drawZoomSquare(
  * tick — the side running along the top draws it only on a cell too small for the long pair,
  * and the side running down the left draws it always, under the pair.
  */
-function drawZoomSide(frame: Frame, side: number, x: number, y: number, horizontal: boolean): void {
+function drawZoomSide(
+  frame: Frame,
+  side: number,
+  x: number,
+  y: number,
+  cell: number,
+  horizontal: boolean,
+): void {
   if (side !== 3) {
-    if (horizontal) drawLine(frame, x + 1, y, x + ZOOM_CELL - 1, y, ZOOM_SIDE_COLOUR);
-    else drawLine(frame, x, y + 1, x, y + ZOOM_CELL - 1, ZOOM_SIDE_COLOUR);
+    if (horizontal) drawLine(frame, x + 1, y, x + cell - 1, y, ZOOM_SIDE_COLOUR);
+    else drawLine(frame, x, y + 1, x, y + cell - 1, ZOOM_SIDE_COLOUR);
   }
   if (side !== 1) return;
-  const middle = ZOOM_CELL >> 1;
-  const reach = Math.trunc(ZOOM_CELL / 3);
-  const long = ZOOM_CELL >= DOOR_TICK_PAIR_FROM_CELL;
+  const middle = cell >> 1;
+  const reach = Math.trunc(cell / 3);
+  const long = cell >= DOOR_TICK_PAIR_FROM_CELL;
   if (horizontal) {
     if (long) {
       drawLine(frame, x + middle - 1, y - reach, x + middle - 1, y + reach, ZOOM_SIDE_COLOUR);
