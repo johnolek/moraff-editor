@@ -163,3 +163,22 @@ describe('a monster of kind 3 stuck to the character', () => {
     expect(game.scratch).toBe(scratch + 1);
   });
 });
+
+describe('a monster held off by a pill', () => {
+  it('says it cannot strike, spends one of the swings and does nothing else', () => {
+    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15);
+    game.paralysis = 10;
+    expect(revMonsterAttack(game).damage).toBe(0);
+    expect(game.banner).toContain("IT CAN'T STRIKE        ");
+    expect(game.paralysis).toBe(9);
+    expect(game.pc.hp).toBe(200);
+    expect(game.scratch).toBe(15);
+  });
+
+  it('swings again once the counter is down to one', () => {
+    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15);
+    game.paralysis = 1;
+    expect(revMonsterAttack(game).damage).toBeGreaterThan(0);
+    expect(game.paralysis).toBe(1);
+  });
+});

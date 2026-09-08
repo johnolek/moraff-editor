@@ -73,6 +73,11 @@ export interface RevGame {
   /** A ported function is owed a key it could not wait for. */
   keyOwed: boolean;
   /**
+   * DGROUP B6CC: how many more of the monster's swings the pills the character has swallowed
+   * will hold off. A pill adds ten (1000:7C3C) and a swing counts one off (1000:9A2F).
+   */
+  paralysis: number;
+  /**
    * DGROUP B2AE, B72C and B2AA: what the monster's last swing rolled, the armour class it had to
    * beat and the damage it did.
    *
@@ -131,6 +136,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     events: [],
     over: false,
     keyOwed: false,
+    paralysis: 0,
     monsterSwing: { roll: 0, armourClass: 0, damage: 0 },
     shield: 0,
     scratch: 0,

@@ -31,6 +31,8 @@ export interface RevMonsterSwing {
 
 /** 1000:9D66 and 1000:9DB2: what a miss and a very heavy hit say. */
 export const IT_MISSED = 'IT MISSED               ';
+/** 1000:9A4C: what a monster held off by a pill says instead of swinging. */
+export const IT_CANT_STRIKE = "IT CAN'T STRIKE        ";
 export const SQUASH = 'SQUASH!!';
 export const ITS_STUCK_TO_YOU = "IT'S STUCK TO YOU!";
 
@@ -64,6 +66,14 @@ export function revMonsterAttack(game: RevGame): RevMonsterSwing {
   const pc = game.pc;
   const rng = game.rng;
   const cells = game.monsterSwing;
+  // 1000:9A2F: a pill holds the monster off for a swing at a time. The counter stops at one
+  // rather than at zero, so the tenth swing a pill was worth is never held off, and nothing but
+  // another pill ever puts it back up.
+  if (game.paralysis > 1) {
+    game.paralysis -= 1;
+    game.banner.push(IT_CANT_STRIKE);
+    return { ...cells };
+  }
   if (!fight) return { ...cells };
   // 1000:9A58: a monster of kind 3 that drew blood last time is stuck to the character, and
   // throws away everything but the damage: the roll and the armour class its last swing left
