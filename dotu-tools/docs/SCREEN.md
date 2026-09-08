@@ -245,8 +245,7 @@ routines hand the line to `FUN_4000_069a` (exe 4000:069a), which draws the vecto
 rather than stepped: `pfont` works the right edge out as `x + 1600 / 80 * length` for font 0
 (the divisors at DS:4dda are 80, 50 and 28, narrower than Moraff's World's 68, 42 and 24), a
 line is `1100 / 36` units tall, and the pen is 3 units — two pixels each way at this size. The
-site itself sets these screens in a web font laid over the drawing, so only the render script
-draws the real face.
+site draws the real face, on the Play tab and in the render script alike.
 
 One group of lines is the exception, and it is the reason the key menu looks unlike everything
 else on the screen. `psfont` takes the vector path only while DS:4dec is set, and the key menu

@@ -6,15 +6,22 @@
   import { battleSpellLines } from '../game/port/screens';
   import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
   import type { DiscoveredMap } from '../map/draw-floor';
-  import GameScreen from '../ui/GameScreen.svelte';
   import { SeededRng } from '../game/port/rng';
   import { debugMonsterLines } from './debug-screen';
   import { inRect } from './screens';
   import type { KilledOnScreen } from './engine';
-  import { drawScreenFurniture, keyMenuLines, SCREEN_PIXELS, SCREEN_WINDOW, statusLines } from './display';
+  import {
+    clearScreenRect,
+    drawScreenFurniture,
+    keyMenuLines,
+    SCREEN_PIXELS,
+    SCREEN_WINDOW,
+    statusLines,
+  } from './display';
   import { viewPictures } from './view3d/browser';
   import { newFrame, toRgba } from './view3d/frame';
   import { renderFourViews, type KilledMonster, type ViewMonster } from './view3d/render';
+  import { drawDotuScreenText } from './view3d/text';
   import { viewLabels } from './view3d/views';
 
   interface Props {
@@ -123,14 +130,6 @@
     return one ? { dir: killed.dir, monster: one } : null;
   });
 
-  /** That rectangle as a CSS inset off the same 1600 by 1200 grid the lines over it are placed in. */
-  const clearedInset = $derived.by(() => {
-    const rect = cleared ?? WHOLE_DISPLAY;
-    const across = (value: number) => `${(100 * value) / SCREEN_WINDOW.width}%`;
-    const down = (value: number) => `${(100 * value) / SCREEN_WINDOW.height}%`;
-    return [down(rect.y), across(SCREEN_WINDOW.width - rect.right), down(SCREEN_WINDOW.height - rect.bottom), across(rect.x)].join(' ');
-  });
-
   $effect(() => {
     const target = canvas;
     if (!target) return;
@@ -170,26 +169,24 @@
       map: discovered,
       monsters: mapMonsters,
     });
+    // A screen that takes the display over fills the rectangle it draws in with colour 0 first:
+    // FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way and cast_a_spell the top of
+    // the screen its spell table stands on. A screen whose rectangle the port does not know
+    // blacks the whole display out instead.
+    if (cleared) clearScreenRect(frame, cleared);
+    drawDotuScreenText(frame, SCREEN_PIXELS, text);
     const rgba = toRgba(frame, sectionPalette(place.module + 1, part, game.colourSetting));
     context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
   });
 </script>
 
+<!-- The game's screen: the four views, the boxes around them and the game's own lines of text. -->
 <div class="screen" style:aspect-ratio="{SCREEN_PIXELS.width} / {SCREEN_PIXELS.height}">
   <canvas bind:this={canvas} width={SCREEN_PIXELS.width} height={SCREEN_PIXELS.height}></canvas>
-  <!-- A screen that takes the display over fills the rectangle it draws in with colour 0 before
-       it draws it: FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way, and cast_a_spell
-       the top of the screen its spell table stands on. A screen whose rectangle is not in the
-       port blacks the whole display out instead. -->
-  {#if screen.length > 0}
-    <div class="cleared" style:inset={clearedInset}></div>
-  {/if}
-  <div class="text"><GameScreen lines={text} window={SCREEN_WINDOW} /></div>
 </div>
 
 <style>
   .screen {
-    position: relative;
     width: 100%;
     background: #000;
   }
@@ -199,20 +196,5 @@
     height: 100%;
     /* The game's pixels stay pixels however far it is scaled up. */
     image-rendering: pixelated;
-  }
-  .cleared {
-    position: absolute;
-    background: #000;
-  }
-  .text {
-    position: absolute;
-    inset: 0;
-  }
-  /* The text lies over the drawing, so it brings no background or border of its own. */
-  .text :global(.screen) {
-    height: 100%;
-    background: none;
-    border: none;
-    border-radius: 0;
   }
 </style>

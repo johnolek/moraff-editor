@@ -11,12 +11,12 @@ import { drawZoomMonsters, type ZoomMapWindow } from './zoom-monsters';
  * views, the boxes around them and the blocks of text on them.
  *
  * Everything is placed in the grid the game draws in whatever the video mode, 1600 across and
- * 1200 down, which is the grid `src/lib/ui/GameScreen.svelte` positions text in and the one the
- * view rectangles in `view3d/geometry.ts` are given in. `dotu-tools/docs/SCREEN.md` is the same
+ * 1200 down, which is the grid `view3d/text.ts` draws a line of text in and the one the view
+ * rectangles in `view3d/geometry.ts` are given in. `dotu-tools/docs/SCREEN.md` is the same
  * screen described from a photograph of the real thing.
  */
 
-/** The whole of it, for a `GameScreen` that lies over the drawing. */
+/** The whole of it, for anything that wants the screen as a rectangle. */
 export const SCREEN_WINDOW = { x: 0, y: 0, width: 1600, height: 1200 };
 
 /** One of the twelve screens the game can run in. */
@@ -275,9 +275,8 @@ export function clearScreenRect(frame: Frame, rect: ScreenRect): void {
 }
 
 /**
- * The boxes and the zoom map, painted into the frame the four views are drawn on. The text over
- * them is a `GameScreen`, since the site sets the game's screens in a web font rather than in the
- * bitmap faces.
+ * The boxes and the zoom map, painted into the frame the four views are drawn on. The words over
+ * them go on afterwards, through `view3d/text.ts`.
  */
 export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
   for (const box of SCREEN_BOXES) {

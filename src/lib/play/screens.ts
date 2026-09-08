@@ -7,8 +7,9 @@ import { BATTLE_SPELLS_BOX } from './display';
  * the right-hand side, and the screens that take the whole display over.
  *
  * Both are drawn in the grid pfont (exe 4000:0bb3) works in, 1600 across and 1200 down, and both
- * go through `src/lib/roller/screen.ts`, which is the same renderer the character roller's
- * screens use.
+ * are painted onto the game's own screen by `view3d/text.ts`, in the faces pfont draws them in.
+ * With the top-down map up in the screen's place there is no frame to paint on, and they go
+ * through `src/lib/roller/screen.ts` instead, which is the character roller's own renderer.
  */
 
 /**

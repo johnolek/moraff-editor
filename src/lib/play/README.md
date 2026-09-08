@@ -199,11 +199,14 @@ whole message column for the miniature one — and it leaves the rectangle on th
 display. Any other wipe takes that rectangle down again, which is how the screen comes back: the
 original repaints it from `movecontrol`, and the port draws a fresh one every time the tab draws.
 
-Everything goes through `src/lib/ui/GameScreen.svelte`, the same renderer the character roller
-uses, so a line lands exactly where the game's own `pfont` call puts it. With the top-down map
-shown in the screen's place, `MessageBox.svelte` draws the message box beside it — the same
-rectangle in the same colours — and only a screen that has taken the display over covers the map,
-since the views it draws across are not there to draw it on.
+Both are painted into the frame the four 3-D views are drawn on, by `view3d/text.ts`, in the
+faces the game itself draws them in: the vector font of `view3d/stroke-font.ts` for every line at
+1024 by 768, and the .FNT glyphs of `view3d/menu-font.ts` for the key menu's own words. The
+render script draws with the same function, so a PNG of the screen and the tab are the same
+picture. With the top-down map shown in the screen's place there is no frame to paint on, so the
+message box beside it is `MessageBox.svelte` and a screen that has taken the display over is a
+`GameScreen`, both of them in the web font; only such a screen covers the map, since the views it
+draws across are not there to draw it on.
 
 A menu is a screen and a `choice`:
 
