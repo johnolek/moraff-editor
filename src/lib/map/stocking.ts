@@ -70,6 +70,10 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  * hit points rolled for whichever monster the type roll picked. On a section's boss floor
  * slot 0 is the Shadow boss, placed in the middle of the map.
  *
+ * Slot 0 is rolled twice over on a boss floor: it takes an ordinary square and an ordinary
+ * type first, and only then does the boss take the slot, hand that square back and draw one of
+ * his own. Both halves spend the generator, which is why they are both here.
+ *
  * The game seeds its generator afresh for every square it draws, which makes the monsters
  * land in diagonal stripes; `rnd` is used plainly here, so they spread out evenly instead.
  *
@@ -92,10 +96,17 @@ export function stockFloor(
   const taken = new Set<number>(occupied);
   const monsters: StockedMonster[] = [];
   for (let slot = 0; slot < MONSTER_SLOTS; slot++) {
-    const boss = slot === 0 && floor === section.bossFloor;
-    const { x, y } = boss ? bossSquare(rows, taken, rnd) : freeSquare(rows, taken, rnd);
+    let { x, y } = freeSquare(rows, taken, rnd);
     taken.add(y * WIDTH + x);
-    const entry = boss ? sectionMonster(section.section, BOSS_SLOT) : rollKind(section.section, rnd);
+    let entry = rollKind(section.section, rnd);
+    if (slot === 0 && floor === section.bossFloor) {
+      entry = sectionMonster(section.section, BOSS_SLOT);
+      // set_monster_map(x, y, 0xff) gives the square just rolled back before the boss is put
+      // down in the middle of the floor instead.
+      taken.delete(y * WIDTH + x);
+      ({ x, y } = bossSquare(rows, taken, rnd));
+      taken.add(y * WIDTH + x);
+    }
     const level = nudgeLevel(baseLevel, rnd);
     monsters.push({ slot, x, y, monsterId: entry.id, level, hp: rollHp(entry, level, rnd) });
   }
@@ -188,10 +199,12 @@ function freeSquare(rows: MapSquare[][], taken: Set<number>, rnd: () => number):
   }
 }
 
+/** Where the Shadow boss is put down, which takes the row before the column — the other way
+ *  round from an ordinary monster's square. */
 function bossSquare(rows: MapSquare[][], taken: Set<number>, rnd: () => number): { x: number; y: number } {
   for (;;) {
-    const x = random(rnd, BOSS_AREA_SIZE) + BOSS_AREA_ORIGIN;
     const y = random(rnd, BOSS_AREA_SIZE) + BOSS_AREA_ORIGIN;
+    const x = random(rnd, BOSS_AREA_SIZE) + BOSS_AREA_ORIGIN;
     if (!rows[y][x].solid && !taken.has(y * WIDTH + x)) return { x, y };
   }
 }
