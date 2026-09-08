@@ -12,7 +12,6 @@
   import Panel from './Panel.svelte';
   import Portrait from './Portrait.svelte';
   import Screen from './Screen.svelte';
-  import View3d from './View3d.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
   import { dotuMapFiles, downloadMapFiles } from './export-maps';
   import { downloadRunLog } from './export-run';
@@ -249,13 +248,6 @@
             debug={debugDrawn(mode)}
             prompt={view.prompt} />
         {:else}
-          {#if view.place.floor > 0}
-            <View3d
-              rows={view.rows}
-              place={view.place}
-              monsters={monstersDrawn(mode, view)}
-              height={session.game.pc.height} />
-          {/if}
           <FloorCanvas
             bind:this={canvas}
             game={UNFORGIVEN_MAP}
