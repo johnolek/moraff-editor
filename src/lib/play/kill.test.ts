@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { expValue } from '../game/port/combat';
 import { GARBAGE_CAN } from '../game/port/kills';
 import { WEAPON_NAMES } from '../game/port/drops';
+import { MENU_LINE_STEP, MENU_TOP, MENU_X, MESSAGE_LINE_Y } from '../game/port/screens';
 import type { Rng } from '../game/port/rng';
 import { facingAMonster, press, TAKE, LEAVE } from './battle.test-support';
 import type { GameSession } from './engine';
+import { KEY } from './keys';
 
 /** A generator that rolls the lowest number it can, which is what makes every drop land. */
 const lowest: Rng = { random: () => 0 };
@@ -86,5 +88,42 @@ describe('killing the monster being fought', () => {
     await press(session, 0x1b);
     expect(session.box).toContain('GOOD NEWS!');
     expect(session.box).toContain('LEVEL! GO TO THE TOWN, FIND');
+  });
+});
+
+describe('the message box while the kill is being read', () => {
+  /** Where a line stands, so that a box line can be told from the bar above it. */
+  const placed = (session: GameSession): [string, number, number][] =>
+    session.view().box.map((line) => [line.text, line.x, line.y]);
+
+  it('puts the kill on the bar and the drop it found down the eight lines', async () => {
+    const session = await facingAMonster(lowest, { cls: 0 });
+    session.game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    expect(placed(session)).toContainEqual(['1) TAKE THE WEAPON', MENU_X, MENU_TOP + 2 * MENU_LINE_STEP]);
+    expect(placed(session)).toContainEqual(['YOU KILLED IT!', MENU_X, MESSAGE_LINE_Y]);
+  });
+
+  it('holds the drop until a key answers it and then empties the box', async () => {
+    const session = await facingAMonster(lowest, { cls: 0 });
+    session.game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    expect(session.box).toContain('1) TAKE THE WEAPON');
+    await press(session, LEAVE);
+    expect(session.box).toContain('1) TAKE THE ARMOR');
+    await press(session, LEAVE);
+    expect(session.box).toEqual([]);
+    // Nothing of the kill is left standing over the map once the loop is back on the player's key.
+    expect(session.view().screen).toEqual([]);
+  });
+
+  it('shows a hint, waits for its key and clears it', async () => {
+    const session = await facingAMonster(lowest, { cls: 2 });
+    // With nothing engaged the F key is the snake's hint, which waits for a key of its own.
+    session.game.engaged = -1;
+    await press(session, KEY.fight);
+    expect(session.box[0]).toBe('YOU MUST BE STANDING NEXT TO A');
+    await press(session, 0x1b);
+    expect(session.box).toEqual([]);
   });
 });
