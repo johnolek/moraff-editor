@@ -33,7 +33,7 @@ import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './mov
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
 import type { RunRecorder, RunSummary } from './run';
-import { MESSAGE_BOX_LINES, messageBoxLines } from './screens';
+import { MESSAGE_BOX_LINES, messageBoxScreen, screenTakenOver } from './screens';
 import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
@@ -114,7 +114,7 @@ export interface PlayView {
   /** The monsters standing on a square the four 3-D views drew this turn, which is exactly the
    *  ones the character can see. */
   visible: StockedMonster[];
-  /** The eight-line message box, as the game draws it. */
+  /** The message box, as the game draws it: the eight lines and the bar above them. */
   box: ScreenLine[];
   /** A screen the game has taken the whole display over with; empty when there is none. */
   screen: ScreenLine[];
@@ -456,13 +456,14 @@ export class GameSession {
     const pc = game.pc;
     const facing = game.engagedAhead === -1 ? game.engaged : game.engagedAhead;
     const drawn = drawnMonsters(game, pc.level);
+    const printed = this.timed.showing(game.screen);
     return {
       place: { x: pc.x, y: pc.y, floor: pc.level, module: pc.module, dir: pc.dir },
       rows: this.rows,
       monsters: drawn,
       visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
-      box: messageBoxLines(this.box),
-      screen: this.timed.showing(game.screen),
+      box: messageBoxScreen({ box: this.box, banner: this.banner, drawn: printed }),
+      screen: screenTakenOver(printed),
       banner: this.banner,
       prompt: ladderPrompt(ladderUnder(game), pc.level === 0 ? buildingUnder(game) : 0),
       seconds: game.secondsElapsed,

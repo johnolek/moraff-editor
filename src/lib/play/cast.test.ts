@@ -88,7 +88,10 @@ const ENCHANT_WEAPON = spellIndex(0, 0, 0);
 const WRITE_SCROLL = spellIndex(0, 0, 2);
 
 /** The lines of every screen the game has drawn, for asking what is on it. */
-const screenText = (session: GameSession) => session.view().screen.map((line) => line.text);
+/** Everything the tab draws in the game's own font: the message box, and any screen the game has
+ *  taken the whole display over with. */
+const screenText = (session: GameSession): string[] =>
+  [...session.view().box, ...session.view().screen].map((line) => line.text);
 
 describe('casting from the spellbook', () => {
   it('casts the spell the menus pick and charges its level in spell points', async () => {

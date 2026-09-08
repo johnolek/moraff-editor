@@ -12,13 +12,13 @@ describe('the I key', () => {
     await settle();
     await press(session, KEY.useItem);
     expect(session.box[0]).toBe('WHICH TYPE OF ITEM?');
-    expect(session.view().screen.map((line) => line.text)).toContain('USE MAGIC MENU:');
+    expect(session.view().box.map((line) => line.text)).toContain('USE MAGIC MENU:');
     await press(session, 0x35);
     expect(session.box[0]).toBe('HIT A KEY (1-6):');
     await press(session, 0x32);
     expect(session.game.pc.hp).toBe(300);
     expect(session.game.pc.healingPotions).toBe(1);
-    expect(session.view().screen).toEqual([]);
+    expect(session.view().box.map((line) => line.text)).not.toContain('USE MAGIC MENU:');
   });
 
   it('casts out of the scrolls when the first line is picked', async () => {

@@ -50,7 +50,7 @@ describe('keeping the swings up with Ctrl-F', () => {
     expect(session.repeatFight).toBe(true);
     for (let waited = 0; waited < 200 && session.repeatFight; waited++) await settle();
     expect(monster.hp).toBe(0);
-    expect(session.view().screen.map((line) => line.text)).toContain('YOU KILLED IT!');
+    expect(session.view().box.map((line) => line.text)).toContain('YOU KILLED IT!');
     expect(session.repeatFight).toBe(false);
   });
 

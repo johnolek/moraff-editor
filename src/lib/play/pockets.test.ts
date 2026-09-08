@@ -30,7 +30,10 @@ async function press(session: GameSession, ...keys: number[]): Promise<void> {
   }
 }
 
-const screenText = (session: GameSession) => session.view().screen.map((line) => line.text);
+/** Everything the tab draws in the game's own font: the message box, and any screen the game has
+ *  taken the whole display over with. */
+const screenText = (session: GameSession): string[] =>
+  [...session.view().box, ...session.view().screen].map((line) => line.text);
 
 /** A spellbook holding one spell: SLEEP, the first of the wizard battle list. */
 function spellbookWithSleep(): number[] {
