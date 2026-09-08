@@ -53,7 +53,7 @@ function squareIndex(x: number, y: number): number {
 
 /**
  * One character's explored maps while they are being played: the block of 32 floor bitmaps that
- * is in memory, and the floor being walked.
+ * is in memory, the floor being walked, and the copy of it taken on arrival.
  */
 export class MapMemory {
   /** DS:c445: the 32 bitmaps of the block in memory, by floor number. */
@@ -63,6 +63,10 @@ export class MapMemory {
   private held: { dungeon: number; block: number } | null = null;
   /** DS:c4c5: the floor being played. */
   private live = emptyFloor();
+  /** DS:c4c9: the copy load_level_map takes of the floor on arrival. The only thing that ever
+   *  reads it is the chute glyph, which is why a chute shows up on a floor only once the
+   *  character has left it and come back. */
+  private arrival = emptyFloor();
   /** The squares the four views drew on the last turn, which is exactly the set of squares a
    *  monster standing on one can be seen on. */
   private drawn: Set<number> = new Set();
@@ -70,7 +74,7 @@ export class MapMemory {
   /**
    * load_level_map (exe 2000:7687): arrive on a floor. All 32 floors of a block are resident at
    * once, so coming back to one costs nothing and loses nothing; the bitmap is simply pointed at
-   * again.
+   * again, and copied into the snapshot the chute glyph is drawn from (unf.c:12427).
    */
   enterFloor(dungeon: number, floor: number): void {
     const block = Math.floor(floor / FLOORS_PER_BLOCK);
@@ -84,6 +88,7 @@ export class MapMemory {
       this.resident.set(floor, bitmap);
     }
     this.live = bitmap;
+    this.arrival = bitmap.slice();
     this.drawn = new Set();
   }
 
@@ -119,6 +124,12 @@ export class MapMemory {
   /** FUN_2000_7210 (exe 2000:7210). */
   isKnown(x: number, y: number): boolean {
     return bitSet(this.live, x, y);
+  }
+
+  /** FUN_2000_7277 (exe 2000:7277): was (x, y) known when the character arrived on this floor?
+   *  drawsquare's chute branch (unf.c:21910) is its one caller. */
+  wasKnownOnArrival(x: number, y: number): boolean {
+    return bitSet(this.arrival, x, y);
   }
 
   /** Every known square of the floor being played, for a caller that wants the whole set rather

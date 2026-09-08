@@ -175,3 +175,24 @@ describe('the map the views build up', () => {
     expect(memory.isKnown(2, 5)).toBe(true);
   });
 });
+
+describe('the copy taken on arrival', () => {
+  it('holds nothing on a floor nobody has been on', () => {
+    const memory = new MapMemory();
+    memory.enterFloor(0, 1);
+    memory.markStep(4, 7);
+    expect(memory.isKnown(4, 7)).toBe(true);
+    expect(memory.wasKnownOnArrival(4, 7)).toBe(false);
+  });
+
+  it('holds everything known up to the moment the character came back', () => {
+    const memory = new MapMemory();
+    memory.enterFloor(0, 1);
+    memory.markStep(4, 7);
+    memory.enterFloor(0, 2);
+    memory.enterFloor(0, 1);
+    expect(memory.wasKnownOnArrival(4, 7)).toBe(true);
+    memory.markStep(5, 7);
+    expect(memory.wasKnownOnArrival(5, 7)).toBe(false);
+  });
+});
