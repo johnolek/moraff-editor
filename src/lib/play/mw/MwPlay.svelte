@@ -14,6 +14,7 @@
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
+  import { monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from '../mode';
   import { mwOnMessageLine } from '../../game/mw-port/state';
   import {
     mwCharacteristicLines,
@@ -37,6 +38,7 @@
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
   let style = $state<MovementStyle>(readMovementStyle('moraffsWorld'));
+  let mode = $state<PlayMode>(readPlayMode('moraffsWorld'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -125,6 +127,12 @@
     view = null;
   }
 
+  /** The mode belongs to the tab; the session carries it so that anything keeping a record of
+   *  the run can say which mode it was played in. */
+  $effect(() => {
+    if (session) session.mode = mode;
+  });
+
   /** The Save Editor writes the roster entry's bytes and bumps the version; the game reads the
    *  record again and follows the edit. */
   $effect(() => {
@@ -183,6 +191,12 @@
     input.blur();
   }
 
+  /** The mode is picked with the mouse, and hands the keyboard back the same way. */
+  function chooseMode(input: HTMLInputElement) {
+    writePlayMode('moraffsWorld', mode);
+    input.blur();
+  }
+
   /** A key on its way to the game. Under Dungeons of the Unforgiven's arrows the up arrow steps
    *  the way the character faces and the other three turn them where they stand. */
   function press(key: number) {
@@ -232,7 +246,7 @@
           rows={view.rows}
           floor={view.place.floor}
           dungeon={view.place.dungeon}
-          monsters={view.monsters}
+          monsters={monstersDrawn(mode, view)}
           bounds={FULL_FLOOR}
           you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
           focus={{ x: view.place.x, y: view.place.y, cell: PLAY_CELL }}
@@ -282,6 +296,16 @@
           <span>{['North', 'South', 'West', 'East'][view.place.dir]}</span>
         </div>
         <div class="keys">
+          <div class="key-note">Play mode:</div>
+          <div class="styles">
+            {#each PLAY_MODES as choice}
+              <label>
+                <input type="radio" value={choice.id} bind:group={mode} onchange={(event) => chooseMode(event.currentTarget)} />
+                <span>{choice.label}</span>
+                <span class="how">{choice.how}</span>
+              </label>
+            {/each}
+          </div>
           <div class="key-note">Arrow keys:</div>
           <div class="styles">
             {#each MOVEMENT_STYLES as choice}
@@ -305,7 +329,9 @@
             {/each}
           </div>
         </div>
-        <MwPanel game={session.game} {view} />
+        {#if panelVisible(mode)}
+          <MwPanel game={session.game} {view} />
+        {/if}
       </aside>
     </div>
   {/if}

@@ -35,6 +35,7 @@ import {
   showSpellsInForce,
   showVitalStats,
 } from './letters';
+import { DEFAULT_PLAY_MODE, type PlayMode } from '../mode';
 import { leaveSquare } from './moment';
 import { resolveStep, turnAndStep, waitAMoment } from './move';
 import { loadMwPlayer, saveMwPlayer } from './record';
@@ -143,6 +144,11 @@ export class MwGameSession {
   /** movecontrol has come back: the character has quit or died. */
   over = false;
   dead = false;
+  /**
+   * How much of the game the tab is showing (`../mode.ts`). Nothing the game does reads it; it
+   * is here so that anything keeping a record of the run can say which mode it was played in.
+   */
+  mode: PlayMode = DEFAULT_PLAY_MODE;
   /** Called whenever the game is about to wait for a key, so the tab can draw what it is
    *  waiting with. */
   onChange: (() => void) | null = null;

@@ -31,7 +31,7 @@ tab, the map canvas, the screen renderer and the roster.
 * **`menus.ts`** — the menus `movecontrol` and the spells build themselves.
 * **`advice.ts`** — the little mouse: eight pieces of advice and fourteen lessons.
 * **`panel.ts`, `MwPanel.svelte`** — the numbers the game keeps and never prints, in the column
-  beside the map. **`MwPortrait.svelte`** — the picture of the monster in front of the character.
+  beside the map, which `../mode.ts` shows in debug alone. **`MwPortrait.svelte`** — the picture of the monster in front of the character.
 * **`MwPlay.svelte`** — the tab: the map, the four corners of the game's own screen laid over it,
   the screens and the row of keys. `src/App.svelte` picks it or Dungeons of the Unforgiven's by
   the game showing.
@@ -135,9 +135,10 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
   screen alone, so a kill's own messages are held for theirs by the Play tab's display timer
   (`../timed.ts`); the flashes while a hole is dug, whose message the port shows as a box rather
   than the strip the original draws it on, are still printed once.
-* **The map is drawn instead of the 3-D view**, and every monster on the floor is drawn, not only
-  the ones a character has seen. The picture of the monster being faced stands in for the view
-  ahead, with the level, hit points and experience the game prints over that view over it.
+* **The map is drawn instead of the 3-D view**, and in speedrun and in debug every monster on the
+  floor is drawn, not only the ones a character has seen (`../mode.ts`). The picture of the
+  monster being faced stands in for the view ahead in every mode, with the level, hit points and
+  experience the game prints over that view over it.
 * **No `?MON.MAP`, no `.DUN`.** The explored map is not kept and the three floors of monsters
   live only as long as the tab is open.
 * **The character file is the roster entry.** `save_player` writes the record back through the
