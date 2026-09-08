@@ -290,13 +290,21 @@ export function fillScreenBox(frame: Frame, box: ScreenBox): void {
  * The boxes and the zoom map, painted into the frame the four views are drawn on. The words over
  * them go on afterwards, through `view3d/text.ts`.
  */
-export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
+export function drawScreenFurniture(frame: Frame, floor: UnforgivenZoomMapFloor): void {
   for (const box of SCREEN_BOXES) fillScreenBox(frame, box);
   drawZoomMapOnly(frame, floor);
 }
 
+/**
+ * The floor as this game's map draws it. Dungeons of the Unforgiven has a facing and marks it
+ * with an arrow, so its own square needs the way the character is turned; Moraff's World has none.
+ */
+export interface UnforgivenZoomMapFloor extends ZoomMapFloor {
+  at: { x: number; y: number; dir: number };
+}
+
 /** The map beside the views on its own, without the boxes around it. */
-export function drawZoomMapOnly(frame: Frame, floor: ZoomMapFloor): void {
+export function drawZoomMapOnly(frame: Frame, floor: UnforgivenZoomMapFloor): void {
   const window = UNFORGIVEN_ZOOM_MAP.window(frame);
   drawZoomMap(frame, floor, window, floor.at, UNFORGIVEN_ZOOM_MAP);
   drawZoomMarker(frame, window, UNFORGIVEN_ZOOM_MAP, floor.at.dir);
@@ -311,7 +319,7 @@ export function drawZoomMapOnly(frame: Frame, floor: ZoomMapFloor): void {
  * every time round the loop it waits for a key in, so it flickers; nothing here waits, so it is
  * drawn once in the white the loop's own marker flashes in (exe 2000:c799).
  */
-export function drawExpandedMap(frame: Frame, floor: ZoomMapFloor): void {
+export function drawExpandedMap(frame: Frame, floor: UnforgivenZoomMapFloor): void {
   fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, EXPANDED_GROUND);
   const window = expandedMapWindow();
   drawZoomMap(frame, floor, window, EXPANDED_CENTRE, UNFORGIVEN_ZOOM_MAP);

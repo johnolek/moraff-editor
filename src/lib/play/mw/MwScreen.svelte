@@ -11,16 +11,10 @@
   import { mwHorizonWeight } from './view3d/geometry';
   import { renderMwView, type MwViewMonster, type MwViewScene } from './view3d/render';
   import { drawMwScreenText } from './view3d/text';
-  import { drawZoomMonsters } from '../zoom-monsters';
   import { drawMwMonsterBars } from './view3d/monster-bar';
+  import { drawMwZoomMap } from './map';
   import {
-    MW_COLOURS,
     MW_KEY_MENU_RECT,
-    MW_MAP_CELL,
-    MW_MAP_COLUMNS,
-    MW_MAP_LEFT,
-    MW_MAP_ROWS,
-    MW_MAP_TOP_PIXELS,
     MW_MESSAGE_BOX_RECT,
     MW_SCREEN_MODE,
     MW_SCREEN_PIXELS,
@@ -28,7 +22,6 @@
     MW_SCREEN_UNITS_Y,
     MW_VIEWS,
     MW_WHOLE_SCREEN_VIEW,
-    MW_ZOOM_MAP,
   } from './view3d/screen';
 
   interface Props {
@@ -44,8 +37,9 @@
     /** `surface_feature`: what a square of floor 0 holds, which is what its ceiling is marked
      *  with there instead of a ladder. */
     surfaceFeatureAt: (x: number, y: number) => number;
-    /** The map the character has discovered, or null to draw the whole floor. */
-    discovered: DiscoveredMap | null;
+    /** The map the zoom map draws: the squares the character has discovered, or every square in
+     *  the two modes that reveal the floor. */
+    discovered: DiscoveredMap;
     /** The monsters marked on the map in the corner, which is every one on the floor in debug
      *  mode and none at all in the modes that show only what the game showed. */
     mapMonsters?: StockedMonster[];
@@ -116,7 +110,7 @@
     if (zoomed === null) {
       for (const [view, rect] of MW_VIEWS.entries()) renderMwView(frame, scene, rect, view);
       drawBoxes(frame);
-      drawZoomMonsters(frame, MW_ZOOM_MAP, place, mapMonsters);
+      drawMwZoomMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters });
     } else {
       renderMwView(frame, scene, MW_WHOLE_SCREEN_VIEW, zoomed);
     }
@@ -128,37 +122,13 @@
     context.putImageData(new ImageData(toRgba(frame, floorPalette(place.floor)), WIDTH, HEIGHT), 0, 0);
   });
 
-  /** The message box, the key menu and the zoom map, which sit around the four views. */
+  /** The message box and the key menu, which movecontrol blanks before it draws in them. */
   function drawBoxes(frame: Frame): void {
     const toX = (x: number) => Math.trunc(((WIDTH - 1) * x) / 0x63f);
     const toY = (y: number) => Math.trunc(((HEIGHT - 1) * y) / 0x4af);
     for (const box of [MW_MESSAGE_BOX_RECT, MW_KEY_MENU_RECT]) {
       fillRect(frame, toX(box.left), toY(box.top), toX(box.right), toY(box.bottom), 0);
     }
-
-    // FUN_3000_b066 (WORLD.EXE 3000:b066): the maroon box the discovered map is drawn on, and
-    // draw_map_square (exe 3000:a97d) filling a walked square black and marking its walls white.
-    const right = Math.trunc(((WIDTH - 1) * 0x119) / MW_SCREEN_UNITS_X);
-    fillRect(frame, 0, MW_MAP_TOP_PIXELS, right, MW_MAP_TOP_PIXELS + MW_MAP_ROWS * MW_MAP_CELL + 2, MW_COLOURS.map);
-    for (let row = 0; row < MW_MAP_ROWS; row++) {
-      for (let col = 0; col < MW_MAP_COLUMNS; col++) {
-        const x = place.x + col - (MW_MAP_COLUMNS >> 1);
-        const y = place.y + row - (MW_MAP_ROWS >> 1);
-        const square = rows[y]?.[x];
-        if (!square || square.solid) continue;
-        if (discovered && !discovered.known(x, y)) continue;
-        const px = MW_MAP_LEFT + col * MW_MAP_CELL;
-        const py = MW_MAP_TOP_PIXELS + row * MW_MAP_CELL;
-        fillRect(frame, px + 1, py + 1, px + MW_MAP_CELL, py + MW_MAP_CELL, 0);
-        if (square.w !== 3) fillRect(frame, px, py + 1, px, py + MW_MAP_CELL - 1, MW_COLOURS.mapWall);
-        if (square.n !== 3) fillRect(frame, px + 1, py, px + MW_MAP_CELL - 1, py, MW_COLOURS.mapWall);
-      }
-    }
-    // FUN_2000_7c8a (exe 2000:7c8a) fills the character's own square in the next of the sixteen
-    // colours each pass, so it blinks. One colour has to stand for that here.
-    const cx = MW_MAP_LEFT + (MW_MAP_COLUMNS >> 1) * MW_MAP_CELL;
-    const cy = MW_MAP_TOP_PIXELS + (MW_MAP_ROWS >> 1) * MW_MAP_CELL;
-    fillRect(frame, cx + 2, cy + 2, cx + MW_MAP_CELL, cy + MW_MAP_CELL, MW_COLOURS.menuKey);
   }
 </script>
 

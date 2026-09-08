@@ -241,6 +241,13 @@
     return playing ? mapDrawn(mode, playing.memory) : null;
   });
 
+  /**
+   * What the zoom map on the game's own screen knows: in faithful the map the character has
+   * discovered, and in the other two every square, since those are the modes that show the whole
+   * floor.
+   */
+  const zoomMap = $derived(discoveredMap ?? { known: () => true, knownOnArrival: () => true });
+
   /** The mode belongs to the tab; the session carries it so that anything keeping a record of
    *  the run can say which mode it was played in. */
   $effect(() => {
@@ -382,7 +389,7 @@
               height={session.game.pc.height}
               {ladderAt}
               {surfaceFeatureAt}
-              discovered={discoveredMap}
+              discovered={zoomMap}
               mapMonsters={zoomMapMonsters(mode, view)}
               lines={screenLines}
               cleared={screenTakesOver}

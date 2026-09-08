@@ -82,7 +82,7 @@ export const ZOOM_CHUTE_COLOUR = 3;
 /** What the drawing half of the screen needs to know about the floor the character stands on. */
 export interface ZoomMapFloor {
   rows: MapSquare[][];
-  at: { x: number; y: number; dir: number };
+  at: { x: number; y: number };
   /** The map the character has discovered: a square it does not know is not drawn at all, and a
    *  chute is marked only on a square that was already known when they arrived. */
   map: DiscoveredMap;
@@ -147,9 +147,18 @@ export function drawZoomMap(
   }
 }
 
-/** The mark on the character's own square, which both games redraw in a new colour every time
- *  round the loop they wait for a key in and the port draws steadily. */
-export function drawZoomMarker(frame: Frame, window: ZoomMapWindow, style: ZoomMapStyle, dir: number): void {
+/**
+ * The mark on the character's own square, which both games redraw in a new colour every time
+ * round the loop they wait for a key in and the port draws steadily.
+ *
+ * @param dir the way the character faces, which only the arrow uses.
+ */
+export function drawZoomMarker(
+  frame: Frame,
+  window: ZoomMapWindow,
+  style: ZoomMapStyle,
+  dir = 0,
+): void {
   const x = window.left + (window.columns >> 1) * window.cell;
   const y = window.top + (window.rows >> 1) * window.cell;
   if (style.marker.kind === 'cell') {

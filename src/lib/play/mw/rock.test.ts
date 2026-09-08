@@ -1,25 +1,41 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { drawFloor } from '../../map/draw-floor';
-import { MORAFFS_WORLD_MAP } from '../../map/game';
-import { MW_MAP_COLUMNS, MW_MAP_ROWS } from './view3d/screen';
+import { MORAFFS_WORLD_MAP, type MapSquare } from '../../map/game';
+import { newFrame, pixelAt } from '../view3d/frame';
+import { drawMwZoomMap, MORAFFS_WORLD_ZOOM_MAP } from './map';
+import { MW_MAP_COLUMNS, MW_MAP_ROWS, MW_SCREEN_PIXELS } from './view3d/screen';
 
 /**
  * What Moraff's World's map on the game's screen draws of the rock, on a floor the site has
  * revealed whole.
  *
  * `is_solid` (WORLD.EXE 3000:a854) is the same test as Dungeons of the Unforgiven's solidcheck: a
- * wall on all four sides, which nothing stands on and no 3-D view sees into. The map is drawn
- * inside `MwScreen.svelte`, so what can be checked here is the floor it is given and the question
- * it asks about a square.
+ * wall on all four sides, which nothing stands on and no 3-D view sees into.
  */
 
-const source = readFileSync('src/lib/play/mw/MwScreen.svelte', 'utf8');
-
 describe("the map on Moraff's World's screen", () => {
-  it('drops a rock square before it asks what the character knows', () => {
-    expect(source).toContain('if (!square || square.solid) continue;');
-    expect(source).toContain('if (discovered && !discovered.known(x, y)) continue;');
+  it('leaves a rock square blank on a floor the site has revealed whole', () => {
+    const rows = MORAFFS_WORLD_MAP.floor(3, 0);
+    const at = { x: 40, y: 55 };
+    const window = MORAFFS_WORLD_ZOOM_MAP.window(MW_SCREEN_PIXELS);
+    const frame = newFrame(MW_SCREEN_PIXELS.width, MW_SCREEN_PIXELS.height);
+    drawMwZoomMap(frame, { rows, at, map: { known: () => true, knownOnArrival: () => true } });
+    let rock: { column: number; row: number } | null = null;
+    for (let row = 0; row < window.rows && rock === null; row++) {
+      for (let column = 0; column < window.columns; column++) {
+        const square: MapSquare | undefined =
+          rows[at.y + row - (window.rows >> 1)]?.[at.x + column - (window.columns >> 1)];
+        if (square?.solid) {
+          rock = { column, row };
+          break;
+        }
+      }
+    }
+    expect(rock).not.toBeNull();
+    const x = window.left + rock!.column * window.cell;
+    const y = window.top + rock!.row * window.cell;
+    // The box behind the map, which is what a square nothing draws on leaves showing.
+    expect(pixelAt(frame, x + 5, y + 5)).toBe(MORAFFS_WORLD_ZOOM_MAP.box);
   });
 
   it('has rock to drop inside the window it draws', () => {
