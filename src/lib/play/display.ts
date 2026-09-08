@@ -278,6 +278,9 @@ export const ZOOM_SIDE_COLOUR = 15;
  *  above the 640 by 350 one (exe 3000:899e). */
 export const ZOOM_CORNER_COLOUR = 6;
 
+/** The cell size from which a door's tick is drawn as a pair of long lines as well. */
+const DOOR_TICK_PAIR_FROM_CELL = 8;
+
 /** `drawsquare` (exe 3000:87de) and `draw_side` (exe 3000:8432) for every square of the window. */
 function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
   const left = zoomMapLeft(frame.width);
@@ -329,12 +332,37 @@ function drawZoomSquare(frame: Frame, square: MapSquare, x: number, y: number): 
  * edge and the others down its left edge; `x` and `y` are the cell's own corner, so the east and
  * south sides are drawn as the west and north sides of the next cell along.
  *
- * A side the character can walk through is left as the black of the square; every other one is a
- * white line along that edge of the cell, so a secret door and a module teleporter are walls to
- * look at.
+ * Every side but an open one gets a plain line, so a secret door and a module teleporter are
+ * walls to look at. A door gets ticks across it as well, which is the gap in the wall the map
+ * draws a doorway as: a short one three pixels long, and on a cell of eight pixels or more two
+ * longer ones a pixel either side of it. The two halves of the routine differ over that short
+ * tick — the side running along the top draws it only on a cell too small for the long pair,
+ * and the side running down the left draws it always, under the pair.
  */
 function drawZoomSide(frame: Frame, side: number, x: number, y: number, horizontal: boolean): void {
-  if (side === 3) return;
-  if (horizontal) drawLine(frame, x + 1, y, x + ZOOM_CELL - 1, y, ZOOM_SIDE_COLOUR);
-  else drawLine(frame, x, y + 1, x, y + ZOOM_CELL - 1, ZOOM_SIDE_COLOUR);
+  if (side !== 3) {
+    if (horizontal) drawLine(frame, x + 1, y, x + ZOOM_CELL - 1, y, ZOOM_SIDE_COLOUR);
+    else drawLine(frame, x, y + 1, x, y + ZOOM_CELL - 1, ZOOM_SIDE_COLOUR);
+  }
+  if (side !== 1) return;
+  const middle = ZOOM_CELL >> 1;
+  const reach = Math.trunc(ZOOM_CELL / 3);
+  const long = ZOOM_CELL >= DOOR_TICK_PAIR_FROM_CELL;
+  if (horizontal) {
+    if (long) {
+      drawLine(frame, x + middle - 1, y - reach, x + middle - 1, y + reach, ZOOM_SIDE_COLOUR);
+      drawLine(frame, x + middle + 1, y - reach, x + middle + 1, y + reach, ZOOM_SIDE_COLOUR);
+      return;
+    }
+    drawLine(frame, x + middle, y - 1, x + middle, y + 1, ZOOM_SIDE_COLOUR);
+    return;
+  }
+  // A door on a side too near the right of the screen draws no tick at all: the game works out
+  // where the right-hand end would reach and gives up when that is past the last column.
+  if (x + reach >= frame.width - 1) return;
+  if (long) {
+    drawLine(frame, x - reach, y + middle + 1, x + reach, y + middle + 1, ZOOM_SIDE_COLOUR);
+    drawLine(frame, x - reach, y + middle - 1, x + reach, y + middle - 1, ZOOM_SIDE_COLOUR);
+  }
+  drawLine(frame, x - 1, y + middle, x + 1, y + middle, ZOOM_SIDE_COLOUR);
 }
