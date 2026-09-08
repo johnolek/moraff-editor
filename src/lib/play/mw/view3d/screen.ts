@@ -12,8 +12,39 @@ import type { ZoomMapWindow } from '../../zoom-monsters';
 export const MW_SCREEN_UNITS_X = 1600;
 export const MW_SCREEN_UNITS_Y = 1200;
 
-/** The video mode John's screenshots are in: 640 by 480 in 256 colours, MW.EXE's mode 11. */
-export const MW_SCREEN_PIXELS = { width: 640, height: 480 } as const;
+/** One of the twelve screens the game can run in. */
+export interface MwVideoMode {
+  /** The number DS:cd94 holds, which is what the code branches on. */
+  mode: number;
+  width: number;
+  height: number;
+  colours: number;
+}
+
+/**
+ * The twelve video modes, from the switch in FUN_2000_1485 (WORLD.EXE 2000:1485, mw.c
+ * "FUN_2000_1485"). Each case sets the screen's last column at DS:cd96 and its last row at
+ * DS:cd9a — one less than the sizes below — and the number of colours at DS:cdd5.
+ */
+export const MW_VIDEO_MODES: MwVideoMode[] = [
+  { mode: 0, width: 720, height: 348, colours: 2 },
+  { mode: 1, width: 320, height: 200, colours: 4 },
+  { mode: 2, width: 320, height: 200, colours: 16 },
+  { mode: 3, width: 320, height: 200, colours: 256 },
+  { mode: 4, width: 360, height: 480, colours: 256 },
+  { mode: 5, width: 640, height: 350, colours: 16 },
+  { mode: 6, width: 640, height: 480, colours: 16 },
+  { mode: 7, width: 800, height: 600, colours: 16 },
+  { mode: 8, width: 1024, height: 768, colours: 16 },
+  { mode: 9, width: 1024, height: 768, colours: 256 },
+  { mode: 10, width: 1024, height: 768, colours: 256 },
+  { mode: 11, width: 640, height: 480, colours: 256 },
+];
+
+/** The mode the game is played in here: 1024 by 768 in 256 colours, which is the one John's
+ *  screen recording is of. */
+export const MW_SCREEN_MODE = MW_VIDEO_MODES[9];
+export const MW_SCREEN_PIXELS = { width: MW_SCREEN_MODE.width, height: MW_SCREEN_MODE.height } as const;
 
 /**
  * Which of the four views a number means, as FUN_3000_1a08 (WORLD.EXE 3000:1a08) takes it. The
@@ -68,16 +99,20 @@ export const MW_KEY_MENU_RECT: ViewRect = { left: 1162, top: 0, right: 0x63f, bo
 
 /**
  * The zoom map at the far left of the middle band, from set_map_view (exe 2000:3ae1) and
- * FUN_3000_b066 (exe 3000:b066) in a 640 by 480 mode: a cell is 8 pixels, and the map is 14
- * columns by 30 rows with the character always in the middle of it.
+ * FUN_3000_b066 (exe 3000:b066). The cell size goes to DS:4488, the columns to DS:4489 and the
+ * rows to DS:448a out of a table the video mode indexes: 8 pixels in 14 columns by 30 rows on a
+ * 640 by 480 screen, and 10 in 18 by 38 on a 1024 by 768 one. The character is always in the
+ * middle of it.
  */
-export const MW_MAP_CELL = 8;
-export const MW_MAP_COLUMNS = 14;
-export const MW_MAP_ROWS = 30;
+export const MW_MAP_CELL = 10;
+export const MW_MAP_COLUMNS = 18;
+export const MW_MAP_ROWS = 38;
 /** DS:448f, which holds 4 and which nothing in the executable ever assigns. */
 export const MW_MAP_LEFT = 4;
-/** DS:cd7e and DS:4491, both `0x1ae * height / 0x4b0`, which is 171 rows down a 480-row screen. */
-export const MW_MAP_TOP_PIXELS = 171;
+/** DS:cd7e and DS:4491, both `0x1ae * maxY / 0x4b0`: 171 rows down a 480-row screen and 274 down
+ *  a 768-row one. */
+export const mwMapTop = (height: number): number => Math.trunc((0x1ae * (height - 1)) / 0x4b0);
+export const MW_MAP_TOP_PIXELS = mwMapTop(MW_SCREEN_PIXELS.height);
 
 /** The same map as one window, for anything drawn on top of it. */
 export const MW_ZOOM_MAP: ZoomMapWindow = {

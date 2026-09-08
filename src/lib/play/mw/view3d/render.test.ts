@@ -160,7 +160,12 @@ describe('a synthetic corridor', () => {
 describe('the floor colour sets', () => {
   it('keeps eleven of them, one per floor mod eleven', () => {
     expect(mwPalettes.palettes).toHaveLength(11);
-    for (const palette of mwPalettes.palettes) expect(palette).toHaveLength(32);
+    for (const palette of mwPalettes.palettes) expect(palette).toHaveLength(48);
+  });
+
+  it('keeps seven grounds, one per floor mod seven', () => {
+    expect(mwPalettes.grounds).toHaveLength(7);
+    for (const ground of mwPalettes.grounds) expect(ground).toHaveLength(16);
   });
 
   it('gives every floor the same fifteen text colours', () => {
