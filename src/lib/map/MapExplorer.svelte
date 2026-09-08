@@ -82,7 +82,7 @@
   const explored = $derived(exploredFiles.get(exploredKey) ?? NO_EXPLORED_FLOORS);
   const exploredHere = $derived(explored.get(floor) ?? null);
   const exploredCount = $derived(exploredHere ? exploredCounts(rows, exploredHere, game.area) : { seen: 0, rock: 0 });
-  const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
+  const cursorSquare = $derived(cursor ? (rows[cursor.y]?.[cursor.x] ?? null) : null);
   const cursorFeature = $derived(cursor && cursorSquare ? squareFeature(game, dungeon, floor, cursorSquare, cursor.x, cursor.y) : null);
   const cursorDescription = $derived(cursor && cursorSquare ? describeSquare(cursorSquare, cursorFeature, cursor.x, cursor.y, game, dungeon) : null);
   const cursorNotes = $derived(
@@ -203,6 +203,10 @@
     if (place.square) {
       cursor = place.square;
       floorCanvas.reveal(place.square);
+    } else if (cursor && !isOnMap(cursor, game.area)) {
+      // A game switch keeps the cursor, and another game's floor can be smaller than the square it
+      // was left on.
+      cursor = null;
     }
   }
 
