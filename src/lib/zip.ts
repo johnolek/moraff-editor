@@ -8,7 +8,7 @@
 
 export interface ZipEntry {
   name: string;
-  bytes: Uint8Array;
+  bytes: Uint8Array<ArrayBuffer>;
 }
 
 const LOCAL_HEADER = 0x04034b50;

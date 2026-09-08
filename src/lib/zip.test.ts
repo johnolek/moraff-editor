@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { crc32, zipBytes, type ZipEntry } from './zip';
 
 /** The files a zip holds, read back out of its central directory the way an unzipper does. */
-function unzip(zip: Uint8Array): ZipEntry[] {
+function unzip(zip: Uint8Array<ArrayBuffer>): ZipEntry[] {
   const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
   let end = zip.length - 22;
   while (end >= 0 && view.getUint32(end, true) !== 0x06054b50) end--;
