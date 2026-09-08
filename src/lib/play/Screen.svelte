@@ -139,7 +139,7 @@
     drawScreenFurniture(frame, {
       rows,
       at: { x: place.x, y: place.y, dir: place.dir },
-      known: (x, y) => discovered.known(x, y),
+      map: discovered,
       monsters: mapMonsters,
     });
     const rgba = toRgba(frame, sectionPalette(place.module + 1, part, game.colourSetting));

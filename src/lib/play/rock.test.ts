@@ -63,7 +63,7 @@ function cellColours(frame: Frame, column: number, row: number): Set<number> {
 
 function screenOf(rows: MapSquare[][], at: { x: number; y: number }): Frame {
   const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
-  drawScreenFurniture(frame, { rows, at: { ...at, dir: 0 }, known: REVEALED.known });
+  drawScreenFurniture(frame, { rows, at: { ...at, dir: 0 }, map: REVEALED });
   return frame;
 }
 

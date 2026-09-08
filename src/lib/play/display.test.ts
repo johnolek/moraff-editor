@@ -188,6 +188,9 @@ describe('the zoom map', () => {
   });
 });
 
+/** A floor every square of which the character knows, which is the two revealed modes. */
+const REVEALED = { known: () => true, knownOnArrival: () => true };
+
 describe('the monsters debug mode marks on the zoom map', () => {
   /** A floor of open squares, big enough for the whole window of the map. */
   const open = (): MapSquare => ({ n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1 });
@@ -207,7 +210,7 @@ describe('the monsters debug mode marks on the zoom map', () => {
     drawScreenFurniture(frame, {
       rows,
       at,
-      known: () => true,
+      map: REVEALED,
       monsters: zoomMapMonsters(mode, { monsters: outOfSight }),
     });
     const map = zoomMapWindow(frame.width);

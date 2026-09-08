@@ -1,4 +1,5 @@
 import { expLabel, levelLabel } from '../character/record';
+import type { DiscoveredMap } from '../map/draw-floor';
 import type { MapSquare } from '../map/game';
 import { ARMOR_NAMES, WEAPON_NAMES } from '../game/port/drops';
 import type { PlayerCharacter, ScreenLine } from '../game/port/state';
@@ -239,8 +240,9 @@ export function arrowPixel(
 export interface ZoomMapFloor {
   rows: MapSquare[][];
   at: { x: number; y: number; dir: number };
-  /** The map the character has discovered: a square it does not know is not drawn at all. */
-  known(x: number, y: number): boolean;
+  /** The map the character has discovered: a square it does not know is not drawn at all, and a
+   *  chute is marked only on a square that was already known when they arrived. */
+  map: DiscoveredMap;
   /** The monsters to mark on the map, which the game never marks and debug mode always does. */
   monsters?: { x: number; y: number }[];
 }
@@ -275,7 +277,7 @@ function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
   for (let column = 0; column < ZOOM_COLUMNS; column++) {
     for (let row = 0; row < ZOOM_ROWS; row++) {
       const square = zoomMapSquare(floor.at, column, row);
-      if (!floor.known(square.x, square.y)) continue;
+      if (!floor.map.known(square.x, square.y)) continue;
       const here = floor.rows[square.y]?.[square.x];
       // Rock is never drawn. solidcheck calls a square rock when it has a wall on all four
       // sides, and nothing ever stands on one: a step cannot reach it and no 3-D view sees
