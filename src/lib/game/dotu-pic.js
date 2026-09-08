@@ -49,15 +49,18 @@ export const vgaToRgb = pal => pal.map(([r, g, b]) => [r * 255 / 63 | 0, g * 255
  *  tint = monster.color, colorSet = monster.colorSet, base = colorSet << 4.
  *  Which pixel value carries the tint depends on the base: 28 for bases 0x20 and 0x40,
  *  17 for every other base.  The drawer skips that pixel when the tint equals the base
- *  (0x20/0x40) or when the tint is 0 (any other base); otherwise the tint is used as a raw
- *  palette index — the base is NOT added to it.  Every other value lands at v + base. */
+ *  (0x20/0x40) or when the tint is 0 (any other base).  In the 0x20 and 0x40 banks the tint
+ *  is a palette entry in its own right; in every other bank the drawer puts the tint in the
+ *  pixel's place and then adds the base to it like any other value.  Every other value lands
+ *  at v + base. */
 export function monsterPixelIndex(v, tint, colorSet) {
   if (v === 0) return -1;
   const base = colorSet << 4;
   if (base === 0x20 || base === 0x40) {
-    if (v === 28) return tint === base ? -1 : tint;
+    if (v === 28) return tint === base ? -1 : tint & 0xff;
   } else if (v === 17) {
-    return tint === 0 ? -1 : tint;
+    if (tint === 0) return -1;
+    v = tint;
   }
   return (v + base) & 0xff;
 }

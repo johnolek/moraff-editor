@@ -35,6 +35,22 @@ describe('the bundled picture files', () => {
   });
 });
 
+describe('monsterPixelIndex', () => {
+  it("adds the colour set's base to the tint outside the 0x20 and 0x40 banks", () => {
+    const giantBallColour = 5;
+    const giantBallColourSet = 1;
+    expect(monsterPixelIndex(17, giantBallColour, giantBallColourSet)).toBe(0x15);
+
+    const wallTint = 12;
+    const wallColourSet = 5;
+    expect(monsterPixelIndex(17, wallTint, wallColourSet)).toBe(0x5c);
+  });
+
+  it('leaves the tint pixel undrawn when the tint is 0', () => {
+    expect(monsterPixelIndex(17, 0, 0)).toBe(-1);
+  });
+});
+
 describe('renderMonster', () => {
   const named = (name: string) => allMonsters().find((m) => m.name === name)!;
 
