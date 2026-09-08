@@ -55,8 +55,8 @@ describe('an SVGA line of text', () => {
     const rows = [...new Set(on.map((p) => p.y))].sort((a, b) => a - b);
     // The glyph box is ten pixels by eighteen at 1024 by 768, and the pen runs each stroke one
     // pixel further out at both ends, so the letter comes to twelve by twenty.
-    expect(columns.at(-1)! - columns[0] + 1).toBe(12);
-    expect(rows.at(-1)! - rows[0] + 1).toBe(20);
+    expect(columns[columns.length - 1] - columns[0] + 1).toBe(12);
+    expect(rows[rows.length - 1] - rows[0] + 1).toBe(20);
     // Between the uprights only the crossbar is drawn, and it is as tall as the pen.
     const middle = on.filter((p) => p.x === columns[0] + 6);
     expect(middle).toHaveLength(3);
