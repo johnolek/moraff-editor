@@ -40,10 +40,6 @@ describe('monsterPixelIndex', () => {
     const giantBallColour = 5;
     const giantBallColourSet = 1;
     expect(monsterPixelIndex(17, giantBallColour, giantBallColourSet, 0)).toBe(0x15);
-
-    const wallTint = 12;
-    const wallColourSet = 5;
-    expect(monsterPixelIndex(17, wallTint, wallColourSet, 0)).toBe(0x5c);
   });
 
   it('leaves the tint pixel undrawn when the tint is 0', () => {

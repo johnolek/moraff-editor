@@ -16,6 +16,17 @@ export const WALL_MATERIALS = [3, 4, 5] as const;
 export const FLOOR_TILES = [6, 7, 8, 9] as const;
 
 /**
+ * The bank the wall drawer lifts a picture value below 16 into: `FUN_4000_4f8f` adds DS:4fc3
+ * (exe 4000:549d), and that byte holds 16 and is never written anywhere in the executable, so a
+ * wall is always drawn in entries 16 to 31 — the section's own wall colours, which `set_palette`
+ * (exe 4000:12c3) fills from one of four colour sets by section-within-module.
+ *
+ * The 0x50 `draw_3d_view` writes (exe 3000:0f75) is a different byte, DS:4fc1, and belongs to
+ * `scale_image2`: it is the bank the floor and ceiling tiles are drawn from, not the walls.
+ */
+export const WALL_BASE = 16;
+
+/**
  * The first entry of the gradient bank the wall drawer reads for picture values 18 and 19, which
  * `FUN_4000_4f8f` adds after shifting the screen column (exe 4000:5419). Only the teleporter sign
  * has any pixel that high; the doors and the three wall materials stop at 15.
