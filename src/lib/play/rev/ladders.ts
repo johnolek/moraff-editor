@@ -48,26 +48,29 @@ export function revFeatureUnder(column: number, row: number, level: number): num
 /**
  * 1000:0642: the top of every pass, where the game works out what is underfoot and says so.
  *
- * A chute is not a prompt — 1000:552B sends it straight to the fall — so the caller runs that
- * first and this is only ever asked about a square the character is still standing on.
+ * The town takes a detour first — 1000:12C6, which puts the rope up over one of the ten building
+ * squares — and then rejoins at 1000:064D, so a town square carries a ladder down and says so
+ * exactly as a dungeon square does.
+ *
+ * A chute is not a prompt: 1000:552B sends it straight to the fall, so the caller runs that first
+ * and this is only ever asked about a square the character is still standing on.
  */
 export function revLookDown(game: RevGame): void {
   const pc = game.pc;
-  game.prompt = null;
-  if (pc.dungeonLevel === 0) {
-    if (townBuilding(pc.column, pc.row) > 0) game.prompt = ROPE_ABOVE;
-    return;
-  }
+  const lines: string[] = [];
+  if (pc.dungeonLevel === 0 && townBuilding(pc.column, pc.row) > 0) lines.push(ROPE_ABOVE);
   const code = game.feature;
   if (code > DEEPEST_LADDER) {
     // 1000:064D: a square over the last chute's landing lets the fall go on another level.
     const landing = game.chuteLanding;
     if (landing && landing.column === pc.column && landing.row === pc.row && landing.level === pc.dungeonLevel) {
       game.feature = 1;
-      game.prompt = `${FALSE_FLOOR} ${GO_DOWN}`;
+      lines.push(`${FALSE_FLOOR} ${GO_DOWN}`);
     }
-    return;
+  } else if (code < 0) {
+    lines.push(`${LADDER_GOING}${UP} ${GO_UP}`);
+  } else if (code >= 1) {
+    lines.push(`${LADDER_GOING}${DOWN} ${GO_DOWN}`);
   }
-  if (code < 0) game.prompt = `${LADDER_GOING}${UP} ${GO_UP}`;
-  else if (code >= 1) game.prompt = `${LADDER_GOING}${DOWN} ${GO_DOWN}`;
+  game.prompt = lines.length > 0 ? lines.join('  ') : null;
 }

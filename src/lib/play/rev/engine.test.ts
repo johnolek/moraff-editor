@@ -150,3 +150,36 @@ describe('the monsters', () => {
 it('is the tick input, not a key', () => {
   expect(REV_CLOCK_TICK).toBeLessThan(0);
 });
+
+describe('the town', () => {
+  it('has ladders down of its own, which D takes', async () => {
+    // (15, 5) of the town is one of its ten ladders down, and spans two levels.
+    const { session } = await playing(5, record({ 23: 15, 24: 5 }));
+    expect(session.view().prompt).toContain('D-GO DOWN');
+    session.press(REV_KEY.down);
+    await settled();
+    expect(session.view().place.level).toBe(2);
+    session.finish();
+  });
+
+  it('climbs the rope into the Flea Bag Inn and takes the ten jewel pieces', async () => {
+    const { session } = await playing(5, record({ 23: 7, 24: 3, 19: 223 + 40 }));
+    session.press(REV_KEY.up);
+    await settled();
+    expect(session.view().box.join(' ')).toContain('Flea Bag Inn');
+    session.press('Y'.charCodeAt(0));
+    await settled();
+    expect(Math.trunc(session.game.pc.money)).toBe(30);
+    session.finish();
+  });
+
+  it('throws a character out of the Kings Inn who cannot pay for it', async () => {
+    const { session } = await playing(5, record({ 23: 18, 24: 17 }));
+    session.press(REV_KEY.up);
+    await settled();
+    session.press('Y'.charCodeAt(0));
+    await settled();
+    expect(session.view().box.join(' ')).toContain('gaurd throws you out');
+    session.finish();
+  });
+});

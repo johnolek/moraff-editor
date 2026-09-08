@@ -95,18 +95,18 @@ describe('what is underfoot', () => {
 });
 
 describe('the line under the map', () => {
-  it('offers the way down on a ladder down', () => {
+  it('offers the way down on one of the towns own ten ladders', () => {
     const game = newRevGame(character({ column: 15, row: 5, dungeonLevel: 0 }), new SeededRng(1));
     game.feature = revFeatureUnder(15, 5, 0);
-    game.pc.dungeonLevel = 1;
     revLookDown(game);
     expect(game.prompt).toContain('D-GO DOWN');
   });
 
-  it('offers the rope on one of the town squares', () => {
+  it('offers the rope on one of the town squares, and the ladder under it too', () => {
     const game = newRevGame(character({ column: 7, row: 3, dungeonLevel: 0 }), new SeededRng(1));
+    game.feature = revFeatureUnder(7, 3, 0);
     revLookDown(game);
-    expect(game.prompt).toBe("There's a rope above. Hit U to climb it.");
+    expect(game.prompt).toContain("There's a rope above. Hit U to climb it.");
   });
 
   it('calls the square a chute left the character on a false floor', () => {

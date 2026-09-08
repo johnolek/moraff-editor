@@ -7,7 +7,7 @@ import { revMeetMonster, revMonsterAnswers, revOwnsWeapon, revSwing, revWeaponFo
 import { revMonsterAttack } from './attack';
 import { revKillMonster } from './kill';
 import { REV_KEY, revArrowMode, revCompassArrow, revTurningArrow, revWrapFacing } from './keys';
-import { revFeatureUnder, revLookDown, REV_NOTHING } from './ladders';
+import { revFeatureUnder, revLookDown } from './ladders';
 import { RevMapMemory, type RevMapStore } from './memory';
 import { DEFAULT_PLAY_MODE, type PlayMode } from '../mode';
 import { revStep } from './move';
@@ -469,7 +469,7 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     // 1000:05F2: the facing is brought back into 1 to 4 at the top of every pass.
     pc.facing = revWrapFacing(pc.facing);
     game.memory.markStep(pc.column, pc.row, pc.dungeonLevel);
-    game.feature = pc.dungeonLevel === 0 ? REV_NOTHING : revFeatureUnder(pc.column, pc.row, pc.dungeonLevel);
+    game.feature = revFeatureUnder(pc.column, pc.row, pc.dungeonLevel);
     if (game.feature === 0) {
       // 1000:552B sends a chute straight to the fall rather than putting a prompt up.
       revFallDownAChute(game, () => session.save());
