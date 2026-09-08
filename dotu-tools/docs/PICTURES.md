@@ -99,36 +99,44 @@ CALLOTHER callback (`(seg << 4) + off`), and Ghidra mis-emulates Borland's `retf
 the long-division helpers (`N_LDIV`/`N_LUDIV`/`N_LMOD`/`N_LUMOD`), so those four are
 computed in the script.
 
-## 4. Colour rules when drawing (scale_image2, colour set < 0x100)
+## 4. Colour rules when drawing (`scale_image2` 4000:4818)
 
-The drawer dispatches on the colour-set base (`base = colorSet << 4`), and the two branches
-are not two settings of one rule — they are different rules.  `tint` is the monster's
-`color` byte.
+The drawer dispatches on the colour-set base, which it keeps in DS:4fc1 (a monster's is
+`colorSet << 4`), and the two branches are not two settings of one rule — they are different
+rules.  `tint` is DS:4fbd, the monster's `color` byte.  Addresses below are offsets in the
+4000 segment, read out of `scale_image2`'s instructions.
 
-Bases 0x20 and 0x40 (0x40 behaves the same way, with 0x40 wherever 0x20 appears):
-
-```
-v == 0                     not drawn
-v == 28 and tint == base   not drawn
-v < 28                     index = v + base
-v == 28                    index = tint          # a palette entry in its own right, no base added
-v == 30                    index = ((yTop + row) % 160) + 0x60
-v == 29 or v == 31         index = 0xff - ((yTop + row) % 160)
-```
-
-Every other base below 0x100 — 0x00, 0x10 and the 3-D walls' 0x50 among them:
+Bases 0x20 and 0x40, dispatched at 4bcc and 4ce8, are one rule written out twice (0x40
+wherever 0x20 appears):
 
 ```
-v == 0                     not drawn
-v == 17 and tint == 0      not drawn
-then, in this order:       if v == 17: v = tint
-                           if v == 16: v = 0
-                           if v == 18: v = secondTint
-index = (v + base) & 0xff                        # the base is added to the tint as well
+v == 0                     not drawn                                         4bd6
+v == 28 and tint == base   not drawn                                         4bdf, 4be5
+v < 28                     index = v + base                                  4c5c, 4c62
+v == 28                    index = tint   # an entry in its own right, no base added   4c68
+v == 30                    index = (gradientRow % 160) + 0x60                4c76
+v == 29 or v == 31         index = 0xff - (gradientRow % 160)                4c90
 ```
 
-Base 0x100 adds 0x20 and base 0x101 adds 0x3f (the town buildings, below).  Any other base
-draws nothing.
+Every other base below 0x100 — 0x00, 0x10 and the 3-D walls' 0x50 among them, and the
+negative bases the water overlay uses — is dispatched at 4e04:
+
+```
+v == 0                     not drawn                                         4e0f
+v == 17 and tint == 0      not drawn                                         4e18
+then, in this order:       if v == 17: v = tint                              4e93
+                           if v == 16: v = 0                                 4e9f
+                           if v == 18: v = secondTint                        4eaa
+index = (v + base) & 0xff  # a byte add, to the tint as much as to anything  4ebe
+```
+
+Base 0x100 adds 0x20 and base 0x101 adds 0x3f (the town buildings, below; 4ee5 and 4f1e).
+Any other base draws nothing.
+
+`gradientRow` is the rectangle's top edge, scaled from the 1600x1200 space to a screen row
+the way every corner is (4929), plus the row within the rectangle: the drawer adds the two at
+4c7c.  It works that out before it mirrors, so a picture drawn upside down carries its
+shading over with it rather than leaving it on the screen.
 
 Four things here are easy to get wrong.
 
@@ -146,13 +154,13 @@ picture that first confirmed the rule is colour set 2, where the tint really is 
 by the next step, which turns it into 0.
 
 **Values 29 to 31 take no colour from the picture at all.**  They read the gradient bank at
-entries 96..255 that 4000:1150 builds, indexed by the screen row the pixel lands on: the
-caller's top y in the game's 1600x1200 coordinate space, plus the destination row, taken
-modulo 160.  Value 30 counts up the bank; 29 and 31 count down it.  A pixel drawn this way
-changes colour with its height on the screen, so where the picture is placed changes how it
-looks: the monster manual draws at top y 25 and the 3-D view at a top y that depends on how
-far away the monster is.  The site draws pictures at their own size at the top of the
-screen, so it uses the picture's own row.
+entries 96..255 that `gradient_palette` 4000:1150 builds, indexed by `gradientRow` above.
+Value 30 counts up the bank; 29 and 31 count down it.  A pixel drawn this way changes colour
+with its height on the screen, so where the picture is placed changes how it looks: the
+monster manual draws each monster from top y 720 to 1120 (`monster_manual` 3000:c39d, which
+also mirrors the fifth), and the 3-D view at a top y that depends on how far away the monster
+is.  The site draws pictures at their own size at the top of the screen, so it uses the
+picture's own row.
 
 Value 29 appears in no monster picture.  Values 30 and 31 appear only in the Gargalon, the
 Squishy Cube, the Khagistoll, the Rotten Swamp Plant and the Shadow bosses that share those
@@ -161,8 +169,9 @@ pictures — all colour set 2.  Every colour set 0 and colour set 1 monster pict
 and so does the wall material image of `ufwall1`..`ufwall4`.
 
 The drawer has two more paths that only run in 16-colour modes: it dithers odd rows when the
-resolution mode at DS:c6a8 is 0, and darkens entries 33..47 on odd columns when the colour
-count at DS:c6e9 is 16.  `dotu-pic.js` and `render_monsters.py` cover 256-colour mode only
+resolution mode at DS:c6a8 is 0 (4bef in the 0x20 and 0x40 banks, 4e28 in the others), and
+darkens entries 33..47 on odd rows when the colour count at DS:c6e9 is 16 — that one only in
+the 0x20 and 0x40 banks (4ca4).  `dotu-pic.js` and `render_monsters.py` cover 256-colour mode only
 and leave both out.
 
 Confirmed against an in-game screenshot of the Ogeroth (section 20, colour set 2, tint 52):
