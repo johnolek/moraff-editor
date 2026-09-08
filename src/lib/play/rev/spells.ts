@@ -376,6 +376,10 @@ export function revEndPreppedSpells(game: RevGame): void {
  */
 export function revCountDownBattleSpells(game: RevGame): void {
   const pc = game.pc;
+  // 1000:0A2B: the pass after the character has taken their turn in a fight skips all of this,
+  // counter and all. Nothing moves the counter inside a fight anyway — the only key that does is
+  // a step, and a step walks away from the monster — so this is the whole of that test here.
+  if (game.fight !== null) return;
   if (game.steps > BATTLE_SPELL_STEPS) game.steps = 1;
   if (revValue(pc, REV_MAGIC.battleSpeed) === game.steps) {
     setRevValue(pc, REV_MAGIC.battleSpeed, 0);

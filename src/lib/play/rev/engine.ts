@@ -3,13 +3,7 @@ import type { Rng } from '../../game/port/rng';
 import { REV_POLLS_PER_TICK, REV_TICK_MS, revPoll } from './clock';
 import { revFallDownAChute } from './chute';
 import type { RevMagicDesk } from './desk';
-import {
-  REV_FOUNTAIN_PROMPT,
-  revAtTheFountain,
-  revDrinkFromTheFountain,
-  revNeedsAFountain,
-  revRollTheFountain,
-} from './fountain';
+import { revAtTheFountain, revDrinkFromTheFountain, revNeedsAFountain, revRollTheFountain } from './fountain';
 import {
   revBreatheFire,
   revMagicItemsOwned,

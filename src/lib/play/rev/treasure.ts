@@ -147,6 +147,9 @@ async function offerTheCoins(game: RevGame, desk: RevMagicDesk): Promise<void> {
   for (;;) {
     game.say(REV_TAKE_OR_LEAVE);
     const key = await desk.poll();
+    // The original asks again for anything that is neither, which for the space it hands back
+    // while a monster stands on the square is forever; a browser cannot spin there, so the pile
+    // is left behind.
     if (key === null || LEAVE_KEYS.includes(key)) return;
     if (!TAKE_KEYS.includes(key)) continue;
     pc.weight += coins.weight;
