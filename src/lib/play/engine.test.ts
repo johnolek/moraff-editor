@@ -271,6 +271,25 @@ describe('the message box', () => {
     expect(session.box[0]).toContain('THERE IS NO LADDER HERE');
   });
 
+  it('wipes the block when the monster the banner named is not ahead any more', async () => {
+    const start = findSquare(3, (square) => square.n === 3);
+    const session = playing(characterFile({ level: 3, dir: 0, ...start }));
+    const game = session.game;
+    const monster = game.monsters[0];
+    game.monsterMap[monster.y * 80 + monster.x] = 0xff;
+    monster.x = start.x;
+    monster.y = start.y - 1;
+    game.monsterMap[monster.y * 80 + monster.x] = 0;
+    await press(session, KEY.escape);
+    expect(session.view().banner[0]).toContain('YOU ARE FIGHTING A LEVEL');
+    game.say('SAID WHILE IT WAS STANDING THERE');
+    game.monsterMap[monster.y * 80 + monster.x] = 0xff;
+    monster.x = 1;
+    monster.y = 1;
+    await press(session, KEY.escape);
+    expect(session.box).toEqual([]);
+  });
+
   it('takes the box and the line above it off with the key its wait asks for', async () => {
     const session = playing(characterFile({ level: 0, ...townWalk() }));
     await settle();

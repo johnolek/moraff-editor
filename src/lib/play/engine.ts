@@ -367,11 +367,19 @@ export class GameSession {
    * which the original prints beside the monster rather than in the message box.
    */
   showBanner(): void {
+    const game = this.game;
     this.banner = [];
-    if (this.game.engagedAhead === -1) return;
-    this.sayingBanner = true;
-    engagementTiming(this.game);
-    this.sayingBanner = false;
+    if (game.engagedAhead !== -1) {
+      this.sayingBanner = true;
+      engagementTiming(game);
+      this.sayingBanner = false;
+      return;
+    }
+    // movecontrol at 2000:c613: the banner is up and nothing is standing ahead any more, so the
+    // block it was printed down is wiped, and whatever else was on it goes at the same time.
+    if (!game.battleInfoOn) return;
+    game.battleInfoOn = false;
+    this.wipeMessageBlock();
   }
 
   /**
