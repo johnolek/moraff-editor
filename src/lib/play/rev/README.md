@@ -43,6 +43,10 @@ BASIC.
 * **`monsters.ts`** — the occupancy grid, the stocking, and the turn one monster takes.
   **`clock.ts`** — the poll those turns are rolled in.
 * **`memory.ts`** — `DIM M(20, 71)`, and the `<n>.BIN` it is saved as.
+* **`screen/`** — the screen the game draws, as a 320 by 200 buffer of colour indexes: the four
+  3-D views and the box between them (`views.ts`, `monsters.ts`), the map of the squares walked on
+  (`map.ts`), everything printed (`text.ts`), and `screen.ts` to put them together.
+  `rev-tools/reference/render_screen.mjs` writes one out as a PNG.
 * **`RevPlay.svelte`** — the tab. **`RevPanel.svelte`** — the numbers the game keeps and never
   prints, which `../mode.ts` shows in debug alone.
 
@@ -115,16 +119,17 @@ Three things are this game's own:
   `../../game/port/rng.ts`, the same generator the other two games are played on. `RND` in BASIC
   is a fraction and `INT(RND * n)` is what the game always writes, which is exactly what
   `rng.random(n)` gives.
-* **The map is drawn instead of the four 3-D views.** What those views would have shown is worked
-  out nowhere, because in this game they mark nothing: the map is the squares walked on, full stop.
-  In speedrun and debug the whole level is drawn instead (`../mode.ts`).
+* **The four 3-D views are drawn.** They still mark nothing — the map is the squares walked on,
+  full stop — but what they show is now worked out and drawn, monsters and all (`screen/`). In
+  speedrun and debug the map beside them is the whole level rather than the walked squares
+  (`../mode.ts`), and the site's own top-down map is still a switch away on the tab.
 * **The letters are read in capitals.** There is no `UCASE$` anywhere in the module, so a
   lower-case `d` matches none of the branches and does nothing at all. This port reads the
   character as typed and behaves the same way; the buttons under the map send capitals.
-* **The words are a box beside the map** rather than `LOCATE`d text over a `SCREEN 1` display. The
-  message box, the line of advice at the top of every pass, the fight's own strip and the
-  ladder-and-rope prompt are kept apart the way the screen keeps them apart, and every line in them
-  is the literal the executable holds.
+* **The words go where the game `LOCATE`s them** — the message rows top left, the spells top
+  right, `EXP. VALUE:` at the bottom — and every line in them is the literal the executable holds.
+  What the port keeps in three lists rather than at rows is put back on rows in
+  `screen/from-game.ts`.
 * **`1.NUM` and `2.NUM` last as long as the tab.** The original saves them on the way out
   (`1000:B5C8`), so the monsters are the state of the disk and are shared by every character on it.
   A browser has no disk to share, so each session starts from the shipped tables.
@@ -138,7 +143,7 @@ Three things are this game's own:
 * **The character file is the roster entry.** The save writes the real 340-number text record, so
   a character can be downloaded and played on in DOS. A death writes nothing; the roster marks the
   entry and keeps the bytes.
-* **The town's pictures are not drawn**, and neither are the monsters'.
+* **The town's pictures are not drawn.** The monsters' are.
 * **The four keys about the screen keep their numbers and nothing plays.** `#`, `@` and `E` write
   the background colour, the palette and the redraw delay the way the game does, and `settings.ts`
   is where the display reads them; nothing here redraws on a timer, so the delay is only kept. `O`
