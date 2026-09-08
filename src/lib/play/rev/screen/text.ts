@@ -16,6 +16,10 @@ export const MESSAGE_ROWS = 4;
 /** The five spells the panel lists, in the rows they are printed on (1000:02D6). */
 export const SPELL_NAMES = ['SPD A', 'STR A', 'STR P', 'SPD P', 'INVIS'];
 
+/** Which values of the character record hold the five counters: elements 1 to 5 of the singles
+ *  at DGROUP 6020, which the list is drawn from (1000:4AEE). */
+export const SPELL_VALUES = [27, 28, 29, 30, 31];
+
 /** A fight, as the three lines at the top of the screen say it (1000:7FCB, 8553, 8588). */
 export interface RevFightLines {
   monsterName: string;

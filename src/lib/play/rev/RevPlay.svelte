@@ -21,6 +21,8 @@
   } from './engine';
   import { REV_FIGHT_KEY_BUTTONS, REV_INTERCEPTED_KEYS, REV_KEY_BUTTONS, revGameKey } from './keys';
   import { revCharacterMap } from './memory';
+  import RevScreenCanvas from './screen/RevScreenCanvas.svelte';
+  import { revScreenStateOf } from './screen/from-game';
 
   /** How many pixels a square is drawn at when the map is centred on the character. */
   const PLAY_CELL = 26;
@@ -41,6 +43,8 @@
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredLevel = $state.raw<number | null>(null);
   let mode = $state<PlayMode>(readPlayMode('revenge'));
+  /** Whether the tab shows the game's own screen or the site's top-down map. */
+  let showScreen = $state(true);
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -72,6 +76,13 @@
       hp: 0,
     }));
   }
+
+  /** The game's own screen, redrawn whenever anything the loop or the clock touches changes. */
+  const gameScreen = $derived.by(() => {
+    void view;
+    const playing = session;
+    return playing ? revScreenStateOf(playing.game, mode !== 'faithful') : null;
+  });
 
   /** The map the floor is drawn from: the squares walked in faithful mode, the whole level in
    *  the other two. The view is read so that the map is drawn again as the character walks. */
@@ -215,6 +226,9 @@
   {:else}
     <div class="stage">
       <div class="map">
+        {#if showScreen && gameScreen}
+          <RevScreenCanvas screen={gameScreen} />
+        {:else}
         <FloorCanvas
           bind:this={canvas}
           game={MORAFFS_REVENGE_MAP}
@@ -227,6 +241,7 @@
           you={{ x: view.place.column - 1, y: view.place.row - 1, dir: CANVAS_FACING[view.place.facing] ?? 0 }}
           focus={{ x: view.place.column - 1, y: view.place.row - 1, cell: PLAY_CELL }}
         />
+        {/if}
         <div class="words">
           {#if view.advice.length > 0}
             <div class="advice">{view.advice.join(' ')}</div>
@@ -290,6 +305,19 @@
                 <span class="how">{choice.how}</span>
               </label>
             {/each}
+          </div>
+          <div class="key-note">What the tab draws:</div>
+          <div class="styles">
+            <label>
+              <input type="radio" value={true} bind:group={showScreen} />
+              <span>Game screen</span>
+              <span class="how">The screen the game itself draws: the four views, the map it remembers and its own words.</span>
+            </label>
+            <label>
+              <input type="radio" value={false} bind:group={showScreen} />
+              <span>Top-down map</span>
+              <span class="how">This site's map of the floor, which zooms and scrolls.</span>
+            </label>
           </div>
           <div class="key-note">Arrow keys, which Escape switches between:</div>
           <div class="how">{ARROW_NOTE[view.arrows]}</div>
