@@ -330,3 +330,124 @@ carrying on.
 In the code: [falseFloor](source:ts/revmap.js/falseFloor), from the chute at `1000:3428`, the
 level it adds at `1000:3491`, the square it remembers at `1000:356F` and the test at `1000:064D`
 (`rev-tools/docs/DUNGEON.md` section 8).
+
+## Monsters
+
+### A monster comes through the wall at you
+
+The dungeon's walls are for you. A monster's turn is one square, orthogonally, and the only thing
+that refuses it is another monster already standing there: the grid the game keeps them in holds
+slot numbers and nothing else, and there is no wall test anywhere on the path. What is
+conditional is the drawing — the redraw compares the distance against a sight table and skips a
+monster you cannot see — so one walks through three walls and appears beside you.
+
+There is a gate on the step, at `1000:758D`, and it is the wall rule's own shape with a 2 where
+the generation goes: over 7 and the step is dropped. Every shipped character has a generation
+of 1 and the fountain of youth only ever makes it odd, so whatever floor plan that expression
+describes, it is not the one you are standing in.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 1, on the direction at `1000:7390`, the gate at
+`1000:758D` and the commit at `1000:7667`.
+
+### A slot number is the whole monster
+
+Forty slots belong to each level, and everything about the monster in one is worked out from the
+slot's own number. Its name is the slot modulo twenty, plus one. Its level is the level it is
+standing on, plus one for each of 2, 4, 8 and 16 that divides the slot number, so a level's forty
+monsters run from its own depth to four or five levels deeper. Its kind — which weapon hurts it,
+how hard it is to hit — is sorted out of its name by bands. Only two things about it are in a
+file: which square it is on, and how many hit points it has left.
+
+The level it works out is `INT((slot + 40) / 40)`, which is right for thirty-nine slots out of
+forty and one too high for the fortieth.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 2, on the name at `1000:80B0`, the level at
+`1000:80DE` and the kind at `1000:82E5`.
+
+### One of the twenty-two names is never met
+
+Each of `F6.COM` and `F7.COM` holds twenty-two monster names, and the rule that picks one reaches
+only the first twenty. Two corrections sit behind it: on levels 1 to 6, name 20 becomes name 12;
+and name 20 becomes name 22 once the monster has more than 140 hit points, which is the only way
+the twenty-second name gets into the game at all.
+
+Nothing reaches name 21. The variable is written in exactly one place, so that is the whole of
+it: `SPECTOR` in the first dungeon and `GHOST` in the second are sitting in the files, drawn,
+indexed, and impossible to meet.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 2, on `1000:80B0` and the two corrections at
+`1000:81A6`.
+
+### The deeper it lives, the harder it hunts
+
+A monster taking its turn decides between wandering and coming at you by rolling against its own
+level plus 35 and asking whether the result is under 15. On level 5 that is a wander fifteen
+turns in forty; on level 65, fifteen in a hundred. Deep monsters barely wander at all.
+
+The rate they get turns at leans the same way and then leans back. The odds of any monster moving
+on a given pass of the loop come from `165 - its level + your level`, so a deeper monster moves
+more often and a higher-level character sees the whole level move less often — but never below
+one pass in eight, whatever the arithmetic says.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 1, on the odds at `1000:7EEC` and the choice at
+`1000:73B6`.
+
+### Killing one puts a fresh one in its place
+
+A monster that runs out of hit points banks its experience and then, rather than being cleared
+out of its slot, is written over. The slot gets `INT(RND * 8 * level) + 2 * level + 1` hit points
+and a fresh square, rerolled until it lands somewhere nothing else is standing.
+
+So a level always holds its forty monsters. You cannot clear a floor, and everything you kill
+comes back at the depth you killed it at.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 1, on the kill at `1000:8E36` and the refill at
+`1000:A3C8`.
+
+### The monsters belong to the disk, not to you
+
+`1.NUM` and `2.NUM` — where every monster on all seventy levels is standing and how much is left
+of it — are loaded once for the whole disk, not per character, and saved back out on the way out
+of the game. Every character on the disk shares them.
+
+Two consequences. A monster you ran away from is still wounded when you find it again, because
+what was left of it went back into the file. And a monster your brother's character softened up
+on level 12 is waiting there, softened, for yours.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 2 and `rev-tools/docs/SURVEY.md` section 3, on the
+save at `1000:B5C8` and the survivor's remainder at `1000:8FB2`.
+
+### Meeting a monster can weaken it for good
+
+The first thing the fight does is cap the monster: if its stored hit points are at or above ten
+times its level, they are set to ten times its level — and the new number is written back into
+the array that gets saved. Walking up to something and walking away has permanently reduced it.
+
+The cap is a comparison, not a clamp, so a negative number in the file would slip under it
+untouched and then be fought at its magnitude. Nothing in the game ever writes one; every value
+it stores is positive, and every read but one takes the magnitude anyway. What a negative entry
+was for, and what wrote it, is not in this program.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 2, on the cap at `1000:8223` and the write-back at
+`1000:825A`.
+
+### No monster ever stands on the outer ring
+
+When the stocking loop needs a square for a monster it rolls a row of 2 to 18 and a column of 2
+to 19. The floor is twenty by nineteen, so rows 1 and 19 and columns 1 and 20 — the whole border
+of every level — never hold a monster on any of the seventy floors.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 2, on the stocking loop at `1000:7A2E`.
+
+### Two casts of monsters, and depth alone decides which
+
+There are two complete sets: twenty-two names in `F6.COM` with their pictures, and twenty-two
+more in `F7.COM` with a second set of pictures in the files whose names end in `A`. Levels 1 to
+34 draw on the first and levels 35 to 70 on the second, swapped over as you cross the boundary
+and swapped back on the way up.
+
+They are not two skins on the same monsters. Of `4.NUM`'s 7,999 bytes of close-up pictures, 2,875
+differ from `4A.NUM`'s — different creatures, drawn separately.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 2 and `rev-tools/docs/SURVEY.md` section 3, on the
+swap at `1000:4C6B` and `1000:4C97`.
