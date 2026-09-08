@@ -253,7 +253,8 @@
             viewsDrawn={view.viewsDrawn}
             expandedMap={view.expandedMap}
             tablet={view.tablet}
-            sectionScreen={view.sectionScreen} />
+            sectionScreen={view.sectionScreen}
+            plaque={view.plaque} />
         {:else}
           <FloorCanvas
             bind:this={canvas}

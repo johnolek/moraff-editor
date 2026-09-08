@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { MapSquare } from '../map/game';
   import { monsterById, type StockedMonster } from '../map/stocking';
+  import type { Rgb } from '../game/dotu-pic.js';
   import { sectionInfo } from '../game/sections';
   import { sectionPalette } from '../bestiary/pictures';
   import { battleSpellLines } from '../game/port/screens';
@@ -19,10 +20,12 @@
     SCREEN_WINDOW,
     statusLines,
   } from './display';
+  import type { PlaqueState } from './engine';
+  import { blankPlaque, drawPlaque, plaqueImage } from './plaque';
   import { drawSectionScreen, type SectionScreen } from './section-screen';
   import { drawTablet } from './tablet';
   import { viewPictures } from './view3d/browser';
-  import { newFrame, toRgba } from './view3d/frame';
+  import { newFrame, toRgba, type Frame } from './view3d/frame';
   import { renderFourViews, type KilledMonster, type ViewMonster } from './view3d/render';
   import { drawDotuScreenText } from './view3d/text';
   import { viewLabels } from './view3d/views';
@@ -61,6 +64,8 @@
     tablet?: string[] | null;
     /** The S key's screen, or null when it is not up: the section's monsters in their panels. */
     sectionScreen?: SectionScreen | null;
+    /** The HIT ANY KEY plaque while a message box's wait is running, or null (`plaque.ts`). */
+    plaque?: PlaqueState | null;
   }
 
   let {
@@ -80,9 +85,12 @@
     expandedMap = false,
     tablet = null,
     sectionScreen = null,
+    plaque = null,
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
+  /** The screen as it was last painted, for the plaque's own animation to work from. */
+  let painted = $state.raw<{ frame: Frame; palette: Rgb[] } | null>(null);
 
   const section = $derived(sectionInfo(place.module, place.floor));
   const part = $derived(section?.part ?? 1);
@@ -156,8 +164,14 @@
       monsters: mapMonsters,
     };
     const paint = (): void => {
-      const rgba = toRgba(frame, sectionPalette(place.module + 1, part, game.colourSetting));
+      // The plaque goes over everything else on the screen, whichever of them is up: FUN_2000_4054
+      // (exe 2000:4054) draws it where it stands rather than clearing anything first.
+      if (plaque === 'blanked') blankPlaque(frame, SCREEN_PIXELS);
+      if (plaque === 'showing') drawPlaque(frame, SCREEN_PIXELS, viewPictures(section?.section ?? 1).wall);
+      const palette = sectionPalette(place.module + 1, part, game.colourSetting);
+      const rgba = toRgba(frame, palette);
       context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
+      painted = plaque === 'showing' ? { frame, palette } : null;
     };
     // The stone tablet the snake's words are read on (exe 3000:9026), which is a screen of its own:
     // the slab and its four lines and nothing else.
@@ -217,6 +231,30 @@
     if (cleared) clearScreenRect(frame, cleared);
     drawDotuScreenText(frame, SCREEN_PIXELS, text);
     paint();
+  });
+
+  /**
+   * The plaque's frame crawling: FUN_2000_2a2e (exe 2000:2a2e) turns the palette's gradient bank
+   * once for every poll of the keyboard while it waits, and the frame is drawn in that bank. The
+   * port turns it once a frame the browser draws, and only over the plaque's own rectangle, so
+   * that a message box does not set the whole dungeon strobing.
+   */
+  $effect(() => {
+    const holding = painted;
+    const target = canvas;
+    if (!holding || !target) return;
+    const context = target.getContext('2d');
+    if (!context) return;
+    let steps = 0;
+    let request = 0;
+    const tick = (): void => {
+      steps += 1;
+      const image = plaqueImage(holding.frame, holding.palette, SCREEN_PIXELS, steps);
+      context.putImageData(new ImageData(image.rgba, image.width, image.height), image.left, image.top);
+      request = requestAnimationFrame(tick);
+    };
+    request = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(request);
   });
 </script>
 
