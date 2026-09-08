@@ -145,8 +145,13 @@ renderFourViews(
 );
 
 // The zoom map draws only what the character has walked, and a script has walked nothing, so it
-// is given the whole floor.
-D.drawScreenFurniture(frame, { rows, at: { ...at, dir }, known: () => true });
+// is given the whole floor — and every square of it as one they had already found on arrival,
+// which is what a chute is marked on.
+D.drawScreenFurniture(frame, {
+  rows,
+  at: { ...at, dir },
+  map: { known: () => true, knownOnArrival: () => true },
+});
 
 const game = newGame();
 game.pc.exp = exp;
