@@ -277,3 +277,57 @@ describe("the second dungeon's three drains", () => {
     expect(game.pc.stats[3]).toBe(15);
   });
 });
+
+describe("the monster's second swing", () => {
+  it('swings again on a roll past the character agility', () => {
+    // Agility 12, so a d13 of 12 rolls 13 and the monster comes back for another swing.
+    const game = attacking(draws({ 4: 3, 13: 12 }), 15);
+    swingAt(game);
+    expect(game.pc.hp).toBe(200 - 2 * 4);
+    expect(game.banner.filter((line) => line === 'IT DID 4 POINTS  ')).toHaveLength(2);
+  });
+
+  it('stops at two however well it rolls', () => {
+    const game = attacking(draws({ 4: 3, 13: 12 }), 15, { hp: 2000, maxHp: 2000 });
+    swingAt(game);
+    expect(game.pc.hp).toBe(2000 - 2 * 4);
+  });
+
+  it('swings once on a roll the agility beats', () => {
+    const game = attacking(draws({ 4: 3, 13: 11 }), 15);
+    swingAt(game);
+    expect(game.pc.hp).toBe(200 - 4);
+  });
+
+  it("adds the kind's attack bonus to the die it rolls", () => {
+    // A draw of 12 off a d33 rolls 13, which beats the agility; the same draw off the plain d13
+    // the other monsters roll is never asked for.
+    const wide = attacking(draws({ 33: 12 }), 15, {}, { attackBonus: 20 });
+    swingAt(wide);
+    expect(wide.pc.hp).toBe(200 - 2);
+    const plain = attacking(draws({ 33: 12 }), 15);
+    swingAt(plain);
+    expect(plain.pc.hp).toBe(200 - 1);
+  });
+
+  it('spends the roll even when it has already swung twice', () => {
+    const rolls: number[] = [];
+    const rng = { random: (n: number) => (rolls.push(n), n === 13 ? 12 : 0) };
+    swingAt(attacking(rng, 15));
+    expect(rolls.filter((n) => n === 13)).toHaveLength(2);
+  });
+
+  it('never swings again at a character it has just killed', () => {
+    const game = attacking(draws({ 4: 3, 13: 12 }), 15, { hp: 2, maxHp: 200 });
+    swingAt(game);
+    expect(game.pc.hp).toBe(2 - 4);
+  });
+
+  it('holds a second swing off with another of the pill charges', () => {
+    const game = attacking(draws({ 4: 3, 13: 12 }), 15);
+    game.paralysis = 10;
+    swingAt(game);
+    expect(game.paralysis).toBe(8);
+    expect(game.pc.hp).toBe(200);
+  });
+});

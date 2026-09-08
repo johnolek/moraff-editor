@@ -108,13 +108,16 @@ describe('a swing', () => {
 });
 
 describe("the monster's answer", () => {
-  it('takes the damage off the character', () => {
+  it('takes the damage off the character, both swings of it', () => {
     const game = started(nearlyTop);
     revMeetMonster(game, 39);
     const before = game.pc.hp;
+    // The top of the die at 1000:9F9A beats any agility, so the monster comes back for its
+    // second swing and the character loses that one as well.
     const swing = revMonsterAttack(game, () => {});
     expect(swing.damage).toBeGreaterThan(0);
-    expect(game.pc.hp).toBe(before - swing.damage);
+    expect(game.banner.filter((line) => line.startsWith('IT DID'))).toHaveLength(2);
+    expect(before - game.pc.hp).toBeGreaterThan(swing.damage);
   });
 
   it('starts its roll from whatever was last in the scratch cell', () => {

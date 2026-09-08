@@ -23,10 +23,8 @@ import type { RevGame } from './state';
  * * **The three points a shallow monster loses off a solid blow can never be taken** (1000:9B95).
  *   The test wants damage over four, and the only band that has run by then adds at most four.
  *
- * Two things the routine does that this port does not:
+ * One thing the routine does that this port does not:
  *
- * * **A second swing.** 1000:9F9A rolls `INT(RND * (the kind's attack bonus + 13)) + 1` against
- *   the character's agility and, once per answer, goes back to 1000:9A2F for another swing.
  * * **The redraw of the character's numbers.** Each drain raises DGROUP B730, which 1000:9F84
  *   spends on a pause and a flush of the keyboard. Nothing on this screen needs it.
  */
@@ -194,13 +192,40 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
 }
 
 /**
- * 1000:9A2F: the monster's swing, and the clamp every way out of it passes through.
+ * 1000:9F9A: whether the monster gets another swing.
  *
- * 1000:9F60 ends the routine at 1000:3B02, which is what puts the hit points back under the
- * maximum when a level drain has just lowered it.
+ * The roll is against the character's agility, the same number 1000:8E44 asks whether the monster
+ * answers at all — so an agile character is swung at less often and swung at twice less often
+ * again.
+ */
+function revSwingsAgain(game: RevGame): boolean {
+  const bonus = game.fight?.attackBonus ?? 0;
+  return game.rng.random(bonus + 13) + 1 > game.pc.stats[4];
+}
+
+/**
+ * 1000:9A2F: the monster's swing, the clamp every way out of it passes through, and the second
+ * swing it goes back to the top for.
+ *
+ * Every way out of the swing — the miss, the pill that held it off, the drains — arrives at
+ * 1000:9F60, which is where the routine ends at 1000:3B02, the clamp that puts the hit points
+ * back under the maximum when a level drain has just lowered it. Then it rolls again, and one
+ * roll past the character's agility takes it back to the top for a second swing.
  */
 export function revMonsterAttack(game: RevGame, save: () => void): RevMonsterSwing {
-  const swing = revSwingAndDrains(game, save);
-  if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
-  return swing;
+  // DGROUP B732: the monster has had its second swing. The game puts it back down on the way out
+  // of every answer, so a monster never gets a third.
+  let again = false;
+  for (;;) {
+    const swing = revSwingAndDrains(game, save);
+    if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
+    // 1000:9F63: a swing that killed the character leaves for the death at 1000:A013 rather than
+    // swinging again. The loop is what asks about the death itself.
+    if (game.pc.level < 0 || game.pc.hp < 0) return swing;
+    // 1000:9FA5 rolls whether or not the flag allows a second swing, so the roll is spent either
+    // way.
+    const swingsAgain = revSwingsAgain(game);
+    if (again || !swingsAgain) return swing;
+    again = true;
+  }
 }
