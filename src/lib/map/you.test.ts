@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Square } from '../game/unfmap.js';
 import { MAP_COLUMNS, MAP_ROWS, UNFORGIVEN_AREA } from './area';
-import { nearestOpenSquare, stepFrom, youAlpha, youArrow } from './you';
+import { arrowPixel, FACING_ARROW_SIZE, facingArrowCells, nearestOpenSquare, stepFrom, youAlpha, youArrow } from './you';
 
 /** A floor from a picture: '#' is rock, '.' is an open square. */
 function floorOf(picture: string[]): Square[][] {
@@ -120,5 +120,35 @@ describe('youArrow', () => {
     // The third corner is the notch: on the line the tip is on, and short of the back.
     expect(youArrow(0)[2]).toEqual({ x: 0.5, y: 0.72 });
     expect(youArrow(3)[2]).toEqual({ x: 0.28, y: 0.5 });
+  });
+});
+
+describe("the arrow the game's own map marks the character with", () => {
+  it('turns it by the way the character faces', () => {
+    // The point of the arrow is the middle of its top row, and it swings to the matching side.
+    expect(arrowPixel(0, 100, 100, 3, 0)).toEqual({ x: 102, y: 99 });
+    expect(arrowPixel(1, 100, 100, 3, 0)).toEqual({ x: 102, y: 105 });
+    expect(arrowPixel(2, 100, 100, 3, 0)).toEqual({ x: 99, y: 102 });
+    expect(arrowPixel(3, 100, 100, 3, 0)).toEqual({ x: 105, y: 102 });
+  });
+
+  it('fills the same 25 cells of a seven by seven grid whichever way it faces', () => {
+    for (let dir = 0; dir < 4; dir++) {
+      const cells = facingArrowCells(dir);
+      expect(cells).toHaveLength(25);
+      const inside = (along: number) => along >= 0 && along < FACING_ARROW_SIZE;
+      expect(cells.every((cell) => inside(cell.x) && inside(cell.y))).toBe(true);
+    }
+  });
+
+  it('puts the point of the arrow on the side the character faces', () => {
+    const middle = FACING_ARROW_SIZE >> 1;
+    const points = [
+      { x: middle, y: 0 },
+      { x: middle, y: FACING_ARROW_SIZE - 1 },
+      { x: 0, y: middle },
+      { x: FACING_ARROW_SIZE - 1, y: middle },
+    ];
+    points.forEach((point, dir) => expect(facingArrowCells(dir)).toContainEqual(point));
   });
 });

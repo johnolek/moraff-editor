@@ -281,7 +281,9 @@
     if (monsters?.length) drawMonsters(ctx, monsters, view, sprites);
     drawMarks(ctx, marks ?? [], view);
     if (route) drawRoute(ctx, route, view);
-    if (you) drawYou(ctx, you.x, you.y, view, youAlpha(performance.now()), you.dir ?? null);
+    // Dungeons of the Unforgiven is the one of the three whose own map marks the character with
+    // an arrow, so it is the one drawn with that arrow here.
+    if (you) drawYou(ctx, you.x, you.y, view, youAlpha(performance.now()), you.dir ?? null, game.id === 'unforgiven');
     if (selected) drawOutline(ctx, selected.x, selected.y, view, 2, palette.selection);
     if (highlight) drawOutline(ctx, highlight.x, highlight.y, view, 2, '#ffffff');
     if (cursor) drawOutline(ctx, cursor.x, cursor.y, view, 1, 'rgba(255, 255, 255, 0.75)');

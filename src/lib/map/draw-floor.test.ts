@@ -127,6 +127,15 @@ describe('drawYou', () => {
     expect(corners).toEqual([]);
   });
 
+  it("draws the game's own arrow a square of the cell to a pixel when it is asked for", () => {
+    const { ctx, rects, corners } = recordMarker();
+    drawYou(ctx, 1, 2, view, 0.5, 0, true);
+    expect(corners).toEqual([]);
+    // The 7 x 7 bitmap has 25 pixels lit, and the point of the arrow is the middle of its top row.
+    expect(rects).toHaveLength(25);
+    expect(rects).toContainEqual([30, 43, 2, 2]);
+  });
+
   it('draws an arrowhead pointing the way the character faces', () => {
     const { ctx, rects, corners } = recordMarker();
     drawYou(ctx, 1, 2, view, 0.5, 0);

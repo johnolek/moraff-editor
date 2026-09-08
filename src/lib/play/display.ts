@@ -1,5 +1,6 @@
 import { expLabel, levelLabel } from '../character/record';
 import type { DiscoveredMap } from '../map/draw-floor';
+import { arrowPixel, FACING_ARROW } from '../map/you';
 import type { MapSquare } from '../map/game';
 import { ARMOR_NAMES, WEAPON_NAMES } from '../game/port/drops';
 import type { PlayerCharacter, ScreenLine, ScreenRect } from '../game/port/state';
@@ -203,37 +204,6 @@ export const zoomMapLeft = (screenWidth: number): number =>
 /** Which square of the floor a cell of the map shows. */
 export function zoomMapSquare(at: { x: number; y: number }, column: number, row: number): { x: number; y: number } {
   return { x: at.x + column - (ZOOM_COLUMNS >> 1), y: at.y + row - (ZOOM_ROWS >> 1) };
-}
-
-/**
- * `FUN_2000_9d17` (exe 2000:9d17): the arrow on the character's square, as the 7 x 7 bitmap at
- * DS:046d that a cell of eight pixels uses. Its point is at the top before the facing turns it.
- */
-export const FACING_ARROW = [
-  '   X   ',
-  '  XXX  ',
-  ' XXXXX ',
-  'XXXXXXX',
-  '  XXX  ',
-  '  XXX  ',
-  '  XXX  ',
-];
-
-/**
- * Where one pixel of that bitmap lands, given the corner of the character's cell. The four cases
- * are the original's own rotations, which mirror rather than turn for south and east.
- */
-export function arrowPixel(
-  facing: number,
-  x: number,
-  y: number,
-  column: number,
-  row: number,
-): { x: number; y: number } {
-  if (facing === 1) return { x: x + column - 1, y: y - row + 5 };
-  if (facing === 2) return { x: x + row - 1, y: y + column - 1 };
-  if (facing === 3) return { x: x - row + 5, y: y + column - 1 };
-  return { x: x + column - 1, y: y + row - 1 };
 }
 
 /** What the drawing half of the screen needs to know about the floor the character stands on. */

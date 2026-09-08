@@ -44,6 +44,58 @@ export function youAlpha(timeMs: number): number {
   return DIMMEST + (BRIGHTEST - DIMMEST) * phase;
 }
 
+/**
+ * `FUN_2000_9d17` (exe 2000:9d17, unf.c "FUN_2000_9d17"): the arrow Dungeons of the Unforgiven
+ * marks the character's square with on its own map, as the 7 x 7 bitmap at DS:046d that a cell of
+ * eight pixels uses. Its point is at the top before the facing turns it.
+ */
+export const FACING_ARROW = [
+  '   X   ',
+  '  XXX  ',
+  ' XXXXX ',
+  'XXXXXXX',
+  '  XXX  ',
+  '  XXX  ',
+  '  XXX  ',
+];
+
+/**
+ * Where one pixel of that bitmap lands, given the corner of the character's cell. The four cases
+ * are the original's own rotations, which mirror rather than turn for south and east.
+ */
+export function arrowPixel(
+  facing: number,
+  x: number,
+  y: number,
+  column: number,
+  row: number,
+): Point {
+  if (facing === 1) return { x: x + column - 1, y: y - row + 5 };
+  if (facing === 2) return { x: x + row - 1, y: y + column - 1 };
+  if (facing === 3) return { x: x - row + 5, y: y + column - 1 };
+  return { x: x + column - 1, y: y + row - 1 };
+}
+
+/** How many pixels across the arrow's bitmap is. */
+export const FACING_ARROW_SIZE = 7;
+
+/**
+ * The squares of a 7 by 7 grid the arrow fills when it is turned to face `dir`, for anything
+ * drawing it at a size of its own.
+ *
+ * The rotations put a pixel anywhere from one before the corner they are given to five past it,
+ * so a corner of one puts the whole arrow between 0 and 6.
+ */
+export function facingArrowCells(dir: number): Point[] {
+  const cells: Point[] = [];
+  FACING_ARROW.forEach((line, row) => {
+    for (let column = 0; column < line.length; column++) {
+      if (line[column] === 'X') cells.push(arrowPixel(dir, 1, 1, column, row));
+    }
+  });
+  return cells;
+}
+
 /** How far into the arrowhead the notch in its back is cut, as a fraction of its length. */
 const NOTCH = 0.28;
 

@@ -7,7 +7,6 @@ import { newFrame, pixelAt, type Frame } from './view3d/frame';
 import { FOUR_VIEWS } from './view3d/views';
 import { ZOOM_MONSTER_COLOUR } from './zoom-monsters';
 import {
-  arrowPixel,
   clearScreenRect,
   drawScreenFurniture,
   keyMenuLines,
@@ -203,14 +202,6 @@ describe('the zoom map', () => {
   it('starts where the game puts it, whatever the screen is wide', () => {
     expect(zoomMapLeft(640)).toBe(521);
     expect(zoomMapLeft(1024)).toBe(834);
-  });
-
-  it('turns the arrow by the way the character faces', () => {
-    // The point of the arrow is the middle of its top row, and it swings to the matching side.
-    expect(arrowPixel(0, 100, 100, 3, 0)).toEqual({ x: 102, y: 99 });
-    expect(arrowPixel(1, 100, 100, 3, 0)).toEqual({ x: 102, y: 105 });
-    expect(arrowPixel(2, 100, 100, 3, 0)).toEqual({ x: 99, y: 102 });
-    expect(arrowPixel(3, 100, 100, 3, 0)).toEqual({ x: 105, y: 102 });
   });
 });
 

@@ -4,7 +4,7 @@ import type { Hop, Route } from './path';
 import { gameSideStroke, palette, sideStroke, squareFill, squareGlyph, type SideStroke } from './palette';
 import { teleporterColour, teleporterLineWidth } from './teleporters';
 import type { Point, Viewport } from './viewport';
-import { youArrow } from './you';
+import { facingArrowCells, FACING_ARROW_SIZE, youArrow } from './you';
 
 export interface DrawOptions extends Viewport {
   /** The game whose area is drawn and whose buildings colour floor 0. */
@@ -250,10 +250,24 @@ export function drawOutline(ctx: CanvasRenderingContext2D, x: number, y: number,
   ctx.lineWidth = 1;
 }
 
-/** The square you stand on, drawn at whatever opacity the caller is pulsing through: an
- *  arrowhead pointing the way the character faces, or a filled block where nobody is facing
- *  anywhere, which is the map explorer walking someone about the floor. */
-export function drawYou(ctx: CanvasRenderingContext2D, x: number, y: number, view: Viewport, alpha: number, dir: number | null = null): void {
+/**
+ * The square you stand on, drawn at whatever opacity the caller is pulsing through.
+ *
+ * `gameArrow` is the arrow the game's own map marks the character with, the 7 x 7 bitmap of
+ * `facingArrowCells` painted a square of the cell to a pixel, which is what a game that has one
+ * is drawn with. Without one it is an arrowhead of the site's own pointing the way the character
+ * faces, and where nobody is facing anywhere it is a filled block, which is the map explorer
+ * walking someone about the floor.
+ */
+export function drawYou(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  view: Viewport,
+  alpha: number,
+  dir: number | null = null,
+  gameArrow = false,
+): void {
   const { x0, y0, w, h } = squareRect(view, x, y);
   const inset = 2;
   const left = x0 + 1 + inset;
@@ -263,6 +277,15 @@ export function drawYou(ctx: CanvasRenderingContext2D, x: number, y: number, vie
   ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
   if (dir === null) {
     ctx.fillRect(left, top, width, height);
+    return;
+  }
+  if (gameArrow) {
+    const edge = (along: number, size: number) => Math.round((along * size) / FACING_ARROW_SIZE);
+    for (const cell of facingArrowCells(dir)) {
+      const x1 = edge(cell.x, width);
+      const y1 = edge(cell.y, height);
+      ctx.fillRect(left + x1, top + y1, edge(cell.x + 1, width) - x1, edge(cell.y + 1, height) - y1);
+    }
     return;
   }
   ctx.beginPath();
