@@ -1,0 +1,190 @@
+{
+ "source": "Moraff's Revenge (Copyright 1988 Steve Moraff), read out of the game folder's F1.COM and F2.COM by rev-tools/reference/build_rev_tables.py; where each string lands is in that script's header",
+ "spells": [
+  {
+   "level": 1,
+   "stat": "Strength:    ### ",
+   "prep": [
+    {
+     "name": "CURE",
+     "text": "`Cure' heals one point of damage per       point of wizdom."
+    },
+    {
+     "name": "SENSE LEVEL",
+     "text": "`Sense Level' determines which level you   are on."
+    }
+   ],
+   "battle": [
+    {
+     "name": "GAS",
+     "text": "When it works, `Gas' makes 1'st through    3'rd level creatures fall asleep,       allowing you to kill them."
+    },
+    {
+     "name": "MAGIC ZOT",
+     "text": "`Magic Zot' does about 1 to 4 points of    damage per level of the caster to all   creatures."
+    }
+   ]
+  },
+  {
+   "level": 2,
+   "stat": "Intelligence:### ",
+   "prep": [
+    {
+     "name": "STRENGTH",
+     "text": "`Strength' increases strength. It lasts    until you return to the 0'th level."
+    },
+    {
+     "name": "SPEED",
+     "text": "`Speed' increases agility. It lasts        until you return to the 0'th level."
+    }
+   ],
+   "battle": [
+    {
+     "name": "MAGIC BOLT",
+     "text": "`Magic Bolt' does about 20 or 30 point     of damage to all creatures."
+    },
+    {
+     "name": "SPEED",
+     "text": "This `Speed' spell increases agility for   a short time."
+    }
+   ]
+  },
+  {
+   "level": 3,
+   "stat": "Wisdom:      ### ",
+   "prep": [
+    {
+     "name": "SENSE LOCATION",
+     "text": "`Sense Location' indicates your x,y        and level position in the dungeon."
+    },
+    {
+     "name": "DESCEND",
+     "text": "`Descend' lowers you to the next level."
+    }
+   ],
+   "battle": [
+    {
+     "name": "LIGHTNING",
+     "text": "`Lighning Bolt' does 6 or 7 point of       damage per level of caster."
+    },
+    {
+     "name": "STRENGTH",
+     "text": "This `Strength' increases strength for     a short time."
+    }
+   ]
+  },
+  {
+   "level": 4,
+   "stat": "Health:      ### ",
+   "prep": [
+    {
+     "name": "FEATHER",
+     "text": "`Feather' reduces player weight."
+    },
+    {
+     "name": "ASCEND",
+     "text": "`Ascend' causes you to float up one        level."
+    }
+   ],
+   "battle": [
+    {
+     "name": "GO AWAY!",
+     "text": "`Go Away' sends the monster away,          leaving treasure with you. Won't        always work."
+    },
+    {
+     "name": "RISE...",
+     "text": "`Rise' causes you to float up to the       next level, leaving the monster         behind."
+    }
+   ]
+  },
+  {
+   "level": 5,
+   "stat": "Agility:     ### ",
+   "prep": [
+    {
+     "name": "CHANGE LEVEL",
+     "text": "`Change Level' sends you to a random       chosen level."
+    },
+    {
+     "name": "INVISIBILITY",
+     "text": "`Invisibility' makes it difficult for      monsters to see you, making it easier   to run away from them."
+    }
+   ],
+   "battle": [
+    {
+     "name": "AUTO KILL",
+     "text": "`Auto kill' makes monsters fall over       dead. Does not always work."
+    },
+    {
+     "name": "EXPLOSION",
+     "text": "`Explosion' does lots of damage to         monsters if the caster is high level."
+    }
+   ]
+  },
+  {
+   "level": 6,
+   "stat": "Laziness:    ### ",
+   "prep": [
+    {
+     "name": "HEAL",
+     "text": "`Heal' restores full health points."
+    },
+    {
+     "name": "MOCCIOLO",
+     "text": "`Mocciolo' is a last resort. It may kill   or save you."
+    }
+   ],
+   "battle": [
+    {
+     "name": "HEAL",
+     "text": "`Heal' restores full health points."
+    },
+    {
+     "name": "GOD?",
+     "text": "`God?' is a last resort. It may kill or     save you."
+    }
+   ]
+  }
+ ],
+ "items": {
+  "headings": [
+   "TELEPORT SCROLLS:",
+   "SEEING SCROLLS:",
+   "HEALING SCROLLS:",
+   "SPELL POINT SCROLLS:",
+   "POTIONS OF SPEED:",
+   "POTIONS OF FIRE:",
+   "POTIONS OF SHIELDING:",
+   "POTIONS OF HEALTH POINTS:",
+   "POTIONS OF RELOCATION"
+  ],
+  "names": [
+   " A TELEPORT SCROLL",
+   " A SCROLL OF SEEING",
+   " A SCROLL OF HEALING",
+   " A SPELL POINT SCROLL",
+   " A POTION OF SPEED",
+   " A POTION OF FIRE",
+   " A POTION OF SHIELDING",
+   " A POTION OF HEALTH POINTS",
+   " A POTION OF RELOCATION"
+  ],
+  "prepText": [
+   "Teleport Scroll: Teleports caster to       0'th level.",
+   "Scroll of Seeing: Maps an entire level     of the dungeon.",
+   "Scroll of Healing: Increases health        points.",
+   "Spell Point Scroll: Increases spell        points.",
+   "Bag of Holding: Holds about 1000 pounds    of treasure and weighs nothing.",
+   "Floor Slosher: Lowers user to the next     deeper level.",
+   "Level Shifter: Moves user to a new         level."
+  ],
+  "battleText": [
+   "Potion of Speed: Increases agility for     a short time,",
+   "Potion of Fire: Allows you to breath       fire on monsters.",
+   "Potion of Invincibility: Makes your        armor very strong.",
+   "Potion of Health Points: Heals wounds.",
+   "Potion of Relocation: Moves caster to a    random location on the same level.",
+   "Holy Hand Grenade: Blows up the            monster."
+  ]
+ }
+}
