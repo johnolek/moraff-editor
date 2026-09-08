@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
-  import { app, type GameId } from '../app-state.svelte';
+  import { app, currentEntry, type GameId } from '../app-state.svelte';
+  import { characterStatus } from '../character/record';
   import { readStored, writeStored } from '../character/storage';
   import { floorBounds, summarizeMapFloor } from '../game/floor-summary';
   import { sectionInfo } from '../game/sections';
@@ -213,6 +214,18 @@
     if (!hasDungeon(wanted, place.dungeon)) return;
     const square = place.x >= 0 && place.y >= 0 && isOnMap(place, wanted.area) ? { x: place.x, y: place.y } : null;
     travel({ game: place.game, dungeon: place.dungeon, floor: place.floor, square, you: square }, cursor);
+  });
+
+  // A played character who walks into another dungeon (the gate on the Play tab, saved with S)
+  // takes the map with them, the way a loaded save opens the map on its own dungeon.
+  $effect(() => {
+    void app.characterVersion;
+    const entry = currentEntry();
+    if (!entry || entry.game !== game.id) return;
+    const place = characterStatus(entry)?.place;
+    if (!place || place.dungeon === untrack(() => dungeon) || !hasDungeon(game, place.dungeon)) return;
+    const square = place.x >= 0 && place.y >= 0 && isOnMap(place, game.area) ? { x: place.x, y: place.y } : null;
+    untrack(() => travel({ game: game.id, dungeon: place.dungeon, floor: place.floor, square, you: square }, cursor));
   });
 
   /** Only an entry naming somewhere else moves the map. Every entry carries the map's place,
