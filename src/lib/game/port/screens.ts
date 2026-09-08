@@ -60,6 +60,7 @@ export function clearRect(game: Game, x0: number, y0: number, x1: number, y1: nu
  */
 export function clearMenuBlock(game: Game): void {
   clearRect(game, 0x398, 0x324, 0x640, 0x4b0);
+  game.menuBox = [];
 }
 
 /**

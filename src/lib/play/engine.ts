@@ -148,8 +148,15 @@ export class GameSession {
   readonly memory: MapMemory;
   /** The floor the character is on, as the map descriptor generates it. */
   rows: MapSquare[][];
-  /** The lines the game has said since the current action began, which is the message box. */
-  box: string[] = [];
+  /** The eight strings the message box is showing, which is the game's own DS:c694. */
+  get box(): string[] {
+    return this.game.menuBox;
+  }
+
+  set box(lines: string[]) {
+    this.game.menuBox = lines;
+  }
+
   /** The lines of the battle banner, which the game prints beside the monster. */
   banner: string[] = [];
   /** DS:034c: the twelve lines view_battle_spells (exe 2000:9417) has showing, which is how it
@@ -353,7 +360,6 @@ export class GameSession {
   wipeMessageBlock(): void {
     clearMenuBlock(this.game);
     clearMessageLine(this.game);
-    this.box = [];
   }
 
   /**

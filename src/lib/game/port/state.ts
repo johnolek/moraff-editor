@@ -456,6 +456,16 @@ export interface Game {
   reprintBattleInfo: boolean;
   /** DS:c4dd: the line printed beside the monster during a fight. */
   monsterStatusLine: string;
+  /**
+   * DS:c694: the eight strings of the message box, as the block is showing them.
+   *
+   * print_menu_only (exe 2000:309e) copies its eight arguments into that buffer and FUN_2000_2f5d
+   * (exe 2000:2f5d) draws them; the buffer itself is never emptied, so the game tells what is on
+   * the block from what was last drawn there rather than from the strings. This holds the strings
+   * only while they are on the block, which is the same thing said once: {@link clearMenuBlock}
+   * empties it, since that is what takes them off the screen.
+   */
+  menuBox: string[];
   /** Every line the game has printed, oldest first. */
   messages: string[];
   /** What is on the screen now, in the order it was drawn. */
@@ -803,6 +813,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     battleInfoOn: false,
     reprintBattleInfo: false,
     monsterStatusLine: '',
+    menuBox: [],
     rng: new BorlandRng(1),
     solid: () => false,
     retdwall: () => 3,
