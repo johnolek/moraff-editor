@@ -575,6 +575,7 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     // repainting the screen the way the original does.
     clearMessageLine(game);
     const handler = KEY_HANDLERS[key];
+    session.run?.dispatched(key);
     if (handler) await handler.run(turn);
     await session.settle();
     if (session.over) return;

@@ -5,7 +5,7 @@ import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwGameSession } from './mw/engine';
 import { mwCharacterFile } from './mw/engine.test';
 import { MW_KEY, mwTurn } from './mw/keys';
-import { decodeRecord, ENGINE_COMMIT, RunRecorder, RUN_LOG_VERSION, TURN_INPUTS } from './run';
+import { countsAsAction, decodeRecord, ENGINE_COMMIT, RunRecorder, RUN_LOG_VERSION, TURN_INPUTS } from './run';
 
 /** A game of Dungeons of the Unforgiven being recorded, with a seed of the test's own. */
 function recordedGame(
@@ -112,5 +112,47 @@ describe('the run log', () => {
     session.finish();
 
     expect(run.log().inputs).toEqual([MW_KEY.arrowUp, TURN_INPUTS[2], MW_KEY.viewStats]);
+  });
+});
+
+describe('the actions a run counts', () => {
+  it('counts a step, a wait and a swing, and not the screens', async () => {
+    const { run, session } = recordedGame();
+    for (const key of [KEY.arrowUp, KEY.enter, KEY.fight, KEY.viewStats, KEY.expNeeded, KEY.pockets, KEY.expandMap]) {
+      await press(session, key);
+    }
+    session.finish();
+
+    expect(run.log().actions).toBe(3);
+  });
+
+  it("counts a turn in Moraff's World, where every arrow steps, and not in the other game", () => {
+    expect(countsAsAction('unforgiven', KEY.arrowLeft)).toBe(false);
+    expect(countsAsAction('unforgiven', KEY.arrowDown)).toBe(false);
+    expect(countsAsAction('moraffsWorld', MW_KEY.arrowLeft)).toBe(true);
+    expect(countsAsAction('moraffsWorld', MW_KEY.arrowDown)).toBe(true);
+  });
+
+  it('counts the ladders, the trap door, the dig and the spells', () => {
+    for (const key of [KEY.up, KEY.down, KEY.trapDoor, KEY.dig, KEY.cast, KEY.useItem]) {
+      expect(countsAsAction('unforgiven', key)).toBe(true);
+    }
+    for (const key of [MW_KEY.up, MW_KEY.down, MW_KEY.trapDoor, MW_KEY.wait, MW_KEY.cast, MW_KEY.useItem]) {
+      expect(countsAsAction('moraffsWorld', key)).toBe(true);
+    }
+  });
+
+  it('leaves out the keys that only put something on the screen', () => {
+    for (const key of [KEY.viewStats, KEY.expNeeded, KEY.pockets, KEY.money, KEY.monsterManual, KEY.help, KEY.quit, KEY.options, KEY.graphics, KEY.expandMap, KEY.zoomView, KEY.armor, KEY.weapon, KEY.loseItem]) {
+      expect(countsAsAction('unforgiven', key)).toBe(false);
+    }
+    for (const key of [MW_KEY.viewStats, MW_KEY.expNeeded, MW_KEY.pockets, MW_KEY.money, MW_KEY.help, MW_KEY.quit, MW_KEY.save, MW_KEY.sound, MW_KEY.brickSpeed, MW_KEY.expandMap, MW_KEY.zoomView, MW_KEY.armor, MW_KEY.weapon, MW_KEY.loseItem, MW_KEY.escape]) {
+      expect(countsAsAction('moraffsWorld', key)).toBe(false);
+    }
+  });
+
+  it('counts each of the swings Ctrl-F takes, and not Ctrl-F itself', () => {
+    expect(countsAsAction('unforgiven', KEY.repeatFight)).toBe(false);
+    expect(countsAsAction('unforgiven', KEY.fight)).toBe(true);
   });
 });

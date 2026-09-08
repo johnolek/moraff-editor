@@ -1,5 +1,7 @@
 import type { PortedGameId } from '../app-state.svelte';
 import { SeededRng, type Rng } from '../game/port/rng';
+import { KEY } from './keys';
+import { MW_KEY } from './mw/keys';
 
 /**
  * The run log: everything a game played here was, written down as it is played.
@@ -43,6 +45,62 @@ export function turnedTo(input: number): number {
   return TURN_INPUTS.indexOf(input);
 }
 
+/**
+ * The keys of Dungeons of the Unforgiven that count as an action, each named with the handler
+ * `KEY_HANDLERS` in `engine.ts` gives it.
+ *
+ * An action is a key the loop hands to a handler that spends a moment of the character's time, or
+ * opens one of the town's buildings or a spell: a step, a swing, a cast, a night at the inn, a
+ * dig. A key that only puts something on the screen — the stats, the experience table, the
+ * pockets, the monster manual, the two spell lists, the money, the maps, the settings — is not an
+ * action, and neither is a turn, which in this game costs the character nothing. Fewest actions is
+ * the order a leaderboard puts runs in, so this is the number a run is judged by.
+ *
+ * It counts the keys the game was asked for rather than the moments it granted: a step into a wall
+ * and a swing at nothing are each an action, the same as they are a key. Ctrl-F is not here
+ * because it only raises the repeat flag; every swing it goes on to take arrives as an F of its
+ * own and is counted as one.
+ */
+const UNFORGIVEN_ACTIONS = new Set<number>([
+  KEY.arrowUp, // stepForward, and the step movecontrol resolves at the end of the pass
+  KEY.enter, // waitAMoment: leave the square and arrive on it again
+  KEY.down, // goDown: the ladder down, and change_module
+  KEY.up, // goUp: the ladder up, or into the store, the temple, the bank or the inn
+  KEY.trapDoor, // goThroughTrapDoor: trapdoor_dest
+  KEY.dig, // digHole: dig_hole spends a moment for each of its flashes
+  KEY.fight, // swingAtMonster: strike, and the time the swing costs
+  KEY.cast, // castASpell: cast_a_spell, which ends in pass_moment
+  KEY.useItem, // useAnItem: use_magic_item
+]);
+
+/** The same in Moraff's World, by the handler `MW_KEY_HANDLERS` in `mw/engine.ts` gives it. Its
+ *  four arrows each face the character and step them, so all four are actions; the turn where the
+ *  character stands, which this port does outside the loop, costs nothing and is not one. */
+const MORAFFS_WORLD_ACTIONS = new Set<number>([
+  MW_KEY.arrowUp, // turnAndStep
+  MW_KEY.arrowDown,
+  MW_KEY.arrowLeft,
+  MW_KEY.arrowRight,
+  MW_KEY.wait, // waitAMoment
+  MW_KEY.space, // the same branch as T
+  MW_KEY.down, // goDown: the ladder down, or dig_hole
+  MW_KEY.up, // goUp: the ladder up, or the town's buildings
+  MW_KEY.trapDoor, // goThroughTrapDoor
+  MW_KEY.fight, // swingAtMonster: strike and the two spend_time calls after it
+  MW_KEY.cast, // castAtTheSpellScreen: spell_screen
+  MW_KEY.useItem, // useAnItem
+]);
+
+const ACTIONS: Record<RunGame, Set<number>> = {
+  unforgiven: UNFORGIVEN_ACTIONS,
+  moraffsWorld: MORAFFS_WORLD_ACTIONS,
+};
+
+/** Whether a key the loop has dispatched counts as one of the run's actions. */
+export function countsAsAction(game: RunGame, key: number): boolean {
+  return ACTIONS[game].has(key);
+}
+
 /** One game, played, as it is written down and handed about. */
 export interface RunLog {
   version: number;
@@ -64,6 +122,8 @@ export interface RunLog {
   record: string;
   /** Every input the game was given, in order. */
   inputs: number[];
+  /** How many of those keys were actions, which is what a run is judged by. */
+  actions: number;
 }
 
 /** The bytes of a base64 string from a run log. */
@@ -121,6 +181,8 @@ export class RunRecorder {
   /** The generator the game is played through, which is the seed and nothing else. */
   readonly rng: Rng;
   readonly inputs: number[] = [];
+  /** How many actions the run has spent. */
+  actions = 0;
 
   constructor(start: RunStart) {
     this.game = start.game;
@@ -143,6 +205,11 @@ export class RunRecorder {
     this.inputs.push(TURN_INPUTS[dir]);
   }
 
+  /** The loop has read a key and is about to hand it to its handler. */
+  dispatched(key: number): void {
+    if (countsAsAction(this.game, key)) this.actions += 1;
+  }
+
   log(): RunLog {
     return {
       version: RUN_LOG_VERSION,
@@ -154,6 +221,7 @@ export class RunRecorder {
       seed: this.seed,
       record: encodeRecord(this.record),
       inputs: [...this.inputs],
+      actions: this.actions,
     };
   }
 }
