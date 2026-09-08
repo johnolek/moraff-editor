@@ -16,21 +16,22 @@ import { MW_COLOURS } from './view3d/screen';
  */
 
 /** How far under the hit points the line goes, which is the height of the grey bar they are
- *  printed on. */
+ *  printed on (FUN_2000_8728). */
 const UNDER_THE_HIT_POINTS = 0x28;
 
-/** The same offset along the line the hit points are printed at (FUN_2000_8728). */
-const HIT_POINTS_X = 0xdb;
-
-/** The chance the next swing lands, printed under the monster's hit points; nothing at all when
- *  nothing is being fought. */
+/**
+ * The chance the next swing lands, printed under the bar the hit points are on and lined up with
+ * the level, which is the corner itself: the hit points are printed further along the line, and
+ * from there this longer line would run off the right of the east view. Nothing is printed when
+ * nothing is being fought.
+ */
 export function mwDebugMonsterLines(game: MwGame, corner: MwMonsterViewCorner): ScreenLine[] {
   const engaged = mwEngagedMonster(game);
   if (engaged === null) return [];
   return [
     {
       text: `HIT:${(engaged.hitChance * 100).toFixed(1)}%`,
-      x: corner.x + HIT_POINTS_X,
+      x: corner.x,
       y: corner.hpY + UNDER_THE_HIT_POINTS,
       font: 0,
       colour: MW_COLOURS.monsterText,

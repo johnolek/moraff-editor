@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MW_MONSTER_VIEW_CORNERS } from '../../game/mw-port/screens';
-import { MW_VIEWS, MW_VIEW_NORTH } from './view3d/screen';
+import { MW_VIEWS, MW_VIEW_EAST, MW_VIEW_NORTH, MW_VIEW_SOUTH, MW_VIEW_WEST } from './view3d/screen';
 import { mwDebugMonsterLines } from './debug-screen';
 import { mwEngagedMonster } from './panel';
 import { BorlandRng } from '../../game/port/rng';
@@ -42,13 +42,21 @@ describe('the chance debug mode adds over the monster', () => {
     expect(line.text).toBe(`HIT:${(chance * 100).toFixed(1)}%`);
   });
 
-  it('puts it under the hit points, inside the view the monster stands in', async () => {
+  it('puts it under the hit points, and fits it inside every one of the four views', async () => {
     const session = await fighting();
-    const [line] = mwDebugMonsterLines(session.game, MW_MONSTER_VIEW_CORNERS.north);
-    const view = MW_VIEWS[MW_VIEW_NORTH];
-    expect(line.y).toBeGreaterThan(MW_MONSTER_VIEW_CORNERS.north.hpY);
-    expect(line.x).toBeGreaterThan(view.left);
-    expect(line.x).toBeLessThan(view.right);
-    expect(line.y).toBeLessThan(view.bottom);
+    const corners = [
+      { corner: MW_MONSTER_VIEW_CORNERS.north, view: MW_VIEWS[MW_VIEW_NORTH] },
+      { corner: MW_MONSTER_VIEW_CORNERS.south, view: MW_VIEWS[MW_VIEW_SOUTH] },
+      { corner: MW_MONSTER_VIEW_CORNERS.west, view: MW_VIEWS[MW_VIEW_WEST] },
+      { corner: MW_MONSTER_VIEW_CORNERS.east, view: MW_VIEWS[MW_VIEW_EAST] },
+    ];
+    for (const { corner, view } of corners) {
+      const [line] = mwDebugMonsterLines(session.game, corner);
+      expect(line.y).toBeGreaterThan(corner.hpY);
+      expect(line.y).toBeLessThan(view.bottom);
+      expect(line.x).toBeGreaterThanOrEqual(view.left);
+      // Twenty-five units a character in the game's smallest font, which is what font 0 is.
+      expect(line.x + line.text.length * 25).toBeLessThan(view.right);
+    }
   });
 });
