@@ -8,9 +8,10 @@ import { MAP_PLAYER, monsterAt, newGame, type PlayerCharacter } from '../game/po
 import { EXPLORED_STRIDE } from '../map/explored';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
-import { facingAMonster, startPlaying } from './battle.test-support';
+import { facingAMonster, inTheTown, press, startPlaying } from './battle.test-support';
 import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
+import { PLAQUE_DELAY_MS } from './plaque';
 import { VIEW_DEPTH, viewedSquares } from './memory';
 
 /** A character file that lives in the test rather than in the roster. */
@@ -573,5 +574,31 @@ describe('the coin flip that mirrors the monster you are fighting', () => {
     session.view();
     session.view();
     expect(rolls.length).toBe(spent);
+  });
+});
+
+describe('the HIT ANY KEY plaque', () => {
+  /** The Z key says its piece and waits for a key, which is what puts a plaque up. */
+  const lowest: Rng = { random: () => 0 };
+
+  it('leaves its rectangle blank until the delay is up', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.zoomView);
+    expect(session.plaque).toBe('blanked');
+    // FUN_2000_3e73 counts 330 ms out in delay (exe 1000:2789) before it draws the plaque.
+    await new Promise((resolve) => setTimeout(resolve, PLAQUE_DELAY_MS + 60));
+    expect(session.plaque).toBe('showing');
+    await press(session, KEY.escape);
+    expect(session.plaque).toBe(null);
+    session.finish();
+  });
+
+  it('puts the plaque up at once when the high speed option is on', async () => {
+    const session = inTheTown(lowest);
+    session.game.highSpeed = true;
+    await press(session, KEY.zoomView);
+    expect(session.plaque).toBe('showing');
+    await press(session, KEY.escape);
+    session.finish();
   });
 });

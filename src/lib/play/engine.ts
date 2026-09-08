@@ -40,6 +40,7 @@ import {
   messageBoxScreen,
   screenTakenOver,
 } from './screens';
+import { PLAQUE_DELAY_MS } from './plaque';
 import type { SectionScreen } from './section-screen';
 import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
@@ -106,6 +107,9 @@ export interface Turn {
   step: { dx: number; dy: number };
 }
 
+/** How far along the HIT ANY KEY plaque's own wait the screen is. */
+export type PlaqueState = 'blanked' | 'showing';
+
 /** One key movecontrol dispatches on. */
 export interface KeyHandler {
   /** The function of the game the key runs, for anyone reading the table. */
@@ -160,6 +164,8 @@ export interface PlayView {
   /** The S key's screen, or null when it is not up: the section's five monsters in their panels
    *  and the slab its words are read off (`section-screen.ts`). */
   sectionScreen: SectionScreen | null;
+  /** The HIT ANY KEY plaque (`plaque.ts`) while a box's wait is running, or null. */
+  plaque: PlaqueState | null;
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
@@ -212,6 +218,12 @@ export class GameSession {
    * five panels of the section's wall material with its monsters standing in them.
    */
   sectionScreen: SectionScreen | null = null;
+  /**
+   * The HIT ANY KEY plaque while the wait behind a message box is running: `blanked` for the hole
+   * FUN_2000_3e73 (exe 2000:3e73) leaves in the screen while its delay counts out, and `showing`
+   * once the plaque itself has been drawn on it.
+   */
+  plaque: PlaqueState | null = null;
   /**
    * How much of the game the tab is showing (`mode.ts`). Nothing the game does reads it; it is
    * here so that anything keeping a record of the run can say which mode it was played in.
@@ -427,11 +439,37 @@ export class GameSession {
   async settle(): Promise<void> {
     while (this.waitOwed) {
       this.waitOwed = false;
-      await this.key();
+      await this.keyWithPlaque();
       // The key the tablet was waiting on is what takes it off the screen (exe 3000:9086, the
       // fade FUN_4000_5c25 runs the moment the key arrives).
       this.tablet = null;
       this.wipeMessageBlock();
+    }
+  }
+
+  /**
+   * The key FUN_2000_4054 (exe 2000:4054) waits for, with the plaque it waits behind.
+   *
+   * The rectangle beside the status block is blanked, `delay` (exe 1000:2789) counts 330 ms out
+   * with that hole in the screen, and the plaque is drawn on it; the high speed option at DS:00c3
+   * skips the delay, so with that on the plaque is there at once. The pause is a display timer of
+   * the same kind the message delays are (`timed.ts`) and the game waits on nothing but the key.
+   */
+  private async keyWithPlaque(): Promise<number> {
+    if (this.game.highSpeed) this.plaque = 'showing';
+    else {
+      this.plaque = 'blanked';
+      this.timed.after(PLAQUE_DELAY_MS, () => {
+        this.plaque = 'showing';
+        this.changed();
+      });
+    }
+    try {
+      return await this.key();
+    } finally {
+      this.timed.cancelAfter();
+      this.plaque = null;
+      this.changed();
     }
   }
 
@@ -621,6 +659,7 @@ export class GameSession {
       expandedMap: this.expandedMap,
       tablet: this.tablet,
       sectionScreen: this.sectionScreen,
+      plaque: this.plaque,
       over: this.over,
       dead: this.dead,
       run: this.run?.summary() ?? null,
