@@ -111,7 +111,9 @@ export function scaleImage(
       previousEnd = b;
 
       if (runEnd >= srcX1) {
-        const index = (options.pixel ?? picturePixelIndex)(run.colour, destY, options.colours);
+        // The gradient values are keyed on the top edge plus the row, which the original works
+        // out before it mirrors: a picture drawn upside down still shades from its top edge down.
+        const index = (options.pixel ?? picturePixelIndex)(run.colour, yT + r, options.colours);
         if (index !== SKIP) {
           const from = flipX ? xR - (b - xL) : a;
           const to = flipX ? xR - (a - xL) : b;
