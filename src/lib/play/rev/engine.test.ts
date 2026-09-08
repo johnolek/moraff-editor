@@ -77,6 +77,9 @@ describe('the loop', () => {
 
   it('walks the character with the compass arrows and remembers where they went', async () => {
     const { session } = await playing();
+    // The compass arrows are the mode Escape asks for; the game starts in the other one.
+    session.press(REV_KEY.escape);
+    await settled();
     const before = session.view().place;
     session.press(REV_KEY.arrowRight);
     await settled();
@@ -88,17 +91,15 @@ describe('the loop', () => {
 
   it('switches what the arrows do on Escape', async () => {
     const { session } = await playing();
-    expect(session.view().arrows).toBe('compass');
+    expect(session.view().arrows).toBe('turning');
     session.press(REV_KEY.escape);
     await settled();
-    expect(session.view().arrows).toBe('turning');
+    expect(session.view().arrows).toBe('compass');
     session.finish();
   });
 
-  it('turns rather than steps with the turning arrows', async () => {
+  it('turns rather than steps with the turning arrows the game starts in', async () => {
     const { session } = await playing();
-    session.press(REV_KEY.escape);
-    await settled();
     const before = session.view().place;
     session.press(REV_KEY.arrowRight);
     await settled();

@@ -39,6 +39,12 @@ BASIC.
 * **`state.ts`** — the DGROUP variables the loop reads and writes, each named by its address.
   **`record.ts`** — the 340 numbers of `<n>.EXE` as the game means them.
 * **`keys.ts`** — the byte the loop compares for every key, and the browser events they come from.
+  It is also the two ways the arrows move, which Escape switches between (1000:10BE). The game
+  starts in the turning arrows — up steps the way the character faces and left and right turn them
+  in place — because the test at 1000:0AD0 branches when DGROUP B524 is *not* zero and B524 is a
+  BASIC variable, so its 0 takes the turn-in-place block at 1000:0B6D. Escape asks for the other:
+  H3.OVL calls the flat map's arrows "a faster, more convenient way to move around the dungeon"
+  and the key it names for switching to them is Escape.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `chute.ts`, `fight.ts`,
   `attack.ts`, `kill.ts`, `town.ts`, `death.ts`, `advice.ts`, `help.ts`, `pause.ts`,
   `settings.ts` — so that two people can add two keys without touching the same file.

@@ -78,18 +78,24 @@ export const REV_KEY = {
 } as const;
 
 /**
- * The two ways the arrows move, which Escape switches between (1000:10BE, and `H3.OVL`: "To
- * switch between the two types of movement, hit the `Esc' key").
+ * The two ways the arrows move, which Escape switches between (1000:10BE, and `H3.OVL`: "There is
+ * a faster, more convenient way to move around the dungeon using the flat map on the left hand
+ * side of the screen. To switch between the two types of movement, hit the `Esc' key").
  *
- * The variable behind it is the single at DGROUP B524, which Escape counts 0, 1, 0 and which
- * starts at 0. So the compass arrows of the flat map are what a character walks with until the
- * player asks for the other.
+ * The variable behind it is the single at DGROUP B524, which Escape counts 0, 1, 0 (1000:10D9) and
+ * which starts at 0, being a BASIC variable QuickBASIC zeroes at start-up. The test at 1000:0AD0
+ * compares it against the 0 at DGROUP B7EE and 1000:0AD3 takes the branch **not** equal, so a
+ * value of 0 goes to the turn-in-place block at 1000:0B6D and anything else to the block at
+ * 1000:0AD8 that faces the character the way the arrow points.
+ *
+ * So the game is played with the turning arrows until the player asks for the other, which is what
+ * the help says as well: the flat map's way of moving is the one Escape is for.
  */
 export type RevArrowMode = 'compass' | 'turning';
 
 /** The mode the game is in for a value of B524. */
 export function revArrowMode(b524: number): RevArrowMode {
-  return b524 === 0 ? 'compass' : 'turning';
+  return b524 === 0 ? 'turning' : 'compass';
 }
 
 /** The four facings, as the move code numbers them (DUNSMALL.EXE 1000:30C7's `ON ... GOTO`). */

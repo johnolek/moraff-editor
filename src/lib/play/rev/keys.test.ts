@@ -67,9 +67,11 @@ describe('the arrows', () => {
     expect(revWrapFacing(REV_SOUTH)).toBe(REV_SOUTH);
   });
 
-  it('starts in the compass mode and switches on Escape', () => {
-    expect(revArrowMode(0)).toBe('compass');
-    expect(revArrowMode(1)).toBe('turning');
+  it('starts in the turning mode and switches on Escape', () => {
+    // 1000:0AD0 compares B524 against the 0 at DGROUP B7EE and 1000:0AD3 branches when they are
+    // *not* equal, so the 0 a BASIC variable starts at is the turn-in-place block at 1000:0B6D.
+    expect(revArrowMode(0)).toBe('turning');
+    expect(revArrowMode(1)).toBe('compass');
   });
 });
 

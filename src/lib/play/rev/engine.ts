@@ -661,7 +661,7 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
 async function stepOrTurn(session: RevGameSession, key: number): Promise<RevStep | null> {
   const game = session.game;
   const pc = game.pc;
-  if (game.arrowMode === 0) {
+  if (revArrowMode(game.arrowMode) === 'compass') {
     const facing = revCompassArrow(key);
     if (facing === 0) return null;
     pc.facing = facing;

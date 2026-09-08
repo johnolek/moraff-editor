@@ -46,7 +46,8 @@ export interface RevGame {
   /** DGROUP B6B4 outside a fight: the level of the last monster met, which the clock reads and
    *  which the kill sets to the dungeon level. */
   lastMonsterLevel: number;
-  /** DGROUP B524: 0 for the compass arrows of the flat map, 1 for the turning arrows. */
+  /** DGROUP B524: 0 for the turning arrows the game starts in, 1 for the compass arrows of the
+   *  flat map. `revArrowMode` in `keys.ts` is where the test the game makes on it is read. */
   arrowMode: number;
   /** DGROUP B474: the steps the character has taken, counted 1 to 16 and round to 1 again
    *  (1000:3187 with 1000:0A4F). It is the clock the fight's own Speed and Strength run out on
