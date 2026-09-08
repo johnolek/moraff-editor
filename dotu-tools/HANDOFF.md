@@ -157,7 +157,8 @@ open floor, explored floor, ladder down/up, chute, trap door, teleporter, town b
   the destination town at a random open square (`relocate()`).
 * **Monsters**: a floor gets 145 slots on random open squares when first stocked; the
   monster file caches the current floor and the two visited before it, everything else is
-  re-stocked on return. Level = floor + 15·module ± a small nudge (`[MGEN]`).
+  re-stocked on return. Level = floor + 15·module ± a small nudge, and the hit points come
+  from that number before the nudge (`[MGEN]`).
 
 ## 5. The map generator
 
@@ -246,10 +247,11 @@ section named. Integer division truncates toward zero throughout; `rand(N)` is 0
 * **Experience per kill** (`[LOOT]`): `mult · (ML + 1 + 5·1.23^ML)`, ML capped at 130;
   `mult` = `expMult` from the data (1 for regulars, 16 for bosses, 3 for blockers, 5 for
   poison/disease monsters). Drain Monster kills pay for level 0 (6·mult).
-* **Monster level** (`[MGEN]`): `floor + 15·module` (→ 1 if ≥ 221), then `while
+* **Monster level** (`[MGEN]`): `Lm = floor + 15·module` (→ 1 if ≥ 221), then `while
   rand(3)==0: L += rand(3)−1`, clamp 1..210. `monsterLevelDistribution()` gives the pmf.
-  HP: `(rand(hp·L+1) + rand(hp·L+1) + 2)/2` (+20·L for bosses, ×2 in sections 18–20,
-  max 32,000). Type odds: 1/20 puffball, else 1/7 blocker, else 1/15 drainer, else 1/12
+  HP is rolled from `Lm` before that nudge, so it does not follow the level the slot ends
+  up holding: `(rand(hp·Lm+1) + rand(hp·Lm+1) + 2)/2` (+20·Lm for bosses, ×2 in
+  sections 18–20, max 32,000). Type odds: 1/20 puffball, else 1/7 blocker, else 1/15 drainer, else 1/12
   poison/disease, else one of the three regulars.
 * **Drops** (`[LOOT]`): weapon/armor `rand(100·N) ≤ ML+10` (N = 1..7 / 1..6), never for
   monks; the "YOU FIND" gate `(floor+40)/950` (550 for fighter/sage) × `min(1, floor/20)`,

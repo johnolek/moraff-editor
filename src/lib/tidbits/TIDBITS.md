@@ -356,7 +356,8 @@ In the code: [stockFloor](source:ts/stocking.ts/stockFloor) and
 
 ### The last three sections double their boss
 
-A Shadow boss already gets 20 extra hit points per level on top of a normal monster's roll. In
+A Shadow boss already gets 20 extra hit points for each level of the floor it guards, on top of
+a normal monster's roll. In
 sections 18, 19 and 20 the whole total is then doubled, after the bonus rather than before it.
 That is the wall the Module V bosses put up, and it is not your imagination.
 
