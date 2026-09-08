@@ -39,7 +39,7 @@ export const PLAY_MODES: { id: PlayMode; label: string; how: string }[] = [
   {
     id: 'debug',
     label: 'Debug',
-    how: 'Everything: the whole floor, every monster, and the panel of numbers the game never prints.',
+    how: 'The top-down map instead of the game screen: the whole floor, every monster, and the panel of numbers the game never prints.',
   },
 ];
 
@@ -55,6 +55,18 @@ export function readPlayMode(game: PortedGameId): PlayMode {
 
 export function writePlayMode(game: PortedGameId, mode: PlayMode): void {
   writeStored(PREFIX + game + SUFFIX, mode);
+}
+
+/**
+ * Whether the tab draws the game's own screen — the four 3-D views and the boxes around them —
+ * rather than the top-down map of the floor.
+ *
+ * The game itself never draws a map of the floor the character is standing on, so the screen is
+ * what faithful and speedrun show. Debug keeps the map, which is the only place on the site the
+ * floor can be read square by square while it is being walked.
+ */
+export function screenDrawn(mode: PlayMode): boolean {
+  return mode !== 'debug';
 }
 
 /**

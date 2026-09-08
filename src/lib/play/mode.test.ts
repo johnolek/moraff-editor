@@ -6,6 +6,7 @@ import {
   panelVisible,
   PLAY_MODES,
   readPlayMode,
+  screenDrawn,
   writePlayMode,
 } from './mode';
 
@@ -96,5 +97,13 @@ describe('the monsters the map draws', () => {
     expect(monstersDrawn('speedrun', sight)).toEqual(sight.monsters);
     expect(monstersDrawn('debug', sight)).toEqual(sight.monsters);
     expect(monstersDrawn('debug', { ...sight, engaged: null })).toEqual(sight.monsters);
+  });
+});
+
+describe('which stage the tab shows', () => {
+  it('draws the game screen in faithful and speedrun and the map in debug', () => {
+    expect(screenDrawn('faithful')).toBe(true);
+    expect(screenDrawn('speedrun')).toBe(true);
+    expect(screenDrawn('debug')).toBe(false);
   });
 });
