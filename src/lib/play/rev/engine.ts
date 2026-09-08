@@ -15,6 +15,7 @@ import {
 } from './fight';
 import { revMonsterAttack } from './attack';
 import { revShowHelp } from './help';
+import { revPause } from './pause';
 import { revKillMonster } from './kill';
 import { REV_KEY, revArrowMode, revCompassArrow, revTurningArrow, revWrapFacing } from './keys';
 import { revFeatureUnder, revLookDown } from './ladders';
@@ -371,7 +372,7 @@ export const REV_KEY_HANDLERS: Record<number, RevKeyHandler> = {
   [REV_KEY.abandon]: { c: '1000:1918, drop all the coins', run: (turn) => notBuiltYet(turn, 'drop all of your coins') },
   [REV_KEY.help]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
   [REV_KEY.f1]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
-  [REV_KEY.pause]: { c: '1000:7FFB, the pause screen', run: (turn) => notBuiltYet(turn, 'stop everything until a key') },
+  [REV_KEY.pause]: { c: '1000:7FFB, the pause screen', run: (turn) => revPause(turn.game, turn.session.desk(), () => quitAndSave(turn)) },
   [REV_KEY.enterDelay]: { c: '1000:0F00, the enter delay', run: (turn) => notBuiltYet(turn, 'set the delay between redraws') },
   [REV_KEY.pill]: { c: '1000:7C49, take a pill', run: (turn) => notBuiltYet(turn, 'take a pill') },
   [REV_KEY.wand]: { c: '1000:7AA1, use a wand', run: (turn) => notBuiltYet(turn, 'use a wand') },
