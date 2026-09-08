@@ -258,7 +258,8 @@ export interface MwCharacter {
 }
 
 /**
- * Something the original does that this port records instead of doing.
+ * Something the original does that this port records instead of doing, or something a ported
+ * function did that the run log of `src/lib/play/run.ts` keeps as a milestone.
  */
 export type MwEvent =
   /**
@@ -298,7 +299,19 @@ export type MwEvent =
    * its monster cache and its six explored-map blocks. MORF-66 says a dead character keeps its
    * bytes and the roster entry is marked instead, so the port deletes nothing.
    */
-  | { kind: 'characterFilesDeleted'; slot: number };
+  | { kind: 'characterFilesDeleted'; slot: number }
+  /**
+   * monster_killed (WORLD.EXE 3000:d51c) has killed one of the eight quest bosses. `boss` is
+   * which of them, 0 to 7, being its monster type less 104.
+   */
+  | { kind: 'bossKilled'; boss: number }
+  /** That boss was the eighth, the Red Dragon King, which is the end of the game. */
+  | { kind: 'gameWon' }
+  /**
+   * The inn (WORLD.EXE 2000:35b1) has handed the character every level their experience has
+   * earned. `level` is the one they wake on.
+   */
+  | { kind: 'levelGained'; level: number };
 
 /**
  * One answer to the three menus that the Write Scroll and Enchant Wand spells walk through: the

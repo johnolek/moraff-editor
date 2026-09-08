@@ -1100,7 +1100,11 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
   if (writing === 0) scrollFind(game);
   if (writing === 1) wandFind(game);
   if (writing === 2) paperFind(game);
-  if (type > FIRST_BOSS - 1 && type < LAST_BOSS + 1) bossReward(game, type, () => choices.enhanceWeapon());
+  if (type > FIRST_BOSS - 1 && type < LAST_BOSS + 1) {
+    game.events.push({ kind: 'bossKilled', boss: type - FIRST_BOSS });
+    if (type === LAST_BOSS) game.events.push({ kind: 'gameWon' });
+    bossReward(game, type, () => choices.enhanceWeapon());
+  }
   game.engaged = -1;
   if (pc.lev !== 0) return;
   if (pc.hp + 15 < pc.maxHp) {

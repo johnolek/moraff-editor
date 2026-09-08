@@ -144,6 +144,21 @@ describe('inn', () => {
     expect(game.messages).toContain('CONGRATULATIONS! YOU HAVE BECOME');
   });
 
+  it('records the level the character woke on', () => {
+    const game = newMwGame({
+      rng: { random: () => 0 },
+      pc: { cls: 0, money: 10, lev: 0, exp: 250, hp: 10, maxHp: 10 },
+    });
+    inn(game, true);
+    expect(game.events).toContainEqual({ kind: 'levelGained', level: 3 });
+  });
+
+  it('records nothing when the night buys no level', () => {
+    const game = newMwGame({ pc: { money: 10, lev: 5, exp: 0 } });
+    inn(game, true);
+    expect(game.events.map((event) => event.kind)).not.toContain('levelGained');
+  });
+
   it('adds eight hours of seconds to the counter that is not the age', () => {
     const game = newMwGame({ pc: { money: 10, ageMinutes: 1000, unread7c0: 0 } });
     inn(game, true);

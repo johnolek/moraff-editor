@@ -226,6 +226,11 @@ export class MwGameSession {
     pc.mapCursorY = this.game.mapViewRows >> 1;
     pc.mapCursorX = this.game.mapViewColumns >> 1;
     recomputeWeight(this.game);
+    run?.watch(this.game.events, () => ({
+      time: this.game.movesTaken,
+      floor: this.game.pc.floor,
+      dungeon: this.game.pc.dungeon,
+    }));
   }
 
   /** A key from the Play tab. */
@@ -473,6 +478,7 @@ export class MwGameSession {
   /** The character is dead: the roster is told, and nothing more is written. */
   die(): void {
     this.dead = true;
+    this.run?.died();
     this.file.died();
   }
 

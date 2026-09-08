@@ -336,8 +336,9 @@ export interface SpellChoice {
 }
 
 /**
- * Something the original does after a spell that this port records instead of doing. See the
- * README's second departure.
+ * Something the original does after a spell that this port records instead of doing (see the
+ * README's second departure), or something a ported function did that the run log of
+ * `src/lib/play/run.ts` keeps as a milestone.
  */
 export type GameEvent =
   /** load_level_map (exe 2000:7687) reads in another floor's monsters. */
@@ -353,7 +354,19 @@ export type GameEvent =
    * character that did not exist before. The record is the live one, which nothing writes to
    * after this.
    */
-  | { kind: 'characterCreated'; slot: number; pc: PlayerCharacter };
+  | { kind: 'characterCreated'; slot: number; pc: PlayerCharacter }
+  /**
+   * kill_monster (exe 3000:b12d) has killed the twenty-second monster of a section, which is that
+   * section's Shadow boss. `boss` is the section, 0 to 19.
+   */
+  | { kind: 'bossKilled'; boss: number }
+  /** That boss was the last section's, the Shadow Ogeroth, which is the end of the game. */
+  | { kind: 'gameWon' }
+  /**
+   * flea_inn (exe 2000:4fe7) has handed the character every level their experience has earned.
+   * `level` is the one they wake on.
+   */
+  | { kind: 'levelGained'; level: number };
 
 /** The columns of the type table `mstats` (exe DS:5402) that the ported functions read. */
 export interface MonsterStats {

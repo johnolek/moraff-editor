@@ -458,6 +458,7 @@ export function stayTheNight(game: Game): void {
 
   if (checkGainLevel(game)) {
     pc.lev = gainLevel(game);
+    game.events.push({ kind: 'levelGained', level: pc.lev });
     if (pc.lev < 5) showHint(game, 22);
     levelUpScreen(game);
   }

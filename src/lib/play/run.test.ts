@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { bundledDungeon } from '../game/dungeon';
+import { UNFORGIVEN_MAP } from '../map/game';
 import { characterFile, press, settle, townSquare } from './battle.test-support';
 import { runMoveControl, startGame, type GameSession } from './engine';
 import { KEY } from './keys';
@@ -154,5 +156,110 @@ describe('the actions a run counts', () => {
   it('counts each of the swings Ctrl-F takes, and not Ctrl-F itself', () => {
     expect(countsAsAction('unforgiven', KEY.repeatFight)).toBe(false);
     expect(countsAsAction('unforgiven', KEY.fight)).toBe(true);
+  });
+});
+
+/** Put a monster on the square in front of a character standing in the town facing north. */
+function plantAMonster(session: GameSession, start: { x: number; y: number }, monster: { hp: number; type: number }) {
+  const planted = session.game.monsters[0];
+  planted.x = start.x;
+  planted.y = start.y - 1;
+  planted.hp = monster.hp;
+  planted.level = 1;
+  planted.type = monster.type;
+  session.game.monsterMap[planted.y * 80 + planted.x] = 0;
+}
+
+/** The first square of the town whose north side is a module teleporter. */
+function teleporterSquare(): { x: number; y: number } {
+  const rows = UNFORGIVEN_MAP.floor(0, 0);
+  for (let y = 2; y < 100; y++) {
+    for (let x = 2; x < 76; x++) {
+      if (rows[y][x].solid || rows[y][x].n !== 4) continue;
+      if (bundledDungeon.ladder(x, y, 0, 0) !== 0) continue;
+      if (bundledDungeon.townFeature(x, y, 0) !== 0) continue;
+      return { x, y };
+    }
+  }
+  throw new Error('no module teleporter in the town');
+}
+
+describe('the milestones a run records', () => {
+  it('records the death, with the actions and the game time it happened at', async () => {
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...townSquare() });
+    await press(session, KEY.arrowUp);
+    session.game.pc.hp = -1;
+    await press(session, KEY.escape);
+    // FUN_2000_9232 prints two of UH.BIN's messages and waits for a key after each.
+    await press(session, KEY.enter);
+    await press(session, KEY.enter);
+    session.finish();
+
+    expect(session.dead).toBe(true);
+    const milestones = run.log().milestones;
+    expect(milestones).toEqual([{ kind: 'death', which: 0, actions: 1, time: session.game.secondsElapsed, floor: 0 }]);
+  });
+
+  it('records the section boss a swing killed', async () => {
+    const start = townSquare();
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...start, lev: 20, str: 90, cls: 2 });
+    plantAMonster(session, start, { hp: 1, type: 22 });
+    await press(session, KEY.escape);
+    await press(session, KEY.fight);
+    for (let key = 0; key < 6; key++) await press(session, KEY.enter);
+    session.finish();
+
+    const boss = run.log().milestones.filter((milestone) => milestone.kind === 'boss');
+    expect(boss.length).toBe(1);
+    expect(boss[0].which).toBe(0);
+    expect(boss[0].actions).toBeGreaterThan(0);
+  });
+
+  it('records the level a night at the inn handed over', async () => {
+    const inn = (() => {
+      for (let y = 1; y < 100; y++) {
+        for (let x = 1; x < 76; x++) {
+          if (bundledDungeon.townFeature(x, y, 0) === 4 && bundledDungeon.ladder(x, y, 0, 0) === 0) return { x, y };
+        }
+      }
+      throw new Error('no inn in the town');
+    })();
+    const { run, session } = recordedGame({
+      level: 0,
+      ...inn,
+      lev: 1,
+      money: 100,
+      exp: 100000,
+      cultureStock: 10,
+      crystals: 10,
+      sp: 0,
+      maxSp: 5,
+    });
+    await press(session, KEY.up);
+    await press(session, KEY.escape);
+    await press(session, KEY.escape);
+    await press(session, KEY.escape);
+    await press(session, 0x31);
+    await press(session, KEY.viewStats);
+    session.finish();
+
+    const levels = run.log().milestones.filter((milestone) => milestone.kind === 'level');
+    expect(levels.length).toBe(1);
+    expect(levels[0].which).toBe(session.game.pc.lev);
+    expect(levels[0].which).toBeGreaterThan(1);
+  });
+
+  it('records the module the teleporter led to', async () => {
+    const start = teleporterSquare();
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...start });
+    await press(session, KEY.arrowUp);
+    await press(session, KEY.enter);
+    await press(session, KEY.viewStats);
+    session.finish();
+
+    expect(session.game.pc.module).toBe(1);
+    const modules = run.log().milestones.filter((milestone) => milestone.kind === 'dungeon');
+    expect(modules.length).toBe(1);
+    expect(modules[0].which).toBe(1);
   });
 });

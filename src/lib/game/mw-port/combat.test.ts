@@ -612,6 +612,28 @@ describe('monsterKilled', () => {
     expect(worth).toBeGreaterThan(0);
   });
 
+  it('records which quest boss it has killed', () => {
+    const game = killing();
+    game.monsters[0].type = 0x6a;
+    monsterKilled(game, nothing);
+    expect(game.events).toContainEqual({ kind: 'bossKilled', boss: 2 });
+    expect(game.events).not.toContainEqual({ kind: 'gameWon' });
+  });
+
+  it('records the win when the boss was the eighth', () => {
+    const game = killing();
+    game.monsters[0].type = 0x6f;
+    monsterKilled(game, nothing);
+    expect(game.events).toContainEqual({ kind: 'bossKilled', boss: 7 });
+    expect(game.events).toContainEqual({ kind: 'gameWon' });
+  });
+
+  it('records nothing for an ordinary monster', () => {
+    const game = killing();
+    monsterKilled(game, nothing);
+    expect(game.events.map((event) => event.kind)).not.toContain('bossKilled');
+  });
+
   it('rewrites the slot as an ogre at (100, 100) and frees the square', () => {
     const game = killing();
     monsterKilled(game, nothing);

@@ -220,6 +220,11 @@ export class GameSession {
     pc.mapCursorY = MAP_VIEW_ROWS >> 1;
     this.rows = UNFORGIVEN_MAP.floor(pc.level, pc.module);
     loadLevelMap(this.game, this.floors, this.rows, pc.level, this.game.rng);
+    run?.watch(this.game.events, () => ({
+      time: this.game.secondsElapsed,
+      floor: this.game.pc.level,
+      dungeon: this.game.pc.module,
+    }));
   }
 
   /** A key from the Play tab. */
@@ -412,6 +417,7 @@ export class GameSession {
   /** The character is dead: the roster is told, and nothing more is written. */
   die(): void {
     this.dead = true;
+    this.run?.died();
     this.file.died();
   }
 

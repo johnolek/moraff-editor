@@ -182,6 +182,29 @@ describe('killMonster', () => {
     expect(game.messages).not.toContain('YOU FIND...');
   });
 
+  it('records which section boss it has killed', async () => {
+    const game = killing(always(0), { module: 0, level: 3 }, BOSS);
+    await killMonster(game);
+    expect(game.events).toContainEqual({ kind: 'bossKilled', boss: 0 });
+    expect(game.events).not.toContainEqual({ kind: 'gameWon' });
+  });
+
+  it('records the win when the boss was the last section\'s', async () => {
+    // The Shadow Ogeroth's orb has to be used on a weapon the character owns, and the menu asks
+    // again until it names one, so the second row of the eight is theirs.
+    const owned = [0, 1, 0, 0, 0, 0, 0, 0];
+    const game = killing(always(0), { module: 4, level: 100, weaponsOwned: owned }, BOSS);
+    await killMonster(game);
+    expect(game.events).toContainEqual({ kind: 'bossKilled', boss: 19 });
+    expect(game.events).toContainEqual({ kind: 'gameWon' });
+  });
+
+  it('records nothing for an ordinary monster', async () => {
+    const game = killing(always(0), { module: 0, level: 3 });
+    await killMonster(game);
+    expect(game.events.map((event) => event.kind)).not.toContain('bossKilled');
+  });
+
   it('gives a fighter and a sage a gate four hundred points easier', async () => {
     for (const [cls, gate] of [[0, 550], [5, 550], [3, 950], [1, 950]]) {
       const game = killing(always(0), { cls, lev: 10, level: 5 });

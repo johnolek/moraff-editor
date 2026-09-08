@@ -101,6 +101,54 @@ export function countsAsAction(game: RunGame, key: number): boolean {
   return ACTIONS[game].has(key);
 }
 
+/**
+ * What a run is verified against: the handful of things that happened in it worth naming.
+ *
+ * A boss is a section's Shadow boss in Dungeons of the Unforgiven (0 to 19) and one of the eight
+ * quest bosses in Moraff's World (0 to 7); a level is the one the character woke on at the inn; a
+ * dungeon is the module or the dungeon the character moved to. A death and a win have nothing to
+ * count, and `which` is 0 for them.
+ */
+export type MilestoneKind = 'boss' | 'level' | 'dungeon' | 'death' | 'win';
+
+export interface Milestone {
+  kind: MilestoneKind;
+  /** Which boss, which level, which module or dungeon. */
+  which: number;
+  /** How many actions the run had spent by then. */
+  actions: number;
+  /** The game's own clock: the seconds call_check_eng counts in Dungeons of the Unforgiven, the
+   *  moves spend_time counts in Moraff's World. */
+  time: number;
+  /** The floor the character was standing on. */
+  floor: number;
+}
+
+/** Where the game had got to when a milestone was reached. */
+export interface RunClock {
+  time: number;
+  floor: number;
+  /** The module of Dungeons of the Unforgiven, or the dungeon of Moraff's World. */
+  dungeon: number;
+}
+
+/**
+ * The events either game's ported functions push that become milestones. Both `GameEvent` and
+ * `MwEvent` carry these three, so a run reads them the same way whichever game it is.
+ */
+export type RunEvent =
+  | { kind: 'bossKilled'; boss: number }
+  | { kind: 'gameWon' }
+  | { kind: 'levelGained'; level: number };
+
+/** The same event, if it is one a run keeps. The events arrive as two unions this file does not
+ *  import, and their three shared members are what it reads. */
+function runEvent(event: { kind: string }): RunEvent | null {
+  const kind = event.kind;
+  if (kind !== 'bossKilled' && kind !== 'gameWon' && kind !== 'levelGained') return null;
+  return event as RunEvent;
+}
+
 /** One game, played, as it is written down and handed about. */
 export interface RunLog {
   version: number;
@@ -124,6 +172,8 @@ export interface RunLog {
   inputs: number[];
   /** How many of those keys were actions, which is what a run is judged by. */
   actions: number;
+  /** What the run reached, oldest first. */
+  milestones: Milestone[];
 }
 
 /** The bytes of a base64 string from a run log. */
@@ -183,6 +233,16 @@ export class RunRecorder {
   readonly inputs: number[] = [];
   /** How many actions the run has spent. */
   actions = 0;
+  /** What the run has reached, oldest first. */
+  readonly milestones: Milestone[] = [];
+
+  /** Where the game has got to, which stamps a milestone. Null until the session hands it over. */
+  private clock: (() => RunClock) | null = null;
+  /** The events the game's ported functions push, and how many of them have been read. */
+  private events: readonly { kind: string }[] = [];
+  private eventsRead = 0;
+  /** The module or dungeon the character was last seen in, so that moving between them shows. */
+  private dungeon = 0;
 
   constructor(start: RunStart) {
     this.game = start.game;
@@ -193,6 +253,18 @@ export class RunRecorder {
     this.mode = start.mode ?? null;
     this.replaying = start.replaying ?? false;
     this.rng = new SeededRng(this.seed);
+  }
+
+  /**
+   * The session hands over the events its ported functions push and the game's own clock, which
+   * between them are where the milestones come from. Anything already pushed belongs to setting
+   * the game up rather than to playing it.
+   */
+  watch(events: readonly { kind: string }[], clock: () => RunClock): void {
+    this.events = events;
+    this.eventsRead = events.length;
+    this.clock = clock;
+    this.dungeon = clock().dungeon;
   }
 
   /** A key on its way into the game. */
@@ -207,10 +279,42 @@ export class RunRecorder {
 
   /** The loop has read a key and is about to hand it to its handler. */
   dispatched(key: number): void {
+    this.note();
     if (countsAsAction(this.game, key)) this.actions += 1;
   }
 
+  /** The character is dead, which is the end of the run. */
+  died(): void {
+    this.note();
+    const now = this.clock?.();
+    if (now) this.milestones.push({ kind: 'death', which: 0, actions: this.actions, time: now.time, floor: now.floor });
+  }
+
+  /**
+   * Everything the game has done since this was last asked, as milestones. It is asked before
+   * every action, at a death and whenever the log is read, so nothing is left behind.
+   */
+  private note(): void {
+    const clock = this.clock;
+    if (clock === null) return;
+    const now = clock();
+    const reach = (kind: MilestoneKind, which: number) =>
+      this.milestones.push({ kind, which, actions: this.actions, time: now.time, floor: now.floor });
+    if (now.dungeon !== this.dungeon) {
+      this.dungeon = now.dungeon;
+      reach('dungeon', now.dungeon);
+    }
+    while (this.eventsRead < this.events.length) {
+      const event = runEvent(this.events[this.eventsRead++]);
+      if (event === null) continue;
+      if (event.kind === 'bossKilled') reach('boss', event.boss);
+      if (event.kind === 'levelGained') reach('level', event.level);
+      if (event.kind === 'gameWon') reach('win', 0);
+    }
+  }
+
   log(): RunLog {
+    this.note();
     return {
       version: RUN_LOG_VERSION,
       engine: ENGINE_COMMIT,
@@ -222,6 +326,7 @@ export class RunRecorder {
       record: encodeRecord(this.record),
       inputs: [...this.inputs],
       actions: this.actions,
+      milestones: this.milestones.map((milestone) => ({ ...milestone })),
     };
   }
 }

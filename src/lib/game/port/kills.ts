@@ -29,6 +29,10 @@ import { MAP_EMPTY, setMonsterMap } from './state';
 /** The square a dead monster's slot is parked on, off the 80 x 110 floor and out of the way. */
 export const GARBAGE_CAN = 100;
 
+/** How many sections the game's floors are divided into. The last one's Shadow boss is the
+ *  Shadow Ogeroth on floor 100 of module V, and killing it is the end of the game. */
+const SECTIONS = 20;
+
 /** The colour kill_monster draws the orb menu's heading in (exe 3000:b72b). */
 const ENHANCE_HEADING_COLOUR = 5;
 
@@ -345,7 +349,11 @@ export async function killMonster(game: Game): Promise<void> {
   }
   if (kindIndex === 22) {
     const section = sectionNumber(pc.module, pc.level);
-    if (section < 20) await bossReward(game, section);
+    if (section < SECTIONS) {
+      game.events.push({ kind: 'bossKilled', boss: section });
+      if (section === SECTIONS - 1) game.events.push({ kind: 'gameWon' });
+      await bossReward(game, section);
+    }
   }
   game.engaged = -1;
   if (game.highSpeed || pc.lev !== 0) return;

@@ -397,6 +397,27 @@ describe('the inn', () => {
     expect(game.messages).not.toContain('WAY TO GO! YOU HAVE BECOME MUCH');
   });
 
+  it('records the level the character woke on', () => {
+    const game = inTown({
+      cls: 0,
+      lev: 1,
+      money: 100000,
+      cultureStock: 100,
+      crystals: 100,
+      exp: 250 * 1.4 ** 3 - 80,
+      hp: 100,
+      maxHp: 100,
+    });
+    stayTheNight(game);
+    expect(game.events).toContainEqual({ kind: 'levelGained', level: 5 });
+  });
+
+  it('records nothing when the night buys no level', () => {
+    const game = inTown({ cls: 0, lev: 5, money: 100000, cultureStock: 100, crystals: 100, exp: 0 });
+    stayTheNight(game);
+    expect(game.events.map((event) => event.kind)).not.toContain('levelGained');
+  });
+
   it('congratulates a character who is still under level 5', () => {
     const game = inTown({
       cls: 0,
