@@ -34,16 +34,7 @@ export interface ViewPictures {
   ladder(down: boolean): PicRowImage | null;
 }
 
-/**
- * Which of the four wall files each of the twenty sections is drawn from: the name table at
- * DS:02ef that `load_section_pictures` (exe 2000:372c) indexes with the section number. The
- * entry for section 1 doubles as the file the game falls back on when a section's own is
- * missing. `src/lib/map/wall-texture.ts` has the same table for the map's wall swatch.
- */
-export const WALL_FILES = [1, 2, 3, 4, 2, 3, 1, 4, 1, 2, 3, 1, 2, 1, 3, 2, 3, 2, 1, 4];
-
-/** The wall file a section is drawn with, by section 1..20. */
-export const wallPictureFile = (section: number): string => `ufwall${WALL_FILES[section - 1] ?? 1}.pic`;
+export { WALL_FILES, wallPictureFile } from '../../game/port/pictures';
 
 /** A picture set with nothing in it, which draws the view in flat colours. */
 export const NO_PICTURES: ViewPictures = {

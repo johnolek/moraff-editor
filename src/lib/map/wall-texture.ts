@@ -4,6 +4,7 @@ import { monsterPixelIndex, renderImage, vgaToRgb, type PicImage, type Rgb } fro
 import mwPalettes from '../game/mw-palettes.json';
 import { sectionInfo } from '../game/sections';
 import { wallImages as moraffsWorldWallImages } from '../mw-bestiary/pictures';
+import { wallPictureFile } from '../game/port/pictures';
 
 /**
  * The texture the 3-D view would draw this floor's walls with.
@@ -29,13 +30,6 @@ export interface WallTexture {
   images: () => PicImage[] | null;
 }
 
-/**
- * Which of the four wall pictures each section is drawn from. This is the name table at DS:02ef
- * that load_section_pictures indexes with the section (exe 2000:372c, unf.c
- * "load_section_pictures"), read out of the unpacked executable; the entry for section 1 is the
- * first, and it doubles as the file the game falls back on when a section's own is missing.
- */
-const UNFORGIVEN_WALL_FILES = [1, 2, 3, 4, 2, 3, 1, 4, 1, 2, 3, 1, 2, 1, 3, 2, 3, 2, 1, 4];
 
 /**
  * A wall picture holds a door, a portcullis, the teleporter sign, three wall materials and four
@@ -70,7 +64,7 @@ const MORAFFS_WORLD_WALL_SETS = mwPalettes.palettes.length;
 function unforgivenWallTexture(module: number, floor: number): WallTexture | null {
   const section = sectionInfo(module, floor);
   if (!section) return null;
-  const file = `ufwall${UNFORGIVEN_WALL_FILES[section.section - 1]}.pic`;
+  const file = wallPictureFile(section.section);
   return {
     file,
     image: UNFORGIVEN_WALL_IMAGE,
