@@ -109,6 +109,9 @@ export function drawStrokeLine(
   right: number,
   bottom: number,
   colour: number,
+  /** The pen `print_text` is given, when the caller asks for one of its own: the stone tablet
+   *  draws each of its lines twice, at 8 units and then at 4 (exe DS:2e06 and DS:25f5). */
+  penUnits?: number,
 ): void {
   if (text.length === 0) return;
   const maxX = screen.width - 1;
@@ -123,7 +126,7 @@ export function drawStrokeLine(
   const endX = round((x2 * maxX) / UNITS_X);
   const endY = round((y2 * maxY) / UNITS_Y);
 
-  const size = strokePenUnits(maxX);
+  const size = penUnits ?? strokePenUnits(maxX);
   const pen: StrokePen = {
     scaleX: Math.trunc(Math.trunc((3 * (endX - startX)) / text.length) / 8),
     scaleY: (endY - startY) >> 1,
