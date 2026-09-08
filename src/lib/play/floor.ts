@@ -46,7 +46,7 @@ export function monsterIdOf(type: number, section: number): string {
  * follow the built-in monsters and the boss is the first of them, so his row is the number of
  * built-in kinds.
  */
-const BOSS_KIND = BUILTIN_KINDS;
+export const BOSS_KIND = BUILTIN_KINDS;
 
 /**
  * Where a floor's Shadow boss has his square remembered: `bossIndex` (exe: the module times

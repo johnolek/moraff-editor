@@ -8,7 +8,12 @@ import { FOUR_VIEWS } from './view3d/views';
 import { ZOOM_MONSTER_COLOUR } from './zoom-monsters';
 import {
   clearScreenRect,
+  drawExpandedMap,
   drawScreenFurniture,
+  EXPANDED_CELL,
+  EXPANDED_COLUMNS,
+  EXPANDED_GROUND,
+  EXPANDED_ROWS,
   keyMenuLines,
   KEY_MENU_LINES,
   KEY_MENU_SPREAD_TO,
@@ -339,5 +344,41 @@ describe('the monsters debug mode marks on the zoom map', () => {
     // The square itself is drawn, in the black the game fills a known square with.
     expect(marks('faithful')).toEqual([0, 0]);
     expect(marks('speedrun')).toEqual([0, 0]);
+  });
+});
+
+
+describe('the map the X key fills the screen with', () => {
+  const open = (): MapSquare => ({ n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1 });
+  const at = { x: 12, y: 20, dir: 0 };
+
+  function drawn(): Frame {
+    const rows: MapSquare[][] = Array.from({ length: EXPANDED_ROWS }, () =>
+      Array.from({ length: EXPANDED_COLUMNS }, open),
+    );
+    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    drawExpandedMap(frame, { rows, at, map: { known: () => true, knownOnArrival: () => true } });
+    return frame;
+  }
+
+  it('shows the whole floor from the screen\'s own corner, at seven pixels a square', () => {
+    const frame = drawn();
+    // The first square of the floor is drawn in the first cell: the branch centres the window on
+    // column 40 and row 55 and the window is the floor's own eighty by a hundred and ten.
+    expect(pixelAt(frame, 0, 0)).toBe(ZOOM_CORNER_COLOUR);
+    expect(pixelAt(frame, EXPANDED_CELL, 0)).toBe(ZOOM_CORNER_COLOUR);
+    expect(pixelAt(frame, 3, 3)).toBe(0);
+  });
+
+  it('fills the screen the map does not reach with the ground it is drawn on', () => {
+    const frame = drawn();
+    expect(pixelAt(frame, EXPANDED_COLUMNS * EXPANDED_CELL + 20, 400)).toBe(EXPANDED_GROUND);
+  });
+
+  it("marks the character's own square, which is what the original flashes there", () => {
+    const frame = drawn();
+    expect(pixelAt(frame, at.x * EXPANDED_CELL + 3, at.y * EXPANDED_CELL + 3)).toBe(15);
+    // The square next door is a plain black one, so the mark is one square and not a smear.
+    expect(pixelAt(frame, (at.x + 1) * EXPANDED_CELL + 3, at.y * EXPANDED_CELL + 3)).toBe(0);
   });
 });

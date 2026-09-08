@@ -12,6 +12,7 @@
   import type { KilledOnScreen } from './engine';
   import {
     clearScreenRect,
+    drawExpandedMap,
     drawScreenFurniture,
     keyMenuLines,
     SCREEN_PIXELS,
@@ -52,6 +53,8 @@
     killed?: KilledOnScreen | null;
     /** Which drawing of the four views this is, which mirrors the monster ahead. */
     viewsDrawn?: number;
+    /** The X key's map is filling the screen, which is drawn instead of everything else. */
+    expandedMap?: boolean;
   }
 
   let {
@@ -68,6 +71,7 @@
     debug = false,
     killed = null,
     viewsDrawn = 0,
+    expandedMap = false,
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
@@ -137,6 +141,21 @@
     if (!context) return;
 
     const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    const floor = {
+      rows,
+      at: { x: place.x, y: place.y, dir: place.dir },
+      map: discovered,
+      monsters: mapMonsters,
+    };
+    // The X key's map is a fill over the whole screen with the floor drawn on it (exe 2000:d341),
+    // so the views and the boxes around them are not drawn at all while it is up.
+    if (expandedMap) {
+      drawExpandedMap(frame, floor);
+      drawDotuScreenText(frame, SCREEN_PIXELS, text);
+      const covered = toRgba(frame, sectionPalette(place.module + 1, part, game.colourSetting));
+      context.putImageData(new ImageData(covered, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
+      return;
+    }
     // The coin flip that mirrors the monster ahead (exe 3000:2323), drawn from the number of the
     // drawing rather than from the game's own generator: a run has to replay exactly, and the tab
     // redraws the screen far more often than the loop draws the views. Seeded here, so every
@@ -164,12 +183,7 @@
       },
       place.dir,
     );
-    drawScreenFurniture(frame, {
-      rows,
-      at: { x: place.x, y: place.y, dir: place.dir },
-      map: discovered,
-      monsters: mapMonsters,
-    });
+    drawScreenFurniture(frame, floor);
     // A screen that takes the display over fills the rectangle it draws in with colour 0 first:
     // FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way and cast_a_spell the top of
     // the screen its spell table stands on. A screen whose rectangle the port does not know

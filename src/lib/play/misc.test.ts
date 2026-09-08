@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Rng } from '../game/port/rng';
+import { newGame, type Game } from '../game/port/state';
 import { inTheTown, press } from './battle.test-support';
+import type { GameSession } from './engine';
+import { BOSS_KIND } from './floor';
 import { KEY } from './keys';
+import { bossSignpost } from './misc';
 
 const lowest: Rng = { random: () => 0 };
 
@@ -86,14 +90,80 @@ describe('the G key', () => {
   });
 });
 
-describe('the X and Z keys', () => {
-  it('say what the game would do with a screen this port draws the map on', async () => {
+describe('the Z key', () => {
+  it('says what the game would do with a screen this port draws the map on', async () => {
     const session = inTheTown(lowest);
-    await press(session, KEY.expandMap);
-    expect(session.box).toContain('THE GAME WOULD FILL THE SCREEN');
-    // The box waits for a key of its own, the way every print_menu_only does.
-    await press(session, KEY.escape);
     await press(session, KEY.zoomView);
     expect(session.box).toContain('THE ZOOM MAP. THIS PORT DRAWS');
+  });
+});
+
+describe('the X key', () => {
+  /** What the game has drawn over the whole display. */
+  const drawn = (session: GameSession): string[] => session.view().screen.map((line) => line.text);
+
+  it('fills the screen with the floor and takes it down again on a key', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.expandMap);
+    expect(session.view().expandedMap).toBe(true);
+    expect(drawn(session)).toEqual(['EXPANDED DUNGEON MAP, HIT ANY KEY...']);
+    await press(session, KEY.escape);
+    expect(session.view().expandedMap).toBe(false);
+    expect(drawn(session)).toEqual([]);
+  });
+
+  it('empties the message box on the way in, the way erase_menu_block does', async () => {
+    const session = inTheTown(lowest, { money: 5 });
+    await press(session, KEY.money);
+    expect(session.box).toContain('LIST OF ASSETS:');
+    await press(session, KEY.escape);
+    await press(session, KEY.expandMap);
+    expect(session.box).toEqual([]);
+  });
+
+  it('says nothing about the way to go on a floor with no boss standing', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.expandMap);
+    expect(drawn(session).some((line) => line.startsWith('GO '))).toBe(false);
+  });
+});
+
+describe('the way to the boss the expanded map prints', () => {
+  /** A game with the section's Shadow boss standing in slot 0, where stock_level puts him. */
+  function withBossAt(x: number, y: number): Game {
+    const game = newGame();
+    Object.assign(game.monsters[0], { x, y, type: BOSS_KIND, hp: 10 });
+    Object.assign(game.pc, { x: 40, y: 40 });
+    return game;
+  }
+
+  const wayTo = (x: number, y: number): string | null => bossSignpost(withBossAt(x, y))?.text ?? null;
+
+  it('names the axis with further to go', () => {
+    expect(wayTo(20, 45)).toBe('GO WEST');
+    expect(wayTo(60, 45)).toBe('GO EAST');
+    expect(wayTo(45, 20)).toBe('GO NORTH');
+    expect(wayTo(45, 60)).toBe('GO SOUTH');
+  });
+
+  it('gives a tie between the two axes to north and south', () => {
+    expect(wayTo(30, 30)).toBe('GO NORTH');
+    expect(wayTo(50, 50)).toBe('GO SOUTH');
+  });
+
+  it('says nothing at all unless slot 0 still holds the boss', () => {
+    const game = withBossAt(20, 45);
+    game.monsters[0].type = 0;
+    expect(bossSignpost(game)).toBeNull();
+  });
+
+  it('is drawn in the corner the map itself does not reach', () => {
+    expect(bossSignpost(withBossAt(20, 45))).toEqual({
+      text: 'GO WEST',
+      x: 0x4b0,
+      y: 0x442,
+      font: 0,
+      colour: 4,
+    });
   });
 });

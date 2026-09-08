@@ -250,7 +250,8 @@
             debug={debugDrawn(mode)}
             prompt={view.prompt}
             killed={view.killed}
-            viewsDrawn={view.viewsDrawn} />
+            viewsDrawn={view.viewsDrawn}
+            expandedMap={view.expandedMap} />
         {:else}
           <FloorCanvas
             bind:this={canvas}

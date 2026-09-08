@@ -14,6 +14,9 @@
 // --killed adds the skull movecontrol paints over that monster the moment its hit points run
 // out, which is the screen the kill's own messages are read on.
 //
+// --expanded-map draws the X key's screen instead: the whole floor at seven pixels a square with
+// the headline under it, and with --boss X,Y the way to the section's Shadow boss beside it.
+//
 // --spells N puts the C key's table of one of the eight spell lists up, on the black cast_a_spell
 // clears for it; --mini-spells N is the same list in the miniature layout, which stands in the
 // message column instead. The character is given every spell of the list so that the table reads
@@ -61,7 +64,8 @@ const { battleSpellLines } = await load('game/port/screens.ts');
 const { engagementTiming, printBattleHpInfo, strike } = await load('game/port/combat.ts');
 const { inRect, messageBoxScreen } = await load('play/screens.ts');
 const { setMonsterMap, MAP_PLAYER } = await load('game/port/state.ts');
-const { monsterIdOf } = await load('play/floor.ts');
+const { monsterIdOf, BOSS_KIND } = await load('play/floor.ts');
+const { bossSignpost } = await load('play/misc.ts');
 const { monsterById } = await load('map/stocking.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
 
@@ -121,6 +125,26 @@ function viewMonster(monster) {
 }
 
 const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+
+// The X key's screen: FUN_3000_8e75 (exe 3000:8e75) over the whole display, with the two lines
+// movecontrol draws on it. Nothing else of the game's screen is on it, so this is the whole of it.
+if (args['expanded-map']) {
+  D.drawExpandedMap(frame, { rows, at: { ...at, dir }, map: { known: () => true, knownOnArrival: () => true } });
+  const map = newGame();
+  Object.assign(map.pc, at);
+  if (args.boss) {
+    const [bx, by] = String(args.boss).split(',').map(Number);
+    Object.assign(map.monsters[0], { x: bx, y: by, type: BOSS_KIND, hp: 10 });
+  }
+  const signpost = bossSignpost(map);
+  const lines = [{ text: 'EXPANDED DUNGEON MAP, HIT ANY KEY...', x: 0, y: 0x47e, font: 0, colour: 15 }];
+  if (signpost) lines.push(signpost);
+  drawDotuScreenText(frame, frame, lines);
+  writeFileSync(out, encodePng(frame.width, frame.height, toRgba(frame, dungeonPalette(palettes, null, moduleIndex + 1, part))));
+  console.log(`${out}  module ${moduleIndex} floor ${floor} expanded map`);
+  await server.close();
+} else {
+
 renderFourViews(
   frame,
   {
@@ -180,6 +204,7 @@ console.log(
     `${['north', 'south', 'west', 'east'][dir]}`,
 );
 await server.close();
+}
 
 /**
  * The message box in the middle of a swing, built by the port's own functions rather than written

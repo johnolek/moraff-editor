@@ -152,6 +152,8 @@ export interface PlayView {
   killed: KilledOnScreen | null;
   /** Which drawing of the four views this is, which mirrors the monster ahead. */
   viewsDrawn: number;
+  /** The X key's map is filling the screen, which covers the views and everything around them. */
+  expandedMap: boolean;
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
@@ -191,6 +193,11 @@ export class GameSession {
   /** movecontrol has come back: the character has quit or died. */
   over = false;
   dead = false;
+  /**
+   * The X key's map is up (`misc.ts`), which the original draws by filling the whole screen and
+   * putting the floor over it, so nothing else on the display shows while it stands.
+   */
+  expandedMap = false;
   /**
    * How much of the game the tab is showing (`mode.ts`). Nothing the game does reads it; it is
    * here so that anything keeping a record of the run can say which mode it was played in.
@@ -575,7 +582,10 @@ export class GameSession {
       monsters: drawn,
       visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
       box: messageBoxScreen({ box: this.box, banner: this.banner, drawn: printed }),
-      screen: screenTakenOver(printed),
+      // The expanded map has covered the display, so every line the game has drawn belongs to
+      // that screen — including the two the X branch puts in the corner the message box stands
+      // in, which erase_menu_block emptied on the way in.
+      screen: this.expandedMap ? printed : screenTakenOver(printed),
       screenCleared: game.blackedOut,
       banner: this.banner,
       prompt: ladderPrompt(ladderUnder(game), pc.level === 0 ? buildingUnder(game) : 0),
@@ -584,6 +594,7 @@ export class GameSession {
       ahead: game.engagedAhead !== -1,
       killed: this.timed.holding ? this.killedWhileHeld : this.killed,
       viewsDrawn: this.viewsDrawn,
+      expandedMap: this.expandedMap,
       over: this.over,
       dead: this.dead,
       run: this.run?.summary() ?? null,
