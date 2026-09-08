@@ -118,3 +118,115 @@ The find that hands one over refuses to give you a second, on the grounds that o
 is: above floor 76 a slosher is an unlimited ladder down.
 
 In the code: [use_magic_item](source:c/use_magic_item).
+
+## Combat
+
+### Swing on the beat
+
+Your to-hit roll is not random. The swing reseeds the random number generator from the PC's tick
+counter and then takes the very first number out of it, and Borland's generator answers
+consecutive seeds with numbers that climb steadily rather than jumping about. The result is a
+sawtooth: the roll walks up from 0 to 79 at about 0.85 per tick and wraps round every 5.2 seconds
+of real time, over and over, for as long as the game is running.
+
+So there are good moments to attack and bad ones, on a five-second cycle, and nothing on screen
+tells you which is which. Only the first roll of the swing follows the clock; the damage dice
+after it move fast enough to look random. The monster's own attack does the same thing with the
+tick count plus 100.
+
+In the code: [strike](source:c/strike), [monster_turn](source:c/monster_turn) and
+[rand](source:c/rand). Borland's generator is a plain
+[linear congruential generator](https://en.wikipedia.org/wiki/Linear_congruential_generator),
+which is why consecutive seeds give answers that lie on a straight line.
+
+### A big swing rolls the damage die several times
+
+The to-hit roll is not pass or fail. A roll on 80 is added to twice your level, your strength,
+your luck, the weapon's own to-hit number and every plus you are carrying; twice the monster's
+depth and the three bytes of its row that count as defence come off; and then the weapon's damage
+die is rolled once for every full 40 points the total sits above 40.
+
+That is why a character who has outgrown a floor kills in one blow: it is the same swing, cashed
+several times over. The monster's side works the same way on a threshold of 32 with 40 coming off
+each time, so a monster's roll of 33 hits once and 73 hits twice.
+
+In the code: [strike](source:c/strike), [monster_turn](source:c/monster_turn) and
+[toHitTotal](source:ts/to-hit.ts/toHitTotal).
+
+### Constitution is the only thing that takes a deep floor back
+
+Once a monster's swing has landed, and only while your level is below the floor number, the game
+piles on extra rolls: one on the difference between the floor and your level, one on four times
+the floor below floor 26, another on five times the floor below floor 101, and one on the
+monster's own depth. That is what makes a floor deeper than you dangerous rather than merely
+harder.
+
+Then the whole total is multiplied by `(100 - constitution + 50) / 150`. At 0 constitution that is
+the damage unchanged; at 100 constitution it is a third of it. The subtraction is floored at 1, so
+constitution above 100 buys nothing at all — the single most useful number in the game stops
+mattering at exactly 100.
+
+In the code: [monster_turn](source:c/monster_turn).
+
+### One monster attack in four is thrown away
+
+After all of that arithmetic there is a roll on four, and on a 1 the entire total is discarded and
+replaced with a roll on `floor / 2 + 3`. That roll can come out zero, so a monster that landed a
+solid hit does nothing at all a quarter of the time on shallow floors, and the message says it
+missed you.
+
+In the code: [monster_turn](source:c/monster_turn).
+
+### A monk is easier to hit for being clever
+
+Every class is hit on the same arithmetic except one. A monk has a roll on their own intelligence
+**added** to the monster's chance of hitting them, which is the one place in the game where a
+characteristic makes you worse at something.
+
+Dungeons of the Unforgiven has the same line and subtracts it. Whatever it was meant to be, in
+Moraff's World a monk who rolls a high intelligence — and intelligence is half of a monk's spell
+points — is paying for it on every swing anything takes at them.
+
+In the code: [monster_turn](source:c/monster_turn).
+
+### A level 0 character cannot be hit for more than five
+
+The last line of a monster's attack, after the damage is final, reads: if your level is 0 and the
+damage is above 4, throw it away and take a roll on 4 plus 1 instead. You leave character creation
+at level 0 and stay there until you have earned 54 experience and paid for a room, so the whole of
+that first stretch is played under a hard cap of five points a hit.
+
+It is the only difficulty setting the game has, and nothing tells you it is there or that it is
+about to end.
+
+In the code: [monster_turn](source:c/monster_turn) and
+[experience_needed](source:c/experience_needed).
+
+### You cannot fight through a door
+
+A square's four sides are each a wall, a door, a secret door or open air, and only a wall stops
+you walking. A door is walked through as freely as open air; a secret door is a door the automap
+draws as a wall.
+
+Engagement is stricter. The test for what you are facing wants the side between you and it to be
+fully open, and a monster's attack wants the same. A monster's own step wants only that the side
+is not a wall. So a monster walks through a doorway to reach you and then neither of you can touch
+the other, and the game says `THE DOOR IS JAMMED` when you try to walk into the square it is
+standing on.
+
+In the code: [check_engagement](source:c/FUN_2000_7d60),
+[monsters_move](source:c/monsters_move) and [side](source:ts/mwmap.js/side).
+
+### Breath throws the whole fight away
+
+A monster whose row names a breath weapon breathes it instead of swinging half the time, and when
+it does, everything above — the roll on 80, your armour, your level, your constitution — is
+discarded. Breath is `depth + a roll on depth`, and that is all.
+
+The five are fire, ice, acid, green phlegm and black slime. Anti-Fire and Anti-Cold halve their
+kinds, and Resist Disease and Resist Poison halve phlegm and slime, which is the only thing those
+two spells do by halves. Acid has no defence: it does its damage, sets the permanent plus on the
+suit you are wearing to zero, takes one of that suit away and leaves you in your skin.
+
+In the code: [monster_turn](source:c/monster_turn) and
+[describeEffects](source:ts/monsters.ts/describeEffects).
