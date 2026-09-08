@@ -151,6 +151,11 @@ function sideAhead(scene: MwViewScene, view: number): number {
  *
  * Near the horizon, where a band would be narrower than a sixty-fourth of the screen, the row is
  * laid flat instead; on a screen under 370 pixels wide every row is.
+ *
+ * Two of the original's other grounds are not here, because the port's screen is never in a state
+ * that asks for them: the line-art brick modes paint plain rows rather than chevrons, and the 1024
+ * by 768 in 256 colours paints a two-pixel dither over palette entries 48 to 63 instead. The
+ * second is the flat dark olive `mw-tools/docs/SCREEN.md` describes.
  */
 function drawFloorAndCeiling(
   frame: Frame,
