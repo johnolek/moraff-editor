@@ -62,8 +62,8 @@ export function drawLine(frame: Frame, x1: number, y1: number, x2: number, y2: n
 }
 
 /** The frame as RGBA bytes, ready for an `ImageData` or a PNG. */
-export function toRgba(frame: Frame, palette: Rgb[]): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(frame.width * frame.height * 4);
+export function toRgba(frame: Frame, palette: Rgb[]): Uint8ClampedArray<ArrayBuffer> {
+  const out = new Uint8ClampedArray(new ArrayBuffer(frame.width * frame.height * 4));
   for (let at = 0; at < frame.pixels.length; at++) {
     const [r, g, b] = palette[frame.pixels[at]] ?? [0, 0, 0];
     out[at * 4] = r;
