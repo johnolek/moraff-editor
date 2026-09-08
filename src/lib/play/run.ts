@@ -203,6 +203,9 @@ export interface RunLog {
   inputs: number[];
   /** How many of those keys were actions, which is what a run is judged by. */
   actions: number;
+  /** The game's own clock where the run had got to: the seconds call_check_eng counts in
+   *  Dungeons of the Unforgiven, the moves spend_time counts in Moraff's World. */
+  time: number;
   /** What the run reached, oldest first. */
   milestones: Milestone[];
 }
@@ -363,6 +366,7 @@ export class RunRecorder {
       record: encodeRecord(this.record),
       inputs: [...this.inputs],
       actions: summary.actions,
+      time: this.clock?.().time ?? 0,
       milestones: summary.milestones,
     };
   }

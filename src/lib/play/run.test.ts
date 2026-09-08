@@ -70,6 +70,15 @@ describe('the run log', () => {
     expect(decodeRecord(log.record)).toEqual(record);
   });
 
+  it("keeps the game's own clock where the run had got to", async () => {
+    const { run, session } = recordedGame();
+    await press(session, KEY.arrowUp);
+    await press(session, KEY.enter);
+    session.finish();
+
+    expect(run.log().time).toBe(session.game.secondsElapsed);
+  });
+
   it('keeps the record the game began with, whatever the game saves over it', async () => {
     const { run, session, record } = recordedGame();
     await press(session, KEY.arrowUp);
@@ -311,6 +320,7 @@ describe('replaying a run', () => {
       dir: session.game.pc.dir,
     });
     expect(again.time).toBe(session.game.secondsElapsed);
+    expect(again.time).toBe(log.time);
     expect(again.time).toBeGreaterThan(0);
     expect(again.actions).toBe(log.actions);
     // The turn costs the character nothing, and a key spent clearing a box the floor put up is
