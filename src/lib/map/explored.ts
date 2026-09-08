@@ -1,12 +1,16 @@
 import { isOnMap, type MapArea } from './area';
 import { COLUMNS as REVENGE_COLUMNS, ROWS as REVENGE_ROWS, mbfSingle } from '../game/revmap.js';
+import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import type { MapSquare } from './game';
 
 /**
- * The explored maps two of the games save beside a character, and which of them a floor of the
- * map shades. Moraff's World writes `<slot><block>.DUN` -- save_dun (exe 2000:5298) writes one
- * and load_dun (exe 2000:542b) reads it back, and mw-tools/docs/DUNGEON.md has the layout.
- * Moraff's Revenge writes `<n>.BIN`, which rev-tools/docs/SURVEY.md section 3 has.
+ * The explored maps the games save beside a character, and which of them a floor of the map
+ * shades. The two C games write the same bytes under names of their own -- Moraff's World's
+ * `<slot><block>.DUN`, which save_dun (exe 2000:5298) writes and load_dun (exe 2000:542b) reads
+ * back, and Dungeons of the Unforgiven's `<character><quarter><module>.DUN`, which save_maps
+ * (exe 2000:7313) writes; mw-tools/docs/DUNGEON.md and dotu-tools/docs/MAP-MEMORY.md section 1
+ * have the layout. Moraff's Revenge writes `<n>.BIN`, which rev-tools/docs/SURVEY.md section 3
+ * has.
  */
 
 /**
@@ -41,6 +45,10 @@ export interface ExploredFloor {
 export interface ExploredFile {
   name: string;
   floors: ExploredFloor[];
+  /** Which dungeon the file's own name says the map was walked in, for a game whose names say:
+   *  the third letter of a Dungeons of the Unforgiven name is the module. The other two games'
+   *  names say nothing about the dungeon. */
+  dungeon?: number;
 }
 
 export interface DunFile extends ExploredFile {
@@ -116,6 +124,57 @@ function bitSet(byte: number, bit: number): boolean {
   return ((byte >> bit % 8) & 1) === 1;
 }
 
+/** The number a file name holds a digit for, as both games write one: the value plus '0'. */
+const NAME_ZERO = 0x30;
+
+/** How many quarters a module is cut into. The deepest has floors 0 to 105, so a name's second
+ *  letter runs 0 to 3. */
+const QUARTERS = Math.floor(Math.max(...BOTTOM_LEVEL) / FLOORS_PER_BLOCK) + 1;
+
+/** The characters select_player (unf.c:11436) numbers, which is also what their record files
+ *  are called, and the attract-mode demo's own 0, whose `001.dun` and friends ship in the game
+ *  folder. */
+const FIRST_CHARACTER = 20;
+const LAST_CHARACTER = 29;
+const DEMO_CHARACTER = 0;
+
+/**
+ * The three numbers a Dungeons of the Unforgiven map file is named after, or null when the name
+ * is not one of those.
+ *
+ * save_maps (exe 2000:7313) writes the character, the quarter and the module, each as itself
+ * plus '0', so character 21's floors 32 to 63 of Module V are `E14.DUN`; `write-explored.ts`
+ * builds the same name. DOS wrote it in upper case, and a copy that has been lower-cased along
+ * the way names the same three numbers.
+ */
+export function dotuDunFileName(name: string): { character: number; quarter: number; module: number } | null {
+  const match = /^(...)\.DUN$/.exec(name.toUpperCase());
+  if (!match) return null;
+  const [character, quarter, module] = [...match[1]].map((letter) => letter.charCodeAt(0) - NAME_ZERO);
+  const named = (character === DEMO_CHARACTER || (character >= FIRST_CHARACTER && character <= LAST_CHARACTER)) &&
+    quarter >= 0 && quarter < QUARTERS &&
+    module >= 0 && module < BOTTOM_LEVEL.length;
+  return named ? { character, quarter, module } : null;
+}
+
+/** One Dungeons of the Unforgiven `.DUN`: the 32 floors of one quarter of one module. */
+export interface DotuDunFile extends ExploredFile {
+  /** The character the map belongs to, 20 to 29, which is what its record file is called. */
+  character: number;
+  /** Which 32 floors of the module these are: quarter 1 is floors 32 to 63. */
+  quarter: number;
+}
+
+/** Reads one Dungeons of the Unforgiven `.DUN` file. Throws with a line to show the user when
+ *  the name or the bytes are not those of an explored map. */
+export function readDotuDunFile(name: string, bytes: Uint8Array): DotuDunFile {
+  const named = dotuDunFileName(name);
+  if (!named) throw new Error(`${name} is not named <character><quarter><module>.DUN, like E14.DUN.`);
+  const floors = bytes.length > HEADER_BYTES ? readDunFloors(bytes, named.quarter) : null;
+  if (!floors) throw new Error(`${name} is ${bytes.length} bytes, which is not the size of the floors it lists.`);
+  return { name, character: named.character, quarter: named.quarter, dungeon: named.module, floors };
+}
+
 /** Adds a file's floors to the explored map. A floor the file holds but nothing was seen on
  *  shades nothing, so it is left out; a floor loaded twice keeps the newer file's squares. */
 export function addExploredFloors(loaded: ExploredFloors, file: ExploredFile): ExploredFloors {
@@ -154,8 +213,18 @@ export function exploredFloorCount(loaded: ExploredFloors): string {
 /** The line under the drop target for Moraff's World: "33 explored floors from blocks 0 and 1".
  *  Its files hold one block of 32 floors each, so several of them make up a dungeon. */
 export function loadedSummary(loaded: ExploredFloors): string {
+  return groupedSummary(loaded, 'block', 'blocks');
+}
+
+/** The same line for Dungeons of the Unforgiven, which calls its 32 floors a quarter: "33
+ *  explored floors from quarters 0 and 1". */
+export function quarterSummary(loaded: ExploredFloors): string {
+  return groupedSummary(loaded, 'quarter', 'quarters');
+}
+
+function groupedSummary(loaded: ExploredFloors, one: string, many: string): string {
   const blocks = [...new Set([...loaded.keys()].map((floor) => Math.floor(floor / FLOORS_PER_BLOCK)))].sort((a, b) => a - b);
-  return `${exploredFloorCount(loaded)} from ${blocks.length === 1 ? 'block' : 'blocks'} ${listOf(blocks)}`;
+  return `${exploredFloorCount(loaded)} from ${blocks.length === 1 ? one : many} ${listOf(blocks)}`;
 }
 
 function listOf(values: number[]): string {

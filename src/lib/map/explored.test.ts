@@ -8,12 +8,15 @@ import {
   isExplored,
   isRevExploredFile,
   loadedSummary,
+  quarterSummary,
   readBinFile,
+  readDotuDunFile,
   readDunFile,
   staleFloorWarning,
   type ExploredFloors,
 } from './explored';
 import type { MapSquare } from './game';
+import { dotuDunName } from './write-explored';
 
 const HEADER_BYTES = 4;
 const ROW_BITMAP_BYTES = 16;
@@ -112,6 +115,50 @@ describe('readDunFile', () => {
   });
 });
 
+describe('readDotuDunFile', () => {
+  it('reads the character, the quarter and the module from the name', () => {
+    const file = readDotuDunFile('E14.DUN', oneFloorFile(0));
+    expect(file.character).toBe(21);
+    expect(file.quarter).toBe(1);
+    expect(file.dungeon).toBe(4);
+  });
+
+  it('reads the name save_maps writes for the same three numbers', () => {
+    expect(dotuDunName(21, 1, 4)).toBe('E14.DUN');
+    expect(readDotuDunFile(dotuDunName(29, 3, 0), oneFloorFile(0)).character).toBe(29);
+  });
+
+  it("takes the demo's own files, which are the character the game numbers 0", () => {
+    expect(readDotuDunFile('011.dun', oneFloorFile(0)).character).toBe(0);
+  });
+
+  it('refuses a name that is nobody\u2019s character, quarter or module', () => {
+    expect(() => readDotuDunFile('N04.DUN', oneFloorFile(0))).toThrow(
+      'N04.DUN is not named <character><quarter><module>.DUN, like E14.DUN.',
+    );
+    expect(() => readDotuDunFile('E44.DUN', oneFloorFile(0))).toThrow('is not named <character><quarter><module>.DUN');
+    expect(() => readDotuDunFile('E15.DUN', oneFloorFile(0))).toThrow('is not named <character><quarter><module>.DUN');
+    expect(() => readDotuDunFile('30.DUN', oneFloorFile(0))).toThrow('is not named <character><quarter><module>.DUN');
+  });
+
+  it('counts a floor from the quarter the name gives', () => {
+    expect(readDotuDunFile('E34.DUN', oneFloorFile(5)).floors.map(({ floor }) => floor)).toEqual([101]);
+  });
+
+  it('reads the squares the file marks as seen', () => {
+    const [floor] = readDotuDunFile('D00.DUN', oneFloorFile(0, [[3, 0], [79, 109]])).floors;
+    expect(isExplored(floor.squares, 3, 0)).toBe(true);
+    expect(isExplored(floor.squares, 79, 109)).toBe(true);
+    expect(floor.squares.size).toBe(2);
+  });
+
+  it('refuses a file the floors it lists do not fill', () => {
+    expect(() => readDotuDunFile('D00.DUN', oneFloorFile(0).slice(0, 900))).toThrow(
+      'D00.DUN is 900 bytes, which is not the size of the floors it lists.',
+    );
+  });
+});
+
 describe('addExploredFloors', () => {
   it('fills the explored map from several files', () => {
     const floors = loaded(oneFloorFile(0, [[1, 1]]), oneFloorFile(3, [[2, 2]]));
@@ -153,6 +200,17 @@ describe('loadedSummary', () => {
       [200, new Set([1])],
     ]);
     expect(loadedSummary(floors)).toBe('3 explored floors from blocks 0, 1 and 6');
+  });
+});
+
+describe('quarterSummary', () => {
+  it('calls the same 32 floors a quarter, which is what Dungeons of the Unforgiven calls them', () => {
+    const floors = new Map([
+      [0, new Set([1])],
+      [40, new Set([1])],
+    ]);
+    expect(quarterSummary(floors)).toBe('2 explored floors from quarters 0 and 1');
+    expect(quarterSummary(new Map([[3, new Set([1])]]))).toBe('1 explored floor from quarter 0');
   });
 });
 
