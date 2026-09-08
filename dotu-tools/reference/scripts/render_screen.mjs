@@ -14,6 +14,9 @@
 // --killed adds the skull movecontrol paints over that monster the moment its hit points run
 // out, which is the screen the kill's own messages are read on.
 //
+// --tablet N draws the stone tablet the little snake's words are read on, with UH2.BIN message N
+// (0 is the first of the town greetings).
+//
 // --expanded-map draws the X key's screen instead: the whole floor at seven pixels a square with
 // the headline under it, and with --boss X,Y the way to the section's Shadow boss beside it.
 //
@@ -66,6 +69,8 @@ const { inRect, messageBoxScreen } = await load('play/screens.ts');
 const { setMonsterMap, MAP_PLAYER } = await load('game/port/state.ts');
 const { monsterIdOf, BOSS_KIND } = await load('play/floor.ts');
 const { bossSignpost } = await load('play/misc.ts');
+const { drawTablet } = await load('play/tablet.ts');
+const { tabletMessage } = await load('game/port/hints.ts');
 const { monsterById } = await load('map/stocking.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
 
@@ -125,6 +130,14 @@ function viewMonster(monster) {
 }
 
 const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+
+// The stone tablet (exe 3000:9026): the slab of the section's wall material and its four lines.
+if (args.tablet !== undefined) {
+  drawTablet(frame, SCREEN_PIXELS, tabletMessage(num('tablet', 0)), wall);
+  writeFileSync(out, encodePng(frame.width, frame.height, toRgba(frame, dungeonPalette(palettes, null, moduleIndex + 1, part))));
+  console.log(`${out}  module ${moduleIndex} floor ${floor} (part ${part}) tablet ${num('tablet', 0)}`);
+  await server.close();
+} else
 
 // The X key's screen: FUN_3000_8e75 (exe 3000:8e75) over the whole display, with the two lines
 // movecontrol draws on it. Nothing else of the game's screen is on it, so this is the whole of it.

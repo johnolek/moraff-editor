@@ -102,14 +102,23 @@ export function onAFloorFacingAMonster(
   return session;
 }
 
+/**
+ * A session with the loop running and the town's greeting already read.
+ *
+ * load_level_map greets a character arriving in the town with the snake's stone tablet, and
+ * FUN_3000_9026 (exe 3000:9026) waits for a key of its own at the end of it, so the key queued
+ * here is the one that takes the tablet down and leaves the loop where a test wants it.
+ */
+export function startPlaying(file: CharacterFile, rng: Rng): GameSession {
+  const session = startGame(file, rng);
+  void runMoveControl(session);
+  if (session.tablet) session.press(KEY.escape);
+  return session;
+}
+
 /** A character standing in the town with the loop running and waiting for its first key. */
 export function inTheTown(rng: Rng, overrides: Partial<PlayerCharacter> = {}): GameSession {
-  const session = startGame(
-    characterFile({ level: 0, dir: 0, ...townSquare(), ...overrides }),
-    rng,
-  );
-  void runMoveControl(session);
-  return session;
+  return startPlaying(characterFile({ level: 0, dir: 0, ...townSquare(), ...overrides }), rng);
 }
 
 /**

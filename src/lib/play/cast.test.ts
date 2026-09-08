@@ -7,6 +7,7 @@ import { BorlandRng, type Rng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
+import { startPlaying } from './battle.test-support';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
 
@@ -24,8 +25,7 @@ function characterFile(overrides: Partial<PlayerCharacter> = {}): CharacterFile 
 
 /** A session with the loop running, waiting for its first key. */
 function playing(file: CharacterFile, rng: Rng = new BorlandRng(3)): GameSession {
-  const session = startGame(file, rng);
-  void runMoveControl(session);
+  const session = startPlaying(file, rng);
   return session;
 }
 

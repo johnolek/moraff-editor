@@ -4,6 +4,7 @@ import { savePlayer } from '../game/port/record';
 import { BorlandRng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { newCharacterFile } from '../roller/save-file';
+import { startPlaying } from './battle.test-support';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
 
@@ -17,8 +18,7 @@ function playing(overrides: Partial<PlayerCharacter> = {}): GameSession {
     },
     died() {},
   };
-  const session = startGame(file, new BorlandRng(3));
-  void runMoveControl(session);
+  const session = startPlaying(file, new BorlandRng(3));
   return session;
 }
 

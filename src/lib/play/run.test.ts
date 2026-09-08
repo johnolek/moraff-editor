@@ -41,6 +41,9 @@ function recordedGame(
   });
   const session = startGame(file, run.rng, run);
   void runMoveControl(session);
+  // The snake's stone tablet greets a character arriving in the town and waits for a key of its
+  // own, so that key is the first thing the game reads and the first input the run writes down.
+  if (session.tablet) session.press(KEY.escape);
   return { run, session, record, file };
 }
 
@@ -122,10 +125,10 @@ describe('the run log', () => {
     session.finish();
 
     const inputs = run.log().inputs;
-    expect(inputs[0]).toBe(KEY.escape);
-    expect(inputs[1]).toBe(KEY.repeatFight);
-    expect(inputs.slice(2).every((key) => key === KEY.fight)).toBe(true);
-    expect(inputs.length).toBeGreaterThan(2);
+    // The town's stone tablet takes the first key and the pass that meets the monster the second.
+    expect(inputs.slice(0, 3)).toEqual([KEY.escape, KEY.escape, KEY.repeatFight]);
+    expect(inputs.slice(3).every((key) => key === KEY.fight)).toBe(true);
+    expect(inputs.length).toBeGreaterThan(3);
     expect(inputs).not.toContain(KEY.viewStats);
   });
 

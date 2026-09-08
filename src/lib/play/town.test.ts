@@ -4,6 +4,7 @@ import { savePlayer } from '../game/port/record';
 import { BorlandRng, type Rng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { newCharacterFile } from '../roller/save-file';
+import { startPlaying } from './battle.test-support';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
 
@@ -50,8 +51,7 @@ function standingOn(
   rng: Rng = new BorlandRng(3),
 ): GameSession {
   const file = characterFile({ level: 0, ...buildingSquare(building), ...overrides });
-  const session = startGame(file, rng);
-  void runMoveControl(session);
+  const session = startPlaying(file, rng);
   return session;
 }
 
@@ -237,6 +237,11 @@ describe('the inn', () => {
     expect(session.game.pc.sp).toBe(5);
     expect(session.game.pc.crystals).toBe(5);
     expect(session.game.pc.money).toBe(89);
+    // level_up_screen (exe 3000:955f) congratulates the new level on the snake's stone tablet
+    // rather than in the message box.
+    expect(session.view().tablet?.[0]).toBe('A little snake says:');
+    expect(session.view().tablet?.join(' ')).toContain('Congratulat');
+    expect(session.box).toEqual([]);
   });
 
   it('throws out a character who cannot pay', async () => {

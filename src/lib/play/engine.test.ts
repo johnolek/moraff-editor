@@ -8,7 +8,7 @@ import { MAP_PLAYER, monsterAt, newGame, type PlayerCharacter } from '../game/po
 import { EXPLORED_STRIDE } from '../map/explored';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
-import { facingAMonster } from './battle.test-support';
+import { facingAMonster, startPlaying } from './battle.test-support';
 import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
 import { VIEW_DEPTH, viewedSquares } from './memory';
@@ -30,8 +30,7 @@ function characterFile(overrides: Partial<PlayerCharacter> = {}): CharacterFile 
 
 /** A session with the loop running, waiting for its first key. */
 function playing(file: CharacterFile, rng: Rng = new BorlandRng(3)): GameSession {
-  const session = startGame(file, rng);
-  void runMoveControl(session);
+  const session = startPlaying(file, rng);
   return session;
 }
 
@@ -278,11 +277,11 @@ describe('the message box', () => {
     const start = townWalk();
     const session = playing(characterFile({ level: 0, dir: 0, ...start }));
     await settle();
-    const greeting = session.box;
-    expect(greeting[0]).toContain('As you reach the town');
+    const standing = ['A BOX NOBODY WAITED ON'];
+    session.game.say(...standing);
     await press(session, KEY.arrowUp);
     expect(session.view().place).toMatchObject({ x: start.x, y: start.y - 1 });
-    expect(session.box).toEqual(greeting);
+    expect(session.box).toEqual(standing);
     await press(session, KEY.up);
     expect(session.box[0]).toContain('THERE IS NO LADDER HERE');
   });
@@ -500,11 +499,47 @@ describe('the map the character discovers', () => {
   });
 });
 
+describe("the stone tablet the snake's words are read on", () => {
+  it('greets a character arriving in the town and waits for a key', async () => {
+    // load_level_map (exe 2000:6e42) sends FUN_3000_9488 the moment a character reaches floor 0,
+    // and the tablet it puts up holds the screen until a key is given.
+    const start = townWalk();
+    const session = startGame(characterFile({ level: 0, dir: 0, ...start }), new BorlandRng(3));
+    void runMoveControl(session);
+    expect(session.view().tablet?.[0]).toContain('As you reach the town');
+    // The words are on the tablet and not in the eight-line message box.
+    expect(session.box).toEqual([]);
+    expect(session.view().viewsDrawn).toBe(0);
+
+    await press(session, KEY.escape);
+    expect(session.view().tablet).toBeNull();
+    expect(session.box).toEqual([]);
+    // The loop has taken the tablet's key and drawn its first pass.
+    expect(session.view().viewsDrawn).toBe(1);
+  });
+
+  it('greets a character who has been deeper with what they have earned', async () => {
+    const start = townWalk();
+    const session = startGame(
+      characterFile({ level: 0, dir: 0, ...start, deepestFloor: 25 }),
+      new BorlandRng(3),
+    );
+    void runMoveControl(session);
+    // Deeper than level 20, which is a different one of the ten greetings.
+    expect(session.view().tablet?.[0]).toContain("You're in town");
+    expect(session.view().tablet?.join(' ')).toContain('amateur explorer');
+    await press(session, KEY.escape);
+    expect(session.view().tablet).toBeNull();
+  });
+});
+
 describe('the coin flip that mirrors the monster you are fighting', () => {
   it('counts the drawings the game would have made and not the passes of the loop', async () => {
     const start = townWalk();
     const session = playing(characterFile({ level: 0, dir: 0, ...start }));
-    // The loop has drawn once and is waiting for its first key.
+    // The town's own stone tablet is read before the loop runs a pass, so the drawing is counted
+    // from after it.
+    await settle();
     expect(session.view().viewsDrawn).toBe(1);
     // A key that neither moves the character nor asks for a redraw draws nothing again.
     await press(session, KEY.escape);

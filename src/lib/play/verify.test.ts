@@ -31,6 +31,9 @@ async function unforgivenRun(): Promise<RunLog> {
   });
   const session = startGame(file, run.rng, run);
   void runMoveControl(session);
+  // The snake's stone tablet greets a character arriving in the town and waits for a key, so that
+  // Escape is the first thing the game reads and the first input the run writes down.
+  if (session.tablet) await press(session, KEY.escape);
   await settle();
   for (const key of [KEY.arrowUp, KEY.enter, KEY.arrowUp, KEY.arrowLeft, KEY.arrowUp, KEY.fight, KEY.enter]) {
     await press(session, key);

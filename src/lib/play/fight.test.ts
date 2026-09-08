@@ -62,7 +62,10 @@ describe('swinging at a monster', () => {
 
   it('leaves a message box standing except for the lines a fight wiped the strip under', async () => {
     const session = await facingAMonster(highest);
-    const standing = session.box.slice();
+    // A box the game has left standing when the swing lands, so that the lines a fight wipes can
+    // be told from the ones it leaves alone.
+    const standing = ['LINE ONE', 'LINE TWO', 'LINE THREE', 'LINE FOUR', 'LINE FIVE'];
+    session.game.say(...standing);
     await press(session, KEY.fight);
     // print_battle_hp_info wipes from 0x377 to 0x3a1 before it draws, and the third of the box's
     // eight lines is the one inside that strip. The line under it is untouched.
