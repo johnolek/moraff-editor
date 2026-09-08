@@ -2,11 +2,16 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { StockedMonster } from '../map/stocking';
 import {
   DEFAULT_PLAY_MODE,
+  defaultPlayDisplay,
   monstersDrawn,
   panelVisible,
+  PLAY_DISPLAYS,
   PLAY_MODES,
+  readPlayDisplay,
   readPlayMode,
+  resetPlayDisplay,
   screenDrawn,
+  writePlayDisplay,
   writePlayMode,
 } from './mode';
 
@@ -105,5 +110,59 @@ describe('which stage the tab shows', () => {
     expect(screenDrawn('faithful')).toBe(true);
     expect(screenDrawn('speedrun')).toBe(true);
     expect(screenDrawn('debug')).toBe(false);
+  });
+});
+
+describe('which of the two a mode shows until the player switches', () => {
+  it("is the game's screen in faithful and the top-down map in the other two", () => {
+    expect(defaultPlayDisplay('faithful')).toBe('screen');
+    expect(defaultPlayDisplay('speedrun')).toBe('map');
+    expect(defaultPlayDisplay('debug')).toBe('map');
+  });
+
+  it('offers the two, each with a label', () => {
+    expect(PLAY_DISPLAYS.map((display) => display.id)).toEqual(['screen', 'map']);
+    expect(PLAY_DISPLAYS.every((display) => display.label.length > 0)).toBe(true);
+  });
+});
+
+describe('the switch between the screen and the map', () => {
+  it('shows what the mode shows until it has been touched', () => {
+    useStorage(fakeStorage());
+    expect(readPlayDisplay('unforgiven', 'faithful')).toBe('screen');
+    expect(readPlayDisplay('unforgiven', 'debug')).toBe('map');
+  });
+
+  it('remembers the choice for one game without touching the other', () => {
+    useStorage(fakeStorage());
+    writePlayDisplay('unforgiven', 'map');
+    expect(readPlayDisplay('unforgiven', 'faithful')).toBe('map');
+    expect(readPlayDisplay('moraffsWorld', 'faithful')).toBe('screen');
+  });
+
+  it('overrides the mode both ways', () => {
+    useStorage(fakeStorage());
+    writePlayDisplay('revenge', 'screen');
+    expect(readPlayDisplay('revenge', 'debug')).toBe('screen');
+  });
+
+  it('falls back to the mode when what is stored is not one of the two', () => {
+    const storage = fakeStorage();
+    useStorage(storage);
+    storage.setItem('moraff-tools.play.revenge.display', 'both');
+    expect(readPlayDisplay('revenge', 'faithful')).toBe('screen');
+  });
+
+  it("goes back to the mode's own default when the mode changes", () => {
+    useStorage(fakeStorage());
+    writePlayDisplay('moraffsWorld', 'map');
+    expect(resetPlayDisplay('moraffsWorld', 'faithful')).toBe('screen');
+    expect(readPlayDisplay('moraffsWorld', 'faithful')).toBe('screen');
+  });
+
+  it('shows what the mode shows where there is nowhere to remember anything', () => {
+    useStorage(undefined);
+    writePlayDisplay('moraffsWorld', 'map');
+    expect(readPlayDisplay('moraffsWorld', 'faithful')).toBe('screen');
   });
 });

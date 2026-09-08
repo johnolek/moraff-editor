@@ -58,6 +58,57 @@ export function writePlayMode(game: PortedGameId, mode: PlayMode): void {
 }
 
 /**
+ * Which of the two a Play tab has on its stage: the game's own screen — the four 3-D views and
+ * the boxes the game draws around them — or the site's top-down map of the floor.
+ */
+export type PlayDisplay = 'screen' | 'map';
+
+/** Where the choice is kept, one key per game, beside the mode. */
+const DISPLAY_SUFFIX = '.display';
+
+/** The two the switch on a Play tab offers. */
+export const PLAY_DISPLAYS: { id: PlayDisplay; label: string }[] = [
+  { id: 'screen', label: "The game's screen" },
+  { id: 'map', label: 'The map' },
+];
+
+function isPlayDisplay(value: unknown): value is PlayDisplay {
+  return PLAY_DISPLAYS.some((display) => display.id === value);
+}
+
+/**
+ * What a mode shows until the player switches.
+ *
+ * Faithful shows the game's own screen, since the game draws no map of the floor being walked.
+ * Speedrun and debug show the top-down map, which is the only place on the site the whole floor
+ * can be read square by square while it is being walked, and the game's own small zoom map is no
+ * substitute for planning a route on.
+ */
+export function defaultPlayDisplay(mode: PlayMode): PlayDisplay {
+  return mode === 'faithful' ? 'screen' : 'map';
+}
+
+/** Which of the two this game shows: the player's choice, or what the mode shows. */
+export function readPlayDisplay(game: PortedGameId, mode: PlayMode): PlayDisplay {
+  const stored = readStored(PREFIX + game + DISPLAY_SUFFIX);
+  return isPlayDisplay(stored) ? stored : defaultPlayDisplay(mode);
+}
+
+export function writePlayDisplay(game: PortedGameId, display: PlayDisplay): void {
+  writeStored(PREFIX + game + DISPLAY_SUFFIX, display);
+}
+
+/**
+ * What a tab shows once the mode has changed, which is that mode's own default: picking debug
+ * reaches the map, and picking faithful reaches the screen, without a second click.
+ */
+export function resetPlayDisplay(game: PortedGameId, mode: PlayMode): PlayDisplay {
+  const display = defaultPlayDisplay(mode);
+  writePlayDisplay(game, display);
+  return display;
+}
+
+/**
  * Whether the tab draws the game's own screen — the four 3-D views and the boxes around them —
  * rather than the top-down map of the floor.
  *
