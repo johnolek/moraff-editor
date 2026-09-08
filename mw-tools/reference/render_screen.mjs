@@ -51,8 +51,8 @@ const {
   MW_MAP_LEFT,
   MW_MAP_TOP_PIXELS,
   MW_DIG_PROMPT,
-  mwDigPrompt,
 } = await load('play/mw/view3d/screen.ts');
+const { ladderPrompt } = await load('play/mw/ladders.ts');
 const { mwKeyMenuLines, MW_KEY_MENU } = await load('game/mw-port/screens.ts');
 const { pixelFont, glyphRows } = await load('ui/pixel-font.ts');
 const palettes = JSON.parse(readFileSync(src('game/mw-palettes.json'), 'utf8'));
@@ -180,7 +180,7 @@ function drawBoxes() {
 function drawText() {
   const lines = [
     ...mwKeyMenuLines(true),
-    { text: mwDigPrompt(0), x: MW_DIG_PROMPT.left, y: MW_DIG_PROMPT.y, colour: MW_DIG_PROMPT.colour, spreadTo: MW_DIG_PROMPT.right },
+    { text: ladderPrompt(0, 0, false), x: MW_DIG_PROMPT.left, y: MW_DIG_PROMPT.y, colour: MW_DIG_PROMPT.colour, spreadTo: MW_DIG_PROMPT.right },
     { text: 'YOU ARE FIGHTING THE MONSTER', x: 0, y: 0x28, colour: MW_COLOURS.message },
     { text: 'LEVEL: 29', x: 0, y: 0x41a, colour: MW_COLOURS.status },
     { text: 'SPELL POINTS: -1483 OF -1483', x: 0, y: 0x44c, colour: MW_COLOURS.status },

@@ -17,8 +17,8 @@ import {
   MW_VIEW_SOUTH,
   MW_VIEW_WEST,
   MW_WEST_VIEW,
-  mwDigPrompt,
 } from './screen';
+import { ladderPrompt } from '../ladders';
 
 const OPEN = 3;
 const WALL = 0;
@@ -222,9 +222,9 @@ describe('the wall pictures', () => {
 
 describe('the line under the views', () => {
   it('says what the square underfoot offers', () => {
-    expect(mwDigPrompt(0)).toBe("HIT 'D' TO DIG A HOLE");
-    expect(mwDigPrompt(2)).toBe("HIT 'D' TO GO DOWN");
-    expect(mwDigPrompt(-1)).toBe("HIT 'U' TO GO UP");
-    expect(mwDigPrompt(-15)).toBe("HIT 'K' TO USE TRAP DOOR");
+    expect(ladderPrompt(0, 0, false)).toBe("HIT 'D' TO DIG A HOLE");
+    expect(ladderPrompt(1, 0, false)).toBe("HIT 'D' TO GO DOWN");
+    expect(ladderPrompt(-1, 0, false)).toBe("HIT 'U' TO GO UP");
+    expect(ladderPrompt(0, 0, true)).toBe("HIT 'K' TO USE TRAP DOOR");
   });
 });

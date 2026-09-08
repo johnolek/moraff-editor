@@ -11,6 +11,11 @@
   import PixelText from '../../ui/PixelText.svelte';
   import MwPanel from './MwPanel.svelte';
   import MwPortrait from './MwPortrait.svelte';
+  import MwScreen from './MwScreen.svelte';
+  import { bundledMwDungeon } from '../../game/mw-dungeon';
+  import { MW_DIG_PROMPT } from './view3d/screen';
+  import { readStored, writeStored } from '../../character/storage';
+  import type { ScreenLine } from '../../game/port/state';
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
   import { downloadMapFiles, mwMapFiles } from '../export-maps';
   import { downloadRunLog } from '../export-run';
@@ -22,6 +27,7 @@
   import { mwOnMessageLine } from '../../game/mw-port/state';
   import {
     mwCharacteristicLines,
+    mwKeyMenuLines,
     mwMonsterViewLines,
     mwStatusLines,
     MW_MONSTER_VIEW_CORNERS,
@@ -43,6 +49,19 @@
   let centredFloor = $state.raw<number | null>(null);
   let style = $state<MovementStyle>(readMovementStyle('moraffsWorld'));
   let mode = $state<PlayMode>(readPlayMode('moraffsWorld'));
+
+  /**
+   * Which of the two ways of showing the floor the tab is using: the game's own screen, with the
+   * four 3-D views and everything the game draws around them, or the top-down map the tab was
+   * built on. The screen is what the game shows; the map is easier to plan a route on.
+   */
+  const DISPLAY_KEY = 'moraff-tools.play.moraffsWorld.display';
+  let display = $state<'screen' | 'map'>(readStored(DISPLAY_KEY) === 'map' ? 'map' : 'screen');
+
+  function chooseDisplay(which: 'screen' | 'map') {
+    display = which;
+    writeStored(DISPLAY_KEY, which);
+  }
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -75,6 +94,40 @@
   const statusLines = $derived(view === null || session === null ? [] : mwStatusLines(session.game));
   const characteristicLines = $derived(
     view === null || session === null ? [] : mwCharacteristicLines(session.game),
+  );
+
+  /**
+   * Everything the game prints on the play screen, each line where the game prints it: the
+   * message box down the left, the menu of keys down the right, the numbers along the bottom, the
+   * line under the two stacked views, and the engaged monster's own three values.
+   */
+  const screenLines = $derived.by((): ScreenLine[] => {
+    if (view === null || session === null) return [];
+    return [
+      ...corner.lines,
+      // The port makes no sound, so the menu always offers to turn it on.
+      ...mwKeyMenuLines(false),
+      ...statusLines,
+      ...characteristicLines,
+      ...monsterValues,
+      ...(view.prompt === null
+        ? []
+        : [
+            {
+              text: view.prompt,
+              x: MW_DIG_PROMPT.left,
+              y: MW_DIG_PROMPT.y,
+              font: 0,
+              colour: MW_DIG_PROMPT.colour,
+              spreadTo: MW_DIG_PROMPT.right,
+            },
+          ]),
+    ];
+  });
+
+  /** ladder_delta for a square, which is what the views draw the ladder marks from. */
+  const ladderAt = $derived((x: number, y: number) =>
+    view === null ? 0 : bundledMwDungeon.ladder(x, y, view.place.floor, view.place.dungeon),
   );
 
   /** How tall a line of the body font is: the message box steps this far between its own. */
@@ -279,6 +332,19 @@
     <div class="stage">
       <!-- The overlays are drawn in the game's own palette entries, the way it draws them. -->
       <div class="map" style:--status-colour={SCREEN_COLOURS[5]}>
+        {#if display === 'screen'}
+          <div class="game-screen">
+            <MwScreen
+              rows={view.rows}
+              place={view.place}
+              monsters={monstersDrawn(mode, view)}
+              height={session.game.pc.height}
+              {ladderAt}
+              discovered={discoveredMap}
+              lines={screenLines}
+            />
+          </div>
+        {:else}
         <FloorCanvas
           bind:this={canvas}
           game={MORAFFS_WORLD_MAP}
@@ -316,6 +382,7 @@
             <GameScreen lines={characteristicLines} window={CHARACTERISTICS_WINDOW} />
           </div>
         </div>
+        {/if}
         {#if screenTakesOver}
           <div class="overlay"><GameScreen lines={view.screen} /></div>
         {/if}
@@ -348,6 +415,17 @@
           <button type="button" onclick={exportMaps}>Export maps</button>
         </div>
         <div class="keys">
+          <div class="key-note">Show:</div>
+          <div class="key-row">
+            <button
+              type="button"
+              class:chosen={display === 'screen'}
+              onclick={() => chooseDisplay('screen')}>The game's screen</button>
+            <button
+              type="button"
+              class:chosen={display === 'map'}
+              onclick={() => chooseDisplay('map')}>The map</button>
+          </div>
           <div class="key-note">Play mode:</div>
           <div class="styles">
             {#each PLAY_MODES as choice}
@@ -583,6 +661,22 @@
   }
   .keys button:hover {
     color: var(--accent);
+  }
+  .keys button.chosen {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  /* The game's screen keeps its own 4:3 shape and sits in the middle of the space the map had. */
+  .game-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: var(--inset);
+  }
+  .game-screen :global(.screen) {
+    width: min(100%, calc((100cqh - 2 * var(--inset)) * 4 / 3));
+    max-height: 100%;
   }
   .side {
     display: flex;

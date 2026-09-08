@@ -107,16 +107,9 @@ export const MW_COLOURS = {
 } as const;
 
 /**
- * FUN_2000_a9bd (WORLD.EXE 2000:a9bd, mw.c "FUN_2000_a9bd"): the line under the two stacked views
- * saying what the square underfoot offers. It is printed spread between x 0x2da and 0x47e at
- * y 0x48d in colour 5, and redrawn only when it changes.
+ * Where FUN_2000_a9bd (WORLD.EXE 2000:a9bd, mw.c "FUN_2000_a9bd") prints the line under the two
+ * stacked views saying what the square underfoot offers: spread between x 0x2da and 0x47e at
+ * y 0x48d in colour 5, and redrawn only when it changes. The four strings it chooses between are
+ * {@link ladderPrompt}.
  */
 export const MW_DIG_PROMPT = { left: 0x2da, y: 0x48d, right: 0x47e, colour: MW_COLOURS.box } as const;
-
-/** Its four strings, byte for byte. `delta` is what `ladder_delta` and `trapdoor_target` gave. */
-export function mwDigPrompt(delta: number): string {
-  if (delta === -15) return "HIT 'K' TO USE TRAP DOOR"; // DS:3264
-  if (delta < 0) return "HIT 'U' TO GO UP"; // DS:3290
-  if (delta > 0) return "HIT 'D' TO GO DOWN"; // DS:327d
-  return "HIT 'D' TO DIG A HOLE"; // DS:32a1
-}
