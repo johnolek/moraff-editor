@@ -82,6 +82,7 @@ const { drawPlaque } = await load('play/plaque.ts');
 const { drawManualPage } = await load('play/manual.ts');
 const { tabletMessage } = await load('game/port/hints.ts');
 const { monsterById } = await load('map/stocking.ts');
+const { sectionInfo } = await load('game/sections.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
 
 const args = {};
@@ -103,9 +104,9 @@ const horizonWeight = num('height-of', 21);
 const exp = num('exp', 0);
 const out = args.out ?? 'screen.png';
 
-// The section a floor belongs to says which palette it uses and which wall file it loads.
-const part = Math.max(0, Math.min(3, Math.floor((floor - (moduleIndex * 20 + 1)) / 5))) + 1;
-const section = moduleIndex * 4 + part;
+// The section a floor belongs to says which palette it uses and which wall file it loads. The
+// floors below the town belong to none, and are drawn in the first section's colours.
+const { section, part } = sectionInfo(moduleIndex, floor) ?? { section: 1, part: 1 };
 
 const dungeon = new Dungeon(Uint8Array.from(Buffer.from(UNFDUNG_B64, 'base64')));
 const rows = dungeon.floor(floor, moduleIndex);
