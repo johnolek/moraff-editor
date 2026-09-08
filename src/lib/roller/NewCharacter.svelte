@@ -57,6 +57,8 @@
   let view = $state.raw<View | null>(null);
   let typed = $state('');
   let note = $state('');
+  /** Whether the finished character has been put on the roster; a roll keeps it once. */
+  let kept = false;
 
   /** Which game is being rolled for. All three have a roller, so it is whichever the switch is on. */
   const rolling = $derived<GameId>(app.game);
@@ -158,6 +160,14 @@
     view = started.view();
     typed = '';
     note = '';
+    kept = false;
+  }
+
+  /** A roll that has reached its sheet goes straight on the roster, current, without a click. */
+  function keepWhenDone() {
+    if (!view || view.question !== null || kept) return;
+    kept = true;
+    keepRolledCharacter(rolling, view.pc.name || fileName, slot, characterFile(view.pc));
   }
 
   function answer(value: number | string) {
@@ -165,6 +175,7 @@
     session.answer(value);
     view = session.view();
     typed = '';
+    keepWhenDone();
   }
 
   /** The arrows on Moraff's Revenge's race menu, which move a pointer rather than answer. */
@@ -179,6 +190,7 @@
     if (!(session instanceof RevRollerSession)) return;
     session.takeRace();
     view = session.view();
+    keepWhenDone();
   }
 
   function enterName() {
@@ -191,6 +203,7 @@
     view = session.view();
     typed = '';
     note = '';
+    kept = false;
   }
 
   function leave() {
@@ -201,7 +214,7 @@
 
   function openInEditor() {
     if (!view) return;
-    keepRolledCharacter(rolling, view.pc.name || fileName, slot, characterFile(view.pc));
+    keepWhenDone();
     goToTab(app, 'editor');
   }
 
@@ -258,7 +271,7 @@
       <h2><PixelText text="New Character" scale={2} /></h2>
       <p class="lead">
         Roll up a character the way the game does: the same questions, the same dice, the same starting kit. The finished
-        character opens in the Save Editor and downloads as a character file you can drop into your game folder.
+        character joins your roster and downloads as a character file you can drop into your game folder.
       </p>
 
       <section>
