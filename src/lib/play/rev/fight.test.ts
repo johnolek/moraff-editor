@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SeededRng, type Rng } from '../../game/port/rng';
 import { HIT_POINTS_PER_LEVEL, monsterLevelOf } from '../../rev-bestiary/monsters';
-import { revMeetMonster, revMonsterAnswers, revOwnsWeapon, revSwing, revSwingWords } from './fight';
+import { revMeetMonster, revMonsterAnswers, revOwnsWeapon, revSwing, revSwingTarget, revSwingWords } from './fight';
 import { revKillMonster } from './kill';
 import { revMonsterAttack } from './attack';
 import { REV_VALUE, setRevValue, type RevPc } from './record';
@@ -188,5 +188,24 @@ describe('what a swing says', () => {
     const game = started({ random: () => 0 });
     expect(revSwingWords(game, { roll: 9, target: 1, damage: 1 })[1]).toBe('YOU DID 1 POINT.');
     expect(revSwingWords(game, { roll: 9, target: 1, damage: 2 })[1]).toBe('YOU DID 2 POINTS.');
+  });
+});
+
+describe('the number a swing has to beat', () => {
+  it('is nothing at all while nothing is being fought', () => {
+    expect(revSwingTarget(started())).toBeNull();
+  });
+
+  it('is what the swing itself is measured against', () => {
+    const game = started();
+    game.fight = revMeetMonster(game, 3);
+    expect(revSwing(game, 'sword').target).toBe(revSwingTarget(game));
+  });
+
+  it('is the same whichever weapon is swung, since a plus is added to the roll instead', () => {
+    const game = started();
+    game.fight = revMeetMonster(game, 3);
+    setRevValue(game.pc, REV_VALUE.swordPlus, 4);
+    expect(revSwing(game, 'sword').target).toBe(revSwing(game, 'fists').target);
   });
 });

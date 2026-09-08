@@ -138,6 +138,26 @@ export interface RevSwing {
 }
 
 /**
+ * 1000:8AD9: the number a swing has to beat, which the game keeps at DGROUP B5E4 and prints
+ * nowhere.
+ *
+ * It is the same whichever weapon is swung — a weapon's plus is added to the roll rather than
+ * taken off this — so it is the one number that says how hard the monster in front of you is to
+ * hit. There is none while nothing is being fought.
+ */
+export function revSwingTarget(game: RevGame): number | null {
+  const fight = game.fight;
+  if (!fight) return null;
+  const pc = game.pc;
+  let target = Math.round((fight.monsterLevel - pc.level) * 0.7);
+  if (target > 5) target = 5;
+  target = Math.round(target + 5 + Math.trunc(pc.dungeonLevel * 0.25) + fight.kindAdjust + fight.monsterLevel);
+  // 1000:8ADC: a fighter has five fewer to beat, and every level over six one fewer again.
+  if (pc.cls === 1) target -= 5;
+  return Math.round(target - Math.trunc(pc.level / 6));
+}
+
+/**
  * 1000:89FD: the swing.
  *
  * The roll is an exploding d20 — a 20 rolls again and both are counted — with seven tenths of
@@ -159,12 +179,7 @@ export function revSwing(game: RevGame, weapon: RevWeapon): RevSwing {
   if (weapon === 'sword') roll += revValue(pc, REV_VALUE.swordPlus);
   if (weapon === 'mace') roll += revValue(pc, REV_VALUE.macePlus);
 
-  let target = Math.round((fight.monsterLevel - pc.level) * 0.7);
-  if (target > 5) target = 5;
-  target = Math.round(target + 5 + Math.trunc(pc.dungeonLevel * 0.25) + fight.kindAdjust + fight.monsterLevel);
-  // 1000:8ADC: a fighter has five fewer to beat, and every level over six one fewer again.
-  if (pc.cls === 1) target -= 5;
-  target = Math.round(target - Math.trunc(pc.level / 6));
+  const target = revSwingTarget(game) ?? 0;
 
   let damage = 0;
   const strength = pc.fromStrength;
