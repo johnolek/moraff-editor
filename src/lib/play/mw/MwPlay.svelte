@@ -141,6 +141,9 @@
               spreadTo: MW_DIG_PROMPT.right,
             },
           ]),
+      // A screen the game has taken the whole display over with is drawn last, at the game's own
+      // coordinates, the way the game draws it over everything else it has on the screen.
+      ...(screenTakesOver ? view.screen : []),
     ];
   });
 
@@ -404,9 +407,11 @@
             <GameScreen lines={characteristicLines} window={CHARACTERISTICS_WINDOW} />
           </div>
         </div>
-        {/if}
+        <!-- With the map in the views' place there is nowhere on it to draw a screen the game
+             has taken the display over with, so it covers the map instead. -->
         {#if screenTakesOver}
           <div class="overlay"><GameScreen lines={view.screen} /></div>
+        {/if}
         {/if}
         {#if view.over}
           <div class="over">
