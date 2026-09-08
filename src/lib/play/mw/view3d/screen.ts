@@ -1,5 +1,4 @@
 import type { ViewRect } from '../../view3d/geometry';
-import type { ZoomMapWindow } from '../../zoom-map';
 
 /**
  * Where everything Moraff's World draws while it is being played goes, in the 1600 by 1200 grid
@@ -112,16 +111,6 @@ export const MW_MAP_LEFT = 4;
 /** DS:cd7e and DS:4491, both `0x1ae * maxY / 0x4b0`: 171 rows down a 480-row screen and 274 down
  *  a 768-row one. */
 export const mwMapTop = (height: number): number => Math.trunc((0x1ae * (height - 1)) / 0x4b0);
-export const MW_MAP_TOP_PIXELS = mwMapTop(MW_SCREEN_PIXELS.height);
-
-/** The same map as one window, for anything drawn on top of it. */
-export const MW_ZOOM_MAP: ZoomMapWindow = {
-  left: MW_MAP_LEFT,
-  top: MW_MAP_TOP_PIXELS,
-  cell: MW_MAP_CELL,
-  columns: MW_MAP_COLUMNS,
-  rows: MW_MAP_ROWS,
-};
 
 /** The colours the screen is drawn in. Entries 1 to 15 are the same in all eleven floor palettes,
  *  so a floor never changes any of these. */
@@ -136,15 +125,9 @@ export const MW_COLOURS = {
   /** DS:142b and DS:142d: the character's own numbers, and the six characteristics. */
   status: 6,
   characteristics: 3,
-  /** FUN_3000_b066: the box the zoom map is drawn on in a 256-colour mode. */
+  /** FUN_3000_b066: the box the zoom map is drawn on in a 256-colour mode. The colours the
+   *  squares on it are drawn in are the ones both C games share, in `../../zoom-map.ts`. */
   map: 10,
-  /** draw_wall_side (exe 3000:a5f7) marks a wall on the map in this, and draw_cell_corners
-   *  (exe 3000:a932) puts the corner dots in 6. */
-  mapWall: 15,
-  mapCorner: 6,
-  /** A ladder or a trap door on the map, and a chute. */
-  mapLadder: 4,
-  mapChute: 3,
   /** DS:4396: the bar FUN_2000_8728 (exe 2000:8728) puts the engaged monster's hit points on. */
   monsterBar: 14,
   /** The same function prints over it in this. */

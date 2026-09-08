@@ -5,7 +5,8 @@ import { BorlandRng } from '../../game/port/rng';
 import { monstersDrawn, panelVisible, zoomMapMonsters } from '../mode';
 import { newFrame, pixelAt } from '../view3d/frame';
 import { drawZoomMonsters, ZOOM_MONSTER_COLOUR } from '../zoom-monsters';
-import { MW_SCREEN_PIXELS, MW_ZOOM_MAP } from './view3d/screen';
+import { MW_SCREEN_PIXELS } from './view3d/screen';
+import { MORAFFS_WORLD_ZOOM_MAP } from './map';
 import type { MwGameSession } from './engine';
 import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
 import { MW_KEY } from './keys';
@@ -103,12 +104,13 @@ describe("the monsters debug mode marks on the map in the screen's corner", () =
 
   function marks(mode: 'faithful' | 'speedrun' | 'debug'): number[] {
     const frame = newFrame(MW_SCREEN_PIXELS.width, MW_SCREEN_PIXELS.height);
-    drawZoomMonsters(frame, MW_ZOOM_MAP, at, zoomMapMonsters(mode, { monsters: outOfSight }));
+    const map = MORAFFS_WORLD_ZOOM_MAP.window(MW_SCREEN_PIXELS);
+    drawZoomMonsters(frame, map, at, zoomMapMonsters(mode, { monsters: outOfSight }));
     return outOfSight.map((monster) => {
-      const column = monster.x - at.x + (MW_ZOOM_MAP.columns >> 1);
-      const row = monster.y - at.y + (MW_ZOOM_MAP.rows >> 1);
-      const x = MW_ZOOM_MAP.left + column * MW_ZOOM_MAP.cell + 3;
-      const y = MW_ZOOM_MAP.top + row * MW_ZOOM_MAP.cell + 3;
+      const column = monster.x - at.x + (map.columns >> 1);
+      const row = monster.y - at.y + (map.rows >> 1);
+      const x = map.left + column * map.cell + 3;
+      const y = map.top + row * map.cell + 3;
       return pixelAt(frame, x, y);
     });
   }

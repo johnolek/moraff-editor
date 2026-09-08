@@ -6,7 +6,6 @@ import {
   MW_MAP_COLUMNS,
   MW_MAP_LEFT,
   MW_MAP_ROWS,
-  MW_MAP_TOP_PIXELS,
   MW_SCREEN_MODE,
   MW_SCREEN_PIXELS,
   MW_VIDEO_MODES,
@@ -78,6 +77,5 @@ describe('the zoom map', () => {
   it('scales its top edge and nothing else', () => {
     expect(mwMapTop(480)).toBe(171);
     expect(mwMapTop(768)).toBe(274);
-    expect(MW_MAP_TOP_PIXELS).toBe(274);
   });
 });
