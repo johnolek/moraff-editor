@@ -227,6 +227,14 @@ which both tabs offer as three radio buttons:
   against the maps elsewhere on this site, and still none of the hidden numbers.
 * **debug** — everything: the whole floor, every monster on it, and the panel of numbers below.
 
+A revealed floor stops at the rock. Dungeons of the Unforgiven's `solidcheck` and Moraff's
+World's `is_solid` (WORLD.EXE 3000:a854) both call a square rock when it has a wall on all four
+sides, and nothing can ever stand on one, so neither game's own map holds one: the map on the
+game's screen and the top-down map both leave them blank, and a revealed floor looks like a
+walked one rather than a lattice of cells. Moraff's Revenge has no rock to leave out — a ladder,
+a chute or a Potion of Relocation can put the character on a square walled on all four sides —
+so its revealed level draws every one of them.
+
 Three functions are all a tab asks of it: `panelVisible(mode)`, `monstersDrawn(mode, view)` and
 `mapDrawn(mode, memory)`, which hands `FloorCanvas` the discovered map or nothing.
 
