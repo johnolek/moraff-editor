@@ -53,6 +53,12 @@ function messagesOf(game: RevGame): string[] {
  *
  * `wholeFloor` is the Play tab's speedrun mode, which draws the level the character has not
  * walked yet; faithful asks the map memory, which is the one thing the game itself would answer.
+ *
+ * The revealed level holds nothing back, because Moraff's Revenge has no rock to hold back. The
+ * other two games leave out a square walled on all four sides, which nothing can ever stand on;
+ * here such a square is one the character can be standing on, since a ladder and a chute keep
+ * the column and the row while they change the level (1000:4C28, 1000:3491) and a Potion of
+ * Relocation drops the character on a random square without asking about a wall (1000:99B7).
  */
 export function revScreenStateOf(game: RevGame, wholeFloor: boolean): RevScreenState {
   const pc = game.pc;
