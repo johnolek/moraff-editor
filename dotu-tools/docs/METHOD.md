@@ -114,3 +114,60 @@ tree: the headless script that produced the dumps, the emulator script, and the 
 helpers.  `ndisasm -b16 -o <addr>` on a slice of `unf_pages.exe` is the quickest way to
 double-check a single call site when the decompiler's argument list looks wrong (that is
 how the find-item gate was confirmed to be `Random(950 - 400*isFighterOrSage) < floor + 40`).
+
+## 8. Reading the floating-point code
+
+Ghidra could not follow the 8087 stack, so in `unf.c` every floating-point argument to
+`draw_3d_view`, `draw_map_square` and the frustum helpers came out as a bare `ftol()` with
+nothing in it, and phantom `in_ST0` values stand where the maths was.  The geometry of the
+3-D view is simply not in the decompilation.  It was read from the instruction stream
+instead, which takes three steps:
+
+1. Unpack `unf.exe` with `deark` (section 0).
+2. Patch Borland's emulated-8087 interrupts back into real FPU opcodes with
+   `../decomp/ghidra-scripts/unemu87.py unf.000.exe unf.fpu.exe 0x30a00` — the third
+   argument is where the data segment starts, so only code is patched.  Without this a
+   disassembler shows `int 39h` where the float instruction should be.
+3. Print a function with `../reference/scripts/adis.py --exe unf.fpu.exe 3000 342d 5617`
+   (segment, offset, size; the size is in `../decomp/functions.txt`).  Every `lcall` is
+   named from that file and every data-segment operand is annotated with the word and the
+   float stored there, which is how the constants below were found.
+
+The segment names the decompilation uses are the paragraphs of the unpacked image plus
+one page, because Ghidra loaded the re-laid file at `1000:0000`:
+
+| decompilation | image paragraph | contents |
+|---|---|---|
+| `1000` | `0000` | Borland runtime |
+| `2000` | `057c` | WORLD |
+| `3000` | `1536` | TOWN, MAGICFNC, CAT |
+| `4000` | `24b2` | DISP |
+| `5000`, `5100`, `5120`, `5400` | `2cb6`, `2dbd`, `2dcb`, `3043` | video drivers |
+| `6000` | `30a0` | data |
+
+Borland far `__cdecl`: arguments are pushed right to left, so the first is at `[bp+6]`
+and the second at `[bp+8]`; a `float` takes 4 bytes, a `double` 8; an `int` returns in
+`ax`, a `long` in `dx:ax`, a float in `ST(0)`.  Runtime helpers you will meet:
+`1000:0ea4` is `floor` (it sets the rounding control to round down), `1000:1141` is
+`ceil`, `1000:115b` is `ftol`, which truncates toward zero, and `1000:14f8`, `1000:1558`,
+`1000:1606`, `1000:1627` are the 32-bit multiply, divide and shifts.
+
+Constants the 3-D view reads from the data segment, as found this way:
+
+| address | value | used for |
+|---|---|---|
+| `DS:2593` | 256.0 | fixed-point scale of the frustum edges |
+| `DS:25af`, `DS:25b3` | 0.5, -0.5 | half a square |
+| `DS:25c3` | 0.4 (double) | the wall-face inset |
+| `DS:25d7` | 1.5 | |
+| `DS:25df` | 0.499 (double) | the rounding bias |
+| `DS:2316` | 650 | the view reach: 650/20+3 = 35 squares |
+| `DS:2328`, `DS:232a` | 79, 104 | the dungeon's x and y limits |
+
+Three helpers the view leans on, decoded from their instructions: `FUN_3000_2822(x)` is
+`floor(x - 0.5) + 0.5` and `FUN_3000_27fc(x)` is `ceil(x - 0.5) + 0.5`, snapping to a
+half-integer either way; `FUN_3000_3311(&sideways, &forward)` rounds both with the 0.499
+bias, then turns them by the facing at `DS:c664`, and in the two turning cases truncates
+the forward value to an int on the way, which the port keeps.  The port itself is
+`src/lib/play/view3d/`; `dotu-tools/reference/scripts/render_3d.mjs` renders any square to
+a PNG.
