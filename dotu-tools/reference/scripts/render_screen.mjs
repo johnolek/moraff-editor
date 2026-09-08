@@ -20,8 +20,8 @@
 // as it does for someone who has been playing a while rather than as thirty NOT YET FOUNDs.
 //
 // The floor is generated from the same UNFDUNG.BIN the site ships, so no save file is needed, and
-// the text is drawn with the game's own .FNT bitmaps rather than the web font the site uses — the
-// browser has VT323 and Node has not.
+// every part of the screen — the views, the boxes and the text on them — is drawn by the code the
+// Play tab draws with, so a PNG from here and the tab are the same picture.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
@@ -47,7 +47,7 @@ const load = (p) => server.ssrLoadModule(`/src/lib/${p}`);
 const { Dungeon } = await load('game/unfmap.js');
 const { UNFDUNG_B64 } = await load('game/unfdung.b64.js');
 const { dungeonPalette } = await load('game/dotu-pic.js');
-const { fillRect, newFrame, toRgba } = await load('play/view3d/frame.ts');
+const { newFrame, toRgba } = await load('play/view3d/frame.ts');
 const { parsePicRows } = await load('play/view3d/texture.ts');
 const { renderFourViews } = await load('play/view3d/render.ts');
 const { wallPictureFile } = await load('play/view3d/pictures.ts');
@@ -56,9 +56,7 @@ const D = await load('play/display.ts');
 const { SCREEN_PIXELS } = D;
 const { newGame } = await load('game/port/state.ts');
 const { drawSpellList, CAST_SPELLBOOK } = await load('game/port/inventory.ts');
-const { FONT_ADVANCE } = await load('roller/screen.ts');
-const { drawStrokeScreenLine, STROKE_ABOVE_WIDTH } = await load('play/view3d/stroke-font.ts');
-const { drawMenuLine } = await load('play/view3d/menu-font.ts');
+const { drawDotuScreenText } = await load('play/view3d/text.ts');
 const { battleSpellLines } = await load('game/port/screens.ts');
 const { engagementTiming, printBattleHpInfo, strike } = await load('game/port/combat.ts');
 const { inRect, messageBoxScreen } = await load('play/screens.ts');
@@ -66,7 +64,6 @@ const { setMonsterMap, MAP_PLAYER } = await load('game/port/state.ts');
 const { monsterIdOf } = await load('play/floor.ts');
 const { monsterById } = await load('map/stocking.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
-const fonts = JSON.parse(readFileSync(src('game/dotu-fonts.json'), 'utf8'));
 
 const args = {};
 for (let i = 2; i < process.argv.length; i++) {
@@ -174,7 +171,7 @@ const standing = [
 ];
 const cleared = game.blackedOut;
 const text = [...(cleared ? standing.filter((line) => !inRect(cleared, line)) : standing), ...drawnOnBlack];
-for (const line of text) drawLine(line);
+drawDotuScreenText(frame, frame, text);
 
 const palette = dungeonPalette(palettes, null, moduleIndex + 1, part);
 writeFileSync(out, encodePng(frame.width, frame.height, toRgba(frame, palette)));
@@ -221,59 +218,8 @@ function spellListLines() {
   const list = asked === true ? 0 : Number(asked);
   game.pc.spellbook = game.pc.spellbook.map(() => 1);
   drawSpellList(game, CAST_SPELLBOOK, list, mini);
-  const box = game.blackedOut;
-  if (box) {
-    const toX = (x) => Math.trunc(((frame.width - 1) * x) / 1599);
-    const toY = (y) => Math.trunc(((frame.height - 1) * y) / 1199);
-    fillRect(frame, toX(box.x), toY(box.y), toX(box.right), toY(box.bottom), 0);
-  }
+  if (game.blackedOut) D.clearScreenRect(frame, game.blackedOut);
   return game.screen;
-}
-
-/**
- * One line of the screen, drawn the way pfont (exe 4000:0bb3) and psfont (exe 4000:0db8) draw it:
- * the string's x, y and character step are in the 1600 x 1200 grid, scaled onto the frame.
- *
- * Above 730 pixels across both routines hand the line to the vector font instead, which is what
- * the 1024 x 768 mode gets — every line but the key menu's own words, which the menu asks for by
- * clearing DS:4dec and which stay .FNT glyphs at their own size. Below 730 the bitmap face is
- * drawn for everything, stretched to the step.
- *
- * The site itself sets these screens in a web font over the drawing rather than in either face.
- */
-function drawLine(line) {
-  if (frame.width - 1 > STROKE_ABOVE_WIDTH) {
-    if (line.bitmapFace) drawMenuLine(frame, frame, line);
-    else drawStrokeScreenLine(frame, frame, 'dotu', line);
-    return;
-  }
-  const toX = (x) => Math.trunc((frame.width * x) / 1600);
-  const toY = (y) => Math.trunc((frame.height * y) / 1200);
-  const advance = line.spreadTo === undefined ? FONT_ADVANCE[line.font] : (line.spreadTo - line.x) / line.text.length;
-  const face = fonts[['small', 'tall', 'bold'][line.font] ?? 'tall'];
-  // The game scales its face to the step it is drawing at, so the glyph is stretched rather than
-  // multiplied: a letter fills the whole of its own cell whatever the step comes to.
-  const scale = toX(advance) / face.advance;
-  const top = toY(line.y);
-  for (let i = 0; i < line.text.length; i++) {
-    const glyph = face.glyphs[line.text[i].toUpperCase()] ?? face.glyphs['?'];
-    if (!glyph) continue;
-    const left = toX(line.x + advance * i);
-    glyph.forEach((word, row) => {
-      for (let bit = 0; word >> bit; bit++) {
-        if (!(word & (1 << bit))) continue;
-        const x1 = left + Math.round(bit * scale);
-        const x2 = left + Math.round((bit + 1) * scale) - 1;
-        const y1 = top + Math.round(row * scale);
-        const y2 = top + Math.round((row + 1) * scale) - 1;
-        for (let y = y1; y <= y2; y++) {
-          for (let x = x1; x <= x2; x++) {
-            if (x >= 0 && y >= 0 && x < frame.width && y < frame.height) frame.pixels[y * frame.width + x] = line.colour;
-          }
-        }
-      }
-    });
-  }
 }
 
 /** A minimal PNG writer: one IDAT of filter-0 scanlines, which zlib does the rest of. */
