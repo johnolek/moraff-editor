@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GameId } from '../app-state.svelte';
 import { allFormulas } from '../formulas/formulas';
-import { decompSection } from '../source/decomp';
+import { decompilation, decompSection } from '../source/decomp';
 import { allPortFunctions, sourceFiles } from '../source/ports';
 import { tabsFor } from '../tabs';
 import { TIDBITS_FILES, tidbitsGames } from './files';
@@ -43,8 +43,13 @@ describe.each(tidbitsGames())('the tidbits of %s', (game) => {
   const entries = entriesOf(sections);
   const targets = targetsOf(sections);
 
-  it('holds the eight sections in order', () => {
-    expect(sections.map((section) => section.title)).toEqual(SECTIONS);
+  it('holds its sections in order, each named once', () => {
+    const titles = sections.map((section) => section.title);
+    expect(titles.length).toBeGreaterThan(0);
+    expect(new Set(titles).size).toBe(titles.length);
+    // The two Borland games share one plan of sections; Moraff's Revenge, a different kind of
+    // game with far less of it read, has its own.
+    if (game !== 'revenge') expect(titles).toEqual(SECTIONS);
   });
 
   it('gives every section entries and every entry something to say', () => {
@@ -83,9 +88,10 @@ describe.each(tidbitsGames())('the tidbits of %s', (game) => {
     }
   });
 
-  it('links to the port, the decompilation and the web', () => {
+  it('links to the port, the decompilation where the Source tab has one, and the web', () => {
     const kinds = new Set(targets.map((target) => target.kind));
-    for (const kind of ['port', 'decompiled', 'url']) expect(kinds).toContain(kind);
+    for (const kind of ['port', 'url']) expect(kinds).toContain(kind);
+    if (decompilation(game)) expect(kinds).toContain('decompiled');
   });
 
   it('shows on a Tidbits tab, and opens its code links on a Source tab', () => {

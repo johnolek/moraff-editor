@@ -1,6 +1,7 @@
 import type { GameId } from '../app-state.svelte';
 import unforgiven from './TIDBITS.md?raw';
 import moraffsWorld from './MW-TIDBITS.md?raw';
+import revenge from './REVENGE-TIDBITS.md?raw';
 
 /**
  * The Tidbits file each game has, one line apiece.
@@ -16,6 +17,7 @@ import moraffsWorld from './MW-TIDBITS.md?raw';
 export const TIDBITS_FILES: Partial<Record<GameId, string>> = {
   unforgiven,
   moraffsWorld,
+  revenge,
 };
 
 /** The games that have a Tidbits file, in the order the table lists them. */
