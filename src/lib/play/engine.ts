@@ -217,9 +217,10 @@ export class GameSession {
       else this.showBox(lines);
       said(...lines);
     };
-    // movecontrol puts the map cursor in the middle of the view before its first pass.
-    pc.mapCursorX = MAP_VIEW_COLUMNS >> 1;
-    pc.mapCursorY = MAP_VIEW_ROWS >> 1;
+    // movecontrol puts the map cursor in the middle of the view before its first pass. newGame
+    // copies the record into a character of its own, so the cursor goes on that one.
+    this.game.pc.mapCursorX = MAP_VIEW_COLUMNS >> 1;
+    this.game.pc.mapCursorY = MAP_VIEW_ROWS >> 1;
     this.rows = UNFORGIVEN_MAP.floor(pc.level, pc.module);
     loadLevelMap(this.game, this.floors, this.rows, pc.level, this.game.rng);
     run?.watch(this.game.events, () => ({

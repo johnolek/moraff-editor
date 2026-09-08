@@ -225,8 +225,8 @@ export class MwGameSession {
     this.rows = MORAFFS_WORLD_MAP.floor(pc.floor, pc.dungeon);
     mwEnterLevel(this.game, this.floors, this.rows, pc.floor, this.game.rng);
     mwSetOccupant(this.game, pc.x, pc.y, MW_SQUARE_PLAYER);
-    pc.mapCursorY = this.game.mapViewRows >> 1;
-    pc.mapCursorX = this.game.mapViewColumns >> 1;
+    this.game.pc.mapCursorY = this.game.mapViewRows >> 1;
+    this.game.pc.mapCursorX = this.game.mapViewColumns >> 1;
     recomputeWeight(this.game);
     run?.watch(this.game.events, () => ({
       time: this.game.movesTaken,
