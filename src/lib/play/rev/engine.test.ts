@@ -134,6 +134,21 @@ describe('the loop', () => {
     expect(session.view().box).toEqual(['WHAT LEVEL SPELL (1-6)?', 'ESC-CAST NO SPELL']);
     session.finish();
   });
+
+  it('casts a spell the character has been taught, one key at a time', async () => {
+    // Value 118 is the bitfield of the level-1 spells the dungeon casts, and bit 0 is Cure.
+    const { session } = await playing(5, revRecord({ 15: 176 + 2, 22: 6, 118: 1 }));
+    session.press(REV_KEY.cast);
+    await settled();
+    session.press('1'.charCodeAt(0));
+    await settled();
+    expect(session.view().box).toContain('1) CURE');
+    session.press('1'.charCodeAt(0));
+    await settled();
+    expect(session.game.pc.hp).toBe(17);
+    expect(session.game.pc.spellPoints).toBe(5);
+    session.finish();
+  });
 });
 
 describe('the monsters', () => {
