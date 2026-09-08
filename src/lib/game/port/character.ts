@@ -510,6 +510,8 @@ export function blankPlayerCharacter(): PlayerCharacter {
     teleportStones: 0,
     keys: Array.from({ length: 36 }, () => 0),
     objective: [0, 0, 0, 0, 0],
+    bossX: Array.from({ length: 80 }, () => 0),
+    bossY: Array.from({ length: 80 }, () => 0),
     bossTaunts: Array.from({ length: 20 }, () => 0),
   };
 }

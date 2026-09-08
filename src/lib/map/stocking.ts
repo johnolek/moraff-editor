@@ -24,9 +24,27 @@ const BLOCKER_COUNT = 2;
 const FIRST_POISON = 14;
 const POISON_COUNT = 8;
 
-/** The Shadow boss appears in the middle 50 squares of each axis. */
+/** The Shadow boss is first put down in the middle 50 squares of each axis. */
 const BOSS_AREA_ORIGIN = 25;
 const BOSS_AREA_SIZE = 50;
+
+/** Every time after that he is put down within seven squares of where he was: `random(15) - 7`
+ *  on each axis. */
+const BOSS_STEP_SIZE = 15;
+const BOSS_STEP_BACK = 7;
+
+/**
+ * The square a section's Shadow boss was last put down on, which the character record keeps at
+ * `bossX` and `bossY`. A boss the game has never placed has 0 in both.
+ */
+export interface BossSquare {
+  x: number;
+  y: number;
+}
+
+/** A boss nobody has ever put down, which is how the map explorer asks for every roll: it has
+ *  no character, so it has nothing to remember. */
+export const BOSS_NEVER_PLACED: BossSquare = { x: 0, y: 0 };
 
 /** The kill flags of a module whose four Shadow bosses are all still alive, which is every roll
  *  the map explorer asks for: it has no character, so it shows a dungeon nobody has beaten. */
@@ -102,6 +120,8 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  *
  * @param bossesBeaten the module's kill flags, which keep a Shadow boss who has already been
  *   killed off his floor for good.
+ * @param bossLastSeen the square this section's Shadow boss was last put down on, which he is
+ *   put back within seven squares of.
  */
 export function stockFloor(
   rows: MapSquare[][],
@@ -110,6 +130,7 @@ export function stockFloor(
   rnd: () => number,
   occupied: Iterable<number> = [],
   bossesBeaten: number = NO_BOSS_BEATEN,
+  bossLastSeen: BossSquare = BOSS_NEVER_PLACED,
 ): StockedMonster[] {
   const section = stockingSection(moduleIndex, floor);
   if (!section) return [];
@@ -125,7 +146,7 @@ export function stockFloor(
       // set_monster_map(x, y, 0xff) gives the square just rolled back before the boss is put
       // down in the middle of the floor instead.
       taken.delete(y * WIDTH + x);
-      ({ x, y } = bossSquare(rows, taken, rnd));
+      ({ x, y } = bossSquare(rows, taken, rnd, bossLastSeen));
       taken.add(y * WIDTH + x);
     }
     const level = nudgeLevel(baseLevel, rnd);
@@ -220,12 +241,30 @@ function freeSquare(rows: MapSquare[][], taken: Set<number>, rnd: () => number):
   }
 }
 
-/** Where the Shadow boss is put down, which takes the row before the column — the other way
- *  round from an ordinary monster's square. */
-function bossSquare(rows: MapSquare[][], taken: Set<number>, rnd: () => number): { x: number; y: number } {
+/**
+ * Where the Shadow boss is put down. The first time his section ever places him it is anywhere
+ * in the middle 50 squares of each axis; every time after that it is within seven squares of
+ * where he was last seen, so a boss stays roughly where a character left him. Both rolls take
+ * the row before the column — the other way round from an ordinary monster's square.
+ *
+ * A square off the edge of the 80 x 110 floor is turned down the same way rock is. The game
+ * reads its map there and takes whatever it finds; the port has nothing to read.
+ */
+function bossSquare(
+  rows: MapSquare[][],
+  taken: Set<number>,
+  rnd: () => number,
+  lastSeen: BossSquare,
+): { x: number; y: number } {
+  const placedBefore = lastSeen.x !== 0 || lastSeen.y !== 0;
+  const roll = (from: number) =>
+    placedBefore
+      ? from + random(rnd, BOSS_STEP_SIZE) - BOSS_STEP_BACK
+      : random(rnd, BOSS_AREA_SIZE) + BOSS_AREA_ORIGIN;
   for (;;) {
-    const y = random(rnd, BOSS_AREA_SIZE) + BOSS_AREA_ORIGIN;
-    const x = random(rnd, BOSS_AREA_SIZE) + BOSS_AREA_ORIGIN;
+    const y = roll(lastSeen.y);
+    const x = roll(lastSeen.x);
+    if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT) continue;
     if (!rows[y][x].solid && !taken.has(y * WIDTH + x)) return { x, y };
   }
 }

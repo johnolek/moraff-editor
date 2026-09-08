@@ -227,6 +227,26 @@ describe('the section boss on his floor', () => {
     expect(bossIsOnTheFloor(session)).toBe(true);
   });
 
+  it('is put back within seven squares of where he was last seen', () => {
+    const session = playing(characterFile({ module: MODULE_V, level: OGEROTH_FLOOR, ...openSquare(OGEROTH_FLOOR) }));
+    const pc = session.game.pc;
+    // bossIndex(4, 3): module V's fourth section.
+    const index = 4 * 8 + 3;
+    let last = { x: pc.bossX[index], y: pc.bossY[index] };
+    expect(last).toEqual({ x: session.game.monsters[0].x, y: session.game.monsters[0].y });
+
+    for (let visit = 0; visit < 4; visit++) {
+      // Three other floors push floor 100 out of the three the game remembers, so coming back to
+      // it rolls it again.
+      for (const level of [99, 98, 97, OGEROTH_FLOOR]) session.enterFloor(level);
+      const again = session.game.monsters[0];
+      expect(Math.abs(again.x - last.x)).toBeLessThanOrEqual(7);
+      expect(Math.abs(again.y - last.y)).toBeLessThanOrEqual(7);
+      last = { x: pc.bossX[index], y: pc.bossY[index] };
+      expect(last).toEqual({ x: again.x, y: again.y });
+    }
+  });
+
   it('is gone for good once that section has been beaten', () => {
     const beaten = [0, 0, 0, 0, 8];
     const session = playing(
