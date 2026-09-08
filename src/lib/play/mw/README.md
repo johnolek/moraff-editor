@@ -33,6 +33,11 @@ tab, the map canvas, the screen renderer and the roster.
 * **`replay.ts`** — how a ported function that stops for a menu is run at all.
 * **`menus.ts`** — the menus `movecontrol` and the spells build themselves.
 * **`advice.ts`** — the little mouse: eight pieces of advice and fourteen lessons.
+* **`map.ts`** — the little map at the far left of the middle band. `draw_map_square` (exe
+  3000:a97d) is the same routine Dungeons of the Unforgiven draws its own corner map with, so the
+  drawing is `../zoom-map.ts` and this file is the row of the table this game fills in: where the
+  map sits, its eighteen by thirty-eight of ten-pixel cells, the maroon box, a building's colour,
+  and the cursor that stands where the other game points an arrow.
 * **`panel.ts`, `MwPanel.svelte`** — the numbers the game keeps and never prints, in the column
   beside the map, which `../mode.ts` shows in debug alone. **`MwPortrait.svelte`** — the picture of the monster in front of the character.
 * **`view3d/`** — the 3-D views and the screen they sit on; see below. **`MwScreen.svelte`**

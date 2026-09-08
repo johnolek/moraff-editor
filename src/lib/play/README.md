@@ -46,7 +46,9 @@ something the original does, a comment says so.
 * **`Play.svelte`** — the tab: the game's screen or the top-down map, the screens and the row of
   keys. **`display.ts`, `Screen.svelte`** — the screen itself: the boxes `movecontrol` fills, the
   key menu, the zoom map, the status block and everything the game has printed, over the four
-  views of `view3d/`.
+  views of `view3d/`. **`zoom-map.ts`** — the little map in the corner, which is the same routine
+  in both C games (`drawsquare` here, `draw_map_square` in Moraff's World) and so is shared with
+  them, with a row of a table apiece for the few numbers they differ over.
 * **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
   prints, beside the map, and the picture of the monster in front of the character over them.
 

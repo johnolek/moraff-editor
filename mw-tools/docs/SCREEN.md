@@ -235,7 +235,13 @@ cyan, two columns: `STR: 38  CON: 11`, `INT: 39  DEX: 19`, `WIZ: 46  LUCK:46`.
 ## The zoom map
 
 On the maroon box, walked squares as black cells with white edges, the character's square
-yellow, a few squares of an L-shaped path.
+yellow, a few squares of an L-shaped path. `draw_map_square` (exe 3000:a97d) is Dungeons of
+the Unforgiven's `drawsquare` (UNF.EXE 3000:87de) three years on and marks a square the same
+way: red dots at the four corners, ticks across a doorway, a yellow diagonal for a ladder down
+and the other for one up, both for a trap door, and both with a pale blue plus sign through
+them for a chute the character knew the square before they arrived. A building's square on
+floor 0 is filled in `surface_feature + 2`, where the earlier game moves its fourth building's
+6 on to 8.
 
 There is no facing arrow, and there cannot be one: Moraff's World has no facing, and all
 four views are compass directions drawn at once.  The character's square is a cursor that
