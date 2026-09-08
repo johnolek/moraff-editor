@@ -72,9 +72,9 @@ export interface RevSlot {
 export const DUNGEONS: RevDungeon[] = data.dungeons;
 export const PALETTES: string[][] = data.palettes;
 /** `1.NUM`, one square per slot packed as `32 * row + column`, or 0 for an empty slot. */
-const POSITIONS: number[] = data.slots.positions;
+export const REV_POSITIONS: number[] = data.slots.positions;
 /** `2.NUM`, the hit points each of those monsters has left. */
-const STRENGTHS: number[] = data.slots.strengths;
+export const REV_STRENGTHS: number[] = data.slots.strengths;
 
 /** Forty monster slots belong to each dungeon level (1000:79C3). */
 export const SLOTS_PER_LEVEL = data.constants.slotsPerLevel;
@@ -155,9 +155,9 @@ export function slotsOnLevel(level: number): RevSlot[] {
   const [first, last] = slotsForLevel(level);
   const out: RevSlot[] = [];
   for (let slot = first; slot <= last; slot++) {
-    const packed = POSITIONS[slot] ?? 0;
+    const packed = REV_POSITIONS[slot] ?? 0;
     if (!packed) continue;
-    const stored = STRENGTHS[slot] ?? 0;
+    const stored = REV_STRENGTHS[slot] ?? 0;
     out.push({
       slot,
       level,

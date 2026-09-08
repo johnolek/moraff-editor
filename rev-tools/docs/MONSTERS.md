@@ -135,20 +135,27 @@ turns, on level 65 only 15 in 100.
 
 `1000:7514` turns the direction into a destination one square away, clamped to
 columns 1 to 20 and rows 1 to 19 (`1000:7613`, `765C`, `75F0`, `7636`), and
-gates the whole move on a hash of the square:
+gates the whole move on the wall between the two squares:
 
 ```
-758d  IF INT(ABS(SIN((<level> + 2) / 2 * K * COLUMN * ROW + 10) * 10)) > 7 THEN RETURN
+758d  IF INT(ABS(SIN((<level> + 2) / <generation> * K * COLUMN * ROW + 10) * 10)) > 7 THEN RETURN
 ```
 
-`1000:7667` commits it: it refuses only when another monster already stands
-there (`1000:7676`), swaps the two grid cells (`1000:76CB`) and writes the new
-square back into `1.NUM`'s array (`1000:76EE`). **A monster steps exactly one
-square, orthogonally, and nothing stops it walking through a wall** — the grid
-at DGROUP `4E90` holds monster slot numbers and nothing else, and there is no
-wall test anywhere on the path. What is conditional is the redraw: `1000:78AA`
-compares the distance against the sight table at DGROUP `198A` and skips the
-drawing when the monster is out of view.
+That is `DUNGEON.md`'s wall rule, argument for argument, with `K` the same 1
+and 2 the four directions set up above it: 1 for north and south with the row
+of the square being entered, 2 for east and west with its column. The
+threshold is the one the player's own move test uses at `1000:314C`, so **a
+monster is stopped by a wall and walks through a door, exactly as the
+character is.**
+
+`1000:7667` commits it: it refuses when another monster already stands there
+(`1000:7676`) or when the clamp left the monster where it was (`1000:7681`),
+swaps the two grid cells (`1000:76CB`) and writes the new square back into
+`1.NUM`'s array (`1000:76EE`). **A monster steps exactly one square,
+orthogonally, through the same walls and doors the character walks through.**
+What is conditional is the redraw: `1000:78AA` compares the distance against
+the sight table at DGROUP `198A` and skips the drawing when the monster is out
+of view.
 
 ### Beside you: the wait stops polling
 
