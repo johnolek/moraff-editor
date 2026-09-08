@@ -45,15 +45,16 @@ export const BRICKS_STRIPED = 2;
 
 /** The colours FUN_3000_1a08 (exe 3000:1a08) sets before it draws a view. */
 export interface MwWallColours {
-  /** DS:439a: every edge and decoration line of a face. */
+  /** DS:439a: the edges of a face, and three of its five decorations. */
   outline: number;
-  /** DS:439c: the chequer one of the five face styles is drawn with. */
+  /** DS:439c: the lattice the fifth decoration is drawn with. */
   chequer: number;
-  /** DS:439e, which nothing in the executable writes, so a door panel is filled with black. */
-  panel: number;
+  /** The X the second decoration draws, which is written into the call rather than read from a
+   *  colour global. */
+  cross: number;
 }
 
-export const MW_WALL_COLOURS: MwWallColours = { outline: 15, chequer: 15, panel: 0 };
+export const MW_WALL_COLOURS: MwWallColours = { outline: 15, chequer: 15, cross: 12 };
 
 export interface MwWallScene {
   rows: MapSquare[][];
@@ -200,7 +201,7 @@ export function drawMwWall(frame: Frame, scene: MwWallScene, face: WallFace): bo
   const nearBottom = div(maxY * face.bottomNear, 1200);
   const farTop = div(maxY * face.topFar, 1200);
   const farBottom = div(maxY * face.bottomFar, 1200);
-  if (low === high) return false;
+  if (xR <= xL || low === high) return false;
 
   let topL: number, topR: number, botL: number, botR: number;
   if (face.kind === 1) {
@@ -220,6 +221,15 @@ export function drawMwWall(frame: Frame, scene: MwWallScene, face: WallFace): bo
 
   const wall = scene.pictures.wall;
   if (wall && scene.bricks === BRICKS_TEXTURED) {
+    // The texture is the whole of this mode: the original draws no outline over it, and the light
+    // band along the top and bottom of every trapezoid is the picture's own — each of its 200 rows
+    // opens and closes with a short run of colour 12, and a row of the picture becomes a column of
+    // the face.
+    //
+    // draw_wall_picture also keeps the last picture drawn in each of the four views and returns
+    // without drawing when it is asked for the same one again (exe 3000:04e0). That saves a repaint
+    // only because the screen still holds the last frame; this port paints a fresh buffer every
+    // time, so the cache is deliberately left out.
     const door = code === SIDE_DOOR;
     const picture: PicRowImage | null = wall[door ? WALL_DOOR : WALL_STONE] ?? null;
     const repeat = door ? DOOR_REPEAT : STONE_REPEAT;
@@ -238,12 +248,18 @@ export function drawMwWall(frame: Frame, scene: MwWallScene, face: WallFace): bo
   /**
    * What the game draws at the other two brick speeds, and what it falls back on when the wall
    * picture was never loaded: the face filled, outlined, and given one of five decorations.
+   *
+   * The door this mode draws by hand — a panel between texture columns 20 and 80 with three
+   * cross-rails and a frame, exe 3000:3dc3 onwards — is not ported. Nothing reaches this path
+   * with the pictures bundled, and the textured door is the one the screen shows.
    */
   function drawLineArt(): void {
     const striped = scene.bricks === BRICKS_STRIPED;
-    if (scene.videoMode === 0) fillFace(frame, xL, xR, topL, topR, botL, botR, (row) => row % 2);
-    else if (!striped) fillFace(frame, xL, xR, topL, topR, botL, botR, () => fill);
-    else fillFace(frame, xL, xR, topL, topR, botL, botR, (row) => row % 2);
+    // The stripes are the outline on its own: no fill and no decoration, only the edges.
+    if (!striped) {
+      const shade = scene.videoMode === 0 ? (row: number) => row % 2 : () => fill;
+      fillFace(frame, xL, xR, topL, topR, botL, botR, shade);
+    }
 
     const line = MW_WALL_COLOURS.outline;
     drawLine(frame, xL, topL, xR, topR, line);
@@ -267,8 +283,9 @@ export function drawMwWall(frame: Frame, scene: MwWallScene, face: WallFace): bo
       drawLine(frame, xR - third, div(topL + 2 * topR, 3), xR - third, div(botL + 2 * botR, 3), line);
     }
     if (style === 1) {
-      drawLine(frame, xL, topL, xR, botR, 12);
-      drawLine(frame, xL, botL, xR, topR, 12);
+      const cross = MW_WALL_COLOURS.cross;
+      drawLine(frame, xL, topL, xR, botR, cross);
+      drawLine(frame, xL, botL, xR, topR, cross);
     }
   }
 }
