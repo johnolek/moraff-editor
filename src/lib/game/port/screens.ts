@@ -356,18 +356,36 @@ export function viewBattleSpells(game: Game, shown: boolean[] = []): boolean[] {
   const now = battleSpellFlags(game);
   if (now.every((value, index) => value === shown[index])) return now;
   clearRect(game, 5, 0x2fe, 0x2ac, 0x40c);
-  // DS:1711
-  const heading = 'CURRENT BATTLE SPELLS IN EFFECT';
-  game.draw({ text: heading, x: 10, y: 0x302, spreadTo: 0x276, font: 0, colour: 8 });
+  for (const line of battleSpellLines(game)) game.draw(line);
+  return now;
+}
+
+/** The heading of that panel (DS:1711), which the original prints whether or not anything is on. */
+export const BATTLE_SPELLS_HEADING: ScreenLine = {
+  text: 'CURRENT BATTLE SPELLS IN EFFECT',
+  x: 10,
+  y: 0x302,
+  spreadTo: 0x276,
+  font: 0,
+  colour: 8,
+};
+
+/**
+ * The panel as lines: the heading, and one line per spell standing on the character in the slot
+ * view_battle_spells gives it. The slots are the twelve tests in order, so a spell always lands
+ * in the same place whichever others are on.
+ */
+export function battleSpellLines(game: Game): ScreenLine[] {
   const rows = battleSpellsInEffect(game);
   let next = 0;
-  now.forEach((on, index) => {
-    if (!on) return;
+  const lines = battleSpellFlags(game).flatMap((on, index) => {
+    if (!on) return [];
     const place = BATTLE_SPELL_PLACES[index];
-    game.draw({ text: rows[next].text, x: place.x, y: place.y, font: 0, colour: place.colour });
+    const text = rows[next].text;
     next += 1;
+    return [{ text, x: place.x, y: place.y, font: 0, colour: place.colour }];
   });
-  return now;
+  return [BATTLE_SPELLS_HEADING, ...lines];
 }
 
 /** The two sex names (exe DS:2300, a table of near pointers), in the order the record stores. */
