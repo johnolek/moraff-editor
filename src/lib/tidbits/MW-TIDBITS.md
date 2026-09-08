@@ -491,3 +491,120 @@ it. It also gets twenty hit points per floor of depth on top of its ordinary rol
 
 In the code: [generate_section](source:c/generate_section),
 [stockFloor](source:ts/stocking.ts/stockFloor) and [BOSSES](source:ts/monsters.ts/BOSSES).
+
+## Map and travel
+
+### There is no map, and it is the other game's map
+
+The game ships no dungeon and saves none. Every question about a square — whether there is a wall
+between here and there, whether this is where a ladder stands — is answered by pushing the column,
+the row, the floor and the dungeon number through one piece of arithmetic and taking a remainder.
+The same question always gets the same answer, so any floor of any dungeon can be drawn from four
+numbers.
+
+That piece of arithmetic is, instruction for instruction, the one Dungeons of the Unforgiven uses.
+The two games share a dungeon generator and feed it different numbers: 18 wall patterns instead of
+25, a floor 80 by 110 instead of 80 by 104, a ladder on one square in 31 instead of one in 27, and
+31,000 dungeons instead of five modules.
+
+They very nearly share the patterns too. Those live in a file — `DUNG.BIN` here, `UNFDUNG.BIN`
+there — and both are exactly 12,800 bytes, 25 records of 512, with 11,229 of those bytes the same
+byte at the same place in both. Eleven of the 25 records are identical end to end. Moraff's World
+reads from record 1 and uses eighteen of them; the other game starts at record 0 and uses all 25.
+A good half of the two games' corridors are drawn from the same hand-drawn tiles, and what makes
+the dungeons different is mostly the numbers going into the hash.
+
+In the code: [myrand](source:c/myrand), [wall_side](source:c/wall_side),
+[load_dung_bin](source:c/load_dung_bin), [side](source:ts/mwmap.js/side) and
+[bundledMwTileset](source:ts/mw-dungeon.ts/bundledMwTileset).
+
+### Every trap door to a floor drops you on the same square
+
+The landing square is not rolled fresh. The game seeds the C library's generator with the fixed
+number 10, asks it for `random(60) + 10` and `random(90) + 10`, and if that square is rock it
+tries seed 11, then 12, and so on until one is not.
+
+Since the seeds are fixed, so is the answer. Every trap door in the dungeon that leads to floor 90
+puts you on the same square of floor 90, every single time, whichever door you opened and however
+many times you use it.
+
+In the code: [the landing](source:c/FUN_2000_a6fa) and
+[trapdoorDest](source:ts/mwmap.js/trapdoorDest).
+
+### Three trap door keys nobody can find, for doors that do not exist
+
+A trap door is labelled with the floor it leads to and wants the key with that number. The keys
+drop from level drainers, and the key you get is for your own floor's group of ten. Twenty flags
+are set aside for them.
+
+The floor test that hands one over stops at floor 178, so the keys labelled 180, 190 and 200 can
+never be found. It does not matter: the destination is `myrand(...) * 10` and is thrown away
+unless it lands between 10 and 179, so no trap door in the game is ever labelled higher than 170
+either. Three keys nobody can find, for three doors nobody can meet.
+
+In the code: [monster_killed](source:c/monster_killed),
+[trapdoor_target](source:c/trapdoor_target) and
+[trapdoor](source:ts/mwmap.js/trapdoor).
+
+### A secret door is a wall on the map and nothing else
+
+The two bits that describe a side of a square have four values: wall, door, secret door, open. Only
+a wall stops you. A door and a secret door are both walked through without a word.
+
+The whole of the difference is what the automap draws: a door gets a line with a gap and two
+marks, a secret door gets a solid line exactly like a wall. So a secret door is not locked, not
+hidden by a roll, and not searched for. It is a wall on the map that is not a wall, and walking at
+it is the only way to find out.
+
+In the code: [wall_side](source:c/wall_side), [draw_map_square](source:c/draw_map_square) and
+[side](source:ts/mwmap.js/side).
+
+### Changing dungeon does not clear the map you have explored
+
+Your explored squares are kept in `.DUN` files, one per save slot per block of 32 floors, and they
+are a bitmap of where you have been and nothing else — no walls, no monsters, no items.
+
+Walking into a different entrance on the overworld blanks the 32 floor maps the game holds in
+memory and marks the loaded block as none, but the files on disk are left where they are, and
+arriving on a floor reads the old block straight back in. Nothing in the file says which dungeon
+it belongs to. A character who wanders the overworld ends up with an explored map that is two
+dungeons layered on top of one another.
+
+Inside those files is a smaller oddity: the bitmap that says which rows are present is built by a
+loop that tests its own counter rather than the map, so every row is always marked present. A
+`.DUN` file is always `4 + floors * 1116` bytes whether you have seen anything on those rows or
+not.
+
+In the code: [save_dun](source:c/save_dun), [load_dun](source:c/load_dun) and
+[enter_level](source:c/enter_level).
+
+### The overworld is a picture somebody typed
+
+`WORLDMAP.BIN` is 4,096 bytes, a 64 by 64 grid of one byte per region, and it holds exactly three
+values: a space, a capital `O` and a capital `P`. They are turned into heights for the landscape
+drawing — -20 for a space, 14 for an `O`, 28 for a `P` — so the whole overworld of Moraff's World
+is a text picture of sea, hills and mountains, and printing the file 64 columns wide draws it.
+
+In the code: [load_worldmap_bin](source:c/load_worldmap_bin) and
+[the world map](source:c/FUN_3000_8235).
+
+### The dungeon number is arithmetic, and it can come out negative
+
+Leaving the overworld computes `(cx * cy * cx) / (|cy| + 1) % 31000` from the region you are
+standing on and then adds one until that dungeon's surface has a square to come back out through.
+It is done in 16-bit integers, so the product wraps, and the numbers you can actually reach run
+from about -3,204 to 3,528 — the 31,000 is a modulus that never bites.
+
+A new character starts in dungeon 0 and stands in a region that would give 58, so the starting
+dungeon is not a place on the map at all. It is the one the roller writes.
+
+A negative number leaks into the monsters as well. A floor's monsters lean towards a group, and
+the group is `(dungeon + 6) % 9`, which comes out negative for a negative dungeon; the drift loop
+that would clamp it only runs while a coin flip keeps coming up heads, so half the time it does
+not run. The roller then reads the monster table from before its own start. Nothing in front of
+the table has ever bracketed a floor the game can reach, so the draw is rejected and rolled again
+— it costs a few rolls and nothing else.
+
+In the code: [the world map](source:c/FUN_3000_8235), [surface_feature](source:c/surface_feature),
+[surface](source:ts/mwmap.js/surface) and
+[floorGroup](source:ts/monsters.ts/floorGroup).
