@@ -136,10 +136,32 @@ describe('a square off to one side', () => {
 });
 
 describe('viewPointToSquare rounding', () => {
+  const at = { x: 10, y: 10 };
+
   it('sends a half square toward zero on either side, as the fcompp at 3000:3348 does', () => {
-    expect(viewPointToSquare(0.5, 0, 0, { x: 10, y: 10 })).toEqual(viewPointToSquare(0, 0, 0, { x: 10, y: 10 }));
-    expect(viewPointToSquare(-0.5, 0, 0, { x: 10, y: 10 })).toEqual(viewPointToSquare(0, 0, 0, { x: 10, y: 10 }));
-    expect(viewPointToSquare(0.501, 0, 0, { x: 10, y: 10 }).x).toBe(11);
-    expect(viewPointToSquare(-0.501, 0, 0, { x: 10, y: 10 }).x).toBe(9);
+    expect(viewPointToSquare(0.5, 0, 0, at)).toEqual(viewPointToSquare(0, 0, 0, at));
+    expect(viewPointToSquare(-0.5, 0, 0, at)).toEqual(viewPointToSquare(0, 0, 0, at));
+    expect(viewPointToSquare(0.501, 0, 0, at).x).toBe(11);
+    expect(viewPointToSquare(-0.501, 0, 0, at).x).toBe(9);
+  });
+
+  it('does so for each of the four facings', () => {
+    // The square two steps straight ahead for each facing, which sideways 0 lands on.
+    const twoAhead = [
+      { x: 10, y: 8 },
+      { x: 10, y: 12 },
+      { x: 8, y: 10 },
+      { x: 12, y: 10 },
+    ];
+    for (const facing of [0, 1, 2, 3]) {
+      expect(viewPointToSquare(0.5, 2, facing, at)).toEqual(twoAhead[facing]);
+      expect(viewPointToSquare(-0.5, 2, facing, at)).toEqual(twoAhead[facing]);
+      expect(viewPointToSquare(0, 2, facing, at)).toEqual(twoAhead[facing]);
+    }
+  });
+
+  it('puts the next line out on the neighbouring square, not the one beyond it', () => {
+    expect(viewPointToSquare(1.5, 2, 0, at)).toEqual({ x: 11, y: 8 });
+    expect(viewPointToSquare(-1.5, 2, 0, at)).toEqual({ x: 9, y: 8 });
   });
 });
