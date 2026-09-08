@@ -200,7 +200,8 @@
   }
 
   function render() {
-    if (!scene || !scene.width || !scene.height) return;
+    // The effect can run once more after the tab hides and bind:this has gone back to null.
+    if (!canvas || !scene || !scene.width || !scene.height) return;
     const { game, rows, floor, view, width, height, explored, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
     const dpr = window.devicePixelRatio || 1;
     const pixelWidth = Math.round(width * dpr);
