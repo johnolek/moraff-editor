@@ -223,6 +223,23 @@ mark for whatever the square holds.
   they have left the floor and come back. Every diagonal is drawn twice, a pixel apart, on
   a screen wider than 1000 pixels.
 
+The X key draws the same squares over the whole screen. `movecontrol`'s 0x78 branch (exe
+2000:d2fe) has two halves and the test between them (exe 2000:d330) is the screen's own width: a
+screen narrower than 321 pixels is shown the top, middle and bottom thirds of the floor one after
+another, centred on rows 18, 55 and 92, and every wider screen — the 1024 by 768 among them — gets
+the whole floor at once, centred on column 40 and row 55. The two have different headlines to
+match, `EXPANDED DUNGEON MAP, HIT ANY KEY...` (DS:1e27) against `DUNGEON MAP, TOP THIRD, HIT ANY
+KEY...` (DS:1e4c), and only the wide one is ever drawn here. `FUN_3000_8e75` (exe 3000:8e75) fills
+the screen with colour 10 before it starts, the same maroon the side map's own box is drawn in,
+and `FUN_2000_a068` (exe 2000:a068) fills the character's own square over the top, in a new colour
+every pass of the loop the game waits for a key in.
+
+Beside it stands `FUN_2000_bf91` (exe 2000:bf91), the way to the section's Shadow boss: `GO WEST`,
+`GO EAST`, `GO NORTH` or `GO SOUTH` (DS:1cba, 1cc2, 1cca, 1cd3) at 1200, 1090 in colour 4. It reads
+monster slot 0, where `stock_level` puts the boss, and prints nothing at all unless that slot still
+holds a type 22 monster — so a floor with no boss and a floor whose boss has been killed both get
+no signpost. The axis with further to go names the direction, and a tie goes to north or south.
+
 `FUN_2000_59c0` (exe 2000:59c0) sizes it from a table the video mode indexes rather than by
 scaling. The side map the play screen shows gets eight-pixel cells in fifteen columns by
 twenty-six rows on a 640 by 480 screen and ten-pixel cells in nineteen by thirty-three at

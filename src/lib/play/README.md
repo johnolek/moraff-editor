@@ -338,10 +338,9 @@ reading it is what sends the panel back to the record.
 
 ## What is not built yet
 
-Nothing. Every key movecontrol dispatches on is answered, and the two that are about the screen
-rather than the game — X, which fills the screen with a third of the floor at a time, and Z,
-which swaps the map for the 3-D view ahead — say what the game would have done with a display
-this port does not have.
+Nothing. Every key movecontrol dispatches on is answered. The one that is about the screen rather
+than the game — Z, which swaps the map for the 3-D view ahead — says what the game would have done
+with a display this port does not have.
 
 ## Where this leaves the original
 
