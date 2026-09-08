@@ -144,22 +144,28 @@ function drawSide(ctx: CanvasRenderingContext2D, stroke: SideStroke | null, x0: 
   if (stroke === 'door') drawDoorBar(ctx, x0, y0, length, vertical);
 }
 
+/** The ticks draw_side puts across a door: a short one three pixels long, and on a side 8 pixels
+ *  or more long two longer ones a pixel either side of it. The two halves of the routine differ
+ *  over the short tick. On a side running along the top of the square it is the small-side case
+ *  of an if/else (exe 3000:848c), so a long side gets the pair alone. On a side running down the
+ *  left the pair's branch falls through into it (exe 3000:8678), so it is drawn at every size,
+ *  after the pair. drawZoomSide in play/display.ts draws the same. */
 function drawDoorBar(ctx: CanvasRenderingContext2D, x0: number, y0: number, length: number, vertical: boolean): void {
   const mid = length >> 1;
   const reach = Math.trunc(length / 3);
+  const long = length >= 8;
   ctx.strokeStyle = palette.line;
   if (vertical) {
-    line(ctx, x0 - 1, y0 + mid, x0 + 2, y0 + mid);
-    if (length > 7) {
+    if (long) {
       line(ctx, x0 - reach, y0 + mid + 1, x0 + reach + 1, y0 + mid + 1);
       line(ctx, x0 - reach, y0 + mid - 1, x0 + reach + 1, y0 + mid - 1);
     }
+    line(ctx, x0 - 1, y0 + mid, x0 + 2, y0 + mid);
+  } else if (long) {
+    line(ctx, x0 + mid - 1, y0 - reach, x0 + mid - 1, y0 + reach + 1);
+    line(ctx, x0 + mid + 1, y0 - reach, x0 + mid + 1, y0 + reach + 1);
   } else {
     line(ctx, x0 + mid, y0 - 1, x0 + mid, y0 + 2);
-    if (length > 7) {
-      line(ctx, x0 + mid - 1, y0 - reach, x0 + mid - 1, y0 + reach + 1);
-      line(ctx, x0 + mid + 1, y0 - reach, x0 + mid + 1, y0 + reach + 1);
-    }
   }
 }
 

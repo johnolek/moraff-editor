@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
 import { MAP_COLUMNS, MAP_ROWS } from './area';
-import { drawFloor, drawYou } from './draw-floor';
+import { drawFloor, drawSquare, drawYou } from './draw-floor';
 import { UNFORGIVEN_MAP, type MapSquare } from './game';
 
 function openFloor(): MapSquare[][] {
@@ -97,6 +97,58 @@ describe('drawFloor over the map a character has discovered', () => {
     ) as unknown as CanvasRenderingContext2D;
     drawFloor(ctx, secret, { ...options, discovered: { known: (x, y) => x === 2 && y === 3, knownOnArrival: () => true } });
     expect(dashes.every((dash) => dash.length === 0)).toBe(true);
+  });
+});
+
+describe('the ticks drawSquare puts across a door', () => {
+  /** A canvas context that remembers every straight line it is asked to stroke, as the corner
+   *  it starts from and the corner it stops at. */
+  function recordLines(): { ctx: CanvasRenderingContext2D; lines: number[][] } {
+    const lines: number[][] = [];
+    let from: number[] = [];
+    const calls: Record<string, (...args: number[]) => void> = {
+      moveTo: (...args) => void (from = args),
+      lineTo: (...args) => void lines.push([...from, ...args]),
+    };
+    const ctx = new Proxy(
+      {},
+      { get: (_target, name) => calls[name as string] ?? (() => {}), set: () => true },
+    ) as unknown as CanvasRenderingContext2D;
+    return { ctx, lines };
+  }
+
+  /** The lines drawn for one square of the given size with one side made a door: the ticks
+   *  across the door run the other way from the door's own wall line, so a north door's ticks
+   *  are the vertical lines and a west door's the horizontal ones. The coordinate a tick keeps
+   *  carries the half pixel the drawer adds to centre a one-pixel line, and the far end is the
+   *  pixel after the last one drawn. */
+  function ticks(side: 'n' | 'w', size: number): number[][] {
+    const { ctx, lines } = recordLines();
+    const square = { n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, [side]: 1 } as MapSquare;
+    drawSquare(ctx, square, 0, 0, size, size, 1, null, UNFORGIVEN_MAP);
+    const acrossTheDoor = side === 'n' ? (l: number[]) => l[0] === l[2] : (l: number[]) => l[1] === l[3];
+    return lines.filter(acrossTheDoor);
+  }
+
+  it('crosses a door in a side running along the square with the long pair alone', () => {
+    // Middle at 5, reach 3: one tick either side of the middle, nothing on the middle itself.
+    expect(ticks('n', 10)).toEqual([
+      [4.5, -3, 4.5, 4],
+      [6.5, -3, 6.5, 4],
+    ]);
+  });
+
+  it('crosses that door with the short tick alone on a square too small for the pair', () => {
+    expect(ticks('n', 7)).toEqual([[3.5, -1, 3.5, 2]]);
+  });
+
+  it('crosses a door in a side running down the square with the short tick under the pair', () => {
+    expect(ticks('w', 10)).toEqual([
+      [-3, 6.5, 4, 6.5],
+      [-3, 4.5, 4, 4.5],
+      [-1, 5.5, 2, 5.5],
+    ]);
+    expect(ticks('w', 7)).toEqual([[-1, 3.5, 2, 3.5]]);
   });
 });
 
