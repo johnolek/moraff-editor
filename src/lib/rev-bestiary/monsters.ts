@@ -36,12 +36,25 @@ export interface RevMonster {
   negative: number;
 }
 
-export interface RevPicture {
-  index: number;
+/** One drawing of a monster at one size. */
+export interface RevDrawing {
   width: number;
   height: number;
   /** One string per row, a character per pixel, each a colour index 0 to 3. */
   rows: string[];
+}
+
+/**
+ * A monster's picture, at every size the 3-D view draws it.
+ *
+ * `4.NUM` holds two sizes of each close-up and `6.NUM` three of each distant one, laid end to
+ * end; the 3-D view picks the size by how far off the monster is (1000:6A3B, 1000:6A74). The
+ * picture's own `width`, `height` and `rows` are the first and biggest of them, which is the one
+ * the bestiary shows and the one a monster on the character's own square is drawn with.
+ */
+export interface RevPicture extends RevDrawing {
+  index: number;
+  variants: RevDrawing[];
 }
 
 /** One of the two sets of monsters, and the band of dungeon levels it is used on. */

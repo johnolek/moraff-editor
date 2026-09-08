@@ -82,9 +82,12 @@ DUNGEONS = [
 # whole byte and two bits to a pixel because the game draws in SCREEN 1.  One
 # picture is as long as the array's first two subscripts together, from the
 # `DIM p%(124, 1, 15)` at 1000:005D and the `DIM p%(44, 2, 18)` at 1000:00BA.
-CLOSE_UP = {"file": "4", "stride": 125 * 2 * 2, "slots": 16, "count": 15,
+# The middle subscript is the perspective: a monster two squares off is drawn
+# with the second close-up and one further away with the first, second or third
+# distant (1000:6A3B and 1000:6A74 pass `depth class - 1` and `depth class - 3`).
+CLOSE_UP = {"file": "4", "elements": 125, "variants": 2, "slots": 16, "count": 15,
             "width": 36, "height": 24}
-DISTANT = {"file": "6", "stride": 45 * 3 * 2, "slots": 19, "count": 18,
+DISTANT = {"file": "6", "elements": 45, "variants": 3, "slots": 19, "count": 18,
            "width": 20, "height": 14}
 PIXEL_BITS = 2
 
@@ -136,24 +139,38 @@ def names(path):
     return found
 
 
+def image(data, at):
+    """One `GET` image: a width in bits, a height in rows, then the rows."""
+    bits, height = struct.unpack("<HH", data[at:at + 4])
+    if not bits:
+        return None
+    width = bits // PIXEL_BITS
+    per_row = (bits + 7) // 8
+    body = data[at + 4:]
+    rows = []
+    for y in range(height):
+        row = body[y * per_row:(y + 1) * per_row]
+        rows.append("".join(str((row[x // 4] >> (6 - PIXEL_BITS * (x % 4))) & 3)
+                            for x in range(width)))
+    return {"width": width, "height": height, "rows": rows}
+
+
 def pictures(path, shape):
-    """Every `GET` image in a 4.NUM or 6.NUM, as rows of colour indexes 0..3."""
+    """Every `GET` image in a 4.NUM or 6.NUM, as rows of colour indexes 0..3.
+
+    A slot holds the same monster drawn at each of the perspectives the 3-D
+    view puts it at, one after the other; the first is the biggest.
+    """
     data = bsave(path)
+    stride = shape["elements"] * shape["variants"] * 2
     out = []
     for slot in range(shape["slots"]):
-        at = slot * shape["stride"]
-        bits, height = struct.unpack("<HH", data[at:at + 4])
-        if not bits:
+        at = slot * stride
+        drawn = [image(data, at + variant * shape["elements"] * 2)
+                 for variant in range(shape["variants"])]
+        if drawn[0] is None:
             continue
-        width = bits // PIXEL_BITS
-        per_row = (bits + 7) // 8
-        body = data[at + 4:]
-        rows = []
-        for y in range(height):
-            row = body[y * per_row:(y + 1) * per_row]
-            rows.append("".join(str((row[x // 4] >> (6 - PIXEL_BITS * (x % 4))) & 3)
-                                for x in range(width)))
-        out.append({"index": slot, "width": width, "height": height, "rows": rows})
+        out.append(dict(index=slot, variants=[one for one in drawn if one], **drawn[0]))
     if len(out) != shape["count"]:
         raise SystemExit("%s holds %d pictures, not %d" % (path, len(out), shape["count"]))
     return out
