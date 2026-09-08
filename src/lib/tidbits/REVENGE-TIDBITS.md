@@ -189,3 +189,144 @@ four of the five shipped files hold. It is the town, which everybody has already
 
 In the code: `rev-tools/docs/SURVEY.md` section 3, on the bit test at `1000:5449` and the
 `BSAVE` shape at `1000:B583`.
+
+## The dungeon
+
+### There is no maze in the box
+
+Seventy levels of twenty squares by nineteen, four sides to a square, is more than a hundred
+thousand walls, and not one of them is stored anywhere. Every `BSAVE` image in the game folder is
+accounted for — five explored maps, the ladders, the monsters and their pictures — and none of
+them describes a wall. The dungeon is one line of arithmetic over the square's own coordinates,
+worked out afresh every time the game needs it.
+
+The five characters shipped on the disk are what proves it. A character reached every square it
+has walked on by stepping onto it from a square beside it, so the squares it has walked cannot be
+cut into pieces by walls; replaying the rule against those maps gives nine explored levels, every
+one of them a single connected piece. Change one term — `level + 3` instead of `level + 2`, the
+two kinds swapped, the `+ 10` dropped — and eight of the nine shatter.
+
+In the code: [floor](source:ts/revmap.js/floor), and `rev-tools/docs/DUNGEON.md` sections 1
+and 7.
+
+### Eight and nine are a wall, six and seven a door
+
+Every side of every square is
+`INT(ABS(SIN(kind * column * row * (level + 2) / generation + 10)) * 10)`, with `kind` 1 for the
+wall across the top of a square and 2 for the wall down its left-hand side.
+The number that comes out is 0 to 9, and three bands is all it means: 8 and 9 are a wall and the
+move is refused, 6 and 7 are a door and you walk through it, and anything below that is an
+opening.
+
+The map draws all three from the same number, which is where the bands come from: a line when the
+value is over 5, and then three pixels of that line painted back out in the background colour
+when it is also 7 or less. The help file's map key agrees exactly — a straight line is a wall, a
+line with a small break is a door, no line is an opening.
+
+A wall belongs to one square, and the two squares it separates ask for it under the same name:
+the wall across the top of a square is the one along the bottom of the square above it.
+
+In the code: [wallSide](source:ts/revmap.js/wallSide) and [side](source:ts/revmap.js/side), from
+the move test at `1000:548B` and the map at `1000:4B5F` (`rev-tools/docs/DUNGEON.md` sections 2
+to 4).
+
+### Nearly a third of the walls are a nine
+
+Of the 51,191 interior sides in the whole dungeon, 42.2% are a wall and 18.2% a door. The ten
+values are nowhere near evenly spread: 9 on its own accounts for 29% of every side in the game.
+
+That is not a choice anybody made. `ABS(SIN(x))` spends most of its time near 1, so multiplying
+by ten and flooring lands on 9 far more often than on anything else, and the dungeon is walled up
+tighter than a uniform roll would have made it.
+
+In the code: [wallSide](source:ts/revmap.js/wallSide) and `rev-tools/docs/DUNGEON.md` section 2.
+
+### QuickBASIC's sine is wrong, and the whole dungeon rests on it
+
+BRUN30's single-precision `SIN` reduces its angle by multiplying by a single-precision `1/(2*pi)`
+and keeping the fraction, which at the sort of angle this game asks for leaves about four correct
+digits. At 27,370 — an ordinary square — it answers 0.430327 where the real sine is 0.430279.
+
+Ordinarily that would not matter. Here the answer is multiplied by ten and floored to one of ten
+bands, so a difference of five in the fifth decimal place is a different wall about once every
+two thousand squares. Anything that computes this dungeon with a real sine gets thousands of
+walls wrong, scattered, in the wrong places. There is no way round it: the only correct sine for
+Moraff's Revenge is Microsoft's incorrect one, polynomial and all.
+
+In the code: [mbfSin](source:ts/revmap.js/mbfSin), which is BRUN30 `CS:BF0C` step for step, and
+`rev-tools/docs/DUNGEON.md` section 6.
+[Microsoft Binary Format](https://en.wikipedia.org/wiki/Microsoft_Binary_Format).
+
+### A door asks nothing of you
+
+`H5.OVL`, the game's own help, lists strength as useful for opening doors. It is not, and there is
+nothing behind the sentence at all. The move test computes one number, compares it with 7, and
+either moves you or does not: no strength check, no die roll, no table. A door and an opening are
+walked through in exactly the same way, and the only difference between them is that the map
+draws a line with a gap in it.
+
+There are no secret doors either. The site's other two games have them, and this one has three
+kinds of side and no fourth.
+
+In the code: [blocked](source:ts/revmap.js/blocked) and `rev-tools/docs/DUNGEON.md` section 3,
+on the four move directions at `1000:30D9`, `3192`, `3254` and `3316`.
+
+### The floor is twenty squares by nineteen
+
+Columns run 1 to 20 and rows run 1 to 19 — not 20. The move code stops at 1 and at 19, and the
+map's own loop is `FOR row = 1 TO 19`.
+
+The arrays do not agree. Both of the map-shaped ones, the explored map and the feature index,
+have room for a twentieth row on every level, and the game never touches it. Seventy-four of the
+squares where the feature formula and its own shipped index disagree are in that row, which
+nobody has ever stood in.
+
+In the code: [COLUMNS](source:ts/revmap.js/COLUMNS) and [ROWS](source:ts/revmap.js/ROWS), and
+`rev-tools/docs/DUNGEON.md` section 1.
+
+### What is on a square is a second formula, and its own index does not quite agree
+
+Walls are one rule; ladders and chutes are another, and the two know nothing about each other.
+The square's own coordinates go into
+`INT(((column + 7) ^ 1.3 * (row + 6) ^ 1.2 * (level + step + 1) ^ 1.1) MOD 300) - 3`, and the
+code that comes out says what is there: 1 to 9 a ladder, 0 a chute, 50 nothing.
+
+`7.NUM` looks like the dungeon's feature file and is not. Every bit in it says only that a square
+holds something; which something still comes from the formula. And the file and the formula do
+not entirely agree — recomputing every one of the 28,000 squares puts a feature on 1,597 of the
+1,632 the file marks, and on 100 squares it does not mark, for 135 disagreements in all. The
+cause is single precision: the product reaches 400,000, and a 24-bit fraction has less than a
+unit of room left by the time the remainder is taken. Whichever pass built the file was not
+computing quite what the game computes when it reads it.
+
+In the code: [featureCode](source:ts/revmap.js/featureCode) and
+[feature](source:ts/revmap.js/feature), from `1000:5793` and `1000:552B`
+(`rev-tools/docs/SURVEY.md` section 3).
+
+### A ladder can be three levels long
+
+The feature code is not the number of levels a ladder spans; it is folded down to one. Take three
+off it twice, while it is still over three, and what is left is 1, 2 or 3 — how far the ladder
+goes. A ladder up is the square's own code. A ladder down is trickier: the game asks each of the
+three levels below in turn and takes the first whose folded code comes out equal to the distance,
+which is why the loop stops at three and why a ladder down and the ladder up that answers it are
+always the same square on two different levels.
+
+In the code: [fold](source:ts/revmap.js/fold) and [feature](source:ts/revmap.js/feature), from
+the folding at `1000:5649` and the search at `1000:552B`.
+
+### A chute drops one level, and the false floor is the same chute again
+
+Falling down a chute prints its line, adds one to your level and leaves your column and row
+alone — you land on the same square, one floor down — and the game remembers the three
+coordinates it left you on.
+
+That memory is the whole of the false floor. Every step asks what is on the square just stepped
+onto, and where the answer is nothing at all *and* the square is the one a chute dropped you on,
+the game prints "False floor." and offers you the go-down prompt. So a false floor is not a
+feature of the dungeon: it is the square under a chute, and stepping through it is the same fall
+carrying on.
+
+In the code: [falseFloor](source:ts/revmap.js/falseFloor), from the chute at `1000:3428`, the
+level it adds at `1000:3491`, the square it remembers at `1000:356F` and the test at `1000:064D`
+(`rev-tools/docs/DUNGEON.md` section 8).
