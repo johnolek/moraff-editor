@@ -28,6 +28,7 @@
   import {
     mwCharacteristicLines,
     mwKeyMenuLines,
+    mwMonsterViewCorner,
     mwMonsterViewLines,
     mwStatusLines,
     MW_MONSTER_VIEW_CORNERS,
@@ -80,13 +81,20 @@
   const cornerWindow = $derived({ x: 0, y: 0, width: MW_CORNER_WIDTH, height: corner.height });
 
   /**
-   * The values over the monster being faced. The game prints them around whichever of its four
-   * views that monster stands in; there is one picture here, so they are always the view ahead's.
+   * Which of the four views the monster being faced stands in, which is where its numbers go.
+   * The top-down map has only the one picture, so that one keeps taking the view ahead's corner.
    */
+  const monsterCorner = $derived(
+    session === null || view?.engaged == null || display === 'map'
+      ? MW_MONSTER_VIEW_CORNERS.north
+      : mwMonsterViewCorner(session.game, view.engaged.x, view.engaged.y),
+  );
+
+  /** Its level, its hit points and what killing it is worth, printed around that view. */
   const monsterValues = $derived(
     session === null || view?.engaged == null
       ? []
-      : mwMonsterViewLines(session.game, view.engaged.slot, MW_MONSTER_VIEW_CORNERS.north),
+      : mwMonsterViewLines(session.game, view.engaged.slot, monsterCorner),
   );
 
   /** The numbers along the bottom of the screen, which the game redraws after every action. The
@@ -342,6 +350,7 @@
               {ladderAt}
               discovered={discoveredMap}
               lines={screenLines}
+              engagedCorner={view.engaged === null ? null : monsterCorner}
             />
           </div>
         {:else}
