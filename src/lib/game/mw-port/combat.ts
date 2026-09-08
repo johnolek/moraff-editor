@@ -176,6 +176,16 @@ export function strike(game: MwGame): number {
 }
 
 /**
+ * How long monster_turn (WORLD.EXE 2000:615c) leaves its own line up before letting the loop
+ * carry on: a tenth of a second when the blow missed, a third of a second when it landed, and a
+ * second and a quarter for a puffball. On a turn two monsters both get, that is what keeps their
+ * messages apart instead of standing them one above the other.
+ */
+const MONSTER_MISS_MS = 100;
+const MONSTER_HIT_MS = 0x15e;
+const PUFFBALL_MS = 0x4ec;
+
+/**
  * The puffball half of monster_turn (WORLD.EXE 2000:615c, mw.c "monster_turn"): a monster whose
  * special byte is 6 does not attack at all. It moves one of the six characteristics by a point
  * and disappears.
@@ -187,6 +197,7 @@ function puffball(game: MwGame, slot: number): number {
   game.eraseScreen();
   // DS:276e / DS:2784, after the characteristic's own name
   game.say(stat + (amount < 0 ? ' DRAINED BY PUFFBALL!' : ' RAISED BY PUFFBALL!'));
+  game.delay(PUFFBALL_MS);
   mwSetOccupant(game, monster.x, monster.y, MW_SQUARE_EMPTY);
   // The slot is not freed. It is left holding a depth 0 monster of type 0 — an OGRE
   // at (100, 100), off the right edge of an 80-wide floor. The occupancy grid is one unchecked
@@ -409,6 +420,7 @@ export function monsterTurn(game: MwGame, slot: number): number {
     // The original prints the shared string buffer again here, so a characteristic drain's line
     // goes up twice and everything else prints nothing.
     game.say(buffer);
+    game.delay(damage < 1 ? MONSTER_MISS_MS : MONSTER_HIT_MS);
   }
   if (damage > 0) pc.hp -= damage;
   return damage;

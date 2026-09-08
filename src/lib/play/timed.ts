@@ -18,6 +18,12 @@ import type { ScreenLine } from '../game/port/state';
 interface Frame {
   screen: ScreenLine[];
   ms: number;
+  /**
+   * What stood in the strip at the top left of Moraff's World's screen when the frame was taken.
+   * That strip is not part of the screen the game draws through `print_text` here, so a frame
+   * carries it separately; a frame with none shows whatever the game has in it now.
+   */
+  banner?: string[];
 }
 
 export class TimedScreens {
@@ -37,15 +43,20 @@ export class TimedScreens {
   }
 
   /** The game has drawn something and asked for the screen to be left as it is. */
-  hold(screen: ScreenLine[], ms: number): void {
+  hold(screen: ScreenLine[], ms: number, banner?: string[]): void {
     if (ms <= 0) return;
-    this.queue.push({ screen: screen.map((line) => ({ ...line })), ms });
+    this.queue.push({ screen: screen.map((line) => ({ ...line })), ms, banner: banner?.slice() });
     if (this.current === null) this.next();
   }
 
   /** What the tab draws: the frame being shown, or the screen the game has now. */
   showing(screen: ScreenLine[]): ScreenLine[] {
     return this.current === null ? screen : this.current.screen;
+  }
+
+  /** The same for the strip a fight writes on, for a frame that was taken with one of its own. */
+  showingBanner(banner: string[]): string[] {
+    return this.current?.banner ?? banner;
   }
 
   /**

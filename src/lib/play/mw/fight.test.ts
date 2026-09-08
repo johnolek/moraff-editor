@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { MONSTERS } from '../../mw-bestiary/monsters';
 import type { MwStockedMonster } from '../../game/mw-port/stocking';
 import { mwSetOccupant } from '../../game/mw-port/state';
-import type { Rng } from '../../game/port/rng';
+import { BorlandRng, type Rng } from '../../game/port/rng';
 import type { MwGameSession } from './engine';
+import { spendTime } from '../../game/mw-port/combat';
+import { startMwGame } from './engine';
 import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
 import { MW_KEY } from './keys';
 
@@ -55,5 +57,42 @@ describe('the F key', () => {
     const session = playingMw(mwCharacterFile({ floor: 0, dir: 0, ...facingNorth() }));
     await pressMw(session, MW_KEY.fight);
     expect(session.box).toEqual([]);
+  });
+});
+
+describe('two monsters that both get a turn', () => {
+  /** A floor-3 square with open air to the north and to the south, and a monster on each.
+   *  The rng is the game's own here rather than {@link highest}, which sends stocking's search
+   *  for an empty square round for ever. */
+  const between = () => findMwSquare(3, (square) => square.n === 3 && square.s === 3);
+
+  const bothAttack = () => {
+    const spot = between();
+    const session = startMwGame(mwCharacterFile({ floor: 3, dir: 0, ...spot }), new BorlandRng(3));
+    const game = session.game;
+    // Every other monster on the floor is pushed out of reach of a turn, so the pass is these
+    // two and nothing else.
+    game.monsterTimers.fill(1000);
+    const sides = [
+      { x: spot.x, y: spot.y - 1 },
+      { x: spot.x, y: spot.y + 1 },
+    ];
+    sides.forEach((side, slot) => {
+      Object.assign(game.monsters[slot], { ...side, hp: 40, type: 1, depth: 3 });
+      mwSetOccupant(game, side.x, side.y, slot);
+      game.monsterTimers[slot] = -1;
+    });
+    session.fighting(() => spendTime(game, 1));
+    return session;
+  };
+
+  it('holds the first message on its own before the second replaces it', () => {
+    const session = bothAttack();
+    const showing = session.view().banner.join('\n');
+    const live = session.banner.join('\n');
+    session.finish();
+    expect(showing).toContain('NORTH');
+    expect(live).toContain('SOUTH');
+    expect(showing).not.toContain('SOUTH');
   });
 });

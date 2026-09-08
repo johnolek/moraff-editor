@@ -185,6 +185,10 @@ export class MwGameSession {
   private pending: string[][] = [];
   /** Where what the game says goes while a fight is being drawn. */
   private bannerSink: string[][] | null = null;
+  /** How many of those groups a delay has already held as a frame of its own. */
+  private bannerShown = 0;
+  /** The last group a delay held, which is what stays up when a fight ends on one. */
+  private bannerHeld: string[] = [];
   /** The record as the game last read it or wrote it back, which is how a record the save editor
    *  has written is told from the game's own save. */
   private known: Uint8Array;
@@ -216,11 +220,12 @@ export class MwGameSession {
         const said = this.bannerSink;
         const box = said?.pop();
         if (box) {
+          if (said && this.bannerShown > said.length) this.bannerShown = said.length;
           this.pending.push(box);
           this.box = box.slice(0, MW_MESSAGE_BOX.lines);
         }
       },
-      delay: (ms) => this.timed.hold(this.game.screen, ms),
+      delay: (ms) => this.holdScreen(ms),
     });
     // The boxes go through say and the screens through draw, the way they are kept apart on the
     // screen itself.
@@ -357,18 +362,47 @@ export class MwGameSession {
   }
 
   /**
+   * delay (WORLD.EXE 1000:22a2): hold the screen as it stands for a while.
+   *
+   * While a fight is being drawn the frame keeps the strip's own lines as well, because the game
+   * wipes the whole corner before it writes the next message there. So a delay ends the message
+   * that has just been printed: it is shown on its own for as long as the game asked, and
+   * whatever is said next starts a fresh one. That is what lets two monsters that both get a turn
+   * be read one after the other rather than stacked together.
+   */
+  private holdScreen(ms: number): void {
+    const said = this.bannerSink;
+    if (said === null) {
+      this.timed.hold(this.game.screen, ms);
+      return;
+    }
+    this.bannerHeld = said.slice(this.bannerShown).flat();
+    this.bannerShown = said.length;
+    this.timed.hold(this.game.screen, ms, this.bannerHeld);
+  }
+
+  /**
    * Run something whose lines belong at the top left of the screen rather than in the box. What
    * it runs has to finish before it returns, so nothing asynchronous belongs here.
    */
   fighting<T>(run: () => T): T {
     const said: string[][] = [];
-    const outer = this.bannerSink;
+    const outerSink = this.bannerSink;
+    const outerShown = this.bannerShown;
+    const outerHeld = this.bannerHeld;
     this.bannerSink = said;
+    this.bannerShown = 0;
+    this.bannerHeld = [];
     try {
       return run();
     } finally {
-      this.bannerSink = outer;
-      if (said.length > 0) this.banner = said.flat();
+      const tail = said.slice(this.bannerShown);
+      const held = this.bannerHeld;
+      this.bannerSink = outerSink;
+      this.bannerShown = outerShown;
+      this.bannerHeld = outerHeld;
+      if (tail.length > 0) this.banner = tail.flat();
+      else if (held.length > 0) this.banner = held;
     }
   }
 
@@ -529,7 +563,7 @@ export class MwGameSession {
         pc.floor === 0 ? buildingUnder(game) : 0,
         trapdoorHere(this),
       ),
-      banner: this.banner,
+      banner: this.timed.showingBanner(this.banner),
       moves: game.movesTaken,
       engaged: game.engaged === -1 ? null : (drawn.find((monster) => monster.slot === game.engaged) ?? null),
       over: this.over,
