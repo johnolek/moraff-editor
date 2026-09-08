@@ -238,6 +238,38 @@ describe('the monster on the square in front of you', () => {
   });
 });
 
+describe('a town building on the square ahead', () => {
+  /** The corridor with one of the four buildings on the square one step ahead, which is what the
+   *  town's own floor puts there. */
+  const ahead = (over: Partial<MapSquare>): MapSquare[][] => {
+    const rows = corridor();
+    Object.assign(rows[4][5], over);
+    return rows;
+  };
+
+  const drawn = (rows: MapSquare[][]): Uint8Array => {
+    const frame = newFrame(SCREEN.width, SCREEN.height);
+    renderView(frame, scene(rows, { floor: 0 }), AHEAD_VIEW, 0);
+    return frame.pixels;
+  };
+
+  it('is drawn with the ladder up, exactly as a square with one on it is', () => {
+    expect(drawn(ahead({ town: 1 }))).toEqual(drawn(ahead({ ladder: -1 })));
+  });
+
+  it('draws something the same square without a building does not', () => {
+    expect(drawn(ahead({ town: 1 }))).not.toEqual(drawn(ahead({})));
+  });
+
+  it('is not the ladder down, which hangs on the floor rather than the ceiling', () => {
+    expect(drawn(ahead({ town: 1 }))).not.toEqual(drawn(ahead({ ladder: 1 })));
+  });
+
+  it('leaves a square that has a ladder of its own alone', () => {
+    expect(drawn(ahead({ ladder: 1, town: 1 }))).toEqual(drawn(ahead({ ladder: 1 })));
+  });
+});
+
 describe('the four views', () => {
   it('draws each of the four facings without complaint', () => {
     for (const facing of [0, 1, 2, 3]) {
