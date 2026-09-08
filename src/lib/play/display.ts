@@ -271,6 +271,9 @@ export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
   drawZoomMonsters(frame, zoomMapWindow(frame.width), floor.at, floor.monsters ?? []);
 }
 
+/** The white `draw_side` (exe 3000:8432) lines every side of a cell that is not open. */
+export const ZOOM_SIDE_COLOUR = 15;
+
 /** `drawsquare` (exe 3000:87de) and `draw_side` (exe 3000:8432) for every square of the window. */
 function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
   const left = zoomMapLeft(frame.width);
@@ -285,15 +288,7 @@ function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
       // the site has revealed whole, where it keeps the rock blank instead of drawing it as a
       // square somebody could be standing in.
       if (!here || here.solid) continue;
-      const x = left + column * ZOOM_CELL;
-      const y = row * ZOOM_CELL;
-      fillRect(frame, x + 1, y + 1, x + ZOOM_CELL, y + ZOOM_CELL, 0);
-      // A side the character can walk through is left as the black of the square; every other
-      // one is a white line along that edge of the cell.
-      if (here.w !== 3) drawLine(frame, x, y + 1, x, y + ZOOM_CELL - 1, 15);
-      if (here.n !== 3) drawLine(frame, x + 1, y, x + ZOOM_CELL - 1, y, 15);
-      if (here.e !== 3) drawLine(frame, x + ZOOM_CELL, y + 1, x + ZOOM_CELL, y + ZOOM_CELL - 1, 15);
-      if (here.s !== 3) drawLine(frame, x + 1, y + ZOOM_CELL, x + ZOOM_CELL - 1, y + ZOOM_CELL, 15);
+      drawZoomSquare(frame, here, left + column * ZOOM_CELL, row * ZOOM_CELL);
     }
   }
 
@@ -307,4 +302,31 @@ function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
       plot(frame, at.x, at.y, 15);
     }
   });
+}
+
+/**
+ * One square of the map, in the order `drawsquare` (exe 3000:87de) draws it: the fill and then
+ * the four sides.
+ */
+function drawZoomSquare(frame: Frame, square: MapSquare, x: number, y: number): void {
+  fillRect(frame, x + 1, y + 1, x + ZOOM_CELL, y + ZOOM_CELL, 0);
+  drawZoomSide(frame, square.w, x, y, false);
+  drawZoomSide(frame, square.n, x, y, true);
+  drawZoomSide(frame, square.e, x + ZOOM_CELL, y, false);
+  drawZoomSide(frame, square.s, x, y + ZOOM_CELL, true);
+}
+
+/**
+ * `draw_side` (exe 3000:8432): one side of one cell. `horizontal` sides run along the cell's top
+ * edge and the others down its left edge; `x` and `y` are the cell's own corner, so the east and
+ * south sides are drawn as the west and north sides of the next cell along.
+ *
+ * A side the character can walk through is left as the black of the square; every other one is a
+ * white line along that edge of the cell, so a secret door and a module teleporter are walls to
+ * look at.
+ */
+function drawZoomSide(frame: Frame, side: number, x: number, y: number, horizontal: boolean): void {
+  if (side === 3) return;
+  if (horizontal) drawLine(frame, x + 1, y, x + ZOOM_CELL - 1, y, ZOOM_SIDE_COLOUR);
+  else drawLine(frame, x, y + 1, x, y + ZOOM_CELL - 1, ZOOM_SIDE_COLOUR);
 }
