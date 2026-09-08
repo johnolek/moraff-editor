@@ -3,3 +3,4 @@ dist/
 dist-cli/
 .DS_Store
 __pycache__/
+games/

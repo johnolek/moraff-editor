@@ -28,6 +28,7 @@ const pictureNames = [
   'ufmon.pic',
   ...Array.from({ length: 20 }, (_, i) => `ufmon${i + 1}.pic`),
   ...Array.from({ length: 4 }, (_, i) => `ufwall${i + 1}.pic`),
+  ...['store', 'armoury', 'weaponry', 'temple', 'bank', 'inn'].map((name) => `${name}.pic`),
 ];
 
 const pictureCopies: [string, string][] = pictureNames.map((name) => [
