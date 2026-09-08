@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BorlandRng } from '../game/port/rng';
 import { inTheTown, settle } from './battle.test-support';
-import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY, KEY_BUTTONS } from './keys';
+import { compassKeys, gameKey, KEY, KEY_BUTTONS } from './keys';
 
 /** A key event as a browser would hand one over. */
 const press = (key: string, modifiers: Partial<KeyboardEvent> = {}) => ({ key, altKey: false, ctrlKey: false, metaKey: false, ...modifiers }) as KeyboardEvent;
@@ -54,10 +54,6 @@ describe('the key the game reads', () => {
 });
 
 describe('the buttons under the game', () => {
-  it('offers every key a browser would take for itself', () => {
-    expect(INTERCEPTED_KEYS.map((button) => button.key)).toEqual([KEY.f1]);
-  });
-
   it('names a key once each', () => {
     const keys = KEY_BUTTONS.map((button) => button.key);
     expect(new Set(keys).size).toBe(keys.length);

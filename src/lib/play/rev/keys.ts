@@ -175,9 +175,6 @@ export interface RevKeyButton {
   label: string;
 }
 
-/** The keys a browser takes for itself, which is why the game needs them as buttons. */
-export const REV_INTERCEPTED_KEYS: RevKeyButton[] = [{ key: REV_KEY.f1, cap: 'F1', label: 'Help' }];
-
 /**
  * The rest of the game's keys as buttons: the four arrows first, then the letters in the order
  * `H1.OVL` lists them under "OPTIONS:".

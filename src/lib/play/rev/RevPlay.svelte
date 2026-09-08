@@ -31,7 +31,7 @@
     type RevGameSession,
     type RevPlayView,
   } from './engine';
-  import { REV_FIGHT_KEY_BUTTONS, REV_INTERCEPTED_KEYS, REV_KEY_BUTTONS, revGameKey } from './keys';
+  import { REV_FIGHT_KEY_BUTTONS, REV_KEY_BUTTONS, revGameKey } from './keys';
   import { revCharacterMap } from './memory';
   import RevScreenCanvas from './screen/RevScreenCanvas.svelte';
   import { revScreenStateOf } from './screen/from-game';
@@ -327,12 +327,6 @@
           </div>
           <div class="key-note">Arrow keys, which Escape switches between:</div>
           <div class="how">{ARROW_NOTE[view.arrows]}</div>
-          <div class="key-note">The browser takes these, so here they are as buttons:</div>
-          <div class="key-row">
-            {#each REV_INTERCEPTED_KEYS as button}
-              <button type="button" title={button.label} onclick={() => session?.press(button.key)}>{button.cap}</button>
-            {/each}
-          </div>
           <div class="key-note">Every key the dungeon reads:</div>
           <div class="key-row">
             {#each REV_KEY_BUTTONS as button}

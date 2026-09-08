@@ -145,13 +145,6 @@ export interface MwKeyButton {
 }
 
 /**
- * The keys a browser takes for itself, which is why the game needs them as buttons: F1 opens the
- * browser's own help in several of them, and a page that swallowed it would be worse than one
- * that hands it over.
- */
-export const MW_INTERCEPTED_KEYS: MwKeyButton[] = [{ key: MW_KEY.f1, cap: 'F1', label: 'HELP MENU' }];
-
-/**
  * The rest of the game's keys as buttons: the four arrows first, then the letters in the order
  * the help menu (WORLD.EXE 4000:3563) lists them.
  *

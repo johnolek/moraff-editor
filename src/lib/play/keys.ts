@@ -141,13 +141,6 @@ export interface KeyButton {
 }
 
 /**
- * The keys a browser takes for itself, which is why the game needs them as buttons: F1 opens
- * the browser's own help in several of them, and a page that swallowed it would be worse than
- * one that hands it over.
- */
-export const INTERCEPTED_KEYS: KeyButton[] = [{ key: KEY.f1, cap: 'F1', label: 'HELP' }];
-
-/**
  * The rest of the game's keys as buttons: the four movements first, the way the game's own
  * button bar (exe 4000:667b) orders them, then the rest.
  *

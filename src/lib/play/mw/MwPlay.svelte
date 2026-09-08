@@ -19,7 +19,7 @@
   import { downloadMapFiles, mwMapFiles } from '../export-maps';
   import { downloadRunLog } from '../export-run';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from '../run';
-  import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
+  import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import { characterMaps } from '../memory';
   import ScreenSwitch from '../ScreenSwitch.svelte';
@@ -468,12 +468,6 @@
                 <span>{choice.label}</span>
                 <span class="how">{choice.how}</span>
               </label>
-            {/each}
-          </div>
-          <div class="key-note">The browser takes these, so here they are as buttons:</div>
-          <div class="key-row">
-            {#each MW_INTERCEPTED_KEYS as button}
-              <button type="button" title={button.label} onclick={() => press(button.key)}>{button.cap}</button>
             {/each}
           </div>
           <div class="key-note">Every key the game reads:</div>
