@@ -1,5 +1,6 @@
 import { menuLine } from '../game/port/screens';
 import type { Game, ScreenLine } from '../game/port/state';
+import { BATTLE_SPELLS_BOX } from './display';
 
 /**
  * The two places the game puts text while it is being played: the eight-line message box down
@@ -96,12 +97,29 @@ export function messageBoxScreen(showing: MessageBoxShowing): ScreenLine[] {
 }
 
 /**
+ * Whether a drawn line stands in the panel of battle spells at the bottom left.
+ *
+ * view_battle_spells (exe 2000:9417) draws that panel and leaves it there, and nothing in the
+ * loop ever wipes that corner. The port's screen paints the panel from the character every time
+ * the tab draws, so what the 2 key and a cast leave behind is a second copy of a panel that is
+ * already showing, and it is left out of everything below.
+ */
+function inTheBattleSpellsPanel(line: ScreenLine): boolean {
+  return (
+    line.x >= BATTLE_SPELLS_BOX.left &&
+    line.x < BATTLE_SPELLS_BOX.right &&
+    line.y >= BATTLE_SPELLS_BOX.top &&
+    line.y < BATTLE_SPELLS_BOX.bottom
+  );
+}
+
+/**
  * The lines the game has drawn anywhere but the message box, which is it taking the whole display
  * over: the help, the V screen, the monster manual and the pages behind the P key all draw across
  * the four views.
  */
 export function screenTakenOver(drawn: ScreenLine[]): ScreenLine[] {
-  return drawn.filter((line) => !onMessageBox(line));
+  return drawn.filter((line) => !onMessageBox(line) && !inTheBattleSpellsPanel(line));
 }
 
 /**

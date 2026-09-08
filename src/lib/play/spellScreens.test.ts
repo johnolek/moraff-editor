@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { battleSpellLines } from '../game/port/screens';
 import { savePlayer } from '../game/port/record';
 import { BorlandRng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
@@ -58,7 +59,9 @@ describe('the spells in effect', () => {
   it('lists the battle spells with the moves left on each', async () => {
     const session = playing({ protection: 2, protectionTime: 40, speedTimer: 12 });
     await press(session, KEY.viewBattleSpells);
-    expect(screenText(session)).toEqual(
+    // The panel is part of the screen, which paints it from the character every time the tab
+    // draws; the key only says which twelve lines are showing.
+    expect(battleSpellLines(session.game).map((line) => line.text)).toEqual(
       expect.arrayContaining(['CURRENT BATTLE SPELLS IN EFFECT', 'PROTECT, LEVEL 2', 'SPEED']),
     );
   });

@@ -49,3 +49,12 @@ describe('the message box on the screen', () => {
     expect(lines.map((line) => line.text)).toEqual(['SAID']);
   });
 });
+
+describe('the panel of battle spells', () => {
+  it('is left out of the screen, since the screen paints it itself', () => {
+    // view_battle_spells draws it and nothing in the loop ever wipes that corner, so the copy the
+    // 2 key and a cast leave behind would stand there for the rest of the game.
+    const panel: ScreenLine = { text: 'CURRENT BATTLE SPELLS IN EFFECT', x: 10, y: 0x302, font: 0, colour: 8 };
+    expect(screenTakenOver([panel, overTheViews])).toEqual([overTheViews]);
+  });
+});
