@@ -38,8 +38,8 @@ BASIC.
   **`record.ts`** — the 340 numbers of `<n>.EXE` as the game means them.
 * **`keys.ts`** — the byte the loop compares for every key, and the browser events they come from.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `chute.ts`, `fight.ts`,
-  `attack.ts`, `kill.ts`, `town.ts`, `death.ts`, `advice.ts` — so that two people can add two keys
-  without touching the same file.
+  `attack.ts`, `kill.ts`, `town.ts`, `death.ts`, `advice.ts`, `help.ts`, `pause.ts`,
+  `settings.ts` — so that two people can add two keys without touching the same file.
 * **`monsters.ts`** — the occupancy grid, the stocking, and the turn one monster takes.
   **`clock.ts`** — the poll those turns are rolled in.
 * **`memory.ts`** — `DIM M(20, 71)`, and the `<n>.BIN` it is saved as.
@@ -139,8 +139,15 @@ Three things are this game's own:
   a character can be downloaded and played on in DOS. A death writes nothing; the roster marks the
   entry and keeps the bytes.
 * **The town's pictures are not drawn**, and neither are the monsters'.
-* **No sound, no palette, no enter delay.** The four keys that are about the screen rather than the
-  game say what the game would have done, which is `screens.ts`.
+* **The four keys about the screen keep their numbers and nothing plays.** `#`, `@` and `E` write
+  the background colour, the palette and the redraw delay the way the game does, and `settings.ts`
+  is where the display reads them; nothing here redraws on a timer, so the delay is only kept. `O`
+  turns the sound off and on again as the game does and says in the box that there is none to
+  play.
+* **The help pages have no screen of their own.** `help.ts` shows `H1.OVL` to `H8.OVL` page by
+  page in the message box, with the keys the original reads; what it leaves out is the switch to
+  `SCREEN 0` at 80 columns, the second colour a `~` line is drawn in, and the recolouring of the
+  `Esc` and `#` markers at 1000:C47B.
 
 ## What is not built yet
 
@@ -156,10 +163,6 @@ it stands in for:
 | T | takes a pill | 1000:7C49 |
 | W | uses a wand | 1000:7AA1 |
 | A | drops all the coins carried, which is what makes a character light | 1000:1918 |
-| P | stops everything until a key, with its own Q for DOS | 1000:7FFB |
-| H, F1 | opens the eight pages of `H1.OVL` to `H8.OVL` | 1000:C332 |
-| E | sets the delay between redraws | 1000:0F00 |
-| #, @, O | the background colour, the palette and the sound | 1000:0FF5, 102A, 1055 |
 | B, P at the fight prompt | breathes fire, and prays | 1000:8985, 884A |
 
 With the spells and the items left out, three things that hang off them are left out with them: the
