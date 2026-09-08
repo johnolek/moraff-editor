@@ -8,7 +8,7 @@ import { arriveSquare, leaveSquare } from '../game/port/moment';
 import { loadPlayer, savePlayer } from '../game/port/record';
 import { clearMenuBlock, clearMessageLine } from '../game/port/screens';
 import type { Rng } from '../game/port/rng';
-import type { Game, ScreenLine } from '../game/port/state';
+import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
 import { MAP_PLAYER, newGame, sectionMonsterKinds, setMonsterMap } from '../game/port/state';
 import { UNFORGIVEN_AREA } from '../map/area';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
@@ -134,6 +134,9 @@ export interface PlayView {
   box: ScreenLine[];
   /** A screen the game has taken the whole display over with; empty when there is none. */
   screen: ScreenLine[];
+  /** How much of the display that screen was drawn on black, and null where the port does not
+   *  know the rectangle and the whole display goes black behind it. */
+  screenCleared: ScreenRect | null;
   /** The battle banner: the monster being faced, as engagement_timing prints it. */
   banner: string[];
   /** The box the game puts up on a square with a ladder or a doorway, where it draws it. */
@@ -531,6 +534,7 @@ export class GameSession {
       visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
       box: messageBoxScreen({ box: this.box, banner: this.banner, drawn: printed }),
       screen: screenTakenOver(printed),
+      screenCleared: game.blackedOut,
       banner: this.banner,
       prompt: ladderPrompt(ladderUnder(game), pc.level === 0 ? buildingUnder(game) : 0),
       seconds: game.secondsElapsed,

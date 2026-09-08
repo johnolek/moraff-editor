@@ -5,6 +5,7 @@ import {
   clearMessageLine,
   clearRect,
   clearStatsScreen,
+  clearToBlack,
   drawMenu,
   ESCAPE,
   MENU_X,
@@ -308,9 +309,14 @@ function ownedRows(game: Game, source: number, type: number): number[][] {
  * says to press a key for a description, and the other three sources just say to pick one. The
  * line under the table explains the cost, and the last line offers the miniature layout — only
  * where the video mode is wide enough to have one, which the port always is.
+ *
+ * The table is drawn on black. cast_a_spell fills the top 0x21c of the screen with colour 0
+ * before it prints a word (exe 2000:e80e), which takes the key menu, the zoom map and the top of
+ * the big 3-D view with it and leaves the battle spells, the status block and the message box
+ * standing.
  */
 function drawLargeSpellList(game: Game, source: number, type: number): void {
-  clearRect(game, 0, 0, 0x640, 0x21c);
+  clearToBlack(game, 0, 0, 0x640, 0x21c);
   game.draw({ text: castHeading(source, type), x: 0, y: 0, font: 0, colour: 4 });
   // DS:2176
   game.draw({ text: 'ESCAPE', x: 0x5be, y: 0, spreadTo: 0x63f, font: 0, colour: 3 });
@@ -334,9 +340,12 @@ function drawLargeSpellList(game: Game, source: number, type: number): void {
  *
  * The names carry no keys here. The thirty letters are drawn on top of them in the big font, in a
  * grid of three columns, three units above the line of names they belong to.
+ *
+ * This one is drawn on black as well: the fill at exe 2000:e6c2 takes the whole message column,
+ * the bar over the box included, and the list goes where the box was.
  */
 function drawMiniSpellList(game: Game, source: number, type: number): void {
-  clearRect(game, 0x398, 0x2ff, 0x640, 0x4b0);
+  clearToBlack(game, 0x398, 0x2ff, 0x640, 0x4b0);
   game.draw({ text: castHeading(source, type), x: 0x39c, y: 0x301, font: 1, colour: 4 });
   // DS:2176
   game.draw({ text: 'ESCAPE', x: 0x5e6, y: 0x301, spreadTo: 0x63f, font: 1, colour: 3 });

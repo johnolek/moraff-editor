@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import { spellIndex } from '../game/port/inventory';
+import { ESCAPE } from '../game/port/screens';
 import { savePlayer } from '../game/port/record';
 import { BorlandRng, type Rng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
@@ -187,6 +188,48 @@ describe('casting from the spellbook', () => {
     expect(screenText(session).some((text) => text.includes('MINOR PROTECTION'))).toBe(false);
     await press(session, KEY.cast, 0x33);
     expect(screenText(session)).toContain('5) SWITCH TO LARGE, SLOW, CAST SPELL MENU');
+  });
+});
+
+describe('the screen the spell table is drawn on', () => {
+  /** cast_a_spell's own two fills: the top of the screen for the big table (exe 2000:e80e) and
+   *  the whole message column for the miniature one (exe 2000:e6c2). */
+  const LARGE = { x: 0, y: 0, right: 0x640, bottom: 0x21c };
+  const MINI = { x: 0x398, y: 0x2ff, right: 0x640, bottom: 0x4b0 };
+
+  it('blacks the top of the screen out under the big table and nothing else', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    await press(session, KEY.cast, 0x33);
+    expect(session.view().screenCleared).toEqual(LARGE);
+  });
+
+  it('brings the screen back when the table goes away', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    await press(session, KEY.cast, 0x33, ESCAPE);
+    expect(session.view().screenCleared).toBe(null);
+    expect(session.view().screen).toEqual([]);
+  });
+
+  it('brings it back when a spell is cast off the table as well', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    await press(session, KEY.cast, 0x33, SPELL_C);
+    expect(session.game.pc.protection).toBe(1);
+    expect(session.view().screenCleared).toBe(null);
+  });
+
+  it('blacks the message column out under the miniature table instead', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    // The 5 key switches layouts and ends the cast, so the table has to be asked for again.
+    await press(session, KEY.cast, 0x33, 0x35);
+    await press(session, KEY.cast, 0x33);
+    expect(session.view().screenCleared).toEqual(MINI);
+  });
+
+  it('leaves a screen whose own fill the port does not know blacking the whole display out', async () => {
+    const session = playing(wizard([MINOR_PROTECTION]));
+    await press(session, KEY.help);
+    expect(session.view().screen.length).toBeGreaterThan(0);
+    expect(session.view().screenCleared).toBe(null);
   });
 });
 

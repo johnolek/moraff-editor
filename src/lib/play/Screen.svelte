@@ -4,7 +4,7 @@
   import { sectionInfo } from '../game/sections';
   import { sectionPalette } from '../bestiary/pictures';
   import { battleSpellLines } from '../game/port/screens';
-  import type { Game, ScreenLine } from '../game/port/state';
+  import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
   import type { DiscoveredMap } from '../map/draw-floor';
   import GameScreen from '../ui/GameScreen.svelte';
   import { SeededRng } from '../game/port/rng';
@@ -28,6 +28,8 @@
     box: ScreenLine[];
     /** A screen the game has taken the whole display over with, at its own coordinates. */
     screen: ScreenLine[];
+    /** How much of the display that screen was drawn on black, or null for the whole of it. */
+    screenCleared?: ScreenRect | null;
     /** The map the character has discovered, which is all the zoom map draws. */
     discovered: DiscoveredMap;
     /** The monsters marked on the zoom map, which is every one on the floor in debug mode and
@@ -51,6 +53,7 @@
     monsters,
     box,
     screen,
+    screenCleared = null,
     discovered,
     prompt,
     mapMonsters = [],
@@ -103,6 +106,15 @@
     return one ? { dir: killed.dir, monster: one } : null;
   });
 
+  /** The black rectangle behind the screen, as a CSS inset off the same 1600 by 1200 grid the
+   *  lines over it are placed in. */
+  const clearedInset = $derived.by(() => {
+    const box = screenCleared ?? { x: 0, y: 0, right: SCREEN_WINDOW.width, bottom: SCREEN_WINDOW.height };
+    const across = (value: number) => `${(100 * value) / SCREEN_WINDOW.width}%`;
+    const down = (value: number) => `${(100 * value) / SCREEN_WINDOW.height}%`;
+    return [down(box.y), across(SCREEN_WINDOW.width - box.right), down(SCREEN_WINDOW.height - box.bottom), across(box.x)].join(' ');
+  });
+
   $effect(() => {
     const target = canvas;
     if (!target) return;
@@ -149,12 +161,12 @@
 
 <div class="screen" style:aspect-ratio="{SCREEN_PIXELS.width} / {SCREEN_PIXELS.height}">
   <canvas bind:this={canvas} width={SCREEN_PIXELS.width} height={SCREEN_PIXELS.height}></canvas>
-  <!-- A screen that takes the display over fills the rectangles it draws in with colour 0 before
-       it draws them: FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way. Which
-       rectangles each of them fills is not in the port, so the whole screen goes black behind
-       one. -->
+  <!-- A screen that takes the display over fills the rectangle it draws in with colour 0 before
+       it draws it: FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way, and cast_a_spell
+       the top of the screen its spell table stands on. A screen whose rectangle is not in the
+       port blacks the whole display out instead. -->
   {#if screen.length > 0}
-    <div class="cleared"></div>
+    <div class="cleared" style:inset={clearedInset}></div>
   {/if}
   <div class="text"><GameScreen lines={text} window={SCREEN_WINDOW} /></div>
 </div>
@@ -174,7 +186,6 @@
   }
   .cleared {
     position: absolute;
-    inset: 0;
     background: #000;
   }
   .text {

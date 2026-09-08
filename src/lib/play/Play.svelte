@@ -243,6 +243,7 @@
             monsters={monstersDrawn(mode, view)}
             box={view.box}
             screen={view.screen}
+            screenCleared={view.screenCleared}
             discovered={zoomMap}
             mapMonsters={zoomMapMonsters(mode, view)}
             debug={debugDrawn(mode)}
