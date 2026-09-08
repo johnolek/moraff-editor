@@ -1,6 +1,6 @@
 import { bundledDungeon } from '../game/dungeon';
 import { showHint } from '../game/port/drops';
-import type { Game } from '../game/port/state';
+import type { Game, ScreenLine } from '../game/port/state';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { hintOnFloor } from './arrival';
 import type { Turn } from './engine';
@@ -28,12 +28,32 @@ export function ladderUnder(game: Game): number {
  * square with a way out of the floor. A ladder down says which key goes down it; a ladder up and
  * a building both say the other one, since a building in the town is reached by climbing to it.
  */
-export function ladderPrompt(ladder: number, building: number): string[] | null {
+export function ladderPrompt(ladder: number, building: number): ScreenLine[] | null {
   const reads = ladder !== 0 ? ladder : -building;
   if (reads === 0) return null;
+  // FUN_2000_ac9e draws the box at this corner of the big view; the two lines sit ten units in
+  // from its left edge and are spread across its 200 units of width.
+  const x = LADDER_PROMPT_X + 10;
+  const line = (text: string, down: number): ScreenLine => ({
+    text,
+    x,
+    y: LADDER_PROMPT_Y + down,
+    spreadTo: LADDER_PROMPT_X + 200,
+    font: 0,
+    colour: 15,
+  });
   // DS:1913 191c, or DS:1902 190a
-  return reads > 0 ? ['HIT D TO', 'GO DOWN'] : ["HIT 'U'", 'TO GO UP'];
+  return reads > 0
+    ? [line('HIT D TO', 0x0f), line('GO DOWN', 0x37)]
+    : [line("HIT 'U'", 0x28), line('TO GO UP', 0x50)];
 }
+
+/**
+ * Where that box goes on the screen the game plays on: FUN_2000_ac9e (exe 2000:ac9e) calls
+ * draw_ladder_prompt with this corner when it has drawn the four views.
+ */
+export const LADDER_PROMPT_X = 0x14a;
+export const LADDER_PROMPT_Y = 0x258;
 
 /**
  * movecontrol's 0x75 branch: U climbs the ladder up, or goes into the building the square holds.

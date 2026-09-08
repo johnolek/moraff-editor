@@ -10,6 +10,7 @@
   import PixelText from '../ui/PixelText.svelte';
   import Panel from './Panel.svelte';
   import Portrait from './Portrait.svelte';
+  import Screen from './Screen.svelte';
   import View3d from './View3d.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
   import { dotuMapFiles, downloadMapFiles } from './export-maps';
@@ -18,7 +19,16 @@
   import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from './run';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
   import { characterMaps } from './memory';
-  import { mapDrawn, monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from './mode';
+  import {
+    mapDrawn,
+    monstersDrawn,
+    panelVisible,
+    PLAY_MODES,
+    readPlayMode,
+    screenDrawn,
+    writePlayMode,
+    type PlayMode,
+  } from './mode';
   import { MENU_LINE_STEP, MENU_SPREAD_TO, MENU_TOP, MENU_X } from '../game/port/screens';
   import { MESSAGE_BOX_LINES } from './screens';
 
@@ -91,6 +101,13 @@
     const playing = session;
     return playing ? mapDrawn(mode, playing.memory) : null;
   });
+
+  /**
+   * What the zoom map on the game's own screen knows: in faithful the map the character has
+   * discovered, and in the other two every square, since those are the modes that show the whole
+   * floor.
+   */
+  const zoomMap = $derived(discoveredMap ?? { known: () => true, knownOnArrival: () => true });
 
   /** The mode belongs to the tab; the session carries it so that anything keeping a record of
    *  the run can say which mode it was played in. */
@@ -222,30 +239,41 @@
   {:else}
     <div class="stage">
       <div class="map">
-        {#if view.place.floor > 0}
-          <View3d
+        {#if screenDrawn(mode)}
+          <Screen
+            game={session.game}
             rows={view.rows}
             place={view.place}
             monsters={monstersDrawn(mode, view)}
-            height={session.game.pc.height} />
+            box={view.box}
+            discovered={zoomMap}
+            prompt={view.prompt} />
+        {:else}
+          {#if view.place.floor > 0}
+            <View3d
+              rows={view.rows}
+              place={view.place}
+              monsters={monstersDrawn(mode, view)}
+              height={session.game.pc.height} />
+          {/if}
+          <FloorCanvas
+            bind:this={canvas}
+            game={UNFORGIVEN_MAP}
+            rows={view.rows}
+            floor={view.place.floor}
+            dungeon={view.place.module}
+            monsters={monstersDrawn(mode, view)}
+            discovered={discoveredMap}
+            bounds={FULL_FLOOR}
+            you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
+            focus={{ x: view.place.x, y: view.place.y, cell: PLAY_CELL }}
+          />
+          {#if view.prompt}
+            <div class="prompt">{#each view.prompt as line}<div>{line.text}</div>{/each}</div>
+          {/if}
         {/if}
-        <FloorCanvas
-          bind:this={canvas}
-          game={UNFORGIVEN_MAP}
-          rows={view.rows}
-          floor={view.place.floor}
-          dungeon={view.place.module}
-          monsters={monstersDrawn(mode, view)}
-          discovered={discoveredMap}
-          bounds={FULL_FLOOR}
-          you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
-          focus={{ x: view.place.x, y: view.place.y, cell: PLAY_CELL }}
-        />
         {#if view.screen.length > 0}
           <div class="overlay"><GameScreen lines={view.screen} /></div>
-        {/if}
-        {#if view.prompt}
-          <div class="prompt">{#each view.prompt as line}<div>{line}</div>{/each}</div>
         {/if}
         {#if view.over}
           <div class="over">
@@ -275,7 +303,9 @@
           {/if}
           <button type="button" onclick={exportMaps}>Export maps</button>
         </div>
-        <GameScreen lines={view.box} window={BOX_WINDOW} />
+        {#if !screenDrawn(mode)}
+          <GameScreen lines={view.box} window={BOX_WINDOW} />
+        {/if}
         {#if view.banner.length > 0}
           <div class="banner">
             {#each view.banner as line}<div>{line}</div>{/each}

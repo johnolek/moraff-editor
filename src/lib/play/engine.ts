@@ -120,8 +120,8 @@ export interface PlayView {
   screen: ScreenLine[];
   /** The battle banner: the monster being faced, as engagement_timing prints it. */
   banner: string[];
-  /** The box the game puts up on a square with a ladder or a doorway. */
-  prompt: string[] | null;
+  /** The box the game puts up on a square with a ladder or a doorway, where it draws it. */
+  prompt: ScreenLine[] | null;
   /** Seconds of game time the character has spent. */
   seconds: number;
   /** The monster the character is facing, or null. */

@@ -143,14 +143,14 @@ describe('changing floors', () => {
     await press(session, KEY.down);
     expect(session.view().place.floor).toBe(2 + depth);
     // The ladder is a ladder from both ends, so the landing square offers the way back up.
-    expect(session.view().prompt).toEqual(["HIT 'U'", 'TO GO UP']);
+    expect(session.view().prompt?.map((line) => line.text)).toEqual(["HIT 'U'", 'TO GO UP']);
   });
 
   it('climbs the ladder back up', async () => {
     const ladder = findSquare(4, (square) => square.ladder < 0);
     const rise = bundledDungeon.ladder(ladder.x, ladder.y, 4, 0);
     const session = playing(characterFile({ level: 4, ...ladder }));
-    expect(session.view().prompt).toEqual(["HIT 'U'", 'TO GO UP']);
+    expect(session.view().prompt?.map((line) => line.text)).toEqual(["HIT 'U'", 'TO GO UP']);
     await press(session, KEY.up);
     expect(session.view().place.floor).toBe(4 + rise);
   });
