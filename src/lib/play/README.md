@@ -22,6 +22,8 @@ something the original does, a comment says so.
 * **`gear.ts`** — the eight-line menu of what the character owns that A, W and the enchant spells
   all build, and the classes each row is refused to. **`manual.ts`** — the S key.
   **`misc.ts`** — M, O, G, X and Z. **`section-screen.ts`** — the pictures on the S key's screen.
+  **`building.ts`** — the picture of the store, temple, bank or inn the character has walked into,
+  which takes the whole display over for as long as they are dealing with it.
   **`plaque.ts`** — the HIT ANY KEY plaque every message box waits behind.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
   memory that decides whether its monsters are rolled again. **`memory.ts`** — the other half of
