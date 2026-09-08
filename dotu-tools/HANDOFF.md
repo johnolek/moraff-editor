@@ -396,6 +396,7 @@ dotu-tools/
   reference/dotu-pic.js          .PIC decoder + palette/colour rules (ES module)
   reference/unfpic.py            .PIC decoder (Python) + PNG export
   reference/render_monsters.py   renders pics/monsters from the game files + palettes.json
+  reference/scripts/render_walls.mjs  renders pics/walls through the port's own drawers
   reference/scripts/EmuPalette.py  Ghidra headless script that emulated set_palette -> palettes.json
   reference/scripts/make_catalog.py  regenerates FUNCTION-CATALOG.md from ghidra_out/functions.txt
   reference/scripts/*.py         the other Ghidra headless scripts (decompile export, setup)
@@ -411,7 +412,8 @@ dotu-tools/
                                  character, one line of the file to a line on screen
   pics/monsters/                 122 monsters as PNG + per-section sheets + Shadow-boss variants
   pics/buildings/                the six town buildings composited (320x200) + sheet
-  pics/walls/                    ufwall1-4 textures (10 each) + sheets
+  pics/walls/                    ufwall1-4 textures (10 each) + sheets, each file in the
+                                 colours of the first section that loads it
 ```
 
 ## 12. Second wave: pictures, the readable rulebook, the port
