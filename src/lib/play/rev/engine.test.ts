@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { SeededRng } from '../../game/port/rng';
 import { formatRevRecord, REV_VALUE_COUNT } from '../../game/rev-port/record';
 import { REV_KEY } from './keys';
+import { NEEDS_A_CURE } from './pass';
+import { REV_VALUE, revValue } from './record';
 import { REV_CLOCK_TICK, RevGameSession, runRevDungeon, startRevGame, type RevCharacterFile } from './engine';
 
 /**
@@ -288,6 +290,44 @@ describe('walking away from a fight', () => {
     }
     expect(session.game.fight).toBeNull();
     expect(session.game.monsters.strengths[41]).toBe(Math.round(left));
+    session.finish();
+  });
+});
+
+describe('a disease', () => {
+  it('takes a characteristic off the character as they play, one every hundredth key', async () => {
+    const { session } = await playing(5, revRecord({ 144: 1 }));
+    const pc = session.game.pc;
+    const points = () => pc.stats.reduce((total, stat) => total + stat, 0);
+    const before = points();
+
+    // The count starts at 1 and the drain lands as it reaches 100, so the ninety-ninth key is
+    // the one that costs a point.
+    for (let key = 0; key < 98; key++) {
+      session.press(REV_KEY.stats);
+      await settled();
+    }
+    expect(points()).toBe(before);
+
+    session.press(REV_KEY.stats);
+    await settled();
+
+    expect(points()).toBe(before - 1);
+    expect(revValue(pc, REV_VALUE.disease)).toBe(100);
+    expect(session.view().box).toContain(NEEDS_A_CURE);
+    session.finish();
+  });
+
+  it('costs a character without one nothing at all', async () => {
+    const { session } = await playing(5);
+    const pc = session.game.pc;
+    const before = pc.stats.slice();
+    for (let key = 0; key < 120; key++) {
+      session.press(REV_KEY.stats);
+      await settled();
+    }
+    expect(pc.stats).toEqual(before);
+    expect(revValue(pc, REV_VALUE.disease)).toBe(0);
     session.finish();
   });
 });

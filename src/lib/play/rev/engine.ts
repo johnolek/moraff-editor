@@ -41,7 +41,8 @@ import { REV_KEY, revArrowMode, revCompassArrow, revTurningArrow, revWrapFacing 
 import { revFeatureUnder, revLookDown } from './ladders';
 import { RevMapMemory, type RevMapStore } from './memory';
 import { DEFAULT_PLAY_MODE, type PlayMode } from '../mode';
-import { revStep } from './move';
+import { revStep, type RevStep } from './move';
+import { revPass } from './pass';
 import { REV_UNBANKED_EXPERIENCE_VALUE, loadRevPlayer, revPlayerFromValues, revValue, saveRevPlayer } from './record';
 import type { RunRecorder, RunSummary } from '../run';
 import { revAdvice } from './advice';
@@ -612,41 +613,50 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     game.said = [];
     game.banner = [];
     session.run?.dispatched(key);
+    let step: RevStep | null = null;
     if (game.fight !== null) {
       // 1000:8701 and 1000:871F: the fight prompt hands Escape and the four arrows to the same
       // two routines the dungeon does, so a character can turn and walk away from a monster.
       if (key === REV_KEY.escape) switchArrows(turn);
-      else if (revCompassArrow(key) !== 0 || revTurningArrow(key) !== null) await stepOrTurn(session, key);
+      else if (revCompassArrow(key) !== 0 || revTurningArrow(key) !== null) step = await stepOrTurn(session, key);
       else await fightKey(session, key);
     } else {
       const handler = REV_KEY_HANDLERS[key];
       if (handler) await handler.run(turn);
-      else await stepOrTurn(session, key);
+      else step = await stepOrTurn(session, key);
     }
     // 1000:A4E7: whatever killed the monster, what it dropped is offered before the next key.
     if (game.killed) {
       game.killed = false;
       await revTreasureFromAKill(game, session.magic());
     }
+    // 1000:3FFC, which every key comes back through. The one that does not is a step a monster
+    // stood in the way of: 1000:33EA prints MONSTER BLOCKS WAY and returns.
+    if (step !== 'monster') revPass(game);
     // The fight is over the moment the character is no longer standing on the monster.
     if (game.fight !== null && session.monsterHere() !== game.fight.slot) revLeaveTheFight(game);
     if (session.over) return;
   }
 }
 
-/** 1000:0AC2: what the arrows do, which depends on the movement mode Escape switches. */
-async function stepOrTurn(session: RevGameSession, key: number): Promise<void> {
+/**
+ * 1000:0AC2: what the arrows do, which depends on the movement mode Escape switches.
+ *
+ * What it hands back is what the step came to, since the per-key routine is reached from a
+ * different place for each of them, and a step a monster blocked never reaches it at all.
+ */
+async function stepOrTurn(session: RevGameSession, key: number): Promise<RevStep | null> {
   const game = session.game;
   const pc = game.pc;
   if (game.arrowMode === 0) {
     const facing = revCompassArrow(key);
-    if (facing === 0) return;
+    if (facing === 0) return null;
     pc.facing = facing;
-    revStep(game, facing);
-    return;
+    return revStep(game, facing);
   }
   const arrow = revTurningArrow(key);
-  if (arrow === null) return;
-  if (arrow.step) revStep(game, pc.facing);
-  else pc.facing += arrow.turn;
+  if (arrow === null) return null;
+  if (arrow.step) return revStep(game, pc.facing);
+  pc.facing += arrow.turn;
+  return null;
 }
