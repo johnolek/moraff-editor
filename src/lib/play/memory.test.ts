@@ -176,6 +176,27 @@ describe('the map the views build up', () => {
   });
 });
 
+describe('what arriving on a floor marks', () => {
+  it('marks the square landed on and everything the views reach from it', () => {
+    const { rows, x, y } = corridorNorth(3);
+    const memory = new MapMemory();
+    memory.enterFloor(0, 1);
+    memory.markArrival(rows, x, y);
+    expect(memory.isKnown(x, y)).toBe(true);
+    expect(memory.isKnown(5, y - 3)).toBe(true);
+    expect(memory.isVisible(5, y - 3)).toBe(true);
+  });
+
+  it('leaves the copy taken on arrival holding none of them', () => {
+    const { rows, x, y } = corridorNorth(3);
+    const memory = new MapMemory();
+    memory.enterFloor(0, 1);
+    memory.markArrival(rows, x, y);
+    expect(memory.wasKnownOnArrival(x, y)).toBe(false);
+    expect(memory.wasKnownOnArrival(5, y - 3)).toBe(false);
+  });
+});
+
 describe('the copy taken on arrival', () => {
   it('holds nothing on a floor nobody has been on', () => {
     const memory = new MapMemory();

@@ -176,6 +176,25 @@ export class MapMemory {
     }
   }
 
+  /**
+   * The two marks of a floor's first drawing, made where the character has landed: the square
+   * underfoot and every square the four 3-D views draw from it.
+   *
+   * The original makes them on movecontrol's next pass, and until that pass comes round it leaves
+   * the floor the character came from on the screen. This port has no such stale screen: it draws
+   * the floor they have arrived on every time the game waits for a key, and an arrival waits for
+   * one before that pass — the snake's hint, the chute's "hit any key", the greeting the module
+   * teleporter prints — so the map behind those boxes would otherwise be blank. The marks are the
+   * same ones the next pass makes; only the moment they are made is earlier.
+   *
+   * {@link enterFloor} takes its copy of the floor before this, the way load_level_map takes it
+   * before movecontrol draws, so a chute still shows up only on a floor already walked.
+   */
+  markArrival(rows: MapSquare[][], x: number, y: number): void {
+    this.markStep(x, y);
+    this.markViews(rows, x, y);
+  }
+
   /** Whether a monster standing here is one the views have just drawn. */
   isVisible(x: number, y: number): boolean {
     return this.drawn.has(squareIndex(x, y));
