@@ -9,6 +9,12 @@ function draws(perRange: Record<number, number>): Rng {
   return { random: (n) => perRange[n] ?? 0 };
 }
 
+/** A draw of a bare `RND`, which the port takes as fifteen bits (`revFraction`). */
+const rnd = (fraction: number) => ({ 0x8000: Math.round(fraction * 0x8000) });
+
+/** Near enough to one to be the top of any die the deeper roll at 1000:9CD9 multiplies. */
+const NEARLY_ONE = rnd(0.99);
+
 function character(fields: Partial<RevPc> = {}): RevPc {
   return {
     values: new Array<number>(340).fill(0),
@@ -85,27 +91,27 @@ describe("the monster's roll", () => {
 describe("the monster's damage bands", () => {
   it('adds a four-sided die and one for beating the armour class', () => {
     // Roll 18 against 17: over the first band and under the two above it.
-    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15);
+    const game = attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 15);
     expect(swingAt(game).damage).toBe(4 + 4 + 7);
   });
 
   it('adds nothing at all for a roll that does not beat the armour class', () => {
-    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 14);
+    const game = attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 14);
     expect(swingAt(game).damage).toBe(4 + 7);
   });
 
   it('adds a twelve-sided die fifteen points over the armour class', () => {
-    const game = attacking(draws({ 4: 3, 12: 11, 5: 4, 8: 7 }), 30);
+    const game = attacking(draws({ 4: 3, 12: 11, 5: 4, ...NEARLY_ONE }), 30);
     expect(swingAt(game).damage).toBe(4 + 12 + 4 + 7);
   });
 
   it('adds a twenty-six-sided die thirty points over it', () => {
-    const game = attacking(draws({ 4: 3, 12: 11, 26: 25, 5: 4, 8: 7 }), 45);
+    const game = attacking(draws({ 4: 3, 12: 11, 26: 25, 5: 4, ...NEARLY_ONE }), 45);
     expect(swingAt(game).damage).toBe(4 + 12 + 26 + 4 + 7);
   });
 
   it('holds the bands off by the fifteen points the shield spell is worth', () => {
-    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15);
+    const game = attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 15);
     game.shield = 15;
     expect(swingAt(game).damage).toBe(4 + 7);
   });
@@ -116,10 +122,23 @@ describe("the monster's damage bands", () => {
   });
 
   it('adds four for every level the monster is deeper than the character', () => {
-    const shallow = attacking(draws({ 8: 7 }), 15, { level: 3 }, { monsterLevel: 5 });
+    const shallow = attacking(draws(NEARLY_ONE), 15, { level: 3 }, { monsterLevel: 5 });
     expect(swingAt(shallow).damage).toBe(1 + 7);
-    const deep = attacking(draws({ 16: 15 }), 15, { level: 1 }, { monsterLevel: 5 });
+    const deep = attacking(draws(NEARLY_ONE), 15, { level: 1 }, { monsterLevel: 5 });
     expect(swingAt(deep).damage).toBe(1 + 15);
+  });
+
+  it("floors the deeper roll the way BASIC's INT does", () => {
+    // Against a character one level over it `deeper' is -4, and INT(0.99 * -4) is -4 where
+    // cutting the fraction off would give -3: the die the band handed over is taken away whole.
+    const game = attacking(draws({ 4: 3, ...NEARLY_ONE }), 15, { level: 6 }, { monsterLevel: 5 });
+    expect(swingAt(game).damage).toBe(0);
+    expect(game.banner).toContain('IT MISSED               ');
+  });
+
+  it('leaves a roll that lands on a whole number where it is', () => {
+    const game = attacking(draws({ 4: 3, ...rnd(0.5) }), 15, { level: 6 }, { monsterLevel: 5 });
+    expect(swingAt(game).damage).toBe(4 - 2);
   });
 
   it('adds a forty-nine-sided die and eighteen past level sixty', () => {
@@ -128,13 +147,13 @@ describe("the monster's damage bands", () => {
   });
 
   it("doubles what the second dungeon's sixth kind does", () => {
-    const single = swingAt(attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15, {}, { kind: 1 })).damage;
-    const double = swingAt(attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15, {}, { kind: 6 })).damage;
+    const single = swingAt(attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 15, {}, { kind: 1 })).damage;
+    const double = swingAt(attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 15, {}, { kind: 6 })).damage;
     expect(double).toBe(2 * single);
   });
 
   it('takes the damage off the character and says how much', () => {
-    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15);
+    const game = attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 15);
     const swing = swingAt(game);
     expect(game.pc.hp).toBe(200 - swing.damage);
     expect(game.banner).toContain(`IT DID ${swing.damage} POINTS  `);
@@ -150,7 +169,7 @@ describe("the monster's damage bands", () => {
 
 describe('a monster of kind 3 stuck to the character', () => {
   it('throws its damage again against the roll its last swing made', () => {
-    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15, {}, { kind: 3 });
+    const game = attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 15, {}, { kind: 3 });
     const first = swingAt(game);
     expect(game.banner).toContain("IT'S STUCK TO YOU!");
     const scratch = game.scratch;
@@ -171,7 +190,7 @@ describe('a monster of kind 3 stuck to the character', () => {
 
 describe('a monster held off by a pill', () => {
   it('says it cannot strike, spends one of the swings and does nothing else', () => {
-    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15);
+    const game = attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 15);
     game.paralysis = 10;
     expect(swingAt(game).damage).toBe(0);
     expect(game.banner).toContain("IT CAN'T STRIKE        ");
@@ -181,7 +200,7 @@ describe('a monster held off by a pill', () => {
   });
 
   it('swings again once the counter is down to one', () => {
-    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15);
+    const game = attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 15);
     game.paralysis = 1;
     expect(swingAt(game).damage).toBeGreaterThan(0);
     expect(game.paralysis).toBe(1);

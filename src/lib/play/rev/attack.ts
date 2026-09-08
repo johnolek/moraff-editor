@@ -1,5 +1,6 @@
 import { dungeonForLevel } from '../../rev-bestiary/monsters';
 import { REV_FIGHT_LINES } from './fight';
+import { revFraction } from './magic';
 import { REV_ARMOUR_VALUE, REV_STAT_COUNT, REV_VALUE, revValue, setRevValue } from './record';
 import type { RevPc } from './record';
 import type { RevGame } from './state';
@@ -134,7 +135,11 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
   let deeper = Math.round((fight.monsterLevel - pc.level) * 4);
   if (deeper < -10) deeper = 10;
   damage += rng.random(fight.monsterLevel);
-  damage += rng.random(deeper);
+  // 1000:9CD9: `deeper' is negative against a character who out-levels the monster, and BASIC's
+  // INT floors rather than cutting the fraction off, so the roll takes a point more off the
+  // damage than `rng.random' would. Written as the fraction the original multiplies, which for a
+  // positive number is the same draw and the same answer.
+  damage += Math.floor(revFraction(rng) * deeper);
   if (fight.monsterLevel > 60) damage += rng.random(49) + 18;
   // 1000:9D1F: kind 6, which only the second dungeon has, hits for double.
   if (fight.kind === 6) damage *= 2;
