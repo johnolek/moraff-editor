@@ -122,6 +122,7 @@ const scene = {
   horizonWeight,
   monsters,
   ladderAt: (x, y) => map.ladder(x, y, floor, dungeon),
+  surfaceFeatureAt: (x, y) => map.surface(x, y, floor, dungeon),
 };
 
 const frame = newFrame(screen.width, screen.height);

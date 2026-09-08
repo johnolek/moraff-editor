@@ -152,6 +152,11 @@
     view === null ? 0 : bundledMwDungeon.ladder(x, y, view.place.floor, view.place.dungeon),
   );
 
+  /** surface_feature for a square, which is what the views mark a ceiling with on floor 0. */
+  const surfaceFeatureAt = $derived((x: number, y: number) =>
+    view === null ? 0 : bundledMwDungeon.surface(x, y, view.place.floor, view.place.dungeon),
+  );
+
   /** How tall a line of the body font is: the message box steps this far between its own. */
   const LINE_HEIGHT = MW_MESSAGE_BOX.step;
 
@@ -363,6 +368,7 @@
               monsters={monstersDrawn(mode, view)}
               height={session.game.pc.height}
               {ladderAt}
+              {surfaceFeatureAt}
               discovered={discoveredMap}
               mapMonsters={zoomMapMonsters(mode, view)}
               lines={screenLines}

@@ -1,6 +1,7 @@
 import { fillRect, drawLine, plot, type Frame } from '../../view3d/frame';
 import { floodBothHalves, type FloodContext, type WallFace } from '../../view3d/flood';
 import { SKIP, scaleImage } from '../../view3d/scale';
+import type { PicRowImage } from '../../view3d/texture';
 import type { ViewRect } from '../../view3d/geometry';
 import {
   MW_VIEW_REACH,
@@ -45,6 +46,9 @@ export interface MwViewScene extends Omit<MwWallScene, 'facing'> {
   monsters: MwViewMonster[];
   /** `ladder_delta` (exe 3000:a449) for a square: above zero a way down, below it a way up. */
   ladderAt(x: number, y: number): number;
+  /** `surface_feature` (exe 2000:7c2d): 1 store, 2 temple, 3 bank, 4 inn, 5 the gate, 0 none.
+   *  Only floor 0 reads it. */
+  surfaceFeatureAt(x: number, y: number): number;
 }
 
 /** The view came back blocked: a wall stands right in front of the character. */
@@ -322,14 +326,24 @@ function drawSquare(
   }
 
   if (face.from === face.to) return;
+  const mark = (picture: PicRowImage | null, top: number, bottom: number) => {
+    if (picture) scaleImage(frame, face.left, top, face.right, bottom, picture, from, to, options(0));
+  };
+
+  // A way down is marked on the floor of the square (exe 3000:2fdd).
   const ladder = scene.ladderAt(face.square.x, face.square.y);
-  if (ladder === 0) return;
-  const picture = scene.pictures.ladder(ladder > 0);
-  if (!picture) return;
-  // A way down is marked on the floor of the square and a way up on its ceiling.
-  const top = ladder > 0 ? Math.trunc((face.top + face.bottom * 2) / 3) : face.top;
-  const bottom = ladder > 0 ? face.bottom : Math.trunc((face.top * 2 + face.bottom) / 3);
-  scaleImage(frame, face.left, top, face.right, bottom, picture, from, to, options(0));
+  if (ladder > 0) {
+    mark(scene.pictures.ladder(true), Math.trunc((face.top + face.bottom * 2) / 3), face.bottom);
+  }
+
+  // The ceiling mark is a way up everywhere but the surface, where exe 3000:302b throws the
+  // ladder away and reads surface_feature instead, negated. So on floor 0 the mark stands over a
+  // store, a temple, a bank, an inn or the gate, and a way up there is not marked at all.
+  const ceiling =
+    scene.floor === 0 ? -scene.surfaceFeatureAt(face.square.x, face.square.y) : ladder;
+  if (ceiling < 0) {
+    mark(scene.pictures.ladder(false), face.top, Math.trunc((face.top * 2 + face.bottom) / 3));
+  }
 }
 
 /**

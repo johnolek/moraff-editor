@@ -40,6 +40,9 @@
     height: number;
     /** `ladder_delta` for a square: above zero a way down, below it a way up. */
     ladderAt: (x: number, y: number) => number;
+    /** `surface_feature`: what a square of floor 0 holds, which is what its ceiling is marked
+     *  with there instead of a ladder. */
+    surfaceFeatureAt: (x: number, y: number) => number;
     /** The map the character has discovered, or null to draw the whole floor. */
     discovered: DiscoveredMap | null;
     /** The monsters marked on the map in the corner, which is every one on the floor in debug
@@ -64,6 +67,7 @@
     monsters,
     height,
     ladderAt,
+    surfaceFeatureAt,
     discovered,
     lines,
     mapMonsters = [],
@@ -104,6 +108,7 @@
       horizonWeight: mwHorizonWeight(height),
       monsters: drawn,
       ladderAt,
+      surfaceFeatureAt,
     };
 
     if (zoomed === null) {

@@ -4,7 +4,8 @@ import mwPalettes from '../../../game/mw-palettes.json';
 import { newFrame, pixelAt, type Frame } from '../../view3d/frame';
 import { MW_VIEW_BLOCKED, mwPicturePixel, renderMwView, type MwViewScene } from './render';
 import { mwHorizonWeight, MW_VIEW_REACH } from './geometry';
-import { NO_MW_PICTURES, WALL_BASE, WALL_DOOR, WALL_STONE } from './pictures';
+import { NO_MW_PICTURES, WALL_BASE, WALL_DOOR, WALL_STONE, type MwViewPictures } from './pictures';
+import type { PicRowImage } from '../../view3d/texture';
 import { SKIP } from '../../view3d/scale';
 import {
   MW_BACK_VIEW,
@@ -59,6 +60,7 @@ function scene(rows: MapSquare[][], at = { x: 5, y: 6 }, over: Partial<MwViewSce
     horizonWeight: mwHorizonWeight(70),
     monsters: [],
     ladderAt: () => 0,
+    surfaceFeatureAt: () => 0,
     ...over,
   };
 }
@@ -264,5 +266,53 @@ describe('the line under the views', () => {
     expect(ladderPrompt(1, 0, false)).toBe("HIT 'D' TO GO DOWN");
     expect(ladderPrompt(-1, 0, false)).toBe("HIT 'U' TO GO UP");
     expect(ladderPrompt(0, 0, true)).toBe("HIT 'K' TO USE TRAP DOOR");
+  });
+});
+
+describe('what the ceiling of a square is marked with', () => {
+  /** A picture that paints every pixel of every row in a colour nothing else on the screen uses,
+   *  so the mark can be counted where it lands over ground that is already painted. */
+  const MARK_COLOUR = 200;
+  const solid: PicRowImage = Array.from({ length: 200 }, () => ({
+    startX: 0,
+    runs: [{ colour: MARK_COLOUR, length: 256 }],
+  }));
+  const marks: MwViewPictures = { ...NO_MW_PICTURES, ladder: () => solid };
+
+  /** The straight corridor the other tests use, looked up from (5, 6). */
+  const view = (over: Partial<MwViewScene>): Frame => {
+    const frame = newFrame(640, 480);
+    renderMwView(
+      frame,
+      scene(corridor(rock(), 5), { x: 5, y: 6 }, { pictures: marks, ...over }),
+      MW_FRONT_VIEW,
+      MW_VIEW_NORTH,
+    );
+    return frame;
+  };
+
+  const marked = (over: Partial<MwViewScene>): number =>
+    view(over).pixels.reduce((count, pixel) => count + (pixel === MARK_COLOUR ? 1 : 0), 0);
+
+  it('marks a way up on a floor under the surface', () => {
+    expect(marked({ floor: 3, ladderAt: () => -1 })).toBeGreaterThan(0);
+  });
+
+  it('marks a way down there too, and leaves a plain square alone', () => {
+    expect(marked({ floor: 3, ladderAt: () => 1 })).toBeGreaterThan(0);
+    expect(marked({ floor: 3, ladderAt: () => 0 })).toBe(0);
+  });
+
+  it("marks a town building's square on the surface, where surface_feature stands in", () => {
+    // exe 3000:302b throws the ladder away on floor 0 and negates surface_feature instead.
+    expect(marked({ floor: 0, ladderAt: () => 0, surfaceFeatureAt: () => 1 })).toBeGreaterThan(0);
+  });
+
+  it('leaves open ground on the surface unmarked, however the ladder reads', () => {
+    expect(marked({ floor: 0, ladderAt: () => -1, surfaceFeatureAt: () => 0 })).toBe(0);
+  });
+
+  it('still marks a way down on the surface, which is drawn before the ladder is thrown away', () => {
+    expect(marked({ floor: 0, ladderAt: () => 1, surfaceFeatureAt: () => 0 })).toBeGreaterThan(0);
   });
 });
