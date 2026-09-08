@@ -31,6 +31,7 @@
     PLAY_MODES,
     readPlayDisplay,
     readPlayMode,
+    sidePicturesVisible,
     writePlayMode,
     zoomMapMonsters,
     type PlayDisplay,
@@ -477,7 +478,9 @@
             {/each}
           </div>
         </div>
-        <WallTexture game={MORAFFS_WORLD_MAP.id} dungeon={view.place.dungeon} floor={view.place.floor} />
+        {#if sidePicturesVisible(mode, display)}
+          <WallTexture game={MORAFFS_WORLD_MAP.id} dungeon={view.place.dungeon} floor={view.place.floor} />
+        {/if}
         {#if panelVisible(mode)}
           <MwPanel game={session.game} {view} />
         {/if}

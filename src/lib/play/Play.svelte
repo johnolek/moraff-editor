@@ -28,6 +28,7 @@
     PLAY_MODES,
     readPlayDisplay,
     readPlayMode,
+    sidePicturesVisible,
     writePlayMode,
     zoomMapMonsters,
     type PlayDisplay,
@@ -333,12 +334,14 @@
             {/each}
           </div>
         </div>
-        <Portrait
-          monster={view.ahead ? view.engaged : null}
-          module={view.place.module}
-          floor={view.place.floor}
-        />
-        <WallTexture game={UNFORGIVEN_MAP.id} dungeon={view.place.module} floor={view.place.floor} />
+        {#if sidePicturesVisible(mode, display)}
+          <Portrait
+            monster={view.ahead ? view.engaged : null}
+            module={view.place.module}
+            floor={view.place.floor}
+          />
+          <WallTexture game={UNFORGIVEN_MAP.id} dungeon={view.place.module} floor={view.place.floor} />
+        {/if}
         {#if panelVisible(mode)}
           <Panel game={session.game} {view} />
         {/if}
