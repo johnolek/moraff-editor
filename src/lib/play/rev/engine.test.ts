@@ -4,8 +4,12 @@ import { formatRevRecord, REV_VALUE_COUNT } from '../../game/rev-port/record';
 import { REV_KEY } from './keys';
 import { REV_CLOCK_TICK, RevGameSession, runRevDungeon, startRevGame, type RevCharacterFile } from './engine';
 
-/** A character standing in the town, as the record stores it. */
-function record(fields: Record<number, number> = {}): Uint8Array<ArrayBuffer> {
+/**
+ * A character standing in the town, as the record stores it: a fighter with 22 health points, 40
+ * jewel pieces and 150 pounds of weight, standing on 10, 10. `fields` names record values by
+ * their number, shifts and all.
+ */
+export function revRecord(fields: Record<number, number> = {}): Uint8Array<ArrayBuffer> {
   const values = new Array<number>(REV_VALUE_COUNT).fill(0);
   for (let stat = 1; stat <= 6; stat++) values[stat - 1] = 3 * 15 + 237;
   values[10 - 1] = 1;
@@ -24,7 +28,8 @@ function record(fields: Record<number, number> = {}): Uint8Array<ArrayBuffer> {
   return formatRevRecord(values);
 }
 
-function file(bytes = record()): RevCharacterFile & { dead: boolean } {
+/** That record as a file a session can be started on, which remembers a death. */
+export function revCharacterFile(bytes = revRecord()): RevCharacterFile & { dead: boolean } {
   return {
     bytes,
     dead: false,
@@ -42,8 +47,8 @@ function settled(): Promise<unknown> {
   return new Promise((resolve) => setTimeout(resolve));
 }
 
-async function playing(seed = 5, bytes = record()): Promise<{ session: RevGameSession; held: ReturnType<typeof file> }> {
-  const held = file(bytes);
+async function playing(seed = 5, bytes = revRecord()): Promise<{ session: RevGameSession; held: ReturnType<typeof revCharacterFile> }> {
+  const held = revCharacterFile(bytes);
   const session = startRevGame(held, new SeededRng(seed));
   void runRevDungeon(session);
   await settled();
@@ -100,7 +105,7 @@ describe('the loop', () => {
   });
 
   it('offers the rope on a town building square', async () => {
-    const { session } = await playing(5, record({ 23: 7, 24: 3 }));
+    const { session } = await playing(5, revRecord({ 23: 7, 24: 3 }));
     expect(session.view().prompt).toBe("There's a rope above. Hit U to climb it.");
     session.finish();
   });
@@ -158,7 +163,7 @@ it('is the tick input, not a key', () => {
 describe('the town', () => {
   it('has ladders down of its own, which D takes', async () => {
     // (15, 5) of the town is one of its ten ladders down, and spans two levels.
-    const { session } = await playing(5, record({ 23: 15, 24: 5 }));
+    const { session } = await playing(5, revRecord({ 23: 15, 24: 5 }));
     expect(session.view().prompt).toContain('D-GO DOWN');
     session.press(REV_KEY.down);
     await settled();
@@ -167,7 +172,7 @@ describe('the town', () => {
   });
 
   it('climbs the rope into the Flea Bag Inn and takes the ten jewel pieces', async () => {
-    const { session } = await playing(5, record({ 23: 7, 24: 3, 19: 223 + 40 }));
+    const { session } = await playing(5, revRecord({ 23: 7, 24: 3, 19: 223 + 40 }));
     session.press(REV_KEY.up);
     await settled();
     expect(session.view().box.join(' ')).toContain('Flea Bag Inn');
@@ -178,7 +183,7 @@ describe('the town', () => {
   });
 
   it('throws a character out of the Kings Inn who cannot pay for it', async () => {
-    const { session } = await playing(5, record({ 23: 18, 24: 17 }));
+    const { session } = await playing(5, revRecord({ 23: 18, 24: 17 }));
     session.press(REV_KEY.up);
     await settled();
     session.press('Y'.charCodeAt(0));
@@ -191,7 +196,7 @@ describe('the town', () => {
 describe('a fight', () => {
   /** Stand the character on a dungeon level with a monster on their own square. */
   async function beside(): Promise<RevGameSession> {
-    const { session } = await playing(9, record({ 25: 2, 23: 10, 24: 10, 142: 1 }));
+    const { session } = await playing(9, revRecord({ 25: 2, 23: 10, 24: 10, 142: 1 }));
     session.enterLevel(2);
     session.game.monsters.grid[22 * 10 + 10] = 41;
     session.game.monsters.positions[41] = 32 * 10 + 10;
@@ -238,7 +243,7 @@ describe('a fight', () => {
 
 describe('walking away from a fight', () => {
   it('ends it and writes what is left of the monster back into the file', async () => {
-    const { session } = await playing(9, record({ 25: 2, 23: 10, 24: 10, 142: 1 }));
+    const { session } = await playing(9, revRecord({ 25: 2, 23: 10, 24: 10, 142: 1 }));
     session.enterLevel(2);
     session.game.monsters.grid[22 * 10 + 10] = 41;
     session.game.monsters.positions[41] = 32 * 10 + 10;

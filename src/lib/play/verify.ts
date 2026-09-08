@@ -7,6 +7,7 @@ import {
   RUN_GAMES,
   RUN_LOG_VERSION,
   type Milestone,
+  type MilestoneKind,
   type RunGame,
   type RunLog,
 } from './run';
@@ -209,14 +210,14 @@ function isRunLog(value: unknown): value is RunLog {
   );
 }
 
-const MILESTONE_KINDS = ['boss', 'level', 'dungeon', 'death', 'win'];
+const MILESTONE_KINDS: MilestoneKind[] = ['boss', 'level', 'dungeon', 'floor', 'death', 'win'];
 
 function isMilestone(value: unknown): value is Milestone {
   if (typeof value !== 'object' || value === null) return false;
   const milestone = value as Record<string, unknown>;
   return (
     typeof milestone.kind === 'string' &&
-    MILESTONE_KINDS.includes(milestone.kind) &&
+    MILESTONE_KINDS.includes(milestone.kind as MilestoneKind) &&
     typeof milestone.which === 'number' &&
     typeof milestone.actions === 'number' &&
     typeof milestone.time === 'number' &&

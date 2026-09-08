@@ -7,6 +7,9 @@ import { KEY } from './keys';
 import { runMwMoveControl, startMwGame } from './mw/engine';
 import { findMwSquare, mwCharacterFile } from './mw/engine.test';
 import { MW_KEY, mwTurn } from './mw/keys';
+import { runRevDungeon, startRevGame } from './rev/engine';
+import { revCharacterFile, revRecord } from './rev/engine.test';
+import { REV_KEY } from './rev/keys';
 import { RunRecorder, type RunLog } from './run';
 import { readRunLog, verifyRun } from './verify';
 
@@ -167,6 +170,39 @@ describe('verifying a run', () => {
   });
 });
 
+/**
+ * The same in Moraff's Revenge: down one of the town's own ladders, four steps around the level
+ * below, and two ticks of the clock the monsters move on — which is the thing about this game a
+ * log has to hold that the other two do not.
+ */
+async function moraffsRevengeRun(): Promise<RunLog> {
+  const file = revCharacterFile(revRecord({ 23: 15, 24: 5 }));
+  const run = new RunRecorder({
+    game: 'revenge',
+    name: 'FIGHTY',
+    record: file.bytes,
+    seed: 4242,
+    startedAt: '2026-09-07T00:00:00.000Z',
+    mode: 'faithful',
+  });
+  const session = startRevGame(file, run.rng, run);
+  void runRevDungeon(session);
+  await settle();
+  session.press(REV_KEY.down);
+  await settle();
+  for (const key of [REV_KEY.arrowUp, REV_KEY.arrowRight, REV_KEY.arrowDown, REV_KEY.arrowLeft]) {
+    session.press(key);
+    await settle();
+  }
+  session.tick();
+  await settle();
+  session.tick();
+  await settle();
+  session.save();
+  session.finish();
+  return run.log();
+}
+
 describe('reading a run log out of a file', () => {
   it('reads back a log this build wrote', async () => {
     const log = await unforgivenRun();
@@ -186,7 +222,7 @@ describe('reading a run log out of a file', () => {
 });
 
 /**
- * The two runs kept as files, which are what the `verify-run` command is tried against and what
+ * The three runs kept as files, which are what the `verify-run` command is tried against and what
  * says that a log written down today still verifies tomorrow.
  *
  * Writing them again, after a change to the engine that legitimately moves them:
@@ -196,6 +232,7 @@ describe('reading a run log out of a file', () => {
 const FIXTURES = [
   { file: 'unforgiven-run.json', record: unforgivenRun },
   { file: 'moraffs-world-run.json', record: moraffsWorldRun },
+  { file: 'moraffs-revenge-run.json', record: moraffsRevengeRun },
 ];
 
 function fixturePath(file: string): URL {
