@@ -6,6 +6,7 @@ import {
   exploredCounts,
   exploredFloorCount,
   isExplored,
+  isRevExploredFile,
   loadedSummary,
   readBinFile,
   readDunFile,
@@ -256,5 +257,13 @@ describe('the loaded explored maps of a Moraff’s Revenge character', () => {
     expect([...floors.keys()]).toEqual([0, 3]);
     expect(exploredFloorCount(floors)).toBe('2 explored floors');
     expect(exploredFloorCount(new Map([[0, new Set([1])]]))).toBe('1 explored floor');
+  });
+});
+
+describe('isRevExploredFile', () => {
+  it('says yes to a <n>.BIN and no to anything else dropped with it', () => {
+    expect(isRevExploredFile('5.BIN', binFile({ 0: [[1, 1]] }))).toBe(true);
+    expect(isRevExploredFile('5.EXE', binFile())).toBe(false);
+    expect(isRevExploredFile('5.BIN', oneFloorFile(0))).toBe(false);
   });
 });

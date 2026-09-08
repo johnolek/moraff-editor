@@ -217,6 +217,20 @@ export function readBinFile(name: string, bytes: Uint8Array): ExploredFile {
   return { name, floors };
 }
 
+/**
+ * Whether a file is one of Moraff's Revenge's explored maps, which is what tells a `<n>.BIN`
+ * dropped beside a character apart from anything else that might be dropped with it. It is the
+ * same test {@link readBinFile} makes; only the answer differs.
+ */
+export function isRevExploredFile(name: string, bytes: Uint8Array): boolean {
+  try {
+    readBinFile(name, bytes);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** The array's values, or null when they are not the whole numbers a row of the map holds.
  *  Bit 20 is never set in a shipped file, which is what says the twenty columns run down from
  *  bit 19 rather than up from bit 0. */
