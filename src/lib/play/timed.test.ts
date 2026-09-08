@@ -20,6 +20,18 @@ describe('TimedScreens', () => {
     expect(texts(timed.showing([line('YOU KILLED IT!')]))).toEqual(['YOU KILLED IT!']);
   });
 
+  it('takes a wiped rectangle off the screens it is holding', () => {
+    const timed = new TimedScreens(() => {});
+    const onTheBlock = (text: string): ScreenLine => ({ text, x: 0x3a2, y: 0x379, font: 0, colour: 15 });
+    timed.hold([line('YOU KILLED IT!'), onTheBlock('IT HAS 50 HEALTH POINTS LEFT')], 1000);
+    timed.hold([onTheBlock('IT HAS 40 HEALTH POINTS LEFT')], 1000);
+    // The rectangle FUN_2000_2820 wipes, which is the eight lines and not the strip above them.
+    timed.wipe(0x398, 0x324, 0x640, 0x4b0);
+    expect(texts(timed.showing([]))).toEqual(['YOU KILLED IT!']);
+    vi.advanceTimersByTime(1000);
+    expect(texts(timed.showing([]))).toEqual([]);
+  });
+
   it('shows each held screen for its own delay and then hands the screen back', () => {
     const timed = new TimedScreens(() => {});
     const live = [line('GOOD NEWS...')];

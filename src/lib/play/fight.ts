@@ -1,6 +1,5 @@
 import { printBattleHpInfo, spendAttackTime, strike } from '../game/port/combat';
 import { showHint } from '../game/port/drops';
-import { sayAsOneBox } from './boxes';
 import type { GameSession, Turn } from './engine';
 import { KEY } from './keys';
 
@@ -19,8 +18,11 @@ const NOTHING_TO_FIGHT = 108;
  * movecontrol (exe 2000:c308, unf.c "movecontrol"), its 0x66 branch at 2000:d294: the F key.
  *
  * With nothing engaged the snake explains how to reach a monster. Otherwise the character swings
- * once, the hit points line goes up under the battle banner when the swing landed, and the time
- * the swing cost is spent, which is what buys an adjacent monster its own attacks.
+ * once, the hit points line goes up in the battle banner when the swing landed, and the time the
+ * swing cost is spent, which is what buys an adjacent monster its own attacks.
+ *
+ * Both of those draw straight onto the message block and neither waits for a key, so the swing
+ * stands beside the banner rather than going into a box of its own.
  */
 export function swingAtMonster(turn: Turn): void {
   const game = turn.game;
@@ -29,12 +31,8 @@ export function swingAtMonster(turn: Turn): void {
     game.pressAnyKey();
     return;
   }
-  // strike draws its lines with pfont under the battle banner and waits for nothing, so the
-  // swing and the hit points it left go up together.
-  sayAsOneBox(turn.session, () => {
-    const damage = strike(game);
-    if (damage > 0) printBattleHpInfo(game);
-  });
+  const damage = strike(game);
+  if (damage > 0) printBattleHpInfo(game);
   // The `while (kbhit()) getch();` strike (exe 2000:7f2b) ends with, which throws away whatever
   // was typed while the swing was on the screen.
   turn.session.flushKeys();

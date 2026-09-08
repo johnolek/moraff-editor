@@ -33,7 +33,13 @@ import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './mov
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
 import type { RunRecorder, RunSummary } from './run';
-import { MESSAGE_BOX_LINES, messageBoxScreen, screenTakenOver } from './screens';
+import {
+  MESSAGE_BOX_LINES,
+  MESSAGE_BOX_LINES_TOP,
+  MESSAGE_BOX_RECT,
+  messageBoxScreen,
+  screenTakenOver,
+} from './screens';
 import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
@@ -387,9 +393,15 @@ export class GameSession {
    * before it draws, so whatever a screen had left down that column goes with it, and it copies
    * all eight of its strings into the buffer, so a box replaces the box before it rather than
    * being added to.
+   *
+   * The tab draws this box over whatever screen the message timer is still holding, so the wipe
+   * reaches those screens as well. The strip above the column is left on them, which is what
+   * keeps a kill's own line showing while the box its drop printed is already up.
    */
   showBox(lines: string[]): void {
     clearMenuBlock(this.game);
+    const box = MESSAGE_BOX_RECT;
+    this.timed.wipe(box.x, MESSAGE_BOX_LINES_TOP, box.right, box.bottom);
     this.box = lines.slice(0, MESSAGE_BOX_LINES);
   }
 

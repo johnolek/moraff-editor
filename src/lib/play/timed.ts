@@ -47,6 +47,21 @@ export class TimedScreens {
   }
 
   /**
+   * Take every line inside a rectangle off the frames as well as off the screen.
+   *
+   * A frame is a picture of a screen the game has already moved on from, and the tab draws the
+   * message box the game has *now* over it. So a wipe that the box the tab is drawing made has to
+   * reach the frames too, or the tab draws a line the game took away underneath a box that was
+   * never behind it.
+   */
+  wipe(x0: number, y0: number, x1: number, y1: number): void {
+    const outside = (line: ScreenLine): boolean =>
+      !(line.x >= x0 && line.x < x1 && line.y >= y0 && line.y < y1);
+    if (this.current !== null) this.current.screen = this.current.screen.filter(outside);
+    for (const frame of this.queue) frame.screen = frame.screen.filter(outside);
+  }
+
+  /**
    * A key has been pressed: the rest of the delays are given up at once and the screen the game
    * has now is what shows, which is where the original would have been by the time it looked at
    * the keyboard again.

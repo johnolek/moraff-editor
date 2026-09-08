@@ -38,19 +38,19 @@ describe('the message box on the screen', () => {
     expect(lines.map((line) => [line.text, line.y])).toEqual([['YOU ARE FIGHTING A LEVEL 3', 0x329]]);
   });
 
-  it("puts the banner's five lines where engagement_timing prints them", () => {
-    // The order is the order the lines are printed in, which is not the order they stand in: the
-    // hit points line is print_battle_hp_info's own pfont at 0x379, third down the screen.
-    const banner = ['YOU ARE FIGHTING A LEVEL 3', 'WATER RAT', 'EXP. VALUE: 27', 'IT IS FAST!', 'IT HAS 9 HEALTH POINTS LEFT'];
+  it("puts the banner's lines where engagement_timing prints them", () => {
+    // The first two stand at the top of the block and the other two at the bottom of it, with
+    // the hit points line and the blow in the gap between: print_battle_hp_info draws its own
+    // line at 0x379 rather than saying it, so the banner said here is four lines long.
+    const banner = ['YOU ARE FIGHTING A LEVEL 3', 'WATER RAT', 'EXP. VALUE: 27', 'IT IS FAST!'];
     const lines = messageBoxScreen({ box: [], banner, drawn: [] });
     expect(lines.map((line) => [line.x, line.y])).toEqual([
       [MENU_X, 0x329],
       [MENU_X, 0x351],
       [MENU_X, 0x441],
       [MENU_X, 0x469],
-      [MENU_X, 0x379],
     ]);
-    // pfont is given the string and a colour and nothing else: none of the five is spread out to
+    // pfont is given the string and a colour and nothing else: none of the four is spread out to
     // the right edge the way a long menu line is.
     expect(lines.every((line) => line.font === 0 && line.colour === 15 && line.spreadTo === undefined)).toBe(true);
   });
@@ -75,6 +75,29 @@ describe('the message box on the screen', () => {
       ['IT TAKES 7 POINTS OF DAMAGE!', BLOW_Y[1]],
     ]);
     expect(messageBoxScreen({ box: [], banner: ['A LEVEL 3'], drawn: [blow('IT HAS 9 HEALTH POINTS LEFT', BATTLE_HP_Y)] })).toHaveLength(2);
+  });
+
+  it('takes the box line a fight wiped the strip under', () => {
+    // The fifth of the eight lines stands at 0x3f1, which is where the blow's second line goes,
+    // and strike's rectangle takes the whole strip from 0x3c5 to 0x419 before it draws.
+    const blow = (text: string, y: number): ScreenLine => ({ text, x: MENU_X, y, font: 0, colour: 15 });
+    const box = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT'];
+    const drawn = [blow('YOU HIT THE MONSTER!!!', BLOW_Y[0]), blow('IT TAKES 7 POINTS OF DAMAGE!', BLOW_Y[1])];
+    const lines = messageBoxScreen({ box, banner: [], drawn });
+    expect(lines.map((line) => line.text)).toEqual([
+      'ONE',
+      'TWO',
+      'THREE',
+      'FOUR',
+      'SIX',
+      'SEVEN',
+      'EIGHT',
+      'YOU HIT THE MONSTER!!!',
+      'IT TAKES 7 POINTS OF DAMAGE!',
+    ]);
+    // The hit points line's own strip runs from 0x377 to 0x3a1, which covers the third line.
+    const hp = messageBoxScreen({ box, banner: [], drawn: [blow('IT HAS 9 HEALTH POINTS LEFT', BATTLE_HP_Y)] });
+    expect(hp.map((line) => line.text)).not.toContain('THREE');
   });
 
   it('counts a line across the views as the game taking the display over', () => {

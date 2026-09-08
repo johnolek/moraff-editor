@@ -1,9 +1,10 @@
-import type { Game } from './state';
+import { BATTLE_HP_Y, BATTLE_TEXT_COLOUR, BLOW_Y, clearRect, MENU_X } from './screens';
+import type { Game, ScreenLine } from './state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
-// the unpacked executable. The comment on each say call gives the address of every line it
-// prints, in order; dotu-tools/reference/scripts/exe_strings.py reads them back.
+// the unpacked executable. The comment on each printed line gives the address of every string it
+// is built from, in order; dotu-tools/reference/scripts/exe_strings.py reads them back.
 
 /**
  * gain_or_drain (exe 2000:8189, unf.c "gain_or_drain"): move one of the six stats by `amount`,
@@ -39,6 +40,11 @@ export function gainOrDrain(game: Game, amount: number): string {
       return 'LUCK'; // DS:1382
   }
   return '';
+}
+
+/** One line of a fight, drawn on the message block where the game's own pfont call puts it. */
+function battleLine(text: string, y: number): ScreenLine {
+  return { text, x: MENU_X, y, font: 0, colour: BATTLE_TEXT_COLOUR };
 }
 
 /**
@@ -89,15 +95,19 @@ export function strike(game: Game): number {
     if (damage > 0 && pc.lev < 5) damage += game.rng.random(5 - pc.lev);
     damage += game.rng.random(pc.lev);
   }
-  if (damage < 1) {
-    // DS:1337
-    game.say('YOU MISSED THE MONSTER');
-  } else {
+  // FUN_2000_295b (exe 2000:295b): the two lines the blow is drawn on and nothing else, so the
+  // battle banner above and below them stands while the swing is on the screen.
+  clearRect(game, 0x398, 0x3c5, 0x640, 0x419);
+  // The original builds this line in the shared buffer at DS:c427 and prints the buffer once at
+  // the end, so a miss lands on the second of the two lines with the first left empty.
+  let below = 'YOU MISSED THE MONSTER'; // DS:1337
+  if (damage >= 1) {
     // DS:1303
-    game.say('YOU HIT THE MONSTER!!!');
+    game.draw(battleLine('YOU HIT THE MONSTER!!!', BLOW_Y[0]));
     // DS:131a 1324, with the damage written between them
-    game.say(`IT TAKES ${damage} POINTS OF DAMAGE!`);
+    below = `IT TAKES ${damage} POINTS OF DAMAGE!`;
   }
+  game.draw(battleLine(below, BLOW_Y[1]));
   // The original writes through the pointer at DS:c64b, which attack_timing aims at the engaged
   // monster's hit points at the same moment it writes the slot number this function reads.
   monster.hp -= damage;
@@ -545,14 +555,20 @@ export function expValue(game: Game, slot: number): number {
 }
 
 /**
- * print_battle_hp_info (exe 2000:b68d, unf.c "print_battle_hp_info"): the hit points line under
- * the battle banner. It reports the monster the player is facing, falling back to the one they
- * are engaging when there is nothing ahead of them.
+ * print_battle_hp_info (exe 2000:b68d, unf.c "print_battle_hp_info"): the hit points line of the
+ * battle banner. It reports the monster the player is facing, falling back to the one they are
+ * engaging when there is nothing ahead of them.
+ *
+ * It is a line of its own rather than the last of the banner's five, because a swing that landed
+ * calls it on its own to put the new number up.
  */
 export function printBattleHpInfo(game: Game): void {
   const slot = game.engagedAhead === -1 ? game.engaged : game.engagedAhead;
+  // FUN_2000_295b (exe 2000:295b): the strip this one line stands on, so the rest of the banner
+  // stands while a swing puts a new number up.
+  clearRect(game, 0x398, 0x377, 0x640, 0x3a1);
   // DS:1af7 1aff, with the hit points written between them
-  game.say(`IT HAS ${game.monsters[slot].hp} HEALTH POINTS LEFT`);
+  game.draw(battleLine(`IT HAS ${game.monsters[slot].hp} HEALTH POINTS LEFT`, BATTLE_HP_Y));
 }
 
 /**
@@ -563,6 +579,9 @@ export function printBattleHpInfo(game: Game): void {
  *
  * The label in front of the experience gets shorter the deeper the floor is, because the number
  * behind it gets longer, and past floor 80 there is no room for a label at all.
+ *
+ * The four lines it prints itself go to the message box; the fifth is
+ * {@link printBattleHpInfo}, which draws itself.
  *
  * The caller only reaches this with a monster in front of the player. The original would read
  * the six bytes in front of the monster table if there were not.

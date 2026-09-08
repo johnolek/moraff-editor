@@ -26,7 +26,9 @@ describe('killing the monster being fought', () => {
     await press(session, 0x1b);
     expect(game.pc.exp).toBe(before + worth);
     // A monk is refused every drop, so the kill draws its one line and asks for no key at all.
-    expect(boxText(session)).toEqual(['YOU KILLED IT!']);
+    // The hit points line the battle banner was drawn with is still on the block underneath it:
+    // nothing wipes the block for a kill, and the screen the delay holds is the screen as it was.
+    expect(boxText(session)).toEqual(['IT HAS 50 HEALTH POINTS LEFT', 'YOU KILLED IT!']);
     expect(session.box).toEqual([]);
     expect([monster.x, monster.y]).toEqual([GARBAGE_CAN, GARBAGE_CAN]);
     expect(session.view().engaged).toBeNull();
@@ -42,7 +44,8 @@ describe('killing the monster being fought', () => {
     // the drop's line left; the tab is still showing the kill's, which the delay behind it holds
     // there for a second before the drop's heading takes its place.
     // Both stand in the message box at once: the kill's line on the bar along its top, and the
-    // offer the drop is waiting on down the eight lines under it.
+    // offer the drop is waiting on down the eight lines under it. The banner's hit points line
+    // went off the held screen with the box's own wipe, so nothing of the fight covers the offer.
     expect(boxText(session)).toEqual([
       `YOU FIND A ${WEAPON_NAMES[1]}`,
       '',

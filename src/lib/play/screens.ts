@@ -55,19 +55,16 @@ export function messageBoxLines(lines: string[]): ScreenLine[] {
 }
 
 /**
- * Where the battle banner's five lines go, in the order engagement_timing (exe 2000:b782) prints
- * them: the monster's level, its name, what killing it is worth, the line its type carries, and
- * its hit points.
+ * Where the four lines engagement_timing (exe 2000:b782) says go: the monster's level, its name,
+ * what killing it is worth, and the line its type carries. Each is a plain pfont call at
+ * {@link MENU_X} in the body font; none of them is spread out the way a long menu line is.
  *
- * Each is a plain pfont call at {@link MENU_X} in the body font, and the last of the five is
- * print_battle_hp_info's own (exe 2000:b68d, at 2000:b76f). None of them is spread out the way a
- * long menu line is.
- *
- * The hit points line lands third down the screen rather than last, and the gap it leaves — from
- * 0x379 to 0x441, three lines of the block's own spacing — is where strike (exe 2000:7e36) draws
- * the blow, at 0x3c9 and 0x3f1, over a banner nothing wipes for it.
+ * The banner's fifth line is the hit points, which print_battle_hp_info (exe 2000:b68d) draws at
+ * {@link BATTLE_HP_Y} — third down the screen rather than last. The gap that leaves, from 0x379
+ * to 0x441, is where strike (exe 2000:7e36) draws the blow at {@link BLOW_Y}, over a banner
+ * nothing wipes for it.
  */
-export const BATTLE_BANNER_Y = [0x329, 0x351, 0x441, 0x469, 0x379];
+export const BATTLE_BANNER_Y = [0x329, 0x351, 0x441, 0x469];
 
 /** The battle banner's lines, ready for the screen renderer. */
 export function battleBannerLines(lines: string[]): ScreenLine[] {
@@ -91,14 +88,28 @@ export interface MessageBoxShowing {
 }
 
 /**
- * The three places a fight draws on the block without wiping the rest of it: the two lines of the
- * blow and the hit points line.
+ * The two strips of the block a fight wipes for itself, each with the lines it then draws in it.
  *
- * strike (exe 2000:7e36) and print_battle_hp_info (exe 2000:b68d) each wipe only the strip their
- * own lines stand on, with FUN_2000_295b (exe 2000:295b), so the banner around them is left
- * standing. Everything else that fills the block wipes the whole of it first.
+ * strike (exe 2000:7e36) and print_battle_hp_info (exe 2000:b68d) are the only routines that draw
+ * on the block without wiping the whole of it: each calls FUN_2000_295b (exe 2000:295b) on the
+ * strip its own lines stand on and leaves the rest alone. So the battle banner is still standing
+ * around them, and a message box that was up loses only the lines those strips cover.
  */
-const DRAWN_BESIDE_THE_BANNER = [...BLOW_Y, BATTLE_HP_Y];
+const BATTLE_STRIPS = [
+  { top: 0x3c5, bottom: 0x419, drawnAt: BLOW_Y },
+  { top: 0x377, bottom: 0x3a1, drawnAt: [BATTLE_HP_Y] },
+];
+
+/** The strips of {@link BATTLE_STRIPS} a fight has a line standing in, which are the ones it
+ *  wiped to put that line there. */
+function battleStripsWiped(drawn: ScreenLine[]): typeof BATTLE_STRIPS {
+  return BATTLE_STRIPS.filter((strip) => drawn.some((line) => strip.drawnAt.includes(line.y)));
+}
+
+/** Whether a line stands in one of those strips, and so has been wiped off the block. */
+function wipedForTheFight(strips: typeof BATTLE_STRIPS, y: number): boolean {
+  return strips.some((strip) => y >= strip.top && y < strip.bottom);
+}
 
 /**
  * The message box as the screen has it.
@@ -119,15 +130,16 @@ const DRAWN_BESIDE_THE_BANNER = [...BLOW_Y, BATTLE_HP_Y];
  */
 export function messageBoxScreen(showing: MessageBoxShowing): ScreenLine[] {
   const drawn = showing.drawn.filter(onMessageBox);
+  const strips = battleStripsWiped(drawn);
   const filled = drawn.some(
-    (line) => line.y >= MESSAGE_BOX_LINES_TOP && !DRAWN_BESIDE_THE_BANNER.includes(line.y),
+    (line) => line.y >= MESSAGE_BOX_LINES_TOP && !wipedForTheFight(strips, line.y),
   );
   const lines = filled
     ? []
     : showing.box.length > 0
       ? messageBoxLines(showing.box)
       : battleBannerLines(showing.banner);
-  return [...lines, ...drawn];
+  return [...lines.filter((line) => !wipedForTheFight(strips, line.y)), ...drawn];
 }
 
 /**

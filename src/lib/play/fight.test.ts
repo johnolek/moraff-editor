@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { BATTLE_HP_Y, BLOW_Y, MENU_X } from '../game/port/screens';
 import { BorlandRng, type Rng } from '../game/port/rng';
 import { facingAMonster, inTheTown, onAFloorFacingAMonster, press, settle } from './battle.test-support';
+import type { GameSession } from './engine';
 import { KEY } from './keys';
 
 /** A generator that rolls as high as it can, so a swing always lands. */
@@ -9,6 +11,10 @@ const highest: Rng = { random: (n) => (n > 0 ? n - 1 : 0) };
 /** A generator that rolls the lowest number it can, so nothing a swing rolls for lands. */
 const lowest: Rng = { random: () => 0 };
 
+/** What stands in the message box, each line with the place the game drew it at. */
+const boxPlaces = (session: GameSession): [string, number, number][] =>
+  session.view().box.map((line) => [line.text, line.x, line.y]);
+
 describe('swinging at a monster', () => {
   it('takes the damage off the monster and spends the time the swing cost', async () => {
     const session = await facingAMonster(highest);
@@ -16,8 +22,7 @@ describe('swinging at a monster', () => {
     const before = { hp: monster.hp, seconds: session.view().seconds };
     await press(session, KEY.fight);
     expect(monster.hp).toBeLessThan(before.hp);
-    expect(session.box).toContain('YOU HIT THE MONSTER!!!');
-    expect(session.box).toContain(`IT HAS ${monster.hp} HEALTH POINTS LEFT`);
+    expect(session.view().box.map((line) => line.text)).toContain('YOU HIT THE MONSTER!!!');
     // The weapon in hand costs its own time, and a fifth of the agility the character is short
     // of 85 is spent on top of it.
     const pc = session.game.pc;
@@ -29,8 +34,42 @@ describe('swinging at a monster', () => {
     const session = await facingAMonster(lowest);
     const monster = session.game.monsters[0];
     await press(session, KEY.fight);
-    expect(session.box).toContain('YOU MISSED THE MONSTER');
+    // The original builds both messages in one buffer and prints it on the lower of the two
+    // lines, so a miss leaves the upper one empty.
+    expect(boxPlaces(session)).toContainEqual(['YOU MISSED THE MONSTER', MENU_X, BLOW_Y[1]]);
+    expect(boxPlaces(session).some(([, , y]) => y === BLOW_Y[0])).toBe(false);
     expect(monster.hp).toBe(50);
+  });
+
+  it('draws the blow in the gap the battle banner leaves, with the banner standing', async () => {
+    const session = await facingAMonster(highest);
+    const monster = session.game.monsters[0];
+    // The snake's arrival hint is standing in the box, and the banner only shows with the box
+    // empty; the wait behind that box is what takes it down in the game.
+    session.wipeMessageBlock();
+    await press(session, KEY.fight);
+    expect(boxPlaces(session)).toEqual([
+      ['YOU ARE FIGHTING A LEVEL 1', MENU_X, 0x329],
+      ['GIANT GARBAGE CAN', MENU_X, 0x351],
+      [expect.stringContaining('EXP. VALUE: 24'), MENU_X, 0x441],
+      ['WHAT AN ANNOYING MONSTER...', MENU_X, 0x469],
+      ['YOU HIT THE MONSTER!!!', MENU_X, BLOW_Y[0]],
+      [expect.stringContaining('POINTS OF DAMAGE!'), MENU_X, BLOW_Y[1]],
+      // Drawn last, since the loop prints the banner again before it waits for the next key.
+      [`IT HAS ${monster.hp} HEALTH POINTS LEFT`, MENU_X, BATTLE_HP_Y],
+    ]);
+  });
+
+  it('leaves a message box standing except for the lines a fight wiped the strip under', async () => {
+    const session = await facingAMonster(highest);
+    const standing = session.box.slice();
+    await press(session, KEY.fight);
+    // print_battle_hp_info wipes from 0x377 to 0x3a1 before it draws, and the third of the box's
+    // eight lines is the one inside that strip. The line under it is untouched.
+    const shown = boxPlaces(session).map(([text]) => text);
+    expect(shown).not.toContain(standing[2]);
+    expect(shown).toContain(standing[3]);
+    expect(shown).toContain('YOU HIT THE MONSTER!!!');
   });
 
   it('sends the character to find a monster when there is nothing in front of them', async () => {
