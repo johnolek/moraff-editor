@@ -206,9 +206,10 @@ break in line ... Represents door. No line ... Represents opening."
 
 The whole-floor redraw has one shortcut worth knowing about before anyone
 compares a screenshot with `revmap.py`: at `1000:4E85` it skips a square's top
-wall outright when the square above has been explored, so a wall between two
-squares the character has both stood on is drawn while walking (`1000:43F2` has
-no such test) and then lost on the next full redraw.
+wall outright when the square above has been explored. Nothing is lost by it:
+the north wall of (c, r+1) is drawn at `y = 8 * row + 37` and the south wall of
+(c, r) at `y + 8`, the same pixel row for the same rule value, and the south
+pass has no such test. The shortcut is de-duplication (`MAP-MEMORY.md` §4.7).
 
 **The 3-D view.** `1000:593C` branches on the facing the same way the move does
 — `ON direction GOTO 5AE1, 5C7D, 5E09, 5FA4` — and each branch works the same
@@ -479,9 +480,11 @@ only when `B53E` is over zero *and* the level is zero. Both entrances test the
 level first (`1000:0642` and `0DD7`), so no square of any level below holds a
 building.
 
-The game's own automap draws none of this: `1000:527B` marks a square only when
-`7.NUM` has its bit, and none of the ten is in `7.NUM`. The buildings are on the
-site's map and were never on the game's.
+The game's own automap does draw them, as letters: the feature branch at
+`1000:527B` marks a square only when `7.NUM` has its bit, and none of the ten
+is in `7.NUM`, but `1000:53CF` calls `1000:C102` and puts a letter on all ten
+squares, which is what `H3.OVL`'s key means by "Letters ... Temples, Stores,
+Banks, Inns, Wizard's guild" (`MAP-MEMORY.md` §4.7).
 
 The town map seeded into every new character — the data statement in
 `CHCHAR.EXE`, `SURVEY.md` section 3 — has walked over four of the ten, and only
