@@ -6,11 +6,11 @@
   import { floorPalette } from '../../mw-bestiary/pictures';
   import type { ScreenLine } from '../../game/port/state';
   import type { MwMonsterViewCorner } from '../../game/mw-port/screens';
-  import GameScreen from '../../ui/GameScreen.svelte';
   import { fillRect, newFrame, toRgba, type Frame } from '../view3d/frame';
   import { mwViewPictures } from './view3d/browser';
   import { mwHorizonWeight } from './view3d/geometry';
   import { renderMwView, type MwViewMonster, type MwViewScene } from './view3d/render';
+  import { drawMwScreenText } from './view3d/text';
   import {
     MW_COLOURS,
     MW_KEY_MENU_RECT,
@@ -61,8 +61,6 @@
 
   const WIDTH = MW_SCREEN_PIXELS.width;
   const HEIGHT = MW_SCREEN_PIXELS.height;
-  /** The text is placed in the same grid the views are drawn in, so the two register. */
-  const TEXT_WINDOW = { x: 0, y: 0, width: MW_SCREEN_UNITS_X, height: MW_SCREEN_UNITS_Y };
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
 
@@ -103,6 +101,7 @@
       renderMwView(frame, scene, MW_WHOLE_SCREEN_VIEW, zoomed);
     }
     if (engagedCorner) drawMonsterBar(frame, engagedCorner);
+    drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
     context.putImageData(new ImageData(toRgba(frame, floorPalette(place.floor)), WIDTH, HEIGHT), 0, 0);
   });
 
@@ -159,15 +158,13 @@
   }
 </script>
 
-<!-- The game's screen: the painted views under the lines of text it draws over them. -->
+<!-- The game's screen: the views, the boxes around them and the game's own lines of text. -->
 <div class="screen" style:aspect-ratio="{MW_SCREEN_UNITS_X} / {MW_SCREEN_UNITS_Y}">
   <canvas bind:this={canvas} width={WIDTH} height={HEIGHT}></canvas>
-  <div class="text"><GameScreen {lines} window={TEXT_WINDOW} /></div>
 </div>
 
 <style>
   .screen {
-    position: relative;
     width: 100%;
     background: #000;
   }
@@ -177,18 +174,5 @@
     height: 100%;
     /* The game's pixels stay pixels however far it is scaled up. */
     image-rendering: pixelated;
-  }
-  /* The text sits over the painted screen in the same 1600 by 1200 grid, so every line lands
-     where the game prints it. */
-  .text {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-  }
-  .text :global(.screen) {
-    height: 100%;
-    background: transparent;
-    border: none;
-    border-radius: 0;
   }
 </style>
