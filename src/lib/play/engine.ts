@@ -27,6 +27,7 @@ import { KEY } from './keys';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { readTheMonsterManual } from './manual';
 import { countTheMoney, expandTheMap, openGraphics, openOptions, zoomTheView } from './misc';
+import { DEFAULT_PLAY_MODE, type PlayMode } from './mode';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
@@ -146,6 +147,11 @@ export class GameSession {
   /** movecontrol has come back: the character has quit or died. */
   over = false;
   dead = false;
+  /**
+   * How much of the game the tab is showing (`mode.ts`). Nothing the game does reads it; it is
+   * here so that anything keeping a record of the run can say which mode it was played in.
+   */
+  mode: PlayMode = DEFAULT_PLAY_MODE;
   /**
    * DS:0437, which Ctrl-F puts up (exe 2000:d285): the loop takes F rather than reading a key,
    * so the character keeps swinging. `fight.ts` is what reads it.
