@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { newFrame, pixelAt } from '../../view3d/frame';
 import { glyphRows, pixelFont } from '../../../ui/pixel-font';
 import { drawMwScreenText, drawMwString, MW_FONT, MW_FONT_STEP } from './text';
-import { MW_SCREEN_PIXELS } from './screen';
+import { MW_SCREEN_PIXELS, MW_VIDEO_MODES } from './screen';
 
-const screen = MW_SCREEN_PIXELS;
+/** The 640 by 480 in 256 colours, which is the widest mode still drawn in the bitmap font. */
+const screen = MW_VIDEO_MODES[11];
 
 /** The columns of a row a glyph fills, as the rows of `bold` hold them: bit 0 is the leftmost. */
 const columns = (row: number): number[] =>
@@ -74,6 +75,22 @@ describe('drawMwString', () => {
     for (const i of [0, 1, 9, 18]) {
       expect(pixelAt(frame, left + Math.trunc((span * i) / text.length) + ink, 0)).toBe(4);
     }
+  });
+});
+
+describe('the SVGA screen the game is played on', () => {
+  it('is wide enough that print_text draws strokes instead', () => {
+    const frame = newFrame(MW_SCREEN_PIXELS.width, MW_SCREEN_PIXELS.height);
+    drawMwString(frame, MW_SCREEN_PIXELS, 'L', 0, 0x41a, 6);
+    const rows: number[] = [];
+    for (let y = 0; y < MW_SCREEN_PIXELS.height; y++) {
+      for (let x = 0; x < 40; x++) if (pixelAt(frame, x, y) === 6) rows.push(y);
+    }
+    const top = Math.trunc(((MW_SCREEN_PIXELS.height - 1) * 0x41a) / 1200);
+    // Twenty rows tall against the bitmap font's eleven, and the pen runs one row above the
+    // scaled top of the line.
+    expect(Math.min(...rows)).toBe(top - 1);
+    expect(Math.max(...rows) - Math.min(...rows) + 1).toBe(20);
   });
 });
 
