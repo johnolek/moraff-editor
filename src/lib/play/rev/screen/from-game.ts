@@ -4,6 +4,7 @@ import type { RevGame } from '../state';
 import type { RevOccupancy } from './monsters';
 import type { RevScreenState } from './screen';
 import { MESSAGE_ROWS, SPELL_VALUES, type RevFightLines } from './text';
+import { revDebugLines } from './debug';
 
 /**
  * The game as the screen wants it.
@@ -79,6 +80,7 @@ export function revScreenStateOf(game: RevGame, options: RevScreenModeOptions): 
     known: options.wholeFloor ? () => true : (column, row) => game.memory.isKnown(column, row, pc.dungeonLevel),
     occupancy: occupancyOf(game),
     mapMonsters: options.debug ? game.monsters.standing() : [],
+    debugLines: options.debug ? revDebugLines(game) : [],
     words: {
       messages: messagesOf(game),
       inTown: pc.dungeonLevel === 0,

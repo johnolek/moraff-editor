@@ -1,6 +1,7 @@
 import { newFrame, type Frame } from '../../view3d/frame';
 import { TEXT } from './colours';
 import { drawText } from './font';
+import { drawRevDebug } from './debug';
 import { drawMap, drawMapMonsters } from './map';
 import { drawMiddleBox, drawMonstersInPanel, type RevOccupancy } from './monsters';
 import { blit, SCREEN_HEIGHT, SCREEN_WIDTH } from './paint';
@@ -50,6 +51,8 @@ export interface RevScreenState {
   /** The monsters marked on the map, which is every one on the level in debug mode and none at
    *  all in the modes that show only what the game showed. */
   mapMonsters?: { column: number; row: number }[];
+  /** The lines debug mode adds under the game's own messages. */
+  debugLines?: string[];
   /** The words on the screen; with none of it given the screen comes out wordless. */
   words?: Partial<RevWords>;
 }
@@ -93,6 +96,7 @@ export function drawRevScreen(state: RevScreenState): Frame {
     characterLevel: words.characterLevel ?? 1,
   });
   drawSpells(screen, words.spells ?? []);
+  drawRevDebug(screen, state.debugLines ?? []);
   if (words.fight) drawExperience(screen, words.fight.experience);
   if (words.prompt) drawPrompt(screen, words.prompt);
   return screen;
