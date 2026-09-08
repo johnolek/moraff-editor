@@ -48,11 +48,17 @@ function messagesOf(game: RevGame): string[] {
   return lines;
 }
 
+/** What the Play tab's mode asks of the screen. */
+export interface RevScreenModeOptions {
+  /** Speedrun and debug draw the level the character has not walked yet; faithful asks the map
+   *  memory, which is the one thing the game itself would answer. */
+  wholeFloor: boolean;
+  /** Debug marks every monster on the level on the map, which the game never does. */
+  debug: boolean;
+}
+
 /**
  * Everything the screen draws, out of the game the session is running.
- *
- * `wholeFloor` is the Play tab's speedrun mode, which draws the level the character has not
- * walked yet; faithful asks the map memory, which is the one thing the game itself would answer.
  *
  * The revealed level holds nothing back, because Moraff's Revenge has no rock to hold back. The
  * other two games leave out a square walled on all four sides, which nothing can ever stand on;
@@ -60,7 +66,7 @@ function messagesOf(game: RevGame): string[] {
  * the column and the row while they change the level (1000:4C28, 1000:3491) and a Potion of
  * Relocation drops the character on a random square without asking about a wall (1000:99B7).
  */
-export function revScreenStateOf(game: RevGame, wholeFloor: boolean): RevScreenState {
+export function revScreenStateOf(game: RevGame, options: RevScreenModeOptions): RevScreenState {
   const pc = game.pc;
   return {
     place: {
@@ -70,8 +76,9 @@ export function revScreenStateOf(game: RevGame, wholeFloor: boolean): RevScreenS
       generation: pc.generation,
       facing: pc.facing,
     },
-    known: wholeFloor ? () => true : (column, row) => game.memory.isKnown(column, row, pc.dungeonLevel),
+    known: options.wholeFloor ? () => true : (column, row) => game.memory.isKnown(column, row, pc.dungeonLevel),
     occupancy: occupancyOf(game),
+    mapMonsters: options.debug ? game.monsters.standing() : [],
     words: {
       messages: messagesOf(game),
       inTown: pc.dungeonLevel === 0,

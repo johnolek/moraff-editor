@@ -1,7 +1,7 @@
 import { newFrame, type Frame } from '../../view3d/frame';
 import { TEXT } from './colours';
 import { drawText } from './font';
-import { drawMap } from './map';
+import { drawMap, drawMapMonsters } from './map';
 import { drawMiddleBox, drawMonstersInPanel, type RevOccupancy } from './monsters';
 import { blit, SCREEN_HEIGHT, SCREEN_WIDTH } from './paint';
 import { drawExperience, drawHelp, drawMessages, drawPrompt, drawSpells, type RevWords } from './text';
@@ -47,6 +47,9 @@ export interface RevScreenState {
   known?: (column: number, row: number) => boolean;
   /** Where the monsters are standing, which only the views and the middle box read. */
   occupancy?: RevOccupancy;
+  /** The monsters marked on the map, which is every one on the level in debug mode and none at
+   *  all in the modes that show only what the game showed. */
+  mapMonsters?: { column: number; row: number }[];
   /** The words on the screen; with none of it given the screen comes out wordless. */
   words?: Partial<RevWords>;
 }
@@ -71,7 +74,10 @@ export function drawRevScreen(state: RevScreenState): Frame {
   const occupancy = state.occupancy ?? NOBODY;
   const words = state.words ?? {};
 
-  if (state.known) drawMap(screen, { ...state.place, known: state.known });
+  if (state.known) {
+    drawMap(screen, { ...state.place, known: state.known });
+    drawMapMonsters(screen, state.place, state.mapMonsters ?? []);
+  }
   drawViewCross(screen, state.place, occupancy);
 
   // The help is offered only where the box between the views is empty: the branch that finds a

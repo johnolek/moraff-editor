@@ -163,6 +163,28 @@ function drawFeature(screen: Frame, column: number, row: number, view: RevMapVie
   }
 }
 
+/**
+ * Debug mode's mark on every monster standing on the level.
+ *
+ * The game's own map never shows one, and this screen has four colours of which black, red and
+ * green already say something about a square, so a monster is marked with a letter in the same
+ * way the town's buildings are. The character's own square keeps its arrow: the box between the
+ * four views is where the game shows a monster standing there.
+ */
+const MONSTER_LETTER = 'M'.charCodeAt(0);
+
+export function drawMapMonsters(
+  screen: Frame,
+  at: { column: number; row: number },
+  monsters: { column: number; row: number }[],
+): void {
+  for (const monster of monsters) {
+    if (monster.column < 1 || monster.column > COLUMNS || monster.row < 1 || monster.row > ROWS) continue;
+    if (monster.column === at.column && monster.row === at.row) continue;
+    putSprite(screen, MONSTER_LETTER, squareLeft(monster.column) + 1, squareTop(monster.row) + 1);
+  }
+}
+
 /** The whole floor, square by square, and the arrow the character is (1000:4CC3, 1000:485F). */
 export function drawMap(screen: Frame, view: RevMapView): void {
   for (let column = 1; column <= COLUMNS; column++) {

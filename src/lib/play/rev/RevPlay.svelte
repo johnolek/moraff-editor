@@ -12,6 +12,7 @@
   import { actionWords, milestoneNote, milestoneWords, RunRecorder } from '../run';
   import ScreenSwitch from '../ScreenSwitch.svelte';
   import {
+    debugDrawn,
     mapDrawn,
     monstersDrawn,
     panelVisible,
@@ -92,7 +93,8 @@
   const gameScreen = $derived.by(() => {
     void view;
     const playing = session;
-    return playing ? revScreenStateOf(playing.game, mode !== 'faithful') : null;
+    if (!playing) return null;
+    return revScreenStateOf(playing.game, { wholeFloor: mode !== 'faithful', debug: debugDrawn(mode) });
   });
 
   /** The map the floor is drawn from: the squares walked in faithful mode, the whole level in

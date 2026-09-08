@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { newFrame, pixelAt } from '../../view3d/frame';
+import { newFrame, pixelAt, type Frame } from '../../view3d/frame';
 import { BLACK, RED, TEXT } from './colours';
-import { drawMap, squareLeft, squareTop, TOWN_BUILDINGS, type RevMapView } from './map';
+import { drawMap, drawMapMonsters, squareLeft, squareTop, TOWN_BUILDINGS, type RevMapView } from './map';
+import { debugDrawn, type PlayMode } from '../../mode';
 import { wallSide, ACROSS, DOWN } from '../../../game/revmap.js';
 
 function view(named: Partial<RevMapView> = {}): RevMapView {
@@ -98,3 +99,47 @@ function countIn(screen: { pixels: Uint8Array; width: number }, x: number, y: nu
   }
   return found;
 }
+
+describe('the monsters debug mode marks on the map', () => {
+  const at = { column: 10, row: 10 };
+  /** Two monsters standing where the character cannot see them: this game's views show only the
+   *  square the character stands on, so neither would be drawn anywhere else. */
+  const outOfSight = [
+    { column: 4, row: 6 },
+    { column: 15, row: 14 },
+  ];
+
+  /** Whether anything was drawn on a square, which for a mark is the letter's own colour. */
+  function lettered(screen: Frame, square: { column: number; row: number }): boolean {
+    const left = squareLeft(square.column) + 1;
+    const top = squareTop(square.row) + 1;
+    for (let x = left; x < left + 7; x++) {
+      for (let y = top; y < top + 7; y++) if (pixelAt(screen, x, y) === TEXT) return true;
+    }
+    return false;
+  }
+
+  /** The map as `from-game.ts` asks for it in that mode: every monster on the level, or none. */
+  function marked(mode: PlayMode): boolean[] {
+    const screen = newFrame(320, 200);
+    drawMapMonsters(screen, at, debugDrawn(mode) ? outOfSight : []);
+    return outOfSight.map((monster) => lettered(screen, monster));
+  }
+
+  it('marks both of them in debug', () => {
+    expect(marked('debug')).toEqual([true, true]);
+  });
+
+  it('marks neither in faithful or in speedrun', () => {
+    expect(marked('faithful')).toEqual([false, false]);
+    expect(marked('speedrun')).toEqual([false, false]);
+  });
+
+  it("leaves the character's own square to its arrow", () => {
+    const screen = newFrame(320, 200);
+    drawMap(screen, view({ column: at.column, row: at.row }));
+    const before = screen.pixels.slice();
+    drawMapMonsters(screen, at, [at]);
+    expect(screen.pixels).toEqual(before);
+  });
+});
