@@ -1,6 +1,7 @@
 import { dungeonForLevel } from '../../rev-bestiary/monsters';
 import { REV_FIGHT_LINES } from './fight';
-import { REV_ARMOUR_VALUE, REV_VALUE, revValue } from './record';
+import { REV_ARMOUR_VALUE, REV_STAT_COUNT, REV_VALUE, revValue, setRevValue } from './record';
+import type { RevPc } from './record';
 import type { RevGame } from './state';
 
 /**
@@ -39,6 +40,18 @@ export const SQUASH = 'SQUASH!!';
 export const ITS_STUCK_TO_YOU = "IT'S STUCK TO YOU!";
 /** 1000:9E7F: what losing a level says. */
 export const LEVEL_DRAINED = 'LEVEL DRAINED!';
+/** 1000:9EC9, 9F08, 9F2B and 9F37: the three drains the second dungeon has of its own. */
+export const YOU_FEEL_UNHEALTHY = 'YOU FEEL UNHEALTHY!';
+export const STRENGTH_DRAINED = 'STRENGTH DRAINED!';
+export const YOU_FEEL_SICK = 'YOU FEEL SICK!';
+export const AGILITY_IS_DRAINED = 'AGILITY IS DRAINED!';
+
+/** 1000:2F43: no characteristic is left under one, which every drain calls on its way out. */
+function revFloorStats(pc: RevPc): void {
+  for (let index = 0; index < REV_STAT_COUNT; index++) {
+    if (pc.stats[index] < 1) pc.stats[index] = 1;
+  }
+}
 
 /**
  * 1000:9B0B: the armour class the monster has to beat.
@@ -144,6 +157,29 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
     game.banner.push(REV_FIGHT_LINES[rng.random(5) + 10]);
     game.banner.push(LEVEL_DRAINED);
     if (pc.level >= 0) save();
+  }
+
+  // 1000:9E95: the second dungeon's three monsters that take a characteristic with them.
+  if (dungeon === 2) {
+    // 1000:9E9F: the face of death, which leaves a character of level 25 or over alone.
+    if (fight.name === 14 && pc.level < 25) {
+      game.banner.push(YOU_FEEL_UNHEALTHY);
+      pc.stats[3] -= 5;
+      revFloorStats(pc);
+    }
+    // 1000:9EE9: kind 5 takes a point of strength on top of the level it has just drained.
+    if (fight.kind === 5) {
+      pc.stats[0] -= 1;
+      game.banner.push(STRENGTH_DRAINED);
+      revFloorStats(pc);
+    }
+    // 1000:9F1A: the pitbull, which leaves the character diseased as well.
+    if (fight.name === 15) {
+      game.banner.push(YOU_FEEL_SICK, AGILITY_IS_DRAINED);
+      setRevValue(pc, REV_VALUE.disease, 1);
+      pc.stats[4] -= 1;
+      revFloorStats(pc);
+    }
   }
   return { ...cells };
 }

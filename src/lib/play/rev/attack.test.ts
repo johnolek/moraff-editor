@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Rng } from '../../game/port/rng';
 import { revMonsterAttack, type RevMonsterSwing } from './attack';
-import type { RevPc } from './record';
+import { REV_VALUE, revValue, type RevPc } from './record';
 import { newRevGame, type RevFight, type RevGame } from './state';
 
 /** A generator that draws the given number for each range asked of it, and zero for the rest. */
@@ -232,5 +232,48 @@ describe('a monster of kind 5 draining a level', () => {
     const game = attacking(draws({}), 0, { level: 3 }, { kind: 5 });
     swingAt(game);
     expect(game.pc.level).toBe(3);
+  });
+});
+
+describe("the second dungeon's three drains", () => {
+  it('takes five health off for the face of death', () => {
+    const game = attacking(draws({ 4: 3 }), 15, { dungeonLevel: 40, stats: [20, 10, 10, 15, 12, 14], level: 3 }, { name: 14 });
+    swingAt(game);
+    expect(game.pc.stats[3]).toBe(10);
+    expect(game.banner).toContain('YOU FEEL UNHEALTHY!');
+  });
+
+  it('leaves a character of level 25 alone', () => {
+    const game = attacking(draws({ 4: 3 }), 15, { dungeonLevel: 40, stats: [20, 10, 10, 15, 12, 14], level: 25 }, { name: 14 });
+    swingAt(game);
+    expect(game.pc.stats[3]).toBe(15);
+  });
+
+  it('takes a point of strength for a kind 5 monster', () => {
+    const game = attacking(draws({ 4: 3 }), 15, { dungeonLevel: 40, stats: [20, 10, 10, 15, 12, 14] }, { kind: 5 });
+    swingAt(game);
+    expect(game.pc.stats[0]).toBe(19);
+    expect(game.banner).toContain('STRENGTH DRAINED!');
+  });
+
+  it('takes a point of agility and leaves the character diseased for the pitbull', () => {
+    const game = attacking(draws({ 4: 3 }), 15, { dungeonLevel: 40, stats: [20, 10, 10, 15, 12, 14] }, { name: 15 });
+    swingAt(game);
+    expect(game.pc.stats[4]).toBe(11);
+    expect(revValue(game.pc, REV_VALUE.disease)).toBe(1);
+    expect(game.banner).toContain('YOU FEEL SICK!');
+    expect(game.banner).toContain('AGILITY IS DRAINED!');
+  });
+
+  it('leaves no characteristic under one', () => {
+    const game = attacking(draws({ 4: 3 }), 15, { dungeonLevel: 40, stats: [1, 10, 10, 2, 1, 14], level: 3 }, { name: 14 });
+    swingAt(game);
+    expect(game.pc.stats[3]).toBe(1);
+  });
+
+  it('drains nothing of the sort in the first dungeon', () => {
+    const game = attacking(draws({ 4: 3 }), 15, { dungeonLevel: 5, stats: [20, 10, 10, 15, 12, 14], level: 3 }, { name: 14 });
+    swingAt(game);
+    expect(game.pc.stats[3]).toBe(15);
   });
 });

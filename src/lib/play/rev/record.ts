@@ -197,6 +197,9 @@ export const REV_VALUE = {
   sword: 142,
   /** DGROUP 1B9E: the mace (1000:8805 and 1000:2A0A). */
   mace: 143,
+  /** DGROUP 1BA2: whether the character is diseased, which the temple charges 400 jewel pieces
+   *  to cure (1000:1C21 and 1000:271B). */
+  disease: 144,
 } as const;
 
 /** DGROUP B56C: which armour the character wears, 0 to 4 as the store sells it (1000:2A9A). */
