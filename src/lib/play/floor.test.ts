@@ -10,6 +10,7 @@ import { newCharacterFile } from '../roller/save-file';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
 import { drawnMonsters, FloorMonsters, loadLevelMap, monsterIdOf, monsterTypeOf } from './floor';
 import { KEY } from './keys';
+import { monstersNearby } from './panel';
 
 const floorOf = (module: number, level: number) => bundledDungeon.floor(level, module);
 
@@ -225,6 +226,9 @@ describe('the section boss on his floor', () => {
     await press(session, KEY.cast, PREPARATION_SPELLS, SPELL_X);
     expect(session.game.pc.level).toBe(OGEROTH_FLOOR);
     expect(bossIsOnTheFloor(session)).toBe(true);
+    // The panel is where a player looks for him, and he is too far off to be one of the nearest.
+    const listed = monstersNearby(session.game, session.view().monsters, 5);
+    expect(listed.map((monster) => monster.name)).toContain('SHADOW OGEROTH');
   });
 
   it('is put back within seven squares of where he was last seen', () => {
