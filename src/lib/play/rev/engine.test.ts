@@ -137,12 +137,12 @@ describe('the monsters', () => {
     session.finish();
   });
 
-  it('writes every tick into the run log where it happened', async () => {
+  it('rolls nothing at all in the town, which the loop jumps straight past', async () => {
     const { session } = await playing();
-    session.enterLevel(3);
+    const before = session.game.monsters.positions.slice();
     session.tick();
-    session.tick();
-    expect(session.run).toBeNull();
+    expect(session.ticks).toBe(0);
+    expect(session.game.monsters.positions).toEqual(before);
     session.finish();
   });
 });

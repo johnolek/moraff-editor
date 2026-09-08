@@ -86,6 +86,10 @@ turns a second with one slot in forty taking each, so a given monster steps roug
 runs `session.tick()` for each one rather than pressing anything. So a run in which the player sat
 still and watched a monster walk across the room replays exactly, with no clock involved.
 
+**The town has no clock at all.** `1000:0891` jumps straight past the monster turn when the level
+is 0, so nothing walks there and nothing is rolled; the timer is not started, and a tab left open
+in the town writes nothing into the log.
+
 **What is not modelled**: the empty `FOR I = 1 TO 700` loop at `1000:08DA`, which the poll runs
 whenever the slot after the cursor is one of the two the "it has noticed you" code marked. It costs
 the poll wall-clock time and so slows every monster while one is awake; how much it costs cannot be

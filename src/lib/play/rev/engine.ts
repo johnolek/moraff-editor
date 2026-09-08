@@ -175,7 +175,8 @@ export class RevGameSession {
    * without a timer.
    */
   tick(): void {
-    if (this.game.over) return;
+    // 1000:0891: the town skips the clock outright, which is why nothing walks there.
+    if (this.game.over || this.game.pc.dungeonLevel === 0) return;
     this.run?.input(REV_CLOCK_TICK);
     this.ticks += 1;
     const walker = revWalker(this.game);
@@ -197,6 +198,7 @@ export class RevGameSession {
 
   private startClock(): void {
     if (this.timer !== null || typeof setInterval !== 'function') return;
+    if (this.game.pc.dungeonLevel === 0) return;
     this.timer = setInterval(() => this.tick(), REV_TICK_MS);
   }
 
@@ -227,8 +229,11 @@ export class RevGameSession {
   /** 1000:4C28: the level changes, which re-stocks the monster grid. */
   enterLevel(level: number): void {
     const pc = this.game.pc;
+    const from = pc.dungeonLevel;
     pc.dungeonLevel = Math.min(Math.max(level, 0), LEVELS);
     this.game.monsters.stock(pc.dungeonLevel, this.game.rng);
+    // 1000:3F4E: coming back to the town is one of the five moments the character is saved.
+    if (pc.dungeonLevel === 0 && from !== 0) this.save();
   }
 
   /** The save editor has written the record while the game is being played. */
