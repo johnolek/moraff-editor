@@ -33,7 +33,9 @@ something the original does, a comment says so.
   function printed shown one after another, since `print_menu_only` waits for a key after each of
   them — `printMenus` for a synchronous function, `printMenusWhile` for one that asks menus of
   its own halfway through, and `sayAsOneBox` for the handful of messages the game draws down that
-  column with `pfont` and does not wait on. A fight draws its own: `strike`,
+  column with `pfont` and does not wait on. A function that draws down that column *and* holds
+  the screen between its lines — `chute.ts` is the one — draws them itself instead, since a frame
+  keeps what `pfont` put on the screen and not what is in the box. A fight draws its own: `strike`,
   `print_battle_hp_info` and `defend` all call `pfont` and none of them waits, so they go through
   `game.draw` rather than through any of these.
 * **`arrival.ts`** — the hint the snake brings on arriving on a floor. **`office.ts`** — the step

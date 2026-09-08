@@ -167,9 +167,19 @@ describe('changing floors', () => {
     const landing = bundledDungeon.chute(chute.x, chute.y, 3, 0);
     const session = playing(characterFile({ level: 3, ...chute }));
     await settle();
-    expect(session.box).toContain('YOU HAVE FALLEN DOWN A CHUTE!');
+    // The three lines are pfont calls down the message column rather than a box of eight.
+    expect(session.game.screen.map((line) => line.text)).toEqual([
+      'UH OH... A SINKING FEELING...',
+      'YOU HAVE FALLEN DOWN A CHUTE!',
+      '  HIT ANY KEY TO CONTINUE...',
+    ]);
+    expect(session.box).toEqual([]);
+    // ...and the tab is still holding the first of them on its own, which is the second and a
+    // half chute waits before it says what has happened.
+    expect(session.view().box.map((line) => line.text)).toEqual(['UH OH... A SINKING FEELING...']);
     await press(session, KEY.escape);
     expect(session.view().place).toMatchObject({ floor: landing, x: chute.x, y: chute.y });
+    expect(session.view().box).toEqual([]);
   });
 
   it('goes through a trap door to the square every one of them lands on', async () => {
