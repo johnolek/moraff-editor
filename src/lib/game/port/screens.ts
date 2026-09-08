@@ -223,17 +223,22 @@ export const HIT_ANY_KEY_X = 0x294;
 export const HIT_ANY_KEY_Y = 0x41e;
 
 /**
- * FUN_2000_3e73 (exe 2000:3e73): the little plaque that says a key is wanted.
+ * The two lines FUN_2000_3e73 (exe 2000:3e73) prints on the little stone plaque that says a key is
+ * wanted, which the wait behind every eight-line message box (FUN_2000_4054, exe 2000:4054) puts
+ * on the screen. With a mouse it asks for the button instead, over three lines, which this port
+ * has no mouse to reach.
  *
- * It is what the wait behind every eight-line message box (FUN_2000_4054, exe 2000:4054) puts on
- * the screen: a box 0xf0 across and 0x82 down at the corner it is given, with a picture of a hand
- * scaled into it where the video mode has the colours for one, and two lines of text over that.
- * With a mouse it asks for the button instead, over three lines.
+ * `src/lib/play/plaque.ts` is the rest of the plaque: the slab they are printed on, the frame
+ * round it and the wait itself. These are lines of the screen rather than of the message box, and
+ * they are not put through `game.draw`, since a plaque goes up behind almost every box and the
+ * tab reads a line drawn on the screen as a screen taking the whole display over.
  */
-export function drawHitAnyKey(game: Game, x: number, y: number): void {
+export function hitAnyKeyLines(x: number, y: number): ScreenLine[] {
   // DS:0a69 0a71
-  game.draw({ text: 'HIT ANY', x: x + 0x19, y: y + 0x14, spreadTo: x + 0xe1, font: 0, colour: 15 });
-  game.draw({ text: 'KEY NOW', x: x + 0x19, y: y + 0x41, spreadTo: x + 0xe1, font: 0, colour: 15 });
+  return [
+    { text: 'HIT ANY', x: x + 0x19, y: y + 0x14, spreadTo: x + 0xe1, font: 0, colour: 15 },
+    { text: 'KEY NOW', x: x + 0x19, y: y + 0x41, spreadTo: x + 0xe1, font: 0, colour: 15 },
+  ];
 }
 
 /** One spell showing on a spells-in-effect screen, with the moves left on it where it has any. */

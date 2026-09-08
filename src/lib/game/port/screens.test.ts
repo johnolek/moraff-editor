@@ -5,7 +5,7 @@ import {
   ESCAPE,
   clearMenuBlock,
   clearMessageLine,
-  drawHitAnyKey,
+  hitAnyKeyLines,
   drawMenu,
   getChoice,
   expNeededScreen,
@@ -96,9 +96,7 @@ describe('the keys a menu takes', () => {
 
 describe('the hit any key plaque', () => {
   it('draws its two lines inside the box it is given', () => {
-    const game = newGame();
-    drawHitAnyKey(game, 0x294, 0x41e);
-    expect(game.screen).toEqual([
+    expect(hitAnyKeyLines(0x294, 0x41e)).toEqual([
       { text: 'HIT ANY', x: 0x2ad, y: 0x432, spreadTo: 0x375, font: 0, colour: 15 },
       { text: 'KEY NOW', x: 0x2ad, y: 0x45f, spreadTo: 0x375, font: 0, colour: 15 },
     ]);
