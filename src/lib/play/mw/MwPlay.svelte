@@ -30,7 +30,6 @@
     PLAY_MODES,
     readPlayDisplay,
     readPlayMode,
-    resetPlayDisplay,
     writePlayMode,
     type PlayDisplay,
     type PlayMode,
@@ -277,7 +276,6 @@
    *  shows what that mode shows, until the switch says otherwise. */
   function chooseMode(input: HTMLInputElement) {
     writePlayMode('moraffsWorld', mode);
-    display = resetPlayDisplay('moraffsWorld', mode);
     input.blur();
   }
 

@@ -77,15 +77,12 @@ function isPlayDisplay(value: unknown): value is PlayDisplay {
 }
 
 /**
- * What a mode shows until the player switches.
- *
- * Faithful shows the game's own screen, since the game draws no map of the floor being walked.
- * Speedrun and debug show the top-down map, which is the only place on the site the whole floor
- * can be read square by square while it is being walked, and the game's own small zoom map is no
- * substitute for planning a route on.
+ * What a game shows before the player has chosen: the game's own screen, whatever the mode.
+ * John (2026-09-08): the 3-D view is the default even for debug and speedrun; the top-down map
+ * is a toggle of its own, which the mode never resets.
  */
-export function defaultPlayDisplay(mode: PlayMode): PlayDisplay {
-  return mode === 'faithful' ? 'screen' : 'map';
+export function defaultPlayDisplay(_mode: PlayMode): PlayDisplay {
+  return 'screen';
 }
 
 /** Which of the two this game shows: the player's choice, or what the mode shows. */
@@ -96,16 +93,6 @@ export function readPlayDisplay(game: PortedGameId, mode: PlayMode): PlayDisplay
 
 export function writePlayDisplay(game: PortedGameId, display: PlayDisplay): void {
   writeStored(PREFIX + game + DISPLAY_SUFFIX, display);
-}
-
-/**
- * What a tab shows once the mode has changed, which is that mode's own default: picking debug
- * reaches the map, and picking faithful reaches the screen, without a second click.
- */
-export function resetPlayDisplay(game: PortedGameId, mode: PlayMode): PlayDisplay {
-  const display = defaultPlayDisplay(mode);
-  writePlayDisplay(game, display);
-  return display;
 }
 
 /**

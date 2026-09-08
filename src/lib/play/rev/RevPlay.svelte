@@ -18,7 +18,6 @@
     PLAY_MODES,
     readPlayDisplay,
     readPlayMode,
-    resetPlayDisplay,
     writePlayMode,
     type PlayDisplay,
     type PlayMode,
@@ -189,7 +188,6 @@
   /** A new mode shows what that mode shows, until the switch says otherwise. */
   function chooseMode(input: HTMLInputElement) {
     writePlayMode('revenge', mode);
-    display = resetPlayDisplay('revenge', mode);
     input.blur();
   }
 

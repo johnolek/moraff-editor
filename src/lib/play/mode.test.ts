@@ -9,7 +9,6 @@ import {
   PLAY_MODES,
   readPlayDisplay,
   readPlayMode,
-  resetPlayDisplay,
   writePlayDisplay,
   writePlayMode,
 } from './mode';
@@ -105,10 +104,10 @@ describe('the monsters the map draws', () => {
 });
 
 describe('which of the two a mode shows until the player switches', () => {
-  it("is the game's screen in faithful and the top-down map in the other two", () => {
+  it("is the game's screen whatever the mode", () => {
     expect(defaultPlayDisplay('faithful')).toBe('screen');
-    expect(defaultPlayDisplay('speedrun')).toBe('map');
-    expect(defaultPlayDisplay('debug')).toBe('map');
+    expect(defaultPlayDisplay('speedrun')).toBe('screen');
+    expect(defaultPlayDisplay('debug')).toBe('screen');
   });
 
   it('offers the two, each with a label', () => {
@@ -118,10 +117,10 @@ describe('which of the two a mode shows until the player switches', () => {
 });
 
 describe('the switch between the screen and the map', () => {
-  it('shows what the mode shows until it has been touched', () => {
+  it('shows the screen in every mode until it has been touched', () => {
     useStorage(fakeStorage());
     expect(readPlayDisplay('unforgiven', 'faithful')).toBe('screen');
-    expect(readPlayDisplay('unforgiven', 'debug')).toBe('map');
+    expect(readPlayDisplay('unforgiven', 'debug')).toBe('screen');
   });
 
   it('remembers the choice for one game without touching the other', () => {
@@ -142,13 +141,6 @@ describe('the switch between the screen and the map', () => {
     useStorage(storage);
     storage.setItem('moraff-tools.play.revenge.display', 'both');
     expect(readPlayDisplay('revenge', 'faithful')).toBe('screen');
-  });
-
-  it("goes back to the mode's own default when the mode changes", () => {
-    useStorage(fakeStorage());
-    writePlayDisplay('moraffsWorld', 'map');
-    expect(resetPlayDisplay('moraffsWorld', 'faithful')).toBe('screen');
-    expect(readPlayDisplay('moraffsWorld', 'faithful')).toBe('screen');
   });
 
   it('shows what the mode shows where there is nowhere to remember anything', () => {
