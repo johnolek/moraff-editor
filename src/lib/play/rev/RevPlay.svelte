@@ -256,20 +256,24 @@
           focus={{ x: view.place.column - 1, y: view.place.row - 1, cell: PLAY_CELL }}
         />
         {/if}
-        <div class="words">
-          {#if view.advice.length > 0}
-            <div class="advice">{view.advice.join(' ')}</div>
-          {/if}
-          {#if view.banner.length > 0}
-            <div class="banner">{#each view.banner as line}<div>{line}</div>{/each}</div>
-          {/if}
-          {#if view.box.length > 0}
-            <div class="box">{#each view.box as line}<div>{line}</div>{/each}</div>
-          {/if}
-          {#if view.prompt}
-            <div class="prompt">{view.prompt}</div>
-          {/if}
-        </div>
+        <!-- The game's own screen prints all of this on the four message rows at its top left
+             (`screen/text.ts`), so this is only for the tab showing the map in its place. -->
+        {#if !(display === 'screen' && gameScreen)}
+          <div class="words">
+            {#if view.advice.length > 0}
+              <div class="advice">{view.advice.join(' ')}</div>
+            {/if}
+            {#if view.banner.length > 0}
+              <div class="banner">{#each view.banner as line}<div>{line}</div>{/each}</div>
+            {/if}
+            {#if view.box.length > 0}
+              <div class="box">{#each view.box as line}<div>{line}</div>{/each}</div>
+            {/if}
+            {#if view.prompt}
+              <div class="prompt">{view.prompt}</div>
+            {/if}
+          </div>
+        {/if}
         {#if view.over}
           <div class="over">
             <div class="over-box">
