@@ -19,14 +19,17 @@
   import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from './run';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
   import { characterMaps } from './memory';
+  import ScreenSwitch from './ScreenSwitch.svelte';
   import {
     mapDrawn,
     monstersDrawn,
     panelVisible,
     PLAY_MODES,
+    readPlayDisplay,
     readPlayMode,
-    screenDrawn,
+    resetPlayDisplay,
     writePlayMode,
+    type PlayDisplay,
     type PlayMode,
   } from './mode';
   import { MENU_LINE_STEP, MENU_SPREAD_TO, MENU_TOP, MENU_X } from '../game/port/screens';
@@ -51,7 +54,9 @@
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
   let style = $state<MovementStyle>(readMovementStyle('unforgiven'));
-  let mode = $state<PlayMode>(readPlayMode('unforgiven'));
+  const storedMode = readPlayMode('unforgiven');
+  let mode = $state<PlayMode>(storedMode);
+  let display = $state<PlayDisplay>(readPlayDisplay('unforgiven', storedMode));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -177,9 +182,11 @@
     input.blur();
   }
 
-  /** The mode is picked with the mouse, and hands the keyboard back the same way. */
+  /** The mode is picked with the mouse, and hands the keyboard back the same way. A new mode
+   *  shows what that mode shows, until the switch says otherwise. */
   function chooseMode(input: HTMLInputElement) {
     writePlayMode('unforgiven', mode);
+    display = resetPlayDisplay('unforgiven', mode);
     input.blur();
   }
 
@@ -239,7 +246,7 @@
   {:else}
     <div class="stage">
       <div class="map">
-        {#if screenDrawn(mode)}
+        {#if display === 'screen'}
           <Screen
             game={session.game}
             rows={view.rows}
@@ -303,7 +310,7 @@
           {/if}
           <button type="button" onclick={exportMaps}>Export maps</button>
         </div>
-        {#if !screenDrawn(mode)}
+        {#if display === 'map'}
           <GameScreen lines={view.box} window={BOX_WINDOW} />
         {/if}
         {#if view.banner.length > 0}
@@ -312,6 +319,7 @@
           </div>
         {/if}
         <div class="keys">
+          <ScreenSwitch game="unforgiven" bind:display />
           <div class="key-note">Play mode:</div>
           <div class="styles">
             {#each PLAY_MODES as choice}
