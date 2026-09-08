@@ -16,10 +16,12 @@ import {
   countsAsAction,
   decodeRecord,
   ENGINE_COMMIT,
+  isRunGame,
   milestoneNote,
   milestoneWords,
   replayRun,
   RunRecorder,
+  RUN_GAMES,
   RUN_LOG_VERSION,
   TURN_INPUTS,
 } from './run';
@@ -467,6 +469,22 @@ describe('replaying a run', () => {
     });
     expect(again.time).toBe(session.game.movesTaken);
     expect(again.actions).toBe(log.actions);
+  });
+});
+
+describe('the games a run can be played in', () => {
+  it('names the games a log can name', () => {
+    expect(isRunGame('unforgiven')).toBe(true);
+    expect(isRunGame('moraffsWorld')).toBe(true);
+    expect(isRunGame('revenge')).toBe(false);
+    expect(isRunGame(2)).toBe(false);
+  });
+
+  it("says each game's clock in that game's own words", () => {
+    expect(RUN_GAMES.unforgiven.clockWords(1)).toBe('1 second');
+    expect(RUN_GAMES.unforgiven.clockWords(12)).toBe('12 seconds');
+    expect(RUN_GAMES.moraffsWorld.clockWords(1.4)).toBe('1 move');
+    expect(RUN_GAMES.moraffsWorld.clockWords(12.5)).toBe('13 moves');
   });
 });
 

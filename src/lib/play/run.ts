@@ -1,5 +1,6 @@
 import type { PortedGameId } from '../app-state.svelte';
 import { SeededRng, type Rng } from '../game/port/rng';
+import { MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine';
@@ -402,6 +403,21 @@ export interface RunReplay {
 }
 
 /**
+ * What a run needs of the game it was played in: the loop that plays it again, the game's own
+ * words for its clock, and its own name for a dungeon.
+ *
+ * A game with an entry in {@link RUN_GAMES} can be recorded, replayed and checked, and nothing
+ * that does any of those three has to know which games there are.
+ */
+export interface RunGameEngine {
+  replay(log: RunLog, run: RunRecorder): Promise<RunReplay>;
+  /** "12 seconds" in Dungeons of the Unforgiven, "12 moves" in Moraff's World. */
+  clockWords(time: number): string;
+  /** The game's own name for one of its modules or dungeons. */
+  dungeonName(dungeon: number): string;
+}
+
+/**
  * Play a run log through the engine again and hand back where it ended.
  *
  * This is the check MORF-145 is for: a claimed ending is believed because the same engine, given
@@ -423,7 +439,7 @@ export async function replayRun(log: RunLog): Promise<RunReplay> {
     mode: log.mode,
     replaying: true,
   });
-  return log.game === 'unforgiven' ? replayUnforgiven(log, run) : replayMoraffsWorld(log, run);
+  return RUN_GAMES[log.game].replay(log, run);
 }
 
 /** Let the loop take what it has been given and come back to waiting for the next key. */
@@ -493,4 +509,23 @@ async function replayMoraffsWorld(log: RunLog, run: RunRecorder): Promise<RunRep
     over: session.over,
     dead: session.dead,
   };
+}
+
+export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
+  unforgiven: {
+    replay: replayUnforgiven,
+    clockWords: (seconds) => `${seconds} second${seconds === 1 ? '' : 's'}`,
+    dungeonName: UNFORGIVEN_MAP.dungeonName,
+  },
+  moraffsWorld: {
+    replay: replayMoraffsWorld,
+    // The clock counts in fractions of a move, which is rounded wherever it is shown.
+    clockWords: (moves) => `${Math.round(moves)} move${Math.round(moves) === 1 ? '' : 's'}`,
+    dungeonName: MORAFFS_WORLD_MAP.dungeonName,
+  },
+};
+
+/** Whether a value out of a file names one of the games a run can have been played in. */
+export function isRunGame(value: unknown): value is RunGame {
+  return typeof value === 'string' && Object.keys(RUN_GAMES).includes(value);
 }
