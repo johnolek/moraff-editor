@@ -30,6 +30,10 @@ const POTION_COUNT = 6;
 /** How many sections the game has, which is how many boss taunt counts the record holds. */
 const SECTION_COUNT = 20;
 
+/** How many squares the record has room to remember a Shadow boss on: eight per module, of
+ *  which the four the module has sections for are ever written. */
+const BOSS_SQUARE_COUNT = 80;
+
 const WEAPON_COUNT = 8;
 const ARMOR_COUNT = 8;
 
@@ -154,6 +158,8 @@ export function loadPlayer(bytes: Uint8Array): PlayerCharacter {
     objective: Array.from({ length: MODULE_COUNT }, (unused, index) => view.getUint8(0x849 + index)),
     gauntlet: int8(0x853),
     fillOnLoad: int8(0x854),
+    bossX: readBytes(view, 0x855, BOSS_SQUARE_COUNT),
+    bossY: readBytes(view, 0x8a5, BOSS_SQUARE_COUNT),
     hard: int8(0x8f6),
     deepestFloor: int16(0x8f9),
     bossTaunts: readBytes(view, 0x8fb, SECTION_COUNT),
@@ -167,8 +173,8 @@ export function loadPlayer(bytes: Uint8Array): PlayerCharacter {
  * The original writes the whole data segment from DS:b880 out, so every byte of the file is
  * whatever the game had in memory. Here the fields the port names are written back over the
  * bytes the character came in with and the rest are left exactly as they were, which is the
- * same file for everything the port reads and keeps the fields it does not touch — the Shadow
- * bosses' squares, the two the save parser has no name for — as the character had them.
+ * same file for everything the port reads and keeps the fields it does not touch — the two the
+ * save parser has no name for — as the character had them.
  *
  * The checksum is not optional: without it the game reads the file back, decides it has been
  * tampered with, and puts the player out to DOS with "Corrupted Character! Sorry!".
@@ -275,6 +281,8 @@ export function savePlayer(pc: PlayerCharacter, record: Uint8Array): Uint8Array<
   for (let index = 0; index < pc.objective.length; index++) view.setUint8(0x849 + index, pc.objective[index]);
   int8(0x853, pc.gauntlet);
   int8(0x854, pc.fillOnLoad);
+  writeBytes(view, 0x855, pc.bossX);
+  writeBytes(view, 0x8a5, pc.bossY);
   int8(0x8f6, pc.hard);
   int16(0x8f9, pc.deepestFloor);
   writeBytes(view, 0x8fb, pc.bossTaunts);

@@ -273,6 +273,13 @@ export interface PlayerCharacter {
    */
   objective: number[];
   /**
+   * 0x855 and 0x8a5, DS:c0d5 and DS:c125: the square each section's Shadow boss was last put
+   * down on, indexed by `bossIndex` in `src/lib/game/dotu-files.js`. A boss who has never been
+   * placed has 0 in both, which is how stock_level tells a first placement from a later one.
+   */
+  bossX: number[];
+  bossY: number[];
+  /**
    * 0x8fb, DS:c17b: one byte per section, how many of that section's boss's taunts have been
    * read. Neither the save parser nor the editor names this field.
    */
@@ -745,6 +752,8 @@ function defaultPc(): PlayerCharacter {
     teleportStones: 0,
     keys: Array.from({ length: 36 }, () => 0),
     objective: [0, 0, 0, 0, 0],
+    bossX: Array.from({ length: 80 }, () => 0),
+    bossY: Array.from({ length: 80 }, () => 0),
     bossTaunts: Array.from({ length: 20 }, () => 0),
   };
 }
