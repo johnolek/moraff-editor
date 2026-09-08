@@ -35,12 +35,44 @@ export class BorlandRng implements Rng {
 }
 
 /**
- * Random (exe 2000:4156, unf.c "Random") over the browser's own generator, which is what a game
- * being played uses.
+ * Random (exe 2000:4156, unf.c "Random") over mulberry32, which is what a game being played uses.
  *
  * The README's third departure: the original reseeds from the clock before nearly every roll,
- * which is why its numbers fall into patterns a player can feel. These are as random as the
- * browser can make them.
+ * which is why its numbers fall into patterns a player can feel. This is one continuous sequence
+ * from a seed drawn once at the start of a run, so the numbers are as good as a small generator
+ * gets and the run can be played again from the seed alone. `src/lib/play/run.ts` is what draws
+ * the seed and keeps it.
+ *
+ * mulberry32 is a well-known 32-bit generator, given here exactly as it is published: one addition
+ * to the state and three multiply-and-mix steps, all in 32-bit arithmetic. `rand()` in the game is
+ * fifteen bits, so only the top fifteen of each word are used.
+ */
+export class SeededRng implements Rng {
+  private state: number;
+
+  constructor(seed: number) {
+    this.state = seed >>> 0;
+  }
+
+  /** The fifteen bits rand (exe 1000:18b6) hands Random, out of mulberry32's word. */
+  rand(): number {
+    this.state = (this.state + 0x6d2b79f5) >>> 0;
+    let word = Math.imul(this.state ^ (this.state >>> 15), 1 | this.state);
+    word = (word + Math.imul(word ^ (word >>> 7), 61 | word)) ^ word;
+    return ((word ^ (word >>> 14)) >>> 0) >>> 17;
+  }
+
+  random(n: number): number {
+    return Math.trunc((this.rand() * n) / 0x8000);
+  }
+}
+
+/**
+ * Random (exe 2000:4156, unf.c "Random") over the browser's own generator.
+ *
+ * Nothing plays through this any more — a run is played through {@link SeededRng} so that it can
+ * be played again — and it is what the port's third departure originally meant by real
+ * randomness.
  */
 export class RealRng implements Rng {
   random(n: number): number {
