@@ -5,6 +5,7 @@
   import FloorCanvas from '../map/FloorCanvas.svelte';
   import { UNFORGIVEN_MAP } from '../map/game';
   import { FULL_FLOOR } from '../map/viewport';
+  import WallTexture from '../map/WallTexture.svelte';
   import GameScreen from '../ui/GameScreen.svelte';
   import PixelText from '../ui/PixelText.svelte';
   import Panel from './Panel.svelte';
@@ -302,6 +303,7 @@
           module={view.place.module}
           floor={view.place.floor}
         />
+        <WallTexture game={UNFORGIVEN_MAP.id} dungeon={view.place.module} floor={view.place.floor} />
         {#if panelVisible(mode)}
           <Panel game={session.game} {view} />
         {/if}

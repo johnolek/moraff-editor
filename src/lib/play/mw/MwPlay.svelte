@@ -5,6 +5,7 @@
   import FloorCanvas from '../../map/FloorCanvas.svelte';
   import { MORAFFS_WORLD_MAP } from '../../map/game';
   import { FULL_FLOOR } from '../../map/viewport';
+  import WallTexture from '../../map/WallTexture.svelte';
   import GameScreen from '../../ui/GameScreen.svelte';
   import { SCREEN_COLOURS } from '../../roller/screen';
   import PixelText from '../../ui/PixelText.svelte';
@@ -369,6 +370,7 @@
             {/each}
           </div>
         </div>
+        <WallTexture game={MORAFFS_WORLD_MAP.id} dungeon={view.place.dungeon} floor={view.place.floor} />
         {#if panelVisible(mode)}
           <MwPanel game={session.game} {view} />
         {/if}

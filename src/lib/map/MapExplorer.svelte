@@ -29,6 +29,7 @@
   import { monsterAt, type StockedMonster } from './stocking';
   import { twinsOf, type TwinFloor } from './twins';
   import { boundsIncluding, type Point } from './viewport';
+  import WallTexture from './WallTexture.svelte';
   import { nearestOpenSquare, stepFrom } from './you';
 
   /** No file loaded, which is every floor of Dungeons of the Unforgiven: it saves nothing
@@ -608,6 +609,7 @@
         onclear={clearExploredFiles}
       />
     {/if}
+    <WallTexture game={game.id} {dungeon} {floor} />
     <Legend
       {game}
       {summary}
