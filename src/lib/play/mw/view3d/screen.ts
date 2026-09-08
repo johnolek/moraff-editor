@@ -1,5 +1,5 @@
 import type { ViewRect } from '../../view3d/geometry';
-import type { ZoomMapWindow } from '../../zoom-monsters';
+import type { ZoomMapWindow } from '../../zoom-map';
 
 /**
  * Where everything Moraff's World draws while it is being played goes, in the 1600 by 1200 grid

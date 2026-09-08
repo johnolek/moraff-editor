@@ -1,4 +1,5 @@
 import { fillRect, type Frame } from './view3d/frame';
+import type { ZoomMapWindow } from './zoom-map';
 
 /**
  * The mark debug mode puts on a monster's square on the small map in the corner of a game's own
@@ -9,17 +10,6 @@ import { fillRect, type Frame } from './view3d/frame';
  * nothing here is a port of anything: it is the site's own mark, and only debug mode asks for it.
  * Moraff's Revenge draws its map on its own terms and marks a monster in `rev/screen/map.ts`.
  */
-
-/** Where a game draws its zoom map and how much of the floor it shows. */
-export interface ZoomMapWindow {
-  /** The top-left corner of the grid, in the frame's own pixels. */
-  left: number;
-  top: number;
-  /** How wide and tall one square is drawn. */
-  cell: number;
-  columns: number;
-  rows: number;
-}
 
 /** How far inside a cell the mark is drawn, which leaves the square's walls showing around it. */
 const INSET = 2;

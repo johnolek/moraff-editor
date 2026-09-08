@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newFrame, pixelAt } from './view3d/frame';
-import { drawZoomMonsters, zoomMapCell, ZOOM_MONSTER_COLOUR, type ZoomMapWindow } from './zoom-monsters';
+import { drawZoomMonsters, zoomMapCell, ZOOM_MONSTER_COLOUR } from './zoom-monsters';
+import type { ZoomMapWindow } from './zoom-map';
 
 /** A map like the one both games draw: eight-pixel cells with the character in the middle. */
 const MAP: ZoomMapWindow = { left: 16, top: 8, cell: 8, columns: 15, rows: 26 };

@@ -1,11 +1,17 @@
 import { expLabel, levelLabel } from '../character/record';
-import type { DiscoveredMap } from '../map/draw-floor';
-import { arrowPixel, FACING_ARROW } from '../map/you';
 import type { MapSquare } from '../map/game';
 import { ARMOR_NAMES, WEAPON_NAMES } from '../game/port/drops';
 import type { PlayerCharacter, ScreenLine, ScreenRect } from '../game/port/state';
-import { drawLine, fillRect, plot, type Frame } from './view3d/frame';
-import { drawZoomMonsters, type ZoomMapWindow } from './zoom-monsters';
+import { fillRect, type Frame } from './view3d/frame';
+import {
+  drawZoomMap,
+  drawZoomMarker,
+  zoomMapSquare,
+  type ZoomMapFloor,
+  type ZoomMapStyle,
+  type ZoomMapWindow,
+} from './zoom-map';
+import { drawZoomMonsters } from './zoom-monsters';
 
 /**
  * The whole screen `movecontrol` (exe 2000:c308) keeps up while the game is played: the four 3-D
@@ -201,27 +207,6 @@ export const ZOOM_ROWS = 33;
 export const zoomMapLeft = (screenWidth: number): number =>
   Math.trunc(((screenWidth - 1) * ZOOM_MAP_BOX.left) / 0x63f);
 
-/** Which square of the floor a cell of the map shows. */
-export function zoomMapSquare(
-  centre: { x: number; y: number },
-  window: { columns: number; rows: number },
-  column: number,
-  row: number,
-): { x: number; y: number } {
-  return { x: centre.x + column - (window.columns >> 1), y: centre.y + row - (window.rows >> 1) };
-}
-
-/** What the drawing half of the screen needs to know about the floor the character stands on. */
-export interface ZoomMapFloor {
-  rows: MapSquare[][];
-  at: { x: number; y: number; dir: number };
-  /** The map the character has discovered: a square it does not know is not drawn at all, and a
-   *  chute is marked only on a square that was already known when they arrived. */
-  map: DiscoveredMap;
-  /** The monsters to mark on the map, which the game never marks and debug mode always does. */
-  monsters?: { x: number; y: number }[];
-}
-
 /** Where the map is drawn on a frame of this width, and how much of the floor it shows. */
 export const zoomMapWindow = (frameWidth: number): ZoomMapWindow => ({
   left: zoomMapLeft(frameWidth),
@@ -230,6 +215,22 @@ export const zoomMapWindow = (frameWidth: number): ZoomMapWindow => ({
   columns: ZOOM_COLUMNS,
   rows: ZOOM_ROWS,
 });
+
+/**
+ * Dungeons of the Unforgiven's row of the table `drawsquare` (exe 3000:87de) is drawn from.
+ * `src/lib/play/mw/map.ts` holds Moraff's World's, and `zoom-map.ts` says what the two differ
+ * over.
+ */
+export const UNFORGIVEN_ZOOM_MAP: ZoomMapStyle = {
+  window: (frame) => zoomMapWindow(frame.width),
+  box: ZOOM_MAP_BOX.colour,
+  // The town is the only floor with buildings, and `squareOn` leaves the field at 0 everywhere
+  // else; `drawsquare` asks about the ladder first and leaves a square with one alone.
+  buildingOn: (square) => (square.ladder === 0 ? (square.town ?? 0) : 0),
+  buildingColour: zoomBuildingColour,
+  marker: { kind: 'arrow' },
+  clipDoorTick: true,
+};
 
 /**
  * `FUN_2000_59c0(0)` (exe 2000:59c0): the map the X key fills the screen with, which is the same
@@ -296,9 +297,9 @@ export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
 
 /** The map beside the views on its own, without the boxes around it. */
 export function drawZoomMapOnly(frame: Frame, floor: ZoomMapFloor): void {
-  const window = zoomMapWindow(frame.width);
-  drawZoomMap(frame, floor, window, floor.at);
-  drawFacingArrow(frame, window, floor.at.dir);
+  const window = UNFORGIVEN_ZOOM_MAP.window(frame);
+  drawZoomMap(frame, floor, window, floor.at, UNFORGIVEN_ZOOM_MAP);
+  drawZoomMarker(frame, window, UNFORGIVEN_ZOOM_MAP, floor.at.dir);
   drawZoomMonsters(frame, window, floor.at, floor.monsters ?? []);
 }
 
@@ -313,7 +314,7 @@ export function drawZoomMapOnly(frame: Frame, floor: ZoomMapFloor): void {
 export function drawExpandedMap(frame: Frame, floor: ZoomMapFloor): void {
   fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, EXPANDED_GROUND);
   const window = expandedMapWindow();
-  drawZoomMap(frame, floor, window, EXPANDED_CENTRE);
+  drawZoomMap(frame, floor, window, EXPANDED_CENTRE, UNFORGIVEN_ZOOM_MAP);
   const cell = window.cell;
   fillRect(
     frame,
@@ -331,23 +332,6 @@ export function drawExpandedMap(frame: Frame, floor: ZoomMapFloor): void {
 const EXPANDED_MARKER = 15;
 
 /**
- * The colours `drawsquare` (exe 3000:87de) draws a square's own marks in.
- *
- * The white is `draw_side`'s (exe 3000:8432) for every side and every door tick; the red is the
- * four corner dots, which the game plots in every video mode from the 640 by 350 one up and in
- * none of the five below it; the yellow is the ladder and trap door diagonals, and the pale blue
- * the chute's, which the chute branch swaps in for the yellow.
- *
- * The two marks are white instead when DS:00c7 is set, which is the switch the game takes from a
- * negative video mode number on its command line (exe 2000:6337). The mode the game is played in
- * here is a positive 9, so that switch is off.
- */
-export const ZOOM_SIDE_COLOUR = 15;
-export const ZOOM_CORNER_COLOUR = 6;
-export const ZOOM_MARK_COLOUR = 4;
-export const ZOOM_CHUTE_COLOUR = 3;
-
-/**
  * The colour a square with one of the town's four buildings on it is filled with: the building's
  * own number plus two, except that the inn's 6 is moved on to 8 (exe 3000:8864). Six is the red
  * the corner dots are plotted in, and eight a dark grey.
@@ -355,165 +339,4 @@ export const ZOOM_CHUTE_COLOUR = 3;
 export function zoomBuildingColour(building: number): number {
   const colour = building + 2;
   return colour === 6 ? 8 : colour;
-}
-
-/** A square with neither a trap door nor a chute on it, which is what the game leaves the
- *  destination floor at and what stops both diagonals being drawn. */
-const NOTHING_CROSSED = -1;
-
-/**
- * The diagonals are drawn twice, a pixel apart, on a screen wider than 1000 of its own pixels
- * (exe 3000:8c02). The play screen is 1024 across, so its map always draws them thick.
- */
-const THICK_MARK_ABOVE_WIDTH = 1000;
-
-/** The cell size from which a door's tick is drawn as a pair of long lines as well. */
-const DOOR_TICK_PAIR_FROM_CELL = 8;
-
-/**
- * `drawsquare` (exe 3000:87de) and `draw_side` (exe 3000:8432) for every square of the window.
- *
- * `FUN_3000_8e75` (exe 3000:8e75) is the loop: it walks the window's own columns and rows and
- * asks for the square `centre + cell - window / 2`, so the same drawing serves the map beside the
- * views, centred on the character, and the X key's map, centred on the middle of the floor.
- */
-function drawZoomMap(
-  frame: Frame,
-  floor: ZoomMapFloor,
-  window: ZoomMapWindow,
-  centre: { x: number; y: number },
-): void {
-  for (let column = 0; column < window.columns; column++) {
-    for (let row = 0; row < window.rows; row++) {
-      const square = zoomMapSquare(centre, window, column, row);
-      if (!floor.map.known(square.x, square.y)) continue;
-      const here = floor.rows[square.y]?.[square.x];
-      // Rock is never drawn. solidcheck calls a square rock when it has a wall on all four
-      // sides, and nothing ever stands on one: a step cannot reach it and no 3-D view sees
-      // into it, so the character's own map never marks one. The test only bites on a floor
-      // the site has revealed whole, where it keeps the rock blank instead of drawing it as a
-      // square somebody could be standing in.
-      if (!here || here.solid) continue;
-      drawZoomSquare(frame, here, window.left + column * window.cell, window.top + row * window.cell, window.cell, {
-        chuteKnown: floor.map.knownOnArrival(square.x, square.y),
-      });
-    }
-  }
-}
-
-/** The arrow on the character's own square, which the original flashes white six times a second
- *  and the port draws steadily. */
-function drawFacingArrow(frame: Frame, window: ZoomMapWindow, dir: number): void {
-  const originX = window.left + (window.columns >> 1) * window.cell + 2;
-  const originY = window.top + (window.rows >> 1) * window.cell + 2;
-  FACING_ARROW.forEach((line, row) => {
-    for (let column = 0; column < line.length; column++) {
-      if (line[column] !== 'X') continue;
-      const at = arrowPixel(dir, originX, originY, column, row);
-      plot(frame, at.x, at.y, 15);
-    }
-  });
-}
-
-/**
- * One square of the map, in the order `drawsquare` (exe 3000:87de) draws it: the fill, the four
- * sides, the four corner dots, and the marks for what the square holds.
- *
- * A square is filled black unless one of the town's four buildings stands on it, which is all the
- * map ever says about a building — no mark goes over the colour. The marks belong to the other
- * three things a square can hold, and the routine asks about them in order, each only on a square
- * the last one left alone: a ladder down is one diagonal and a ladder up the other, a trap door is
- * both, and a chute is both with a plus sign through them, in pale blue rather than yellow. The
- * chute is asked about only on a square that was already known when the character arrived on the
- * floor, which is why a chute shows on the map after they have left and come back and not before.
- */
-function drawZoomSquare(
-  frame: Frame,
-  square: MapSquare,
-  x: number,
-  y: number,
-  cell: number,
-  asTheGame: { chuteKnown: boolean },
-): void {
-  const ladder = square.ladder;
-  const building = ladder === 0 ? (square.town ?? 0) : 0;
-  fillRect(frame, x + 1, y + 1, x + cell, y + cell, building === 0 ? 0 : zoomBuildingColour(building));
-
-  drawZoomSide(frame, square.w, x, y, cell, false);
-  drawZoomSide(frame, square.n, x, y, cell, true);
-  drawZoomSide(frame, square.e, x + cell, y, cell, false);
-  drawZoomSide(frame, square.s, x, y + cell, cell, true);
-  for (const corner of [x, x + cell]) {
-    plot(frame, corner, y, ZOOM_CORNER_COLOUR);
-    plot(frame, corner, y + cell, ZOOM_CORNER_COLOUR);
-  }
-
-  // The trap door's own destination floor, which the square is crossed for whatever it is, and
-  // which the chute branch borrows when it claims the square instead.
-  let crossed = building === 0 && ladder === 0 ? square.trapdoor : NOTHING_CROSSED;
-  let colour = ZOOM_MARK_COLOUR;
-  if (ladder === 0 && crossed === NOTHING_CROSSED && asTheGame.chuteKnown && square.chute !== 0) {
-    crossed = square.chute;
-    colour = ZOOM_CHUTE_COLOUR;
-    const middle = Math.trunc(cell / 2);
-    drawLine(frame, x + middle, y, x + middle, y + cell, colour);
-    drawLine(frame, x, y + middle, x + cell, y + middle, colour);
-  }
-
-  const thick = frame.width - 1 > THICK_MARK_ABOVE_WIDTH;
-  if (ladder > 0 || crossed !== NOTHING_CROSSED) {
-    drawLine(frame, x, y, x + cell, y + cell, colour);
-    if (thick) drawLine(frame, x, y + 1, x + cell, y + cell + 1, colour);
-  }
-  if (ladder < 0 || crossed !== NOTHING_CROSSED) {
-    drawLine(frame, x, y + cell, x + cell, y, colour);
-    if (thick) drawLine(frame, x, y + cell + 1, x + cell, y + 1, colour);
-  }
-}
-
-/**
- * `draw_side` (exe 3000:8432): one side of one cell. `horizontal` sides run along the cell's top
- * edge and the others down its left edge; `x` and `y` are the cell's own corner, so the east and
- * south sides are drawn as the west and north sides of the next cell along.
- *
- * Every side but an open one gets a plain line, so a secret door and a module teleporter are
- * walls to look at. A door gets ticks across it as well, which is the gap in the wall the map
- * draws a doorway as: a short one three pixels long, and on a cell of eight pixels or more two
- * longer ones a pixel either side of it. The two halves of the routine differ over that short
- * tick — the side running along the top draws it only on a cell too small for the long pair,
- * and the side running down the left draws it always, under the pair.
- */
-function drawZoomSide(
-  frame: Frame,
-  side: number,
-  x: number,
-  y: number,
-  cell: number,
-  horizontal: boolean,
-): void {
-  if (side !== 3) {
-    if (horizontal) drawLine(frame, x + 1, y, x + cell - 1, y, ZOOM_SIDE_COLOUR);
-    else drawLine(frame, x, y + 1, x, y + cell - 1, ZOOM_SIDE_COLOUR);
-  }
-  if (side !== 1) return;
-  const middle = cell >> 1;
-  const reach = Math.trunc(cell / 3);
-  const long = cell >= DOOR_TICK_PAIR_FROM_CELL;
-  if (horizontal) {
-    if (long) {
-      drawLine(frame, x + middle - 1, y - reach, x + middle - 1, y + reach, ZOOM_SIDE_COLOUR);
-      drawLine(frame, x + middle + 1, y - reach, x + middle + 1, y + reach, ZOOM_SIDE_COLOUR);
-      return;
-    }
-    drawLine(frame, x + middle, y - 1, x + middle, y + 1, ZOOM_SIDE_COLOUR);
-    return;
-  }
-  // A door on a side too near the right of the screen draws no tick at all: the game works out
-  // where the right-hand end would reach and gives up when that is past the last column.
-  if (x + reach >= frame.width - 1) return;
-  if (long) {
-    drawLine(frame, x - reach, y + middle + 1, x + reach, y + middle + 1, ZOOM_SIDE_COLOUR);
-    drawLine(frame, x - reach, y + middle - 1, x + reach, y + middle - 1, ZOOM_SIDE_COLOUR);
-  }
-  drawLine(frame, x - 1, y + middle, x + 1, y + middle, ZOOM_SIDE_COLOUR);
 }

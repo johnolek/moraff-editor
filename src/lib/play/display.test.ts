@@ -31,13 +31,15 @@ import {
   ZOOM_ROWS,
   zoomMapLeft,
   zoomBuildingColour,
-  zoomMapSquare,
   zoomMapWindow,
+} from './display';
+import {
+  zoomMapSquare,
   ZOOM_CHUTE_COLOUR,
   ZOOM_CORNER_COLOUR,
   ZOOM_MARK_COLOUR,
   ZOOM_SIDE_COLOUR,
-} from './display';
+} from './zoom-map';
 import { MW_VIDEO_MODES } from './mw/view3d/screen';
 
 /** How much of the floor the map beside the views shows, which is what a cell is counted in. */

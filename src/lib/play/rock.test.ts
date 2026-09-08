@@ -9,8 +9,8 @@ import {
   ZOOM_MAP_BOX,
   ZOOM_ROWS,
   zoomMapLeft,
-  zoomMapSquare,
 } from './display';
+import { zoomMapSquare } from './zoom-map';
 import { newFrame, pixelAt, type Frame } from './view3d/frame';
 
 /** How much of the floor the map beside the views shows, which is what a cell is counted in. */
