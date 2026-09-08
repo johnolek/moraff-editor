@@ -9,8 +9,7 @@ town buildings (`store`, `armoury`, `weaponry`, `temple`, `bank`, `inn`).
 Decoders: `reference/unfpic.py` (`parse_pic(bytes) -> (images, consumed)`) and
 `reference/dotu-pic.js` (`parsePic`, `renderImage`, the colour rules).  Rendered output is
 in `pics/monsters` (all 122 monsters + per-section contact sheets), `pics/buildings`,
-`pics/walls`.  The monster PNGs were rendered before the section 4 colour rule was
-corrected and need re-running through `render_monsters.py`.
+`pics/walls`.
 
 ## 1. File format (from `load_building_picture` 3000:974d and `scale_image2` 4000:4818)
 
