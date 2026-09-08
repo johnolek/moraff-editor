@@ -22,7 +22,7 @@ import {
 import { dropSomething } from './drop';
 import { swingAtMonster } from './fight';
 import { MwFloorMonsters, mwDrawnMonsters, mwEnterLevel } from './floor';
-import { MapMemory } from '../memory';
+import { MapMemory, type MapStore } from '../memory';
 import { killTheDead } from './kill';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { MW_KEY } from './keys';
@@ -74,6 +74,10 @@ export interface MwCharacterFile {
   write(bytes: Uint8Array<ArrayBuffer>): void;
   /** The character has died, which the roster marks and never undoes. */
   died(): void;
+  /** save_dun and load_dun (WORLD.EXE 2000:5298 and 2000:542b): the explored maps kept beside
+   *  the record, the way the game keeps its `.DUN` files beside it. A caller with none — a
+   *  replay, a test — plays with a map that lasts as long as the session. */
+  maps?: MapStore;
 }
 
 /** What movecontrol works out about the square before it reads a key. */
@@ -195,7 +199,7 @@ export class MwGameSession {
     /** The run log this game is being written down in, or null for a game nobody is recording. */
     readonly run: RunRecorder | null = null,
   ) {
-    this.memory = new MapMemory();
+    this.memory = new MapMemory(file.maps ?? null);
     const pc = loadMwPlayer(file.bytes);
     this.known = file.bytes.slice();
     this.game = newMwGame({

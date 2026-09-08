@@ -27,7 +27,7 @@ import { KEY } from './keys';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { readTheMonsterManual } from './manual';
 import { countTheMoney, expandTheMap, openGraphics, openOptions, zoomTheView } from './misc';
-import { MapMemory } from './memory';
+import { MapMemory, type MapStore } from './memory';
 import { DEFAULT_PLAY_MODE, type PlayMode } from './mode';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
@@ -73,6 +73,10 @@ export interface CharacterFile {
   write(bytes: Uint8Array<ArrayBuffer>): void;
   /** The character has died, which the roster marks and never undoes. */
   died(): void;
+  /** save_maps and load_maps (exe 2000:7313 and 2000:74ae): the explored maps kept beside the
+   *  record, the way the game keeps its `.DUN` file beside it. A caller with none — a replay, a
+   *  test — plays with a map that lasts as long as the session. */
+  maps?: MapStore;
 }
 
 /** What movecontrol works out about the square before it reads a key. */
@@ -197,7 +201,7 @@ export class GameSession {
     /** The run log this game is being written down in, or null for a game nobody is recording. */
     readonly run: RunRecorder | null = null,
   ) {
-    this.memory = new MapMemory();
+    this.memory = new MapMemory(file.maps ?? null);
     const pc = loadPlayer(file.bytes);
     this.known = file.bytes.slice();
     this.game = newGame({

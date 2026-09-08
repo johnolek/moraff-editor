@@ -134,6 +134,9 @@ async function leaveByTheGate(session: MwGameSession): Promise<void> {
   await session.showBoxes(asking);
   const chosen = await typeADungeonNumber(session, game.pc.dungeon);
   if (chosen === null) return;
+  // FUN_2000_7b20 writes the block's explored map out before it walks the character onto the
+  // world map, which is the last save before the gate throws the maps away.
+  session.memory.save();
   walkIntoTheDungeon(session, chosen);
 }
 

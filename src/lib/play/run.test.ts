@@ -8,6 +8,7 @@ import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession
 import { mwCharacterFile } from './mw/engine.test';
 import { MW_KEY, mwTurn } from './mw/keys';
 import { runFileName } from './export-run';
+import type { StoredMaps } from './memory';
 import {
   actionWords,
   countsAsAction,
@@ -317,6 +318,44 @@ describe('replaying a run', () => {
     expect(log.actions).toBeGreaterThan(2);
     expect(again.milestones).toEqual(log.milestones);
     expect(again.dead).toBe(false);
+  });
+
+  it('arrives there just the same for a character whose map is kept beside them', async () => {
+    // The map a character discovers is written and read like a .DUN file, and nothing about it
+    // touches the game: it draws no random number and changes no state, so a run played with one
+    // replays into a session that has none.
+    const kept: StoredMaps = {};
+    const file = characterFile({ level: 3, dir: 0, ...floorSquare(3), lev: 20, str: 60 });
+    file.maps = {
+      read: () => kept,
+      write: (maps) => void Object.assign(kept, maps),
+      clear: () => void Object.keys(kept).forEach((key) => delete kept[key]),
+    };
+    const run = new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record: file.bytes, seed: 12345, startedAt: '2026-09-07T00:00:00.000Z' });
+    const session = startGame(file, run.rng, run);
+    void runMoveControl(session);
+    await settle();
+    for (const key of [KEY.arrowUp, KEY.arrowLeft, KEY.arrowUp, KEY.enter, KEY.fight, KEY.arrowUp]) {
+      await press(session, key);
+    }
+    session.memory.save();
+    session.save();
+    session.finish();
+    const log = run.log();
+    expect(Object.keys(kept)).not.toHaveLength(0);
+
+    const again = await replayRun(log);
+    expect(again.record).toEqual(file.bytes);
+    expect(again.time).toBe(session.game.secondsElapsed);
+    expect(again.actions).toBe(log.actions);
+    expect(again.milestones).toEqual(log.milestones);
+    expect(again.place).toEqual({
+      x: session.game.pc.x,
+      y: session.game.pc.y,
+      floor: session.game.pc.level,
+      dungeon: session.game.pc.module,
+      dir: session.game.pc.dir,
+    });
   });
 
   it('reaches the same milestones, at the same actions and the same game time', async () => {

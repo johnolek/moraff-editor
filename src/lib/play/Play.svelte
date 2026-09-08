@@ -14,6 +14,7 @@
   import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder } from './run';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
+  import { characterMaps } from './memory';
   import { mapDrawn, monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from './mode';
   import { MENU_LINE_STEP, MENU_SPREAD_TO, MENU_TOP, MENU_X } from '../game/port/screens';
   import { MESSAGE_BOX_LINES } from './screens';
@@ -55,6 +56,9 @@
         replaceCharacterBytes(bytes);
       },
       died: characterDied,
+      // The explored maps live beside the roster entry, the way the game's .DUN files live
+      // beside the character's record.
+      maps: characterMaps(entry.id),
     };
     // Every game is a run: a seed of its own, and every key that follows written down beside it.
     const run = new RunRecorder({ game: 'unforgiven', name: entry.name, record: entry.bytes });

@@ -15,6 +15,7 @@
   import { actionWords, milestoneNote, milestoneWords, RunRecorder } from '../run';
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
+  import { characterMaps } from '../memory';
   import { mapDrawn, monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from '../mode';
   import { mwOnMessageLine } from '../../game/mw-port/state';
   import {
@@ -112,6 +113,9 @@
         replaceCharacterBytes(bytes);
       },
       died: characterDied,
+      // The explored maps live beside the roster entry, the way the game's .DUN files live
+      // beside the character's record.
+      maps: characterMaps(entry.id),
     };
     // Every game is a run: a seed of its own, and every key that follows written down beside it.
     const run = new RunRecorder({ game: 'moraffsWorld', name: entry.name, record: entry.bytes });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EXPLORED_STRIDE } from '../map/explored';
 import type { MapSquare } from '../map/game';
-import { MapMemory, VIEW_DEPTH, viewedSquares } from './memory';
+import { MapMemory, VIEW_DEPTH, viewedSquares, type MapStore, type StoredMaps } from './memory';
 
 /** A floor whose every square is open to its neighbours, walled in at the outside edge. */
 function openFloor(columns: number, rows: number): MapSquare[][] {
@@ -194,5 +194,78 @@ describe('the copy taken on arrival', () => {
     expect(memory.wasKnownOnArrival(4, 7)).toBe(true);
     memory.markStep(5, 7);
     expect(memory.wasKnownOnArrival(5, 7)).toBe(false);
+  });
+});
+
+describe('the maps kept beside the character', () => {
+  /** A store that lives in the test rather than in the browser. */
+  function store(): MapStore & { maps: StoredMaps } {
+    return {
+      maps: {},
+      read() {
+        return this.maps;
+      },
+      write(maps: StoredMaps) {
+        this.maps = { ...maps };
+      },
+      clear() {
+        this.maps = {};
+      },
+    };
+  }
+
+  it('writes the block in memory out and reads it back into a new game', () => {
+    const kept = store();
+    const first = new MapMemory(kept);
+    first.enterFloor(0, 3);
+    first.markStep(4, 7);
+    first.save();
+    const second = new MapMemory(kept);
+    second.enterFloor(0, 3);
+    expect(second.isKnown(4, 7)).toBe(true);
+    expect(second.wasKnownOnArrival(4, 7)).toBe(true);
+  });
+
+  it('keeps the maps of one dungeon apart from those of another', () => {
+    const kept = store();
+    const memory = new MapMemory(kept);
+    memory.enterFloor(0, 3);
+    memory.markStep(4, 7);
+    memory.enterFloor(1, 3);
+    expect(memory.isKnown(4, 7)).toBe(false);
+    memory.enterFloor(0, 3);
+    expect(memory.isKnown(4, 7)).toBe(true);
+  });
+
+  it('writes the block out by itself when the character crosses out of it', () => {
+    const kept = store();
+    const memory = new MapMemory(kept);
+    memory.enterFloor(0, 3);
+    memory.markStep(4, 7);
+    memory.enterFloor(0, 40);
+    expect(Object.keys(kept.maps)).toEqual(['0:3']);
+  });
+
+  it('loses everything learned since the last save, which is what a death does', () => {
+    const kept = store();
+    const first = new MapMemory(kept);
+    first.enterFloor(0, 3);
+    first.markStep(4, 7);
+    first.save();
+    first.markStep(5, 7);
+    const second = new MapMemory(kept);
+    second.enterFloor(0, 3);
+    expect(second.isKnown(4, 7)).toBe(true);
+    expect(second.isKnown(5, 7)).toBe(false);
+  });
+
+  it('remembers nothing between games when there is nowhere to keep it', () => {
+    const first = new MapMemory();
+    first.enterFloor(0, 3);
+    first.markStep(4, 7);
+    first.save();
+    const second = new MapMemory();
+    second.enterFloor(0, 3);
+    expect(second.isKnown(4, 7)).toBe(false);
   });
 });

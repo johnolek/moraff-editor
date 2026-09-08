@@ -1,3 +1,4 @@
+import { fromBase64, readStored, toBase64, writeStored } from '../character/storage';
 import { DUN_COLUMNS, DUN_ROWS, EXPLORED_STRIDE, FLOORS_PER_BLOCK, type ExploredSquares } from '../map/explored';
 import type { DiscoveredMap } from '../map/draw-floor';
 import type { MapSquare } from '../map/game';
@@ -47,6 +48,50 @@ function setBit(bitmap: Uint8Array, x: number, y: number): void {
   bitmap[y * ROW_BYTES + (x >> 3)] |= 1 << x % 8;
 }
 
+/**
+ * The explored maps as they are kept beside the character: one floor's bitmap per entry, in the
+ * game's own row bytes, keyed `<dungeon>:<floor>`.
+ *
+ * The original writes those bitmaps to a file of their own beside the character's record —
+ * `<slot><quarter><module>.DUN` in Dungeons of the Unforgiven, `<slot><block>.DUN` in Moraff's
+ * World — and this keeps a blob of its own beside the roster entry, so the Save Editor's
+ * download of the record is the record alone, exactly as the game's own file is.
+ */
+export type StoredMaps = Record<string, string>;
+
+/** Where a character's explored maps are read and written. */
+export interface MapStore {
+  read(): StoredMaps;
+  write(maps: StoredMaps): void;
+  /** The files are deleted, which is what Moraff's World does when a character dies. */
+  clear(): void;
+}
+
+const MAPS_PREFIX = 'moraff-tools.maps.';
+
+/** The explored maps kept beside one roster entry. */
+export function characterMaps(id: string): MapStore {
+  const key = MAPS_PREFIX + id;
+  return {
+    read() {
+      const text = readStored(key);
+      if (!text) return {};
+      try {
+        const parsed: unknown = JSON.parse(text);
+        return typeof parsed === 'object' && parsed !== null ? (parsed as StoredMaps) : {};
+      } catch {
+        return {};
+      }
+    },
+    write(maps) {
+      writeStored(key, JSON.stringify(maps));
+    },
+    clear() {
+      writeStored(key, JSON.stringify({}));
+    },
+  };
+}
+
 /** The squares of a floor, as the map draws and the explored-map reader indexes them. */
 function squareIndex(x: number, y: number): number {
   return y * EXPLORED_STRIDE + x;
@@ -54,7 +99,8 @@ function squareIndex(x: number, y: number): number {
 
 /**
  * One character's explored maps while they are being played: the block of 32 floor bitmaps that
- * is in memory, the floor being walked, and the copy of it taken on arrival.
+ * is in memory, the floor being walked, the copy of it taken on arrival, and the blob they are
+ * written to and read back from beside the roster entry.
  */
 export class MapMemory {
   /** DS:c445: the 32 bitmaps of the block in memory, by floor number. */
@@ -72,6 +118,10 @@ export class MapMemory {
    *  monster standing on one can be seen on. */
   private drawn: Set<number> = new Set();
 
+  /** Where the maps are read and written, or null for a game nobody is keeping them for — a
+   *  replay, or a test. */
+  constructor(private readonly store: MapStore | null = null) {}
+
   /**
    * load_level_map (exe 2000:7687): arrive on a floor. All 32 floors of a block are resident at
    * once, so coming back to one costs nothing and loses nothing; the bitmap is simply pointed at
@@ -80,8 +130,9 @@ export class MapMemory {
   enterFloor(dungeon: number, floor: number): void {
     const block = Math.floor(floor / FLOORS_PER_BLOCK);
     if (this.held === null || this.held.dungeon !== dungeon || this.held.block !== block) {
+      this.save();
       this.held = { dungeon, block };
-      this.resident.clear();
+      this.load();
     }
     let bitmap = this.resident.get(floor);
     if (!bitmap) {
@@ -145,6 +196,37 @@ export class MapMemory {
       known: (x, y) => this.isKnown(x, y),
       knownOnArrival: (x, y) => this.wasKnownOnArrival(x, y),
     };
+  }
+
+  /**
+   * save_maps (exe 2000:7313): the block in memory, written out beside the character. The
+   * original writes it when the block changes, when the module changes and on Q, and this is
+   * called from those three places alone — so a death loses everything learned since the last
+   * of them, which is what the original does by never saving on death at all.
+   */
+  save(): void {
+    if (!this.store || !this.held) return;
+    const maps = this.store.read();
+    for (const [floor, bitmap] of this.resident) {
+      maps[`${this.held.dungeon}:${floor}`] = toBase64(bitmap);
+    }
+    this.store.write(maps);
+  }
+
+  /** load_maps (exe 2000:74ae): the block's bitmaps, with any floor the file does not hold
+   *  zeroed. */
+  private load(): void {
+    this.resident.clear();
+    if (!this.store || !this.held) return;
+    const maps = this.store.read();
+    const first = this.held.block * FLOORS_PER_BLOCK;
+    for (let floor = first; floor < first + FLOORS_PER_BLOCK; floor++) {
+      const stored = maps[`${this.held.dungeon}:${floor}`];
+      if (typeof stored !== 'string') continue;
+      const bytes = fromBase64(stored);
+      if (!bytes || bytes.length !== FLOOR_BYTES) continue;
+      this.resident.set(floor, bytes);
+    }
   }
 
   /** Every known square of the floor being played, for a caller that wants the whole set rather

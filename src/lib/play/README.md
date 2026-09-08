@@ -257,9 +257,14 @@ this port does not have.
 * **The map is drawn instead of the 3-D view.** What the views would have shown is still worked
   out, since it is what the map remembers and what says which monsters can be seen (`memory.ts`);
   in speedrun and in debug the whole floor and every monster on it are drawn instead.
-* **No `?MON.MAP`, no `.DUN`.** The original reads the floor a character is loaded onto out of
-  their monster map file and writes the explored map out beside it; a browser has neither, so a
-  floor is stocked afresh on arrival and the whole map is revealed.
+* **No `?MON.MAP`.** The original reads the floor a character is loaded onto out of their monster
+  map file; a browser has none, so a floor is stocked afresh on arrival.
+* **The `.DUN` is a blob beside the roster entry.** The explored maps are written and read where
+  the original writes and reads them — when the character crosses out of the 32 floors in memory,
+  when the module changes, and on Q — so a death still loses everything learned since the last of
+  those, exactly as it does in DOS. What the browser keeps is `moraff-tools.maps.<entry>`, one
+  bitmap per floor in the game's own row bytes, so the Save Editor's download of the record is
+  still the record alone.
 * **The character file is the roster entry.** `save_player` writes the record back through
   `CharacterFile.write`, which is the real 2,697-byte file with its checksum, so a character can
   be downloaded and played on in DOS. Death writes nothing, which is what the original does; the

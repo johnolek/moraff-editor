@@ -156,8 +156,11 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
   (`../memory.ts`); in speedrun and in debug the whole floor and every monster on it are drawn
   instead (`../mode.ts`). The picture of the monster being faced stands in for the view ahead in
   every mode, with the level, hit points and experience the game prints over that view over it.
-* **No `?MON.MAP`, no `.DUN`.** The explored map is not kept and the three floors of monsters
-  live only as long as the tab is open.
+* **No `<slot>MON.MAP`.** The three floors of monsters live only as long as the tab is open.
+* **The `.DUN` files are a blob beside the roster entry.** The explored maps are written where
+  the original writes them — when the character crosses out of the 32 floors in memory, on the
+  way out through the gate, and on Q — and kept as `moraff-tools.maps.<entry>`, one bitmap per
+  floor in the game's own row bytes.
 * **The character file is the roster entry.** `save_player` writes the record back through the
   roster, which is the real 2,344-byte file, so a character can be downloaded and played on in
   DOS. Death writes nothing, which is what the original does short of deleting the file; the
