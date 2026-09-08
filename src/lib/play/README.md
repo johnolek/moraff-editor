@@ -186,6 +186,21 @@ again and neither the box nor the banner shows. `strike` and `print_battle_hp_in
 exceptions: each wipes only the strip its own lines stand on, so the banner is still there around
 them and a box that was up loses only the lines those strips cover.
 
+A third thing is neither: **the stone tablet**, which is `tablet.ts` and `FUN_3000_9026` (exe
+3000:9026). The little snake's four-line messages — the greeting on reaching the town and the
+congratulations for a rank gained — are read off a slab of the section's own wall material laid
+across the middle of an otherwise black screen, not out of the message box. `game.tablet(...lines)`
+is where those go; the session keeps them as `session.tablet`, the tab draws the slab and its
+lines in place of everything else, and the key `FUN_3000_9026` waits for is owed the way
+`pressAnyKey`'s is and taken in `settle`. `load_level_map` puts the town's up before `movecontrol`
+has run a pass, so the loop takes that key before its first. The section boss's taunt is a tablet
+too and is not this one: `boss_office_message` draws it 250 units lower with the boss's picture
+over it and waits for nothing, so it stays in the box.
+
+The X key is the other screen of its own. `misc.ts` fills the display with the floor's map and
+`display.ts` draws it, at seven pixels a square over the whole eighty by a hundred and ten, with
+`FUN_2000_bf91`'s way to the section boss beside it.
+
 `screenTakenOver` is the rest of what was drawn, which is the help, the V screen,
 the monster manual, the pages behind the P key and the spell table, all of which draw across the
 four 3-D views.
