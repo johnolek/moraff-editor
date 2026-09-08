@@ -608,3 +608,75 @@ the table has ever bracketed a floor the game can reach, so the draw is rejected
 In the code: [the world map](source:c/FUN_3000_8235), [surface_feature](source:c/surface_feature),
 [surface](source:ts/mwmap.js/surface) and
 [floorGroup](source:ts/monsters.ts/floorGroup).
+
+## Town and money
+
+### Seven kinds of money, and only one of them buys anything
+
+The record keeps eight counters: jewels in your pocket, jewels in the bank, and piles of copper,
+silver, ivory, gold, platinum and jewel stones. The store, the temple, the inn and the boat all
+take pocket jewels and none of them will look at a stone.
+
+The bank is the only exchange and it is one way. 200 copper stones make a jewel, 12 silver, 4
+ivory, 2 gold; a platinum stone is worth five jewels and a jewel stone one. Nothing turns jewels
+back into stones, and the net worth the stats screen prints is pocket plus bank, with the stones
+left out of it entirely.
+
+The exchange destroys what does not divide. Each kind is divided by its own rate on its own, the
+quotient rounded towards zero, and then all six counters are set to zero whatever the quotient
+was: 199 copper stones convert to nothing and are gone. So converting small piles often is
+strictly worse than hoarding and converting once, and the worst a single visit can burn is just
+under four jewels' worth.
+
+In the code: [bank](source:c/bank), [financial_statement](source:c/financial_statement) and
+[view_stats](source:c/view_stats).
+
+### The store wants you to have more than the price
+
+The test the store makes is `price < money`, not `price <= money`. A stick costs one jewel and
+cannot be bought with one jewel in your pocket; you need two. Every price in the shop is really
+one jewel higher than the menu says.
+
+The temple, next door, takes exactly what you have and says `SORRY, CAN'T BUY ON CREDIT HERE.`
+only when the price is genuinely above your money.
+
+In the code: [store](source:c/store) and [the temple](source:c/FUN_2000_3085).
+
+### The two best things in the game are priced and never sold
+
+The store's tables have seven rows apiece and both menus stop at six. The rows nobody can reach
+are the great sword at 9,900 jewels and the titanium suit at 60,000 — the biggest damage die of
+any real weapon and the best armour class in the game.
+
+Both can still be found on a kill. They were meant to be bought, and in the game that shipped they
+can only be taken off a corpse.
+
+In the code: [store](source:c/store), [WEAPONS](source:ts/monsters.ts/WEAPONS) and
+[ARMOUR](source:ts/monsters.ts/ARMOUR).
+
+### A night at the inn heals nothing
+
+Ten jewels at the Flea Bag Inn buys back every spell point you have spent, clears every spell
+still running — taking back the strength and agility the preparation spells lent you — and hands
+over every level your experience has earned since your last stay, all at once.
+
+It does not restore a single hit point. Nothing in the inn touches your health at all: the cures
+are the temple's business, and the temple charges for them.
+
+The night is also eight hours added, in seconds, to a 32-bit counter that is not the age field and
+that nothing in the game ever reads.
+
+In the code: [inn](source:c/inn), [level_from_experience](source:c/level_from_experience) and
+[the level-up](source:c/FUN_3000_e5f5).
+
+### Your money slows you down
+
+Every step costs `(100 + what you are carrying - 10 times your agility) / 100 + 1` moves, and
+those moves are what buy an adjacent monster its turns. The weight counts your body, your armour,
+your weapons — and your coins, at a pound for every sixteen metal stones.
+
+A character who has been hoarding copper for the exchange rate is walking around slower and being
+hit more for it, and the little mouse will eventually notice and tell them to find a bank.
+
+In the code: [recompute_weight](source:c/recompute_weight),
+[the step cost](source:c/FUN_2000_9cb8) and [the mouse](source:c/FUN_3000_9383).
