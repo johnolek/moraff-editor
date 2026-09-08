@@ -112,6 +112,13 @@
 
 <div class="screen">
   <canvas bind:this={canvas} width={SCREEN_PIXELS.width} height={SCREEN_PIXELS.height}></canvas>
+  <!-- A screen that takes the display over fills the rectangles it draws in with colour 0 before
+       it draws them: FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way. Which
+       rectangles each of them fills is not in the port, so the whole screen goes black behind
+       one. -->
+  {#if screen.length > 0}
+    <div class="cleared"></div>
+  {/if}
   <div class="text"><GameScreen lines={text} window={SCREEN_WINDOW} /></div>
 </div>
 
@@ -128,6 +135,11 @@
     height: 100%;
     /* The game's pixels stay pixels however far it is scaled up. */
     image-rendering: pixelated;
+  }
+  .cleared {
+    position: absolute;
+    inset: 0;
+    background: #000;
   }
   .text {
     position: absolute;
