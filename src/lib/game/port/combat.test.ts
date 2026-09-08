@@ -364,6 +364,16 @@ describe('defend, the puffball', () => {
     expect(game.redrawView).toBe(true);
   });
 
+  it('holds its line the way the game holds it, however fast the game is set to run', () => {
+    const { game } = fighting(4, { });
+    const delays: number[] = [];
+    game.delay = (ms) => void delays.push(ms);
+    game.highSpeed = true;
+    describeMonster(game, { special: 6, statDrain: -4 });
+    defend(game, 0);
+    expect(delays).toEqual([1260]);
+  });
+
   it('raises the stat when the description says to', () => {
     const { game } = fighting(4, {});
     describeMonster(game, { special: 6, statDrain: 5 });

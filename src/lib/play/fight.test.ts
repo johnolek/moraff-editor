@@ -121,3 +121,18 @@ describe('dying in a fight', () => {
     expect(session.view().over).toBe(true);
   });
 });
+
+describe('a puffball that reaches you', () => {
+  it('leaves what it did on the strip above the message box', async () => {
+    const session = onAFloorFacingAMonster(new BorlandRng(7), 3);
+    await settle();
+    // Kind 2 is the lightest blue puffball: it does not attack at all, it moves one
+    // characteristic and disappears.
+    session.game.monsters[0].type = 2;
+    // The monster's timer has run out, so the seconds the moment costs buy it its move.
+    session.game.monsterTimers[0] = -1;
+    await press(session, KEY.enter);
+    const said = session.view().box.map((line) => line.text);
+    expect(said.some((line) => line.endsWith('RAISED BY PUFFBALL!'))).toBe(true);
+  });
+});

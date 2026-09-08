@@ -59,6 +59,13 @@ function battleLine(text: string, y: number): ScreenLine {
 const DRAIN_COLOUR = 6;
 
 /**
+ * How long defend (exe 2000:82b7, unf.c "defend") leaves the puffball's line on the strip before
+ * it returns (unf.c:13057). It is the one line of a fight the game waits on, and the wait is not
+ * shortened by the high speed option.
+ */
+const PUFFBALL_MS = 1260;
+
+/**
  * The line defend (exe 2000:82b7) draws on the strip above the message box, which is where every
  * blow a monster lands goes.
  *
@@ -218,6 +225,9 @@ function puffball(game: Game, slot: number): number {
   // banner this port keeps is a list of strings rather than lines on the screen, so there is
   // nothing on that rectangle for a wipe to take off.
   game.draw(messageLine(said, DRAIN_COLOUR));
+  // Without the wait the line is gone before it is seen: the loop draws the banner again as soon
+  // as the move is over, and the block the banner is printed down is wiped first.
+  game.delay(PUFFBALL_MS);
   return 0;
 }
 
