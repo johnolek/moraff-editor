@@ -48,6 +48,24 @@ export interface RevGame {
   lastMonsterLevel: number;
   /** DGROUP B524: 0 for the compass arrows of the flat map, 1 for the turning arrows. */
   arrowMode: number;
+  /** DGROUP B474: the steps the character has taken, counted 1 to 16 and round to 1 again
+   *  (1000:3187 with 1000:0A4F). It is the clock the fight's own Speed and Strength run out on
+   *  and nothing else uses it. */
+  steps: number;
+  /** DGROUP B6CC: how many more of the monster's turns a wand has taken away (1000:9A2F). */
+  monsterHeld: number;
+  /** DGROUP B6CE: what a wand has put on the character's next swing, once (1000:8CC5). */
+  swingBonus: number;
+  /** DGROUP B706: the armour the potion of shielding gives for the rest of a fight
+   *  (1000:9971), which the monster's own swing reads. */
+  shielding: number;
+  /** DGROUP B726: the monster was sent away rather than killed, which is why `Go Away!' does
+   *  not say "YOU KILLED IT!!" (1000:A4CD). */
+  monsterLeft: boolean;
+  /** `TIMER`: how long this game has been played, in seconds, which is what the three potions
+   *  that wear off are timed against (1000:8977). The original reads the wall clock; here it is
+   *  the monsters' own clock, so it runs while the level does. */
+  seconds: number;
   /** DGROUP B4C6: the feature under the character — negative for a ladder up, 1 to 3 for a
    *  ladder down, 0 for a chute, and over 3 for open ground. */
   feature: number;
@@ -140,6 +158,12 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     memory,
     lastMonsterLevel: 0,
     arrowMode: 0,
+    steps: 1,
+    monsterHeld: 0,
+    swingBonus: 0,
+    shielding: 0,
+    monsterLeft: false,
+    seconds: 0,
     feature: 50,
     chuteLanding: null,
     fight: null,

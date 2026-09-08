@@ -34,5 +34,8 @@ export function revKillMonster(game: RevGame): void {
     game.monsters.grid[GRID_STRIDE * row + column] = slot;
     break;
   }
-  game.say(YOU_KILLED_IT);
+  // 1000:A4CD: `Go Away!' leaves the monster's treasure behind and the monster alive somewhere
+  // else, so the kill it runs says nothing.
+  if (game.monsterLeft) game.monsterLeft = false;
+  else game.say(YOU_KILLED_IT);
 }

@@ -59,5 +59,8 @@ export function revStep(game: RevGame, direction: number): RevStep {
   if (column < 1 || column > COLUMNS || row < 1 || row > ROWS) return 'edge';
   pc.column = column;
   pc.row = row;
+  // 1000:3187: the same four branches count the step, which is what the fight's Speed and
+  // Strength spells run out on.
+  game.steps += 1;
   return 'moved';
 }
