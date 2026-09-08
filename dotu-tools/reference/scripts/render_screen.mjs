@@ -4,7 +4,7 @@
 // render_3d.mjs is the same thing for one view on its own.
 //
 //   node dotu-tools/reference/scripts/render_screen.mjs --module 0 --floor 1 --x 57 --y 3 \
-//        --dir 0 --out screen.png [--height-of 21] [--exp 0] [--fight] [--killed]
+//        --dir 0 --out screen.png [--height-of 21] [--exp 0] [--fight] [--killed] [--spells 2]
 //
 // --fight fills the message box the way it stands in the middle of a swing: the battle banner
 // engagement_timing prints, the two lines strike draws the blow on, and the hit points line
@@ -13,6 +13,11 @@
 //
 // --killed adds the skull movecontrol paints over that monster the moment its hit points run
 // out, which is the screen the kill's own messages are read on.
+//
+// --spells N puts the C key's table of one of the eight spell lists up, on the black cast_a_spell
+// clears for it; --mini-spells N is the same list in the miniature layout, which stands in the
+// message column instead. The character is given every spell of the list so that the table reads
+// as it does for someone who has been playing a while rather than as thirty NOT YET FOUNDs.
 //
 // The floor is generated from the same UNFDUNG.BIN the site ships, so no save file is needed, and
 // the text is drawn with the game's own .FNT bitmaps rather than the web font the site uses — the
@@ -42,7 +47,7 @@ const load = (p) => server.ssrLoadModule(`/src/lib/${p}`);
 const { Dungeon } = await load('game/unfmap.js');
 const { UNFDUNG_B64 } = await load('game/unfdung.b64.js');
 const { dungeonPalette } = await load('game/dotu-pic.js');
-const { newFrame, toRgba } = await load('play/view3d/frame.ts');
+const { fillRect, newFrame, toRgba } = await load('play/view3d/frame.ts');
 const { parsePicRows } = await load('play/view3d/texture.ts');
 const { renderFourViews } = await load('play/view3d/render.ts');
 const { wallPictureFile } = await load('play/view3d/pictures.ts');
@@ -50,12 +55,13 @@ const { viewLabels } = await load('play/view3d/views.ts');
 const D = await load('play/display.ts');
 const { SCREEN_PIXELS } = D;
 const { newGame } = await load('game/port/state.ts');
+const { drawSpellList, CAST_SPELLBOOK } = await load('game/port/inventory.ts');
 const { FONT_ADVANCE } = await load('roller/screen.ts');
 const { drawStrokeScreenLine, STROKE_ABOVE_WIDTH } = await load('play/view3d/stroke-font.ts');
 const { drawMenuLine } = await load('play/view3d/menu-font.ts');
 const { battleSpellLines } = await load('game/port/screens.ts');
 const { engagementTiming, printBattleHpInfo, strike } = await load('game/port/combat.ts');
-const { messageBoxScreen } = await load('play/screens.ts');
+const { inRect, messageBoxScreen } = await load('play/screens.ts');
 const { setMonsterMap, MAP_PLAYER } = await load('game/port/state.ts');
 const { monsterIdOf } = await load('play/floor.ts');
 const { monsterById } = await load('map/stocking.ts');
@@ -156,13 +162,18 @@ D.drawScreenFurniture(frame, {
 const game = newGame();
 game.pc.exp = exp;
 game.pc.height = horizonWeight;
-const text = [
+// The spell table's own fill goes down first: the lines under it are ones movecontrol would have
+// to draw again, so the game has none of them showing while the table is up.
+const drawnOnBlack = spellListLines();
+const standing = [
   ...D.keyMenuLines(),
   ...battleSpellLines(game),
   ...D.statusLines(game.pc),
   ...viewLabels(exp, horizonWeight),
   ...(args.fight ? fightLines() : []),
 ];
+const cleared = game.blackedOut;
+const text = [...(cleared ? standing.filter((line) => !inRect(cleared, line)) : standing), ...drawnOnBlack];
 for (const line of text) drawLine(line);
 
 const palette = dungeonPalette(palettes, null, moduleIndex + 1, part);
@@ -196,6 +207,27 @@ function fightLines() {
   const damage = strike(fight);
   if (damage > 0) printBattleHpInfo(fight);
   return messageBoxScreen({ box: fight.menuBox, banner, drawn: fight.screen });
+}
+
+/**
+ * The C key's spell table, drawn on the rectangle cast_a_spell fills with colour 0 for it. The
+ * fill goes straight onto the frame, over the views and the boxes, the way the game's own does;
+ * the lines it clears for come back as screen lines like every other.
+ */
+function spellListLines() {
+  const mini = args['mini-spells'] !== undefined;
+  const asked = mini ? args['mini-spells'] : args.spells;
+  if (asked === undefined) return [];
+  const list = asked === true ? 0 : Number(asked);
+  game.pc.spellbook = game.pc.spellbook.map(() => 1);
+  drawSpellList(game, CAST_SPELLBOOK, list, mini);
+  const box = game.blackedOut;
+  if (box) {
+    const toX = (x) => Math.trunc(((frame.width - 1) * x) / 1599);
+    const toY = (y) => Math.trunc(((frame.height - 1) * y) / 1199);
+    fillRect(frame, toX(box.x), toY(box.y), toX(box.right), toY(box.bottom), 0);
+  }
+  return game.screen;
 }
 
 /**
