@@ -99,3 +99,11 @@ describe('the help pages', () => {
     expect(menus.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('leaving the help', () => {
+  it('takes the pages down, since the game is drawn back over them', async () => {
+    const { desk, game } = pressing(['X']);
+    await revShowHelp(game, desk);
+    expect(game.said).toEqual([]);
+  });
+});

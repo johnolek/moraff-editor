@@ -64,7 +64,11 @@ export async function revShowHelp(game: RevGame, desk: RevTownDesk): Promise<voi
     game.said = [];
     game.say(...revHelpChunks(0)[0]);
     const chosen = revHelpChoice(await desk.key());
-    if (chosen === null) return;
+    if (chosen === null) {
+      // 1000:C586 leaves the help through 1000:2FF7, and 1000:0ED1 draws the game back over it.
+      game.said = [];
+      return;
+    }
     const chunks = revHelpChunks(chosen);
     for (let at = 0; at < chunks.length; at++) {
       game.said = [];
