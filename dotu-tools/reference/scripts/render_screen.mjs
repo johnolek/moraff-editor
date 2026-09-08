@@ -4,12 +4,15 @@
 // render_3d.mjs is the same thing for one view on its own.
 //
 //   node dotu-tools/reference/scripts/render_screen.mjs --module 0 --floor 1 --x 57 --y 3 \
-//        --dir 0 --out screen.png [--height-of 21] [--exp 0] [--fight]
+//        --dir 0 --out screen.png [--height-of 21] [--exp 0] [--fight] [--killed]
 //
 // --fight fills the message box the way it stands in the middle of a swing: the battle banner
 // engagement_timing prints, the two lines strike draws the blow on, and the hit points line
 // print_battle_hp_info puts back. It also stands the monster on the square being fought, which
 // draw_3d_view draws zoomed into each view.
+//
+// --killed adds the skull movecontrol paints over that monster the moment its hit points run
+// out, which is the screen the kill's own messages are read on.
 //
 // The floor is generated from the same UNFDUNG.BIN the site ships, so no save file is needed, and
 // the text is drawn with the game's own .FNT bitmaps rather than the web font the site uses — the
@@ -135,6 +138,7 @@ renderFourViews(
     dir,
     monsters: args.fight ? [viewMonster(fought)] : [],
     water: [4, 8, 20].includes(section),
+    killed: args.killed ? { dir, monster: viewMonster(fought) } : null,
   },
   dir,
 );
