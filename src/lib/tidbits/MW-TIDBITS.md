@@ -376,3 +376,118 @@ about ten hours. It is neither. The loop spends anything under 60 in one go and 
 In the code: [spell_screen](source:c/spell_screen),
 [mwMaximumSpellPointCost](source:ts/spells.ts/mwMaximumSpellPointCost),
 [cast_spell](source:c/cast_spell) and [movecontrol](source:c/movecontrol).
+
+## Monsters
+
+### MORAFF can never appear, twice over
+
+Monster 9 of the table is called MORAFF. Its lowest floor is 120 and its highest is 90, so no
+floor in the game falls inside its range; and the picture flag for its slot is clear, so it has no
+picture in `WORLD.PIC` either. The roller checks both, and MORAFF fails both.
+
+Whatever it looked like and whatever it did, nobody has ever met it.
+
+In the code: [pick_monster](source:c/pick_monster),
+[neverStocked](source:ts/monsters.ts/neverStocked) and
+[MONSTERS](source:ts/monsters.ts/MONSTERS).
+
+### Seventeen monsters have no picture, and so no existence
+
+`WORLD.PIC` holds 37 images against a 48-byte table of flags saying which of them are there, and
+35 of those flags are set. A monster's row carries a picture number, and the routine that rolls a
+monster redraws until it has one whose flag is set. Seventeen of the 104 rollable monsters carry a
+number whose flag is not.
+
+They are ordinary monsters with ordinary numbers — the Hobbit, the Troll, the Goblin, the
+Gargoyle, the Floating Eye, the Specter, three centipedes and three giant toads among them — and
+the game will never place a single one. The Hobbit matters more than the rest: it is monster 6,
+which is the group a character in dungeon 0 walks over. Their floors get no group lean at all,
+because the monster the group names cannot be drawn.
+
+In the code: [pick_monster](source:c/pick_monster),
+[load_world_pic](source:c/load_world_pic) and
+[stockingOdds](source:ts/monsters.ts/stockingOdds).
+
+### Everything you kill becomes an ogre in the corner
+
+A dead monster is not removed. Its slot is rewritten in place as monster type 0 — an Ogre — with
+no hit points, no depth, and a position of x 100, y 100, which is off the side of an 80-wide
+floor.
+
+The occupancy grid is 80 by 110 kept as one run of bytes, indexed `y * 80 + x` with no range
+check, and the branch that puts you back on a floor you were on before writes every one of the 145
+slots onto that grid whatever its hit points. A corpse lands at byte 8,100, which reads back as
+the square x 20, y 101. Every monster you ever killed on that floor piles onto that one square,
+and the last of them wins it.
+
+The game kills whatever you are facing the moment its hit points drop below one, so an ogre with
+none dies before you swing. At depth 0 it pays 12 experience, on any floor, and still rolls every
+drop the kill has to offer — and the drops read the depth of the slot, which the kill has already
+zeroed, so they are the same drops on floor 200 as on floor 2.
+
+That blanking is the kill's other mark on the game. It happens before any of the ten routines
+that decide what the monster was carrying, three of which read the dead monster's depth and so
+read a zero — on every kill, not only this one. The experience is worked out first and is the one
+thing it does not spoil.
+
+In the code: [monster_killed](source:c/monster_killed),
+[generate_section](source:c/generate_section), [the weapon find](source:c/FUN_3000_ba27),
+[the money find](source:c/FUN_3000_bdb5) and
+[killExperience](source:ts/monsters.ts/killExperience).
+
+### The Shadow dragons are holes in the shape of a dragon
+
+Every monster has a colour byte, and the picture drawer paints pixel value 17 with it — which is
+how one picture of a ball serves as fifteen coloured balls and one dragon picture serves as seven
+dragons.
+
+The four Shadow dragons carry 32, and 32 is the value the drawer reads as "do not draw this pixel"
+at all. So a Shadow dragon is not a dark dragon. It is the dragon picture with every coloured
+region cut out and the corridor showing through the gaps — the same trick Dungeons of the
+Unforgiven plays with its own Shadow bosses.
+
+In the code: [draw_picture](source:c/draw_picture) and
+[MONSTERS](source:ts/monsters.ts/MONSTERS).
+
+### Ten monsters no spell touches, and they hand your grenade back
+
+Zeus, the Devil and the eight quest bosses carry a 100 in the byte that marks a monster's kind.
+Teleport Monster, Autokill, Drain Monster and both Hold Monsters ask about it first and print
+`NO, THAT SILLY SPELL DOESTN'T WORK ON ME` instead of working.
+
+A holy hand grenade thrown at one of them is caught, and the game says so — misspelling its own
+word for it as `GRADADE` — and then hands it back. Unlike a spell, the grenade is not used up: the
+count comes off only on the branch where the monster dies. Throwing one at the Red Dragon King
+costs nothing but the key press.
+
+In the code: [spell_proof](source:c/spell_proof), [use_magic_item](source:c/use_magic_item) and
+[isSpellProof](source:ts/monsters.ts/isSpellProof).
+
+### Everything more than a few steps away is standing still
+
+A monster only moves if it is within `floor / 10 + 10` squares of you, measured by walking
+distance rather than a straight line, and even then only four times in five. That is ten squares on
+floor 1 and thirty on floor 200. Anything further away stands exactly where it was placed, for as
+long as the floor stays in memory.
+
+When it does move it takes one step: west if you are west of it, else east if you are east, else
+north, else south, and if the first of those it wants is blocked it tries the next. It never steps
+away and never goes round anything. A monster level with you whose sideways step is walled off has
+nothing left to try and stands there for ever.
+
+In the code: [monsters_move](source:c/monsters_move).
+
+### The quest bosses stay where you left them
+
+The eight quest bosses stand on floors 4, 8, 12, 16, 125, 150, 175 and 200, in the first of the
+floor's 145 monster slots, and only while the kill flag for that one is still clear. The first
+time a boss is placed it goes somewhere in the middle of the floor, `random(50) + 25` on each axis,
+and its square is written into a pair of tables indexed by the monster number.
+
+Every later visit puts it back within seven squares of that remembered spot. The rest of the floor
+is rerolled from scratch and stands somewhere new; the dragon is roughly where you ran away from
+it. It also gets twenty hit points per floor of depth on top of its ordinary roll, which on floor
+200 is four thousand before the dice are thrown.
+
+In the code: [generate_section](source:c/generate_section),
+[stockFloor](source:ts/stocking.ts/stockFloor) and [BOSSES](source:ts/monsters.ts/BOSSES).
