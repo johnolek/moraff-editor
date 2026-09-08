@@ -3,7 +3,7 @@ import { expValue } from '../game/port/combat';
 import { GARBAGE_CAN } from '../game/port/kills';
 import { WEAPON_NAMES } from '../game/port/drops';
 import { MENU_LINE_STEP, MENU_TOP, MENU_X, MESSAGE_LINE_Y } from '../game/port/screens';
-import type { Rng } from '../game/port/rng';
+import { SeededRng, type Rng } from '../game/port/rng';
 import { facingAMonster, inTheTown, press, townSquare, TAKE, LEAVE } from './battle.test-support';
 import type { GameSession } from './engine';
 import { KEY } from './keys';
@@ -128,6 +128,38 @@ describe('the message box while the kill is being read', () => {
     expect(session.box[0]).toBe('YOU MUST BE STANDING NEXT TO A');
     await press(session, 0x1b);
     expect(session.box).toEqual([]);
+  });
+});
+
+describe('the cup of health a kill turns up', () => {
+  /**
+   * post_kill_heal (exe 3000:afc5) on the generator a game is really played with, rather than on
+   * a generator a test has told what to roll. A monk is refused every other drop except the
+   * money, so the cup is the first thing this kill has to say.
+   */
+  it('is offered on a seeded run and heals the character', async () => {
+    const session = await facingAMonster(new SeededRng(4), { cls: 2, hp: 100, maxHp: 400 });
+    session.game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    expect(session.box).toEqual([
+      'YOU FOUND A CUP OF HEALTH!',
+      '',
+      'PRESS ANY KEY TO DRINK',
+      '  THE WONDERFUL LIQUID',
+      '  AND GAIN A FEW HEALTH',
+      '  POINTS.',
+      '',
+      'HIT ANY KEY...',
+    ]);
+    expect(session.game.pc.hp).toBe(106);
+  });
+
+  it('is refused to a character who has lost nothing', async () => {
+    const session = await facingAMonster(new SeededRng(4), { cls: 2, hp: 400, maxHp: 400 });
+    session.game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    expect(session.box).toEqual([]);
+    expect(session.game.pc.hp).toBe(400);
   });
 });
 
