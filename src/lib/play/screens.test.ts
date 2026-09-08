@@ -116,7 +116,7 @@ describe('the message box on the screen', () => {
 
 describe('what the spell table blacks out', () => {
   /** cast_a_spell fills the top 0x21c of the screen with colour 0 before it draws the big table
-   *  (exe 2000:e80e), and the message column before it draws the miniature one (exe 2000:e6c2). */
+   *  (exe 2000:ee34), and the message column before it draws the miniature one (exe 2000:e26e). */
   const LARGE = { x: 0, y: 0, right: 0x640, bottom: 0x21c };
   const MINI = { x: 0x398, y: 0x2ff, right: 0x640, bottom: 0x4b0 };
 

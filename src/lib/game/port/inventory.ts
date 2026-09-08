@@ -311,7 +311,7 @@ function ownedRows(game: Game, source: number, type: number): number[][] {
  * where the video mode is wide enough to have one, which the port always is.
  *
  * The table is drawn on black. cast_a_spell fills the top 0x21c of the screen with colour 0
- * before it prints a word (exe 2000:e80e), which takes the key menu, the zoom map and the top of
+ * before it prints a word (exe 2000:ee34), which takes the key menu, the zoom map and the top of
  * the big 3-D view with it and leaves the battle spells, the status block and the message box
  * standing.
  */
@@ -341,7 +341,7 @@ function drawLargeSpellList(game: Game, source: number, type: number): void {
  * The names carry no keys here. The thirty letters are drawn on top of them in the big font, in a
  * grid of three columns, three units above the line of names they belong to.
  *
- * This one is drawn on black as well: the fill at exe 2000:e6c2 takes the whole message column,
+ * This one is drawn on black as well: the fill at exe 2000:e26e takes the whole message column,
  * the bar over the box included, and the list goes where the box was.
  */
 function drawMiniSpellList(game: Game, source: number, type: number): void {

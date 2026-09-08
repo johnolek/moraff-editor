@@ -192,8 +192,8 @@ describe('casting from the spellbook', () => {
 });
 
 describe('the screen the spell table is drawn on', () => {
-  /** cast_a_spell's own two fills: the top of the screen for the big table (exe 2000:e80e) and
-   *  the whole message column for the miniature one (exe 2000:e6c2). */
+  /** cast_a_spell's own two fills: the top of the screen for the big table (exe 2000:ee34) and
+   *  the whole message column for the miniature one (exe 2000:e26e). */
   const LARGE = { x: 0, y: 0, right: 0x640, bottom: 0x21c };
   const MINI = { x: 0x398, y: 0x2ff, right: 0x640, bottom: 0x4b0 };
 

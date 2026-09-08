@@ -59,7 +59,7 @@ async function menuChoice(
  * miniature layout takes the menu column and the line above it back, and the big one clears the
  * top of the screen it drew the table over.
  *
- * The big one's wipe is another fill in colour 0 (exe 2000:f003), and what puts the screen back
+ * The big one's wipe is another fill in colour 0 (exe 2000:f90d), and what puts the screen back
  * is movecontrol drawing the four views, the key menu and the map again on its next pass. The
  * port draws a fresh screen every time the tab draws, so all this has to do is take the table's
  * lines off and leave nothing blacked out behind them.
