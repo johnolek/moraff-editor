@@ -596,8 +596,11 @@ export function rollChar(game: Game): void {
   // away and there is no way to pick it.
   readUrollLines(uroll, 3);
   const difficulty = game.askDifficulty();
-  // DS:c647, the contest flag. Nothing can set it, because the menu above is the only thing
-  // that writes it and it never comes back with anything but 0 or 1.
+  // DS:c647, the contest flag. This menu can only ever leave it 0, because it never comes back
+  // with anything but 0 or 1, but it is not the only thing in the game that writes it: a hidden
+  // key in the play loop (byte 0xfb, exe 2000:c308) sets it, and choosing to quit is the only
+  // thing that clears it again. This port stops before the play loop, so it reaches neither.
+  // See dotu-tools/docs/CONTEST.md.
   let contest = 0;
   if (difficulty === 0) {
     pc.hard = 0;
