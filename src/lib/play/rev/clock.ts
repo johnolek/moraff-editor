@@ -63,10 +63,12 @@ export const REV_SPEED = 1;
 /**
  * 1000:7EEC: one pass of the poll. On a one-in-`D` draw one monster takes a turn.
  *
- * `lastMonsterLevel` is DGROUP B6B4, which is written in one place only — 1000:80EF, where a
- * monster is met — so outside a fight it is the level of the last monster the character met, and
- * zero until they have met one. The odds are worked out from that rather than from the monster
- * whose turn it is, which is the original's own slip and is kept.
+ * `lastMonsterLevel` is DGROUP B6B4, and two places write it: 1000:80EF, where a monster is met,
+ * puts that monster's level there, and 1000:A3C8, where one is killed, puts the dungeon level
+ * there. So it is the level of the last monster the character had anything to do with, and zero
+ * until they have had anything to do with one. The odds are worked out from that rather than from
+ * the monster whose turn it is, which is the original's own slip and is kept; the wander roll at
+ * 1000:73BC reads the same variable for the same reason.
  */
 export function revPoll(monsters: RevMonsters, walker: RevWalker, lastMonsterLevel: number, rng: Rng): void {
   const odds = monsterTurnOdds(lastMonsterLevel, walker.level, REV_SPEED);

@@ -82,10 +82,12 @@ Two things follow that are worth knowing before reading the numbers here.
   20` is between 4.75 and 8.25 whatever the two levels are, so every monster on the author's own
   machine moved on one pass in eight. The level terms only start telling one monster from another
   on a machine several times faster.
-* **`165 - the monster's level` is the *last* monster's level.** DGROUP B6B4 is written in one
-  place, `1000:80EF`, where a monster is met, so outside a fight the clock is reading whoever the
-  character last stood on, and zero until they have met anybody. The kill sets it to the dungeon
-  level (`1000:A3C8`). It is kept.
+* **`165 - the monster's level` is the *last* monster's level.** DGROUP B6B4 is written in two
+  places: `1000:80EF`, where a monster is met, puts that monster's level there, and `1000:A3C8`,
+  where one is killed, puts the dungeon level there. So the clock is reading whoever the character
+  last had anything to do with, and zero until they have had anything to do with anybody. The
+  wander roll at `1000:73BC` reads it too, so a monster deciding whether to chase is asking about
+  some other monster. It is kept.
 
 **What this port does.** The poll is a display timer the session runs only while the loop is
 sitting at an `INKEY$` — the dungeon's own at `1000:087F` and the fight prompt's at `1000:86E5`,
