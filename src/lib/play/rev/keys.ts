@@ -182,14 +182,17 @@ export const REV_INTERCEPTED_KEYS: RevKeyButton[] = [{ key: REV_KEY.f1, cap: 'F1
  * The rest of the game's keys as buttons: the four arrows first, then the letters in the order
  * `H1.OVL` lists them under "OPTIONS:".
  *
- * The labels are that page's own names for the keys. The four arrows, D, U and F1 are on no list
- * of the game's and their labels are this port's own.
+ * The labels are that page's own names for the keys. The four arrows, Return, D, U and F1 are on
+ * no list of the game's and their labels are this port's own.
  */
 export const REV_KEY_BUTTONS: RevKeyButton[] = [
   { key: REV_KEY.arrowUp, cap: '↑', label: 'Move' },
   { key: REV_KEY.arrowLeft, cap: '←', label: 'Move' },
   { key: REV_KEY.arrowDown, cap: '↓', label: 'Move' },
   { key: REV_KEY.arrowRight, cap: '→', label: 'Move' },
+  // Not a key the dungeon loop dispatches on: the kill stops at HIT RETURN and asks again for
+  // every key but this one (1000:A514), so without it a kill cannot be got past by button alone.
+  { key: REV_KEY.enter, cap: 'Enter', label: 'Answers HIT RETURN' },
   { key: REV_KEY.down, cap: 'D', label: 'Go down' },
   { key: REV_KEY.up, cap: 'U', label: 'Go up' },
   { key: REV_KEY.stats, cap: 'V', label: 'View Stats' },

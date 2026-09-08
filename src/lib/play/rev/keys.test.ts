@@ -73,3 +73,7 @@ it('gives every button a key the game reads', () => {
   const known = new Set<number>(Object.values(REV_KEY));
   for (const button of REV_KEY_BUTTONS) expect(known.has(button.key)).toBe(true);
 });
+
+it('offers the Return a kill waits at as a button of its own', () => {
+  expect(REV_KEY_BUTTONS.map((button) => button.key)).toContain(REV_KEY.enter);
+});
