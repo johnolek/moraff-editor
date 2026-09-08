@@ -58,6 +58,9 @@ export interface RevGame {
   fight: RevFight | null;
   /** The lines the loop has printed since the last key, which the tab shows as a box. */
   said: string[];
+  /** 1000:06D2's line of advice, which the loop prints on its own row at the top of every pass
+   *  and which nothing the keys do writes over. */
+  advice: string[];
   /** The line the ladder, the chute and the rope put under the map (1000:56D0). */
   prompt: string | null;
   /** What a fight is saying, which the original draws over the top of the screen rather than in
@@ -108,6 +111,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     chuteLanding: null,
     fight: null,
     said: [],
+    advice: [],
     prompt: null,
     banner: [],
     events: [],
