@@ -1,7 +1,10 @@
 import { monstersMove } from '../../game/mw-port/combat';
 import { innClearPreparation } from '../../game/mw-port/town';
 import { MONSTER_SLOTS } from '../../game/mw-port/stocking';
+import { mwClearMessageLine, type MwGame } from '../../game/mw-port/state';
+import type { ScreenLine } from '../../game/port/state';
 import type { MwTurn } from './engine';
+import { MW_TEXT_COLOUR } from './screens';
 
 /**
  * dig_hole (WORLD.EXE 2000:a19d, mw.c "dig_hole"): D on a square with no ladder digs through the
@@ -24,6 +27,36 @@ const HELD_TIMER = -1200;
 
 /** How many moments the digging takes. */
 const DIGGING_MOMENTS = 6;
+
+/**
+ * The flashing of 'DIGGING... DIGGING...' (exe 2000:a2e5 and 2000:a37c): four times over, the
+ * strip wiped for {@link DIG_BLANK_MS} and the line drawn again for as long as the run asks.
+ *
+ * The second run of four is reached only from the top floor down to floor 15 (exe 2000:a34e
+ * tests the floor against 16), and it holds the line half a second longer.
+ */
+const DIG_FLASHES = 4;
+const DIG_BLANK_MS = 300;
+const DIG_LINE_MS = 1500;
+const DIG_SHALLOW_LINE_MS = 2000;
+const DIG_SECOND_RUN_STOPS_AT = 0x10;
+
+/** How long the line saying a monster has interrupted the dig stands (exe 2000:a2c2), and the
+ *  colour print_text draws it in, which is not the one every other line here uses. */
+const MONSTER_HELPS_MS = 1000;
+const MONSTER_HELPS_COLOUR = 4;
+
+const stripLine = (text: string, colour: number): ScreenLine => ({ text, x: 0, y: 0, font: 0, colour });
+
+/** One run of four flashes, each wiping the strip and drawing the line again. */
+export function digging(game: MwGame, lineMs: number): void {
+  for (let flash = 0; flash < DIG_FLASHES; flash++) {
+    mwClearMessageLine(game);
+    game.delay(DIG_BLANK_MS);
+    game.draw(stripLine('DIGGING... DIGGING...', MW_TEXT_COLOUR)); // DS:308c
+    game.delay(lineMs);
+  }
+}
 
 /** Below this floor the hole is dug upwards instead, and the rescue puts the character one
  *  floor deeper only while they are above it. */
@@ -76,12 +109,12 @@ export async function digAHole(turn: MwTurn): Promise<boolean> {
   for (let slot = 0; slot < MONSTER_SLOTS; slot++) game.monsterTimers[slot] = 0;
   if (session.faceTheMonster() !== -1) {
     game.redrawView = true;
-    game.say('A MONSTER WANTS TO HELP'); // DS:3074
+    mwClearMessageLine(game);
+    game.draw(stripLine('A MONSTER WANTS TO HELP', MONSTER_HELPS_COLOUR)); // DS:3074
+    game.delay(MONSTER_HELPS_MS);
     return false;
   }
-  // The original flashes this four times over, and four more times above floor 16, with a wait
-  // between each. There is no clock here to wait on, so it is printed once.
-  game.say('DIGGING... DIGGING...'); // DS:308c
+  digging(game, DIG_LINE_MS);
   // DS:30a2 30b9 30d1 30e9 3104 311e 3137, DS:20bd
   game.say(
     'BOY THIS IS HARD WORK!',
@@ -95,6 +128,7 @@ export async function digAHole(turn: MwTurn): Promise<boolean> {
   );
   game.pressAnyKey();
   await session.settle();
+  if (game.pc.floor < DIG_SECOND_RUN_STOPS_AT) digging(game, DIG_SHALLOW_LINE_MS);
   session.flushKeys();
   game.engaged = -1;
   // The same floor is entered again before the hole goes anywhere, which is neither the floor

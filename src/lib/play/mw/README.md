@@ -187,8 +187,8 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
 * **No clock in the game.** The game is turn based: a moment passes per action and nothing
   happens while the player thinks. The `delay` calls the original busy-waits in are about the
   screen alone, so a kill's own messages are held for theirs by the Play tab's display timer
-  (`../timed.ts`); the flashes while a hole is dug, whose message the port shows as a box rather
-  than the strip the original draws it on, are still printed once.
+  (`../timed.ts`); the flashes while a hole is dug are kept as
+  well, on the strip the original draws them on.
 * **The map is drawn instead of the 3-D view.** What the four views would have shown is still
   worked out, since it is what the map remembers and what says which monsters can be seen
   (`../memory.ts`); in speedrun and in debug the whole floor and every monster on it are drawn
