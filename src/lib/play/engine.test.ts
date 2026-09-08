@@ -256,12 +256,32 @@ describe('the message box', () => {
     expect(session.box).toEqual(['SECOND BOX']);
   });
 
-  it('takes the one line above the box off when the loop takes its next key', async () => {
+  it('keeps what it last said while the character walks on', async () => {
+    // movecontrol wipes nothing where it takes its key (exe 2000:c82d), so a message the game
+    // never waited on stands in the box until the next box is drawn over it.
+    const start = townWalk();
+    const session = playing(characterFile({ level: 0, dir: 0, ...start }));
+    await settle();
+    const greeting = session.box;
+    expect(greeting[0]).toContain('As you reach the town');
+    await press(session, KEY.arrowUp);
+    expect(session.view().place).toMatchObject({ x: start.x, y: start.y - 1 });
+    expect(session.box).toEqual(greeting);
+    await press(session, KEY.up);
+    expect(session.box[0]).toContain('THERE IS NO LADDER HERE');
+  });
+
+  it('takes the box and the line above it off with the key its wait asks for', async () => {
     const session = playing(characterFile({ level: 0, ...townWalk() }));
     await settle();
     const game = session.game;
+    game.say('YOU FIND...');
     game.draw(messageLine('NOTHING! (HIT ANY KEY)', 8));
+    game.pressAnyKey();
     await press(session, KEY.escape);
+    expect(session.box).toEqual(['YOU FIND...']);
+    await press(session, KEY.escape);
+    expect(session.box).toEqual([]);
     expect(game.screen).toEqual([]);
   });
 });

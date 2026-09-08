@@ -625,12 +625,8 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     // The square the pass was worked out from is the one the record has just replaced, so the
     // pass starts again rather than answering a key with what the character used to be.
     if (key === RECORD_EDITED) continue;
-    session.box = [];
-    // The one line above the box goes with it. A message drawn there that the game does not wipe
-    // itself — "NOTHING! (HIT ANY KEY)" is the one that matters — would otherwise stand over the
-    // map for the rest of the game, since this port draws the floor from the map rather than
-    // repainting the screen the way the original does.
-    clearMessageLine(game);
+    // movecontrol wipes nothing where it takes its key, so the last thing said stands in the box
+    // until a box, a menu or one of the wipes above paints over it.
     const handler = KEY_HANDLERS[key];
     session.run?.dispatched(key);
     if (handler) await handler.run(turn);
