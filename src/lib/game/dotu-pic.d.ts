@@ -13,19 +13,25 @@ export type Rgb = [number, number, number];
 export function vgaToRgb(pal: number[][]): Rgb[];
 
 /**
- * Palette index for a monster picture pixel; -1 means the pixel is not drawn. `row` is the
- * screen row the pixel is drawn on, which three pixel values take their colour from.
+ * Palette index for one picture pixel, or -1 when the pixel is not drawn. `base` is the
+ * colour-set base (a monster's is colorSet << 4) and `row` is the row the pixel lands on,
+ * which only the gradient values look at.
  *
- * In the 0x20 and 0x40 banks (the base is colorSet << 4) the tint pixel is value 28: it is
- * skipped when the tint equals the base and is otherwise a palette entry in its own right,
- * with no base added. Values 29 to 31 in those banks ignore the picture and take their colour
- * from the row, out of the 96..255 gradient bank; 30 counts up it and 29 and 31 count down it.
- * Every other bank substitutes in turn: 17 becomes the tint (skipped when the tint is 0), then
- * 16 becomes 0, then 18 becomes the drawer's second tint, which is always 0. The steps run in
- * that order, so a tint of 16 falls through the next one and lands on the base entry. Every
- * value that was not replaced lands at v + base.
+ * In the 0x20 and 0x40 banks the tint pixel is value 28: it is skipped when the tint equals
+ * the base and is otherwise a palette entry in its own right, with no base added. Values 29 to
+ * 31 in those banks ignore the picture and take their colour from the row, out of the 96..255
+ * gradient bank; 30 counts up it and 29 and 31 count down it. Every other base substitutes in
+ * turn: 17 becomes the tint (skipped when the tint is 0), then 16 becomes 0, then 18 becomes
+ * the drawer's second tint, which is always 0. The steps run in that order, so a tint of 16
+ * falls through the next one and lands on the base entry. Every value that was not replaced
+ * lands at (v + base) & 0xff. Bases 0x100 and 0x101 are the town buildings' two layers.
  */
+export function picturePixelIndex(v: number, row: number, base: number, tint: number): number;
+
+/** The same rule for a monster: base = colorSet << 4, tint = the record's color byte. */
 export function monsterPixelIndex(v: number, tint: number, colorSet: number, row: number): number;
+
+/** The same rule for a town building: layers 0 and 2 use base 0x100, layers 1 and 3 use 0x101. */
 export function buildingPixelIndex(v: number, layer: number): number;
 
 /** `indexFn` is given each pixel's value and the row it is drawn on. */

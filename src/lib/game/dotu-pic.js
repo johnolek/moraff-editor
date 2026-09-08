@@ -44,32 +44,46 @@ export function parsePic(bytes) {
 /** Map a 6-bit VGA palette ([r,g,b] 0..63 each, 256 entries) to 8-bit RGB. */
 export const vgaToRgb = pal => pal.map(([r, g, b]) => [r * 255 / 63 | 0, g * 255 / 63 | 0, b * 255 / 63 | 0]);
 
-/** The drawer's second tint, DS:4fbf, which it substitutes for pixel value 18.  Nothing in the
- *  executable ever writes that word, so it keeps the initial value 0 and pixel value 18 always
- *  ends up on the colour set's base entry, exactly like pixel value 16. */
+/** The drawer's second tint, DS:4fbf, which it substitutes for pixel value 18 (exe 4000:4eb0).
+ *  Nothing in the executable ever writes that word, so it keeps the initial value 0 and pixel
+ *  value 18 always ends up on the colour set's base entry, exactly like pixel value 16. */
 const SECOND_TINT = 0;
 
-/** Final palette index for a MONSTER picture pixel (the game's picture drawer, scale_image2
- *  at exe 4000:4818, with colour set < 0x100).  Returns -1 for "not drawn".
- *  tint = monster.color, colorSet = monster.colorSet, base = colorSet << 4, row = the screen
- *  row the pixel is drawn on.
- *  The 0x20 and 0x40 banks pass values 1..27 straight through to v + base.  Value 28 is the
- *  tint: skipped when the tint equals the base, and otherwise a palette entry in its own
- *  right, with no base added.  Values 29 to 31 ignore the picture entirely and take their
- *  colour from the screen row, out of the 96..255 gradient bank: 30 counts up it and 29 and
- *  31 count down it.
- *  Every other bank substitutes in turn: 17 becomes the tint (skipped when the tint is 0),
- *  then 16 becomes 0, then 18 becomes the second tint.  The steps run in that order, so a
- *  tint of 16 falls through the next one and lands on the base entry.
- *  Every value that was not replaced lands at v + base. */
-export function monsterPixelIndex(v, tint, colorSet, row) {
+/** Final palette index for one picture pixel, or -1 for "not drawn".  This is the whole colour
+ *  rule of the game's picture drawer, scale_image2 (exe 4000:4818); everything that draws a
+ *  .PIC file goes through it.  `base` is the colour-set base the drawer keeps in DS:4fc1 (a
+ *  monster's is colorSet << 4) and `tint` is DS:4fbd.  `row` is the row the pixel lands on,
+ *  which only the gradient values look at; the drawer counts it as the rectangle's top edge
+ *  after it has been scaled to the screen, plus the row within the rectangle (exe 4000:4c7c).
+ *
+ *  Bases 0x20 and 0x40 are one rule written out twice (exe 4000:4bcc and 4000:4ce8).  Values
+ *  1..27 land at v + base (4000:4c5c).  Value 28 is the tint: skipped when the tint equals the
+ *  base (4000:4be5), and otherwise a palette entry in its own right, with no base added
+ *  (4000:4c68).  Values 29 to 31 take no colour from the picture at all -- they read the
+ *  96..255 gradient bank that gradient_palette (exe 4000:1150) builds, at the row wrapped to
+ *  160: 30 counts up the bank (4000:4c76) and 29 and 31 count down it (4000:4c90).
+ *
+ *  Every other base below 0x100, negative ones included, substitutes in turn (exe 4000:4e04):
+ *  17 becomes the tint, and is skipped when the tint is 0 (4000:4e18, 4000:4e93); then 16
+ *  becomes 0 (4000:4e9f); then 18 becomes the second tint (4000:4eaa).  The steps run in that
+ *  order, so a tint of 16 falls through the next one and lands on the base entry.  What is left
+ *  lands at (v + base) & 0xff -- the base is added, as a byte, to a substituted tint as much as
+ *  to anything else (4000:4ebe).
+ *
+ *  Base 0x100 adds 0x20 and base 0x101 adds 0x3f (exe 4000:4ee5 and 4000:4f1e); those two are
+ *  the town buildings.  Any other base draws nothing. */
+export function picturePixelIndex(v, row, base, tint) {
   if (v === 0) return -1;
-  const base = colorSet << 4;
   if (base === 0x20 || base === 0x40) {
     if (v < 28) return v + base;
     if (v === 28) return tint === base ? -1 : tint & 0xff;
     const gradientRow = row % 160;
     return v === 30 ? gradientRow + 0x60 : 0xff - gradientRow;
+  }
+  if (base >= 0x100) {
+    if (base === 0x100) return (v + 0x20) & 0xff;
+    if (base === 0x101) return (v + 0x3f) & 0xff;
+    return -1;
   }
   if (v === 17 && tint === 0) return -1;
   if (v === 17) v = tint;
@@ -77,8 +91,15 @@ export function monsterPixelIndex(v, tint, colorSet, row) {
   if (v === 18) v = SECOND_TINT;
   return (v + base) & 0xff;
 }
-/** Final palette index for a BUILDING picture pixel: layer 0/2 use +0x20, layers 1/3 use +0x3f. */
-export const buildingPixelIndex = (v, layer) => (v === 0 ? -1 : (v + (layer & 1 ? 0x3f : 0x20)) & 0xff);
+
+/** Final palette index for a MONSTER picture pixel: tint = monster.color, colorSet =
+ *  monster.colorSet.  Both are read straight out of the 29-byte monster record before the
+ *  picture is drawn, by draw_map_square (exe 3000:2848) and by monster_manual (exe 3000:c39d). */
+export const monsterPixelIndex = (v, tint, colorSet, row) => picturePixelIndex(v, row, colorSet << 4, tint);
+
+/** Final palette index for a BUILDING picture pixel: load_building_picture (exe 3000:974d) draws
+ *  the four images in order with the bases 0x100, 0x101, 0x100, 0x101. */
+export const buildingPixelIndex = (v, layer) => picturePixelIndex(v, 0, layer & 1 ? 0x101 : 0x100, 0);
 
 /** Render one image into an ImageData-like {width,height,data: Uint8ClampedArray}.
  *  indexFn is given the pixel's value and its row, which some pixel values take their colour

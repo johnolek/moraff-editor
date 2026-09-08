@@ -1,3 +1,4 @@
+import { picturePixelIndex as pixelIndex } from '../../game/dotu-pic.js';
 import { plot, type Frame } from './frame';
 import type { PicRowImage } from './texture';
 
@@ -17,43 +18,14 @@ export interface PixelColours {
   base: number;
   /** DS:4fbd, the monster's own `color` byte. */
   tint: number;
-  /** DS:4fbf, which nothing in the game ever writes, so it is always 0. */
-  tint2?: number;
 }
 
 /** Nothing is drawn for this pixel. */
 export const SKIP = -1;
 
-/**
- * The colour rule as the code has it, which differs from `PICTURES.md` section 4 in three places:
- * values 16 and 18 do have special cases, values 29 to 31 in the 0x20 and 0x40 banks are
- * gradients keyed on the screen row, and outside those two banks the base is added to the tint.
- * `row` is the destination row the pixel lands on, which only the gradients look at.
- */
-export function picturePixelIndex(value: number, row: number, colours: PixelColours): number {
-  const base = colours.base;
-  if (value === 0) return SKIP;
-
-  if (base === 0x20 || base === 0x40) {
-    if (value === 0x1c) return colours.tint === base ? SKIP : colours.tint;
-    if (value === 0x1e) return (row % 160) + 0x60;
-    if (value === 0x1d || value === 0x1f) return 0xff - (row % 160);
-    return (value + base) & 0xff;
-  }
-  if (base >= 0x100) {
-    if (base === 0x100) return (value + 0x20) & 0xff;
-    if (base === 0x101) return (value + 0x3f) & 0xff;
-    return SKIP;
-  }
-
-  if (value === 0x11 && colours.tint === 0) return SKIP;
-  // These cascade: a tint of exactly 16 falls on through and comes out 0.
-  let v = value;
-  if (v === 0x11) v = colours.tint;
-  if (v === 0x10) v = 0;
-  if (v === 0x12) v = colours.tint2 ?? 0;
-  return (v + base) & 0xff;
-}
+/** The drawer's colour rule, which `PICTURES.md` section 4 writes out. */
+export const picturePixelIndex = (value: number, row: number, colours: PixelColours): number =>
+  pixelIndex(value, row, colours.base, colours.tint);
 
 const div = (a: number, b: number): number => Math.trunc(a / b);
 
