@@ -137,6 +137,16 @@ describe("the monster's answer", () => {
     game.pc.stats[4] = 99;
     expect(revMonsterAnswers(game)).toBe(false);
   });
+
+  it('answers on a roll equal to the agility, as the jae at 1000:8E6E does', () => {
+    const game = started({ random: () => 9 } as Rng);
+    revMeetMonster(game, 3);
+    const roll = 9 + game.fight!.attackBonus + 1;
+    game.pc.stats[4] = roll;
+    expect(revMonsterAnswers(game)).toBe(true);
+    game.pc.stats[4] = roll + 1;
+    expect(revMonsterAnswers(game)).toBe(false);
+  });
 });
 
 describe('a kill', () => {

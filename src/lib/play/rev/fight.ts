@@ -189,11 +189,13 @@ export function revSwing(game: RevGame, weapon: RevWeapon): RevSwing {
 /**
  * 1000:8E44: whether the monster swings back. The roll is against the character's agility, and
  * the two monsters of the second dungeon that carry the bonus at 1000:8448 nearly always do.
+ * A roll equal to the agility is enough: the branch at 1000:8E6E is `jae`, where the second
+ * swing's test at 1000:9FD1 is the strict one.
  */
 export function revMonsterAnswers(game: RevGame): boolean {
   const fight = game.fight;
   if (!fight) return false;
-  return game.rng.random(50) + fight.attackBonus + 1 > game.pc.stats[4];
+  return game.rng.random(50) + fight.attackBonus + 1 >= game.pc.stats[4];
 }
 
 /**
