@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import { loadPlayer, savePlayer } from '../game/port/record';
-import { UNFORGIVEN_MAP } from '../map/game';
-import { characterFile, press, settle, townSquare } from './battle.test-support';
+import { characterFile, floorSquare, press, settle, teleporterSquare, townSquare } from './battle.test-support';
 import { runMoveControl, startGame, type CharacterFile, type GameSession } from './engine';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
@@ -237,32 +236,6 @@ function innSquare(): { x: number; y: number } {
     }
   }
   throw new Error('no inn in the town');
-}
-
-/** The first walkable square of a floor with a way out to the north. A replay is only exact when
- *  everything the run met came out of the seed, so a test that replays plants nothing. */
-function floorSquare(level: number): { x: number; y: number } {
-  const rows = UNFORGIVEN_MAP.floor(level, 0);
-  for (let y = 1; y < 100; y++) {
-    for (let x = 1; x < 76; x++) {
-      if (!rows[y][x].solid && rows[y][x].n === 3) return { x, y };
-    }
-  }
-  throw new Error(`no square with a way north on floor ${level}`);
-}
-
-/** The first square of the town whose north side is a module teleporter. */
-function teleporterSquare(): { x: number; y: number } {
-  const rows = UNFORGIVEN_MAP.floor(0, 0);
-  for (let y = 2; y < 100; y++) {
-    for (let x = 2; x < 76; x++) {
-      if (rows[y][x].solid || rows[y][x].n !== 4) continue;
-      if (bundledDungeon.ladder(x, y, 0, 0) !== 0) continue;
-      if (bundledDungeon.townFeature(x, y, 0) !== 0) continue;
-      return { x, y };
-    }
-  }
-  throw new Error('no module teleporter in the town');
 }
 
 describe('the milestones a run records', () => {

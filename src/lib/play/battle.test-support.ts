@@ -55,6 +55,32 @@ export function townSquare(): { x: number; y: number } {
   throw new Error('no walkable town square');
 }
 
+/** The first walkable square of a floor of module 0 with a way out to the north. */
+export function floorSquare(level: number): { x: number; y: number } {
+  const rows: MapSquare[][] = UNFORGIVEN_MAP.floor(level, 0);
+  for (let y = 1; y < 100; y++) {
+    for (let x = 1; x < 76; x++) {
+      if (!rows[y][x].solid && rows[y][x].n === 3) return { x, y };
+    }
+  }
+  throw new Error(`no square with a way north on floor ${level}`);
+}
+
+/** The first square of the town whose north side is a module teleporter and which has nothing
+ *  else on it. */
+export function teleporterSquare(): { x: number; y: number } {
+  const rows: MapSquare[][] = UNFORGIVEN_MAP.floor(0, 0);
+  for (let y = 2; y < 100; y++) {
+    for (let x = 2; x < 76; x++) {
+      if (rows[y][x].solid || rows[y][x].n !== 4) continue;
+      if (bundledDungeon.ladder(x, y, 0, 0) !== 0) continue;
+      if (bundledDungeon.townFeature(x, y, 0) !== 0) continue;
+      return { x, y };
+    }
+  }
+  throw new Error('no module teleporter in the town');
+}
+
 /**
  * A character on a dungeon floor with a monster in front of them, which is where a monster can
  * fight back: call_check_eng leaves the town alone.
@@ -64,15 +90,7 @@ export function onAFloorFacingAMonster(
   level: number,
   overrides: Partial<PlayerCharacter> = {},
 ): GameSession {
-  const rows: MapSquare[][] = UNFORGIVEN_MAP.floor(level, 0);
-  const start = (() => {
-    for (let y = 1; y < 100; y++) {
-      for (let x = 1; x < 76; x++) {
-        if (!rows[y][x].solid && rows[y][x].n === 3) return { x, y };
-      }
-    }
-    throw new Error(`no square with a way north on floor ${level}`);
-  })();
+  const start = floorSquare(level);
   const session = startGame(characterFile({ level, dir: 0, ...start, ...overrides }), rng);
   void runMoveControl(session);
   const planted = session.game.monsters[0];
