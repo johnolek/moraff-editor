@@ -37,6 +37,15 @@ export const TABLET_WIDTH = 37;
  * 40 on. The seam that leaves down the middle is the tablet's own look.
  */
 const SLAB = { top: 0x122, bottom: 0x398, split: 799 };
+/**
+ * How far up or down the screen the slab and its lines are moved, which is what DS:2412 asks for
+ * (exe 3000:9042): 0 leaves the tablet across the middle, 1 and 2 lift it by 0x122 so that its
+ * top edge is the top of the screen, and 3 drops it by 0xfa.
+ *
+ * The monster manual sets DS:2412 to 2 before it reads its own words off the slab (exe 3000:c4d4),
+ * which is what leaves the bottom half of that screen free for the five monsters.
+ */
+export const TABLET_RAISED = -0x122;
 const SLAB_LEFT = { x1: 1, x2: SLAB.split, srcX1: 0, srcX2: 0xd2 };
 const SLAB_RIGHT = { x1: 800, x2: 0x63e, srcX1: 0x28, srcX2: 0xff };
 
@@ -60,7 +69,7 @@ const SLAB_BASE = 0x23;
  * the port uses the 12 `FUN_3000_342d` (exe 3000:342d) gives a plain wall face, so the tablet
  * comes out the same every time it is drawn.
  */
-const SLAB_TINT = 12;
+export const SLAB_TINT = 12;
 
 /** Where the four lines stand and how far each is spread, out of the 1600 by 1200 grid. */
 const TEXT_X = 100;
@@ -78,6 +87,36 @@ const TEXT_PASSES = [
   { colour: 14, pen: 8 },
   { colour: 15, pen: 4 },
 ];
+
+/**
+ * The slab on its own, without the words on it: the two halves of the section's wall image 5
+ * (exe 3000:90a8 and 3000:90d4), moved by `offset` and tinted by whatever DS:4fbd was left
+ * holding when `FUN_3000_9026` was called.
+ */
+export function drawTabletSlab(
+  frame: Frame,
+  screen: TabletScreen,
+  wall: PicRowImage[] | null,
+  offset: number,
+  tint: number,
+): void {
+  const slab = wall?.[TABLET_SLAB_IMAGE] ?? null;
+  if (!slab) return;
+  const options = { screen, colours: { base: SLAB_BASE, tint } };
+  for (const half of [SLAB_LEFT, SLAB_RIGHT]) {
+    scaleImage(
+      frame,
+      half.x1,
+      SLAB.top + offset,
+      half.x2,
+      SLAB.bottom + offset,
+      slab,
+      half.srcX1,
+      half.srcX2,
+      options,
+    );
+  }
+}
 
 /** The screen the tablet is drawn on, in pixels. */
 export interface TabletScreen {
@@ -100,13 +139,7 @@ export function drawTablet(
   wall: PicRowImage[] | null,
 ): void {
   fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, 0);
-  const slab = wall?.[TABLET_SLAB_IMAGE] ?? null;
-  if (slab) {
-    const options = { screen, colours: { base: SLAB_BASE, tint: SLAB_TINT } };
-    for (const half of [SLAB_LEFT, SLAB_RIGHT]) {
-      scaleImage(frame, half.x1, SLAB.top, half.x2, SLAB.bottom, slab, half.srcX1, half.srcX2, options);
-    }
-  }
+  drawTabletSlab(frame, screen, wall, 0, SLAB_TINT);
   lines.slice(0, TABLET_LINES).forEach((line, index) => {
     if (line.trim() === '') return;
     const text = line.slice(0, TABLET_WIDTH).padEnd(TABLET_WIDTH);
