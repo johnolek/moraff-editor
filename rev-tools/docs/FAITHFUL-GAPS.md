@@ -5,14 +5,15 @@ Moraff's Revenge, read against the annotated BASIC of `DUNSMALL.EXE` in Septembe
 below. `dotu-tools/docs/FAITHFUL-GAPS.md` says what this list is and is not; the departures the
 port makes on purpose are the last section of `src/lib/play/rev/README.md`.
 
-One of these is a rule of the game rather than of the screen. It is first, and it is the only
-entry in any of the three games' lists that changes what a run does.
+Everything left here is a matter of the screen. The two entries that were rules of the game — a
+disease costing a characteristic as you walk, and rings of health healing you as you walk — are
+ported (MORF-232 and MORF-233), and none of the three games' lists now holds anything that
+changes what a run does.
 
 ## The list
 
 | what the player sees or feels | where it comes from | state |
 |---|---|---|
-| **Rings of health heal you as you walk**, one point per ring per pass, up to your maximum. The port lists the rings and heals nobody. | 1000:4028–4068, capped at 1000:3B02. | filed MORF-233 — **changes the game** |
 | **The dead monster's picture stays under YOU KILLED IT!!** Both that and HIT RETURN are printed straight across the close-up, and nothing rubs the picture out until the treasure clears the screen. The port takes the picture away the instant the monster dies. | `LOCATE 16,24` at 1000:A4C7/A4D8 and `LOCATE 17,26` at 1000:A4F9, over the close-up at (225, 112). 1000:6BAF sees the emptied slot and returns without erasing; the only routine that blanks that box, 1000:58F7, is never reached from the kill. | filed MORF-234 |
 | **A fight is written straight over the map.** The hit line and the damage land on rows 11 and 10 in the middle of the screen, the monster's answer and every drain run down from row 20, and MONSTER BLOCKS WAY appears above the FRONT box. The port collects the lot into the message rows at the top. | 1000:8D00–8DDE and 1000:8D5D / 8D91 / 8DBE; 1000:9DAF, 9DC1, 9DE8 and the drains at 9E7C, 9EC6, 9F05, 9F28, 9F34; 1000:33EA and 1000:340C. | filed MORF-235 |
 | **Almost every message is held on the screen** — two seconds for SOUND ON, NOT ENOUGH SPELL POINTS, a wand with no effect and what a battle item did; four for the fountain, the locate spell and every refusal in the store, the temple and the inns; eight back to back when the Flea Bag Inn makes you sick. The port prints and carries on. | 1000:2F1A is `T=TIMER: WHILE TIMER-T < 2: WEND` and 1000:2F35 calls it twice. Sites listed on the item, the four seconds a disease drain holds its line for (1000:40EB) among them. | filed MORF-238 |

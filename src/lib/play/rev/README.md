@@ -43,7 +43,7 @@ BASIC.
   `attack.ts`, `kill.ts`, `town.ts`, `death.ts`, `advice.ts`, `help.ts`, `pause.ts`,
   `settings.ts` — so that two people can add two keys without touching the same file.
 * **`pass.ts`** — 1000:3FFC, what the game does on the far side of every key whatever the key
-  was. The disease drain lives here.
+  was: the rings of health healing and the disease drain.
 * **The magic** — `spells.ts` (the twenty-four spells), `items.ts` (the twelve magic items, the
   six pills and the nine wands), `treasure.ts` (what a kill drops), `fountain.ts`. `magic.ts`
   names the record numbers all four read, `tables.ts` is `F1.COM` and `F2.COM`, and `desk.ts` is
@@ -206,7 +206,7 @@ it stands in for:
 | --- | --- | --- |
 | A | drops all the coins carried, which is what makes a character light | 1000:1918 |
 
-## Three things read out of the code that the documents had otherwise
+## Four things read out of the code that the documents had otherwise
 
 * **`rev-tools/docs/MONSTERS.md` said a monster walks through walls.** The gate at `1000:758D` is
   not a hash: it is the wall rule itself, with the character's own generation as the divisor and
@@ -225,3 +225,9 @@ it stands in for:
   character catches something, and 1000:4076 adds one to it on every pass. So the drain lands as
   it reaches 100, 200 and so on; the count is saved with the character, and the cure putting it
   back to 0 is what starts the next disease from the beginning.
+* **The rings of health do not heal on every pass.** The gap list had them worth a point each
+  per pass and nothing else; the test at 1000:4049 also wants DGROUP B4C2 to be zero, and that
+  flag is set by the loop's own re-entry after a key (1000:0636), by a turn, by the statistics
+  screen and by a move a wall stopped. So the rings heal on a step, on a step the edge of the
+  floor stopped, and on C, P, T and W — the keys that call the per-key routine themselves — and
+  on nothing else. A character cannot rest by tapping a key.
