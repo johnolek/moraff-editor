@@ -11,6 +11,7 @@ import {
   MW_COLOURS,
   MW_EAST_VIEW,
   MW_FRONT_VIEW,
+  MW_SCREEN_PIXELS,
   MW_VIEWS,
   MW_VIEW_EAST,
   MW_VIEW_NORTH,
@@ -146,6 +147,38 @@ describe('a synthetic corridor', () => {
     renderMwView(frame, scene(rows, { x: 5, y: 6 }, { bricks: 2 }), MW_FRONT_VIEW, MW_VIEW_NORTH);
     const seen = new Set(frame.pixels);
     expect(seen.has(MW_COLOURS.message)).toBe(true); // 15, the edge colour DS:439a holds
+  });
+
+  it('paints mode 9\'s ground out of the sixteen entries above 47', () => {
+    const frame = newFrame(MW_SCREEN_PIXELS.width, MW_SCREEN_PIXELS.height);
+    renderMwView(
+      frame,
+      scene(rows, { x: 5, y: 6 }, { videoMode: 9, screen: MW_SCREEN_PIXELS }),
+      MW_FRONT_VIEW,
+      MW_VIEW_NORTH,
+    );
+    const seen = [...new Set(frame.pixels)].filter((entry) => entry >= 0x20);
+    expect(seen.length).toBeGreaterThan(1);
+    for (const entry of seen) expect(entry).toBeLessThan(64);
+    // The chequer's own two entries belong to the 640 by 480 mode and are never written here.
+    expect(new Set(frame.pixels).has(0x1a)).toBe(false);
+    expect(new Set(frame.pixels).has(0x1b)).toBe(false);
+  });
+
+  it('dithers mode 9\'s ground two pixels at a time', () => {
+    const frame = newFrame(MW_SCREEN_PIXELS.width, MW_SCREEN_PIXELS.height);
+    renderMwView(
+      frame,
+      scene(rows, { x: 5, y: 6 }, { videoMode: 9, screen: MW_SCREEN_PIXELS }),
+      MW_FRONT_VIEW,
+      MW_VIEW_NORTH,
+    );
+    // Every band lays the row's own colour on its odd pixels and the band's own on its even
+    // ones, so the middle band of a row well below the horizon alternates between the two.
+    const across = [...Array(20).keys()].map((i) => pixelAt(frame, 592 + i, 355));
+    expect(new Set(across).size).toBe(2);
+    expect(across.filter((_, i) => i % 2 === 0)).toEqual(Array(10).fill(across[0]));
+    expect(across.filter((_, i) => i % 2 === 1)).toEqual(Array(10).fill(across[1]));
   });
 
   it('blacks the whole view instead of the ground on a two-colour display', () => {

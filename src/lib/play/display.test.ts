@@ -14,8 +14,11 @@ import {
   MESSAGE_BAR_BOX,
   MESSAGE_BOX,
   SCREEN_BOXES,
+  SCREEN_MODE,
+  SCREEN_PIXELS,
   statusLines,
   SCREEN_PIXELS,
+  VIDEO_MODES,
   ZOOM_CELL,
   ZOOM_COLUMNS,
   ZOOM_ROWS,
@@ -23,6 +26,7 @@ import {
   zoomMapSquare,
   zoomMapWindow,
 } from './display';
+import { MW_VIDEO_MODES } from './mw/view3d/screen';
 
 describe('the boxes on the screen', () => {
   it('keeps every one inside the screen', () => {
@@ -112,6 +116,30 @@ describe('the status block', () => {
       expect(line.y).toBeGreaterThan(0x40e);
       expect(line.y).toBeLessThan(0x4ac);
     }
+  });
+});
+
+describe('the video modes', () => {
+  it('has the twelve the jump table dispatches on', () => {
+    expect(VIDEO_MODES).toHaveLength(12);
+    expect(VIDEO_MODES.map((mode) => mode.mode)).toEqual([...Array(12).keys()]);
+  });
+
+  it('is played in mode 9, the 1024 by 768 in 256 colours', () => {
+    expect(SCREEN_MODE).toEqual({ mode: 9, width: 1024, height: 768, colours: 256 });
+    expect(SCREEN_PIXELS).toEqual({ width: 1024, height: 768 });
+  });
+
+  it('offers the same twelve as Moraff\'s World, in the same order', () => {
+    expect(VIDEO_MODES).toEqual(MW_VIDEO_MODES);
+  });
+});
+
+describe('the boxes on a 1024 by 768 screen', () => {
+  it('scales the same table a 640 by 480 screen uses', () => {
+    const onScreen = (value: number) => Math.trunc(((SCREEN_PIXELS.width - 1) * value) / 0x63f);
+    expect(onScreen(MESSAGE_BOX.left)).toBe(588);
+    expect(onScreen(MESSAGE_BOX.right)).toBe(1023);
   });
 });
 
