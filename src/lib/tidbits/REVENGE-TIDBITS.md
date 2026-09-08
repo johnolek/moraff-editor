@@ -317,11 +317,15 @@ the same square on two different levels — everywhere below the town, at any ra
 In the code: [fold](source:ts/revmap.js/fold) and [feature](source:ts/revmap.js/feature), from
 the folding at `1000:5649` and the search at `1000:552B`.
 
-### A chute drops one level, and the false floor is the same chute again
+### A chute drops one, two or three levels, and the false floor is the same chute again
 
-Falling down a chute prints its line, adds one to your level and leaves your column and row
-alone — you land on the same square, one floor down — and the game remembers the three
-coordinates it left you on.
+Falling down a chute prints its line and leaves your column and row alone — you land on the same
+square, further down — and the game remembers the three coordinates it left you on. How much
+further is worked out from the square you fell through, in three tests that each add a level and
+gate the next: one level always, a second when your column plus your row is even, and a third when
+the level you have then reached plus your column is even and that level is over 25. So an odd
+column plus row always falls exactly one. There is a fourth test as well, and it can never pass:
+it asks for a level that is its own half.
 
 That memory is the whole of the false floor. Every step asks what is on the square just stepped
 onto, and where the answer is nothing at all **and** the square is the one a chute dropped you on,
@@ -329,8 +333,9 @@ the game prints "False floor." and offers you the go-down prompt. So a false flo
 feature of the dungeon: it is the square under a chute, and stepping through it is the same fall
 carrying on.
 
-In the code: [falseFloor](source:ts/revmap.js/falseFloor), from the chute at `1000:3428`, the
-level it adds at `1000:3491`, the square it remembers at `1000:356F` and the test at `1000:064D`
+In the code: [chuteLanding](source:ts/revmap.js/chuteLanding) and
+[falseFloor](source:ts/revmap.js/falseFloor), from the chute at `1000:3428`, the levels it adds at
+`1000:3491` to `1000:355A`, the square it remembers at `1000:356F` and the test at `1000:064D`
 (`rev-tools/docs/DUNGEON.md` section 8).
 
 ## Monsters
