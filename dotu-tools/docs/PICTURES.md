@@ -89,6 +89,18 @@ building a different table is copied over 32..95 (`DS:4df4` -> 32..63, `DS:4e54`
 (`m<module>_s<part>_dungeon|town`) and `data/building-palette-banks.json` the two shop
 tables.
 
+The last thing `set_palette` does before the building tables is dim the wall colours by the
+options menu's colour setting, DS:4df2, which the menu calls the SUBDUED-BRIGHT COLOR SWITCH
+and which is a four-step cycle rather than a switch.  Setting 0 leaves the palette as it is;
+1, 2 and 3 blend each of entries 16..31, and 80..95 outside a water section, further toward
+grey, working each channel out from the channels already rewritten.  The data segment starts
+DS:4df2 at 1, but `roll_char` (exe 3000:4c77) writes 0 over it before a character exists and
+`load_player` restores it from the copy saved with the character at DS:c18f, so **0 is what
+a game is actually drawn in** and is what `palettes.json` holds.  Reading the data segment's
+1 instead is what made Module I's wall material a dull olive rather than the vivid lime the
+game shows.  `dimPalette` in `dotu-pic.js` is the port of the loop, checked against the
+emulator on all twenty dungeon palettes and all three blending settings.
+
 How the palettes were obtained: instead of reimplementing `set_palette` by hand, the
 function was run inside Ghidra's p-code emulator (`reference/scripts/EmuPalette.py`) with
 the globals it reads (module, floor, colour count, resolution mode, water and town flags)

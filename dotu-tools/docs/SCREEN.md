@@ -212,15 +212,26 @@ same twelve modes in the same order as Moraff's World's.
 
 Two things change with it beyond the scaling.
 
-The letters. Above 730 pixels across (exe 4000:0bda in `pfont`, 4000:0ddc in `psfont`) neither
-routine draws a .FNT glyph: both hand the line to `FUN_4000_069a` (exe 4000:069a), which draws
-the vector font of `src/lib/play/view3d/stroke-font.ts`. That is just as well, because mode 9
-asks `load_font` for `320x200.fnt` and its four-by-six metrics (exe 2000:1c6e), which at 1024
-by 768 would be unreadable. Each character is spread rather than stepped: `pfont` works the
-right edge out as `x + 1600 / 80 * length` for font 0 (the divisors at DS:4dda are 80, 50 and
-28, narrower than Moraff's World's 68, 42 and 24), a line is `1100 / 36` units tall, and the
-pen is 3 units — two pixels each way at this size. The site itself sets these screens in a web
-font laid over the drawing, so only the render script draws the real face.
+The letters. Above 730 pixels across (exe 4000:0bda in `pfont`, 4000:0ddc in `psfont`) both
+routines hand the line to `FUN_4000_069a` (exe 4000:069a), which draws the vector font of
+`src/lib/play/view3d/stroke-font.ts`, rather than a .FNT glyph. Each character is spread
+rather than stepped: `pfont` works the right edge out as `x + 1600 / 80 * length` for font 0
+(the divisors at DS:4dda are 80, 50 and 28, narrower than Moraff's World's 68, 42 and 24), a
+line is `1100 / 36` units tall, and the pen is 3 units — two pixels each way at this size. The
+site itself sets these screens in a web font laid over the drawing, so only the render script
+draws the real face.
+
+One group of lines is the exception, and it is the reason the key menu looks unlike everything
+else on the screen. `psfont` takes the vector path only while DS:4dec is set, and the key menu
+(`FUN_4000_667b`, exe 4000:667b) clears that word around its thirteen body lines and sets it
+again before it draws the key letters. So the menu's own words fall through to `FUN_4000_09a5`
+(exe 4000:09a5), the .FNT blitter, which plots one screen pixel per set bit with no scaling at
+all. Mode 9 asks `load_font` for `320x200.fnt` (exe 2000:1c6e) and reads it with the first row
+of boxes at DS:4d22 and DS:4d5e, and the menu asks for the third of those boxes, so the face is
+ten pixels wide and fourteen rows tall — small, thin, and perfectly readable next to the bold
+strokes of the key letters and the status block. It is also why the menu's first line reads
+`1>` when the string at DS:65dd is ` ) PREP SPELLS`: in that face a parenthesis is two straight
+diagonals meeting at a point. `src/lib/play/view3d/menu-font.ts` is the port of it.
 
 The ground of the 3-D view, but only when the wall pictures could not be loaded. Mode 9 has
 its own path there (exe 3000:13ab, 154d, 1592, 15ee for the floor and 19f5, 1b97, 1bdc, 1c38
