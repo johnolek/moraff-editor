@@ -70,8 +70,8 @@ export class MwFloorMonsters {
     game.monsterMap.fill(MW_SQUARE_EMPTY);
     if (!rolled) {
       // The re-visit branches write every one of the 145 slots onto the grid whatever its hit
-      // points, so the monsters killed on this floor — blanked to (0, 0) by monster_killed — all
-      // land on the top-left corner, where the last of them wins the square.
+      // points, so the monsters killed on this floor — moved to (100, 100) by monster_killed —
+      // all land on grid byte 8,100, the square (20, 101), where the last of them wins it.
       for (let slot = 0; slot < table.monsters.length; slot++) {
         const monster = table.monsters[slot];
         mwSetOccupant(game, monster.x, monster.y, slot);
@@ -115,10 +115,9 @@ export function mwEnterLevel(
  * The monsters standing on the floor, as the map draws them: every slot the occupancy grid holds
  * at its own square, which is what the automap reads to draw one.
  *
- * A slot with no hit points left is skipped. The game leaves a killed monster's blanked slot on
- * the grid at (0, 0) when its floor is visited again, and that square is rock the character can
- * never stand on, so drawing it would put a monster in the corner of the map that nothing can
- * reach.
+ * A slot with no hit points left is skipped. The game puts a killed monster's slot back on the
+ * grid at the square (20, 101) when its floor is visited again, because (100, 100) on an 80-wide
+ * grid is byte 8,100, and drawing it there would show a pile of corpses nothing can fight.
  */
 export function mwDrawnMonsters(game: MwGame): StockedMonster[] {
   const drawn: StockedMonster[] = [];
