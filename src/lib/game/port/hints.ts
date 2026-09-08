@@ -61,7 +61,9 @@ export function giveHint(index: number, text: string = uhText): string[] {
  * The original reads four lines per message from the start of the file and keeps the last four
  * it read, then pads each line with spaces out to 37 characters — which blanks whatever the
  * previous message left in the buffer, and would cut a longer line off at 37. No line in
- * UH2.BIN is that long, so the padding never shows and nothing is ever lost.
+ * UH2.BIN is that long, so nothing is ever lost. The lines come back unpadded here; the padding
+ * matters only to the tablet the words are drawn on, which spreads a line across a fixed width,
+ * and `src/lib/play/tablet.ts` puts it back for that.
  */
 export function tabletMessage(index: number, text: string = uh2Text): string[] {
   const file = openHintFile(text);

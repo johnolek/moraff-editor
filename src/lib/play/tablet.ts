@@ -1,0 +1,119 @@
+import type { Frame } from './view3d/frame';
+import { fillRect } from './view3d/frame';
+import { scaleImage } from './view3d/scale';
+import { drawStrokeLine } from './view3d/stroke-font';
+import type { PicRowImage } from './view3d/texture';
+
+/**
+ * `FUN_3000_9026` (exe 3000:9026, unf.c "FUN_3000_9026"): the stone tablet the little snake's
+ * words are read on, which is a slab of the section's own wall material across the middle of the
+ * screen with four lines of the big font cut into it.
+ *
+ * `tablet_message` (exe 3000:931c) is what fills those four lines out of UH2.BIN, and
+ * `src/lib/game/port/hints.ts` is the port of that. Everything here is the drawing.
+ */
+
+/** How many lines the tablet has, which is what UH2.BIN gives it. */
+export const TABLET_LINES = 4;
+
+/**
+ * How wide a line is by the time `tablet_message` (exe 3000:931c) hands it over: it writes spaces
+ * from character 37 back to the end of the string and puts the terminator at 37, so every line is
+ * exactly that long whatever it holds.
+ *
+ * That padding is what makes the tablet's letters the same size on every line. `FUN_4000_069a`
+ * spreads a line across the width it is given, so a short line with the spaces taken off would be
+ * drawn in letters two or three times the size of a full one's.
+ */
+export const TABLET_WIDTH = 37;
+
+/**
+ * The slab, in the 1600 by 1200 grid: a band across the middle of the screen, drawn in two halves
+ * out of the same picture so that its right half repeats the left rather than stretching it
+ * (exe 3000:90a8 and 3000:90d4).
+ *
+ * The halves overlap by a pixel at 799 and 800, and each takes its own window of the picture's
+ * 256 columns: the left one everything up to column 210 and the right one everything from column
+ * 40 on. The seam that leaves down the middle is the tablet's own look.
+ */
+const SLAB = { top: 0x122, bottom: 0x398, split: 799 };
+const SLAB_LEFT = { x1: 1, x2: SLAB.split, srcX1: 0, srcX2: 0xd2 };
+const SLAB_RIGHT = { x1: 800, x2: 0x63e, srcX1: 0x28, srcX2: 0xff };
+
+/**
+ * `ufwall<section>.pic` image 5, which is the third of the section's three wall materials: the
+ * picture table `load_section_pictures` (exe 2000:372c) fills at DS:c3d7 puts the ten wall images
+ * four bytes apart, and DS:c3eb is the sixth of them.
+ */
+export const TABLET_SLAB_IMAGE = 5;
+
+/**
+ * `FUN_3000_9004` (exe 3000:9004): the colour-set base the slab is drawn at in a 256-colour mode,
+ * which puts the picture's values in the palette's picture bank rather than in the wall colours
+ * the same image wears in the corridor.
+ */
+const SLAB_BASE = 0x23;
+
+/**
+ * The tint the slab's value-17 pixels take. `FUN_3000_9026` sets no tint of its own, so the
+ * original draws the slab in whatever DS:4fbd was left holding by the last picture on the screen;
+ * the port uses the 12 `FUN_3000_342d` (exe 3000:342d) gives a plain wall face, so the tablet
+ * comes out the same every time it is drawn.
+ */
+const SLAB_TINT = 12;
+
+/** Where the four lines stand and how far each is spread, out of the 1600 by 1200 grid. */
+const TEXT_X = 100;
+const TEXT_TO = 0x5dc;
+const TEXT_TOP = 0x159;
+const TEXT_BOTTOM = 0x1a9;
+const TEXT_STEP = 0x8c;
+
+/**
+ * Each line is drawn twice, which is what cuts it into the stone: a fat dark stroke first and a
+ * thinner bright one over it. The pens are the two floats at DS:2e06 and DS:25f5, and the colours
+ * the 14 and 15 `FUN_3000_9026` sets DS:c6ba to in a 256-colour mode.
+ */
+const TEXT_PASSES = [
+  { colour: 14, pen: 8 },
+  { colour: 15, pen: 4 },
+];
+
+/** The screen the tablet is drawn on, in pixels. */
+export interface TabletScreen {
+  width: number;
+  height: number;
+}
+
+/**
+ * The tablet, over a screen of its own.
+ *
+ * The original blacks the whole palette before it draws the slab and fades it back up afterwards
+ * (`FUN_4000_5b3f` and `FUN_4000_5b91`, exe 4000:5b3f and 4000:5b91), which is why the tablet is
+ * read on a dark screen; the port has no palette to fade, so it fills the display with colour 0
+ * and leaves the slab standing on it.
+ */
+export function drawTablet(
+  frame: Frame,
+  screen: TabletScreen,
+  lines: string[],
+  wall: PicRowImage[] | null,
+): void {
+  fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, 0);
+  const slab = wall?.[TABLET_SLAB_IMAGE] ?? null;
+  if (slab) {
+    const options = { screen, colours: { base: SLAB_BASE, tint: SLAB_TINT } };
+    for (const half of [SLAB_LEFT, SLAB_RIGHT]) {
+      scaleImage(frame, half.x1, SLAB.top, half.x2, SLAB.bottom, slab, half.srcX1, half.srcX2, options);
+    }
+  }
+  lines.slice(0, TABLET_LINES).forEach((line, index) => {
+    if (line.trim() === '') return;
+    const text = line.slice(0, TABLET_WIDTH).padEnd(TABLET_WIDTH);
+    const top = TEXT_TOP + index * TEXT_STEP;
+    const bottom = TEXT_BOTTOM + index * TEXT_STEP;
+    for (const pass of TEXT_PASSES) {
+      drawStrokeLine(frame, screen, 'dotu', text, TEXT_X, top, TEXT_TO, bottom, pass.colour, pass.pen);
+    }
+  });
+}
