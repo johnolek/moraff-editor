@@ -10,6 +10,7 @@
   import type { StockedMonster } from './stocking';
   import { drawTeleporters, teleporterHue, teleporterSegments } from './teleporters';
   import { centerOn, ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
+  import { renderWallTexture, wallTexture } from './wall-texture';
   import { youAlpha } from './you';
 
   /** The marker's square, and the facing it is drawn pointing along where it has one. */
@@ -56,10 +57,13 @@
     route?: Route | null;
     /** Details shown in a box beside the cursor square. */
     tooltip?: Tooltip | null;
+    /** Whether the rock behind the floor is laid with the wall texture the 3-D view would draw
+     *  this floor with. */
+    wallBackground?: boolean;
     onselect?: (square: Point) => void;
   }
 
-  let { game, rows, floor, dungeon, monsters = [], bounds, explored = null, discovered = null, cursor = $bindable(null), highlight = null, you = null, focus = null, marks = [], selected = null, route = null, tooltip = null, onselect }: Props = $props();
+  let { game, rows, floor, dungeon, monsters = [], bounds, explored = null, discovered = null, cursor = $bindable(null), highlight = null, you = null, focus = null, marks = [], selected = null, route = null, tooltip = null, wallBackground = true, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -140,6 +144,49 @@
     },
   };
 
+  // How much of the wall texture is left showing behind the floor: enough to read the stone,
+  // not enough to compete with the map drawn over it.
+  const WALL_TEXTURE_DIM = 0.7;
+
+  // One tile of each floor's wall texture, drawn once and kept: a floor lays the same tile over
+  // and over, and coming back to a floor finds it already drawn.
+  const tiles = new Map<string, HTMLCanvasElement>();
+
+  /** One tile of the wall texture this floor's rock is laid with, or null when the floor has
+   *  no wall texture or the site does not bundle its picture. */
+  function wallTile(floor: number, dungeon: number): HTMLCanvasElement | null {
+    if (!wallBackground) return null;
+    const texture = wallTexture(game.id, dungeon, floor);
+    if (!texture) return null;
+    const cached = tiles.get(texture.key);
+    if (cached) return cached;
+    const image = renderWallTexture(texture);
+    if (!image) return null;
+    const tile = document.createElement('canvas');
+    tile.width = image.width;
+    tile.height = image.height;
+    const ctx = tile.getContext('2d')!;
+    ctx.putImageData(new ImageData(image.data, image.width, image.height), 0, 0);
+    // The game's own background colour shows through the holes in a texture, and the dimming
+    // then goes over both.
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = palette.background;
+    ctx.fillRect(0, 0, tile.width, tile.height);
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = `rgba(0, 0, 0, ${WALL_TEXTURE_DIM})`;
+    ctx.fillRect(0, 0, tile.width, tile.height);
+    tiles.set(texture.key, tile);
+    return tile;
+  }
+
+  /** The tile laid out across the canvas, moving with the floor as it is panned. */
+  function wallPattern(ctx: CanvasRenderingContext2D, tile: HTMLCanvasElement, view: Viewport): CanvasPattern | undefined {
+    const pattern = ctx.createPattern(tile, 'repeat');
+    if (!pattern) return undefined;
+    pattern.setTransform(new DOMMatrix().translateSelf(view.originX % tile.width, view.originY % tile.height));
+    return pattern;
+  }
+
   // The floor itself is drawn once into a static layer whenever rows, view or size change;
   // every frame then blits it and draws the overlays (teleporters, marks, route, cursor) on
   // top. Dependencies are read here, synchronously, so the effect re-runs when they change.
@@ -153,7 +200,7 @@
   }
 
   $effect(() => {
-    const next: Scene = { game, rows, floor, view, width: size.width, height: size.height, explored, discovered };
+    const next: Scene = { game, rows, floor, dungeon, view, width: size.width, height: size.height, explored, discovered };
     staticStale = true;
     scene = { ...untrack(overlays), ...next };
     scheduleRender();
@@ -181,6 +228,7 @@
     game: MapGame;
     rows: MapSquare[][];
     floor: number;
+    dungeon: number;
     view: Viewport;
     width: number;
     height: number;
@@ -207,7 +255,7 @@
   function render() {
     // The effect can run once more after the tab hides and bind:this has gone back to null.
     if (!canvas || !scene || !scene.width || !scene.height) return;
-    const { game, rows, floor, view, width, height, explored, discovered, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
+    const { game, rows, floor, dungeon, view, width, height, explored, discovered, cursor, highlight, you, marks, monsters, selected, route, teleporters } = scene;
     const dpr = window.devicePixelRatio || 1;
     const pixelWidth = Math.round(width * dpr);
     const pixelHeight = Math.round(height * dpr);
@@ -220,7 +268,9 @@
       staticLayer.height = pixelHeight;
       const staticCtx = staticLayer.getContext('2d')!;
       staticCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null, game, discovered, explored: explored ? (x, y) => isExplored(explored, x, y) : undefined });
+      const tile = wallTile(floor, dungeon);
+      const background = tile ? wallPattern(staticCtx, tile, view) : undefined;
+      drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null, game, background, discovered, explored: explored ? (x, y) => isExplored(explored, x, y) : undefined });
       staticStale = false;
     }
     const ctx = canvas.getContext('2d')!;

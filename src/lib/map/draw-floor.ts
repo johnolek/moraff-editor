@@ -16,6 +16,9 @@ export interface DrawOptions extends Viewport {
   floor: number;
   /** Hue for teleporter sides, or null to leave them to an animated overlay. */
   teleporterHue: number | null;
+  /** What to fill behind the floor, where the rock is, instead of the game's own background
+   *  colour: the map lays the floor's wall texture there. */
+  background?: string | CanvasPattern;
   /** Whether a loaded explored map has seen a square, when one is loaded. */
   explored?: (x: number, y: number) => boolean;
   /** The map a character being played has discovered, when the floor is drawn as the game's own
@@ -45,7 +48,7 @@ export const LABEL_MIN_CELL = 20;
  *  Square edges are snapped to whole pixels so lines stay crisp at any zoom. */
 export function drawFloor(ctx: CanvasRenderingContext2D, rows: MapSquare[][], options: DrawOptions): void {
   const { cell, originX, originY, width, height, game } = options;
-  ctx.fillStyle = palette.background;
+  ctx.fillStyle = options.background ?? palette.background;
   ctx.fillRect(0, 0, width, height);
 
   const firstX = Math.max(0, Math.floor(-originX / cell));
