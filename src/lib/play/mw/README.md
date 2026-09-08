@@ -35,9 +35,42 @@ tab, the map canvas, the screen renderer and the roster.
 * **`advice.ts`** — the little mouse: eight pieces of advice and fourteen lessons.
 * **`panel.ts`, `MwPanel.svelte`** — the numbers the game keeps and never prints, in the column
   beside the map, which `../mode.ts` shows in debug alone. **`MwPortrait.svelte`** — the picture of the monster in front of the character.
-* **`MwPlay.svelte`** — the tab: the map, the four corners of the game's own screen laid over it,
-  the screens and the row of keys. `src/App.svelte` picks it or Dungeons of the Unforgiven's by
-  the game showing.
+* **`view3d/`** — the 3-D views and the screen they sit on; see below. **`MwScreen.svelte`**
+  paints them and lays the game's own lines of text over them.
+* **`MwPlay.svelte`** — the tab: the game's screen or the top-down map, whichever the switch is
+  set to, the screens and the row of keys. `src/App.svelte` picks it or Dungeons of the
+  Unforgiven's by the game showing.
+
+## The 3-D views
+
+`view3d/` draws what `FUN_3000_1a08` (WORLD.EXE 3000:1a08) draws: the four compass views, the
+walls, the ground, the monsters and the ladder marks. It paints palette indices into a plain
+buffer and touches no DOM, so the same code runs under vitest and in
+`../../../mw-tools/reference/render_screen.mjs`, which writes a whole screen to a PNG.
+
+Most of it is not written here. Moraff's World and Dungeons of the Unforgiven share one view
+engine — the later game's routines are the earlier one's, three years on — so `../view3d/` is
+imported wholesale for the parts that agree:
+
+* `frame.ts`, `texture.ts` and `scale.ts` — the buffer, the wall texture mapper and the picture
+  blitter. `draw_wall_picture` (exe 3000:04d3) and `draw_picture` (exe 3000:0105) are the same
+  routines as the later game's, down to the 390-to-399 clamp and the run-endpoint mapping.
+* `flood.ts` — the recursive frustum split the view walks the floor with. `FUN_3000_0b3b` and
+  `FUN_3000_12ca` agree with the later game's pair down to the 650-call budget and the detail
+  that the left half works its texture percentages out in floating point where the right half
+  uses integers.
+* `geometry.ts` — the 35-square reach, the slot narrowing, the snap to a half-integer.
+
+What is this game's own is written beside it:
+
+* **`screen.ts`** — the four view rectangles and everything else the screen is laid out from.
+* **`wall.ts`** — `FUN_3000_31f3`: WALL.PIC's two images rather than the later game's ten, and
+  palette entries 16 to 31 rather than 80 to 95.
+* **`geometry.ts`** — the two places the projection differs: which way the sideways rounding
+  branches, and that there is no 0.15 step.
+* **`render.ts`** — `FUN_3000_1a08` itself, and the chevron ground the later game replaced with
+  perspective tiles.
+* **`pictures.ts`, `browser.ts`** — which image is the door, the wall and the two ladder marks.
 
 ## Waiting for a key
 
