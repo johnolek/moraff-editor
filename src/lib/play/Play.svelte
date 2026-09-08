@@ -10,6 +10,7 @@
   import PixelText from '../ui/PixelText.svelte';
   import Panel from './Panel.svelte';
   import Portrait from './Portrait.svelte';
+  import View3d from './View3d.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
   import { downloadRunLog } from './export-run';
   import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
@@ -213,6 +214,13 @@
   {:else}
     <div class="stage">
       <div class="map">
+        {#if view.place.floor > 0}
+          <View3d
+            rows={view.rows}
+            place={view.place}
+            monsters={monstersDrawn(mode, view)}
+            height={session.game.pc.height} />
+        {/if}
         <FloorCanvas
           bind:this={canvas}
           game={UNFORGIVEN_MAP}
