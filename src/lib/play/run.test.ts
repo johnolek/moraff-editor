@@ -7,10 +7,14 @@ import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
 import { mwCharacterFile } from './mw/engine.test';
 import { MW_KEY, mwTurn } from './mw/keys';
+import { runFileName } from './export-run';
 import {
+  actionWords,
   countsAsAction,
   decodeRecord,
   ENGINE_COMMIT,
+  milestoneNote,
+  milestoneWords,
   replayRun,
   RunRecorder,
   RUN_LOG_VERSION,
@@ -379,5 +383,38 @@ describe('replaying a run', () => {
     });
     expect(again.time).toBe(session.game.movesTaken);
     expect(again.actions).toBe(log.actions);
+  });
+});
+
+describe('the words a run is shown with', () => {
+  it('says one action rather than one actions', () => {
+    expect(actionWords(0)).toBe('0 actions');
+    expect(actionWords(1)).toBe('1 action');
+    expect(actionWords(12)).toBe('12 actions');
+  });
+
+  it('names each kind of milestone', () => {
+    const at = { actions: 4, time: 12, floor: 3 };
+    const dungeonName = (dungeon: number) => `Module ${dungeon}`;
+    expect(milestoneWords({ kind: 'boss', which: 0, ...at }, dungeonName)).toBe('Boss 1 beaten');
+    expect(milestoneWords({ kind: 'level', which: 5, ...at }, dungeonName)).toBe('Level 5');
+    expect(milestoneWords({ kind: 'dungeon', which: 2, ...at }, dungeonName)).toBe('Module 2');
+    expect(milestoneWords({ kind: 'death', which: 0, ...at }, dungeonName)).toBe('Died');
+    expect(milestoneWords({ kind: 'win', which: 0, ...at }, dungeonName)).toBe('Won');
+  });
+
+  it('says where in the run a milestone happened', () => {
+    expect(milestoneNote({ kind: 'level', which: 5, actions: 1, time: 12, floor: 3 }, '12 seconds')).toBe(
+      'After 1 action and 12 seconds, on floor 3.',
+    );
+    expect(milestoneNote({ kind: 'level', which: 5, actions: 4, time: 12, floor: 0 }, '12 moves')).toBe(
+      'After 4 actions and 12 moves, in the town.',
+    );
+  });
+
+  it('names the file a run downloads as after the character', () => {
+    const log = new RunRecorder({ game: 'unforgiven', name: "GRIM WALD'S", record: new Uint8Array(4) }).log();
+    expect(runFileName(log)).toBe('grim-wald-s-run.json');
+    expect(runFileName({ ...log, name: '   ' })).toBe('character-run.json');
   });
 });

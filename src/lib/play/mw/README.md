@@ -55,6 +55,18 @@ A ported function that is **not** async — a fight, a drop, a town menu — can
 `await session.settle()` in the loop is where it is taken, and where the boxes the function
 printed are shown one after another.
 
+## The run
+
+Every game here is recorded the same way Dungeons of the Unforgiven's is, by the same `../run.ts`:
+the record play began with, the seed, the engine's commit and every input in order, with the
+action count and the milestones beside them. `../README.md` has the whole of it. Two things are
+this game's own:
+
+* Its four arrows each face the character and step them, so all four are actions; the turn where
+  the character stands, which `mwTurn` does outside the loop because the game has no key for it,
+  costs nothing and is an input of its own in the log rather than a key.
+* Its milestones come from `monster_killed`'s eight quest-boss bits and from the inn's level-up.
+
 ## Where the words go
 
 Moraff's World writes in two places, and this port keeps them apart the way the screen does.

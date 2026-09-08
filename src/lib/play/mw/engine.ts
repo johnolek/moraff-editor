@@ -42,7 +42,7 @@ import { loadMwPlayer, saveMwPlayer } from './record';
 import { mwMessageBoxLines, MW_MESSAGE_BOX } from './screens';
 import { TimedScreens } from '../timed';
 import { quitAndSave } from './quit';
-import type { RunRecorder } from '../run';
+import type { RunRecorder, RunSummary } from '../run';
 import { buildingUnder } from './town';
 import { explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
 
@@ -122,6 +122,8 @@ export interface MwPlayView {
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
+  /** How the run stands, or null for a game nobody is recording. */
+  run: RunSummary | null;
 }
 
 /**
@@ -513,6 +515,7 @@ export class MwGameSession {
       engaged: game.engaged === -1 ? null : (drawn.find((monster) => monster.slot === game.engaged) ?? null),
       over: this.over,
       dead: this.dead,
+      run: this.run?.summary() ?? null,
     };
   }
 }

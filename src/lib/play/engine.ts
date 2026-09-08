@@ -31,7 +31,7 @@ import { DEFAULT_PLAY_MODE, type PlayMode } from './mode';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
-import type { RunRecorder } from './run';
+import type { RunRecorder, RunSummary } from './run';
 import { MESSAGE_BOX_LINES, messageBoxLines } from './screens';
 import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
@@ -124,6 +124,8 @@ export interface PlayView {
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
+  /** How the run stands, or null for a game nobody is recording. */
+  run: RunSummary | null;
 }
 
 /**
@@ -450,6 +452,7 @@ export class GameSession {
       ahead: game.engagedAhead !== -1,
       over: this.over,
       dead: this.dead,
+      run: this.run?.summary() ?? null,
     };
   }
 }

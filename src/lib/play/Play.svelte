@@ -10,8 +10,9 @@
   import Panel from './Panel.svelte';
   import Portrait from './Portrait.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
-  import { RunRecorder } from './run';
+  import { downloadRunLog } from './export-run';
   import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
+  import { actionWords, milestoneNote, milestoneWords, RunRecorder } from './run';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
   import { monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from './mode';
   import { MENU_LINE_STEP, MENU_SPREAD_TO, MENU_TOP, MENU_X } from '../game/port/screens';
@@ -156,6 +157,15 @@
     for (const one of keys) playing.press(one);
   }
 
+  /** The run as it stands, as a file. */
+  function exportRun() {
+    const run = session?.run;
+    if (run) downloadRunLog(run.log());
+  }
+
+  /** The game's own clock, which the panel calls "spent down here". */
+  const clockWords = (seconds: number) => `${seconds} second${seconds === 1 ? '' : 's'}`;
+
   function isTyping(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
@@ -220,6 +230,17 @@
           <span>{view.place.x}, {view.place.y}</span>
           <span>{['North', 'South', 'West', 'East'][view.place.dir]}</span>
         </div>
+        {#if view.run}
+          <div class="run">
+            <span class="actions">{actionWords(view.run.actions)}</span>
+            {#each view.run.milestones as milestone}
+              <span class="milestone" title={milestoneNote(milestone, clockWords(milestone.time))}>
+                {milestoneWords(milestone, UNFORGIVEN_MAP.dungeonName)}
+              </span>
+            {/each}
+            <button type="button" onclick={exportRun}>Export run</button>
+          </div>
+        {/if}
         <GameScreen lines={view.box} window={BOX_WINDOW} />
         {#if view.banner.length > 0}
           <div class="banner">
@@ -369,7 +390,27 @@
     font-size: 24px;
     color: var(--accent);
   }
+  .run {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .run .actions {
+    color: var(--ink);
+  }
+  .run .milestone {
+    padding: 1px 6px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .run button {
+    margin-left: auto;
+  }
   .over-box button,
+  .run button,
   .keys button {
     padding: 6px 12px;
     border: 1px solid var(--line);

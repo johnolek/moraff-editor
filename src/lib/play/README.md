@@ -37,6 +37,40 @@ something the original does, a comment says so.
 * **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
   prints, beside the map, and the picture of the monster in front of the character over them.
 
+## The run
+
+Every game is a run, and a run is written down as it is played, so that a claimed ending can be
+checked by playing it again rather than believed. `run.ts` is all of it and nothing in it draws,
+so it runs under Node as well as in a tab.
+
+* **The log** — the character's record as play began, the seed the run's generator was started
+  from, the commit the engine was built from, and every input in order. That is the whole of a
+  run: both games are turn based and every random number comes from the one generator, so the
+  same three things put through the same engine make the same game again.
+* **The inputs** are what the game *read*, not what the player pressed, which is why they are
+  taken in `GameSession.key` rather than in `press`: a key typed while the character is swinging
+  is thrown away by the flush at the end of the swing and the game never sees it. Ctrl-F's own
+  swings, which the loop takes without reading the keyboard, are written down where the loop
+  takes them, and Moraff's World's turn where the character stands, which is no key of that
+  game's, is an input of its own.
+* **The actions** — every key the loop hands to a handler that spends a moment or opens a
+  building or a spell, which is the number a leaderboard orders runs by. `UNFORGIVEN_ACTIONS` and
+  `MORAFFS_WORLD_ACTIONS` name the handler behind every key in them.
+* **The milestones** — a boss killed, a level gained, a module or dungeon moved to, a death, the
+  win, each with the action count and the game time it happened at. The three the ported routines
+  alone know about arrive as `game.events`; the module or dungeon is read from the game itself, so
+  every way of changing one is caught.
+* **`replayRun(log)`** builds a session from the log and presses its keys in order, and hands back
+  the record, the place, the clock, the actions and the milestones it ended with. A replay never
+  raises the repeat-fight flag, since those swings are in the log already.
+* **`export-run.ts`** is the download, which is the one part of this that touches the page.
+
+The engine commit comes from `__ENGINE_COMMIT__`, which `vite.config.ts` defines from `git
+rev-parse HEAD`; vitest reads the same config, so a test sees it too.
+
+A run is only replayable from its own beginning to its own end: a record the Save Editor writes
+while the game is being played is not in the log, so a run edited mid-play cannot be checked.
+
 ## Waiting for a key
 
 The original blocks on `getch` in the middle of its loop. A browser cannot, so the `Game` grew

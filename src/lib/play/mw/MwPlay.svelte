@@ -11,7 +11,8 @@
   import MwPanel from './MwPanel.svelte';
   import MwPortrait from './MwPortrait.svelte';
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
-  import { RunRecorder } from '../run';
+  import { downloadRunLog } from '../export-run';
+  import { actionWords, milestoneNote, milestoneWords, RunRecorder } from '../run';
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import { monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from '../mode';
@@ -211,6 +212,16 @@
     else mwTurn(playing, arrow.dir);
   }
 
+  /** The run as it stands, as a file. */
+  function exportRun() {
+    const run = session?.run;
+    if (run) downloadRunLog(run.log());
+  }
+
+  /** The game's own clock, which the panel calls "moves spent". It counts in fractions of a move,
+   *  and the panel rounds it the same way. */
+  const clockWords = (moves: number) => `${Math.round(moves)} move${Math.round(moves) === 1 ? '' : 's'}`;
+
   function isTyping(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
     return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
@@ -298,6 +309,17 @@
           <span>{view.place.x}, {view.place.y}</span>
           <span>{['North', 'South', 'West', 'East'][view.place.dir]}</span>
         </div>
+        {#if view.run}
+          <div class="run">
+            <span class="actions">{actionWords(view.run.actions)}</span>
+            {#each view.run.milestones as milestone}
+              <span class="milestone" title={milestoneNote(milestone, clockWords(milestone.time))}>
+                {milestoneWords(milestone, MORAFFS_WORLD_MAP.dungeonName)}
+              </span>
+            {/each}
+            <button type="button" onclick={exportRun}>Export run</button>
+          </div>
+        {/if}
         <div class="keys">
           <div class="key-note">Play mode:</div>
           <div class="styles">
@@ -492,7 +514,27 @@
     font-size: 24px;
     color: var(--accent);
   }
+  .run {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .run .actions {
+    color: var(--ink);
+  }
+  .run .milestone {
+    padding: 1px 6px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .run button {
+    margin-left: auto;
+  }
   .over-box button,
+  .run button,
   .keys button {
     padding: 6px 12px;
     border: 1px solid var(--line);

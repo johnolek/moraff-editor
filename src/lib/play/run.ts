@@ -151,6 +151,35 @@ function runEvent(event: { kind: string }): RunEvent | null {
   return event as RunEvent;
 }
 
+/** How a run stands, for the line the Play tab shows. */
+export interface RunSummary {
+  actions: number;
+  milestones: Milestone[];
+}
+
+/** "1 action", "12 actions": how much of a run has been spent. */
+export function actionWords(actions: number): string {
+  return `${actions} action${actions === 1 ? '' : 's'}`;
+}
+
+/**
+ * The few words a milestone shows as. `dungeonName` is the game's own name for a module or a
+ * dungeon, which `src/lib/map/game.ts` gives for each game.
+ */
+export function milestoneWords(milestone: Milestone, dungeonName: (dungeon: number) => string): string {
+  if (milestone.kind === 'boss') return `Boss ${milestone.which + 1} beaten`;
+  if (milestone.kind === 'level') return `Level ${milestone.which}`;
+  if (milestone.kind === 'dungeon') return dungeonName(milestone.which);
+  return milestone.kind === 'win' ? 'Won' : 'Died';
+}
+
+/** Where in the run a milestone happened. `clock` is the game's own words for its time, such as
+ *  "12 seconds" or "12 moves". */
+export function milestoneNote(milestone: Milestone, clock: string): string {
+  const where = milestone.floor === 0 ? 'in the town' : `on floor ${milestone.floor}`;
+  return `After ${actionWords(milestone.actions)} and ${clock}, ${where}.`;
+}
+
 /** One game, played, as it is written down and handed about. */
 export interface RunLog {
   version: number;
@@ -315,8 +344,14 @@ export class RunRecorder {
     }
   }
 
-  log(): RunLog {
+  /** How the run stands, which is what the Play tab draws. */
+  summary(): RunSummary {
     this.note();
+    return { actions: this.actions, milestones: this.milestones.map((milestone) => ({ ...milestone })) };
+  }
+
+  log(): RunLog {
+    const summary = this.summary();
     return {
       version: RUN_LOG_VERSION,
       engine: ENGINE_COMMIT,
@@ -327,8 +362,8 @@ export class RunRecorder {
       seed: this.seed,
       record: encodeRecord(this.record),
       inputs: [...this.inputs],
-      actions: this.actions,
-      milestones: this.milestones.map((milestone) => ({ ...milestone })),
+      actions: summary.actions,
+      milestones: summary.milestones,
     };
   }
 }
