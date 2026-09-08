@@ -14,7 +14,7 @@ import {
   mwSpellRecord,
 } from './spells';
 import type { MwCharacter, MwGame } from './state';
-import { mwOccupantAt } from './state';
+import { MW_SQUARE_PLAYER, mwOccupantAt } from './state';
 
 /**
  * The screens Moraff's World puts up between one move and the next: the vital statistics, the
@@ -467,15 +467,43 @@ export function mwMonsterViewLines(
   ];
 }
 
+/** One of the four squares beside the character, with the corner its numbers are printed in. */
+export interface MwMonsterViewSide {
+  slot: number;
+  corner: MwMonsterViewCorner;
+}
+
 /**
- * FUN_2000_8b3f (WORLD.EXE 2000:8b3f) calling FUN_2000_892d: the values over the view of one of
- * the four squares next to the character. It draws nothing when nothing is standing there.
+ * The tail of FUN_2000_8b3f (WORLD.EXE 2000:8b3f, mw.c "FUN_2000_8b3f"): having drawn the four
+ * views, it asks each of the four sides in turn whether the wall between is open air and whether
+ * anything is standing there, and calls FUN_2000_892d for every side that is both. So a character
+ * with monsters on two sides gets both sets of numbers, over both views, at once.
+ *
+ * The order is the function's own — north, south, west, east — and each side reads the wall the
+ * way it does: the north and the west are sides of the character's own square, the south and the
+ * east the matching sides of the neighbour beyond them.
  */
-export function drawMonsterInfo(game: MwGame, monsterX: number, monsterY: number): void {
-  const slot = mwOccupantAt(game, monsterX, monsterY);
-  if (slot === -1) return;
-  const corner = mwMonsterViewCorner(game, monsterX, monsterY);
-  for (const line of mwMonsterViewLines(game, slot, corner)) game.draw(line);
+export function mwMonsterViewSides(game: MwGame): MwMonsterViewSide[] {
+  const pc = game.pc;
+  const open = (x: number, y: number, hv: 0 | 1) =>
+    game.wallSide(x, y, hv, pc.floor, pc.dungeon) === 3;
+  const sides: { corner: MwMonsterViewCorner; x: number; y: number; open: boolean }[] = [
+    { corner: MW_MONSTER_VIEW_CORNERS.north, x: pc.x, y: pc.y - 1, open: open(pc.x, pc.y, 1) },
+    { corner: MW_MONSTER_VIEW_CORNERS.south, x: pc.x, y: pc.y + 1, open: open(pc.x, pc.y + 1, 1) },
+    { corner: MW_MONSTER_VIEW_CORNERS.west, x: pc.x - 1, y: pc.y, open: open(pc.x, pc.y, 0) },
+    { corner: MW_MONSTER_VIEW_CORNERS.east, x: pc.x + 1, y: pc.y, open: open(pc.x + 1, pc.y, 0) },
+  ];
+  return sides.flatMap((side) => {
+    if (!side.open) return [];
+    const slot = mwOccupantAt(game, side.x, side.y);
+    if (slot === -1 || slot === MW_SQUARE_PLAYER) return [];
+    return [{ slot, corner: side.corner }];
+  });
+}
+
+/** Every line those sides print, which is what the play screen lays over the views. */
+export function mwMonsterViewSideLines(game: MwGame): ScreenLine[] {
+  return mwMonsterViewSides(game).flatMap((side) => mwMonsterViewLines(game, side.slot, side.corner));
 }
 
 /**

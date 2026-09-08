@@ -15,7 +15,8 @@ import {
   MW_STATUS_BLOCK,
   applySpellCategory,
   drawHelpMenu,
-  drawMonsterInfo,
+  mwMonsterViewSideLines,
+  mwMonsterViewSides,
   drawSpellCategoryMenu,
   drawSpellGrid,
   drawSpellsInForce,
@@ -182,20 +183,19 @@ describe('mwSpellTimers', () => {
   });
 });
 
-describe('drawMonsterInfo', () => {
-  const nearby = (dx: number, dy: number) => {
+describe('mwMonsterViewSides', () => {
+  const nearby = (...at: { dx: number; dy: number }[]) => {
     const game = newMwGame({
       pc: { x: 20, y: 30, floor: 5 },
-      monsters: [{ x: 20 + dx, y: 30 + dy, hp: 46, type: 1, depth: 5 }],
+      monsters: at.map((side) => ({ x: 20 + side.dx, y: 30 + side.dy, hp: 46, type: 1, depth: 5 })),
     });
-    mwSetOccupant(game, 20 + dx, 30 + dy, 0);
+    at.forEach((side, slot) => mwSetOccupant(game, 20 + side.dx, 30 + side.dy, slot));
     return game;
   };
 
   it('gives the level, the hit points and the experience', () => {
-    const game = nearby(0, -1);
-    drawMonsterInfo(game, 20, 29);
-    expect(game.messages).toEqual([
+    const game = nearby({ dx: 0, dy: -1 });
+    expect(mwMonsterViewSideLines(game).map((line) => line.text)).toEqual([
       'LEVEL:5',
       'HP:46',
       `EXP. VALUE: ${(5 * 1.23 ** 5 + 6).toFixed(0).padEnd(20)}`,
@@ -208,38 +208,48 @@ describe('drawMonsterInfo', () => {
       monsters: [{ x: 20, y: 29, hp: 8, type: 1, depth: 20 }],
     });
     mwSetOccupant(game, 20, 29, 0);
-    drawMonsterInfo(game, 20, 29);
-    expect(game.messages[0]).toBe('LEV:20');
-    expect(game.messages[2].startsWith('EXP: ')).toBe(true);
+    const lines = mwMonsterViewSideLines(game);
+    expect(lines[0].text).toBe('LEV:20');
+    expect(lines[2].text.startsWith('EXP: ')).toBe(true);
   });
 
   it('puts the hit points on the side of the screen the monster is on', () => {
-    const west = nearby(-1, 0);
-    drawMonsterInfo(west, 19, 30);
-    expect(west.screen.find((line) => line.text.startsWith('HP:'))).toMatchObject({
+    const west = mwMonsterViewSideLines(nearby({ dx: -1, dy: 0 }));
+    expect(west.find((line) => line.text.startsWith('HP:'))).toMatchObject({
       x: 0x11d + 0xdb,
       y: 0x1b2,
     });
 
-    const east = nearby(1, 0);
-    drawMonsterInfo(east, 21, 30);
-    expect(east.screen.find((line) => line.text.startsWith('HP:'))).toMatchObject({
+    const east = mwMonsterViewSideLines(nearby({ dx: 1, dy: 0 }));
+    expect(east.find((line) => line.text.startsWith('HP:'))).toMatchObject({
       x: 0x48b + 0xdb,
       y: 0x1b2,
     });
   });
 
-  it('draws nothing when the square is empty', () => {
-    const game = newMwGame({ pc: { x: 20, y: 30 } });
-    drawMonsterInfo(game, 20, 29);
-    expect(game.messages).toEqual([]);
+  it('draws nothing when every side is empty', () => {
+    expect(mwMonsterViewSideLines(newMwGame({ pc: { x: 20, y: 30 } }))).toEqual([]);
   });
 
   it('hangs the level and the experience off the corner of that side of the screen', () => {
-    const south = nearby(0, 1);
-    drawMonsterInfo(south, 20, 31);
-    expect(south.screen[0]).toMatchObject({ x: 0x2d4, y: 0x25f });
-    expect(south.screen[2]).toMatchObject({ x: 0x2d4, y: 0x25f + 0x201 });
+    const south = mwMonsterViewSideLines(nearby({ dx: 0, dy: 1 }));
+    expect(south[0]).toMatchObject({ x: 0x2d4, y: 0x25f });
+    expect(south[2]).toMatchObject({ x: 0x2d4, y: 0x25f + 0x201 });
+  });
+
+  it('answers every side a monster stands on at once, in the order the game asks', () => {
+    const game = nearby({ dx: 0, dy: -1 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 });
+    expect(mwMonsterViewSides(game)).toEqual([
+      { slot: 0, corner: MW_MONSTER_VIEW_CORNERS.north },
+      { slot: 1, corner: MW_MONSTER_VIEW_CORNERS.south },
+      { slot: 2, corner: MW_MONSTER_VIEW_CORNERS.west },
+    ]);
+  });
+
+  it('leaves out a side with anything but open air in the way', () => {
+    const game = nearby({ dx: 0, dy: -1 });
+    game.wallSide = (_x, y) => (y === 30 ? 1 : 3);
+    expect(mwMonsterViewSides(game)).toEqual([]);
   });
 });
 
