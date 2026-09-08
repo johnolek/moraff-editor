@@ -1,6 +1,7 @@
 import { killMonster } from '../game/port/kills';
 import { printMenusWhile } from './boxes';
 import type { GameSession } from './engine';
+import { drawnMonsters } from './floor';
 
 /**
  * movecontrol (exe 2000:c308, unf.c "movecontrol") at 2000:db6d: the check the loop makes once
@@ -10,8 +11,8 @@ import type { GameSession } from './engine';
  * ran out, so a swing, a spell and a hand grenade all end the same way. `kill_monster` is what
  * hands over the experience, the drops and a section boss's reward, and it asks its own menus.
  *
- * The original draws the monster's picture over the map one last time first, which this port has
- * no portraits for.
+ * The skull and crossbones goes on first (exe 2000:dafb), painted into the rectangle the view
+ * drew the monster in, and stands there until the loop draws the views again.
  *
  * Every box kill_monster prints stops for a key, and the drops ask menus in between, so the kill
  * is run through {@link printMenusWhile} rather than straight through.
@@ -19,6 +20,10 @@ import type { GameSession } from './engine';
 export async function killTheDead(session: GameSession): Promise<void> {
   const game = session.game;
   if (game.engaged === -1 || game.monsters[game.engaged].hp >= 1) return;
+  // The original paints the skull only where a monster really was drawn, which it knows from the
+  // rectangle draw_3d_view kept for that view (exe 3000:2756 blanks it when the square is empty).
+  const drawn = drawnMonsters(game, game.pc.level).find((monster) => monster.slot === game.engaged);
+  if (drawn) session.killed = { dir: game.enemyDir, monsterId: drawn.monsterId };
   await printMenusWhile(session, () => killMonster(game));
   // The repeat-fight flag comes down with the monster (exe 2000:dbe3), so Ctrl-F swings at one
   // monster rather than at whatever walks up next.

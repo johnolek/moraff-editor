@@ -3,9 +3,17 @@ import { describe, expect, it } from 'vitest';
 import type { MapSquare } from '../../map/game';
 import { newFrame, type Frame } from './frame';
 import { AHEAD_VIEW } from './geometry';
-import { floorTilePair, NO_PICTURES, type ViewPictures } from './pictures';
+import { floorTilePair, NO_PICTURES, OVERLAY_SKULL, type ViewPictures } from './pictures';
+import { scaleImage } from './scale';
 import { parsePicRows } from './texture';
-import { VIEW_BLOCKED, renderFourViews, renderView, type ViewMonster, type ViewScene } from './render';
+import {
+  VIEW_BLOCKED,
+  engagedMonsterRect,
+  renderFourViews,
+  renderView,
+  type ViewMonster,
+  type ViewScene,
+} from './render';
 import { FOUR_VIEWS } from './views';
 import { WALL_PALETTE } from './wall';
 
@@ -284,5 +292,82 @@ describe('which pair of floor tiles a square is laid with', () => {
 
   it('changes it when they turn from a north-south way to an east-west one', () => {
     expect(floorTilePair(5, 5, 0)).not.toBe(floorTilePair(5, 5, 2));
+  });
+});
+
+describe('the skull over a monster you have just killed', () => {
+  const overlayPictures = parsePicRows(readFileSync('src/lib/game/pics/overlay.pic'));
+  const monster: ViewMonster = { x: 5, y: 4, picnum: 0, builtin: true, colour: 20, colorSet: 2 };
+
+  /** A crossroads, so that the skull can be asked for in any of the four views. */
+  function crossroads(): MapSquare[][] {
+    const rows = blankFloor();
+    for (const [x, y] of [[5, 5], [5, 4], [6, 5], [4, 5], [5, 6]]) {
+      rows[y][x] = { ...shut(), n: 3, s: 3, w: 3, e: 3 };
+    }
+    return rows;
+  }
+
+  /** The four views with the overlay file loaded, and the monster already off the grid — which
+   *  is where `kill_monster` leaves it while its own boxes are still going up. */
+  function fourViews(over: Partial<ViewScene> = {}): Frame {
+    const frame = newFrame(SCREEN.width, SCREEN.height);
+    const overlay = { ...pictures(), overlay: overlayPictures };
+    renderFourViews(frame, scene(crossroads(), { pictures: overlay, monsters: [], ...over }), 0);
+    return frame;
+  }
+
+  it('is not drawn while nothing has been killed', () => {
+    expect([...fourViews().pixels]).toEqual([...fourViews({ killed: null }).pixels]);
+  });
+
+  it('draws the dead monster and the skull the other way round over it', () => {
+    const expected = fourViews();
+    const rect = engagedMonsterRect(AHEAD_VIEW);
+    scaleImage(expected, rect.left, rect.top, rect.right, rect.bottom, monsterPictures[2], 0, 255, {
+      screen: SCREEN,
+      colours: { base: monster.colorSet << 4, tint: monster.colour },
+    });
+    scaleImage(expected, rect.right, rect.top, rect.left, rect.bottom, overlayPictures[OVERLAY_SKULL], 0, 255, {
+      screen: SCREEN,
+      colours: { base: 0x20, tint: 0 },
+    });
+    expect([...fourViews({ killed: { dir: 0, monster } }).pixels]).toEqual([...expected.pixels]);
+  });
+
+  it('is not the same drawing as a skull left the way round the picture under it', () => {
+    const plain = fourViews();
+    const rect = engagedMonsterRect(AHEAD_VIEW);
+    scaleImage(plain, rect.left, rect.top, rect.right, rect.bottom, monsterPictures[2], 0, 255, {
+      screen: SCREEN,
+      colours: { base: monster.colorSet << 4, tint: monster.colour },
+    });
+    scaleImage(plain, rect.left, rect.top, rect.right, rect.bottom, overlayPictures[OVERLAY_SKULL], 0, 255, {
+      screen: SCREEN,
+      colours: { base: 0x20, tint: 0 },
+    });
+    expect([...fourViews({ killed: { dir: 0, monster } }).pixels]).not.toEqual([...plain.pixels]);
+  });
+
+  it('goes into the view the direction it was killed in names', () => {
+    // The character faces north, so a monster killed to the west was drawn in the LEFT ARROW view.
+    const west = fourViews({ killed: { dir: 2, monster: { ...monster, x: 4, y: 5 } } });
+    const ahead = engagedMonsterRect(AHEAD_VIEW);
+    const left = engagedMonsterRect(FOUR_VIEWS[1].rect);
+    const box = (rect: typeof ahead) => {
+      const toX = (x: number) => Math.trunc(((SCREEN.width - 1) * x) / 1599);
+      const toY = (y: number) => Math.trunc(((SCREEN.height - 1) * y) / 1199);
+      return coloursIn(west, toX(rect.left), toY(rect.top), toX(rect.right), toY(rect.bottom));
+    };
+    expect([...box(left)].some((colour) => colour >= 0x2c && colour <= 0x33)).toBe(true);
+    expect([...box(ahead)].some((colour) => colour >= 0x2c && colour <= 0x33)).toBe(false);
+  });
+
+  it('draws nothing at all when the bundle has no overlay file', () => {
+    const bare = newFrame(SCREEN.width, SCREEN.height);
+    renderFourViews(bare, scene(crossroads(), { monsters: [], killed: { dir: 0, monster } }), 0);
+    const empty = newFrame(SCREEN.width, SCREEN.height);
+    renderFourViews(empty, scene(crossroads(), { monsters: [] }), 0);
+    expect([...bare.pixels]).toEqual([...empty.pixels]);
   });
 });

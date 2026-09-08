@@ -3,7 +3,7 @@
 Everything the game draws that is not a line or a font glyph comes from 33 `.PIC` files:
 `ufmon.pic` (ladders + the 7 built-in monster pictures), `ufmon1.pic`..`ufmon20.pic` (the
 four monsters of each section), `ufwall1.pic`..`ufwall4.pic` (3-D wall textures, doors,
-the teleporter sign, floor/ceiling tiles), `overlay.pic` (the water overlay), and the six
+the teleporter sign, floor/ceiling tiles), `overlay.pic` (the water overlay and the skull a kill draws), and the six
 town buildings (`store`, `armoury`, `weaponry`, `temple`, `bank`, `inn`).
 
 Decoders: `reference/unfpic.py` (`parse_pic(bytes) -> (images, consumed)`) and

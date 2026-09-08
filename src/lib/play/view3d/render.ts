@@ -10,7 +10,7 @@ import {
   type ViewFrame,
   type ViewRect,
 } from './geometry';
-import { FLOOR_TILES, floorTilePair } from './pictures';
+import { FLOOR_TILES, floorTilePair, OVERLAY_SKULL } from './pictures';
 import { scaleImage, type ScaleOptions } from './scale';
 import { drawWall, DETAIL_TEXTURED, type WallScene } from './wall';
 import { FOUR_VIEWS, viewFacing } from './views';
@@ -45,6 +45,18 @@ export interface ViewScene extends Omit<WallScene, 'facing'> {
   water: boolean;
   /** The coin flip the view mirrors the monster ahead on, fresh for every draw. */
   random?: () => number;
+  /** The monster whose hit points have just run out, whose skull is up. */
+  killed?: KilledMonster | null;
+}
+
+/**
+ * A monster killed but not yet cleared off the screen: the skull `movecontrol` paints over it,
+ * and the picture underneath the skull.
+ */
+export interface KilledMonster {
+  /** DS:049d: which of the four ways the monster was found standing in. */
+  dir: number;
+  monster: ViewMonster;
 }
 
 /** The view came back blocked: the character is facing a wall from right up against it. */
@@ -122,6 +134,43 @@ export function renderView(frame: Frame, scene: ViewScene, rect: ViewRect, facin
 export function renderFourViews(frame: Frame, scene: ViewScene, facing: number): void {
   const party = { ...scene, dir: facing };
   for (const view of FOUR_VIEWS) renderView(frame, party, view.rect, viewFacing(view.name, facing));
+  drawSkull(frame, party, facing);
+}
+
+/**
+ * `movecontrol` (exe 2000:c308) at 2000:dafb: a monster whose hit points have run out gets a
+ * skull and crossbones painted over it before `kill_monster` says a word, and it stands there
+ * through every box the kill prints until the loop comes round and draws the views again.
+ *
+ * The skull is `overlay.pic`'s second image, and the rectangle is the one `draw_3d_view` kept
+ * when it drew the monster in the view DS:049d names. The kept copy holds its left and right
+ * edges the other way round, so this second drawing is always the mirror of the picture under it.
+ *
+ * The port redraws the views from the game as it stands rather than leaving the last drawing on
+ * the screen, so the monster's own picture is drawn again underneath the skull: `kill_monster`
+ * takes it off the occupancy grid part-way through its boxes, and without this the skull would be
+ * left hanging on an empty corridor.
+ */
+function drawSkull(frame: Frame, scene: ViewScene, facing: number): void {
+  const killed = scene.killed;
+  if (!killed) return;
+  const skull = scene.pictures.overlay?.[OVERLAY_SKULL];
+  if (!skull) return;
+  const view = FOUR_VIEWS.find((each) => viewFacing(each.name, facing) === killed.dir);
+  if (!view) return;
+
+  const { left, top, right, bottom } = engagedMonsterRect(view.rect);
+  const picture = scene.pictures.monster(killed.monster.picnum, killed.monster.builtin);
+  if (picture) {
+    scaleImage(frame, left, top, right, bottom, picture, 0, 255, monsterPaint(scene, killed.monster));
+  }
+  // The base is set at exe 2000:daf1 and the tint is left at whatever the last monster drawn set
+  // it to. Nothing turns on that: the skull's every pixel is under 28, which is the only value
+  // the tint stands in for in this bank.
+  scaleImage(frame, right, top, left, bottom, skull, 0, 255, {
+    screen: scene.screen,
+    colours: { base: 0x20, tint: 0 },
+  });
 }
 
 /** `retdwall` for the side the view looks through from the character's own square. */

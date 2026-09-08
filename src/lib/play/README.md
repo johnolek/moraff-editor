@@ -210,6 +210,12 @@ suit of armor, and which weapon a section boss's orb is used on — through `gam
 drops, the money and the levels all hang off it. Every box it prints in between waits for a key,
 which is what `printMenusWhile` is for.
 
+A monster whose hit points have run out gets a skull and crossbones painted over it first (exe
+2000:dafb), into the rectangle the view drew its picture in, and it stands there through every
+box the kill prints. `dotu-tools/docs/SCREEN.md` has where the rectangle comes from;
+`session.killed` is what carries it to the tab, and the loop clears it where the original clears
+DS:049d.
+
 The character's own death is asked about next (2000:dbe9), and the step the key asked for is
 resolved after that, so a key that killed the character never takes the step it wanted.
 

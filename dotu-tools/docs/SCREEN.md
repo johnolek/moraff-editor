@@ -150,6 +150,24 @@ reach — `slotNarrowing(width, 1) / 3` and `(bottom + 7 * top) / 8` — in `FUN
 (WORLD.EXE 3000:1a08) and so in `src/lib/play/mw/view3d/render.ts`. The two games share the
 routine; only Unforgiven grew the second rectangle over it.
 
+### The skull, when it dies
+
+`movecontrol` is what draws over the rectangle it kept. At exe 2000:dafb, once the key has been
+dealt with and before `kill_monster` says a word, a monster whose hit points have run out gets
+`overlay.pic`'s **second** image painted into the rectangle of the view DS:049d names — a skull
+and crossbones. It is drawn at colour-set base 0x20 (set at 2000:daf1), and since every pixel of
+it is under 28 the tint left over from the last monster drawn never comes into it.
+
+The kept rectangle holds its left and right edges the other way round, so the skull is always the
+mirror of the picture under it.
+
+Nothing takes it off: it stands through every box the kill prints, each of which waits for a key,
+until the loop comes round and draws the four views again. That is the whole of it — one picture
+into one rectangle, over the monster still on the screen.
+
+The port draws it in `src/lib/play/view3d/render.ts`, and redraws the dead monster underneath it
+because it paints a fresh screen every pass where the original leaves the last one standing.
+
 ### What is not drawn
 
 `draw_3d_view` follows the monster with the water overlay at exe 3000:24c8: when a built-in

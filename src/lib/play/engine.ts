@@ -113,6 +113,16 @@ export interface KeyHandler {
 }
 
 /** What the Play tab draws. */
+/**
+ * A monster killed whose skull `movecontrol` (exe 2000:c308) has painted over it, which stands
+ * on the screen until the loop comes round and draws the four views again.
+ */
+export interface KilledOnScreen {
+  /** DS:049d: which of the four ways the monster was standing in. */
+  dir: number;
+  monsterId: string;
+}
+
 export interface PlayView {
   place: { x: number; y: number; floor: number; module: number; dir: number };
   rows: MapSquare[][];
@@ -135,6 +145,8 @@ export interface PlayView {
   /** That monster is the one standing straight ahead (DS:c655) rather than one being fought
    *  from another side, which is when the game has its picture on the screen. */
   ahead: boolean;
+  /** The monster the skull is standing over, or null when nothing has just been killed. */
+  killed: KilledOnScreen | null;
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
@@ -184,6 +196,8 @@ export class GameSession {
    * so the character keeps swinging. `fight.ts` is what reads it.
    */
   repeatFight = false;
+  /** The monster the skull is standing over, until the loop draws the views again. */
+  killed: KilledOnScreen | null = null;
   /** Called whenever the game is about to wait for a key, so the tab can draw what it is
    *  waiting with. */
   onChange: (() => void) | null = null;
@@ -508,6 +522,7 @@ export class GameSession {
       seconds: game.secondsElapsed,
       engaged: facing === -1 ? null : (drawn.find((monster) => monster.slot === facing) ?? null),
       ahead: game.engagedAhead !== -1,
+      killed: this.killed,
       over: this.over,
       dead: this.dead,
       run: this.run?.summary() ?? null,
@@ -619,6 +634,8 @@ export async function runMoveControl(session: GameSession): Promise<void> {
       return;
     }
     game.enemyDir = -1;
+    // The views are drawn again below, which is what takes the skull off the last monster killed.
+    session.killed = null;
     // movecontrol (unf.c:15405) marks the square under the character's feet before it works
     // anything else out about it.
     session.memory.markStep(pc.x, pc.y);

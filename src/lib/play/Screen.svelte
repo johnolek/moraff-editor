@@ -8,10 +8,11 @@
   import type { DiscoveredMap } from '../map/draw-floor';
   import GameScreen from '../ui/GameScreen.svelte';
   import { debugMonsterLines } from './debug-screen';
+  import type { KilledOnScreen } from './engine';
   import { drawScreenFurniture, keyMenuLines, SCREEN_PIXELS, SCREEN_WINDOW, statusLines } from './display';
   import { viewPictures } from './view3d/browser';
   import { newFrame, toRgba } from './view3d/frame';
-  import { renderFourViews, type ViewMonster } from './view3d/render';
+  import { renderFourViews, type KilledMonster, type ViewMonster } from './view3d/render';
   import { viewLabels } from './view3d/views';
 
   interface Props {
@@ -36,9 +37,23 @@
     debug?: boolean;
     /** The HIT U/D box, where draw_ladder_prompt puts it. */
     prompt: ScreenLine[] | null;
+    /** The monster the skull is standing over, or null when nothing has just been killed. */
+    killed?: KilledOnScreen | null;
   }
 
-  let { game, rows, place, monsters, box, screen, discovered, prompt, mapMonsters = [], debug = false }: Props = $props();
+  let {
+    game,
+    rows,
+    place,
+    monsters,
+    box,
+    screen,
+    discovered,
+    prompt,
+    mapMonsters = [],
+    debug = false,
+    killed = null,
+  }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
 
@@ -56,22 +71,33 @@
     ...(debug ? debugMonsterLines(game) : []),
   ]);
 
+  const viewMonster = (monster: { x: number; y: number; monsterId: string }): ViewMonster | null => {
+    const entry = monsterById(monster.monsterId);
+    if (!entry) return null;
+    return {
+      x: monster.x,
+      y: monster.y,
+      picnum: entry.picnum,
+      builtin: entry.origin.kind === 'builtin',
+      colour: entry.color,
+      colorSet: entry.colorSet,
+    };
+  };
+
   const drawn = $derived.by((): ViewMonster[] =>
     monsters.flatMap((monster) => {
-      const entry = monsterById(monster.monsterId);
-      if (!entry) return [];
-      return [
-        {
-          x: monster.x,
-          y: monster.y,
-          picnum: entry.picnum,
-          builtin: entry.origin.kind === 'builtin',
-          colour: entry.color,
-          colorSet: entry.colorSet,
-        },
-      ];
+      const one = viewMonster(monster);
+      return one ? [one] : [];
     }),
   );
+
+  const skull = $derived.by((): KilledMonster | null => {
+    if (!killed) return null;
+    // The square it stood on is not read: the skull goes into the rectangle its picture was
+    // drawn in, which the direction alone names.
+    const one = viewMonster({ x: 0, y: 0, monsterId: killed.monsterId });
+    return one ? { dir: killed.dir, monster: one } : null;
+  });
 
   $effect(() => {
     const target = canvas;
@@ -96,6 +122,7 @@
         dir: place.dir,
         monsters: drawn,
         water: [4, 8, 20].includes(section?.section ?? 0),
+        killed: skull,
       },
       place.dir,
     );

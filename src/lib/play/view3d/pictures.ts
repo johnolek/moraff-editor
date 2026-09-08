@@ -26,6 +26,16 @@ export const FLOOR_TILES = [6, 7, 8, 9] as const;
 export const floorTilePair = (x: number, y: number, dir: number): number => ((x + y + (dir < 2 ? 1 : 0)) % 2) * 2;
 
 /**
+ * The two images of `overlay.pic`, which `load_overlay_pic` (exe 2000:3654) reads into the pair
+ * of far pointers at DS:c3af and DS:c3b3.
+ *
+ * The water is drawn over the bottom of a monster in the three water sections. The skull and
+ * crossbones is what `movecontrol` (exe 2000:c308) paints over a monster that has just died.
+ */
+export const OVERLAY_WATER = 0;
+export const OVERLAY_SKULL = 1;
+
+/**
  * Everything the 3-D view draws that comes out of a `.PIC` file. The renderer is handed one of
  * these rather than reaching for the files itself, so the same code runs in the browser (where
  * Vite inlines the pictures) and under Node (where a script reads them off disk).
@@ -36,7 +46,7 @@ export interface ViewPictures {
    * view falls back to flat fills of the section's own wall colours when this is null.
    */
   wall: PicRowImage[] | null;
-  /** `overlay.pic`, drawn over the bottom of a monster in the three water sections. */
+  /** `overlay.pic`, whose two images are {@link OVERLAY_WATER} and {@link OVERLAY_SKULL}. */
   overlay: PicRowImage[] | null;
   /** A monster's picture, by the picture number and colour set in its record. */
   monster(picnum: number, builtin: boolean): PicRowImage | null;

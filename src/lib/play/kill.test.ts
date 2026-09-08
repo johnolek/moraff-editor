@@ -130,3 +130,40 @@ describe('the message box while the kill is being read', () => {
     expect(session.box).toEqual([]);
   });
 });
+
+describe('the skull the kill paints over the monster', () => {
+  it('stands while the kill is still printing and goes when the views are drawn again', async () => {
+    const session = await facingAMonster(lowest, { cls: 0 });
+    const game = session.game;
+    const monsterId = session.view().monsters[0].monsterId;
+    const dir = game.enemyDir;
+    expect(session.view().killed).toBeNull();
+
+    game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    // The kill has stopped on the offer its drop printed, which is where the original still has
+    // the skull standing on the screen.
+    expect(session.view().killed).toEqual({ dir, monsterId });
+    // ...and the monster it names is off the floor by now, so the picture the skull is drawn
+    // over has to come from here rather than from the square.
+    expect(session.view().monsters).toEqual([]);
+
+    // The armour the kill drops next is a second offer, and the skull is still up for it.
+    await press(session, LEAVE);
+    expect(session.view().killed).toEqual({ dir, monsterId });
+
+    await press(session, LEAVE);
+    expect(session.view().killed).toBeNull();
+  });
+
+  it('is not painted for a monster that was never drawn in a view', async () => {
+    const session = await facingAMonster(lowest, { cls: 0 });
+    const game = session.game;
+    // Off the occupancy grid, the way a monster killed by something other than the swing that
+    // met it can be: draw_3d_view drew nothing for it, so there is no rectangle to paint into.
+    game.monsterMap[game.monsters[0].y * 80 + game.monsters[0].x] = -1;
+    game.monsters[0].hp = 0;
+    await press(session, 0x1b);
+    expect(session.view().killed).toBeNull();
+  });
+});
