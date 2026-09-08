@@ -4,7 +4,11 @@
 // render_3d.mjs is the same thing for one view on its own.
 //
 //   node dotu-tools/reference/scripts/render_screen.mjs --module 0 --floor 1 --x 57 --y 3 \
-//        --dir 0 --out screen.png [--height-of 21] [--exp 0]
+//        --dir 0 --out screen.png [--height-of 21] [--exp 0] [--fight]
+//
+// --fight fills the message box the way it stands in the middle of a swing: the battle banner
+// engagement_timing prints, the two lines strike draws the blow on, and the hit points line
+// print_battle_hp_info puts back.
 //
 // The floor is generated from the same UNFDUNG.BIN the site ships, so no save file is needed, and
 // the text is drawn with the game's own .FNT bitmaps rather than the web font the site uses — the
@@ -45,6 +49,9 @@ const { newGame } = await load('game/port/state.ts');
 const { FONT_ADVANCE } = await load('roller/screen.ts');
 const { drawStrokeScreenLine, STROKE_ABOVE_WIDTH } = await load('play/view3d/stroke-font.ts');
 const { battleSpellLines } = await load('game/port/screens.ts');
+const { engagementTiming, printBattleHpInfo, strike } = await load('game/port/combat.ts');
+const { messageBoxScreen } = await load('play/screens.ts');
+const { setMonsterMap, MAP_PLAYER } = await load('game/port/state.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
 const fonts = JSON.parse(readFileSync(src('game/dotu-fonts.json'), 'utf8'));
 
@@ -122,6 +129,7 @@ const text = [
   ...battleSpellLines(game),
   ...D.statusLines(game.pc),
   ...viewLabels(exp, horizonWeight),
+  ...(args.fight ? fightLines() : []),
 ];
 for (const line of text) drawLine(line);
 
@@ -132,6 +140,32 @@ console.log(
     `${['north', 'south', 'west', 'east'][dir]}`,
 );
 await server.close();
+
+/**
+ * The message box in the middle of a swing, built by the port's own functions rather than written
+ * out here. The generator rolls as high as it can, so the swing always lands.
+ */
+function fightLines() {
+  const fight = newGame({ rng: { random: (n) => (n > 0 ? n - 1 : 0) } });
+  Object.assign(fight.pc, { x: at.x, y: at.y, dir, level: floor, lev: 22, str: 60, weapon: 7 });
+  setMonsterMap(fight, fight.pc.x, fight.pc.y, MAP_PLAYER);
+  const [dx, dy] = [[0, -1], [0, 1], [-1, 0], [1, 0]][dir];
+  Object.assign(fight.monsters[0], { x: at.x + dx, y: at.y + dy, hp: 480, type: 23, level: 40 });
+  setMonsterMap(fight, fight.monsters[0].x, fight.monsters[0].y, 0);
+  fight.engaged = 0;
+  // The play session collects what engagement_timing says as the banner rather than as a box.
+  const banner = [];
+  const said = fight.say;
+  fight.say = (...lines) => {
+    banner.push(...lines);
+    said(...lines);
+  };
+  engagementTiming(fight);
+  fight.say = said;
+  const damage = strike(fight);
+  if (damage > 0) printBattleHpInfo(fight);
+  return messageBoxScreen({ box: fight.menuBox, banner, drawn: fight.screen });
+}
 
 /**
  * One line of the screen, drawn the way pfont (exe 4000:0bb3) and psfont (exe 4000:0db8) draw it:
