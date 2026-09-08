@@ -15,11 +15,12 @@ export function vgaToRgb(pal: number[][]): Rgb[];
 /**
  * Palette index for a monster picture pixel; -1 means the pixel is not drawn.
  *
- * The tint pixel is value 28 when the colour-set base (colorSet << 4) is 0x20 or 0x40 and
- * value 17 otherwise; it is skipped when the tint equals the base (0x20/0x40) or is 0 (any
- * other base). In the 0x20 and 0x40 banks the tint is a palette entry in its own right; in
- * every other bank the tint takes the pixel's place and then gets the base added like any
- * other value. Every other value lands at v + base.
+ * In the 0x20 and 0x40 banks (the base is colorSet << 4) the tint pixel is value 28: it is
+ * skipped when the tint equals the base and is otherwise a palette entry in its own right,
+ * with no base added. Every other bank substitutes in turn: 17 becomes the tint (skipped when
+ * the tint is 0), then 16 becomes 0, then 18 becomes the drawer's second tint, which is always
+ * 0. The steps run in that order, so a tint of 16 falls through the next one and lands on the
+ * base entry. Every value that was not replaced lands at v + base.
  */
 export function monsterPixelIndex(v: number, tint: number, colorSet: number): number;
 export function buildingPixelIndex(v: number, layer: number): number;

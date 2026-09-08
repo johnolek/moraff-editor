@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { monsterPixelIndex, parsePic } from '../game/dotu-pic.js';
+import { builtinPictureIndex, monsterPixelIndex, parsePic } from '../game/dotu-pic.js';
 import { allMonsters } from './monsters';
 import { monsterPictureFile, pictureImages, renderMonster, sectionPalette } from './pictures';
 
@@ -49,6 +49,26 @@ describe('monsterPixelIndex', () => {
   it('leaves the tint pixel undrawn when the tint is 0', () => {
     expect(monsterPixelIndex(17, 0, 0)).toBe(-1);
   });
+
+  it("sends values 16 and 18 to the colour set's base entry", () => {
+    const giantBallColour = 5;
+    const giantBallColourSet = 1;
+    expect(monsterPixelIndex(16, giantBallColour, giantBallColourSet)).toBe(0x10);
+    expect(monsterPixelIndex(18, giantBallColour, giantBallColourSet)).toBe(0x10);
+  });
+
+  it('sends a tint of 16 on to the base entry as well', () => {
+    const blackPuffballColour = 16;
+    expect(monsterPixelIndex(17, blackPuffballColour, 0)).toBe(0);
+    expect(monsterPixelIndex(16, 9, 0)).toBe(0);
+  });
+
+  it('leaves values 16 and 18 alone in the 0x20 bank', () => {
+    const ogerothColour = 52;
+    const ogerothColourSet = 2;
+    expect(monsterPixelIndex(16, ogerothColour, ogerothColourSet)).toBe(0x30);
+    expect(monsterPixelIndex(18, ogerothColour, ogerothColourSet)).toBe(0x32);
+  });
 });
 
 describe('renderMonster', () => {
@@ -92,5 +112,18 @@ describe('renderMonster', () => {
     };
     expect(colourAt(TINT_VALUE)).toEqual(palette[52]);
     expect(colourAt(17)).toEqual(palette[49]);
+  });
+
+  it("draws the Black Puffball's tinted pixels in entry 0, which is black", () => {
+    const puffball = named('Black Puffball');
+    const palette = sectionPalette(1, 1);
+    const picture = pictureImages('ufmon.pic')[builtinPictureIndex(puffball.picnum)];
+    const image = renderMonster(puffball, 1, 1);
+
+    const tinted = [...picture].flatMap((v, i) => (v === 17 ? [i] : []));
+    expect(tinted.length).toBeGreaterThan(1000);
+    const colours = new Set(tinted.map((i) => [...image.data.slice(i * 4, i * 4 + 3)].join()));
+    expect([...colours]).toEqual([palette[0].join()]);
+    expect(palette[0]).toEqual([0, 0, 0]);
   });
 });

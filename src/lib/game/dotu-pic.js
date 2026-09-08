@@ -44,24 +44,31 @@ export function parsePic(bytes) {
 /** Map a 6-bit VGA palette ([r,g,b] 0..63 each, 256 entries) to 8-bit RGB. */
 export const vgaToRgb = pal => pal.map(([r, g, b]) => [r * 255 / 63 | 0, g * 255 / 63 | 0, b * 255 / 63 | 0]);
 
+/** The drawer's second tint, DS:4fbf, which it substitutes for pixel value 18.  Nothing in the
+ *  executable ever writes that word, so it keeps the initial value 0 and pixel value 18 always
+ *  ends up on the colour set's base entry, exactly like pixel value 16. */
+const SECOND_TINT = 0;
+
 /** Final palette index for a MONSTER picture pixel (the game's picture drawer, scale_image2
  *  at exe 4000:4818, with colour set < 0x100).  Returns -1 for "not drawn".
  *  tint = monster.color, colorSet = monster.colorSet, base = colorSet << 4.
- *  Which pixel value carries the tint depends on the base: 28 for bases 0x20 and 0x40,
- *  17 for every other base.  The drawer skips that pixel when the tint equals the base
- *  (0x20/0x40) or when the tint is 0 (any other base).  In the 0x20 and 0x40 banks the tint
- *  is a palette entry in its own right; in every other bank the drawer puts the tint in the
- *  pixel's place and then adds the base to it like any other value.  Every other value lands
- *  at v + base. */
+ *  In the 0x20 and 0x40 banks the tint pixel is value 28; it is skipped when the tint equals
+ *  the base and is otherwise a palette entry in its own right, with no base added.
+ *  Every other bank substitutes in turn: 17 becomes the tint (skipped when the tint is 0),
+ *  then 16 becomes 0, then 18 becomes the second tint.  The steps run in that order, so a
+ *  tint of 16 falls through the next one and lands on the base entry.
+ *  Every value that was not replaced lands at v + base. */
 export function monsterPixelIndex(v, tint, colorSet) {
   if (v === 0) return -1;
   const base = colorSet << 4;
   if (base === 0x20 || base === 0x40) {
     if (v === 28) return tint === base ? -1 : tint & 0xff;
-  } else if (v === 17) {
-    if (tint === 0) return -1;
-    v = tint;
+    return (v + base) & 0xff;
   }
+  if (v === 17 && tint === 0) return -1;
+  if (v === 17) v = tint;
+  if (v === 16) v = 0;
+  if (v === 18) v = SECOND_TINT;
   return (v + base) & 0xff;
 }
 /** Final palette index for a BUILDING picture pixel: layer 0/2 use +0x20, layers 1/3 use +0x3f. */
