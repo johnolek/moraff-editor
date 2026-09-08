@@ -70,6 +70,28 @@ interface StrokePen {
 const round = (value: number): number => Math.trunc(value + 0.5);
 
 /**
+ * One line as `print_text` and `print_text_clipped` hand it over.
+ *
+ * `print_text` works the right edge out from the string's own length. `print_text_clipped` is
+ * given one and pulls it in by half a character, so that the last glyph's box ends on it rather
+ * than starting there.
+ */
+export function drawStrokeScreenLine(
+  frame: Frame,
+  screen: StrokeScreen,
+  game: StrokeGame,
+  line: { text: string; x: number; y: number; font: number; colour: number; spreadTo?: number },
+): void {
+  const { text, x, y, font, colour, spreadTo } = line;
+  if (text.length === 0) return;
+  const right =
+    spreadTo === undefined
+      ? x + strokeAdvance(game, font) * text.length
+      : spreadTo - Math.trunc(Math.trunc((spreadTo - x) / text.length) / 2);
+  drawStrokeLine(frame, screen, game, text, x, y, right, y + strokeLineHeight(font), colour);
+}
+
+/**
  * One line of text, drawn between two x values the way FUN_4000_0699 draws one.
  *
  * `left` and `right` are in the 1600-wide grid. `print_text` works the right edge out from the

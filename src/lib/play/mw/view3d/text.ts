@@ -1,17 +1,15 @@
 import type { ScreenLine } from '../../../game/port/state';
 import { plot, type Frame } from '../../view3d/frame';
 import { glyphRows, pixelFont } from '../../../ui/pixel-font';
-import {
-  drawStrokeLine,
-  strokeAdvance,
-  strokeLineHeight,
-  STROKE_ABOVE_WIDTH,
-} from '../../view3d/stroke-font';
+import { drawStrokeScreenLine, STROKE_ABOVE_WIDTH } from '../../view3d/stroke-font';
 import { MW_SCREEN_UNITS_X, MW_SCREEN_UNITS_Y } from './screen';
 
 /**
- * The words on the play screen, drawn into the same buffer the views are, in the game's own
- * bitmap font.
+ * The words on the play screen, drawn into the same buffer the views are, in the game's own face.
+ *
+ * Which face that is depends on how wide the screen is. Above 730 pixels — which the 1024 by 768
+ * the game is played in here is — `print_text` draws the vector font of
+ * `src/lib/play/view3d/stroke-font.ts` and none of what follows applies.
  *
  * `load_font` (WORLD.EXE 4000:0a20, mw.c "load_font") reads one .FNT file for the video mode and
  * FUN_4000_08bc (exe 4000:08bc) takes the three fonts' widths and heights out of the tables at
@@ -82,14 +80,7 @@ export function drawMwString(
   font = 0,
 ): void {
   if (screen.width - 1 > STROKE_ABOVE_WIDTH) {
-    // print_text_clipped pulls its given right edge in by half a character so that the last
-    // glyph's box ends there; print_text works one out from the string's own length.
-    const step = strokeAdvance('mw', font);
-    const right =
-      spreadTo === undefined
-        ? x + step * text.length
-        : spreadTo - Math.trunc(Math.trunc((spreadTo - x) / text.length) / 2);
-    drawStrokeLine(frame, screen, 'mw', text, x, y, right, y + strokeLineHeight(font), colour);
+    drawStrokeScreenLine(frame, screen, 'mw', { text, x, y, font, colour, spreadTo });
     return;
   }
   const left = toX(screen, x);
