@@ -189,8 +189,9 @@ function drawGlyph(ctx: CanvasRenderingContext2D, square: MapSquare, x0: number,
   if (!asTheGame && size >= LABEL_MIN_CELL) drawLabel(ctx, String(glyphDestination(square, floor)), x0 + 1 + w / 2, y0 + 1 + h / 2, size);
 }
 
-/** Floor a ladder, chute, trap door or false floor square leads to. A false floor is a chute
- *  going on, so it drops one floor like the chute that landed you on it. */
+/** Floor a ladder, chute, trap door or false floor square leads to. A false floor drops exactly
+ *  one floor however far the chute that landed you there fell: Moraff's Revenge leaves the
+ *  square with a ladder-down code of 1 (1000:064D). */
 export function glyphDestination(square: MapSquare, floor: number): number {
   if (square.ladder) return floor + square.ladder;
   if (square.trapdoor >= 0) return square.trapdoor;
