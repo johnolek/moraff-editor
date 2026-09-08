@@ -3,7 +3,7 @@ import { newGame } from '../game/port/state';
 import type { MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
 import { zoomMapMonsters } from './mode';
-import { newFrame, pixelAt } from './view3d/frame';
+import { newFrame, pixelAt, type Frame } from './view3d/frame';
 import { FOUR_VIEWS } from './view3d/views';
 import { ZOOM_MONSTER_COLOUR } from './zoom-monsters';
 import {
@@ -24,8 +24,13 @@ import {
   ZOOM_COLUMNS,
   ZOOM_ROWS,
   zoomMapLeft,
+  zoomBuildingColour,
   zoomMapSquare,
   zoomMapWindow,
+  ZOOM_CHUTE_COLOUR,
+  ZOOM_CORNER_COLOUR,
+  ZOOM_MARK_COLOUR,
+  ZOOM_SIDE_COLOUR,
 } from './display';
 import { MW_VIDEO_MODES } from './mw/view3d/screen';
 
@@ -187,6 +192,95 @@ describe('the zoom map', () => {
     expect(arrowPixel(3, 100, 100, 3, 0)).toEqual({ x: 105, y: 102 });
   });
 });
+
+describe('what the zoom map draws on one square', () => {
+  const open = (): MapSquare => ({ n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1 });
+  const at = { x: 40, y: 50, dir: 0 };
+  /** A cell well clear of the character's own, which the arrow would otherwise draw over. */
+  const COLUMN = 3;
+  const ROW = 3;
+  const marked = { x: at.x + COLUMN - (ZOOM_COLUMNS >> 1), y: at.y + ROW - (ZOOM_ROWS >> 1) };
+  const x0 = zoomMapLeft(SCREEN_PIXELS.width) + COLUMN * ZOOM_CELL;
+  const y0 = ROW * ZOOM_CELL;
+
+  /** The map of a floor of open squares with one square given what the test is about. */
+  function drawn(square: Partial<MapSquare>, chuteKnown = true): Frame {
+    const rows: MapSquare[][] = Array.from({ length: 80 }, () => Array.from({ length: 80 }, open));
+    Object.assign(rows[marked.y][marked.x], square);
+    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    drawScreenFurniture(frame, { rows, at, map: { known: () => true, knownOnArrival: () => chuteKnown } });
+    return frame;
+  }
+
+  /** One pixel of that square's own cell, by how far it is from the cell's top left corner. */
+  const dot = (frame: Frame, dx: number, dy: number): number => pixelAt(frame, x0 + dx, y0 + dy);
+
+  /** Two points, one on each diagonal and on neither of the other's two passes. */
+  const DOWN_STROKE = [2, 2] as const;
+  const UP_STROKE = [2, 8] as const;
+  const strokes = (frame: Frame): number[] => [dot(frame, ...DOWN_STROKE), dot(frame, ...UP_STROKE)];
+
+  it('fills a plain square black and dots its four corners red', () => {
+    const frame = drawn({});
+    expect(dot(frame, 5, 5)).toBe(0);
+    expect([dot(frame, 0, 0), dot(frame, ZOOM_CELL, 0), dot(frame, 0, ZOOM_CELL), dot(frame, ZOOM_CELL, ZOOM_CELL)])
+      .toEqual([ZOOM_CORNER_COLOUR, ZOOM_CORNER_COLOUR, ZOOM_CORNER_COLOUR, ZOOM_CORNER_COLOUR]);
+  });
+
+  it('lines every side but an open one, so a secret door and a teleporter are walls to look at', () => {
+    expect(dot(drawn({ w: 3 }), 0, 5)).toBe(0);
+    for (const side of [0, 1, 2, 4]) expect(dot(drawn({ w: side }), 0, 5)).toBe(ZOOM_SIDE_COLOUR);
+    expect(drawn({ w: 2 }).pixels).toEqual(drawn({ w: 0 }).pixels);
+    expect(drawn({ w: 4 }).pixels).toEqual(drawn({ w: 0 }).pixels);
+  });
+
+  it('ticks a door in a side running down the cell, with a short line under the long pair', () => {
+    const frame = drawn({ w: 1 });
+    expect([dot(frame, -3, 4), dot(frame, 3, 4)]).toEqual([ZOOM_SIDE_COLOUR, ZOOM_SIDE_COLOUR]);
+    expect([dot(frame, -3, 6), dot(frame, 3, 6)]).toEqual([ZOOM_SIDE_COLOUR, ZOOM_SIDE_COLOUR]);
+    expect([dot(frame, -1, 5), dot(frame, 1, 5)]).toEqual([ZOOM_SIDE_COLOUR, ZOOM_SIDE_COLOUR]);
+  });
+
+  it('ticks a door in a side running along the cell with the long pair alone', () => {
+    const frame = drawn({ n: 1 });
+    expect([dot(frame, 4, -3), dot(frame, 6, 3)]).toEqual([ZOOM_SIDE_COLOUR, ZOOM_SIDE_COLOUR]);
+    // The short tick the other half of the routine always draws is this half's small-cell case.
+    expect(dot(frame, 5, -1)).toBe(0);
+  });
+
+  it('draws a ladder down as one diagonal and a ladder up as the other', () => {
+    expect(strokes(drawn({ ladder: 1 }))).toEqual([ZOOM_MARK_COLOUR, 0]);
+    expect(strokes(drawn({ ladder: -1 }))).toEqual([0, ZOOM_MARK_COLOUR]);
+  });
+
+  it('crosses a trap door with both of them', () => {
+    expect(strokes(drawn({ trapdoor: 25 }))).toEqual([ZOOM_MARK_COLOUR, ZOOM_MARK_COLOUR]);
+  });
+
+  it('draws a chute as the cross with a plus sign through it, in pale blue', () => {
+    const frame = drawn({ chute: 4 });
+    expect(strokes(frame)).toEqual([ZOOM_CHUTE_COLOUR, ZOOM_CHUTE_COLOUR]);
+    expect([dot(frame, 5, 1), dot(frame, 1, 5)]).toEqual([ZOOM_CHUTE_COLOUR, ZOOM_CHUTE_COLOUR]);
+  });
+
+  it('marks no chute on a square that was not known on arrival', () => {
+    expect(drawn({ chute: 4 }, false).pixels).toEqual(drawn({}).pixels);
+  });
+
+  it('colours a building in and says nothing else about it', () => {
+    const fills = [1, 2, 3, 4].map((building) => dot(drawn({ town: building }), 8, 5));
+    expect(fills).toEqual([3, 4, 5, 8]);
+    expect(fills).toEqual([1, 2, 3, 4].map(zoomBuildingColour));
+    // The inn's own colour is neither of the two a mark is drawn in, so the points a diagonal
+    // would cross read the fill and nothing else.
+    expect(strokes(drawn({ town: 4 }))).toEqual([zoomBuildingColour(4), zoomBuildingColour(4)]);
+  });
+
+  it('leaves a square with a ladder on it uncoloured, the way the game asks in that order', () => {
+    expect(drawn({ ladder: -1, town: 1 }).pixels).toEqual(drawn({ ladder: -1 }).pixels);
+  });
+});
+
 
 /** A floor every square of which the character knows, which is the two revealed modes. */
 const REVEALED = { known: () => true, knownOnArrival: () => true };
