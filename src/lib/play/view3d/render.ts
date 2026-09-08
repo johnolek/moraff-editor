@@ -1,3 +1,4 @@
+import type { MapSquare } from '../../map/game';
 import { fillRect, type Frame } from './frame';
 import { floodBothHalves, type FloodContext, type WallFace } from './flood';
 import {
@@ -338,15 +339,30 @@ function drawSquare(
 
   const square = scene.rows[face.square.y]?.[face.square.x];
   if (!square || face.from === face.to) return;
-  if (square.ladder !== 0) {
-    const picture = scene.pictures.ladder(square.ladder > 0);
-    if (!picture) return;
-    // A ladder down is marked on the floor of the square, a ladder up on its ceiling.
-    const top = square.ladder > 0 ? Math.trunc((face.top + face.bottom * 2) / 3) : face.top;
-    const bottom = square.ladder > 0 ? face.bottom : Math.trunc((face.top * 2 + face.bottom) / 3);
-    scaleImage(frame, face.left, top, face.right, bottom, picture, Math.trunc(face.from * 255), Math.trunc(face.to * 255), {
-      screen: scene.screen,
-      colours: { base: 0, tint: 0 },
-    });
-  }
+  const ladder = ladderShownOn(square);
+  if (ladder === 0) return;
+  const picture = scene.pictures.ladder(ladder > 0);
+  if (!picture) return;
+  // A ladder down is marked on the floor of the square, a ladder up on its ceiling.
+  const top = ladder > 0 ? Math.trunc((face.top + face.bottom * 2) / 3) : face.top;
+  const bottom = ladder > 0 ? face.bottom : Math.trunc((face.top * 2 + face.bottom) / 3);
+  scaleImage(frame, face.left, top, face.right, bottom, picture, Math.trunc(face.from * 255), Math.trunc(face.to * 255), {
+    screen: scene.screen,
+    colours: { base: 0, tint: 0 },
+  });
+}
+
+/**
+ * Which of `ufmon.pic`'s two ladder pictures a square is drawn with, as `draw_map_square` works
+ * it out at exe 3000:3222: greater than zero the ladder down on the square's floor, less than
+ * zero the ladder up on its ceiling, and zero neither.
+ *
+ * check_for_ladder answers first, and only on a square it says has no ladder does the town's
+ * building count (exe 3000:3297) — `trapdoor` (exe 2000:9cba, unf.c "trapdoor"), which is the
+ * building despite its name, negated. So a store, a temple, a bank or an inn is drawn with the
+ * ladder up: that is how the view says there is somewhere to go up into.
+ */
+function ladderShownOn(square: MapSquare): number {
+  if (square.ladder !== 0) return square.ladder;
+  return -(square.town ?? 0);
 }
