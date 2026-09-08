@@ -9,6 +9,7 @@ import {
   drainMonsterKills,
   monsterAttackInterval,
   monsterHpRange,
+  monsterLevelBase,
   simulate,
   sleepChance,
 } from '../game/dotu-mech.js';
@@ -215,7 +216,10 @@ export function combatReport(fighter: Fighter, fight: Fight, { trials = 20000, r
   const yours = sampled(game, () => strike(game), trials);
   const its = sampled(game, () => defend(game, 0), trials);
 
-  const hp = monsterHpRange(monster.type.hpPerLevel, fight.level, monster.isBoss, sectionOfFight(fight));
+  // Hit points are rolled before the level is nudged, so they follow the floor even when the
+  // level control has been moved off it.
+  const baseLevel = monsterLevelBase(fight.floor, fight.module);
+  const hp = monsterHpRange(monster.type.hpPerLevel, baseLevel, monster.isBoss, sectionOfFight(fight));
   const middleHp = Math.trunc((hp[0] + hp[1]) / 2);
   const swingsToKill: SwingsToKill = {
     hp,
