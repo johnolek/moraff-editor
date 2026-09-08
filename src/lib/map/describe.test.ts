@@ -63,15 +63,21 @@ describe('featureLine', () => {
 
 describe('describeExplored', () => {
   it('says the file has seen an open square', () => {
-    expect(describeExplored(false, 0, MORAFFS_WORLD_MAP.exploredMaps!)).toBe('Explored in the .DUN file you loaded.');
+    expect(describeExplored(false, MORAFFS_WORLD_MAP.dungeonName(0), MORAFFS_WORLD_MAP.exploredMaps!)).toBe(
+      'Explored in the .DUN file you loaded.',
+    );
   });
 
-  it('says which dungeon makes a seen square rock', () => {
-    expect(describeExplored(true, 7, MORAFFS_WORLD_MAP.exploredMaps!)).toBe('Explored in the .DUN file you loaded, but rock in dungeon 7.');
+  it('says which dungeon makes a seen square rock, by the name that game gives it', () => {
+    expect(describeExplored(true, MORAFFS_WORLD_MAP.dungeonName(7), MORAFFS_WORLD_MAP.exploredMaps!)).toBe(
+      'Explored in the .DUN file you loaded, but rock in Dungeon 7.',
+    );
   });
 
   it('names each game\u2019s own explored maps', () => {
-    expect(describeExplored(false, 1, MORAFFS_REVENGE_MAP.exploredMaps!)).toBe('Explored in the .BIN file you loaded.');
+    expect(describeExplored(false, MORAFFS_REVENGE_MAP.dungeonName(1), MORAFFS_REVENGE_MAP.exploredMaps!)).toBe(
+      'Explored in the .BIN file you loaded.',
+    );
   });
 });
 

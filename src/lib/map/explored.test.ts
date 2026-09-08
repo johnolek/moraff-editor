@@ -15,7 +15,7 @@ import {
   staleFloorWarning,
   type ExploredFloors,
 } from './explored';
-import type { MapSquare } from './game';
+import { MORAFFS_WORLD_MAP, UNFORGIVEN_MAP, type MapSquare } from './game';
 import { dotuDunName } from './write-explored';
 
 const HEADER_BYTES = 4;
@@ -216,15 +216,25 @@ describe('quarterSummary', () => {
 
 describe('staleFloorWarning', () => {
   it('says nothing when every explored square is open', () => {
-    expect(staleFloorWarning(0, 0)).toBeNull();
+    expect(staleFloorWarning(0, MORAFFS_WORLD_MAP, 0)).toBeNull();
   });
 
   it('names the dungeon the floor was drawn for', () => {
-    expect(staleFloorWarning(51, 7)).toBe('51 explored squares of this floor are rock in dungeon 7 (drawn in red), so this file was mapped in another dungeon.');
+    expect(staleFloorWarning(51, MORAFFS_WORLD_MAP, 7)).toBe(
+      '51 explored squares of this floor are rock in Dungeon 7 (drawn in red), so this file was mapped in another dungeon.',
+    );
   });
 
   it('counts one square in the singular', () => {
-    expect(staleFloorWarning(1, 7)).toBe('1 explored square of this floor is rock in dungeon 7 (drawn in red), so this file was mapped in another dungeon.');
+    expect(staleFloorWarning(1, MORAFFS_WORLD_MAP, 7)).toBe(
+      '1 explored square of this floor is rock in Dungeon 7 (drawn in red), so this file was mapped in another dungeon.',
+    );
+  });
+
+  it('calls each game\u2019s own floors by its own noun', () => {
+    expect(staleFloorWarning(1, UNFORGIVEN_MAP, 2)).toBe(
+      '1 explored square of this floor is rock in Module III (drawn in red), so this file was mapped in another module.',
+    );
   });
 });
 

@@ -1,7 +1,7 @@
 import { isOnMap, type MapArea } from './area';
 import { COLUMNS as REVENGE_COLUMNS, ROWS as REVENGE_ROWS, mbfSingle } from '../game/revmap.js';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
-import type { MapSquare } from './game';
+import type { MapGame, MapSquare } from './game';
 
 /**
  * The explored maps the games save beside a character, and which of them a floor of the map
@@ -234,10 +234,11 @@ function listOf(values: number[]): string {
 
 /** What the panel says when the floor's explored squares include some this dungeon makes
  *  rock, which the game itself would never have written. */
-export function staleFloorWarning(rock: number, dungeon: number): string | null {
+export function staleFloorWarning(rock: number, game: MapGame, dungeon: number): string | null {
   if (!rock) return null;
   const squares = rock === 1 ? '1 explored square of this floor is' : `${rock} explored squares of this floor are`;
-  return `${squares} rock in dungeon ${dungeon} (drawn in red), so this file was mapped in another dungeon.`;
+  const elsewhere = `so this file was mapped in another ${game.dungeonNoun.toLowerCase()}`;
+  return `${squares} rock in ${game.dungeonName(dungeon)} (drawn in red), ${elsewhere}.`;
 }
 
 /**

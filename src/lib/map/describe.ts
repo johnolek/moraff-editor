@@ -55,10 +55,11 @@ export function featureLine(description: SquareDescription): string | null {
   return description.rock ? 'Rock' : description.feature;
 }
 
-/** What the panel says about a square a loaded explored map has seen. */
-export function describeExplored(rock: boolean, dungeon: number, files: ExploredMapFiles): string {
+/** What the panel says about a square a loaded explored map has seen. `dungeonName` is what the
+ *  game calls the floors being looked at: "Module I", "Dungeon 7", "Generation 5". */
+export function describeExplored(rock: boolean, dungeonName: string, files: ExploredMapFiles): string {
   const seen = `Explored in the ${files.extension} file you loaded`;
-  return rock ? `${seen}, but rock in dungeon ${dungeon}.` : `${seen}.`;
+  return rock ? `${seen}, but rock in ${dungeonName}.` : `${seen}.`;
 }
 
 export function describeNote(note: Note): string {

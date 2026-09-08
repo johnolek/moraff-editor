@@ -90,7 +90,7 @@
   );
   const cursorExplored = $derived(
     cursor && cursorSquare && exploredHere && game.exploredMaps && isExplored(exploredHere, cursor.x, cursor.y)
-      ? describeExplored(cursorSquare.solid, dungeon, game.exploredMaps)
+      ? describeExplored(cursorSquare.solid, game.dungeonName(dungeon), game.exploredMaps)
       : null,
   );
   const cursorMonster = $derived(cursor ? monsterAt(monsters, cursor.x, cursor.y) : null);
@@ -604,7 +604,7 @@
         files={game.exploredMaps}
         floors={explored}
         errors={exploredErrors}
-        warning={staleFloorWarning(exploredCount.rock, dungeon)}
+        warning={staleFloorWarning(exploredCount.rock, game, dungeon)}
         onfiles={loadExploredFiles}
         onclear={clearExploredFiles}
       />
