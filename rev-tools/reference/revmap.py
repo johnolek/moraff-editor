@@ -11,6 +11,10 @@ with `kind` 1 for the wall along the top of a square and 2 for the wall down its
 left-hand side.  8 and 9 are a wall, 6 and 7 a door, anything less an opening.
 `../docs/DUNGEON.md` is the write-up, with the addresses and the evidence.
 
+The ladders and the chutes are half a file: which squares carry one comes out of
+`7.NUM` and only what is on them is worked out from the coordinates, so this
+wants the game folder's own copy of that file.
+
     python3 revmap.py --level 2
     python3 revmap.py --level 2 --explored ~/games/rev2/5.BIN
     python3 revmap.py --check ~/games/rev2/[1-5].BIN
@@ -20,6 +24,7 @@ character drinks from the fountain of youth on level 70, and two more each time
 it does, which gives that character a dungeon of its own.
 """
 import argparse
+import os
 
 import mbf
 import read_bsave
@@ -71,8 +76,39 @@ def fold(code):
     return code
 
 
+# 7.NUM, which 1000:BBC8 BLOADs to DGROUP 8366 at start-up.  `--features` takes
+# another copy of it.
+FEATURE_FILE = "~/games/rev2/7.NUM"
+_FEATURE_ROWS = None
+
+
+def features(path=None):
+    """7.NUM's singles, read once."""
+    global _FEATURE_ROWS
+    if _FEATURE_ROWS is None:
+        whole = os.path.expanduser(path or FEATURE_FILE)
+        _FEATURE_ROWS = mbf.singles(read_bsave.read(whole)[2])
+    return _FEATURE_ROWS
+
+
+def marked(column, row, level):
+    """Whether 7.NUM says a fixed feature is on the square.
+
+    1000:54CB indexes the array as `21 * level + row` and hands the cell to the
+    bit test at 1000:5449, which is
+    `INT(AT(row, level) / 2 ^ (20 - column)) MOD 2`.  The automap reads it the
+    same way at 1000:5285.  The town is not a case of its own: level 0 goes
+    through the same lookup.
+    """
+    return read_bsave.is_set(read_bsave.level_rows(features(), level)[row - 1], column)
+
+
 def feature(column, row, level):
     """What 1000:552B finds on a square: a ladder, a chute, or nothing.
+
+    7.NUM comes first.  1000:54CB looks the square up there, and where the bit
+    is clear 1000:5500 puts 50 -- nothing is here -- on the square without
+    asking the formula at all.
 
     The square's own code is a ladder going up when it is 1 to 9, folded down
     to 1, 2 or 3 by 1000:5649, which is how many levels the ladder spans.  A
@@ -87,6 +123,8 @@ def feature(column, row, level):
     rather than exactly it, which is ten ladders down out of the town instead of
     three -- exactly the ten squares `7.NUM` marks on level 0.
     """
+    if not marked(column, row, level):
+        return None
     if level > 0:
         code = read_dungeon.feature_code(column, row, level)
         if code == 0:
@@ -203,7 +241,10 @@ def main():
     parser.add_argument("--explored", help="a character's <n>.BIN")
     parser.add_argument("--check", nargs="+", metavar="BIN",
                         help="replay characters' explored squares against the rule")
+    parser.add_argument("--features", default=FEATURE_FILE,
+                        help="the game folder's 7.NUM (default %s)" % FEATURE_FILE)
     arguments = parser.parse_args()
+    features(arguments.features)
     if arguments.check:
         for path in arguments.check:
             pairs, separated, report = check(path, arguments.generation)
