@@ -46,9 +46,10 @@ checked by playing it again rather than believed. `run.ts` is all of it and noth
 so it runs under Node as well as in a tab.
 
 * **The log** — the character's record as play began, the seed the run's generator was started
-  from, the commit the engine was built from, and every input in order. That is the whole of a
-  run: both games are turn based and every random number comes from the one generator, so the
-  same three things put through the same engine make the same game again.
+  from, the commit the engine was built from, and every input in order, with the actions, the
+  game's clock and the milestones the run claims. That is the whole of a run: both games are turn
+  based and every random number comes from the one generator, so the same three things put
+  through the same engine make the same game again.
 * **The inputs** are what the game *read*, not what the player pressed, which is why they are
   taken in `GameSession.key` rather than in `press`: a key typed while the character is swinging
   is thrown away by the flush at the end of the swing and the game never sees it. Ctrl-F's own
@@ -65,13 +66,42 @@ so it runs under Node as well as in a tab.
 * **`replayRun(log)`** builds a session from the log and presses its keys in order, and hands back
   the record, the place, the clock, the actions and the milestones it ended with. A replay never
   raises the repeat-fight flag, since those swings are in the log already.
+* **`RUN_GAMES`** is the one table of what a run needs of the game it was played in: the loop that
+  replays it, the game's own words for its clock and its own name for a dungeon. A game with a
+  line here can be recorded, replayed and checked, and nothing that does any of the three knows
+  which games there are.
 * **`export-run.ts`** is the download, which is the one part of this that touches the page.
 
 The engine commit comes from `__ENGINE_COMMIT__`, which `vite.config.ts` defines from `git
 rev-parse HEAD`; vitest reads the same config, so a test sees it too.
 
-A run is only replayable from its own beginning to its own end: a record the Save Editor writes
-while the game is being played is not in the log, so a run edited mid-play cannot be checked.
+## Checking a run
+
+`verify.ts` is the verdict: `verifyRun(log)` replays the log and says whether what comes back is
+what the log claims.
+
+* **Verified** — the replay spent the same actions, its clock reached the same number, and it
+  reached the same milestones in the same order, each at the same action count, clock and floor.
+  The verdict carries the ending as well: where the character stood, whether they are alive, dead
+  or have won, and a SHA-256 of the record the run ended with.
+* **Failed** — the first thing that differs, in words, milestone by milestone.
+* **Unverifiable** — nothing can be said either way. A run is only replayable from its own
+  beginning to its own end, and a record the Save Editor wrote while the game was being played is
+  not in the log: the log counts those as `edits`, and a run with any is unverifiable rather than
+  failed.
+* **A note** — an engine commit that is not this build's. That is a warning and not a failure:
+  the two engines may well agree, and a replay that reproduces the run says they did.
+
+`pnpm verify-run <run.json>` is the same check from a command line, with no browser: it builds
+`src/cli/verify-run.ts` for Node through `vite.verify.config.ts`, which defines
+`__ENGINE_COMMIT__` the way the site's build does, and prints the verdict. It exits 0 for a run
+that is what it claims to be, 1 for one that is not or cannot be checked, and 2 when there is no
+file to read. Nothing the command imports touches Svelte or the page.
+
+`fixtures/` holds one recorded run per game, played headless with a seed of their own, which the
+tests verify and the command can be tried on. A fixture that stops verifying is the engine having
+changed a game under runs already played in it; when that change is meant, write them again with
+`WRITE_RUN_FIXTURES=1 pnpm test src/lib/play/verify.test.ts`.
 
 ## Waiting for a key
 
