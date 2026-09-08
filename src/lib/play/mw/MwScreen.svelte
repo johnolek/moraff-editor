@@ -21,6 +21,7 @@
     MW_MAP_ROWS,
     MW_MAP_TOP_PIXELS,
     MW_MESSAGE_BOX_RECT,
+    MW_SCREEN_MODE,
     MW_SCREEN_PIXELS,
     MW_SCREEN_UNITS_X,
     MW_SCREEN_UNITS_Y,
@@ -98,8 +99,7 @@
       dungeon: place.dungeon,
       pictures: mwViewPictures(),
       bricks: 0,
-      // Mode 11, the 640 by 480 in 256 colours the game's own screenshots are in.
-      videoMode: 11,
+      videoMode: MW_SCREEN_MODE.mode,
       screen: { width: WIDTH, height: HEIGHT },
       horizonWeight: mwHorizonWeight(height),
       monsters: drawn,

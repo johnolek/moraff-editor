@@ -3,7 +3,7 @@
 // beside it pixel for pixel.
 //
 //   node mw-tools/reference/render_screen.mjs --floor 3 --dungeon 0 --x 40 --y 50 \
-//        --out screen.png [--height-of 70] [--view 0] [--width 640] [--height 480]
+//        --out screen.png [--height-of 70] [--view 0] [--width 1024] [--height 768]
 //
 // The floor is generated from the same DUNG.BIN the site ships, so no save file is needed.
 // --view renders that one view over the whole screen, the way the Z key zooms one; without it
@@ -44,6 +44,8 @@ const {
   MW_MESSAGE_BOX_RECT,
   MW_KEY_MENU_RECT,
   MW_COLOURS,
+  MW_SCREEN_MODE,
+  MW_SCREEN_PIXELS,
   MW_MAP_CELL,
   MW_MAP_COLUMNS,
   MW_MAP_ROWS,
@@ -76,7 +78,10 @@ const num = (name, fallback) => (args[name] === undefined ? fallback : Number(ar
 const floor = num('floor', 3);
 const dungeon = num('dungeon', 0);
 const at = { x: num('x', 40), y: num('y', 50) };
-const screen = { width: num('width', 640), height: num('height', 480) };
+const screen = {
+  width: num('width', MW_SCREEN_PIXELS.width),
+  height: num('height', MW_SCREEN_PIXELS.height),
+};
 const horizonWeight = mwHorizonWeight(num('height-of', 70));
 const only = args.view === undefined ? null : Number(args.view);
 const out = args.out ?? 'mw-screen.png';
@@ -111,8 +116,8 @@ const scene = {
   dungeon,
   pictures,
   bricks: 0,
-  // Mode 11, the 640x480 in 256 colours John's screenshots are in.
-  videoMode: 11,
+  // Mode 9, the 1024x768 in 256 colours John's screen recording is of.
+  videoMode: MW_SCREEN_MODE.mode,
   screen,
   horizonWeight,
   monsters,
@@ -129,7 +134,11 @@ if (only !== null) {
   drawText();
 }
 
-const palette = palettes.palettes[((floor % 11) + 11) % 11].map(([r, g, b]) => [
+// Entries 0 to 47 are keyed by floor % 11 and the ground, entries 48 to 63, by floor % 7.
+const palette = [
+  ...palettes.palettes[((floor % 11) + 11) % 11],
+  ...palettes.grounds[((floor % 7) + 7) % 7],
+].map(([r, g, b]) => [
   Math.round((r * 255) / 63),
   Math.round((g * 255) / 63),
   Math.round((b * 255) / 63),
