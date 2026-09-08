@@ -86,6 +86,11 @@ export function revItemsHeld(pc: RevPc, item: number): number {
   return revValue(pc, FIRST_ITEM_VALUE + item - 1);
 }
 
+/** One more of one of them, which is what a kill leaves (1000:B01D). */
+export function revGainItem(pc: RevPc, item: number): void {
+  setRevValue(pc, FIRST_ITEM_VALUE + item - 1, revItemsHeld(pc, item) + 1);
+}
+
 /** One of them is used up (1000:16FA and the eight like it). */
 export function revSpendItem(pc: RevPc, item: number): void {
   setRevValue(pc, FIRST_ITEM_VALUE + item - 1, revItemsHeld(pc, item) - 1);
@@ -128,6 +133,11 @@ export const REV_WORN = {
   ringsOfHealth: 1,
   /** 1000:13ED: the bag of holding. */
   bagOfHolding: 2,
+  /** 1000:ADF5 and 1000:AE81: the magic sword and mace, whose pluses are values 39 and 40. The
+   *  table at 1000:AC87 is the only place either bit is ever written and nothing reads them
+   *  back; the pluses are what the fight goes by. */
+  magicSword: 4,
+  magicMace: 8,
   /** 1000:3BE7: the magic ring, whose bonus is value 41. */
   magicRing: 16,
   /** 1000:3C15: the magic armour, whose bonus is value 42. */

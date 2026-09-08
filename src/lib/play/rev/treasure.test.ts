@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { REV_VALUE, revValue, setRevValue } from './record';
+import { REV_MAGIC } from './magic';
+import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue } from './record';
 import { REV_KEY } from './keys';
 import {
   REV_HIT_RETURN,
   REV_TAKE_OR_LEAVE,
   REV_TOO_HEAVY,
+  REV_NOTHING,
+  REV_YOU_FIND,
   REV_YOU_FIND_A_MACE,
   REV_YOU_FIND_A_SWORD,
   revDropsTreasure,
@@ -12,6 +15,7 @@ import {
   revTreasureFound,
   revTreasureFromAKill,
 } from './treasure';
+import type { RevPc } from './record';
 import { revCharacter, revRolls, revTestGame } from './spells.test-support';
 
 const KEY = (character: string) => character.charCodeAt(0);
@@ -239,5 +243,137 @@ describe('the armour or weapon the shallow levels hand out', () => {
     keys.push(REV_KEY.enter);
     await revTreasureFromAKill(game, desk);
     expect(game.said).toEqual([REV_HIT_RETURN]);
+  });
+});
+
+describe('what YOU FIND turns up', () => {
+  /** Everything a kill rolls before the table: the coins, the spellbook and the three drops. */
+  const upToTheTable = [0, 0, 0, 0, 0];
+
+  /**
+   * The rolls that read one line of the table on the twelfth level: the depth roll and the
+   * one-in-five that open it, then the plus, then the line. A half of twelve is six, and a third
+   * of six and one is a plus of 3.
+   */
+  const tableRolls = (line: number) => [...upToTheTable, FRACTION(0.5), 0, FRACTION(0.5), line - 1];
+
+  async function found(line: number, fields: Partial<RevPc> = {}) {
+    const pc = revCharacter({ dungeonLevel: 12, ...fields });
+    const game = revTestGame(pc, revRolls(tableRolls(line)));
+    game.keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game.game, game.desk);
+    return { pc, said: game.game.said.filter((said) => said !== REV_HIT_RETURN) };
+  }
+
+  it('says YOU FIND before every line of it', async () => {
+    const { said } = await found(7);
+    expect(said[0]).toBe(REV_YOU_FIND);
+  });
+
+  it('never reads the table at all above the fourth level', async () => {
+    const { said } = await found(7, { dungeonLevel: 3 });
+    expect(said).toEqual([]);
+  });
+
+  it('counts a ring of health and only wears the bit once', async () => {
+    const first = await found(1);
+    expect(first.said).toContain(' A RING OF HEALTH');
+    expect(first.pc.rings).toBe(1);
+    expect(revValue(first.pc, 38)).toBe(1);
+    const second = await found(1, { rings: 1 });
+    expect(second.pc.rings).toBe(1);
+    expect(revValue(second.pc, 38)).toBe(1);
+  });
+
+  it('hands over a bag of holding, and a sword to a character who has one', async () => {
+    const bag = await found(2);
+    expect(bag.said).toContain(' A BAG OF HOLDING');
+    expect(bag.pc.rings).toBe(2);
+    // 1000:AD7D falls into the next line of the program rather than saying NOTHING.
+    const again = await found(2, { rings: 2 });
+    expect(again.said).toContain(' A + 3 SWORD');
+  });
+
+  it('hands over a magic sword and a magic mace with the plus the depth rolled', async () => {
+    const sword = await found(3);
+    expect(sword.said).toContain(' A + 3 SWORD');
+    expect(revValue(sword.pc, REV_VALUE.sword)).toBe(1);
+    expect(revValue(sword.pc, REV_VALUE.swordPlus)).toBe(3);
+    expect(sword.pc.rings).toBe(4);
+    const mace = await found(4);
+    expect(mace.said).toContain(' A + 3 MACE');
+    expect(revValue(mace.pc, REV_VALUE.macePlus)).toBe(3);
+    expect(mace.pc.rings).toBe(8);
+  });
+
+  it('says nothing for a weapon no better than the one carried, and to a wizard', async () => {
+    const owned = revCharacter({ dungeonLevel: 12 });
+    setRevValue(owned, REV_VALUE.swordPlus, 3);
+    const game = revTestGame(owned, revRolls(tableRolls(3)));
+    game.keys.push(REV_KEY.enter);
+    await revTreasureFromAKill(game.game, game.desk);
+    expect(game.game.said).toContain(REV_NOTHING);
+    const wizard = await found(3, { cls: 2 });
+    expect(wizard.said).toContain(REV_NOTHING);
+  });
+
+  it('hands a wizard the magic ring, which is the one line of the table they are allowed', async () => {
+    const { pc, said } = await found(5, { cls: 2 });
+    expect(said).toContain(' + 3 RING');
+    expect(revValue(pc, REV_VALUE.armourBonus)).toBe(3);
+    expect(pc.rings).toBe(16);
+  });
+
+  it('puts the character in field plate along with the magic armour', async () => {
+    const { pc, said } = await found(6);
+    expect(said).toContain(' + 3 FIELD PLATE ARMOR');
+    expect(revValue(pc, REV_MAGIC.magicArmour)).toBe(3);
+    expect(revValue(pc, REV_ARMOUR_VALUE)).toBe(4);
+    expect(pc.rings).toBe(32);
+  });
+
+  it('hands over a holy hand grenade', async () => {
+    const { pc, said } = await found(7);
+    expect(said).toContain(' A HOLY HAND GRENADE!');
+    expect(revValue(pc, REV_MAGIC.holyHandGrenades)).toBe(1);
+  });
+
+  it('hands over a floor slosher once and says nothing the second time', async () => {
+    const first = await found(8);
+    expect(first.said).toContain(' A FLOOR SLOSHER');
+    expect(first.pc.rings).toBe(64);
+    const second = await found(8, { rings: 64 });
+    expect(second.said).toContain(REV_NOTHING);
+  });
+
+  it('hands over one of the nine scrolls and potions on lines nine to seventeen', async () => {
+    const first = await found(9);
+    expect(first.said).toContain(' A TELEPORT SCROLL  ');
+    expect(revValue(first.pc, 47)).toBe(1);
+    const last = await found(17);
+    expect(last.said).toContain(' A POTION OF RELOCATION  ');
+    expect(revValue(last.pc, 55)).toBe(1);
+  });
+
+  it('reads a book of a characteristic and puts a point on it', async () => {
+    const pc = revCharacter({ dungeonLevel: 12 });
+    const game = revTestGame(pc, revRolls([...tableRolls(18), 4]));
+    game.keys.push(REV_KEY.enter, KEY(' '));
+    await revTreasureFromAKill(game.game, game.desk);
+    expect(game.game.said).toContain('You have found a book of agility.');
+    expect(game.game.said).toContain('   Press any key to read it.');
+    expect(pc.stats[4]).toBe(16);
+    expect(game.game.said).toContain('You feel very good.');
+  });
+
+  it('reads the same book on every one of lines eighteen to twenty-two', async () => {
+    for (const line of [18, 19, 20, 21, 22]) {
+      const pc = revCharacter({ dungeonLevel: 12 });
+      const game = revTestGame(pc, revRolls([...tableRolls(line), 0]));
+      game.keys.push(REV_KEY.enter, KEY(' '));
+      await revTreasureFromAKill(game.game, game.desk);
+      expect(game.game.said).toContain('You have found a book of strength.');
+      expect(pc.stats[0]).toBe(16);
+    }
   });
 });

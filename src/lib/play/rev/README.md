@@ -175,16 +175,24 @@ worth knowing before reading the code.
   (`1000:AA18`), for a level rolled against the depth and a set decided by a coin. Nothing else
   in the game teaches a spell, and the wizard's guild sells only the sentence that says what one
   does.
+* **A kill is where nearly all of it comes from.** Past the coins and the spellbook a kill rolls
+  four more times (`treasure.ts`): the plain sword, mace or suit of armour the first eight levels
+  hand out, a wand and a pill for the two kinds of monster that carry them, and from the fourth
+  level down a twenty-two-line table of magic — the rings, the pluses, the field plate, the nine
+  scrolls and potions, and a book that puts a point on a characteristic for good. The store sells
+  the rest, and nothing else in the dungeon hands over anything at all.
 * **The two clocks are not the clock.** The spells a fight casts on the character are timed in
   *steps* — the counter at DGROUP B474 that every move counts and the top of every pass brings
   back round to 1 — so standing still never spends one. The three potions that wear off are timed
   against `TIMER`, which here is the monsters' own clock.
-* **Two of them are written down wrong and are kept that way.** `Feather' only stops at the `IF`
-  that zeroes a weight gone negative, so a character still carrying something falls into the next
-  line of the program, which is `Ascend': casting Feather floats them up a level as well. And the
-  bag of holding has nowhere to read how much treasure is being carried, so it works it back out
-  of the weight — and the second of the two sums, the one for a character in magic armour,
-  forgets to take the armour off.
+* **Three of them are written down wrong and are kept that way.** `Feather' only stops at the
+  `IF` that zeroes a weight gone negative, so a character still carrying something falls into the
+  next line of the program, which is `Ascend': casting Feather floats them up a level as well.
+  The bag of holding has nowhere to read how much treasure is being carried, so it works it back
+  out of the weight — and the second of the two sums, the one for a character in magic armour,
+  forgets to take the armour off. And a kill that turns up a bag of holding for a character who
+  has one falls into the next line of the drops table rather than saying NOTHING (`1000:AD7D`),
+  so a second bag of holding is a magic sword.
 
 ## What is not built yet
 
@@ -195,12 +203,6 @@ it stands in for:
 | key | what the game does | where |
 | --- | --- | --- |
 | A | drops all the coins carried, which is what makes a character light | 1000:1918 |
-
-Two things a kill can hand over are left out with them. Past the coins and the spellbook,
-`1000:AB7F` rolls three more times and, on each, calls one of `1000:B1DF`, `B156` and `B0E3`;
-past those again, `1000:AC87` prints "YOU FIND... " and hands over something else. None of the
-four has been read out. And the "HIT RETURN" the kill waits at before any of it (`1000:A505`) is
-not a key this port asks for.
 
 ## Two things read out of the code that the documents had otherwise
 

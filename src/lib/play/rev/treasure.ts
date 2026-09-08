@@ -1,20 +1,32 @@
 import type { RevMagicDesk } from './desk';
 import { REV_KEY } from './keys';
+import { REV_FEEL_VERY_GOOD } from './items';
 import {
+  REV_MAGIC,
+  REV_WORN,
   revBasicNumber,
   revFraction,
+  revGainItem,
   revGainPill,
   revGainWandCharges,
   revPillColour,
   revWandColour,
+  revWears,
 } from './magic';
 import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue } from './record';
-import { REV_SPELL_LEVEL_COUNT } from './tables';
+import { REV_ITEM_TABLE, REV_SPELL_LEVEL_COUNT } from './tables';
 import type { RevGame } from './state';
 
 /**
- * What a kill leaves behind: the coins at DUNSMALL.EXE 1000:A522 and the spellbook at
- * 1000:AA18.
+ * What a kill leaves behind, which is six things rolled one after another from DUNSMALL.EXE
+ * 1000:A4E7 to 1000:B0E0.
+ *
+ * It waits at HIT RETURN (1000:A505) and then rolls, in this order: the **coins** (1000:A522),
+ * the **spellbook** (1000:AA18), a plain **weapon or suit of armour** (1000:B1DF), a **wand**
+ * (1000:B156), a **pill** (1000:B0E3), and the twenty-two-line table of **magic** at
+ * 1000:AC87. Only the first two are rolled for every kill: the armour wants one of the first
+ * eight levels of the dungeon, the wand and the pill want a monster of the right kind, and the
+ * table wants the fourth level and deeper.
  *
  * A monster drops coins one time in five, and the six kinds of coin are rolled one at a time
  * with the depth and the monster's own level in every sum. They weigh something and are worth
@@ -163,29 +175,35 @@ export async function revTreasureFromAKill(game: RevGame, desk: RevMagicDesk): P
   await waitForReturn(game, desk);
   if (revDropsTreasure(game)) await offerTheCoins(game, desk);
   await offerASpellbook(game, desk);
-  theRestOfTheDrops(game);
+  await theRestOfTheDrops(game, desk);
 }
 
 /**
- * 1000:AB7F: the three more rolls a kill makes once the coins and the spellbook are out of the
- * way.
+ * 1000:AB7F: the four more things a kill can hand over once the coins and the spellbook are out
+ * of the way.
  *
- * Every one of them rolls whether or not the test in front of it could have passed, so a kill
- * costs the run's generator the same three numbers however it went.
+ * Every one of them rolls whether or not the test beside it could have passed, so a kill costs
+ * the run's generator the same numbers however it went.
  */
-function theRestOfTheDrops(game: RevGame): void {
+async function theRestOfTheDrops(game: RevGame, desk: RevMagicDesk): Promise<void> {
+  const rng = game.rng;
   const depth = game.pc.dungeonLevel;
   // 1000:AB7F: the plain weapon or suit of armour a character is meant to be kitted out with,
   // which only the first eight levels of the dungeon hand over.
-  const kitRoll = game.rng.random(8);
+  const kitRoll = rng.random(8);
   if (depth < 9 && kitRoll === 1) armourOrAWeapon(game);
   // 1000:ABB5 and 1000:ABF4: the wand and the pill the monster's own kind allows, each on a roll
   // the depth widens — a wand comes off about one such kill in seven on the first level and
   // better than one in three on the seventieth.
-  const wandRoll = game.rng.random(300);
+  const wandRoll = rng.random(300);
   if (game.dropsAWand && wandRoll < depth + 40) aWand(game);
-  const pillRoll = game.rng.random(160);
+  const pillRoll = rng.random(160);
   if (game.dropsAPill && pillRoll < depth + 25) aPill(game);
+  // 1000:AC33: and then the table, on a depth roll the first three levels of the dungeon can
+  // never pass and that grows likelier all the way down, and one kill in five of those.
+  const deepEnough = Math.floor(revFraction(rng) * depth + 7) + 1 > 10;
+  const lucky = rng.random(5) + 1 === 1;
+  if (deepEnough && lucky) await theTable(game, desk);
 }
 
 /** 1000:B292 and 1000:B2BA: the two weapons the shallow levels hand out. */
@@ -322,4 +340,143 @@ async function offerASpellbook(game: RevGame, desk: RevMagicDesk): Promise<void>
   setRevValue(pc, value, known | bit);
   game.say(`YOU FIND A LEVEL ${revBasicNumber(level)} SPELLBOOK     `, ...REV_SPELLBOOK_ADVICE);
   await desk.poll();
+}
+
+
+/** 1000:AC99: what the table is announced with, and 1000:B0D1 what a line with nothing to give
+ *  says. */
+export const REV_YOU_FIND = 'YOU FIND... ';
+export const REV_NOTHING = 'NOTHING';
+
+/** 1000:AD38 onwards: the lines of the table that name what they hand over outright. */
+const A_RING_OF_HEALTH = ' A RING OF HEALTH';
+const A_BAG_OF_HOLDING = ' A BAG OF HOLDING';
+const A_HOLY_HAND_GRENADE = ' A HOLY HAND GRENADE!';
+const A_FLOOR_SLOSHER = ' A FLOOR SLOSHER';
+
+/** 1000:B07A and 1000:B096: what a book of a characteristic says. */
+const A_BOOK_OF = 'You have found a book of ';
+const PRESS_ANY_KEY_TO_READ = '   Press any key to read it.';
+
+/** 1000:B03E: the five characteristics a book can be of, in the order the record keeps them and
+ *  with the game's own spelling of the third. */
+const BOOK_SUBJECTS = ['strength.', 'learning.', 'wizdom.', 'health.', 'agility.'];
+
+/**
+ * 1000:AC87: the twenty-two things a deep kill can turn up.
+ *
+ * Two numbers are rolled before the table is read: the plus every magic thing in it carries,
+ * which is a third of a roll on the depth, and which of the twenty-two lines it is. Lines 1 to 8
+ * are the magic a character wears, 9 to 17 the nine scrolls and potions the store also sells,
+ * and 18 to 22 a book that puts a point on a characteristic.
+ *
+ * A line that has nothing to give — magic the character already has better of, and anything at
+ * all offered to a wizard — says NOTHING instead.
+ *
+ * The four seconds 1000:2F35 holds YOU FIND... on the screen for are not kept, since nothing in
+ * this port waits; the two flushes around them are.
+ */
+async function theTable(game: RevGame, desk: RevMagicDesk): Promise<void> {
+  const rng = game.rng;
+  game.flushKeys();
+  game.say(REV_YOU_FIND);
+  const plus = Math.floor(Math.floor(revFraction(rng) * game.pc.dungeonLevel) / 3) + 1;
+  const line = rng.random(22) + 1;
+  game.scratch = line;
+  if (line > 17 && line < 23) await aBookOfACharacteristic(game, desk);
+  else if (line > 8) oneOfTheNineItems(game, line);
+  else theMagicWorn(game, line, plus);
+  game.flushKeys();
+}
+
+/** 1000:B0CE: the line had nothing this character does not have better of. */
+function nothing(game: RevGame): void {
+  game.say(REV_NOTHING);
+}
+
+/** 1000:AD35 to 1000:AFE0: the eight lines that hand over magic the character wears. */
+function theMagicWorn(game: RevGame, line: number, plus: number): void {
+  const pc = game.pc;
+  if (line === 1) {
+    game.say(A_RING_OF_HEALTH);
+    // The bit says the character wears rings of health at all and value 38 says how many, so a
+    // second ring raises only the count.
+    if (!revWears(pc, REV_WORN.ringsOfHealth)) pc.rings += REV_WORN.ringsOfHealth;
+    setRevValue(pc, REV_MAGIC.ringsOfHealth, revValue(pc, REV_MAGIC.ringsOfHealth) + 1);
+    return;
+  }
+  if (line === 2 && !revWears(pc, REV_WORN.bagOfHolding)) {
+    game.say(A_BAG_OF_HOLDING);
+    pc.rings += REV_WORN.bagOfHolding;
+    return;
+  }
+  // 1000:AD7D: a second bag of holding does not say NOTHING — it falls into the next line of the
+  // program, which is the sword, so the character is offered one of those instead.
+  if (line <= 3) {
+    game.scratch = plus;
+    if (pc.cls === 2 || revValue(pc, REV_VALUE.swordPlus) >= plus) return nothing(game);
+    game.say(` A +${revBasicNumber(plus)}SWORD`);
+    setRevValue(pc, REV_VALUE.sword, 1);
+    if (!revWears(pc, REV_WORN.magicSword)) pc.rings += REV_WORN.magicSword;
+    setRevValue(pc, REV_VALUE.swordPlus, plus);
+    return;
+  }
+  if (line === 4) {
+    game.scratch = plus;
+    if (pc.cls === 2 || revValue(pc, REV_VALUE.macePlus) >= plus) return nothing(game);
+    game.say(` A +${revBasicNumber(plus)}MACE`);
+    setRevValue(pc, REV_VALUE.mace, 1);
+    if (!revWears(pc, REV_WORN.magicMace)) pc.rings += REV_WORN.magicMace;
+    setRevValue(pc, REV_VALUE.macePlus, plus);
+    return;
+  }
+  // 1000:AEB5: the ring is the one piece of magic in the table a wizard is allowed.
+  if (line === 5) {
+    if (revValue(pc, REV_VALUE.armourBonus) >= plus) return nothing(game);
+    game.say(` +${revBasicNumber(plus)}RING`);
+    if (!revWears(pc, REV_WORN.magicRing)) pc.rings += REV_WORN.magicRing;
+    setRevValue(pc, REV_VALUE.armourBonus, plus);
+    return;
+  }
+  if (line === 6) {
+    if (pc.cls === 2 || revValue(pc, REV_MAGIC.magicArmour) >= plus) return nothing(game);
+    game.say(` +${revBasicNumber(plus)}FIELD PLATE ARMOR`);
+    if (!revWears(pc, REV_WORN.magicArmour)) pc.rings += REV_WORN.magicArmour;
+    setRevValue(pc, REV_MAGIC.magicArmour, plus);
+    // 1000:AF8B: and the suit worn becomes field plate, which nothing else in the dungeon hands
+    // over.
+    setRevValue(pc, REV_ARMOUR_VALUE, 4);
+    return;
+  }
+  if (line === 7) {
+    game.say(A_HOLY_HAND_GRENADE);
+    setRevValue(pc, REV_MAGIC.holyHandGrenades, revValue(pc, REV_MAGIC.holyHandGrenades) + 1);
+    return;
+  }
+  if (revWears(pc, REV_WORN.floorSlosher)) return nothing(game);
+  game.say(A_FLOOR_SLOSHER);
+  pc.rings += REV_WORN.floorSlosher;
+}
+
+/** 1000:AFE1: lines 9 to 17 are the nine scrolls and potions, one more of the line's own. */
+function oneOfTheNineItems(game: RevGame, line: number): void {
+  const which = line - 8;
+  game.scratch = which;
+  game.say(`${REV_ITEM_TABLE.names[which - 1]}  `);
+  revGainItem(game.pc, which);
+}
+
+/**
+ * 1000:B023: lines 18 to 22 are all the same book, of one of five characteristics rolled here.
+ *
+ * The wait is the game's own blocking one, so the characteristics are floored at 1 on the way out
+ * of it (1000:2F43) before the point is put on.
+ */
+async function aBookOfACharacteristic(game: RevGame, desk: RevMagicDesk): Promise<void> {
+  const stat = game.rng.random(5) + 1;
+  game.scratch = stat;
+  game.say(`${A_BOOK_OF}${BOOK_SUBJECTS[stat - 1]}`, PRESS_ANY_KEY_TO_READ);
+  await desk.wait();
+  game.pc.stats[stat - 1] += 1;
+  game.say(REV_FEEL_VERY_GOOD);
 }
