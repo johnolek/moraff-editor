@@ -267,8 +267,8 @@ this port does not have.
   still the record alone.
 * **The character file is the roster entry.** `save_player` writes the record back through
   `CharacterFile.write`, which is the real 2,697-byte file with its checksum, so a character can
-  be downloaded and played on in DOS. Death writes nothing, which is what the original does; the
-  roster marks the entry instead.
+  be downloaded and played on in DOS. Death writes nothing, neither the record nor the map, which
+  is what the original does; the roster marks the entry instead.
 * **The town's pictures are not drawn.** `g_store`, `temple`, `bank` and `flea_inn` fill the
   screen with `store.pic`, `temple.pic`, `bank.pic` and `inn.pic` behind their menus, and
   `boss_office_message` draws the boss beside its taunt. The port shows the words alone.

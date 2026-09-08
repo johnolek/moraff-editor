@@ -4,6 +4,7 @@ import { MW_ESCAPE } from '../../game/mw-port/screens';
 import type { MwGame } from '../../game/mw-port/state';
 import { bank, inn, store, temple } from '../../game/mw-port/town';
 import type { MwGameSession, MwTurn } from './engine';
+import { mwLeaveTheDungeon } from './memory';
 
 /**
  * The five things a square of floor 0 can hold, which the U key opens: the store, the temple,
@@ -162,16 +163,16 @@ const WHICH_DUNGEON = [
  * it has just picked: the character stands on its gate square, on floor 0, and enter_level puts
  * them there.
  *
- * The original also throws away the explored map — it deletes the eight `.DUN` files, blanks
- * all 32 floors in memory and forgets which block is loaded — and this port keeps no explored
- * map to throw away. What it does not do is forget the monsters: the two floors behind the one
- * in play still belong to the dungeon being left, so climbing down a ladder soon after can find
- * the floor as the old dungeon left it. That is the original's own behaviour, since nothing
- * between here and generate_section clears those two tables.
+ * It throws the explored map away on the way out, which {@link mwLeaveTheDungeon} is. What it
+ * does not do is forget the monsters: the two floors behind the one in play still belong to the
+ * dungeon being left, so climbing down a ladder soon after can find the floor as the old dungeon
+ * left it. That is the original's own behaviour, since nothing between here and generate_section
+ * clears those two tables.
  */
 function walkIntoTheDungeon(session: MwGameSession, chosen: number): void {
   const pc = session.game.pc;
   const arrival = gateArrival(chosen);
+  mwLeaveTheDungeon(session.memory, pc.dungeon, arrival.dungeon);
   pc.dungeon = arrival.dungeon;
   pc.x = arrival.x;
   pc.y = arrival.y;

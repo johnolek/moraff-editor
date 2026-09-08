@@ -229,6 +229,22 @@ export class MapMemory {
     }
   }
 
+  /** The 32 bitmaps are blanked and the block marker is put back to -1, without touching what
+   *  is on disk. */
+  forgetResident(): void {
+    this.resident.clear();
+    this.held = null;
+    this.live = emptyFloor();
+    this.arrival = emptyFloor();
+    this.drawn = new Set();
+  }
+
+  /** The explored maps are deleted outright, which only Moraff's World does. */
+  forgetEverything(): void {
+    this.store?.clear();
+    this.forgetResident();
+  }
+
   /** Every known square of the floor being played, for a caller that wants the whole set rather
    *  than a square at a time. */
   knownSquares(): ExploredSquares {

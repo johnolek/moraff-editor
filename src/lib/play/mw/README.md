@@ -25,7 +25,8 @@ tab, the map canvas, the screen renderer and the roster.
 * **`floor.ts`** — `enter_level` and `generate_section`'s three monster tables: arriving on a
   floor and the memory that decides whether its monsters are rolled again. The map the character
   has discovered is `../memory.ts`, since that part of `enter_level` is the same engine as
-  Dungeons of the Unforgiven's.
+  Dungeons of the Unforgiven's; **`memory.ts`** is the little this game does differently with it,
+  which is that a death and the gate throw the maps away.
 * **`record.ts`** — `load_player` and `save_player` over the whole 2,344-byte record.
 * **`screens.ts`** — where the message box goes, and `mwNotBuiltYet`. **`boxes.ts`** is the rest
   of it: showing the several boxes a ported function printed in one go one after another.
@@ -164,7 +165,8 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
 * **The character file is the roster entry.** `save_player` writes the record back through the
   roster, which is the real 2,344-byte file, so a character can be downloaded and played on in
   DOS. Death writes nothing, which is what the original does short of deleting the file; the
-  roster marks the entry instead and keeps the bytes.
+  roster marks the entry instead and keeps the bytes. The explored maps beside it are deleted,
+  which the original does too (`memory.ts`).
 * **The town's pictures are not drawn.** The store, the temple, the bank and the inn fill the
   screen with a WORLD.PIC image behind their menus. The port shows the words alone.
 * **There is no world map.** FUN_3000_8235 walks the character over an overworld, and all it
