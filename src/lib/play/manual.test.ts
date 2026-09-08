@@ -29,6 +29,38 @@ describe('the S key', () => {
     expect(drawn(session)).toContain(data.sections[0].descriptions[8]);
   });
 
+  it('prints the letters with the pen and the box the game gives them', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.monsterManual);
+    const letters = session.game.screen.find((line) => line.text === 'A     B     C     D     E');
+    // The thin bright pass of exe 3000:c4b1: colour 15, the pen at DS:2f68, and the box the
+    // call is handed rather than one psfont works out.
+    expect(letters).toMatchObject({ colour: 15, pen: 5, x: 0x19, y: 0x41a, spreadTo: 0x564, strokeBottom: 0x460 });
+  });
+
+  it('hands the tab the section and the words the panels are drawn under', async () => {
+    const session = inTheTown(lowest);
+    await press(session, KEY.monsterManual);
+    expect(session.sectionScreen).toEqual({ section: 1, lines: data.sections[0].intro, bossDead: false });
+    await press(session, 0x62);
+    expect(session.sectionScreen?.lines).toEqual(data.sections[0].descriptions.slice(8, 12));
+    await press(session, KEY.escape);
+    expect(session.sectionScreen).toBe(null);
+  });
+
+  it('stamps DEAD over the first panel once the section boss is dead', async () => {
+    const alive = inTheTown(lowest);
+    await press(alive, KEY.monsterManual);
+    expect(drawn(alive)).not.toContain('DEAD');
+
+    const beaten = inTheTown(lowest);
+    // The module's byte at DS:c0c9, bit 1 for the first of its four sections.
+    beaten.game.pc.objective[beaten.game.pc.module] |= 1;
+    await press(beaten, KEY.monsterManual);
+    expect(drawn(beaten)).toContain('DEAD');
+    expect(beaten.sectionScreen?.bossDead).toBe(true);
+  });
+
   it('leaves on any key that is not one of the five letters', async () => {
     const session = inTheTown(lowest);
     await press(session, KEY.monsterManual);
