@@ -50,7 +50,7 @@ export async function printMenus(session: GameSession, print: () => void): Promi
     session.showBox(box);
     await session.game.key();
   }
-  session.box = [];
+  session.wipeMessageBlock();
 }
 
 /**
@@ -118,5 +118,5 @@ export async function printMenusWhile(
     game.choice = askedChoice;
   }
   await showEach();
-  session.box = [];
+  session.wipeMessageBlock();
 }

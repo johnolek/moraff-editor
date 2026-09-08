@@ -339,8 +339,21 @@ export class GameSession {
     while (this.waitOwed) {
       this.waitOwed = false;
       await this.key();
-      this.box = [];
+      this.wipeMessageBlock();
     }
+  }
+
+  /**
+   * FUN_2000_4054 (exe 2000:4054, unf.c "FUN_2000_4054"), what it does once its key has arrived:
+   * the eight lines are wiped with FUN_2000_2820 and the strip above them with FUN_2000_28be.
+   *
+   * That wait is what every eight-line message box is shown behind, so a box that asks for a key
+   * stands only until it is given one.
+   */
+  wipeMessageBlock(): void {
+    clearMenuBlock(this.game);
+    clearMessageLine(this.game);
+    this.box = [];
   }
 
   /**
