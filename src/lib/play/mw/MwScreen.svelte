@@ -46,6 +46,11 @@
     mapMonsters?: StockedMonster[];
     /** The text the game draws over the screen, in its own 1600 by 1200 units. */
     lines: ScreenLine[];
+    /**
+     * The game has taken the whole display over, which it does on a screen it has cleared:
+     * clear_screen (WORLD.EXE) blanks the display before those pages are drawn.
+     */
+    cleared?: boolean;
     /** One view over the whole screen, the way the Z key zooms one; null draws all four. */
     zoomed?: number | null;
     /** The corner of the view the monster being fought stands in, or null when none is. */
@@ -61,6 +66,7 @@
     discovered,
     lines,
     mapMonsters = [],
+    cleared = false,
     zoomed = null,
     engagedCorner = null,
   }: Props = $props();
@@ -108,6 +114,9 @@
       renderMwView(frame, scene, MW_WHOLE_SCREEN_VIEW, zoomed);
     }
     if (engagedCorner) drawMonsterBar(frame, engagedCorner);
+    // A page that takes the display over (the help, the statistics) is drawn on a cleared
+    // screen, so the frame goes black before its lines are painted.
+    if (cleared) fillRect(frame, 0, 0, WIDTH, HEIGHT, 0);
     drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
     context.putImageData(new ImageData(toRgba(frame, floorPalette(place.floor)), WIDTH, HEIGHT), 0, 0);
   });

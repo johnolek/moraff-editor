@@ -366,6 +366,7 @@
               discovered={discoveredMap}
               mapMonsters={zoomMapMonsters(mode, view)}
               lines={screenLines}
+              cleared={screenTakesOver}
               engagedCorner={view.engaged === null ? null : monsterCorner}
             />
           </div>
