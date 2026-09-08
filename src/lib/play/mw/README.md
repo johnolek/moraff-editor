@@ -135,13 +135,13 @@ size: each corner is given the share of the map's width it has of the screen's 1
 | --- | --- |
 | top left | the strip a kill and a fight write on, and the message box under it (`mwCorner`) |
 | top right | the picture of the monster faced, with the level, hit points and experience FUN_2000_892d prints over its view, and the line FUN_2000_a9bd puts under the map |
+| bottom left | the character's own level, experience, spell points and health points (`mwStatusLines`) |
+| bottom right | the six characteristics (`mwCharacteristicLines`) |
 
 With the game's own screen up rather than the map, those three values go over every view a
 monster is standing in rather than over the one being faced, which is what FUN_2000_8b3f does
 after it has drawn the four views; `view3d/monster-bar.ts` is the bar FUN_2000_8728 puts the hit
 points on.
-| bottom left | the character's own level, experience, spell points and health points (`mwStatusLines`) |
-| bottom right | the six characteristics (`mwCharacteristicLines`) |
 
 Two things are not where the original puts them. The strip is drawn over the top of the message
 box in the game — the first line of each is at y 0x28 — which it gets away with because a menu is
