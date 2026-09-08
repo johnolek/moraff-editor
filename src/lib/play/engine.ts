@@ -409,6 +409,7 @@ export class GameSession {
     const bytes = this.edited;
     if (bytes === null) return;
     this.edited = null;
+    this.run?.edited();
     this.known = bytes.slice();
     this.file.bytes = bytes;
     const game = this.game;

@@ -20,7 +20,7 @@ import { MW_KEY, mwTurn } from './mw/keys';
 
 /** The shape of the log itself. A reader that does not know this number should not trust what it
  *  finds. */
-export const RUN_LOG_VERSION = 1;
+export const RUN_LOG_VERSION = 2;
 
 /** Which of the two playable games a run was played in. */
 export type RunGame = PortedGameId;
@@ -208,6 +208,12 @@ export interface RunLog {
   time: number;
   /** What the run reached, oldest first. */
   milestones: Milestone[];
+  /**
+   * How many times a record written outside the game — the Save Editor's — reached the character
+   * while the run was being played. A run with any cannot be checked: those records are not in
+   * the log, so a replay has no way of putting the character back into them.
+   */
+  edits: number;
 }
 
 /** The bytes of a base64 string from a run log. */
@@ -267,6 +273,8 @@ export class RunRecorder {
   readonly inputs: number[] = [];
   /** How many actions the run has spent. */
   actions = 0;
+  /** How many records written outside the game have reached the character. */
+  edits = 0;
   /** What the run has reached, oldest first. */
   readonly milestones: Milestone[] = [];
 
@@ -315,6 +323,12 @@ export class RunRecorder {
   dispatched(key: number): void {
     this.note();
     if (countsAsAction(this.game, key)) this.actions += 1;
+  }
+
+  /** A record the Save Editor wrote has reached the character, which is the end of what this log
+   *  describes: the log holds the record the run began with and nothing since. */
+  edited(): void {
+    this.edits += 1;
   }
 
   /** The character is dead, which is the end of the run. */
@@ -368,6 +382,7 @@ export class RunRecorder {
       actions: summary.actions,
       time: this.clock?.().time ?? 0,
       milestones: summary.milestones,
+      edits: this.edits,
     };
   }
 }

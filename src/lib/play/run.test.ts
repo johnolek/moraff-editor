@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
+import { loadPlayer, savePlayer } from '../game/port/record';
 import { UNFORGIVEN_MAP } from '../map/game';
 import { characterFile, press, settle, townSquare } from './battle.test-support';
 import { runMoveControl, startGame, type CharacterFile, type GameSession } from './engine';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
 import { mwCharacterFile } from './mw/engine.test';
+import { loadMwPlayer, saveMwPlayer } from './mw/record';
 import { MW_KEY, mwTurn } from './mw/keys';
 import { runFileName } from './export-run';
 import type { StoredMaps } from './memory';
@@ -136,6 +138,39 @@ describe('the run log', () => {
     session.finish();
 
     expect(run.log().inputs).toEqual([MW_KEY.arrowUp, TURN_INPUTS[2], MW_KEY.viewStats]);
+  });
+});
+
+describe('a run the save editor wrote a record into', () => {
+  it('says how many records reached the character', async () => {
+    const { run, session, file } = recordedGame({ level: 0, dir: 0, ...townSquare(), str: 20 });
+    await press(session, KEY.arrowUp);
+    session.recordEdited(savePlayer({ ...loadPlayer(file.bytes), str: 99 }, file.bytes));
+    await settle();
+    session.finish();
+
+    expect(session.game.pc.str).toBe(99);
+    expect(run.log().edits).toBe(1);
+  });
+
+  it("says the same in Moraff's World", async () => {
+    const { run, session, file } = recordedMwGame();
+    session.press(MW_KEY.arrowUp);
+    await settle();
+    session.recordEdited(saveMwPlayer({ ...loadMwPlayer(file.bytes), str: 99 }, file.bytes));
+    await settle();
+    session.finish();
+
+    expect(session.game.pc.str).toBe(99);
+    expect(run.log().edits).toBe(1);
+  });
+
+  it('counts none for a run nobody wrote a record into', async () => {
+    const { run, session } = recordedGame();
+    await press(session, KEY.arrowUp);
+    session.finish();
+
+    expect(run.log().edits).toBe(0);
   });
 });
 
