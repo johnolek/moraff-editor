@@ -13,22 +13,32 @@ import struct
 import sys
 from pathlib import Path
 
+# name: (file, rows per glyph, advance in pixels, glyphs skipped before the first)
+# Each file's three glyph boxes in rows, out of the tables the video mode indexes at DS:4d22 and
+# DS:4d5e.  A file is those three sizes back to back, 46 glyphs each, with no header.
+BOXES = {"320x200.fnt": [6, 8, 14], "360x480.fnt": [14, 19, 34], "ehout.fnt": [11, 14, 25]}
+
+# name: (file, which of the file's three sizes, rows exported, advance in pixels)
 FONTS = {
-    # name: (file, rows per glyph, advance in pixels)
-    "small": ("320x200.fnt", 5, 4),
-    "tall": ("360x480.fnt", 13, 6),
-    "bold": ("ehout.fnt", 10, 8),
+    "small": ("320x200.fnt", 0, 5, 4),
+    "tall": ("360x480.fnt", 0, 13, 6),
+    "bold": ("ehout.fnt", 0, 10, 8),
+    # The size the key menu is drawn in above 730 pixels across, where every other line is
+    # drawn with the vector font instead.
+    "menu": ("320x200.fnt", 2, 14, 10),
 }
-ORDER = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.?!()'&:=/"
+
+# Glyph order, which is the same in all three files and is what DS:4d7d maps a character to.
+ORDER = "-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.?!()'&:"
+GLYPHS = len(ORDER)
 
 
-def decode(path: Path, rows: int) -> dict[str, list[int]]:
-    size = path.stat().st_size // 2 * 2
-    words = struct.unpack("<%dH" % (size // 2), path.read_bytes()[:size])
-    stride = rows + 1
-    glyphs = {}
-    for index, char in enumerate(ORDER):
-        glyphs[char] = [words[index * stride + r] for r in range(rows)]
+def decode(path: Path, size_index: int, rows: int) -> dict[str, list[int]]:
+    boxes = BOXES[path.name]
+    words = struct.unpack("<%dH" % (path.stat().st_size // 2), path.read_bytes())
+    box = boxes[size_index]
+    first = sum(boxes[:size_index]) * GLYPHS
+    glyphs = {char: [words[first + index * box + r] for r in range(rows)] for index, char in enumerate(ORDER)}
     glyphs[" "] = [0] * rows
     return glyphs
 
@@ -36,8 +46,8 @@ def decode(path: Path, rows: int) -> dict[str, list[int]]:
 def main() -> None:
     game = Path(sys.argv[1])
     out = {}
-    for name, (file, rows, advance) in FONTS.items():
-        glyphs = decode(game / file, rows)
+    for name, (file, size_index, rows, advance) in FONTS.items():
+        glyphs = decode(game / file, size_index, rows)
         out[name] = {"source": file, "height": rows, "advance": advance, "glyphs": glyphs}
         widest = max(v.bit_length() for g in glyphs.values() for v in g)
         print(f"{name}: {file} {rows} rows, widest glyph {widest} px, advance {advance}")
