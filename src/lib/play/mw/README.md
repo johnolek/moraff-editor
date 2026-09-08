@@ -204,8 +204,11 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
   DOS. Death writes nothing, which is what the original does short of deleting the file; the
   roster marks the entry instead and keeps the bytes. The explored maps beside it are deleted,
   which the original does too (`memory.ts`).
-* **The town's pictures are not drawn.** The store, the temple, the bank and the inn fill the
-  screen with a WORLD.PIC image behind their menus. The port shows the words alone.
+* **The town has no pictures to draw.** `draw_picture` (WORLD.EXE 3000:0105) is called from three
+  places only — the view ahead, the square painter and the attract screen — so the store, the
+  temple, the bank and the inn really are words alone in this game too. The one thing the town
+  is drawn with is the mark `FUN_3000_2796` hangs over a building's square on floor 0, which is
+  in `view3d/render.ts`.
 * **There is no world map.** FUN_3000_8235 walks the character over an overworld, and all it
   does with where they stop is work a dungeon number out of the cell — one of 31,000, each of
   them the same eighteen wall patterns behind a different number. The port asks for that number
