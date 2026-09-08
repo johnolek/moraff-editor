@@ -10,8 +10,7 @@
 // all four are drawn in their own boxes.
 //
 // The text of the screen — the message box, the key menu, the numbers and the stats — is drawn
-// here in the small bitmap font the site already bundles, only so that the whole screen can be
-// seen at once. The site itself sets those lines in a web face through GameScreen.svelte.
+// by the same play/mw/view3d/text.ts the site draws it with, in the game's own bitmap font.
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { deflateSync } from 'node:zlib';
@@ -52,9 +51,9 @@ const {
   MW_MAP_TOP_PIXELS,
   MW_DIG_PROMPT,
 } = await load('play/mw/view3d/screen.ts');
+const { drawMwScreenText } = await load('play/mw/view3d/text.ts');
 const { ladderPrompt } = await load('play/mw/ladders.ts');
-const { mwKeyMenuLines, MW_KEY_MENU } = await load('game/mw-port/screens.ts');
-const { pixelFont, glyphRows } = await load('ui/pixel-font.ts');
+const { mwKeyMenuLines } = await load('game/mw-port/screens.ts');
 const palettes = JSON.parse(readFileSync(src('game/mw-palettes.json'), 'utf8'));
 
 const args = {};
@@ -121,7 +120,6 @@ const scene = {
 };
 
 const frame = newFrame(screen.width, screen.height);
-const font = pixelFont('small');
 
 if (only !== null) {
   renderMwView(frame, scene, MW_WHOLE_SCREEN_VIEW, only);
@@ -176,44 +174,22 @@ function drawBoxes() {
   fillRect(frame, cx + 2, cy + 2, cx + MW_MAP_CELL, cy + MW_MAP_CELL, MW_COLOURS.menuKey);
 }
 
-/** The lines of text, in the bundled bitmap font, so the whole screen can be seen at once. */
+/** The lines of text, drawn where and how the game draws them. */
 function drawText() {
-  const lines = [
+  drawMwScreenText(frame, screen, [
     ...mwKeyMenuLines(true),
-    { text: ladderPrompt(0, 0, false), x: MW_DIG_PROMPT.left, y: MW_DIG_PROMPT.y, colour: MW_DIG_PROMPT.colour, spreadTo: MW_DIG_PROMPT.right },
-    { text: 'YOU ARE FIGHTING THE MONSTER', x: 0, y: 0x28, colour: MW_COLOURS.message },
-    { text: 'LEVEL: 29', x: 0, y: 0x41a, colour: MW_COLOURS.status },
-    { text: 'SPELL POINTS: -1483 OF -1483', x: 0, y: 0x44c, colour: MW_COLOURS.status },
-    { text: 'HEALTH POINTS: 3395 OF 3395', x: 0, y: 0x47e, colour: MW_COLOURS.status },
-    { text: 'STR: 38', x: 0x49c, y: 0x41a, colour: MW_COLOURS.characteristics },
-    { text: 'INT: 39', x: 0x49c, y: 0x44c, colour: MW_COLOURS.characteristics },
-    { text: 'WIZ: 46', x: 0x49c, y: 0x47e, colour: MW_COLOURS.characteristics },
-    { text: 'CON: 11', x: 0x578, y: 0x41a, colour: MW_COLOURS.characteristics },
-    { text: 'DEX: 19', x: 0x578, y: 0x44c, colour: MW_COLOURS.characteristics },
-    { text: 'LUCK:46', x: 0x578, y: 0x47e, colour: MW_COLOURS.characteristics },
-  ];
-  for (const line of lines) {
-    const x0 = Math.trunc((screen.width * line.x) / 1600);
-    const y0 = Math.trunc((screen.height * line.y) / 1200);
-    const step =
-      line.spreadTo === undefined
-        ? 9
-        : Math.trunc((screen.width * (line.spreadTo - line.x)) / 1600 / Math.max(1, line.text.length));
-    for (let i = 0; i < line.text.length; i++) {
-      const glyph = glyphRows(font, line.text[i]);
-      const left = x0 + i * step;
-      glyph.forEach((bits, r) => {
-        for (let bit = 0; bits >> bit; bit++) {
-          if (bits & (1 << bit)) plot(left + bit, y0 + r, line.colour);
-        }
-      });
-    }
-  }
-}
-
-function plot(x, y, colour) {
-  if (x < 0 || y < 0 || x >= frame.width || y >= frame.height) return;
-  frame.pixels[y * frame.width + x] = colour;
+    { text: ladderPrompt(0, 0, false), x: MW_DIG_PROMPT.left, y: MW_DIG_PROMPT.y, font: 0, colour: MW_DIG_PROMPT.colour, spreadTo: MW_DIG_PROMPT.right },
+    { text: 'YOU ARE FIGHTING THE MONSTER', x: 0, y: 0x28, font: 0, colour: MW_COLOURS.message },
+    { text: 'LEVEL: 29', x: 0, y: 0x41a, font: 0, colour: MW_COLOURS.status },
+    { text: 'SPELL POINTS: -1483 OF -1483', x: 0, y: 0x44c, font: 0, colour: MW_COLOURS.status },
+    { text: 'HEALTH POINTS: 3395 OF 3395', x: 0, y: 0x47e, font: 0, colour: MW_COLOURS.status },
+    { text: 'STR: 38', x: 0x49c, y: 0x41a, font: 0, colour: MW_COLOURS.characteristics },
+    { text: 'INT: 39', x: 0x49c, y: 0x44c, font: 0, colour: MW_COLOURS.characteristics },
+    { text: 'WIZ: 46', x: 0x49c, y: 0x47e, font: 0, colour: MW_COLOURS.characteristics },
+    { text: 'CON: 11', x: 0x578, y: 0x41a, font: 0, colour: MW_COLOURS.characteristics },
+    { text: 'DEX: 19', x: 0x578, y: 0x44c, font: 0, colour: MW_COLOURS.characteristics },
+    { text: 'LUCK:46', x: 0x578, y: 0x47e, font: 0, colour: MW_COLOURS.characteristics },
+  ]);
 }
 
 /** A minimal PNG writer: one IDAT of filter-0 scanlines, which zlib does the rest of. */
