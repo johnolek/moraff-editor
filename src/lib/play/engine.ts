@@ -154,6 +154,8 @@ export interface PlayView {
   viewsDrawn: number;
   /** The X key's map is filling the screen, which covers the views and everything around them. */
   expandedMap: boolean;
+  /** The four lines of the stone tablet the snake's words are read on, or null when none is up. */
+  tablet: string[] | null;
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
@@ -198,6 +200,9 @@ export class GameSession {
    * putting the floor over it, so nothing else on the display shows while it stands.
    */
   expandedMap = false;
+  /** The lines of the stone tablet showing, or null. FUN_3000_9026 (exe 3000:9026) draws it and
+   *  waits for a key, and the key it is given is what takes it down again. */
+  tablet: string[] | null = null;
   /**
    * How much of the game the tab is showing (`mode.ts`). Nothing the game does reads it; it is
    * here so that anything keeping a record of the run can say which mode it was played in.
@@ -296,6 +301,13 @@ export class GameSession {
       if (this.sayingBanner) this.banner = [...this.banner, ...lines];
       else this.showBox(lines);
       said(...lines);
+    };
+    // A tablet is a screen of its own rather than a box, and FUN_3000_9026 waits for a key at the
+    // end of it (exe 3000:9081, the FUN_2000_412a call), which settle is where the port takes.
+    this.game.tablet = (...lines: string[]) => {
+      this.tablet = lines;
+      said(...lines);
+      this.waitOwed = true;
     };
     // movecontrol puts the map cursor in the middle of the view before its first pass. newGame
     // copies the record into a character of its own, so the cursor goes on that one.
@@ -407,6 +419,9 @@ export class GameSession {
     while (this.waitOwed) {
       this.waitOwed = false;
       await this.key();
+      // The key the tablet was waiting on is what takes it off the screen (exe 3000:9086, the
+      // fade FUN_4000_5c25 runs the moment the key arrives).
+      this.tablet = null;
       this.wipeMessageBlock();
     }
   }
@@ -595,6 +610,7 @@ export class GameSession {
       killed: this.timed.holding ? this.killedWhileHeld : this.killed,
       viewsDrawn: this.viewsDrawn,
       expandedMap: this.expandedMap,
+      tablet: this.tablet,
       over: this.over,
       dead: this.dead,
       run: this.run?.summary() ?? null,
@@ -626,7 +642,7 @@ function greetTheTown(session: GameSession): void {
   if (session.game.pc.level !== 0) return;
   const tablet = townTablet(session.game.pc.deepestFloor);
   if (tablet === null) return;
-  session.game.say(...tabletMessage(tablet));
+  session.game.tablet(...tabletMessage(tablet));
 }
 
 /**
@@ -685,6 +701,10 @@ function waitAMoment(turn: Turn): void {
 export async function runMoveControl(session: GameSession): Promise<void> {
   const game = session.game;
   const pc = game.pc;
+  // load_level_map greets a character arriving in the town with the snake's stone tablet, and
+  // FUN_3000_9026 waits for a key of its own at the end of it, all before movecontrol has run a
+  // pass. That tablet is the only thing that can be owed a key this early.
+  if (session.tablet) await session.settle();
   for (;;) {
     // The save editor can write the record while the game is being played, and the top of a pass
     // is where the game takes it: nothing of the original's runs across it, and everything the

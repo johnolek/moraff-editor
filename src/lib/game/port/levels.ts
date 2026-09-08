@@ -84,5 +84,5 @@ export function gainLevel(game: Game): number {
 export function levelUpScreen(game: Game): void {
   const tablet = innTablet(game.pc.lev);
   if (tablet === null) return;
-  game.say(...tabletMessage(tablet));
+  game.tablet(...tabletMessage(tablet));
 }

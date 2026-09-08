@@ -577,6 +577,16 @@ export interface Game {
    */
   say(...lines: string[]): void;
   /**
+   * tablet_message (exe 3000:931c, unf.c "tablet_message"): four lines shown on the stone tablet
+   * FUN_3000_9026 (exe 3000:9026) draws — a slab of the section's wall material across the middle
+   * of the screen — rather than in the eight-line message box. The tablet waits for a key of its
+   * own and goes when it is given one.
+   *
+   * The default keeps the lines with everything else the game has said, which is what a test
+   * reads; the Play tab puts the slab up instead (`src/lib/play/tablet.ts`).
+   */
+  tablet(...lines: string[]): void;
+  /**
    * pfont (exe 4000:0bb3) and psfont (exe 4000:0db8): draw one string on the screen and append it
    * to `messages` as well.
    *
@@ -676,7 +686,7 @@ export function setMonsterMap(game: Game, x: number, y: number, value: number): 
  * The overrides {@link newGame} accepts: any field of a {@link Game} except `pc`, which it takes
  * field by field, and the three printing methods, which it always supplies itself.
  */
-export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say' | 'draw' | 'eraseScreen'>> {
+export interface GameOverrides extends Partial<Omit<Game, 'pc' | 'say' | 'tablet' | 'draw' | 'eraseScreen'>> {
   pc?: Partial<PlayerCharacter>;
 }
 
@@ -890,6 +900,9 @@ export function newGame(overrides: GameOverrides = {}): Game {
       let last = lines.length;
       while (last > 0 && lines[last - 1] === '') last--;
       for (let i = 0; i < last; i++) messages.push(lines[i]);
+    },
+    tablet(...lines: string[]): void {
+      game.say(...lines);
     },
     draw(line: ScreenLine): void {
       const at = screen.findIndex((drawn) => drawn.x === line.x && drawn.y === line.y);

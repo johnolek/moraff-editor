@@ -19,6 +19,7 @@
     SCREEN_WINDOW,
     statusLines,
   } from './display';
+  import { drawTablet } from './tablet';
   import { viewPictures } from './view3d/browser';
   import { newFrame, toRgba } from './view3d/frame';
   import { renderFourViews, type KilledMonster, type ViewMonster } from './view3d/render';
@@ -55,6 +56,8 @@
     viewsDrawn?: number;
     /** The X key's map is filling the screen, which is drawn instead of everything else. */
     expandedMap?: boolean;
+    /** The four lines of the stone tablet the snake's words are read on, or null when none is up. */
+    tablet?: string[] | null;
   }
 
   let {
@@ -72,6 +75,7 @@
     killed = null,
     viewsDrawn = 0,
     expandedMap = false,
+    tablet = null,
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
@@ -147,13 +151,23 @@
       map: discovered,
       monsters: mapMonsters,
     };
+    const paint = (): void => {
+      const rgba = toRgba(frame, sectionPalette(place.module + 1, part, game.colourSetting));
+      context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
+    };
+    // The stone tablet the snake's words are read on (exe 3000:9026), which is a screen of its own:
+    // the slab and its four lines and nothing else.
+    if (tablet) {
+      drawTablet(frame, SCREEN_PIXELS, tablet, viewPictures(section?.section ?? 1).wall);
+      paint();
+      return;
+    }
     // The X key's map is a fill over the whole screen with the floor drawn on it (exe 2000:d341),
     // so the views and the boxes around them are not drawn at all while it is up.
     if (expandedMap) {
       drawExpandedMap(frame, floor);
       drawDotuScreenText(frame, SCREEN_PIXELS, text);
-      const covered = toRgba(frame, sectionPalette(place.module + 1, part, game.colourSetting));
-      context.putImageData(new ImageData(covered, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
+      paint();
       return;
     }
     // The coin flip that mirrors the monster ahead (exe 3000:2323), drawn from the number of the
@@ -190,8 +204,7 @@
     // blacks the whole display out instead.
     if (cleared) clearScreenRect(frame, cleared);
     drawDotuScreenText(frame, SCREEN_PIXELS, text);
-    const rgba = toRgba(frame, sectionPalette(place.module + 1, part, game.colourSetting));
-    context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
+    paint();
   });
 </script>
 

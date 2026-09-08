@@ -251,7 +251,8 @@
             prompt={view.prompt}
             killed={view.killed}
             viewsDrawn={view.viewsDrawn}
-            expandedMap={view.expandedMap} />
+            expandedMap={view.expandedMap}
+            tablet={view.tablet} />
         {:else}
           <FloorCanvas
             bind:this={canvas}
