@@ -1,6 +1,13 @@
 import { attackTiming } from '../game/port/combat';
 import { showHint } from '../game/port/drops';
 import { endBattleSpells, passMoment, relocate } from '../game/port/moment';
+import {
+  BATTLE_TEXT_COLOUR,
+  clearMenuBlock,
+  clearMessageLine,
+  messageLine,
+} from '../game/port/screens';
+import type { Game } from '../game/port/state';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import type { Turn } from './engine';
 
@@ -28,8 +35,35 @@ const HELD_TIMER = -1200;
 /** How many moments the digging takes. */
 const DIGGING_MOMENTS = 6;
 
+/**
+ * The flashing of 'DIGGING... DIGGING...' (exe 2000:bb92 and 2000:bbeb): four times over, the
+ * line wiped off for {@link DIG_BLANK_MS} and then drawn again for as long as the run asks.
+ *
+ * The second run of four is reached only from the top floor down to floor 15 (exe 2000:bbc0
+ * tests the floor against 16), and it holds the line half a second longer, so digging near the
+ * surface takes twice as long as digging deep.
+ */
+const DIG_FLASHES = 4;
+const DIG_BLANK_MS = 300;
+const DIG_LINE_MS = 1500;
+const DIG_SHALLOW_LINE_MS = 2000;
+const DIG_SECOND_RUN_STOPS_AT = 16;
+
+/** How long the line saying a monster has interrupted the dig stands (exe 2000:bb70). */
+const MONSTER_HELPS_MS = 1000;
+
 /** How far down a hole can reach, and where the floors run out. */
 const DEEPEST_REACH = 6;
+
+/** One run of four flashes, each one wiping the line off and drawing it again. */
+export function digging(game: Game, lineMs: number): void {
+  for (let flash = 0; flash < DIG_FLASHES; flash++) {
+    clearMessageLine(game);
+    if (!game.highSpeed) game.delay(DIG_BLANK_MS);
+    game.draw(messageLine('DIGGING... DIGGING...', BATTLE_TEXT_COLOUR)); // DS:1b5c
+    if (!game.highSpeed) game.delay(lineMs);
+  }
+}
 
 export async function digHole(turn: Turn): Promise<void> {
   const { game, session } = turn;
@@ -54,15 +88,20 @@ export async function digHole(turn: Turn): Promise<void> {
   game.monsterTimers.fill(0);
   if (attackTiming(game) !== -1) {
     game.redrawView = true;
-    game.say('A MONSTER WANTS TO HELP'); // DS:1b44
+    clearMenuBlock(game);
+    game.draw(messageLine('A MONSTER WANTS TO HELP', BATTLE_TEXT_COLOUR)); // DS:1b44
+    if (!game.highSpeed) game.delay(MONSTER_HELPS_MS);
     return;
   }
-  // The original flashes this four times over, and four more times above floor 16, with a wait
-  // between each. There is no clock here to wait on, so it is printed once.
-  game.say('DIGGING... DIGGING...'); // DS:1b5c
+  digging(game, DIG_LINE_MS);
   // DS:1b72 1b89 1ba1
   game.say('BOY THIS IS HARD WORK!', 'THIS IS ONE WAY TO WORK', '  UP A SWEAT!');
-  game.pressAnyKey();
+  // print_menu_only ends in FUN_2000_4054, which takes a key and then wipes what it showed, so
+  // the second run of flashes has the strip to itself.
+  await game.key();
+  session.wipeMessageBlock();
+  if (pc.level < DIG_SECOND_RUN_STOPS_AT) digging(game, DIG_SHALLOW_LINE_MS);
+  clearMessageLine(game);
   game.engaged = -1;
   game.recenterMap = true;
   let landing = pc.level;

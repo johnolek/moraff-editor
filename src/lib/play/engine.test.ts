@@ -212,9 +212,14 @@ describe('changing floors', () => {
     await press(session, KEY.dig);
     expect(session.box[0]).toBe('DO YOU WISH TO DIG A HOLE');
     await press(session, 0x31);
-    // The dig either goes through or a monster reaches the character first.
-    const view = session.view();
-    expect(view.place.floor > 3 || session.box.includes('A MONSTER WANTS TO HELP')).toBe(true);
+    // A monster that reached the character stops the dig, on the line above the box rather than
+    // in it, which is where dig_hole draws it.
+    const said = session.view().box.map((line) => line.text);
+    if (said.includes('A MONSTER WANTS TO HELP')) return;
+    // Otherwise the first four DIGGING... flashes have gone by and the box is waiting for a key.
+    expect(session.box[0]).toBe('BOY THIS IS HARD WORK!');
+    await press(session, KEY.escape);
+    expect(session.view().place.floor).toBeGreaterThan(3);
   });
 });
 
