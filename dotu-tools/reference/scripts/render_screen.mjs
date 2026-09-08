@@ -14,6 +14,9 @@
 // --killed adds the skull movecontrol paints over that monster the moment its hit points run
 // out, which is the screen the kill's own messages are read on.
 //
+// --plaque adds the HIT ANY KEY plaque FUN_2000_3e73 puts up behind every message box that waits,
+// as it stands once its 330 ms delay is up.
+//
 // --tablet N draws the stone tablet the little snake's words are read on, with UH2.BIN message N
 // (0 is the first of the town greetings).
 //
@@ -75,6 +78,7 @@ const { monsterIdOf, BOSS_KIND } = await load('play/floor.ts');
 const { bossSignpost } = await load('play/misc.ts');
 const { drawTablet } = await load('play/tablet.ts');
 const { drawSectionScreen } = await load('play/section-screen.ts');
+const { drawPlaque } = await load('play/plaque.ts');
 const { drawManualPage } = await load('play/manual.ts');
 const { tabletMessage } = await load('game/port/hints.ts');
 const { monsterById } = await load('map/stocking.ts');
@@ -242,6 +246,8 @@ const standing = [
 const cleared = game.blackedOut;
 const text = [...(cleared ? standing.filter((line) => !inRect(cleared, line)) : standing), ...drawnOnBlack];
 drawDotuScreenText(frame, frame, text);
+// The plaque the wait behind a message box puts up (exe 2000:3e73), over whatever is on the screen.
+if (args.plaque) drawPlaque(frame, SCREEN_PIXELS, wall);
 
 const palette = dungeonPalette(palettes, null, moduleIndex + 1, part);
 writeFileSync(out, encodePng(frame.width, frame.height, toRgba(frame, palette)));
