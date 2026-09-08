@@ -215,7 +215,7 @@
   /** The run as it stands, as a file. */
   function exportRun() {
     const run = session?.run;
-    if (run) downloadRunLog(run.log());
+    if (run) downloadRunLog({ ...run.log(), mode: session?.mode ?? null });
   }
 
   /** The game's own clock, which the panel calls "moves spent". It counts in fractions of a move,
