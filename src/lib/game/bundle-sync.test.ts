@@ -23,7 +23,11 @@ const copies: [string, string][] = [
   ['src/lib/game/building-palette-banks.json', 'dotu-tools/data/building-palette-banks.json'],
 ];
 
-const pictureNames = ['ufmon.pic', ...Array.from({ length: 20 }, (_, i) => `ufmon${i + 1}.pic`)];
+const pictureNames = [
+  'ufmon.pic',
+  ...Array.from({ length: 20 }, (_, i) => `ufmon${i + 1}.pic`),
+  ...Array.from({ length: 4 }, (_, i) => `ufwall${i + 1}.pic`),
+];
 
 const pictureCopies: [string, string][] = pictureNames.map((name) => [
   `src/lib/game/pics/${name}`,
