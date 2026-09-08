@@ -28,6 +28,23 @@ const POISON_COUNT = 8;
 const BOSS_AREA_ORIGIN = 25;
 const BOSS_AREA_SIZE = 50;
 
+/** The kill flags of a module whose four Shadow bosses are all still alive, which is every roll
+ *  the map explorer asks for: it has no character, so it shows a dungeon nobody has beaten. */
+export const NO_BOSS_BEATEN = 0;
+
+/**
+ * Whether the section's Shadow boss stands on this floor: it is his floor, and the bit for his
+ * section is still clear.
+ *
+ * `bossesBeaten` is the module's byte at DS:c0c9, which the save calls `objective`; bits 1, 2, 4
+ * and 8 are the four sections of the module, and kill_monster (exe 3000:b12d) sets one when its
+ * boss dies.
+ */
+function bossStandsOn(section: SectionInfo, floor: number, bossesBeaten: number): boolean {
+  if (floor !== section.bossFloor) return false;
+  return (bossesBeaten & (1 << (section.part - 1))) === 0;
+}
+
 export interface StockedMonster {
   /** Position in the floor's monster table; the Shadow boss is always slot 0. */
   slot: number;
@@ -82,6 +99,9 @@ const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
  * explorer, which has no player, leaves it out.
  *
  * A floor the game could not stock gets nothing.
+ *
+ * @param bossesBeaten the module's kill flags, which keep a Shadow boss who has already been
+ *   killed off his floor for good.
  */
 export function stockFloor(
   rows: MapSquare[][],
@@ -89,6 +109,7 @@ export function stockFloor(
   floor: number,
   rnd: () => number,
   occupied: Iterable<number> = [],
+  bossesBeaten: number = NO_BOSS_BEATEN,
 ): StockedMonster[] {
   const section = stockingSection(moduleIndex, floor);
   if (!section) return [];
@@ -99,7 +120,7 @@ export function stockFloor(
     let { x, y } = freeSquare(rows, taken, rnd);
     taken.add(y * WIDTH + x);
     let entry = rollKind(section.section, rnd);
-    if (slot === 0 && floor === section.bossFloor) {
+    if (slot === 0 && bossStandsOn(section, floor, bossesBeaten)) {
       entry = sectionMonster(section.section, BOSS_SLOT);
       // set_monster_map(x, y, 0xff) gives the square just rolled back before the boss is put
       // down in the middle of the floor instead.

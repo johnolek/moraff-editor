@@ -54,6 +54,15 @@ describe('stockFloor', () => {
     expect(plain.some((monster) => monsterById(monster.monsterId).isBoss)).toBe(false);
   });
 
+  it('leaves a Shadow boss who has been killed off his floor', () => {
+    const section = sectionInfo(0, 5)!;
+    const beaten = stockFloor(floorOf(0, 5), 0, 5, seeded(13), [], 1 << (section.part - 1));
+    expect(beaten.some((monster) => monsterById(monster.monsterId).isBoss)).toBe(false);
+
+    const anotherSectionsBoss = stockFloor(floorOf(0, 5), 0, 5, seeded(13), [], 2);
+    expect(monsterById(anotherSectionsBoss[0].monsterId).name).toBe(section.bossName);
+  });
+
   it('places the Shadow boss in the middle 50 squares of both axes', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const [boss] = stockFloor(floorOf(1, 20), 1, 20, seeded(seed));

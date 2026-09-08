@@ -100,7 +100,10 @@ export class FloorMonsters {
       // The player is on the grid before the roll, so nothing is stocked on top of them.
       setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
       if (level !== 0) {
-        fill(table.monsters, stockFloor(rows, game.pc.module, level, fractions(rng), [squareIndex(game.pc.x, game.pc.y)]));
+        fill(
+          table.monsters,
+          stockFloor(rows, game.pc.module, level, fractions(rng), [squareIndex(game.pc.x, game.pc.y)], game.pc.objective[game.pc.module]),
+        );
       }
     }
     for (let slot = 0; slot < table.monsters.length; slot++) {
