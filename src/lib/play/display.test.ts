@@ -8,6 +8,7 @@ import { FOUR_VIEWS } from './view3d/views';
 import { ZOOM_MONSTER_COLOUR } from './zoom-monsters';
 import {
   arrowPixel,
+  clearScreenRect,
   drawScreenFurniture,
   keyMenuLines,
   KEY_MENU_LINES,
@@ -169,6 +170,26 @@ describe('the boxes on a 1024 by 768 screen', () => {
     const onScreen = (value: number) => Math.trunc(((SCREEN_PIXELS.width - 1) * value) / 0x63f);
     expect(onScreen(MESSAGE_BOX.left)).toBe(588);
     expect(onScreen(MESSAGE_BOX.right)).toBe(1023);
+  });
+});
+
+describe('the black a screen is drawn on', () => {
+  const filled = (rect: { x: number; y: number; right: number; bottom: number }): Frame => {
+    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    frame.pixels.fill(7);
+    clearScreenRect(frame, rect);
+    return frame;
+  };
+
+  it('blacks out the rectangle the game filled, scaled the way it fills one', () => {
+    // cast_a_spell's own fill for the miniature spell table: the whole message column.
+    const frame = filled({ x: 0x398, y: 0x2ff, right: 0x640, bottom: 0x4b0 });
+    const left = Math.trunc(((SCREEN_PIXELS.width - 1) * 0x398) / 0x63f);
+    const top = Math.trunc(((SCREEN_PIXELS.height - 1) * 0x2ff) / 0x4af);
+    expect(pixelAt(frame, left, top)).toBe(0);
+    expect(pixelAt(frame, SCREEN_PIXELS.width - 1, SCREEN_PIXELS.height - 1)).toBe(0);
+    expect(pixelAt(frame, left - 1, top)).toBe(7);
+    expect(pixelAt(frame, left, top - 1)).toBe(7);
   });
 });
 

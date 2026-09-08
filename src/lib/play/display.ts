@@ -2,7 +2,7 @@ import { expLabel, levelLabel } from '../character/record';
 import type { DiscoveredMap } from '../map/draw-floor';
 import type { MapSquare } from '../map/game';
 import { ARMOR_NAMES, WEAPON_NAMES } from '../game/port/drops';
-import type { PlayerCharacter, ScreenLine } from '../game/port/state';
+import type { PlayerCharacter, ScreenLine, ScreenRect } from '../game/port/state';
 import { drawLine, fillRect, plot, type Frame } from './view3d/frame';
 import { drawZoomMonsters, type ZoomMapWindow } from './zoom-monsters';
 
@@ -257,15 +257,32 @@ export const zoomMapWindow = (frameWidth: number): ZoomMapWindow => ({
 });
 
 /**
+ * Where a corner of a filled rectangle lands on the frame. `FUN_2000_20db` (exe 2000:20db) scales
+ * its corners by the screen's last column over 1599 and its last row over 1199, one unit off
+ * `pfont`'s own 1600 and 1200.
+ */
+const fillX = (frame: Frame, x: number): number => Math.trunc(((frame.width - 1) * x) / 0x63f);
+const fillY = (frame: Frame, y: number): number => Math.trunc(((frame.height - 1) * y) / 0x4af);
+
+/**
+ * The colour 0 a screen that takes the display over is drawn on: `cast_a_spell` fills the top of
+ * the screen for its spell table and the message column for the miniature one, and a screen whose
+ * own fill is lost in the decompilation blacks the whole display out instead.
+ */
+export function clearScreenRect(frame: Frame, rect: ScreenRect): void {
+  const [left, top] = [fillX(frame, rect.x), fillY(frame, rect.y)];
+  fillRect(frame, left, top, fillX(frame, rect.right), fillY(frame, rect.bottom), 0);
+}
+
+/**
  * The boxes and the zoom map, painted into the frame the four views are drawn on. The text over
  * them is a `GameScreen`, since the site sets the game's screens in a web font rather than in the
  * bitmap faces.
  */
 export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
-  const toX = (x: number) => Math.trunc(((frame.width - 1) * x) / 0x63f);
-  const toY = (y: number) => Math.trunc(((frame.height - 1) * y) / 0x4af);
   for (const box of SCREEN_BOXES) {
-    fillRect(frame, toX(box.left), toY(box.top), toX(box.right), toY(box.bottom), box.colour);
+    const [left, top] = [fillX(frame, box.left), fillY(frame, box.top)];
+    fillRect(frame, left, top, fillX(frame, box.right), fillY(frame, box.bottom), box.colour);
   }
   drawZoomMap(frame, floor);
   drawZoomMonsters(frame, zoomMapWindow(frame.width), floor.at, floor.monsters ?? []);
