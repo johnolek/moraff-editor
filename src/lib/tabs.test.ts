@@ -6,8 +6,8 @@ describe('the tabs a game has', () => {
     expect(tabsFor('unforgiven')).toEqual(TABS);
   });
 
-  it('is the Map, Play, the Save Editor, the Monsters, Spells, New Character and Source for Moraff’s World', () => {
-    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['map', 'play', 'editor', 'monsters', 'spells', 'roller', 'source']);
+  it('is the Map, Play, the Save Editor, the Monsters, Spells, Tidbits, New Character and Source for Moraff’s World', () => {
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toEqual(['map', 'play', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source']);
   });
 
   it('is the Map, the Save Editor, the Monsters, New Character and Source for Moraff’s Revenge', () => {

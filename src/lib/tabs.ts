@@ -21,9 +21,10 @@ export const TABS: TabEntry[] = [
 ];
 
 /** The tabs each game other than Dungeons of the Unforgiven has, which has them all: the
- *  calculators, the formulas, the tidbits and the snake are that game's alone. */
+ *  calculators, the formulas and the snake are that game's alone. A game listing `tidbits` here
+ *  needs a file of its own in `src/lib/tidbits/files.ts` to show on it. */
 const GAME_TABS: Partial<Record<GameId, Tab[]>> = {
-  moraffsWorld: ['map', 'play', 'editor', 'monsters', 'spells', 'roller', 'source'],
+  moraffsWorld: ['map', 'play', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source'],
   revenge: ['map', 'editor', 'monsters', 'roller', 'source'],
 };
 

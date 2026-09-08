@@ -3,10 +3,10 @@
   import { goToTab } from '../history';
   import { sourceFiles, type SourceFile } from '../source/ports';
   import PixelText from '../ui/PixelText.svelte';
-  import source from './TIDBITS.md?raw';
+  import { TIDBITS_FILES } from './files';
   import { parseTidbits, searchTidbits, type Inline, type LinkTarget } from './markdown';
 
-  const all = parseTidbits(source);
+  const all = $derived(parseTidbits(TIDBITS_FILES[app.game] ?? ''));
 
   let search = $state('');
 
@@ -16,9 +16,10 @@
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  /** The file an entry names by its bare name, as the Source tab keys it: by its whole path. */
+  /** The file an entry names by its bare name, as the Source tab keys it: by its whole path.
+   *  Each game has its own port, so the same bare name is a different file under each. */
   function sourceFile(name: string): SourceFile | null {
-    return sourceFiles().find((file) => file.endsWith(`/${name}`)) ?? null;
+    return sourceFiles(app.game).find((file) => file.endsWith(`/${name}`)) ?? null;
   }
 
   function open(target: LinkTarget): void {

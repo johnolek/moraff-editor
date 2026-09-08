@@ -31,8 +31,10 @@ pnpm dev
   them. Edit the bundle first, then copy. Types live in the sibling `.d.ts` files.
 - The map explorer, the Play tab, the save editor, the monsters, the spells and the
   character roller cover DotU and Moraff's World; Moraff's Revenge has the map
-  explorer only; the calculators, the formulas, the tidbits and the snake are
-  DotU's alone.
+  explorer only; the calculators, the formulas and the snake are DotU's alone.
+- The Tidbits tab follows the game switch: a game has one when
+  `src/lib/tidbits/files.ts` names a file for it and `src/lib/tabs.ts` lists the
+  tab for it.
 - Real game folders live in `~/games/4unf for claude/` (DotU), `~/games/mworld/`
   (Moraff's World) and `~/games/rev2/` (Moraff's Revenge); never modify them and
   never commit copies of saves or executables. Tests use synthetic buffers.
