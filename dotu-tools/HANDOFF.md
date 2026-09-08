@@ -390,6 +390,7 @@ dotu-tools/
   docs/METHOD.md                 how the functions in the exe were identified
   docs/PORT-PLAN.md              browser-playable port: what is known, what is not, phases
   docs/TIDBITS.md                the odd things found in the exe (copy protection, palette leaks...)
+  docs/CONTEST.md                the hundred-dollar contest, and why the promised code does not exist
   docs/FUNCTION-CATALOG.md       all 647 functions of unf.exe, 185 named, with callers
   reference/dotu-explained.js    the game rules as long-named, step-by-step JS + cross-check self-test
   reference/dotu-pic.js          .PIC decoder + palette/colour rules (ES module)
