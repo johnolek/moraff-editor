@@ -26,9 +26,10 @@ something the original does, a comment says so.
   memory that decides whether its monsters are rolled again. **`memory.ts`** — the other half of
   arriving on a floor: the map the character has discovered, which is the same engine in both
   games and so is shared with Moraff's World.
-* **`screens.ts`** — the eight lines of the message box, which are `menuLine` in
-  `src/lib/game/port/screens.ts` drawn in the same place a menu is, and `notBuiltYet`, which
-  nothing here says any more. **`boxes.ts`** is the rest of it: the several boxes a ported
+* **`screens.ts`** — where the message box stands on the screen and what is in it, which is the
+  eight lines of `menuLine` in `src/lib/game/port/screens.ts` drawn in the same place a menu is,
+  plus `notBuiltYet`, which nothing here says any more. **`MessageBox.svelte`** is that box drawn
+  on its own, for the tab showing the map instead of the screen. **`boxes.ts`** is the rest of it: the several boxes a ported
   function printed shown one after another, since `print_menu_only` waits for a key after each of
   them — `printMenus` for a synchronous function, `printMenusWhile` for one that asks menus of
   its own halfway through, and `sayAsOneBox` for the handful of messages the game draws down that
@@ -37,7 +38,8 @@ something the original does, a comment says so.
   count `draw_monster_view` keeps, and the taunt the section boss sends every 250 of them.
 * **`Play.svelte`** — the tab: the game's screen or the top-down map, the screens and the row of
   keys. **`display.ts`, `Screen.svelte`** — the screen itself: the boxes `movecontrol` fills, the
-  key menu, the zoom map and the status block, over the four views of `view3d/`.
+  key menu, the zoom map, the status block and everything the game has printed, over the four
+  views of `view3d/`.
 * **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
   prints, beside the map, and the picture of the monster in front of the character over them.
 
@@ -143,23 +145,33 @@ message box, which is `notBuiltYet` in `screens.ts`, so nothing is ever silently
 
 ## Showing a screen
 
-Two places text goes, and they are kept apart:
+Two things text goes through, and both end up on the game's own screen, at the coordinates the
+game drew them at:
 
-* **The message box** — eight lines down the right (exe 2000:2f5d). `game.say(...lines)` puts
-  them there, which is `print_menu_only`, and the box is cleared when the next key arrives.
+* **The message box** — eight lines down the right with a bar above them (exe 2000:2f5d, and
+  `dotu-tools/docs/SCREEN.md` for what it looks like). `game.say(...lines)` puts them there,
+  which is `print_menu_only`, and the box is cleared when the next key arrives.
   `game.pressAnyKey()` after it is the wait the original does.
 * **A screen** — `game.draw(line)` and `game.eraseScreen()`, which are `pfont` and
-  `erase_menu_block`. Anything on `game.screen` is drawn over the map at the game's own
-  coordinates, and the tab shows it as long as it is there. `help.ts` is the worked example: draw,
-  `await game.key()`, erase.
+  `erase_menu_block`. `help.ts` is the worked example: draw, `await game.key()`, erase.
 * **A screen the game leaves up for a moment** — `game.delay(ms)`, which is the `delay` at
   1000:2789 the original busy-waits in. The screen as it stands at that call is kept as a frame
   by `timed.ts`, and the frames are shown in turn for as long as each asked for, so a kill's
   four messages arrive one after another rather than the last one alone. Nothing about the game
   waits: the loop runs straight past. Any key gives up the frames still to come.
 
-Both go through `src/lib/ui/GameScreen.svelte`, the same renderer the character roller uses, so a
-line lands exactly where the game's own `pfont` call puts it.
+`screens.ts` is where the two are put back together, since the game does not keep them apart on
+the screen: `messageBoxScreen` is what stands in the message box — the eight lines the last box or
+menu filled, or the battle banner when nothing has been said, and over them whatever `pfont` has
+drawn inside the box's own rectangle, which is where a kill puts "YOU KILLED IT!" and a drop puts
+"GOOD NEWS...". `screenTakenOver` is the rest of what was drawn, which is the help, the V screen,
+the monster manual and the pages behind the P key, all of which draw across the four 3-D views.
+
+Everything goes through `src/lib/ui/GameScreen.svelte`, the same renderer the character roller
+uses, so a line lands exactly where the game's own `pfont` call puts it. With the top-down map
+shown in the screen's place, `MessageBox.svelte` draws the message box beside it — the same
+rectangle in the same colours — and only a screen that has taken the display over covers the map,
+since the views it draws across are not there to draw it on.
 
 A menu is a screen and a `choice`:
 
@@ -255,9 +267,9 @@ Nothing the game does reads it.
 | `place` | where the character is standing and which way they face |
 | `rows` | the floor, as the map descriptor generates it |
 | `monsters` | every monster standing on the floor, for the map |
-| `box` | the eight lines of the message box |
+| `box` | the message box: its eight lines and the bar above them |
 | `screen` | the screen the game has taken the display over with |
-| `banner` | `engagement_timing`'s lines about the monster being faced |
+| `banner` | `engagement_timing`'s lines about the monster being faced, which the box shows when nothing has been said |
 | `prompt` | the ladder or doorway box |
 | `seconds` | game time spent, which `call_check_eng` counts |
 | `engaged` | the monster being faced, with its level and hit points |
