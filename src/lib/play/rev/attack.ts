@@ -63,20 +63,30 @@ export function revMonsterAttack(game: RevGame): RevMonsterSwing {
   const fight = game.fight;
   const pc = game.pc;
   const rng = game.rng;
-  const armourClass = revArmourClass(game);
-  if (!fight) return { roll: 0, armourClass, damage: 0 };
-  let roll = 0;
+  const cells = game.monsterSwing;
+  if (!fight) return { ...cells };
+  // 1000:9A58: a monster of kind 3 that drew blood last time is stuck to the character, and
+  // throws away everything but the damage: the roll and the armour class its last swing left
+  // in DGROUP are what this one is measured against.
+  const stuck = fight.kind === 3 && cells.damage > 0;
+  cells.damage = 0;
+  if (!stuck) {
+    cells.roll = 0;
+    // The scratch cell the roll accumulates into rather than assigning, which is the second slip.
+    let x = game.scratch;
+    do {
+      x += rng.random(20) + 1;
+      cells.roll += fight.monsterLevel - 1;
+    } while (x === 20);
+    game.scratch = x;
+    cells.roll += x - 2;
+    // 1000:9AEF: the shallowest monster of all rolls two lower.
+    if (fight.monsterLevel === 1) cells.roll -= 2;
+    cells.armourClass = revArmourClass(game);
+  }
+  const roll = cells.roll;
+  const armourClass = cells.armourClass;
   let damage = 0;
-  // The scratch cell the roll accumulates into rather than assigning, which is the second slip.
-  let x = game.scratch;
-  do {
-    x += rng.random(20) + 1;
-    roll += fight.monsterLevel - 1;
-  } while (x === 20);
-  game.scratch = x;
-  roll += x - 2;
-  // 1000:9AEF: the shallowest monster of all rolls two lower.
-  if (fight.monsterLevel === 1) roll -= 2;
 
   const toBeat = armourClass + game.shield;
   if (roll > toBeat) damage += rng.random(4) + 1;
@@ -95,11 +105,12 @@ export function revMonsterAttack(game: RevGame): RevMonsterSwing {
   // 1000:9D1F: kind 6, which only the second dungeon has, hits for double.
   if (fight.kind === 6) damage *= 2;
   if (damage < 0) damage = 0;
+  cells.damage = damage;
   if (damage === 0) {
     game.banner.push(IT_MISSED);
-    return { roll, armourClass, damage };
+    return { ...cells };
   }
   pc.hp -= damage;
   game.banner.push(`IT DID ${damage} POINTS  `);
-  return { roll, armourClass, damage };
+  return { ...cells };
 }

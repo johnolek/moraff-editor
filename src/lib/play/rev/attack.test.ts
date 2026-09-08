@@ -142,3 +142,24 @@ describe("the monster's damage bands", () => {
     expect(game.pc.hp).toBe(200);
   });
 });
+
+describe('a monster of kind 3 stuck to the character', () => {
+  it('throws its damage again against the roll its last swing made', () => {
+    const game = attacking(draws({ 4: 3, 5: 4, 8: 7 }), 15, {}, { kind: 3 });
+    const first = revMonsterAttack(game);
+    expect(game.banner).toContain("IT'S STUCK TO YOU!");
+    const scratch = game.scratch;
+    const second = revMonsterAttack(game);
+    expect(second.roll).toBe(first.roll);
+    expect(second.damage).toBe(first.damage);
+    expect(game.scratch).toBe(scratch);
+  });
+
+  it('rolls again when its last swing drew no blood', () => {
+    const game = attacking(draws({}), 0, {}, { kind: 3 });
+    expect(revMonsterAttack(game).damage).toBe(0);
+    const scratch = game.scratch;
+    revMonsterAttack(game);
+    expect(game.scratch).toBe(scratch + 1);
+  });
+});

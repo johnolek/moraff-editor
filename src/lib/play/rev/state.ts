@@ -73,6 +73,15 @@ export interface RevGame {
   /** A ported function is owed a key it could not wait for. */
   keyOwed: boolean;
   /**
+   * DGROUP B2AE, B72C and B2AA: what the monster's last swing rolled, the armour class it had to
+   * beat and the damage it did.
+   *
+   * They outlive the swing because 1000:9A7C reads all three before writing them: a monster of
+   * kind 3 that is stuck to the character throws its damage again against the roll its last
+   * swing made.
+   */
+  monsterSwing: { roll: number; armourClass: number; damage: number };
+  /**
    * DGROUP B706: what the spell at 1000:9971 adds for a hundred seconds to the number the
    * monster's swing has to beat. The spells are not built, so nothing here ever raises it.
    */
@@ -122,6 +131,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     events: [],
     over: false,
     keyOwed: false,
+    monsterSwing: { roll: 0, armourClass: 0, damage: 0 },
     shield: 0,
     scratch: 0,
     say(...lines: string[]) {
