@@ -12,6 +12,7 @@
   import Portrait from './Portrait.svelte';
   import View3d from './View3d.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
+  import { dotuMapFiles, downloadMapFiles } from './export-maps';
   import { downloadRunLog } from './export-run';
   import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from './run';
@@ -174,6 +175,13 @@
     for (const one of keys) playing.press(one);
   }
 
+  /** The .DUN files this character would have beside them in the game's own folder. */
+  function exportMaps() {
+    const playing = session;
+    const entry = currentEntry();
+    if (playing && entry) downloadMapFiles(dotuMapFiles(playing.memory.exploredFloors(), entry.slot), entry.name);
+  }
+
   /** The run as it stands, as a file. */
   function exportRun() {
     const run = session?.run;
@@ -255,8 +263,8 @@
           <span>{view.place.x}, {view.place.y}</span>
           <span>{['North', 'South', 'West', 'East'][view.place.dir]}</span>
         </div>
-        {#if view.run}
-          <div class="run">
+        <div class="run">
+          {#if view.run}
             <span class="actions">{actionWords(view.run.actions)}</span>
             {#each view.run.milestones as milestone}
               <span class="milestone" title={milestoneNote(milestone, clockWords(milestone.time))}>
@@ -264,8 +272,9 @@
               </span>
             {/each}
             <button type="button" onclick={exportRun}>Export run</button>
-          </div>
-        {/if}
+          {/if}
+          <button type="button" onclick={exportMaps}>Export maps</button>
+        </div>
         <GameScreen lines={view.box} window={BOX_WINDOW} />
         {#if view.banner.length > 0}
           <div class="banner">
@@ -434,6 +443,9 @@
   }
   .run button {
     margin-left: auto;
+  }
+  .run button + button {
+    margin-left: 0;
   }
   .over-box button,
   .run button,

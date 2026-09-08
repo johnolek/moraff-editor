@@ -12,6 +12,7 @@
   import MwPanel from './MwPanel.svelte';
   import MwPortrait from './MwPortrait.svelte';
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
+  import { downloadMapFiles, mwMapFiles } from '../export-maps';
   import { downloadRunLog } from '../export-run';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from '../run';
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
@@ -228,6 +229,15 @@
     else mwTurn(playing, arrow.dir);
   }
 
+  /** The .DUN files this character would have beside them in the game's own folder. */
+  function exportMaps() {
+    const playing = session;
+    const entry = currentEntry();
+    if (!playing || !entry) return;
+    const floors = playing.memory.exploredFloors();
+    downloadMapFiles(mwMapFiles(floors, entry.slot, playing.game.pc.dungeon), entry.name);
+  }
+
   /** The run as it stands, as a file. */
   function exportRun() {
     const run = session?.run;
@@ -325,8 +335,8 @@
           <span>{view.place.x}, {view.place.y}</span>
           <span>{['North', 'South', 'West', 'East'][view.place.dir]}</span>
         </div>
-        {#if view.run}
-          <div class="run">
+        <div class="run">
+          {#if view.run}
             <span class="actions">{actionWords(view.run.actions)}</span>
             {#each view.run.milestones as milestone}
               <span class="milestone" title={milestoneNote(milestone, clockWords(milestone.time))}>
@@ -334,8 +344,9 @@
               </span>
             {/each}
             <button type="button" onclick={exportRun}>Export run</button>
-          </div>
-        {/if}
+          {/if}
+          <button type="button" onclick={exportMaps}>Export maps</button>
+        </div>
         <div class="keys">
           <div class="key-note">Play mode:</div>
           <div class="styles">
@@ -549,6 +560,9 @@
   }
   .run button {
     margin-left: auto;
+  }
+  .run button + button {
+    margin-left: 0;
   }
   .over-box button,
   .run button,

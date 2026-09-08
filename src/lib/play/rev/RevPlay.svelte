@@ -7,6 +7,7 @@
   import type { StockedMonster } from '../../map/stocking';
   import { FULL_FLOOR } from '../../map/viewport';
   import PixelText from '../../ui/PixelText.svelte';
+  import { downloadMapFiles, revMapFile } from '../export-maps';
   import { downloadRunLog } from '../export-run';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder } from '../run';
   import { mapDrawn, monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from '../mode';
@@ -167,6 +168,13 @@
     input.blur();
   }
 
+  /** The <n>.BIN this character would have beside them in the game's own folder. */
+  function exportMaps() {
+    const playing = session;
+    const entry = currentEntry();
+    if (playing && entry) downloadMapFiles([revMapFile(playing.game.memory.bytes(), entry.slot)], entry.name);
+  }
+
   function exportRun() {
     const run = session?.run;
     if (run) downloadRunLog({ ...run.log(), mode: session?.mode ?? null });
@@ -260,8 +268,8 @@
             <span>{view.fight.hitPoints} hit points left</span>
           </div>
         {/if}
-        {#if view.run}
-          <div class="run">
+        <div class="run">
+          {#if view.run}
             <span class="actions">{actionWords(view.run.actions)}</span>
             {#each view.run.milestones as milestone}
               <span class="milestone" title={milestoneNote(milestone, clockWords(milestone.time))}>
@@ -269,8 +277,9 @@
               </span>
             {/each}
             <button type="button" onclick={exportRun}>Export run</button>
-          </div>
-        {/if}
+          {/if}
+          <button type="button" onclick={exportMaps}>Export maps</button>
+        </div>
         <div class="keys">
           <div class="key-note">Play mode:</div>
           <div class="styles">
