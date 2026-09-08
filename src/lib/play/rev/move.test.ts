@@ -12,6 +12,8 @@ function character(fields: Partial<RevPc> = {}): RevPc {
     values: new Array<number>(340).fill(0),
     stats: [15, 15, 15, 15, 15, 15],
     fromStrength: 4,
+    fromHealth: 6,
+    fromAgility: 3,
     cls: 1,
     experience: 0,
     level: 0,

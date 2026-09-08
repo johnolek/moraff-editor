@@ -17,8 +17,12 @@ const VALUE = {
   /** The six characteristics, `(stored - 237) / 3` (1000:B6BF): strength, intelligence, wisdom,
    *  health, agility, laziness. */
   firstStat: 1,
-  /** 1000:B6F7's first field, which CHCHAR sets from strength and the fight adds to damage. */
+  /** 1000:B6F7's first field, which CHCHAR sets from strength and the swing adds to damage. */
   fromStrength: 7,
+  /** DGROUP B59E, which gaining a level adds to the hit points it hands out (1000:2065). */
+  fromHealth: 8,
+  /** DGROUP B5A2, which is part of the armour class a monster has to beat (1000:9B1E). */
+  fromAgility: 9,
   /** 1 for a fighter and anything else a wizard (1000:1A65). */
   cls: 10,
   experience: 12,
@@ -65,6 +69,8 @@ export interface RevPc {
   /** Strength, intelligence, wisdom, health, agility and laziness, in that order. */
   stats: number[];
   fromStrength: number;
+  fromHealth: number;
+  fromAgility: number;
   cls: number;
   experience: number;
   level: number;
@@ -103,6 +109,8 @@ export function revPlayerFromValues(values: number[]): RevPc {
     values: values.slice(),
     stats,
     fromStrength: at(VALUE.fromStrength),
+    fromHealth: at(VALUE.fromHealth),
+    fromAgility: at(VALUE.fromAgility),
     cls: at(VALUE.cls),
     experience: at(VALUE.experience),
     level: at(VALUE.level),
@@ -132,6 +140,8 @@ export function revValuesFor(pc: RevPc): number[] {
     values[VALUE.firstStat - 1 + index] = STAT_SCALE * pc.stats[index] + STAT_SHIFT;
   }
   put(VALUE.fromStrength, pc.fromStrength);
+  put(VALUE.fromHealth, pc.fromHealth);
+  put(VALUE.fromAgility, pc.fromAgility);
   put(VALUE.cls, pc.cls);
   put(VALUE.experience, pc.experience);
   put(VALUE.level, pc.level);
@@ -161,4 +171,46 @@ export function saveRevPlayer(pc: RevPc): Uint8Array<ArrayBuffer> {
  *  (`CINT(B558) AND 1` at 1000:1E5C and 1000:1F92). */
 export function wearsRingsOfHealth(pc: RevPc): boolean {
   return (Math.round(pc.rings) & 1) !== 0;
+}
+
+/**
+ * The values of the record the dungeon reads out of its five arrays, each named by the DGROUP
+ * address the game reads it at.
+ *
+ * The arrays are laid out element `I` at `<base> + 4 * I`, so element 1 of the ten singles at
+ * 6020 is value 27, element 1 of the ten at B41E is value 37, and element 1 of the two hundred
+ * at 1B92 is value 141.
+ */
+export const REV_VALUE = {
+  /** DGROUP 6034: the moves left on the invisibility spell (1000:7342). */
+  invisibility: 31,
+  /** DGROUP B42A: what the sword's magic adds to a swing (1000:8A5F). */
+  swordPlus: 39,
+  /** DGROUP B42E: what the mace's magic adds — to the armour class rather than to the swing,
+   *  which is one of the two slips in the fight code (1000:9B12). */
+  macePlus: 40,
+  /** DGROUP B432: the other thing the armour class is built from (1000:9B18). */
+  armourBonus: 41,
+  /** DGROUP 1B96: the knife (1000:8830 and the store at 1000:29D4). */
+  knife: 141,
+  /** DGROUP 1B9A: the sword (1000:87DB and 1000:2A40). */
+  sword: 142,
+  /** DGROUP 1B9E: the mace (1000:8805 and 1000:2A0A). */
+  mace: 143,
+} as const;
+
+/** DGROUP B56C: which armour the character wears, 0 to 4 as the store sells it (1000:2A9A). */
+export const REV_ARMOUR_VALUE = 11;
+
+/** DGROUP B4DE: the experience a kill banks, which is added to the record's own experience
+ *  wherever the two are compared (1000:A37A, read at 1000:0736). */
+export const REV_UNBANKED_EXPERIENCE_VALUE = 21;
+
+/** One of the record's numbers the dungeon reads by address. */
+export function revValue(pc: RevPc, value: number): number {
+  return pc.values[value - 1] ?? 0;
+}
+
+export function setRevValue(pc: RevPc, value: number, number: number): void {
+  pc.values[value - 1] = number;
 }

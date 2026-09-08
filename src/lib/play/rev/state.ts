@@ -1,7 +1,7 @@
 import type { Rng } from '../../game/port/rng';
 import { RevMapMemory } from './memory';
 import { RevMonsters, type RevWalker } from './monsters';
-import type { RevPc } from './record';
+import { REV_VALUE, revValue, type RevPc } from './record';
 
 /**
  * The dungeon's own variables: what DUNSMALL.EXE keeps in DGROUP while a character is being
@@ -69,18 +69,16 @@ export interface RevGame {
   over: boolean;
   /** A ported function is owed a key it could not wait for. */
   keyOwed: boolean;
+  /**
+   * DGROUP 52FC, the compiler's scratch cell, which hundreds of statements write and one reads
+   * back without writing it first: the monster's d20 at 1000:9A96 accumulates into it where the
+   * character's at 1000:8A14 assigns. It is here because that bug needs somewhere to live.
+   */
+  scratch: number;
   say(...lines: string[]): void;
   /** 1000:2F71: the blocking wait a ported function asks for and cannot take itself. */
   pressAnyKey(): void;
 }
-
-/**
- * Where the moves left on the invisibility spell are.
- *
- * The ten singles at DGROUP 6020 are values 27 to 36 of the record, element I at `6020 + 4 * I`,
- * and 1000:7342 reads element 5 to decide whether a monster can see the character.
- */
-export const REV_INVISIBILITY_VALUE = 31;
 
 /** What a character has to be for the monsters to take a turn against them. */
 export function revWalker(game: RevGame): RevWalker {
@@ -92,7 +90,7 @@ export function revWalker(game: RevGame): RevWalker {
     level: pc.dungeonLevel,
     generation: pc.generation,
     weight: pc.weight,
-    invisible: pc.values[REV_INVISIBILITY_VALUE - 1] ?? 0,
+    invisible: revValue(pc, REV_VALUE.invisibility),
     fighting: game.fight?.slot ?? 0,
   };
 }
@@ -115,6 +113,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     events: [],
     over: false,
     keyOwed: false,
+    scratch: 0,
     say(...lines: string[]) {
       game.said.push(...lines);
     },
