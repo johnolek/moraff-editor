@@ -1,3 +1,4 @@
+import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { savePlayer, loadPlayer } from '../game/port/record';
 import { characterFile, press, settle, teleporterSquare, townSquare } from './battle.test-support';
@@ -181,4 +182,38 @@ describe('reading a run log out of a file', () => {
     expect(readRunLog(JSON.stringify({ ...log, inputs: ['up'] }))).toBeNull();
     expect(readRunLog(JSON.stringify({ ...log, milestones: [{ kind: 'boss' }] }))).toBeNull();
   });
+});
+
+/**
+ * The two runs kept as files, which are what the `verify-run` command is tried against and what
+ * says that a log written down today still verifies tomorrow.
+ *
+ * Writing them again, after a change to the engine that legitimately moves them:
+ * `WRITE_RUN_FIXTURES=1 pnpm test src/lib/play/verify.test.ts`. A fixture that stops verifying
+ * without one is the engine having changed a game under runs already played.
+ */
+const FIXTURES = [
+  { file: 'unforgiven-run.json', record: unforgivenRun },
+  { file: 'moraffs-world-run.json', record: moraffsWorldRun },
+];
+
+function fixturePath(file: string): URL {
+  return new URL(`./fixtures/${file}`, import.meta.url);
+}
+
+describe('the runs kept beside these tests', () => {
+  for (const fixture of FIXTURES) {
+    it(`verifies ${fixture.file}`, async () => {
+      if (process.env.WRITE_RUN_FIXTURES) {
+        writeFileSync(fixturePath(fixture.file), `${JSON.stringify(await fixture.record(), null, 2)}\n`);
+      }
+      const log = readRunLog(readFileSync(fixturePath(fixture.file), 'utf8'));
+      if (log === null) throw new Error(`${fixture.file} is not a run log this build reads`);
+
+      const verdict = await verifyRun(log);
+      expect(verdict.reason).toBeNull();
+      expect(verdict.status).toBe('verified');
+      expect(verdict.replayed).toEqual({ actions: log.actions, time: log.time, milestones: log.milestones });
+    });
+  }
 });
