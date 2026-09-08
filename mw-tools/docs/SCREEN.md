@@ -1,30 +1,37 @@
-# The game screen, from two screenshots
+# The game screen
 
-John's screenshots of Moraff's World (2026-09-07): a level-29 character on a deep floor,
-first standing in a corridor with a monster visible in the east view, then engaged with
-it. Positions below are given in a 640 by 480 screen, measured and rounded; the code's own
-rectangles win where they differ.
+John's screenshots of Moraff's World (2026-09-07) and his screen recording of it
+(`Moraff's World - Fighting the Red Dragon King with a monk.mov`): a level-29 character on
+a deep floor, first standing in a corridor with a monster visible in the east view, then
+engaged with it.
 
-Every position in this note is the same wherever the game is run, because the game places
-everything in a 1600 by 1200 grid and scales it to whatever the screen is, so none of them
-says which of the twelve video modes the screenshots are in. Two things do depend on the
-mode — the ground the corridor is drawn on and the size of the letters — and both are
-below.
+The game is played here in video mode 9, the 1024 by 768 in 256 colours, which is what the
+recording is of: its window holds a 1024 by 768 raster at exactly two device pixels per
+game pixel. Positions below are that screen's pixels, worked out from the code's own
+rectangles rather than measured, because the game places everything in a 1600 by 1200 grid
+and scales it to whatever the screen is. Three things do depend on the mode — the ground
+the corridor is drawn on, the size of the zoom map's cells and the letters — and all three
+are below.
 
 ## The regions
 
 | region | x | y | look |
 |---|---|---|---|
-| message box | 0..286 | 0..171 | black, white text; a small green square in its top-left corner |
-| key menu | 464..640 | 0..171 | black, 11 lines green with yellow key letters |
-| FRONT view | 288..464 | 0..238 | the north view |
-| BACK view | 288..464 | 238..460 | the south view, directly under the front |
-| dig prompt | 288..464 | 460..480 | `HIT 'D' TO DIG A HOLE` in orange |
-| zoom map | 0..113 | 171..410 | maroon box, the discovered map drawn small |
-| WEST view | 113..286 | 171..410 | |
-| EAST view | 464..640 | 171..410 | |
-| character's numbers | 0..286 | 413..480 | red text, three lines |
-| stats | 464..640 | 413..480 | cyan text, three lines |
+| message box | 0..460 | 0..275 | black, white text; a small green square in its top-left corner |
+| key menu | 743..1023 | 0..273 | black, 11 lines green with yellow key letters |
+| FRONT view | 462..739 | 0..383 | the north view |
+| BACK view | 462..739 | 387..741 | the south view, directly under the front |
+| dig prompt | 467..735 | 745 | `HIT 'D' TO DIG A HOLE` in orange |
+| zoom map | 0..179 | 274..656 | maroon box, the discovered map drawn small |
+| WEST view | 181..458 | 275..658 | |
+| EAST view | 743..1022 | 275..658 | |
+| character's numbers | 0..458 | 669..753 | red text, three lines |
+| stats | 743..1023 | 669..753 | cyan text, three lines |
+
+Every one of those the recording can be measured against agrees to the pixel, and so does
+every row of the key menu and the numbers. The one place it does not is the zoom map's
+maroon box: the code fills 274 to 656 and the recording shows 275 to 655, so the driver's
+rectangle fill leaves its first and last rows alone where `fillRect` here includes them.
 
 The views have no labels. The four are the same drawing; front and back are a little
 taller than they are wide, west and east a little wider.
@@ -79,35 +86,43 @@ white armour with light blue seams, a red helmet with horns, a yellow axe in eac
 standing two squares away at about half the view's height, and a ladder down (orange, on
 the floor) in the foreground at the right.
 
-## The ground, and which video mode the screenshots are in
+## The ground
 
-The ceiling and the floor are described above as a flat dark olive, and only one of the
-twelve video modes draws them that way.
+The ceiling and the floor read as a flat dark olive, and only one of the twelve video modes
+draws them that way.
 
-FUN_3000_1a08 (exe 3000:1a08) works out each row's distance in floor tiles and takes its
-parity to pick between palette entries 26 and 27, then steps bands of that colour outward
-from the middle of the view until they reach its edge, so the ground comes out as chevrons
-converging on the vanishing point. In colour set 3 those two entries are a mid grey
-(#a2a2a2) and a mid green (#00a200), so the chevrons are plain to see. That is what every
-video mode draws but one, the 640 by 480 in 256 colours included, and it is what
-`src/lib/play/mw/view3d/render.ts` draws.
+FUN_3000_1a08 (exe 3000:1a08) works out each row's distance in floor tiles and steps bands
+of colour outward from the middle of the view until they reach its edge, so the ground comes
+out as chevrons converging on the vanishing point. In every mode but one the band's colour
+flips between palette entries 26 and 27 — a mid grey and a mid green in colour set 3 — and
+the chevrons are plain to see.
 
-The exception is video mode 9, the 1024 by 768 in 256 colours. There (exe 3000:1dbe,
-3000:1f4d and 3000:2201) the ground is not drawn with the line routine at all but with
-FUN_2000_0ad7, a run fill that takes a sixteen-bit word — two pixels at once — and the
-colour walks a range of the palette a band at a time rather than flipping between two
-entries: entries 32 to 63 on floor 0, 48 to 63 on floor 1, and the sixteen wall entries
-16 to 31 below that. Entries 48 to 63 are the only ones `set_palette` never writes, so they
-are left as palette_ramp (exe 4000:109d) filled them, #6d3100 down to #413d00 — a narrow
-dark brown to dark olive ramp two pixels wide, which at any normal distance reads as one
-flat dark olive with no chequer at all.
+The exception is video mode 9, the 1024 by 768 in 256 colours, which is the mode the game is
+played in here. The chevrons are the same shape, but:
 
-So a flat dark olive ground and a 640 by 480 screen cannot both be true of this executable.
-John's own screen recording of the game is in mode 9: its window holds a 1024 by 768 raster
-at exactly two device pixels per game pixel, and its corridor floor is that flat dark olive,
-a one-pixel dither of two nearly identical colours, all the way from the horizon to the
-bottom of the view. Which of the two the screenshots are is settled by counting their
-pixels, and that has not been done.
+- the row's own distance `t` picks a colour of its own: `48 + (t % 16)`, where `t` is signed,
+  so the entry lands anywhere in 33 to 63 (exe 3000:1dfd for the ceiling, 3000:20b1 for the
+  floor);
+- the band's colour starts at entry 48 on every row and walks a range of the palette a band
+  at a time (exe 3000:1f4d and 3000:2201). The surface walks the wider 32 to 63; the first
+  floor down puts its ground alone on the wall entries 16 to 31 while its ceiling keeps 48 to
+  63; every floor below uses 48 to 63 for both;
+- every band is written by FUN_2000_0ad7 (exe 2000:0ad7) two pixels to a sixteen-bit word —
+  the band's colour on the even pixels of the run and the row's on the odd ones. A run of odd
+  length lays the band's colour down once first, so the rest of it sits a pixel out of step.
+
+Entries 48 to 63 are close enough in colour that the dither reads as one flat olive with no
+chevron visible at all, which is what the recording shows. `set_palette` (exe 4000:10ee)
+fills them from a switch on `floor % 7` — seven shapes, four of which leave one component
+standing at what `palette_ramp` (exe 4000:109d) put there — so the ground has a period of
+seven where the walls have one of eleven.
+
+The recording's own floor is one where `floor % 7` is 4: its ground bands hold their green
+steady while their red climbs, and further out the red overtakes the green, which is what
+that shape does and what none of the other six does. Allowing for the recording's colours
+sitting about six sevenths of the palette's, its two innermost bands are entries 48 and 49
+to within a pixel value, and the port's own render of the same shape reproduces them. That is
+a different character on a different floor from the two screenshots, which are floor 3.
 
 `src/lib/game/mw-palettes.json` is right about entries 26 and 27, and was checked against a
 second reading of `set_palette` built from the instructions rather than from
@@ -167,8 +182,31 @@ EHOUT.FNT, and no `640X480.FNT` ships, so its letters come off the eleven-row gl
 rows out of step and are unreadable; the 640 by 480 in sixteen colours loads the same file
 and asks for its own metrics. `src/lib/play/mw/view3d/text.ts` draws the readable one. And
 above 730 pixels across — 800 by 600 and every mode above it, mode 9 included — print_text
-does not use these glyphs at all but hands the line to FUN_4000_0699, which has not been
-read.
+does not use these glyphs at all. See the next section.
+
+## The letters mode 9 really uses
+
+Above 730 pixels across (exe 4000:0b47) print_text hands the line to FUN_4000_0699 (exe
+4000:0699), which draws a vector font: 82 glyphs of up to six entries of `kind, x1, y1, x2,
+y2` in a box 256 units square, at DGROUP 0x730c, with the table at DGROUP 0x7da0 saying which
+glyph a character draws. FUN_4000_0034 (exe 4000:0034) walks a glyph — kind 0xfe is a line
+the pen widens up and down, 0xff one it widens left and right, 0x10 ends the glyph, and
+anything under 0x10 is an ellipse centred `x1, y1` with radii `x2, y2` whose four bits pick
+the quadrants (1 upper left, 2 lower left, 4 upper right, 8 lower right). The arcs are the
+256-colour driver's own midpoint ellipse, FUN_2000_04ee (exe 2000:04ee), with FUN_2000_0467
+(exe 2000:0467) plotting the four mirror images of each point.
+
+Nothing steps a fixed width: every line is spread between two x values. print_text works the
+right edge out as `x + 1600 / 68 * length` for font 0 (the divisors at DS:7f6a are 68, 42 and
+24), and print_text_clipped pulls its given right edge in by half a character. A line is
+`1100 / 36` units tall for font 0 (DS:7f70). The pen is 4 units wide up to 800 pixels across
+and 3 above it, which at 1024 by 768 comes to two pixels each way, and the glyph box comes
+out ten pixels by eighteen with the pen running one pixel further out all round.
+
+The recording is the check: `HIT 'D' TO DIG A HOLE` lands on rows 743 to 763 and columns 466
+to 724 there, and on exactly those rows and columns here. Every row of the key menu's eleven
+lines matches too. Dungeons of the Unforgiven carries the same font, differing in
+twenty-nine bytes, and steps it narrower — its divisors at DS:4dda are 80, 50 and 28.
 
 ## Engaged
 
@@ -203,5 +241,12 @@ There is no facing arrow, and there cannot be one: Moraff's World has no facing,
 four views are compass directions drawn at once.  The character's square is a cursor that
 blinks, filled each pass in the next of the sixteen palette entries in turn
 (FUN_2000_7c8a, exe 2000:7c8a) — the game's own help file tells the player to look closely
-for it.  It is always in the middle of the map, which is fourteen cells by thirty of eight
-pixels each and scrolls under the character rather than the other way about.
+for it.  It is always in the middle of the map, which scrolls under the character rather than the
+other way about.
+
+`set_map_view` (exe 2000:3ae1) sizes it from a table the video mode indexes rather than by
+scaling: eight-pixel cells in fourteen columns by thirty rows on a 640 by 480 screen, and
+ten-pixel cells in eighteen by thirty-eight at 1024 by 768. Its left edge is the 4 at
+DS:448f, which nothing ever assigns, and its top is `0x1ae * maxY / 0x4b0` — 171 rows down a
+480-row screen and 274 down a 768-row one. The recording's own grid lines sit ten pixels
+apart at x and y both four more than a multiple of ten, which is what those numbers give.
