@@ -140,13 +140,18 @@ async function leaveByTheGate(session: MwGameSession): Promise<void> {
 /**
  * What the box asks where the game would walk the character out onto the world map. The
  * overworld's own number picker is the cell they stopped walking on; here it is typed.
+ *
+ * Every line is under 27 characters, which is where the message box stops drawing a line at its
+ * own size and squeezes it into the box's width instead. H.BIN's own records are written to that
+ * limit, second lines indented by two spaces, and these are too.
  */
 const WHICH_DUNGEON = [
-  'THERE IS NO WORLD MAP: PICK A DUNGEON INSTEAD.',
+  'THERE IS NO WORLD MAP:',
+  '  PICK A DUNGEON INSTEAD.',
   '',
-  'TYPE A DUNGEON NUMBER AND HIT',
-  '  ENTER, OR ESCAPE TO STAY IN',
-  '  THIS ONE.',
+  'TYPE A DUNGEON NUMBER AND',
+  '  HIT ENTER, OR ESCAPE TO',
+  '  STAY IN THIS ONE.',
 ];
 
 /**

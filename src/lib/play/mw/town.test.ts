@@ -104,7 +104,7 @@ describe('the gate out to the world map', () => {
     await pressMw(session, MW_KEY.up);
     expect(session.box).toContain('1) EXPLORE THE WILDERNESS');
     await pressMw(session, 0x31);
-    expect(session.box).toContain('THERE IS NO WORLD MAP: PICK A DUNGEON INSTEAD.');
+    expect(session.box).toContain('  PICK A DUNGEON INSTEAD.');
     return session;
   }
 
