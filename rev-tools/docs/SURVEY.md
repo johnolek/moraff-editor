@@ -664,7 +664,9 @@ and on 100 squares it does not — 135 disagreements in 28,000, which is what a
 24-bit mantissa costs when the product reaches 400,000 and the remainder has
 less than a unit of room left. **`7.NUM` is an index of that expression, not a
 description of the dungeon.** `read_dungeon.py --formula` marks the squares the
-two disagree about. The town is its own case, and a cleaner one: `1000:552B`
+two disagree about, and a port has to carry the file rather than recompute it,
+because `1000:54CB` reads the bit before it evaluates anything —
+`DUNGEON.md` section 8. The town is its own case, and a cleaner one: `1000:552B`
 sends level 0 straight to the ladder-down loop and `1000:55DD` loosens the test
 inside it, and the formula then produces exactly the ten squares the file marks
 on level 0 — `DUNGEON.md` section 9.

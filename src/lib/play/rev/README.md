@@ -15,7 +15,9 @@ BASIC.
 
 * **The dungeon is arithmetic, not a file.** Every wall comes out of one line over the square's
   own coordinates, and `../../game/revmap.js` is that line — already ported, bit-exact against the
-  run-time's own single-precision `SIN`. Nothing here generates a floor.
+  run-time's own single-precision `SIN`. Nothing here generates a floor. The ladders and the
+  chutes are the one half-exception: which squares carry one is read from the game's own `7.NUM`,
+  bundled as `../../game/rev7.b64.js`, and only what is on them is arithmetic.
 * **The map remembers the squares you walked on and nothing else.** No 3-D view marks anything.
   `memory.ts` is the whole of it, and it is not `../memory.ts`, which is the other two games'
   shared engine.

@@ -342,8 +342,9 @@ const MORAFFS_REVENGE_BUILDINGS: Building[] = [
 ];
 
 /**
- * Moraff's Revenge. Its dungeon is not stored anywhere: every wall, ladder and chute comes out
- * of the square's own coordinates, which is what `src/lib/game/revmap.js` works out.
+ * Moraff's Revenge. Almost none of its dungeon is stored anywhere: every wall comes out of the
+ * square's own coordinates, and so does every ladder and chute, but which squares carry one at
+ * all is read from the game's own `7.NUM`. `src/lib/game/revmap.js` is both halves.
  *
  * The game numbers its columns from 1 and its rows from 1, and the map numbers both from 0, so
  * the map's (x, y) is the game's (x + 1, y + 1).

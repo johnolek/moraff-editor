@@ -145,9 +145,8 @@ function drawCircle(screen: Frame, centreX: number, centreY: number, radius: num
 /**
  * The ladder or the chute on a square (1000:52BB, 52F2, 5346).
  *
- * The original draws one only where `7.NUM` marks the square; the site has no `7.NUM` and asks
- * the formula the file is an index of, which `../../game/revmap.js` says disagrees with it about
- * 135 squares in 28,000.
+ * 1000:5285 draws one only where `7.NUM` marks the square, which is the gate `feature` in
+ * `../../../game/revmap.js` reads before it works out which feature it is.
  */
 function drawFeature(screen: Frame, column: number, row: number, view: RevMapView, y: number): void {
   const found = feature(column, row, view.level);

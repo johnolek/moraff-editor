@@ -428,6 +428,16 @@ its index; `1000:552B` is what turns a code into a feature, and `revmap.py`
 draws the result. Two of the things `SURVEY.md` left open are settled by reading
 that routine beside the map drawing and `H3.OVL`:
 
+**Which of the two the game asks is settled before either.** `1000:54CB` reads
+the square's bit out of `7.NUM` and, where it is clear, `1000:5500` puts 50 —
+nothing is here — on the square without evaluating the formula at all; the
+automap does the same at `1000:5285`. So the file says which squares carry
+something and the formula says what it is, and where the two part company the
+file wins. That is 61 squares of the nineteen rows the game uses: 26 the formula
+alone would put a ladder or a chute on, and 35 the file marks and the formula
+finds nothing on, which `1000:563F` then leaves at 50 as well. `revmap.py` and
+`revmap.js` both read the file first for that reason.
+
 * **A code of 0 is a chute.** `1000:552B` sends it to `1000:3428` while playing,
   and the map, which sets the flag at `B65A` first (`1000:5293`), keeps the code
   and draws a circle for it (`1000:52BB`). `H3.OVL`'s map key: "Circle ...
