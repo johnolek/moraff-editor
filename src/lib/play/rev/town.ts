@@ -369,8 +369,9 @@ async function readOutAnItem(game: RevGame, desk: RevTownDesk, magic: RevMagicDe
   const key = await desk.key();
   if (key !== PREP && key !== BATTLE) return;
   const which = key === PREP ? 'prep' : 'battle';
-  // 1000:2C86: it puts the menu up with the fight prompt's own flag set, so every line is
-  // offered whether the character owns it or not and "L = LEAVE" is on the bottom.
+  // 1000:2C86: it puts one of the game's own item menus up with the fight prompt's flag set, so
+  // it has "L = LEAVE" on the bottom -- and so the guild will only talk about an item the
+  // character already owns, since that menu turns a line they have none of into nothing chosen.
   const item = await revItemMenu(game, magic, which, true);
   if (item === 0) return;
   game.pc.money -= REV_MAGIC_ITEM_LIST_PRICE;
