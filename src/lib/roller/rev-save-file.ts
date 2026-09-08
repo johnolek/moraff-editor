@@ -92,7 +92,7 @@ export function newRevCharacterFile(pc: RevCharacter): Uint8Array<ArrayBuffer> {
 }
 
 /** How many singles the explored map holds: `DIM M(20, 71)` from M(0,0) to M(20,71). */
-const MAP_SINGLES = 1511;
+export const REV_MAP_SINGLES = 1511;
 
 /**
  * How long the BSAVE says it is.
@@ -101,7 +101,7 @@ const MAP_SINGLES = 1511;
  * byte more than the 1,511 singles between them — so the last single is cut in half on the way
  * out, and the file is an odd size.
  */
-const MAP_LENGTH = MAP_SINGLES * 4 + 1;
+const MAP_LENGTH = REV_MAP_SINGLES * 4 + 1;
 
 /**
  * Where the array happened to sit in the build that saved it.
@@ -145,16 +145,31 @@ export function mbfBytes(value: number): number[] {
  * hold whatever was there before. They read back as zero either way, and this writes them clean.
  */
 export function newRevExploredFile(pc: RevCharacter): Uint8Array<ArrayBuffer> {
+  const singles = new Array<number>(REV_MAP_SINGLES).fill(0);
+  pc.explored.forEach((row, index) => {
+    singles[index + 1] = row;
+  });
+  return revExploredBytes(singles);
+}
+
+/**
+ * The whole explored-map array as a BSAVE image, which is what the game writes at its own five
+ * save points (1000:B583).
+ *
+ * `singles` is the array element by element — level L at 21 * L, then rows 0 to 20 — and anything
+ * short of {@link REV_MAP_SINGLES} is written as zeroes.
+ */
+export function revExploredBytes(singles: readonly number[]): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(7 + MAP_LENGTH + 1);
   bytes[0] = 0xfd;
   const header = new DataView(bytes.buffer);
   header.setUint16(1, MAP_SEGMENT, true);
   header.setUint16(3, MAP_OFFSET, true);
   header.setUint16(5, MAP_LENGTH, true);
-  pc.explored.forEach((row, index) => {
-    const four = mbfBytes(row);
-    for (let i = 0; i < 4; i++) bytes[7 + (index + 1) * 4 + i] = four[i];
-  });
+  for (let index = 0; index < REV_MAP_SINGLES; index++) {
+    const four = mbfBytes(singles[index] ?? 0);
+    for (let i = 0; i < 4; i++) bytes[7 + index * 4 + i] = four[i];
+  }
   bytes[7 + MAP_LENGTH] = END_OF_FILE;
   return bytes;
 }
