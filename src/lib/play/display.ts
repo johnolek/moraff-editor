@@ -279,15 +279,18 @@ export function clearScreenRect(frame: Frame, rect: ScreenRect): void {
   fillRect(frame, left, top, fillX(frame, rect.right), fillY(frame, rect.bottom), 0);
 }
 
+/** One of the screen's boxes, filled in its own colour. */
+export function fillScreenBox(frame: Frame, box: ScreenBox): void {
+  const [left, top] = [fillX(frame, box.left), fillY(frame, box.top)];
+  fillRect(frame, left, top, fillX(frame, box.right), fillY(frame, box.bottom), box.colour);
+}
+
 /**
  * The boxes and the zoom map, painted into the frame the four views are drawn on. The words over
  * them go on afterwards, through `view3d/text.ts`.
  */
 export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
-  for (const box of SCREEN_BOXES) {
-    const [left, top] = [fillX(frame, box.left), fillY(frame, box.top)];
-    fillRect(frame, left, top, fillX(frame, box.right), fillY(frame, box.bottom), box.colour);
-  }
+  for (const box of SCREEN_BOXES) fillScreenBox(frame, box);
   drawZoomMapOnly(frame, floor);
 }
 

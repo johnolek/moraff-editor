@@ -15,7 +15,9 @@
     clearScreenRect,
     drawExpandedMap,
     drawScreenFurniture,
+    fillScreenBox,
     keyMenuLines,
+    MESSAGE_BOX,
     SCREEN_PIXELS,
     SCREEN_WINDOW,
     statusLines,
@@ -111,14 +113,21 @@
    * makes cannot take them off the way it takes a printed line off. The tab leaves out the ones
    * that stand where the wipe reached instead.
    */
-  const standing = $derived([
-    ...keyMenuLines(),
-    ...battleSpellLines(game),
-    ...statusLines(game.pc),
-    ...viewLabels(game.pc.exp, height),
-    ...box,
-    ...(prompt ?? []),
-  ]);
+  const standing = $derived(
+    // Walking into a town building blanks the whole display (erase_menu_block, exe 4000:42b4,
+    // fills it with colour 0) and movecontrol is not running to put any of this back, so the only
+    // words on the screen are the ones the building itself printed.
+    buildingScreen
+      ? box
+      : [
+          ...keyMenuLines(),
+          ...battleSpellLines(game),
+          ...statusLines(game.pc),
+          ...viewLabels(game.pc.exp, height),
+          ...box,
+          ...(prompt ?? []),
+        ],
+  );
 
   const text = $derived([
     ...(cleared === null ? standing : standing.filter((line) => !inRect(cleared, line))),
@@ -210,6 +219,18 @@
     // redraw between two drawings gets the same four flips and the monster being fought stands
     // the way round it was.
     const flips = new SeededRng(viewsDrawn);
+    // A building takes the display over: the views and the boxes around them were wiped on the way
+    // in, and every message box the building prints fills its own background again (exe 2000:2820).
+    if (buildingScreen) {
+      drawBuilding(frame, SCREEN_PIXELS, buildingScreen, {
+        building: buildingPictures(buildingScreen.file),
+        wall: viewPictures(section?.section ?? 1).wall,
+      });
+      if (box.length > 0) fillScreenBox(frame, MESSAGE_BOX);
+      drawDotuScreenText(frame, SCREEN_PIXELS, text);
+      paint();
+      return;
+    }
     renderFourViews(
       frame,
       {
@@ -232,15 +253,6 @@
       place.dir,
     );
     drawScreenFurniture(frame, floor);
-    // The building's picture goes over the views and the boxes around them, which is where the
-    // town routines draw it: movecontrol is not running while a building is being dealt with, so
-    // the screen underneath is whatever it left there.
-    if (buildingScreen) {
-      drawBuilding(frame, SCREEN_PIXELS, buildingScreen, {
-        building: buildingPictures(buildingScreen.file),
-        wall: viewPictures(section?.section ?? 1).wall,
-      });
-    }
     // A screen that takes the display over fills the rectangle it draws in with colour 0 first:
     // FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way and cast_a_spell the top of
     // the screen its spell table stands on. A screen whose rectangle the port does not know

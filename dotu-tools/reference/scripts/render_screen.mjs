@@ -27,6 +27,10 @@
 // --expanded-map draws the X key's screen instead: the whole floor at seven pixels a square with
 // the headline under it, and with --boss X,Y the way to the section's Shadow boss beside it.
 //
+// --building NAME draws one of the six town screens over the views the way walking into it does:
+// store, weaponry, armoury, temple, bank or inn, each with its own frame, picture and heading,
+// and the whole screen in the town palette a building switches the game to.
+//
 // --spells N puts the C key's table of one of the eight spell lists up, on the black cast_a_spell
 // clears for it; --mini-spells N is the same list in the miniature layout, which stands in the
 // message column instead. The character is given every spell of the list so that the table reads
@@ -83,6 +87,8 @@ const { drawManualPage } = await load('play/manual.ts');
 const { tabletMessage } = await load('game/port/hints.ts');
 const { monsterById } = await load('map/stocking.ts');
 const { sectionInfo } = await load('game/sections.ts');
+const BUILDINGS = await load('play/building.ts');
+const { townPalette } = await load('bestiary/pictures.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
 
 const args = {};
@@ -231,13 +237,23 @@ D.drawScreenFurniture(frame, {
   map: { known: () => true, knownOnArrival: () => true },
 });
 
+// The building the character has walked into, whose screen takes the display over.
+const building = args.building ? BUILDINGS[String(args.building).toUpperCase()] : null;
+if (args.building && !building) throw new Error(`no town building called ${args.building}`);
+
 const game = newGame();
 game.pc.exp = exp;
 game.pc.height = horizonWeight;
+if (building) {
+  // The building takes the display over: everything movecontrol draws was wiped on the way in.
+  frame.pixels.fill(0);
+  BUILDINGS.drawBuilding(frame, SCREEN_PIXELS, building, { building: picture(building.file), wall });
+  D.fillScreenBox(frame, D.MESSAGE_BOX);
+}
 // The spell table's own fill goes down first: the lines under it are ones movecontrol would have
 // to draw again, so the game has none of them showing while the table is up.
 const drawnOnBlack = spellListLines();
-const standing = [
+const standing = building ? [] : [
   ...D.keyMenuLines(),
   ...battleSpellLines(game),
   ...D.statusLines(game.pc),
@@ -250,7 +266,9 @@ drawDotuScreenText(frame, frame, text);
 // The plaque the wait behind a message box puts up (exe 2000:3e73), over whatever is on the screen.
 if (args.plaque) drawPlaque(frame, SCREEN_PIXELS, wall);
 
-const palette = dungeonPalette(palettes, null, moduleIndex + 1, part);
+const palette = building
+  ? townPalette(moduleIndex + 1, part)
+  : dungeonPalette(palettes, null, moduleIndex + 1, part);
 writeFileSync(out, encodePng(frame.width, frame.height, toRgba(frame, palette)));
 console.log(
   `${out}  module ${moduleIndex} floor ${floor} (part ${part}) at ${at.x},${at.y} facing ` +
