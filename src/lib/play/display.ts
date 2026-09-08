@@ -281,6 +281,21 @@ export const ZOOM_CORNER_COLOUR = 6;
 /** The cell size from which a door's tick is drawn as a pair of long lines as well. */
 const DOOR_TICK_PAIR_FROM_CELL = 8;
 
+/** The yellow of the ladder and trap door diagonals, and the pale blue the chute branch swaps in
+ *  for it (exe 3000:8a85). */
+export const ZOOM_MARK_COLOUR = 4;
+export const ZOOM_CHUTE_COLOUR = 3;
+
+/** A square with neither a trap door nor a chute on it, which is what the game leaves the
+ *  destination floor at and what stops both diagonals being drawn. */
+const NOTHING_CROSSED = -1;
+
+/**
+ * The diagonals are drawn twice, a pixel apart, on a screen wider than 1000 of its own pixels
+ * (exe 3000:8c02). The play screen is 1024 across, so its map always draws them thick.
+ */
+const THICK_MARK_ABOVE_WIDTH = 1000;
+
 /** `drawsquare` (exe 3000:87de) and `draw_side` (exe 3000:8432) for every square of the window. */
 function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
   const left = zoomMapLeft(frame.width);
@@ -295,7 +310,9 @@ function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
       // the site has revealed whole, where it keeps the rock blank instead of drawing it as a
       // square somebody could be standing in.
       if (!here || here.solid) continue;
-      drawZoomSquare(frame, here, left + column * ZOOM_CELL, row * ZOOM_CELL);
+      drawZoomSquare(frame, here, left + column * ZOOM_CELL, row * ZOOM_CELL, {
+        chuteKnown: floor.map.knownOnArrival(square.x, square.y),
+      });
     }
   }
 
@@ -313,10 +330,25 @@ function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
 
 /**
  * One square of the map, in the order `drawsquare` (exe 3000:87de) draws it: the fill, the four
- * sides, and a dot on each of the four corners.
+ * sides, the four corner dots, and the marks for what the square holds.
+ *
+ * The marks say what the square holds, and the routine asks about them in order, each only on a
+ * square the last one left alone: a ladder down is one diagonal and a ladder up the other, a trap
+ * door is both, and a chute is both with a plus sign through them, in pale blue rather than
+ * yellow. The chute is asked about only on a square that was already known when the character
+ * arrived on the floor, which is why a chute shows on the map after they have left and come back
+ * and not before.
  */
-function drawZoomSquare(frame: Frame, square: MapSquare, x: number, y: number): void {
+function drawZoomSquare(
+  frame: Frame,
+  square: MapSquare,
+  x: number,
+  y: number,
+  asTheGame: { chuteKnown: boolean },
+): void {
+  const ladder = square.ladder;
   fillRect(frame, x + 1, y + 1, x + ZOOM_CELL, y + ZOOM_CELL, 0);
+
   drawZoomSide(frame, square.w, x, y, false);
   drawZoomSide(frame, square.n, x, y, true);
   drawZoomSide(frame, square.e, x + ZOOM_CELL, y, false);
@@ -324,6 +356,28 @@ function drawZoomSquare(frame: Frame, square: MapSquare, x: number, y: number): 
   for (const corner of [x, x + ZOOM_CELL]) {
     plot(frame, corner, y, ZOOM_CORNER_COLOUR);
     plot(frame, corner, y + ZOOM_CELL, ZOOM_CORNER_COLOUR);
+  }
+
+  // The trap door's own destination floor, which the square is crossed for whatever it is, and
+  // which the chute branch borrows when it claims the square instead.
+  let crossed = ladder === 0 ? square.trapdoor : NOTHING_CROSSED;
+  let colour = ZOOM_MARK_COLOUR;
+  if (ladder === 0 && crossed === NOTHING_CROSSED && asTheGame.chuteKnown && square.chute !== 0) {
+    crossed = square.chute;
+    colour = ZOOM_CHUTE_COLOUR;
+    const middle = Math.trunc(ZOOM_CELL / 2);
+    drawLine(frame, x + middle, y, x + middle, y + ZOOM_CELL, colour);
+    drawLine(frame, x, y + middle, x + ZOOM_CELL, y + middle, colour);
+  }
+
+  const thick = frame.width - 1 > THICK_MARK_ABOVE_WIDTH;
+  if (ladder > 0 || crossed !== NOTHING_CROSSED) {
+    drawLine(frame, x, y, x + ZOOM_CELL, y + ZOOM_CELL, colour);
+    if (thick) drawLine(frame, x, y + 1, x + ZOOM_CELL, y + ZOOM_CELL + 1, colour);
+  }
+  if (ladder < 0 || crossed !== NOTHING_CROSSED) {
+    drawLine(frame, x, y + ZOOM_CELL, x + ZOOM_CELL, y, colour);
+    if (thick) drawLine(frame, x, y + ZOOM_CELL + 1, x + ZOOM_CELL, y + 1, colour);
   }
 }
 
