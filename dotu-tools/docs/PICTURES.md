@@ -63,7 +63,7 @@ palette is built in banks of 16:
 | entries | contents |
 |---|---|
 | 1..15 | fixed UI colours |
-| 16..31 | the section's wall colours (four variants, by section-within-module) |
+| 16..31 | the section's wall colours (four variants, by section-within-module); what the 3-D walls are drawn in |
 | 32..63 | the picture bank (dungeon table; a water variant for sections 4 and 8) |
 
 A monster pixel lands at `(colorSet << 4) + v`.  69 of the 122 monsters have `colorSet`
@@ -78,7 +78,7 @@ tint takes the pixel's place and then gets the base added like any other value.
 | entries | contents |
 |---|---|
 | 64..79 | **only ever written by the building palette**; keeps whatever the last shop wrote (true of the palette, but no monster's tint reaches it) |
-| 80..95 | section-tinted bank used for the 3-D walls (`colorSet` 5); random components in water sections |
+| 80..95 | the 3-D view's floor and ceiling tiles (`colorSet` 5); random components in water sections |
 | 96..255 | gradients built by 4000:1150 (distance shading, sky/floor) |
 
 The dungeon palette depends on module, section-within-module, and the water flag.  Inside a
@@ -130,7 +130,7 @@ v == 30                    index = (gradientRow % 160) + 0x60                4c7
 v == 29 or v == 31         index = 0xff - (gradientRow % 160)                4c90
 ```
 
-Every other base below 0x100 — 0x00, 0x10 and the 3-D walls' 0x50 among them, and the
+Every other base below 0x100 — 0x00, 0x10 and the floor tiles' 0x50 among them, and the
 negative bases the water overlay uses — is dispatched at 4e04:
 
 ```
@@ -177,8 +177,7 @@ picture's own row.
 Value 29 appears in no monster picture.  Values 30 and 31 appear only in the Gargalon, the
 Squishy Cube, the Khagistoll, the Rotten Swamp Plant and the Shadow bosses that share those
 pictures — all colour set 2.  Every colour set 0 and colour set 1 monster picture but five
-(the Mummy, the Flesh Eater, the Foot Stomper, the Vampire and the Titan) uses 16, 17 or 18,
-and so does the wall material image of `ufwall1`..`ufwall4`.
+(the Mummy, the Flesh Eater, the Foot Stomper, the Vampire and the Titan) uses 16, 17 or 18.
 
 The drawer has two more paths that only run in 16-colour modes: it dithers odd rows when the
 resolution mode at DS:c6a8 is 0 (4bef in the 0x20 and 0x40 banks, 4e28 in the others), and
@@ -212,12 +211,35 @@ Building pictures use fixed bases: images 0 and 2 with `+0x20`, images 1 and 3 w
 64-pixel strip at x = 256..319 (the game screen is 320 wide; the picture is 256).  See
 `pics/buildings/_sheet.png`.
 
-3-D walls are drawn with `colorSet` base 0x50 (entries 80..95); `ufwallN` images 0..5 are
-door, portcullis/secret door, the "STEP THROUGH THIS TELEPORTER" sign, three wall
-materials; 6..9 are the floor/ceiling perspective tiles.  `FUN_3000_342d` (exe 3000:342d)
-sets the tint before every face it draws — 12 for a plain wall face, and 15, 1 and 0 for the
-other faces at 3000:385e..38be — so a wall's value-17 pixels land at tint + 0x50, which is
-entry 0x5c for a plain wall.
+`ufwallN` images 0..5 are door, portcullis/secret door, the "STEP THROUGH THIS TELEPORTER"
+sign, three wall materials; 6..9 are the floor/ceiling perspective tiles.  The tiles go
+through `scale_image2` with base 0x50, which `draw_3d_view` writes to DS:4fc1 (exe
+3000:0f75) — that is what entries 80..95 are for.  **The walls do not.**  They go through a
+texture mapper of their own, `FUN_4000_4f8f`, which `FUN_3000_342d` (exe 3000:342d) calls
+once per face after setting the tint at DS:4fbd — 12 for a plain wall face, and 15, 1 and 0
+for the other faces at 3000:385e..38be.
+
+That mapper has a colour rule of its own, read out of its instructions at 4000:53d1..54a1
+(256-colour modes; below that it substitutes the tint and dithers instead):
+
+```
+v < 16                     index = (v + base) & 0xff                         549d
+v == 16                    index = 0                                         53e0
+v == 17                    index = tint    # no base added, unlike scale_image2   53ea
+v == 18                    index = ((x >> (wide ? 1 : 2)) & 0x7f) + 0x80     540f, 5420
+v == 19                    index = (((0x400 - x) >> (wide ? 3 : 2)) & 0x7f) + 0x80   5458, 5472
+v >= 20                    index = v       # a palette entry in its own right      5490
+```
+
+`base` is DS:4fc3 and `x` is the screen column being painted; `wide` is a screen whose last
+column DS:c6aa is past 1000.  **Nothing in the executable ever writes DS:4fc3**, so it keeps
+its initial 16 and a wall is always drawn in entries 16..31 — the section's own wall
+colours, which is why the same corridor is green stone in section 1 and red brick with green
+mortar in section 6.  Nothing is transparent: a run of value 0 is drawn, at the base entry.
+
+Only the teleporter sign has a pixel above 15; the doors and the three wall materials of
+every `ufwallN` stop at 15.  Moraff's World's `draw_wall_picture` (mw.c 3000:04d3) is the
+same routine recompiled, with 0x40 in place of 0x80 in the two gradient lines.
 
 In water sections the built-in monsters (garbage cans, puffballs, flasks) are drawn 140
 rows tall instead of 200 with the water overlay (`overlay.pic`) over the bottom — that is
