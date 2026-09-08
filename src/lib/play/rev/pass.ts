@@ -1,4 +1,4 @@
-import { revFloorStats } from './magic';
+import { REV_MAGIC, revFloorStats } from './magic';
 import { REV_STAT_COUNT, REV_VALUE, revValue, setRevValue } from './record';
 import type { RevGame } from './state';
 
@@ -29,7 +29,25 @@ export const NEEDS_A_CURE = 'You feel sick. You need a cure disease. ';
 const PASSES_PER_DRAIN = 100;
 
 export function revPass(game: RevGame): void {
+  revRingsHeal(game);
   revDiseaseDrain(game);
+}
+
+/**
+ * 1000:4028: the rings of health heal one point per ring, up to the character's maximum.
+ *
+ * They are worn rather than used, and the number of them is a count of its own (value 38) beside
+ * the bit of value 16 that says they are worn at all. Nothing else in the dungeon gives a
+ * character health points back; the two cheaper inns heal a wearer in full (1000:1E5C) and that
+ * is the only other thing the rings do.
+ */
+function revRingsHeal(game: RevGame): void {
+  const pc = game.pc;
+  const rings = revValue(pc, REV_MAGIC.ringsOfHealth);
+  if (rings <= 0 || pc.hp >= pc.maxHp || game.ringsHeldBack) return;
+  pc.hp += rings;
+  // 1000:3B02, which is what trims the last ring's point on the pass that fills the character up.
+  if (pc.hp > pc.maxHp) pc.hp = pc.maxHp;
 }
 
 /**

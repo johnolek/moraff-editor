@@ -331,3 +331,32 @@ describe('a disease', () => {
     session.finish();
   });
 });
+
+describe('the rings of health', () => {
+  it('heal a character as they walk and not as they stand still', async () => {
+    const { session } = await playing(5, revRecord({ 14: 376 + 40, 15: 176 + 10, 38: 2 }));
+    const pc = session.game.pc;
+    expect(pc.hp).toBe(10);
+
+    // The statistics screen comes back through the loop's own re-entry, which holds them back.
+    session.press(REV_KEY.stats);
+    await settled();
+    expect(pc.hp).toBe(10);
+
+    for (const arrow of [REV_KEY.arrowUp, REV_KEY.arrowDown, REV_KEY.arrowLeft, REV_KEY.arrowRight]) {
+      const before = session.view().place;
+      session.press(arrow);
+      await settled();
+      const after = session.view().place;
+      // A wall holds them back the same way; only the arrow that steps heals.
+      if (after.column === before.column && after.row === before.row) {
+        expect(pc.hp).toBe(10);
+        continue;
+      }
+      expect(pc.hp).toBe(12);
+      session.finish();
+      return;
+    }
+    throw new Error('no arrow stepped, so the healing was never asked for');
+  });
+});

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { REV_MAGIC } from './magic';
 import { NEEDS_A_CURE, revPass } from './pass';
 import { REV_VALUE, revValue, setRevValue } from './record';
 import { revCharacter, revRolls, revTestGame } from './spells.test-support';
@@ -78,5 +79,51 @@ describe('the per-key routine', () => {
 
     expect(pc.stats).toEqual([15, 15, 15, 15, 15, 15]);
     expect(game.said).toEqual([]);
+  });
+});
+
+describe('the rings of health', () => {
+  it('heal a point per ring on every pass', () => {
+    const pc = revCharacter({ hp: 20, maxHp: 40 });
+    setRevValue(pc, REV_MAGIC.ringsOfHealth, 2);
+    const { game } = revTestGame(pc);
+
+    revPass(game);
+    expect(pc.hp).toBe(22);
+    revPass(game);
+    expect(pc.hp).toBe(24);
+  });
+
+  it("stop at the maximum, trimming the last ring's point", () => {
+    const pc = revCharacter({ hp: 37, maxHp: 40 });
+    setRevValue(pc, REV_MAGIC.ringsOfHealth, 2);
+    const { game } = revTestGame(pc);
+
+    revPass(game);
+    expect(pc.hp).toBe(39);
+    revPass(game);
+    expect(pc.hp).toBe(40);
+    revPass(game);
+    expect(pc.hp).toBe(40);
+  });
+
+  it('heal nobody who is not wearing any', () => {
+    const pc = revCharacter({ hp: 20, maxHp: 40 });
+    const { game } = revTestGame(pc);
+
+    revPass(game);
+
+    expect(pc.hp).toBe(20);
+  });
+
+  it("are held back on a key that comes back through the loop's own re-entry", () => {
+    const pc = revCharacter({ hp: 20, maxHp: 40 });
+    setRevValue(pc, REV_MAGIC.ringsOfHealth, 2);
+    const { game } = revTestGame(pc);
+    game.ringsHeldBack = true;
+
+    revPass(game);
+
+    expect(pc.hp).toBe(20);
   });
 });

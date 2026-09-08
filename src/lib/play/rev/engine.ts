@@ -451,6 +451,13 @@ export const REV_KEY_HANDLERS: Record<number, RevKeyHandler> = {
   [REV_KEY.sound]: { c: '1000:1055, the sound', run: (turn) => revToggleSound(turn.game) },
 };
 
+/**
+ * 1000:0E62, 0EFD, 0F80 and 0FE4: the four keys that call the per-key routine themselves rather
+ * than reach it through the loop's re-entry at 1000:0636, which is why the rings of health still
+ * heal on them.
+ */
+const KEYS_THE_RINGS_HEAL_ON = new Set<number>([REV_KEY.cast, REV_KEY.pause, REV_KEY.pill, REV_KEY.wand]);
+
 /** 1000:10BE: Escape counts the movement mode 0, 1, 0. */
 function switchArrows(turn: RevTurn): void {
   turn.game.arrowMode = (turn.game.arrowMode + 1) % 2;
@@ -613,6 +620,8 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     game.said = [];
     game.banner = [];
     session.run?.dispatched(key);
+    // 1000:0636: coming back through the loop's own re-entry is what holds the rings back.
+    game.ringsHeldBack = !KEYS_THE_RINGS_HEAL_ON.has(key);
     let step: RevStep | null = null;
     if (game.fight !== null) {
       // 1000:8701 and 1000:871F: the fight prompt hands Escape and the four arrows to the same
@@ -625,6 +634,10 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
       if (handler) await handler.run(turn);
       else step = await stepOrTurn(session, key);
     }
+    // 1000:33CB: a step that went through and one the edge of the floor stopped both come back
+    // through the tail the four move routines share, which leaves the rings healing. A wall does
+    // not (1000:315A), and neither does a turn.
+    if (step === 'moved' || step === 'edge') game.ringsHeldBack = false;
     // 1000:A4E7: whatever killed the monster, what it dropped is offered before the next key.
     if (game.killed) {
       game.killed = false;

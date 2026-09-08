@@ -52,6 +52,17 @@ export interface RevGame {
    *  (1000:3187 with 1000:0A4F). It is the clock the fight's own Speed and Strength run out on
    *  and nothing else uses it. */
   steps: number;
+  /**
+   * DGROUP B4C2: the rings of health do not heal on this key.
+   *
+   * Their test at 1000:4049 is the only thing in the whole game that reads it, and the per-key
+   * routine puts it back to zero on its way out (1000:40F7). The loop's own re-entry sets it
+   * (1000:0636), and so do a turn (1000:0627), the four move routines when a wall stops the
+   * step (1000:315A, 321F, 32E1 and 339F), the statistics screen (1000:1A00) and three places
+   * inside a fight (1000:809C, 8F8B and A39E). What is left over is a step that went through,
+   * a step the edge of the floor stopped, and C, P, T and W.
+   */
+  ringsHeldBack: boolean;
   /** DGROUP B5B2: the spell level last typed at a cast prompt, which the wands that cast a
    *  spell for nothing charge the character for again (1000:9555). */
   spellLevel: number;
@@ -179,6 +190,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     memory,
     lastMonsterLevel: 0,
     arrowMode: 0,
+    ringsHeldBack: false,
     steps: 1,
     spellLevel: 0,
     swingBonus: 0,
