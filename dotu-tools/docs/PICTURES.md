@@ -69,10 +69,12 @@ palette is built in banks of 16:
 
 A monster pixel lands at `(colorSet << 4) + v`.  69 of the 122 monsters have `colorSet`
 0, so their body pixels use entries 1..31 directly (UI colours + the section's wall
-colours — which is why the same picture changes hue from section to section); the other
-53 use colour set 2 (entries 32..63).  The tint pixel (section 4) is the exception: the
-monster's `color` byte is used as a palette entry directly, with no base added, so a tint
-can name any of the 256 entries — though no monster's tint is higher than 52.
+colours — which is why the same picture changes hue from section to section); 52 use
+colour set 2 (entries 32..63), and the Giant Ball alone uses colour set 1.  The tint pixel
+(section 4) is the exception, but only in colour sets 2 and 4: there the monster's `color`
+byte is a palette entry in its own right, with no base added, so a tint can name any of the
+256 entries — though no monster's tint is higher than 52.  In every other colour set the
+tint takes the pixel's place and then gets the base added like any other value.
 
 | entries | contents |
 |---|---|
@@ -100,26 +102,78 @@ computed in the script.
 
 ## 4. Colour rules when drawing (scale_image2, colour set < 0x100)
 
-For each pixel value `v` (1..31), with `tint = monster.color` and `base = colorSet << 4`:
+The drawer dispatches on the colour-set base (`base = colorSet << 4`), and the two branches
+are not two settings of one rule — they are different rules.  `tint` is the monster's
+`color` byte.
+
+Bases 0x20 and 0x40 (0x40 behaves the same way, with 0x40 wherever 0x20 appears):
 
 ```
-tintValue = 28 if base == 0x20 or base == 0x40 else 17
-if v == tintValue:                      # the "tint" pixel
-    skip it if tint == base             # (0x20/0x40 bases; any other base skips on tint 0)
-    index = tint                        # a palette entry in its own right: no base added
-else:
-    index = (v + base) & 0xff
+v == 0                     not drawn
+v == 28 and tint == base   not drawn
+v < 28                     index = v + base
+v == 28                    index = tint          # a palette entry in its own right, no base added
+v == 30                    index = ((yTop + row) % 160) + 0x60
+v == 29 or v == 31         index = 0xff - ((yTop + row) % 160)
 ```
 
-Two things here are easy to get wrong.  Which pixel value carries the tint depends on the
-colour-set base — 28 for the 0x20 and 0x40 banks, 17 for the rest — and the tint is a
-palette entry, not a 5-bit value, so the base is never added to it.  There is no special
-case for values 16 and 18.
+Every other base below 0x100 — 0x00, 0x10 and the 3-D walls' 0x50 among them:
+
+```
+v == 0                     not drawn
+v == 17 and tint == 0      not drawn
+then, in this order:       if v == 17: v = tint
+                           if v == 16: v = 0
+                           if v == 18: v = secondTint
+index = (v + base) & 0xff                        # the base is added to the tint as well
+```
+
+Base 0x100 adds 0x20 and base 0x101 adds 0x3f (the town buildings, below).  Any other base
+draws nothing.
+
+Four things here are easy to get wrong.
+
+**Values 16 and 18 do have special cases** outside the 0x20 and 0x40 banks.  `secondTint`
+is DS:4fbf, which the drawer reads at 4000:4eb0 and which nothing in the executable ever
+writes, so it keeps its initial value 0.  Value 18 therefore always lands on the bank's base
+entry, exactly like value 16.
+
+**The base is added to the tint** everywhere except the 0x20 and 0x40 banks.  In colour set
+0 the base is 0 and adding it changes nothing, which is why treating the tint as a finished
+palette entry looked right for so long: 69 of the 122 monsters are colour set 0, and the
+picture that first confirmed the rule is colour set 2, where the tint really is used raw.
+
+**The substitutions cascade.**  A tint of 16 is put in place of value 17 and is then caught
+by the next step, which turns it into 0.
+
+**Values 29 to 31 take no colour from the picture at all.**  They read the gradient bank at
+entries 96..255 that 4000:1150 builds, indexed by the screen row the pixel lands on: the
+caller's top y in the game's 1600x1200 coordinate space, plus the destination row, taken
+modulo 160.  Value 30 counts up the bank; 29 and 31 count down it.  A pixel drawn this way
+changes colour with its height on the screen, so where the picture is placed changes how it
+looks: the monster manual draws at top y 25 and the 3-D view at a top y that depends on how
+far away the monster is.  The site draws pictures at their own size at the top of the
+screen, so it uses the picture's own row.
+
+Value 29 appears in no monster picture.  Values 30 and 31 appear only in the Gargalon, the
+Squishy Cube, the Khagistoll, the Rotten Swamp Plant and the Shadow bosses that share those
+pictures — all colour set 2.  Every colour set 0 and colour set 1 monster picture uses 16,
+17 or 18, and so does the wall material image of `ufwall1`..`ufwall4`.
+
+The drawer has two more paths that only run in 16-colour modes: it dithers odd rows when the
+resolution mode at DS:c6a8 is 0, and darkens entries 33..47 on odd columns when the colour
+count at DS:c6e9 is 16.  `dotu-pic.js` and `render_monsters.py` cover 256-colour mode only
+and leave both out.
 
 Confirmed against an in-game screenshot of the Ogeroth (section 20, colour set 2, tint 52):
 its body is value 28 and comes out entry 52, a rust brown, and its horns are value 17 and
 come out entry 17 + 32 = 49, grey.  Reading 17 as the tint (which is what the WALL drawer
 does) gives it a red body and blue horns instead.
+
+Confirmed a second time by the Black Puffball (built-in, colour set 0, tint 16).  Its tinted
+pixels are value 17, the cascade turns the tint 16 into 0, and the monster comes out black —
+which is what its name says it should be.  Under the old rule it came out entry 16, the
+first of the section's wall colours, and was not black at all.
 
 Every Shadow boss shares its section's picture 7 with the first regular monster; the two
 differ only in the tint.  The regular one has a real tint — a palette entry with its body
@@ -139,8 +193,10 @@ Building pictures use fixed bases: images 0 and 2 with `+0x20`, images 1 and 3 w
 
 3-D walls are drawn with `colorSet` base 0x50 (entries 80..95); `ufwallN` images 0..5 are
 door, portcullis/secret door, the "STEP THROUGH THIS TELEPORTER" sign, three wall
-materials; 6..9 are the floor/ceiling perspective tiles.  Their value-17 pixels take the
-tint of whatever monster was drawn last (the global is simply not reset).
+materials; 6..9 are the floor/ceiling perspective tiles.  `FUN_3000_342d` (exe 3000:342d)
+sets the tint before every face it draws — 12 for a plain wall face, and 15, 1 and 0 for the
+other faces at 3000:385e..38be — so a wall's value-17 pixels land at tint + 0x50, which is
+entry 0x5c for a plain wall.
 
 In water sections the built-in monsters (garbage cans, puffballs, flasks) are drawn 140
 rows tall instead of 200 with the water overlay (`overlay.pic`) over the bottom — that is
@@ -152,9 +208,9 @@ why they look like they are floating.
 import { parsePic, renderImage, monsterPixelIndex, vgaToRgb, dungeonPalette } from "./dotu-pic.js";
 const pal = dungeonPalette(palettes, banks.bankB_entries64_95, module, part);   // 256 x [r,g,b]
 const { images } = parsePic(new Uint8Array(await (await fetch("ufmon1.pic")).arrayBuffer()));
-const img = renderImage(images[monster.picnum - 7], pal, v => monsterPixelIndex(v, monster.color, monster.colorSet));
+const img = renderImage(images[monster.picnum - 7], pal, (v, row) => monsterPixelIndex(v, monster.color, monster.colorSet, row));
 ctx.putImageData(new ImageData(img.data, img.width, img.height), 0, 0);
 ```
 
 `render_monsters.py` is the Python equivalent that produced `pics/monsters`; the two
-were checked to be pixel-identical on the Gargalon.
+were checked to be pixel-identical on all 122 monsters.
