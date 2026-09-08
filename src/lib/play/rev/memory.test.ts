@@ -104,6 +104,22 @@ describe('the file beside the character', () => {
     expect(new RevMapMemory(store).isKnown(9, 9, 9)).toBe(true);
   });
 
+  it('seeds the town for a character with nothing beside them yet, as CHCHAR does', () => {
+    expect(new RevMapMemory(inHand()).isKnown(7, 3, 0)).toBe(true);
+  });
+
+  it('takes the whole map a character walked in DOS, town and all', () => {
+    const dos = new RevMapMemory();
+    dos.markStep(11, 12, 13);
+    const store = inHand();
+    store.write(dos.bytes());
+
+    const memory = new RevMapMemory(store);
+
+    expect(memory.isKnown(11, 12, 13)).toBe(true);
+    expect(memory.isKnown(7, 3, 0)).toBe(true);
+  });
+
   it('deletes the file and the array with it, which is what a death does', () => {
     const store = inHand();
     const memory = new RevMapMemory(store);
