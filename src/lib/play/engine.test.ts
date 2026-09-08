@@ -5,10 +5,12 @@ import { loadPlayer, savePlayer } from '../game/port/record';
 import { messageLine } from '../game/port/screens';
 import { BorlandRng, type Rng } from '../game/port/rng';
 import { MAP_PLAYER, monsterAt, newGame, type PlayerCharacter } from '../game/port/state';
+import { EXPLORED_STRIDE } from '../map/explored';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
 import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
+import { VIEW_DEPTH } from './memory';
 
 /** A character file that lives in the test rather than in the roster. */
 function characterFile(overrides: Partial<PlayerCharacter> = {}): CharacterFile & { dead: boolean } {
@@ -373,5 +375,32 @@ describe('an edit in the save editor', () => {
     expect(session.game.pc.str).toBe(20);
     await press(session, KEY.escape);
     expect(session.game.pc.str).toBe(99);
+  });
+});
+
+describe('the map the character discovers', () => {
+  it('knows the square underfoot and what the views reach, and never further than they do', async () => {
+    const start = townWalk();
+    const session = playing(characterFile({ ...start, level: 0 }));
+    await settle();
+    const known = [...session.memory.knownSquares()];
+    expect(session.memory.isKnown(start.x, start.y)).toBe(true);
+    expect(known.length).toBeGreaterThan(1);
+    for (const index of known) {
+      const x = index % EXPLORED_STRIDE;
+      const y = (index - x) / EXPLORED_STRIDE;
+      expect(Math.max(Math.abs(x - start.x), Math.abs(y - start.y))).toBeLessThanOrEqual(VIEW_DEPTH);
+    }
+  });
+
+  it('keeps every square it has learned as the character walks', async () => {
+    const start = townWalk();
+    const session = playing(characterFile({ ...start, level: 0, dir: 0 }));
+    await settle();
+    const before = [...session.memory.knownSquares()];
+    await press(session, KEY.arrowUp);
+    expect(session.game.pc.y).toBe(start.y - 1);
+    const after = session.memory.knownSquares();
+    for (const square of before) expect(after.has(square)).toBe(true);
   });
 });

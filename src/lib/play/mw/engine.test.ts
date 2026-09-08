@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { bundledMwDungeon } from '../../game/mw-dungeon';
 import { blankMwCharacter, MW_SQUARE_PLAYER, mwMessageLine, mwOccupantAt, type MwCharacter } from '../../game/mw-port/state';
 import { BorlandRng, type Rng } from '../../game/port/rng';
+import { EXPLORED_STRIDE } from '../../map/explored';
 import { MORAFFS_WORLD_MAP, type MapSquare } from '../../map/game';
 import { MwGameSession, runMwMoveControl, startMwGame, type MwCharacterFile } from './engine';
 import { MW_KEY } from './keys';
+import { VIEW_DEPTH } from '../memory';
 import { loadMwPlayer, saveMwPlayer } from './record';
 
 /** A character file that lives in the test rather than on the roster. */
@@ -50,6 +52,9 @@ export function playingMw(
   void runMwMoveControl(session);
   return session;
 }
+
+/** Let the loop run without pressing anything, for a turn that starts by itself. */
+export const settleMw = () => new Promise((resolve) => setTimeout(resolve));
 
 /** Press a key and let the loop get back to waiting for the next one. */
 export async function pressMw(session: MwGameSession, key: number): Promise<void> {
@@ -218,5 +223,32 @@ describe('an edit in the save editor', () => {
     expect(session.game.pc.str).toBe(20);
     await pressMw(session, MW_KEY.escape);
     expect(session.game.pc.str).toBe(99);
+  });
+});
+
+describe('the map the character discovers', () => {
+  it('knows the square underfoot and what the four compass views reach, and no further', async () => {
+    const start = townWalk();
+    const session = playingMw(mwCharacterFile({ floor: 0, dir: 0, ...start }));
+    await settleMw();
+    expect(session.memory.isKnown(start.x, start.y)).toBe(true);
+    const known = [...session.memory.knownSquares()];
+    expect(known.length).toBeGreaterThan(1);
+    for (const index of known) {
+      const x = index % EXPLORED_STRIDE;
+      const y = (index - x) / EXPLORED_STRIDE;
+      expect(Math.max(Math.abs(x - start.x), Math.abs(y - start.y))).toBeLessThanOrEqual(VIEW_DEPTH);
+    }
+  });
+
+  it('keeps every square it has learned as the character walks', async () => {
+    const start = townWalk();
+    const session = playingMw(mwCharacterFile({ floor: 0, dir: 0, ...start }));
+    await settleMw();
+    const before = [...session.memory.knownSquares()];
+    await pressMw(session, MW_KEY.arrowUp);
+    expect(session.view().place.y).toBe(start.y - 1);
+    const after = session.memory.knownSquares();
+    for (const square of before) expect(after.has(square)).toBe(true);
   });
 });

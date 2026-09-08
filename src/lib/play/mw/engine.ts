@@ -22,6 +22,7 @@ import {
 import { dropSomething } from './drop';
 import { swingAtMonster } from './fight';
 import { MwFloorMonsters, mwDrawnMonsters, mwEnterLevel } from './floor';
+import { MapMemory } from '../memory';
 import { killTheDead } from './kill';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { MW_KEY } from './keys';
@@ -133,6 +134,9 @@ export interface MwPlayView {
 export class MwGameSession {
   readonly game: MwGame;
   readonly floors = new MwFloorMonsters();
+  /** The map this character has discovered, which is what the Play tab draws in faithful mode
+   *  and what says which monsters can be seen. */
+  readonly memory: MapMemory;
   /** The floor the character is on, as the map descriptor generates it. */
   rows: MapSquare[][];
   /** The eight lines showing in the message box. */
@@ -188,6 +192,7 @@ export class MwGameSession {
     /** The run log this game is being written down in, or null for a game nobody is recording. */
     readonly run: RunRecorder | null = null,
   ) {
+    this.memory = new MapMemory();
     const pc = loadMwPlayer(file.bytes);
     this.known = file.bytes.slice();
     this.game = newMwGame({
@@ -224,6 +229,7 @@ export class MwGameSession {
     // the view before its first pass.
     this.rows = MORAFFS_WORLD_MAP.floor(pc.floor, pc.dungeon);
     mwEnterLevel(this.game, this.floors, this.rows, pc.floor, this.game.rng);
+    this.memory.enterFloor(pc.dungeon, pc.floor);
     mwSetOccupant(this.game, pc.x, pc.y, MW_SQUARE_PLAYER);
     this.game.pc.mapCursorY = this.game.mapViewRows >> 1;
     this.game.pc.mapCursorX = this.game.mapViewColumns >> 1;
@@ -417,6 +423,7 @@ export class MwGameSession {
     game.pc.floor = level;
     this.rows = MORAFFS_WORLD_MAP.floor(level, game.pc.dungeon);
     mwEnterLevel(game, this.floors, this.rows, level, game.rng);
+    this.memory.enterFloor(game.pc.dungeon, level);
   }
 
   /**
@@ -611,9 +618,16 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
       await mwDie(session);
       if (session.over) return;
     }
+    // movecontrol (mw.c:14005) marks the square under the character's feet before it works
+    // anything else out about it.
+    session.memory.markStep(pc.x, pc.y);
     const turn = await beginTurn(session);
     session.faceTheMonster();
     await session.settle();
+    // FUN_2000_8b3f (WORLD.EXE 2000:8b3f): the four 3-D views, one per compass direction, and
+    // every square any of them draws is marked. The four cover the whole circle, so the squares
+    // are the same ones Dungeons of the Unforgiven's turning views mark.
+    session.memory.markViews(session.rows, pc.x, pc.y);
     const key = await session.keyOrEdit();
     // The square the pass was worked out from is the one the record has just replaced, so the
     // pass starts again rather than answering a key with what the character used to be.

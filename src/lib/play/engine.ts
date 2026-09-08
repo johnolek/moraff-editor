@@ -27,6 +27,7 @@ import { KEY } from './keys';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { readTheMonsterManual } from './manual';
 import { countTheMoney, expandTheMap, openGraphics, openOptions, zoomTheView } from './misc';
+import { MapMemory } from './memory';
 import { DEFAULT_PLAY_MODE, type PlayMode } from './mode';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
@@ -135,6 +136,9 @@ export interface PlayView {
 export class GameSession {
   readonly game: Game;
   readonly floors = new FloorMonsters();
+  /** The map this character has discovered, which is what the Play tab draws in faithful mode
+   *  and what says which monsters can be seen. */
+  readonly memory: MapMemory;
   /** The floor the character is on, as the map descriptor generates it. */
   rows: MapSquare[][];
   /** The lines the game has said since the current action began, which is the message box. */
@@ -190,6 +194,7 @@ export class GameSession {
     /** The run log this game is being written down in, or null for a game nobody is recording. */
     readonly run: RunRecorder | null = null,
   ) {
+    this.memory = new MapMemory();
     const pc = loadPlayer(file.bytes);
     this.known = file.bytes.slice();
     this.game = newGame({
@@ -223,6 +228,7 @@ export class GameSession {
     this.game.pc.mapCursorY = MAP_VIEW_ROWS >> 1;
     this.rows = UNFORGIVEN_MAP.floor(pc.level, pc.module);
     loadLevelMap(this.game, this.floors, this.rows, pc.level, this.game.rng);
+    this.memory.enterFloor(pc.module, pc.level);
     run?.watch(this.game.events, () => ({
       time: this.game.secondsElapsed,
       floor: this.game.pc.level,
@@ -359,6 +365,7 @@ export class GameSession {
     game.pc.level = level;
     this.rows = UNFORGIVEN_MAP.floor(level, game.pc.module);
     loadLevelMap(game, this.floors, this.rows, level, game.rng);
+    this.memory.enterFloor(game.pc.module, level);
     game.recenterMap = true;
   }
 
@@ -562,6 +569,9 @@ export async function runMoveControl(session: GameSession): Promise<void> {
       return;
     }
     game.enemyDir = -1;
+    // movecontrol (unf.c:15405) marks the square under the character's feet before it works
+    // anything else out about it.
+    session.memory.markStep(pc.x, pc.y);
     const turn = beginTurn(session);
     if (turn.ladder === 0 && turn.trapdoor === -1 && pc.level > 0) {
       const chute = chuteUnder(game);
@@ -574,6 +584,13 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     if (game.engaged === -1) pc.sleepTimer = 0;
     session.showBanner();
     if (pc.deepestFloor < pc.level) pc.deepestFloor = pc.level;
+    // FUN_2000_ac9e (exe 2000:ac9e): the four 3-D views, drawn where the loop waits for a key,
+    // and every square any of them draws is marked. The original draws them only when the
+    // character has moved or something has asked for a redraw, which marks the same squares
+    // either way — the geometry has not changed — and only leaves the monsters on the screen a
+    // moment stale. This draws them every pass, so the monsters that can be seen are the ones
+    // standing there now.
+    session.memory.markViews(session.rows, pc.x, pc.y);
     const key = await session.keyOrEdit();
     // The square the pass was worked out from is the one the record has just replaced, so the
     // pass starts again rather than answering a key with what the character used to be.
