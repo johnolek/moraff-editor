@@ -32,8 +32,7 @@
   import WallTexture from './WallTexture.svelte';
   import { nearestOpenSquare, stepFrom } from './you';
 
-  /** No file loaded, which is every floor of Dungeons of the Unforgiven: it saves nothing
-   *  about where a character has been. */
+  /** No file loaded, which is every floor until one is dropped on the panel. */
   const NO_EXPLORED_FLOORS: ExploredFloors = new Map();
 
   let game = $state<MapGame>(MAP_GAMES[app.game]);

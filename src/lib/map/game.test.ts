@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { summarizeMapFloor } from '../game/floor-summary';
 import { HEIGHT, WIDTH } from '../game/unfmap.js';
+import { addExploredFloors, DUN_COLUMNS, DUN_ROWS, FLOORS_PER_BLOCK, isExplored } from './explored';
 import { floorsOf, hasDungeon, MAP_GAMES, MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP, type MapGame } from './game';
+import { dotuDunName, writeDunFile } from './write-explored';
 
 describe('the area a game shows', () => {
   it('is 79 by 104 for Dungeons of the Unforgiven and 79 by 110 for Moraff’s World', () => {
@@ -184,5 +186,31 @@ describe('the legend of a Moraff’s Revenge floor', () => {
     expect(summary.secretDoors).toBe(0);
     expect(summary.trapdoors).toBe(0);
     expect(summary.trapdoorLanding).toBeUndefined();
+  });
+});
+
+describe('the explored maps a game saves beside a character', () => {
+  /** The bytes save_maps writes for a character who has seen one square of one floor. */
+  function dunFile(floor: number, x: number, y: number): Uint8Array {
+    const bitmap = new Uint8Array((DUN_COLUMNS / 8) * DUN_ROWS);
+    bitmap[y * (DUN_COLUMNS / 8) + (x >> 3)] |= 1 << x % 8;
+    return writeDunFile(new Map([[floor, bitmap]]), Math.floor(floor / FLOORS_PER_BLOCK));
+  }
+
+  it('shades a Dungeons of the Unforgiven floor from the character\u2019s own .DUN', () => {
+    const files = UNFORGIVEN_MAP.exploredMaps!;
+    const file = files.read(dotuDunName(21, 1, 4), dunFile(35, 5, 7));
+    expect(file.dungeon).toBe(4);
+    expect(file.floors.map(({ floor }) => floor)).toEqual([35]);
+    const loaded = addExploredFloors(new Map(), file);
+    expect(isExplored(loaded.get(35)!, 5, 7)).toBe(true);
+    expect(isExplored(loaded.get(35)!, 6, 7)).toBe(false);
+    expect(files.summarize(loaded)).toBe('1 explored floor from quarter 1');
+  });
+
+  it('names the files each game writes', () => {
+    expect(UNFORGIVEN_MAP.exploredMaps?.extension).toBe('.DUN');
+    expect(MORAFFS_WORLD_MAP.exploredMaps?.extension).toBe('.DUN');
+    expect(MORAFFS_REVENGE_MAP.exploredMaps?.extension).toBe('.BIN');
   });
 });

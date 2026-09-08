@@ -5,7 +5,15 @@ import { bundledMwDungeon } from '../game/mw-dungeon';
 import { LEVELS as REVENGE_LEVELS, floor as revengeFloor, squareOn as revengeSquareOn } from '../game/revmap.js';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { MORAFFS_REVENGE_AREA, MORAFFS_WORLD_AREA, UNFORGIVEN_AREA, type MapArea } from './area';
-import { exploredFloorCount, loadedSummary, readBinFile, readDunFile, type ExploredMapFiles } from './explored';
+import {
+  exploredFloorCount,
+  loadedSummary,
+  quarterSummary,
+  readBinFile,
+  readDotuDunFile,
+  readDunFile,
+  type ExploredMapFiles,
+} from './explored';
 import { MODULE_NUMERALS } from './labels';
 import { MORAFFS_WORLD_STOCKING } from './mw-stocking';
 import { hasTeleporterSide } from './path';
@@ -162,6 +170,13 @@ const UNFORGIVEN_BUILDINGS: Building[] = [
   { label: 'Inn', colour: '#00ff00' },
 ];
 
+const UNFORGIVEN_DUN_FILES: ExploredMapFiles = {
+  extension: '.DUN',
+  hint: "Dungeons of the Unforgiven saves the squares your character has seen beside the save, in files named <character><quarter><module>.DUN — E14.DUN is character 21's floors 32 to 63 of Module V.",
+  read: readDotuDunFile,
+  summarize: quarterSummary,
+};
+
 export const UNFORGIVEN_MAP: MapGame = {
   id: 'unforgiven',
   area: UNFORGIVEN_AREA,
@@ -199,8 +214,7 @@ export const UNFORGIVEN_MAP: MapGame = {
   buildingOn: (square) => square.town ?? 0,
   routeTo: { noun: 'teleporter', matches: hasTeleporterSide },
   stocking: UNFORGIVEN_STOCKING,
-  // Dungeons of the Unforgiven writes nothing about where a character has been.
-  exploredMaps: null,
+  exploredMaps: UNFORGIVEN_DUN_FILES,
   pngName: (dungeon, floor) => `dotu-module-${dungeon + 1}-${floor === 0 ? 'town' : `floor-${numberForFileName(floor)}`}.png`,
   modules: true,
 };
