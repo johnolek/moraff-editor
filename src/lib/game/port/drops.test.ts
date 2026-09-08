@@ -339,7 +339,7 @@ describe('postKillHeal', () => {
     expect(game.pc.hp).toBe(60);
   });
 
-  it('adds a few more below floor 7', () => {
+  it('adds up to three more from floor 7 down', () => {
     const game = killing(rolls(0, 6, 3), { hp: 50, maxHp: 100, level: 7 });
     postKillHeal(game);
     expect(game.pc.hp).toBe(63);

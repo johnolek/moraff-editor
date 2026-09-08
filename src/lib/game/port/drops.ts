@@ -400,7 +400,7 @@ export function findItem(game: Game): void {
 
 /**
  * post_kill_heal (exe 3000:afc5, unf.c "post_kill_heal"): the cup of health a kill turns up one
- * time in four, worth four to fourteen hit points and a few more below floor 7.
+ * time in four, worth four to fourteen hit points, and up to three more from floor 7 down.
  *
  * A character already at full health is not offered one.
  */
