@@ -23,6 +23,16 @@ export const MESSAGE_LINE_Y = 0x301;
 export const MENU_COLOUR = 6;
 
 /**
+ * The colour every line of a fight is drawn in: the word at DS:0435, which is 15 and which
+ * nothing in the game ever writes.
+ *
+ * It is the colour of the battle banner's five lines, of the two lines strike (exe 2000:7e36)
+ * draws a blow on, of print_battle_hp_info's line (exe 2000:b68d) and of the line defend
+ * (exe 2000:82b7) draws when a monster swings back.
+ */
+export const BATTLE_TEXT_COLOUR = 15;
+
+/**
  * How long a menu line has to be before the game spreads it out instead of printing it plainly.
  *
  * mset_gmenu measures the line and sends anything of 27 characters or more through FUN_4000_593f

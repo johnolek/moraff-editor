@@ -1,4 +1,4 @@
-import { MENU_X, menuLine } from '../game/port/screens';
+import { BATTLE_TEXT_COLOUR, MENU_X, menuLine } from '../game/port/screens';
 import type { Game, ScreenLine } from '../game/port/state';
 import { BATTLE_SPELLS_BOX } from './display';
 
@@ -69,10 +69,6 @@ export function messageBoxLines(lines: string[]): ScreenLine[] {
  */
 export const BATTLE_BANNER_Y = [0x329, 0x351, 0x441, 0x469, 0x379];
 
-/** The colour every one of the five is drawn in: the word at DS:0435, which is 15 and which
- *  nothing in the game ever writes. */
-export const BATTLE_BANNER_COLOUR = 15;
-
 /** The battle banner's lines, ready for the screen renderer. */
 export function battleBannerLines(lines: string[]): ScreenLine[] {
   return lines.slice(0, BATTLE_BANNER_Y.length).map((text, index) => ({
@@ -80,7 +76,7 @@ export function battleBannerLines(lines: string[]): ScreenLine[] {
     x: MENU_X,
     y: BATTLE_BANNER_Y[index],
     font: 0,
-    colour: BATTLE_BANNER_COLOUR,
+    colour: BATTLE_TEXT_COLOUR,
   }));
 }
 
