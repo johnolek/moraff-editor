@@ -8,7 +8,8 @@
 //
 // --fight fills the message box the way it stands in the middle of a swing: the battle banner
 // engagement_timing prints, the two lines strike draws the blow on, and the hit points line
-// print_battle_hp_info puts back.
+// print_battle_hp_info puts back. It also stands the monster on the square being fought, which
+// draw_3d_view draws zoomed into each view.
 //
 // The floor is generated from the same UNFDUNG.BIN the site ships, so no save file is needed, and
 // the text is drawn with the game's own .FNT bitmaps rather than the web font the site uses — the
@@ -52,6 +53,8 @@ const { battleSpellLines } = await load('game/port/screens.ts');
 const { engagementTiming, printBattleHpInfo, strike } = await load('game/port/combat.ts');
 const { messageBoxScreen } = await load('play/screens.ts');
 const { setMonsterMap, MAP_PLAYER } = await load('game/port/state.ts');
+const { monsterIdOf } = await load('play/floor.ts');
+const { monsterById } = await load('map/stocking.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
 const fonts = JSON.parse(readFileSync(src('game/dotu-fonts.json'), 'utf8'));
 
@@ -90,6 +93,25 @@ function picture(name) {
 }
 const wall = picture(wallPictureFile(section));
 const builtin = picture('ufmon.pic');
+const own = picture(`ufmon${section}.pic`);
+
+// The monster --fight is fought with, on the square the character faces: the fourth of the
+// section's own five kinds, which is what makes the banner name one of them.
+const [dx, dy] = [[0, -1], [0, 1], [-1, 0], [1, 0]][dir];
+const fought = { x: at.x + dx, y: at.y + dy, type: 23, hp: 480, level: 40 };
+
+/** A monster of the floor's table as the 3-D view wants it, which is what the play screen does. */
+function viewMonster(monster) {
+  const entry = monsterById(monsterIdOf(monster.type, section));
+  return {
+    x: monster.x,
+    y: monster.y,
+    picnum: entry.picnum,
+    builtin: entry.origin.kind === 'builtin',
+    colour: entry.color,
+    colorSet: entry.colorSet,
+  };
+}
 
 const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
 renderFourViews(
@@ -103,7 +125,7 @@ renderFourViews(
     pictures: {
       wall,
       overlay: picture('overlay.pic'),
-      monster: (picnum, isBuiltin) => (isBuiltin ? (builtin?.[picnum + 2] ?? null) : null),
+      monster: (picnum, isBuiltin) => (isBuiltin ? (builtin?.[picnum + 2] ?? null) : (own?.[picnum - 7] ?? null)),
       ladder: (down) => builtin?.[down ? 0 : 1] ?? null,
     },
     detail: 0,
@@ -111,7 +133,7 @@ renderFourViews(
     videoClass: 2,
     horizonWeight,
     dir,
-    monsters: [],
+    monsters: args.fight ? [viewMonster(fought)] : [],
     water: [4, 8, 20].includes(section),
   },
   dir,
@@ -149,9 +171,8 @@ function fightLines() {
   const fight = newGame({ rng: { random: (n) => (n > 0 ? n - 1 : 0) } });
   Object.assign(fight.pc, { x: at.x, y: at.y, dir, level: floor, lev: 22, str: 60, weapon: 7 });
   setMonsterMap(fight, fight.pc.x, fight.pc.y, MAP_PLAYER);
-  const [dx, dy] = [[0, -1], [0, 1], [-1, 0], [1, 0]][dir];
-  Object.assign(fight.monsters[0], { x: at.x + dx, y: at.y + dy, hp: 480, type: 23, level: 40 });
-  setMonsterMap(fight, fight.monsters[0].x, fight.monsters[0].y, 0);
+  Object.assign(fight.monsters[0], fought);
+  setMonsterMap(fight, fought.x, fought.y, 0);
   fight.engaged = 0;
   // The play session collects what engagement_timing says as the banner rather than as a box.
   const banner = [];
