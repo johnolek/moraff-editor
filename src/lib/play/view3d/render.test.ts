@@ -5,7 +5,8 @@ import { newFrame, type Frame } from './frame';
 import { AHEAD_VIEW } from './geometry';
 import { NO_PICTURES, type ViewPictures } from './pictures';
 import { parsePicRows } from './texture';
-import { VIEW_BLOCKED, renderView, type ViewScene } from './render';
+import { VIEW_BLOCKED, renderFourViews, renderView, type ViewScene } from './render';
+import { FOUR_VIEWS } from './views';
 import { WALL_PALETTE } from './wall';
 
 const SCREEN = { width: 320, height: 200 };
@@ -150,6 +151,20 @@ describe('the four views', () => {
     for (const facing of [0, 1, 2, 3]) {
       const frame = newFrame(SCREEN.width, SCREEN.height);
       expect(() => renderView(frame, scene(corridor()), AHEAD_VIEW, facing)).not.toThrow();
+    }
+  });
+});
+
+describe('the four views of one screen', () => {
+  it('draws something in each of the four rectangles', () => {
+    const frame = newFrame(640, 480);
+    renderFourViews(frame, scene(corridor(), { screen: { width: 640, height: 480 } }), 0);
+    for (const view of FOUR_VIEWS) {
+      const left = Math.trunc((639 * view.rect.left) / 1600);
+      const right = Math.trunc((639 * view.rect.right) / 1600);
+      const top = Math.trunc((479 * view.rect.top) / 1200);
+      const bottom = Math.trunc((479 * view.rect.bottom) / 1200);
+      expect([...coloursIn(frame, left + 4, top + 4, right - 4, bottom - 4)].length).toBeGreaterThan(1);
     }
   });
 });

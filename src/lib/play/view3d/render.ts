@@ -12,6 +12,7 @@ import {
 import { FLOOR_TILES } from './pictures';
 import { scaleImage } from './scale';
 import { drawWall, DETAIL_TEXTURED, type WallScene } from './wall';
+import { FOUR_VIEWS, viewFacing } from './views';
 
 /**
  * `draw_3d_view` (exe 3000:0f75): one of the four corridor views. It walks forward a square at a
@@ -107,6 +108,14 @@ export function renderView(frame: Frame, scene: ViewScene, rect: ViewRect, facin
     );
   }
   return 0;
+}
+
+/**
+ * The four views of one screen, drawn into one frame: `FUN_2000_ac9e` (exe 2000:ac9e) calls
+ * `draw_3d_view` once for the way the character faces and once for each of the other three.
+ */
+export function renderFourViews(frame: Frame, scene: ViewScene, facing: number): void {
+  for (const view of FOUR_VIEWS) renderView(frame, scene, view.rect, viewFacing(view.name, facing));
 }
 
 /** `retdwall` for the side the view looks through from the character's own square. */
