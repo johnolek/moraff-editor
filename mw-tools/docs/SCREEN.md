@@ -44,8 +44,10 @@ Green with the key letter yellow: `B`, `W`, `Z`, `I`, `A`, `F`, `WAIT` wholly ye
 
 ## The views
 
-The wall texture is the grey stone of WALL.PIC with green cracks (floor 29, colour set 7):
-large rectangular blocks with a lighter mortar line between them. A wall one square ahead
+The wall texture is the grey stone of WALL.PIC with green cracks: large rectangular blocks
+with a lighter mortar line between them. That is colour set 3, whose sixteen wall entries
+alternate a grey ramp with a green one, so the floor is one where `floor % 11` is 3 — the
+29 in the screenshot is the character's level and says nothing about the depth. A wall one square ahead
 fills the whole view with the texture at full size, which is what both the front and the
 back view show in the first screenshot. A corridor (the west view) shows the ceiling and
 the floor as flat dark olive (a dark yellow-green, no texture), and the walls at each depth
