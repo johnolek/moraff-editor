@@ -1,4 +1,5 @@
 import { dungeonForLevel } from '../../rev-bestiary/monsters';
+import { REV_FIGHT_LINES } from './fight';
 import { REV_ARMOUR_VALUE, REV_VALUE, revValue } from './record';
 import type { RevGame } from './state';
 
@@ -36,6 +37,8 @@ export const IT_MISSED = 'IT MISSED               ';
 export const IT_CANT_STRIKE = "IT CAN'T STRIKE        ";
 export const SQUASH = 'SQUASH!!';
 export const ITS_STUCK_TO_YOU = "IT'S STUCK TO YOU!";
+/** 1000:9E7F: what losing a level says. */
+export const LEVEL_DRAINED = 'LEVEL DRAINED!';
 
 /**
  * 1000:9B0B: the armour class the monster has to beat.
@@ -62,7 +65,7 @@ export function revArmourClass(game: RevGame): number {
  * The three damage bands each test the roll against the armour class plus `game.shield`
  * (1000:9B61, 9C00 and 9C41), which is the only place the spell at 1000:9971 is read.
  */
-export function revMonsterAttack(game: RevGame): RevMonsterSwing {
+function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
   const fight = game.fight;
   const pc = game.pc;
   const rng = game.rng;
@@ -131,5 +134,28 @@ export function revMonsterAttack(game: RevGame): RevMonsterSwing {
   }
   pc.hp -= damage;
   game.banner.push(`IT DID ${damage} POINTS  `);
+
+  // 1000:9DF4: kind 5 drains a level off any blow it lands, at any depth. The character is
+  // written back to disk on the spot, so the loss survives whatever happens next.
+  if (fight.kind === 5) {
+    pc.experience = Math.trunc(pc.experience * 0.7);
+    pc.level -= 1;
+    pc.maxHp = pc.maxHp - rng.random(10) - pc.fromHealth + 1;
+    game.banner.push(REV_FIGHT_LINES[rng.random(5) + 10]);
+    game.banner.push(LEVEL_DRAINED);
+    if (pc.level >= 0) save();
+  }
   return { ...cells };
+}
+
+/**
+ * 1000:9A2F: the monster's swing, and the clamp every way out of it passes through.
+ *
+ * 1000:9F60 ends the routine at 1000:3B02, which is what puts the hit points back under the
+ * maximum when a level drain has just lowered it.
+ */
+export function revMonsterAttack(game: RevGame, save: () => void): RevMonsterSwing {
+  const swing = revSwingAndDrains(game, save);
+  if (game.pc.hp > game.pc.maxHp) game.pc.hp = game.pc.maxHp;
+  return swing;
 }

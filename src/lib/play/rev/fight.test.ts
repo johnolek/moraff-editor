@@ -112,7 +112,7 @@ describe("the monster's answer", () => {
     const game = started(nearlyTop);
     revMeetMonster(game, 39);
     const before = game.pc.hp;
-    const swing = revMonsterAttack(game);
+    const swing = revMonsterAttack(game, () => {});
     expect(swing.damage).toBeGreaterThan(0);
     expect(game.pc.hp).toBe(before - swing.damage);
   });
@@ -122,7 +122,7 @@ describe("the monster's answer", () => {
       const game = started({ random: () => 0 } as Rng);
       revMeetMonster(game, 39);
       game.scratch = scratch;
-      return revMonsterAttack(game).roll;
+      return revMonsterAttack(game, () => {}).roll;
     };
     expect(roll(40) - roll(0)).toBe(40);
   });

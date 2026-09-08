@@ -464,7 +464,7 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
     return;
   }
   // 1000:8E44 and 1000:878E: the monster's own swing, which is only ever reached from here.
-  if (revMonsterAnswers(game)) revMonsterAttack(game);
+  if (revMonsterAnswers(game)) revMonsterAttack(game, () => session.save());
 }
 
 /**
