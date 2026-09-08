@@ -24,7 +24,12 @@ import {
 /** The three arrays a direction is drawn from, with everything an opening but what is named. */
 function depths(named: Partial<ViewDepths> = {}): ViewDepths {
   const empty = (): number[] => new Array(8).fill(OPEN);
-  return { far: named.far ?? empty(), left: named.left ?? empty(), right: named.right ?? empty() };
+  return {
+    far: named.far ?? empty(),
+    left: named.left ?? empty(),
+    right: named.right ?? empty(),
+    reached: named.reached ?? 6,
+  };
 }
 
 /** How many pixels of a colour a panel holds, which is enough to tell a slab from an outline. */

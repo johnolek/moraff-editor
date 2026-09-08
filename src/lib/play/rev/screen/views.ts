@@ -50,6 +50,8 @@ export interface ViewDepths {
   left: number[];
   /** 1F42: the wall along its right. */
   right: number[];
+  /** The deepest depth the scan got to before a wall or a door stopped it. */
+  reached: number;
 }
 
 /** How deep the scan and the drawing go: `FOR depth = 1 TO 6` (1000:613C, 1000:69B4). */
@@ -122,9 +124,11 @@ export function scanDirection(place: RevViewPlace, direction: number): ViewDepth
     far: new Array(DEEPEST + 2).fill(OPEN),
     left: new Array(DEEPEST + 2).fill(OPEN),
     right: new Array(DEEPEST + 2).fill(OPEN),
+    reached: 0,
   };
   for (let depth = 1; depth <= DEEPEST; depth++) {
     if (depths.far[depth - 1] !== OPEN) break;
+    depths.reached = depth;
     const { column, row } = squareAtDepth(place, direction, depth);
     if (direction === NORTH) {
       depths.far[depth] = grade(ACROSS, column, row, place);
