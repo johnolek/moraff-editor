@@ -142,7 +142,7 @@
       known: (x, y) => discovered.known(x, y),
       monsters: mapMonsters,
     });
-    const rgba = toRgba(frame, sectionPalette(place.module + 1, part));
+    const rgba = toRgba(frame, sectionPalette(place.module + 1, part, game.colourSetting));
     context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
   });
 </script>

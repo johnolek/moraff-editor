@@ -1,6 +1,7 @@
 import {
   PIC_H,
   PIC_W,
+  BRIGHT_COLOURS,
   builtinPictureIndex,
   dungeonPalette,
   monsterPixelIndex,
@@ -56,9 +57,12 @@ export function pictureImages(file: string): PicImage[] {
 /**
  * The dungeon palette of a section, by 1-based module and part 1..4 within the module. Entries
  * 64..79 stay black, since only a shop's palette writes them and no monster's tint reaches them.
+ *
+ * `setting` is the options menu's colour setting; everything outside a game in progress leaves
+ * it at the value a new character is given, which draws the wall colours at full strength.
  */
-export function sectionPalette(module: number, part: number): Rgb[] {
-  return dungeonPalette(palettes, null, module, part);
+export function sectionPalette(module: number, part: number, setting: number = BRIGHT_COLOURS): Rgb[] {
+  return dungeonPalette(palettes, null, module, part, setting);
 }
 
 /** The monster drawn with the palette of the given section; module is 1-based. */

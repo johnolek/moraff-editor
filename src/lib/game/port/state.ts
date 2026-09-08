@@ -1,4 +1,5 @@
 import data from '../dotu-data.json';
+import { BRIGHT_COLOURS } from '../dotu-pic.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX, HEIGHT, WIDTH } from '../unfmap.js';
 import type { Rng } from './rng';
 import { BorlandRng } from './rng';
@@ -615,6 +616,12 @@ export interface Game {
    */
   highSpeed: boolean;
   /**
+   * DS:4df2: the options menu's colour setting, 0 to 3. 0 draws the wall colours at full
+   * strength and every other setting blends them toward grey. roll_char (exe 3000:4c77) gives a
+   * new character 0, and the game saves the setting with the character at DS:c18f.
+   */
+  colourSetting: number;
+  /**
    * DS:5400: drop_money has already said the character cannot carry any more dollars, so it does
    * not say it again until a find succeeds.
    */
@@ -844,6 +851,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
 
     // kills and town
     highSpeed: false,
+    colourSetting: BRIGHT_COLOURS,
     dollarCapWarned: false,
     ...rest,
     messages,

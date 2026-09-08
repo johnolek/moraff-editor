@@ -55,6 +55,19 @@ describe('the O key', () => {
     expect(session.box).toContain('THAT SWITCH IS FOR THE DOS');
   });
 
+  it('steps the colour setting round its four values without saying anything', async () => {
+    const session = inTheTown(lowest);
+    expect(session.game.colourSetting).toBe(0);
+    for (const want of [1, 2, 3, 0]) {
+      await press(session, KEY.options);
+      const menu = [...session.box];
+      await press(session, 0x32);
+      expect(session.game.colourSetting).toBe(want);
+      // The game answers this switch by redrawing, so the menu is left as it stands.
+      expect(session.box).toEqual(menu);
+    }
+  });
+
   it('changes nothing on escape', async () => {
     const session = inTheTown(lowest);
     await press(session, KEY.options);

@@ -3,6 +3,7 @@ import { showHint } from '../game/port/drops';
 import { clearMenuBlock, clearMessageLine } from '../game/port/screens';
 import { showMoney } from '../game/port/town';
 import type { Turn } from './engine';
+import { COLOUR_SETTINGS } from '../game/dotu-pic.js';
 import { KEY, menuEntry, menuKeys } from './keys';
 
 /**
@@ -34,12 +35,11 @@ const HIGH_SPEED_ON = 112;
 const HIGH_SPEED_OFF = 113;
 const NO_SOUND = 114;
 
-/** What the four switches in the middle of the menu are answered with. */
+/** What the three switches this port has nothing behind are answered with. */
 const NOT_A_PORT_SETTING = [
   'THAT SWITCH IS FOR THE DOS',
-  "GAME'S SCREEN AND ITS MOUSE,",
-  'NEITHER OF WHICH THIS PORT',
-  'HAS.',
+  "GAME'S MOUSE, WHICH THIS PORT",
+  'DOES NOT HAVE.',
 ];
 
 /**
@@ -47,8 +47,9 @@ const NOT_A_PORT_SETTING = [
  *
  * The first entry is the high speed option (DS:00c3), which stops the game saying that money was
  * found, throws away the drops the character has no use for, and skips most of its delays; the
- * last shows what the game has to say about sound. The four in between set the palette, turn the
- * mouse on and off, move it, and pick how the menu highlights a line.
+ * second steps the colour setting (DS:4df2) round its four values; the last shows what the game
+ * has to say about sound. The three in between turn the mouse on and off, move it, and pick how
+ * the menu highlights a line.
  */
 export async function openOptions(turn: Turn): Promise<void> {
   const { game, session } = turn;
@@ -60,6 +61,10 @@ export async function openOptions(turn: Turn): Promise<void> {
   if (entry === 1) {
     game.highSpeed = !game.highSpeed;
     showHint(game, game.highSpeed ? HIGH_SPEED_ON : HIGH_SPEED_OFF);
+  } else if (entry === 2) {
+    // The game answers this one by redrawing rather than by saying anything.
+    game.colourSetting = (game.colourSetting + 1) % COLOUR_SETTINGS;
+    return;
   } else if (entry === 6) {
     showHint(game, NO_SOUND);
   } else {
