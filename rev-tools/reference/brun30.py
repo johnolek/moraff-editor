@@ -269,7 +269,14 @@ _ARITHMETIC = [
 _OPERANDS = ("DS:SI, ES:DI", "DS:SI, ES:DI",
              "accumulator, ES:DI", "accumulator, ES:DI",
              "DS:SI, accumulator", "DS:SI, accumulator",
-             "DS:SI, a local slot", "DS:SI, a local slot")
+             "a local slot, accumulator", "a local slot, accumulator")
+
+# The G+6 and G+7 stubs call CS:1EC3, which reads the inline byte and puts the
+# address of that local slot in SI, then fall into the "accumulator on the
+# right" stub: the slot is the LEFT operand and the accumulator the right. Slot
+# n is the eight bytes at DGROUP B7B0 + 8 * (n - 0x80), so 0x80 is B7B0 and
+# 0x81 is B7B8. Reading it the other way round turns `slot - acc` into
+# `acc - slot` and reverses every comparison against a slot.
 
 for _base, _op, _addresses in _ARITHMETIC:
     for _i, _address in enumerate(_addresses):

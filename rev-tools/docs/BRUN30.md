@@ -80,7 +80,7 @@ the operands.  The entry stubs make this plain; here is the whole of subtract:
 ```
 BRUN30 CS:B354   mov  si, 001A      ; $99: left operand is the accumulator
                  jmp  B35F
-         B359    call 1EC3          ; $9D: right operand is a local slot
+         B359    call 1EC3          ; $9D: left operand is a local slot, then
          B35C    mov  di, 001A      ; $9B: right operand is the accumulator
          B35F    call 1F6B          ; $97: both operands named outright
                  mov  ax, [di+2]
@@ -90,8 +90,9 @@ BRUN30 CS:B354   mov  si, 001A      ; $99: left operand is the accumulator
 
 So for a family based at slot *G*: *G*+0 single with both operands in memory,
 *G*+1 the double of that, *G*+2 single with the accumulator on the left, *G*+4
-single with the accumulator on the right, *G*+6 single with the right operand in
-a local slot, and the odd numbers the doubles.  `+` is at `$7F`, `/` at `$87`,
+single with the accumulator on the right, *G*+6 single with the left operand in
+a local slot and the accumulator on the right (the `$9D` stub sets SI from the
+inline byte and falls into the `$9B` stub), and the odd numbers the doubles.  `+` is at `$7F`, `/` at `$87`,
 `*` at `$8F`, `-` at `$97` and comparison at `$9F`; `^` is the odd one out at
 `$23`.
 
@@ -105,7 +106,9 @@ instructions.  There are three kinds.
 ds; lodsb` at BRUN30 CS:C237 to fetch the dimension count; `$AB`..`$AE` do it at
 CS:AC71 to fetch a power of two; the rest — `$29`, `$2A`, `$71`, `$72` and the
 *G*+6 and *G*+7 slot of every arithmetic family — reach the same byte through
-BRUN30 CS:1EC3, which turns it into the address of a local slot.  Calling CS:1EC3
+BRUN30 CS:1EC3, which turns it into the address of a local slot: slot *n* is the
+eight bytes at DGROUP B7B0 + 8(*n* - 80h), so `$80` is B7B0 and `$81` is B7B8.
+Calling CS:1EC3
 is the test: it is what the sixteen slots that use it have in common, and it is
 how the list was made rather than by pattern-matching the run-time.
 
@@ -322,27 +325,27 @@ acts.  `LOCATE 25, 1` is `mov bx,19h; INT 3Eh $42; mov bx,1; INT 3Eh $44`.
 | `$81` | `B369` | `+` | single: accumulator, ES:DI | 162 | high |
 | `$82` | `ADA2` | `+` | double: accumulator, ES:DI | 5 | high |
 | `$83` | `B371` | `+` | single: DS:SI, accumulator | 9 | high |
-| `$85` | `B36E` | `+` | single: DS:SI, a local slot | 27 | high |
+| `$85` | `B36E` | `+` | single: a local slot, accumulator | 27 | high |
 | `$87` | `B52B` | `/` | single: DS:SI, ES:DI | 10 | high |
 | `$89` | `B520` | `/` | single: accumulator, ES:DI | 13 | high |
 | `$8B` | `B528` | `/` | single: DS:SI, accumulator | 3 | high |
-| `$8D` | `B525` | `/` | single: DS:SI, a local slot | 17 | high |
+| `$8D` | `B525` | `/` | single: a local slot, accumulator | 17 | high |
 | `$8F` | `B4AB` | `*` | single: DS:SI, ES:DI | 44 | high |
 | `$90` | `AF46` | `*` | double: DS:SI, ES:DI | 3 | high |
 | `$91` | `B4A0` | `*` | single: accumulator, ES:DI | 130 | high |
-| `$95` | `B4A5` | `*` | single: DS:SI, a local slot | 46 | high |
+| `$95` | `B4A5` | `*` | single: a local slot, accumulator | 46 | high |
 | `$97` | `B35F` | `-` | single: DS:SI, ES:DI | 23 | high |
 | `$99` | `B354` | `-` | single: accumulator, ES:DI | 7 | high |
 | `$9B` | `B35C` | `-` | single: DS:SI, accumulator | 21 | high |
 | `$9C` | `AD89` | `-` | double: DS:SI, accumulator | 4 | high |
-| `$9D` | `B359` | `-` | single: DS:SI, a local slot | 11 | high |
+| `$9D` | `B359` | `-` | single: a local slot, accumulator | 11 | high |
 | `$9F` | `A837` | `CMP` | single: DS:SI, ES:DI | 434 | high |
 | `$A0` | `A81E` | `CMP` | double: DS:SI, ES:DI | 19 | high |
 | `$A1` | `A82C` | `CMP` | single: accumulator, ES:DI | 89 | high |
 | `$A2` | `A813` | `CMP` | double: accumulator, ES:DI | 5 | high |
 | `$A3` | `A834` | `CMP` | single: DS:SI, accumulator | 6 | high |
-| `$A5` | `A831` | `CMP` | single: DS:SI, a local slot | 16 | high |
-| `$A6` | `A818` | `CMP` | double: DS:SI, a local slot | 2 | high |
+| `$A5` | `A831` | `CMP` | single: a local slot, accumulator | 16 | high |
+| `$A6` | `A818` | `CMP` | double: a local slot, accumulator | 2 | high |
 | `$A7` | `AC1A` | `IF` | test the single at DS:SI against zero | 131 | high |
 | `$A8` | `AC26` | `IF` | test the double at DS:SI against zero | 4 | high |
 | `$AB` | `AC63` | `SCALE` | load the single at DS:SI and multiply it by 2^n | 17 | high |
