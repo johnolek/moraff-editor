@@ -73,7 +73,89 @@ foreground, drawn in orange and yellow, with a black ellipse behind it where it 
 ceiling. Far down the corridor a monster stands, drawn small.
 
 In the RIGHT ARROW view a monster stands close, drawn at about half the view's height, with
-a ladder down (orange, on the floor) in front of it.
+a ladder down (orange, on the floor) in front of it. That one is on the square next door,
+which the game draws by its own rule; the next section is that rule.
+
+## The monster on the square in front of you
+
+The monster one square away — the one an engagement is fought with — is not drawn through
+the perspective at all. `draw_3d_view` (exe 3000:0f75) walks the squares straight ahead
+back toward the character, and on the last step of that walk it draws the monster into a
+fixed rectangle of the view instead.
+
+The walk's own square drawing is `draw_map_square` (exe 3000:2848), and that function
+refuses to draw a monster for exactly this square: at exe 3000:2f5e it compares its first
+two arguments against DS:25bb (-0.5, a double) and DS:25d7 (1.5) and jumps past the whole
+monster block to 3000:3148, where the ladder and the trapdoor are drawn. Those two numbers
+are the near corner of the square one step ahead, which is what `draw_3d_view` passes at
+3000:225b. So the monsters further off go through the projection and the near one does not.
+Only ever one of the two is drawn.
+
+The rectangle is read out of the instruction stream at exe 3000:2342 and 3000:23ca, the
+floating-point arguments having been lost in `unf.c` (METHOD.md section 8). With `left`,
+`top`, `right` and `bottom` the view's own rectangle in the 1600 by 1200 grid and `e` the
+slot narrowing every square of the walk uses one step out, `width * 1 / (2 * 1 + 1)`:
+
+| edge | value |
+|---|---|
+| left | `ftol(left + e / 2)` |
+| top | `(bottom + 3 * top) / 4` |
+| right | `ftol(right - e / 2)` |
+| bottom | `(15 * bottom + top) / 16` |
+
+**The character's height does not come into it.** DS:b8bd, which every other part of the
+view weighs its horizon by, is not read here: the two horizontal edges are fixed fractions
+of the view, a quarter of the way down it and fifteen sixteenths of the way down. A tall
+character and a short one see the monster in the same place.
+
+The whole picture is drawn, columns 0 to 255 of it. Which way round it faces is a coin flip
+drawn fresh for every view — `rand() * 2 / 0x8000` at exe 3000:2323 — and when that comes
+out zero the left and right edges are handed to `scale_image2` (exe 4000:4818) the other
+way round, which is how that routine mirrors. The colours are the monster's own, the same
+DS:4fbd tint and DS:4fc1 colour-set base `draw_map_square` uses, and in the three water
+sections a built-in monster is again drawn short: 140 of its rows stretched over the whole
+rectangle.
+
+Where that lands on the 1024 by 768 screen, for the two views the screenshot shows:
+
+| view | rectangle | of the view |
+|---|---|---|
+| UP ARROW | 297..725 across, 123..455 down | 67% of its width, 25%..94% of its height |
+| RIGHT ARROW | 863..991 across, 375..476 down | the same fractions |
+
+All four views do it, each in its own rectangle: the code is inside `draw_3d_view`, which
+`FUN_2000_ac9e` (exe 2000:ac9e) calls once per view. The four rectangles are kept as well,
+in the arrays at DS:2318, DS:c67a, DS:c682 and DS:c68a indexed by the view (exe 3000:244f),
+so that `movecontrol` (exe 2000:c308) can paint a picture over the same place again when
+the monster dies. The kept copy holds its left and right the mirrored way round, so that
+second drawing is always mirrored.
+
+The monster goes on last. `draw_map_square` has already put down the wall behind it and the
+ladder on its square by the time this runs, and the picture paints over both wherever it is
+not transparent.
+
+### Two rectangles, one of them unreachable
+
+Before the coin flip, at exe 3000:2312, the code compares the screen's own last column (the
+long at DS:c6aa) against 1000, and a second copy of the whole draw follows at 3000:25ff
+with `e / 3` for the inset and `(bottom + 7 * top) / 8` for the top edge — a smaller, lower
+rectangle for a narrow screen. It can never run: all three branches of that comparison land
+on the same instruction (`jg` and `jne` both jump to 3000:2323, and the `ja` is a jump to
+the next instruction), so the wide-screen rectangle is taken whatever the screen is. Ghidra
+drops the second copy as unreachable, which is why `unf.c` shows only one pair of
+`scale_image2` calls here. The port has the reachable one only.
+
+Moraff's World draws its own engaged monster with the numbers of the copy Unforgiven cannot
+reach — `slotNarrowing(width, 1) / 3` and `(bottom + 7 * top) / 8` — in `FUN_3000_1a08`
+(WORLD.EXE 3000:1a08) and so in `src/lib/play/mw/view3d/render.ts`. The two games share the
+routine; only Unforgiven grew the second rectangle over it.
+
+### What is not drawn
+
+`draw_3d_view` follows the monster with the water overlay at exe 3000:24c8: when a built-in
+monster was drawn short in a water section, DS:c3af's picture is drawn over the same
+rectangle in a colour DS:c6e9 picks. `draw_map_square` does the same at exe 3000:307c for
+the monsters further off. Neither is ported, at any distance.
 
 ## The message box
 
