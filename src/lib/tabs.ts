@@ -25,7 +25,7 @@ export const TABS: TabEntry[] = [
  *  needs a file of its own in `src/lib/tidbits/files.ts` to show on it. */
 const GAME_TABS: Partial<Record<GameId, Tab[]>> = {
   moraffsWorld: ['map', 'play', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source'],
-  revenge: ['map', 'editor', 'monsters', 'tidbits', 'roller', 'source'],
+  revenge: ['map', 'play', 'editor', 'monsters', 'tidbits', 'roller', 'source'],
 };
 
 /** The one tab the other games call something else, since only Dungeons of the Unforgiven needs

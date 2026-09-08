@@ -2,7 +2,6 @@ import type { PortedGameId } from '../app-state.svelte';
 import { readStored, writeStored } from '../character/storage';
 import type { DiscoveredMap } from '../map/draw-floor';
 import type { StockedMonster } from '../map/stocking';
-import type { MapMemory } from './memory';
 
 /**
  * How much of the game a Play tab shows, which is a choice the tab offers and the browser
@@ -96,7 +95,10 @@ export function monstersDrawn(mode: PlayMode, sight: MonstersInSight): StockedMo
 /**
  * The map the floor is drawn from: the one the character has discovered in faithful, and none in
  * the other two modes, where the whole floor is drawn.
+ *
+ * `MapMemory` is what the two games that share a map engine hand it; Moraff's Revenge keeps its
+ * own and hands over the same one question, which is all this asks for.
  */
-export function mapDrawn(mode: PlayMode, memory: MapMemory): DiscoveredMap | null {
+export function mapDrawn(mode: PlayMode, memory: { discovered(): DiscoveredMap }): DiscoveredMap | null {
   return mode === 'faithful' ? memory.discovered() : null;
 }

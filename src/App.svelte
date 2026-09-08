@@ -13,6 +13,7 @@
   import MapExplorer from './lib/map/MapExplorer.svelte';
   import Play from './lib/play/Play.svelte';
   import MwPlay from './lib/play/mw/MwPlay.svelte';
+  import RevPlay from './lib/play/rev/RevPlay.svelte';
   import MwMonsters from './lib/mw-bestiary/MwMonsters.svelte';
   import RevMonsters from './lib/rev-bestiary/RevMonsters.svelte';
   import NewCharacter from './lib/roller/NewCharacter.svelte';
@@ -74,8 +75,8 @@
     </p>
   {:else if app.game === 'revenge'}
     <p class="game-note">
-      Moraff's Revenge has the Map, the Save Editor, the Monsters, New Character and Source so far. The rest is on the
-      way.
+      Moraff's Revenge has the Map, Play, the Save Editor, the Monsters, Tidbits, New Character and Source so far.
+      The rest is on the way.
     </p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
@@ -83,8 +84,8 @@
     <MapExplorer />
   </main>
   <main class:hidden={app.tab !== 'play'}>
-    <!-- The two games are two executables with two loops, so each brings its own. -->
-    {#if app.game === 'moraffsWorld'}<MwPlay />{:else}<Play />{/if}
+    <!-- The three games are three executables with three loops, so each brings its own. -->
+    {#if app.game === 'moraffsWorld'}<MwPlay />{:else if app.game === 'revenge'}<RevPlay />{:else}<Play />{/if}
   </main>
   <main class:hidden={app.tab !== 'editor'}>
     <SaveEditor />
