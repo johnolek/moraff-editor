@@ -497,6 +497,8 @@
           </span>
         {/if}
       </div>
+    </div>
+    <div class="viewport">
       {#if twins.length}
         <div
           class="twins"
@@ -508,8 +510,6 @@
             >{/each}
         </div>
       {/if}
-    </div>
-    <div class="viewport">
       <FloorCanvas
         bind:this={floorCanvas}
         {game}
@@ -670,7 +670,18 @@
   .section {
     color: var(--muted);
   }
+  /* Floats over the map like the controls do, so the notice coming and going never moves the
+     floor buttons under a click. */
   .twins {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    max-width: 320px;
+    padding: 8px 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
     color: var(--muted);
   }
   .twins .link {
