@@ -100,10 +100,11 @@ export function stockingSection(moduleIndex: number, floor: number): SectionInfo
 const random = (rnd: () => number, n: number) => Math.trunc(rnd() * n);
 
 /**
- * Fills a floor's 145 monster slots the way stock_level() does: every slot gets a random
- * open square nothing else stands on, a level nudged away from the floor's base level, and
- * hit points rolled for whichever monster the type roll picked. On a section's boss floor
- * slot 0 is the Shadow boss, placed in the middle of the map.
+ * Fills a floor's 145 monster slots the way stock_level (exe 2000:671e, unf.c "stock_level")
+ * does: every slot gets a random open square nothing else stands on, hit points rolled from the
+ * floor's base level for whichever monster the type roll picked, and a level nudged away from
+ * that same base level. On a section's boss floor slot 0 is the Shadow boss, placed in the
+ * middle of the map.
  *
  * Slot 0 is rolled twice over on a boss floor: it takes an ordinary square and an ordinary
  * type first, and only then does the boss take the slot, hand that square back and draw one of
@@ -149,8 +150,10 @@ export function stockFloor(
       ({ x, y } = bossSquare(rows, taken, rnd, bossLastSeen));
       taken.add(y * WIDTH + x);
     }
-    const level = nudgeLevel(baseLevel, rnd);
-    monsters.push({ slot, x, y, monsterId: entry.id, level, hp: rollHp(entry, level, rnd) });
+    // The hit points are rolled from the floor's base level and the stored level is jittered
+    // only afterwards, so a monster's hit points and its level need not match.
+    const hp = rollHp(entry, baseLevel, rnd);
+    monsters.push({ slot, x, y, monsterId: entry.id, level: nudgeLevel(baseLevel, rnd), hp });
   }
   return monsters;
 }

@@ -79,10 +79,24 @@ describe('stockFloor', () => {
       expect(Math.abs(monster.level - base)).toBeLessThanOrEqual(15);
       const entry = monsterById(monster.monsterId);
       const section = entry.origin.kind === 'section' ? entry.origin.section : 1;
-      const [lo, hi] = monsterHpRange(entry.type.hpPerLevel, monster.level, entry.isBoss, section);
+      const [lo, hi] = monsterHpRange(entry.type.hpPerLevel, base, entry.isBoss, section);
       expect(monster.hp).toBeGreaterThanOrEqual(lo);
       expect(monster.hp).toBeLessThanOrEqual(hi);
     }
+  });
+
+  it('rolls the hit points from the floor base and not from the nudged level', () => {
+    const base = monsterLevelBase(12, 0);
+    const monsters = stockFloor(floorOf(0, 12), 0, 12, seeded(3));
+    // On this seed slot 62 is a Giant Ball stocked at level 9 on a level 12 floor, holding more
+    // hit points than level 9 could ever roll.
+    const nudgedDown = monsters[62];
+    const entry = monsterById(nudgedDown.monsterId);
+    expect(nudgedDown.level).toBeLessThan(base);
+    const [, hiForItsLevel] = monsterHpRange(entry.type.hpPerLevel, nudgedDown.level);
+    const [, hiForTheFloor] = monsterHpRange(entry.type.hpPerLevel, base);
+    expect(nudgedDown.hp).toBeGreaterThan(hiForItsLevel);
+    expect(nudgedDown.hp).toBeLessThanOrEqual(hiForTheFloor);
   });
 
   it('leaves a floor the game could not stock empty', () => {
