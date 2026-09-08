@@ -562,3 +562,83 @@ instructions earlier.
 
 In the code: [feature](source:ts/revmap.js/feature), from the town's branch at `1000:55DD` and
 the spill at `1000:55F9` (`rev-tools/docs/DUNGEON.md` section 9).
+
+## Bugs the game has
+
+### Seven of the town's ladders lead to floor minus one
+
+The looser test the town uses takes any ladder that reaches *at least* as far as asked, which
+means seven of its ten ladders down are longer than the trip they were picked for. The square at
+11, 6 of the town is a ladder down one level. The square at 11, 6 of level 1 — the same square,
+one floor down, the one the ladder lands you on — is a ladder up two, and two levels above
+level 1 is a floor that does not exist.
+
+Everywhere below the town a ladder down and the ladder up that answers it agree about how far
+they go, because the exact test is what the rest of the dungeon uses. Seven squares of the town
+are the only place the pairing breaks.
+
+In the code: [feature](source:ts/revmap.js/feature) and `rev-tools/docs/DUNGEON.md` section 9.
+
+### A magic mace makes you harder to hit
+
+Your own swing adds the plus on your weapon to the roll, which is what a plus is for. The
+monster's swing, on the way past, adds the magic mace's plus to your armour class — in the
+routine that works out whether the monster hits *you*.
+
+So a magic mace is quietly worth more than it says: it is a weapon bonus and a defence bonus at
+once, and nothing on any screen mentions the second half.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 1, on the monster's swing at `1000:9B12` beside
+yours at `1000:8A5C`.
+
+### The monster's die is never cleared
+
+Both sides of a fight roll a twenty-sided die that explodes: roll a 20 and roll again, adding.
+Your roll assigns the result to its variable. The monster's adds to it.
+
+The variable it adds to is the compiler's general-purpose scratch cell, the one hundreds of
+statements in the program use as somewhere to put a number for a moment. So a monster's attack
+roll does not start at the die; it starts at whatever the last statement to touch that cell
+happened to leave in it, and then the die is added on top.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 1, on the monster's roll at `1000:9A96` against
+yours at `1000:8A14`.
+
+### After the fountain of youth, the game disagrees with itself about its own walls
+
+The wall rule divides by the generation, and two places in the game compute it. The move test
+divides first and multiplies the coordinates on afterwards; the map divides last. In
+single-precision arithmetic that is not the same sum.
+
+While the generation is 1 — which is every character as shipped — dividing by one costs nothing
+and the two agree everywhere. Drink from the fountain and they stop agreeing: two sides out of
+60,480 at generation 3, seven at generation 5, six at generation 7. A handful of squares in a
+regenerated dungeon are drawn with a wall you can walk through, or without one you cannot.
+
+In the code: [wallSide](source:ts/revmap.js/wallSide), whose order is the move test's, and
+`rev-tools/docs/DUNGEON.md` section 6.
+
+### The last number of your saved map is cut in half
+
+The statement that writes a character's explored map asks for a length of "the address of the
+last element minus the address of the first, plus one". The two addresses are 6,044 bytes apart,
+so the length comes out 6,045 — four bytes for every element except the last, which gets one.
+
+Nothing is lost, because the last element is the corner of an array the game never reads. What it
+leaves behind is the giveaway: every `<n>.BIN` in the game folder is an odd number of bytes long,
+which is not a shape a `BSAVE` of an array of four-byte numbers can otherwise take.
+
+In the code: `rev-tools/docs/SURVEY.md` section 3, on the `BSAVE` at `1000:B583`.
+
+### A zero in your saved map still carries the bytes that were there before
+
+BRUN30 stores a floating-point zero by writing the exponent byte and nothing else, on the
+grounds that an exponent of zero is the whole of what makes a number zero — the other three bytes
+are never read again, so why write them.
+
+They do get written to disk, though. Eight rows of the town in every shipped explored map are
+zero, and the bytes underneath those zeroes are whatever happened to be in that memory when the
+array was dimensioned. They read back as zero and always will; they are just not blank.
+
+In the code: the explored-map writer in `src/lib/roller/rev-save-file.ts`, which writes them
+clean, from the `BSAVE` at `CHCHAR.EXE` offset `1557`.
