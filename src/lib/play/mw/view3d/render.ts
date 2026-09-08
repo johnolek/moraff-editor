@@ -1,4 +1,4 @@
-import { fillRect, drawLine, type Frame } from '../../view3d/frame';
+import { fillRect, drawLine, plot, type Frame } from '../../view3d/frame';
 import { floodBothHalves, type FloodContext, type WallFace } from '../../view3d/flood';
 import { SKIP, scaleImage } from '../../view3d/scale';
 import type { ViewRect } from '../../view3d/geometry';
@@ -11,6 +11,7 @@ import {
   type SquarePlace,
   type ViewFrame,
 } from './geometry';
+import { MW_SCREEN_MODE } from './screen';
 import { drawMwWall, BRICKS_TEXTURED, SIDE_OPEN, type MwWallScene } from './wall';
 
 /**
@@ -152,10 +153,13 @@ function sideAhead(scene: MwViewScene, view: number): number {
  * Near the horizon, where a band would be narrower than a sixty-fourth of the screen, the row is
  * laid flat instead; on a screen under 370 pixels wide every row is.
  *
- * Two of the original's other grounds are not here, because the port's screen is never in a state
- * that asks for them: the line-art brick modes paint plain rows rather than chevrons, and the 1024
- * by 768 in 256 colours paints a two-pixel dither over palette entries 48 to 63 instead. The
- * second is the flat dark olive `mw-tools/docs/SCREEN.md` describes.
+ * Video mode 9 — the 1024 by 768 in 256 colours the port runs in — paints the same chevrons in
+ * different colours: {@link stepGround} walks a palette ramp a band at a time instead of
+ * flipping between two entries, and every band is a two-pixel dither of that colour against the
+ * row's own. That is the flat dark olive `mw-tools/docs/SCREEN.md` describes.
+ *
+ * The line-art brick modes, which paint plain rows rather than chevrons, are still not here: the
+ * port's screen is never in a state that asks for them.
  */
 function drawFloorAndCeiling(
   frame: Frame,
@@ -180,8 +184,12 @@ function drawFloorAndCeiling(
   const centre = (left + right) >> 1;
   const flatBelow = maxX >> 6;
   const banded = maxX >= 0x172;
-  // The parity is stepped by the character's own square, so the ground shifts as they walk.
+  const svga = scene.videoMode === MW_SCREEN_MODE.mode;
+  // The pattern is stepped by the character's own square, so the ground shifts as they walk. The
+  // chequer wants only the parity of that; mode 9 wants the whole number, because it picks the
+  // row's colour out of sixteen rather than two.
   const nudge = (which < 2 && scene.at.y % 2 === 0) || (which > 1 && scene.at.x % 2 === 1) ? 1 : 0;
+  const walked = 3 * (which < 2 ? scene.at.y : scene.at.x);
 
   for (const ceiling of [true, false]) {
     const edgeRow = ceiling ? top : bottom;
@@ -192,30 +200,83 @@ function drawFloorAndCeiling(
       // without bound as the row approaches the horizon.
       const step = short(y - horizon + (ceiling ? -1 : 1));
       if (step === 0) continue;
-      const tile = Math.trunc(short(Math.trunc(short(short(edgeRow - horizon) * 4) / step)) / 3) + nudge;
-      let colour = tile % 2 === 1 ? 0x1b : 0x1a;
+      const distance = Math.trunc(short(Math.trunc(short(short(edgeRow - horizon) * 4) / step)) / 3);
+      let colour = (distance + nudge) % 2 === 1 ? 0x1b : 0x1a;
+      // Mode 9's word of two entries: the row's colour lands on the odd pixels of every band and
+      // the band's own colour on the even ones.
+      const tile = (which === 0 || which === 2 ? -distance : distance) + walked;
+      let word = ((GROUND_FIRST + (tile % 16)) << 8) | GROUND_FIRST;
 
       const span = ceiling ? horizon - y : y - horizon;
       const reach = ceiling ? horizon - top : bottom - horizon;
       const half = reach === 0 ? 0 : Math.trunc((span * ((right - left) >> 1)) / reach);
       if (half < flatBelow || !banded) {
-        drawLine(frame, left, y, right, y, colour);
+        // Too near the horizon for a band to be worth drawing, so the row is laid flat. Mode 9
+        // lays it in the low byte alone, which every row starts at the ramp's first entry.
+        if (svga) drawGroundRun(frame, left, y, right - left + 1, GROUND_FIRST);
+        else drawLine(frame, left, y, right, y, colour);
         continue;
       }
 
       let inner = half >> 1;
-      drawLine(frame, centre - inner, y, centre + inner, y, colour);
+      if (svga) drawGroundRun(frame, centre - inner, y, 2 * inner, word);
+      else drawLine(frame, centre - inner, y, centre + inner, y, colour);
       const edge = centre - left - 1;
       for (;;) {
         colour = colour === 0x1b ? 0x1a : 0x1b;
+        word = stepGround(word, scene.floor, ceiling);
         let outer = inner + half;
         if (centre - outer <= left) outer = edge;
-        drawLine(frame, centre + inner, y, centre + outer, y, colour);
-        drawLine(frame, centre - outer, y, centre - inner, y, colour);
+        if (svga) {
+          drawGroundRun(frame, centre + inner, y, outer - inner, word);
+          drawGroundRun(frame, centre - outer, y, outer - inner, word);
+        } else {
+          drawLine(frame, centre + inner, y, centre + outer, y, colour);
+          drawLine(frame, centre - outer, y, centre - inner, y, colour);
+        }
         if (outer === edge) break;
         inner = outer;
       }
     }
+  }
+}
+
+/** The first of the sixteen palette entries `set_palette` fills the mode-9 ground from. */
+const GROUND_FIRST = 0x30;
+
+/**
+ * How the band colour walks between two bands (exe 3000:1f4d for the ceiling, 3000:2201 for the
+ * floor). The low byte counts round a range of the palette: entries 48 to 63 everywhere except
+ * on the surface, which uses the wider 32 to 63, and on the first floor down, whose ground alone
+ * walks the sixteen wall entries 16 to 31 instead.
+ */
+function stepGround(word: number, floor: number, ceiling: boolean): number {
+  const base = floor === 0 ? 0x20 : (floor === 1) === ceiling ? 0x30 : 0x10;
+  const mask = floor === 0 ? 0x3f1f : floor === 1 ? 0x3f0f : 0x3f2f;
+  return ((((word - base + 1) & mask) + base) & 0xffff) >>> 0;
+}
+
+/**
+ * FUN_2000_0ad7 (WORLD.EXE 2000:0ad7, mw.c "FUN_2000_0ad7"): a run of pixels written two at a
+ * time as a sixteen-bit word, the low byte on the left of each pair.
+ *
+ * A run of odd length puts the low byte down once before the pairs start, so everything after it
+ * sits a pixel out of step. The routine writes straight into a 1024-byte scan line, which is why
+ * it clamps the run to that width whatever the screen is.
+ */
+function drawGroundRun(frame: Frame, x: number, y: number, length: number, word: number): void {
+  const low = word & 0xff;
+  const high = (word >> 8) & 0xff;
+  let at = Math.max(0, x);
+  let left = Math.min(length, 0x400 - at);
+  if (left % 2 === 1) {
+    plot(frame, at, y, low);
+    at += 1;
+    left -= 1;
+  }
+  for (let i = 0; i < left; i += 2) {
+    plot(frame, at + i, y, low);
+    plot(frame, at + i + 1, y, high);
   }
 }
 
