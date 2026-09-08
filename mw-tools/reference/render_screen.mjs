@@ -9,6 +9,10 @@
 // --view renders that one view over the whole screen, the way the Z key zooms one; without it
 // all four are drawn in their own boxes.
 //
+// --beside x,y,type,depth,hp stands one of the game's own monsters on a square next to the
+// character, so the level, hit points and kill value FUN_2000_8b3f prints over its view are drawn
+// too. Give it more than once for a character with monsters on more than one side.
+//
 // The text of the screen — the message box, the key menu, the numbers and the stats — is drawn
 // by the same play/mw/view3d/text.ts the site draws it with, in the game's own bitmap font.
 
@@ -55,11 +59,15 @@ const {
 } = await load('play/mw/view3d/screen.ts');
 const { drawMwScreenText } = await load('play/mw/view3d/text.ts');
 const { ladderPrompt } = await load('play/mw/ladders.ts');
-const { mwKeyMenuLines } = await load('game/mw-port/screens.ts');
+const { mwKeyMenuLines, mwMonsterViewSideLines, mwMonsterViewSides } = await load('game/mw-port/screens.ts');
+const { mwSetOccupant, newMwGame } = await load('game/mw-port/state.ts');
+const { MONSTERS } = await load('mw-bestiary/monsters.ts');
+const { drawMwMonsterBars } = await load('play/mw/view3d/monster-bar.ts');
 const palettes = JSON.parse(readFileSync(src('game/mw-palettes.json'), 'utf8'));
 
 const args = {};
 const monsters = [];
+const beside = [];
 for (let i = 2; i < process.argv.length; i++) {
   const key = process.argv[i];
   if (key.startsWith('--')) {
@@ -70,6 +78,9 @@ for (let i = 2; i < process.argv.length; i++) {
       // records would. The Armored Fighter of the screenshots is picture 7, colour 0.
       const [x, y, picture, colour] = (i++, process.argv[i]).split(',').map(Number);
       monsters.push({ x, y, picture, colour: colour ?? 0 });
+    } else if (key === '--beside') {
+      const [x, y, type, depth, hp] = (i++, process.argv[i]).split(',').map(Number);
+      beside.push({ x, y, type, depth, hp });
     } else args[key.slice(2)] = (i++, next);
   }
 }
@@ -88,6 +99,19 @@ const out = args.out ?? 'mw-screen.png';
 
 const map = new MwDungeon(bundledMwTileset());
 const rows = map.floor(floor, dungeon);
+
+// The monsters standing beside the character, as the game's own record of them: the view draws
+// their pictures and FUN_2000_8b3f prints their numbers over the views they stand in.
+const fight = newMwGame({
+  pc: { x: at.x, y: at.y, floor, dungeon },
+  monsters: beside.map((one) => ({ x: one.x, y: one.y, type: one.type, depth: one.depth, hp: one.hp })),
+  wallSide: (x, y, hv, onFloor, inDungeon) => map.side(x, y, hv, onFloor, inDungeon),
+});
+beside.forEach((one, slot) => {
+  mwSetOccupant(fight, one.x, one.y, slot);
+  monsters.push({ x: one.x, y: one.y, picture: MONSTERS[one.type].picture, colour: MONSTERS[one.type].colour });
+});
+const besideSides = beside.length === 0 ? [] : mwMonsterViewSides(fight);
 
 function picture(name) {
   try {
@@ -132,6 +156,7 @@ if (only !== null) {
 } else {
   for (const [view, rect] of MW_VIEWS.entries()) renderMwView(frame, scene, rect, view);
   drawBoxes();
+  drawMwMonsterBars(frame, besideSides.map((side) => side.corner), floor);
   drawText();
 }
 
@@ -199,6 +224,7 @@ function drawText() {
     { text: 'CON: 11', x: 0x578, y: 0x41a, font: 0, colour: MW_COLOURS.characteristics },
     { text: 'DEX: 19', x: 0x578, y: 0x44c, font: 0, colour: MW_COLOURS.characteristics },
     { text: 'LUCK:46', x: 0x578, y: 0x47e, font: 0, colour: MW_COLOURS.characteristics },
+    ...(beside.length === 0 ? [] : mwMonsterViewSideLines(fight)),
   ]);
 }
 
