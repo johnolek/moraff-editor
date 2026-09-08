@@ -11,7 +11,7 @@ import type { RevGame } from './state';
  * of a key of the player's** — which is what makes the fight turn based even though the level
  * around it keeps moving. You act, then it acts.
  *
- * Two things in here read as slips rather than design, and both are kept:
+ * Three things in here read as slips rather than design, and all three are kept:
  *
  * * **The magic mace's plus is added to the character's armour class** (1000:9B12) rather than
  *   to their swing.
@@ -20,6 +20,15 @@ import type { RevGame } from './state';
  *   so the monster's roll starts from whatever was last left in it. This port keeps a scratch
  *   number of its own on the game for the same reason, and every ported function that writes 52FC
  *   writes it here.
+ * * **The three points a shallow monster loses off a solid blow can never be taken** (1000:9B95).
+ *   The test wants damage over four, and the only band that has run by then adds at most four.
+ *
+ * Two things the routine does that this port does not:
+ *
+ * * **A second swing.** 1000:9F9A rolls `INT(RND * (the kind's attack bonus + 13)) + 1` against
+ *   the character's agility and, once per answer, goes back to 1000:9A2F for another swing.
+ * * **The redraw of the character's numbers.** Each drain raises DGROUP B730, which 1000:9F84
+ *   spends on a pause and a flush of the keyboard. Nothing on this screen needs it.
  */
 
 /** What the monster's swing came to. */
