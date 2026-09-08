@@ -18,10 +18,10 @@ function press(key: string, modifiers: Partial<KeyboardEvent> = {}): KeyboardEve
 }
 
 describe('revGameKey', () => {
-  it('reads a letter exactly as it was typed, since the dungeon never folds the case', () => {
+  it('hands the loop the capital, since the dungeon compares capitals and folds nothing', () => {
     expect(revGameKey(press('D'))).toBe(REV_KEY.down);
-    expect(revGameKey(press('d'))).toBe('d'.charCodeAt(0));
-    expect(revGameKey(press('d'))).not.toBe(REV_KEY.down);
+    expect(revGameKey(press('d'))).toBe(REV_KEY.down);
+    expect(revGameKey(press('#'))).toBe(REV_KEY.background);
   });
 
   it('reads the arrows as the negated scan codes behind their CHR$(0) pairs', () => {

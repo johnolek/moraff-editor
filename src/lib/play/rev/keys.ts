@@ -12,8 +12,9 @@
  *
  * **The letters are compared in capitals and nothing upper-cases them.** There is no `UCASE$`
  * anywhere in the module, so a lower-case `d` matches none of the branches and the dungeon does
- * nothing at all with it. This port reads the character as typed, so it behaves the same way;
- * the buttons under the map send capitals.
+ * nothing at all with it. A DOS player held Shift or Caps Lock; this tab upper-cases a letter
+ * key on its way in instead, so what the loop reads is the capital either way, and the buttons
+ * under the map send capitals too.
  */
 
 /** Every key the dungeon loop dispatches on, by the byte it compares. */
@@ -156,7 +157,7 @@ export function revGameKey(event: KeyboardEvent): number | null {
   if (event.altKey || event.metaKey || event.ctrlKey) return null;
   const named = NAMED_KEYS[event.key];
   if (named !== undefined) return named;
-  if (event.key.length === 1) return event.key.charCodeAt(0);
+  if (event.key.length === 1) return event.key.toUpperCase().charCodeAt(0);
   return null;
 }
 
