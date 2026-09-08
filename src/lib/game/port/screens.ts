@@ -420,8 +420,9 @@ export function clearStatsScreen(game: Game): void {
  * Height is stored in quarter inches, so the line that prints it multiplies by four. The disease
  * and poison lines are the moves left before the next bite, which is the one place the game shows
  * either clock. The line at the bottom is the difficulty the character was rolled under; its
- * middle case reads the contest flag at DS:c647, which nothing in the registered game can set —
- * see the note on the difficulty menu in `character.ts` — so it can never be shown.
+ * middle case reads the contest flag at DS:c647, which the character roller can never set — see
+ * the note on the difficulty menu in `character.ts` — and which only a hidden key in the play
+ * loop turns on. That key is not in this port, so this port never shows that line.
  */
 export function viewStats(game: Game): void {
   const pc = game.pc;
