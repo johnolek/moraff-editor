@@ -22,6 +22,7 @@ import {
   strike,
 } from './combat';
 import { BorlandRng } from './rng';
+import { MENU_X, MESSAGE_LINE_Y } from './screens';
 import type { Game, Monster, MonsterKind, PlayerCharacter } from './state';
 import { MAP_PLAYER, monsterAt, newGame, setMonsterMap } from './state';
 
@@ -294,6 +295,28 @@ describe('defend', () => {
     expect(game.messages).toEqual([`THE GARGALON DOES ${damage} ${points}`]);
   });
 
+  it("draws its line on the strip above the message box, where defend's pfont puts it", () => {
+    const { game } = fighting(2, FIGHTERS[1][1]);
+    game.pc.hp = 5000;
+    attackUntilItLands(game);
+    expect(game.screen).toEqual([
+      { text: game.messages[0], x: MENU_X, y: MESSAGE_LINE_Y, font: 0, colour: 15 },
+    ]);
+  });
+
+  it('spreads a line of 28 characters or more out to the right edge, as psfont does', () => {
+    const { game } = fighting(2, FIGHTERS[1][1]);
+    describeMonster(game, { name: 'MONSTER WITH A VERY LONG NAME' });
+    game.pc.hp = 5000;
+    attackUntilItLands(game);
+    expect(game.screen[0].spreadTo).toBe(0x638);
+    const short = fighting(2, FIGHTERS[1][1]);
+    short.game.pc.hp = 5000;
+    attackUntilItLands(short.game);
+    expect(short.game.screen[0].text.length).toBeLessThan(0x1c);
+    expect(short.game.screen[0].spreadTo).toBeUndefined();
+  });
+
   it('says the monster missed and leaves the player alone', () => {
     const { game } = fighting(1, { lev: 60, dex: 90, luck: 90, con: 60, level: 4, armor: 6 });
     game.pc.hp = 500;
@@ -332,6 +355,10 @@ describe('defend, the puffball', () => {
     expect(defend(game, 0)).toBe(0);
     expect(game.pc.con).toBe(19);
     expect(game.messages).toEqual(['CONSTITUTION DRAINED BY PUFFBALL!']);
+    // The strip above the message box, in the menu column's own colour rather than the fight's.
+    expect(game.screen).toEqual([
+      { text: 'CONSTITUTION DRAINED BY PUFFBALL!', x: MENU_X, y: MESSAGE_LINE_Y, font: 0, colour: 6 },
+    ]);
     expect(monsterAt(game, 10, 10)).toBe(-1);
     expect(monster).toEqual({ x: 100, y: 100, hp: 0, type: 0, level: 0 });
     expect(game.redrawView).toBe(true);

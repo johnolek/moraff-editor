@@ -1,4 +1,12 @@
-import { BATTLE_HP_Y, BATTLE_TEXT_COLOUR, BLOW_Y, clearRect, MENU_X } from './screens';
+import {
+  BATTLE_HP_Y,
+  BATTLE_TEXT_COLOUR,
+  BLOW_Y,
+  clearMessageLine,
+  clearRect,
+  MENU_X,
+  messageLine,
+} from './screens';
 import type { Game, ScreenLine } from './state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
 
@@ -45,6 +53,22 @@ export function gainOrDrain(game: Game, amount: number): string {
 /** One line of a fight, drawn on the message block where the game's own pfont call puts it. */
 function battleLine(text: string, y: number): ScreenLine {
   return { text, x: MENU_X, y, font: 0, colour: BATTLE_TEXT_COLOUR };
+}
+
+/** The colour a drain a monster brought with it is drawn in, which is the menu column's own. */
+const DRAIN_COLOUR = 6;
+
+/**
+ * The line defend (exe 2000:82b7) draws on the strip above the message box, which is where every
+ * blow a monster lands goes.
+ *
+ * A line of 28 characters or more is handed to psfont (exe 4000:0db8) instead of pfont and is
+ * spread out to x 0x638, so a long monster name still fits the strip.
+ */
+function defendLine(text: string): ScreenLine {
+  const line = messageLine(text, BATTLE_TEXT_COLOUR);
+  if (text.length >= 0x1c) line.spreadTo = 0x638;
+  return line;
 }
 
 /**
@@ -175,8 +199,10 @@ function puffball(game: Game, slot: number): number {
   const monster = game.monsters[slot];
   const amount = game.monsterKinds[monster.type].statDrain;
   const stat = gainOrDrain(game, amount);
+  // FUN_2000_28be (exe 2000:28be): the strip the line is about to go on.
+  clearMessageLine(game);
   // DS:1387 / DS:139d, after the stat's own name
-  game.say(stat + (amount < 0 ? ' DRAINED BY PUFFBALL!' : ' RAISED BY PUFFBALL!'));
+  const said = stat + (amount < 0 ? ' DRAINED BY PUFFBALL!' : ' RAISED BY PUFFBALL!');
   setMonsterMap(game, monster.x, monster.y, MAP_EMPTY);
   // The slot is not freed. It is left holding a level 0 monster of kind 0 — a Giant Garbage Can
   // — at (100, 100), off the right edge of an 80-wide floor. The occupancy grid is one unchecked
@@ -188,6 +214,10 @@ function puffball(game: Game, slot: number): number {
   monster.type = 0;
   monster.level = 0;
   game.redrawView = true;
+  // The original wipes the top of the block with FUN_2000_295b before it draws. The battle
+  // banner this port keeps is a list of strings rather than lines on the screen, so there is
+  // nothing on that rectangle for a wipe to take off.
+  game.draw(messageLine(said, DRAIN_COLOUR));
   return 0;
 }
 
@@ -277,11 +307,13 @@ function drainsAndAilments(game: Game, slot: number): void {
     game.reprintBattleInfo = true;
   }
   if (kind.statDrain !== 0) {
+    // FUN_2000_28be (exe 2000:28be): the strip the line is about to go on.
+    clearMessageLine(game);
     const stat = gainOrDrain(game, kind.statDrain);
     // DS:1536 / DS:1549, after the stat's own name
     const line = stat + (kind.statDrain < 0 ? ' HAS BEEN DRAINED!' : ' HAS BEEN RAISED!');
     game.events.push({ kind: 'playerSaved' });
-    game.say(line);
+    game.draw(messageLine(line, DRAIN_COLOUR));
   }
   if (kind.special !== 0) {
     if (kind.special !== 99) game.events.push({ kind: 'playerSaved' });
@@ -397,11 +429,13 @@ export function defend(game: Game, slot: number): number {
   if (kind.breath !== 0 && game.rng.random(2) !== 0) {
     damage = breathe(game, slot);
   } else {
+    // FUN_2000_28be (exe 2000:28be): the strip the line is about to go on.
+    clearMessageLine(game);
     // DS:14ca, the monster's name, then DS:13fb with DS:14cf or DS:1402, or DS:14d6
     let line = `THE ${kind.name}`;
     if (damage > 0) line += ` DOES ${damage}` + (damage === 1 ? ' POINT' : ' POINTS');
     else line += ' MISSES!';
-    game.say(line);
+    game.draw(defendLine(line));
     if (damage > 0) drainsAndAilments(game, slot);
   }
   if (damage > 0) pc.hp -= damage;
