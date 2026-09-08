@@ -9,7 +9,9 @@ import {
   messageLine,
 } from '../game/port/screens';
 import type { ScreenLine } from '../game/port/state';
-import { messageBoxScreen, onMessageBox, screenTakenOver } from './screens';
+import { keyMenuLines, statusLines, BATTLE_SPELLS_BOX, MESSAGE_BOX } from './display';
+import { newGame } from '../game/port/state';
+import { inRect, messageBoxScreen, onMessageBox, screenTakenOver } from './screens';
 
 /** A line drawn where the V screen draws, which is across the four views. */
 const overTheViews: ScreenLine = { text: 'VIEW STATS FOR BRAWLER', x: 0x2d0, y: 0, font: 0, colour: 3 };
@@ -109,6 +111,29 @@ describe('the message box on the screen', () => {
   it('leaves what the game drew across the views out of the message box', () => {
     const lines = messageBoxScreen({ box: ['SAID'], banner: [], drawn: [overTheViews] });
     expect(lines.map((line) => line.text)).toEqual(['SAID']);
+  });
+});
+
+describe('what the spell table blacks out', () => {
+  /** cast_a_spell fills the top 0x21c of the screen with colour 0 before it draws the big table
+   *  (exe 2000:e80e), and the message column before it draws the miniature one (exe 2000:e6c2). */
+  const LARGE = { x: 0, y: 0, right: 0x640, bottom: 0x21c };
+  const MINI = { x: 0x398, y: 0x2ff, right: 0x640, bottom: 0x4b0 };
+
+  it('takes the whole key menu with it and leaves the status block standing', () => {
+    expect(keyMenuLines().every((line) => inRect(LARGE, line))).toBe(true);
+    expect(statusLines(newGame().pc).some((line) => inRect(LARGE, line))).toBe(false);
+  });
+
+  it('leaves the battle spells and the message box alone as well', () => {
+    expect(inRect(LARGE, { text: '', x: BATTLE_SPELLS_BOX.left, y: BATTLE_SPELLS_BOX.top, font: 0, colour: 8 })).toBe(false);
+    expect(inRect(LARGE, { text: '', x: MESSAGE_BOX.left, y: MESSAGE_BOX.top, font: 0, colour: 8 })).toBe(false);
+  });
+
+  it('takes only the message column when the table is the miniature one', () => {
+    expect(keyMenuLines().some((line) => inRect(MINI, line))).toBe(false);
+    expect(statusLines(newGame().pc).some((line) => inRect(MINI, line))).toBe(false);
+    expect(inRect(MINI, { text: '', x: MESSAGE_BOX.left, y: MESSAGE_BOX.top, font: 0, colour: 8 })).toBe(true);
   });
 });
 
