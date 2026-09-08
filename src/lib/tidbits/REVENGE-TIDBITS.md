@@ -642,3 +642,81 @@ array was dimensioned. They read back as zero and always will; they are just not
 
 In the code: the explored-map writer in `src/lib/roller/rev-save-file.ts`, which writes them
 clean, from the `BSAVE` at `CHCHAR.EXE` offset `1557`.
+
+## Trivia
+
+### The disk calls itself the advanced version, and it is not
+
+`BEGIN.EXE` banners itself `MORAFF'S REVENGE ADVANCED VERSION 3.3` on the way in, and then offers
+"5...ORDER MORAFF'S REVENGE ADVANCED VER." as a menu item, and the order form behind that item is
+perfectly clear that what you have is the beginner's build and that it stops at the seventeenth
+level. The title screen is advertising a thing it claims to be.
+
+In the code: `rev-tools/docs/SURVEY.md` section 1, on `BEGIN.EXE`'s strings and `NCD.EXE`'s
+order text.
+
+### One file in the folder is not Moraff's and not the game's
+
+`COLOR.COM` is a real `.COM` file, 1,092 bytes, and it identifies itself as copyright Diamond
+Flower Electric — a video card utility from 1987 that came with somebody's graphics card. Nothing
+in the game runs it and nothing in the game mentions it; it was swept up with the rest of a
+directory and shipped.
+
+The other thing in there Moraff did not write is Microsoft's run-time, which the game cannot run
+without.
+
+In the code: `rev-tools/docs/SURVEY.md` section 1.
+
+### A 41-byte text file decides which characters exist
+
+`F5.COM` is the list of names, one per line in slot order, ending with the word `END`, and it —
+not the presence of a character record — is what the front end offers you. The shipped disk has
+five character records and five explored maps sitting in the folder and two names in `F5.COM`,
+so three complete characters from 1991 are on that disk and cannot be reached from the menu.
+
+In the code: `rev-tools/docs/SURVEY.md` section 1, on the character picker in `BEGIN.EXE`.
+
+### The hall of fame is not a table, it is a picture
+
+`F9.EXE` is not a program and not a list of names and scores. It is a `BSAVE` image — a block of
+memory written straight to disk — 1,789 bytes, of which the first seven are the header and the
+last is the end-of-file byte. `F8.EXE`, the program on the main menu that shows the hall of fame,
+`BLOAD`s it back to the address the header names and that is the whole of the feature.
+
+In the code: `rev-tools/docs/SURVEY.md` sections 1 and 3, on `F8.EXE`'s `BLOAD` at its offset
+`01DD`.
+
+### The seventh paragraph comes out blue
+
+The instruction screens take a new colour at the start of every paragraph from a table filled
+`C(J) = J + 9`, with a counter that goes up by one each time and wraps at 6 back to 0. The
+characteristics screen has eight paragraphs.
+
+So the first six run green, cyan, red, magenta, yellow, white, and then the seventh — the
+paragraph about laziness — falls back to element 0 of the table, which is blue, before the eighth
+starts the cycle again at green. It is the only paragraph on the screen in a colour the rest of
+the cycle never uses.
+
+In the code: the colour step at `CHCHAR.EXE` offset `16E8` and the table at `044E`.
+
+### Picture 6 is a skull, a ribcage and a scythe
+
+Which picture a monster is drawn with is two files deep: the first name in `F6.COM` is `SKELETON`,
+element 1 of `3.NUM` is a 6, and picture 6 of `4.NUM` is a skull, a ribcage and a scythe. That
+single chain is what confirmed the whole arrangement — two small tables of picture numbers, one
+for the close-up view and one for the distant one, in front of two files of pictures.
+
+In the code: `rev-tools/docs/SURVEY.md` section 3.
+
+### The monsters are drawn in CGA's own two palettes
+
+The game runs in `SCREEN 1`, which is four colours at two bits a pixel, and it starts on
+background 0 with the palette set to 2. In `SCREEN 1` an even palette number is CGA palette 0 —
+black, green, red and brown. The `@` key steps the palette to 3, which is CGA palette 1 — black,
+cyan, magenta and white — and the `#` key steps the background colour through all sixteen. Those
+are not choices Moraff made about how a monster should look; they are the only two sets of
+colours the hardware had.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 2, on the colour setup at `1000:0174` and the two
+keys at `1000:1038` and `1000:1003`.
+[Color Graphics Adapter](https://en.wikipedia.org/wiki/Color_Graphics_Adapter).
