@@ -26,10 +26,12 @@ drawn over the view.
 
 ## The key menu
 
-Green text with the key letter in yellow, two entries per line where two fit:
+Green text with the key letter in yellow, two entries per line where two fit (the
+screenshot reads `1>`; the string at DS:65dd is `1)`, and `OPTIONS MENU` alone is drawn in
+colour 3, pale blue):
 
 ```
-1> PREP SPELLS
+1) PREP SPELLS
 VIEW MONEY
 VIEW STATS
 CAST SPELL
@@ -49,9 +51,9 @@ yellow letters; `1>` is yellow.)
 
 ## The 3-D view
 
-A corridor seen from a square with walls on both sides. The vanishing point is at the
-centre of the view. The floor takes roughly the bottom 40% of the view and the ceiling the
-top 25%; both are drawn with the perspective tiles: a brown-red ground with darker red
+A corridor seen from a square with walls on both sides. The vanishing point sits
+`(32 - height) / 32` of the way down the view (34% for a Humanoid of height 21), which is
+why the floor takes roughly the bottom 40% of the view and the ceiling less; both are drawn with the perspective tiles: a brown-red ground with darker red
 seams between tiles and dark blue-grey puddles inside them (the floor and ceiling tile
 images of the wall file). The walls are the section's material, a mottled green with
 darker green veins, and every wall panel has a bright green edge line along its top,
@@ -66,7 +68,9 @@ a ladder down (orange, on the floor) in front of it.
 
 ## The message box
 
-Text in light blue, the big font, four lines from the bottom: `HOW TO PLAY: USE ARROW
+Text the screenshot reads as light blue, the big font, four lines from the bottom (the
+code draws the box's text in colour 6, the red of the stats block, in both its branches;
+which is right is unsettled, see MORF-174): `HOW TO PLAY: USE ARROW
 KEYS / TO EXPLORE THE DUNGEON. USE / LADDERS TO DESCEND TO DEEPER, / MORE DANGEROUS
 PLACES.` The green bar across the top of the box is about 12 pixels tall.
 
