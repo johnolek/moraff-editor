@@ -21,6 +21,7 @@
   import { characterMaps } from './memory';
   import ScreenSwitch from './ScreenSwitch.svelte';
   import {
+    debugDrawn,
     mapDrawn,
     monstersDrawn,
     panelVisible,
@@ -254,6 +255,7 @@
             box={view.box}
             discovered={zoomMap}
             mapMonsters={zoomMapMonsters(mode, view)}
+            debug={debugDrawn(mode)}
             prompt={view.prompt} />
         {:else}
           {#if view.place.floor > 0}

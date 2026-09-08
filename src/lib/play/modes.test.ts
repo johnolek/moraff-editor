@@ -54,6 +54,12 @@ describe('the monsters the map draws', () => {
   });
 });
 
+describe("the numbers debug mode prints over the game's own screen", () => {
+  it('is what the tab puts behind the mode', () => {
+    expect(source).toContain('debug={debugDrawn(mode)}');
+  });
+});
+
 describe('the panel of numbers the game never prints', () => {
   it('is absent in faithful and in speedrun, and present in debug', () => {
     expect(panelVisible('faithful')).toBe(false);

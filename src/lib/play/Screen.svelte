@@ -7,6 +7,7 @@
   import type { Game, ScreenLine } from '../game/port/state';
   import type { DiscoveredMap } from '../map/draw-floor';
   import GameScreen from '../ui/GameScreen.svelte';
+  import { debugMonsterLines } from './debug-screen';
   import { drawScreenFurniture, keyMenuLines, SCREEN_PIXELS, SCREEN_WINDOW, statusLines } from './display';
   import { viewPictures } from './view3d/browser';
   import { newFrame, toRgba } from './view3d/frame';
@@ -28,11 +29,14 @@
     /** The monsters marked on the zoom map, which is every one on the floor in debug mode and
      *  none at all in the modes that show only what the game showed. */
     mapMonsters?: StockedMonster[];
+    /** Whether the numbers the game never prints are printed over the views, which is debug
+     *  mode's own doing. */
+    debug?: boolean;
     /** The HIT U/D box, where draw_ladder_prompt puts it. */
     prompt: ScreenLine[] | null;
   }
 
-  let { game, rows, place, monsters, box, discovered, prompt, mapMonsters = [] }: Props = $props();
+  let { game, rows, place, monsters, box, discovered, prompt, mapMonsters = [], debug = false }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
 
@@ -46,6 +50,7 @@
     ...viewLabels(game.pc.exp, height),
     ...box,
     ...(prompt ?? []),
+    ...(debug ? debugMonsterLines(game) : []),
   ]);
 
   const drawn = $derived.by((): ViewMonster[] =>
