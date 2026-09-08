@@ -150,8 +150,14 @@ game drew them at:
 
 * **The message box** — eight lines down the right with a bar above them (exe 2000:2f5d, and
   `dotu-tools/docs/SCREEN.md` for what it looks like). `game.say(...lines)` puts them there,
-  which is `print_menu_only`, and the box is cleared when the next key arrives.
-  `game.pressAnyKey()` after it is the wait the original does.
+  which is `print_menu_only`, and they stand until something paints over them: the next box, a
+  menu drawn down the same column, or one of the two wipes. `game.pressAnyKey()` after it is the
+  wait the original does, and that wait (exe 2000:4054) is one of the wipes — a box that asks for
+  a key is taken down by the key it is given. The others are the block the banner leaves when its
+  monster is gone (exe 2000:c613) and whatever a ported function wipes itself. What movecontrol
+  does *not* do is wipe where it reads the player's key, so a message the game never waited on
+  stays in the box while the character walks on. The strings live on the game as `menuBox`, which
+  is its own DS:c694, so `clearMenuBlock` takes them with it.
 * **A screen** — `game.draw(line)` and `game.eraseScreen()`, which are `pfont` and
   `erase_menu_block`. `help.ts` is the worked example: draw, `await game.key()`, erase.
 * **A screen the game leaves up for a moment** — `game.delay(ms)`, which is the `delay` at
