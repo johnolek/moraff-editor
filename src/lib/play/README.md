@@ -21,7 +21,7 @@ something the original does, a comment says so.
   the P key, and the six potions behind the I key's fourth line.
 * **`gear.ts`** — the eight-line menu of what the character owns that A, W and the enchant spells
   all build, and the classes each row is refused to. **`manual.ts`** — the S key.
-  **`misc.ts`** — M, O, G, X and Z.
+  **`misc.ts`** — M, O, G, X and Z. **`section-screen.ts`** — the pictures on the S key's screen.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
   memory that decides whether its monsters are rolled again. **`memory.ts`** — the other half of
   arriving on a floor: the map the character has discovered, which is the same engine in both
@@ -196,6 +196,15 @@ lines in place of everything else, and the key `FUN_3000_9026` waits for is owed
 has run a pass, so the loop takes that key before its first. The section boss's taunt is a tablet
 too and is not this one: `boss_office_message` draws it 250 units lower with the boss's picture
 over it and waits for nothing, so it stays in the box.
+
+The S key's screen is a third. `section-screen.ts` and `manual.ts` are the two halves of
+`monster_manual` (exe 3000:c39d): five panels of the section's own wall material across the bottom
+of the screen with the section's five monsters standing in them, A to E in their corners, DEAD over
+the first panel when that section's Shadow boss is already dead, and the tablet's slab lifted to
+the top of the screen for the four lines of MD.BIN the letters turn between. `session.sectionScreen`
+is what carries it to the tab. Every line of the big font on it is drawn twice, a fat dark stroke
+and a thin bright one over it; a screen line is one line at one place, so the fat pass is drawn with
+the pictures and the thin one is the line `manual.ts` prints.
 
 The X key is the other screen of its own. `misc.ts` fills the display with the floor's map and
 `display.ts` draws it, at seven pixels a square over the whole eighty by a hundred and ten, with
@@ -402,6 +411,4 @@ with a display this port does not have.
   rule of the game rather than of the screen — the high speed option at DS:00c3, which the port
   keeps. The rest are the palette, the mouse, the menu highlighting and the 3-D views, and each
   of those says so in a box.
-* **The monster manual has no pictures.** `monster_manual` fills the top of the screen with the
-  section's five monsters and puts A to E under them; the port draws the letters and the words.
 * **The two hidden keys are left out**: 0xfb turns saving off and 0xfe hands out ten hit points.
