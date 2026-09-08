@@ -331,6 +331,13 @@ this port does not have.
   kept exactly. The `delay` calls the original busy-waits in are about the screen alone, so those
   the port has are kept as a display timer (`timed.ts`); the flashes while a hole is dug are kept
   as well, on the one line above the message box the original draws them on.
+* **The coin flip that mirrors the monster ahead is the pass number.** `draw_3d_view` mirrors
+  the picture of the monster being fought on `rand() * 2 / 0x8000` (exe 3000:2323), drawn fresh
+  for every view of every pass. The tab draws the screen again whenever anything about it
+  changes, so spending the game's own generator there would put a run's numbers out of step with
+  its log. `session.viewsDrawn` counts the passes instead and `Screen.svelte` works the four
+  flips out from that number alone, so a monster still turns to face the other way as the
+  character acts and nothing of the game is spent.
 * **The screen is the game's own.** `display.ts` and `Screen.svelte` draw what `movecontrol`
   draws — the four 3-D views, the key menu, the zoom map, the battle-spell box, the message box
   and the status block, each where the game puts it. Debug mode swaps the whole thing for the

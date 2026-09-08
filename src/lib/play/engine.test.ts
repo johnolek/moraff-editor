@@ -448,3 +448,26 @@ describe('the map the character discovers', () => {
     for (const square of before) expect(after.has(square)).toBe(true);
   });
 });
+
+describe('the coin flip that mirrors the monster you are fighting', () => {
+  it('counts the drawings of the four views, one per pass of the loop', async () => {
+    const session = playing(characterFile({ level: 0 }));
+    // The loop has drawn once and is waiting for its first key.
+    expect(session.view().viewsDrawn).toBe(1);
+    await press(session, KEY.escape);
+    expect(session.view().viewsDrawn).toBe(2);
+    await press(session, KEY.escape);
+    expect(session.view().viewsDrawn).toBe(3);
+  });
+
+  it('leaves the game\'s own generator alone, so a run still replays', async () => {
+    const rolls: number[] = [];
+    const counted: Rng = { random: (n) => (rolls.push(n), 0) };
+    const session = playing(characterFile({ level: 0 }), counted);
+    const spent = rolls.length;
+    // Drawing the views again spends nothing: the flip is worked out from the pass number.
+    session.view();
+    session.view();
+    expect(rolls.length).toBe(spent);
+  });
+});

@@ -7,6 +7,7 @@
   import type { Game, ScreenLine } from '../game/port/state';
   import type { DiscoveredMap } from '../map/draw-floor';
   import GameScreen from '../ui/GameScreen.svelte';
+  import { SeededRng } from '../game/port/rng';
   import { debugMonsterLines } from './debug-screen';
   import type { KilledOnScreen } from './engine';
   import { drawScreenFurniture, keyMenuLines, SCREEN_PIXELS, SCREEN_WINDOW, statusLines } from './display';
@@ -39,6 +40,8 @@
     prompt: ScreenLine[] | null;
     /** The monster the skull is standing over, or null when nothing has just been killed. */
     killed?: KilledOnScreen | null;
+    /** Which drawing of the four views this is, which mirrors the monster ahead. */
+    viewsDrawn?: number;
   }
 
   let {
@@ -53,6 +56,7 @@
     mapMonsters = [],
     debug = false,
     killed = null,
+    viewsDrawn = 0,
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
@@ -106,6 +110,11 @@
     if (!context) return;
 
     const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    // The coin flip that mirrors the monster ahead (exe 3000:2323), drawn from the pass number
+    // rather than from the game's own generator: a run has to replay exactly, and the tab redraws
+    // the screen far more often than the loop draws the views. Seeded here, so a redraw within
+    // one pass gets the same four flips and the picture stands still while the player reads.
+    const flips = new SeededRng(viewsDrawn);
     renderFourViews(
       frame,
       {
@@ -123,6 +132,7 @@
         monsters: drawn,
         water: [4, 8, 20].includes(section?.section ?? 0),
         killed: skull,
+        random: () => flips.rand() / 0x8000,
       },
       place.dir,
     );

@@ -147,6 +147,8 @@ export interface PlayView {
   ahead: boolean;
   /** The monster the skull is standing over, or null when nothing has just been killed. */
   killed: KilledOnScreen | null;
+  /** Which drawing of the four views this is, which mirrors the monster ahead. */
+  viewsDrawn: number;
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
@@ -198,6 +200,18 @@ export class GameSession {
   repeatFight = false;
   /** The monster the skull is standing over, until the loop draws the views again. */
   killed: KilledOnScreen | null = null;
+  /**
+   * How many times the loop has drawn the four views, which is what the coin flip mirroring the
+   * monster ahead is drawn from.
+   *
+   * The original flips that coin on its own generator, fresh for every view of every pass (exe
+   * 3000:2323). This port cannot: the tab redraws the screen whenever anything about it changes,
+   * and spending the game's seeded generator per redraw would make a run unreplayable. Counting
+   * the passes gives a number that changes exactly as often as the original's draw does, and the
+   * flip is worked out from it alone, so nothing of the game is spent and a monster still turns
+   * to face the other way as the character acts.
+   */
+  viewsDrawn = 0;
   /** Called whenever the game is about to wait for a key, so the tab can draw what it is
    *  waiting with. */
   onChange: (() => void) | null = null;
@@ -523,6 +537,7 @@ export class GameSession {
       engaged: facing === -1 ? null : (drawn.find((monster) => monster.slot === facing) ?? null),
       ahead: game.engagedAhead !== -1,
       killed: this.killed,
+      viewsDrawn: this.viewsDrawn,
       over: this.over,
       dead: this.dead,
       run: this.run?.summary() ?? null,
@@ -658,6 +673,7 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     // moment stale. This draws them every pass, so the monsters that can be seen are the ones
     // standing there now.
     session.memory.markViews(session.rows, pc.x, pc.y);
+    session.viewsDrawn += 1;
     const key = await session.keyOrEdit();
     // The square the pass was worked out from is the one the record has just replaced, so the
     // pass starts again rather than answering a key with what the character used to be.

@@ -247,7 +247,8 @@
             mapMonsters={zoomMapMonsters(mode, view)}
             debug={debugDrawn(mode)}
             prompt={view.prompt}
-            killed={view.killed} />
+            killed={view.killed}
+            viewsDrawn={view.viewsDrawn} />
         {:else}
           <FloorCanvas
             bind:this={canvas}
