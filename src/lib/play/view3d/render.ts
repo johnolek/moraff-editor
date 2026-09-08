@@ -6,6 +6,7 @@ import {
   horizonRow,
   projectSquare,
   slotNarrowing,
+  viewPointToSquare,
   type ViewFrame,
   type ViewRect,
 } from './geometry';
@@ -109,6 +110,7 @@ export function renderView(frame: Frame, scene: ViewScene, rect: ViewRect, facin
       ftol(rect.left + across),
       ftol(rect.right - across),
     );
+    if (depth === 1) drawEngagedMonster(frame, scene, rect, facing, across);
   }
   return 0;
 }
@@ -193,6 +195,51 @@ function monsterPaint(scene: ViewScene, monster: ViewMonster): ScaleOptions {
 }
 
 /**
+ * The last step of `draw_3d_view`'s walk back toward the character (exe 3000:21e7): the monster
+ * one square ahead — the one an engagement is fought with — drawn into a rectangle of the view
+ * rather than through the perspective. `draw_map_square` leaves that square's monster to this.
+ *
+ * The rectangle is the view's own corners, pulled in across by half the slot narrowing one step
+ * out and cut down to the quarter row and the fifteen-sixteenths row (exe 3000:2342). The
+ * character's height, which the horizon is weighed by everywhere else in the view, is not read
+ * here at all: the monster stands in the same place however tall they are.
+ *
+ * `dotu-tools/docs/SCREEN.md` writes the numbers out, along with the second rectangle for narrow
+ * screens that the original's own branch can never reach.
+ */
+function drawEngagedMonster(
+  frame: Frame,
+  scene: ViewScene,
+  rect: ViewRect,
+  facing: number,
+  narrowing: number,
+): void {
+  const ahead = viewPointToSquare(0, 1, facing, scene.at);
+  const monster = scene.monsters.find((m) => m.x === ahead.x && m.y === ahead.y);
+  if (!monster) return;
+  const picture = scene.pictures.monster(monster.picnum, monster.builtin);
+  if (!picture) return;
+
+  const left = ftol(rect.left + narrowing / 2);
+  const right = ftol(rect.right - narrowing / 2);
+  // A coin flip fresh for every draw mirrors the picture, which `scale_image2` does by being
+  // handed a left edge greater than its right. The screen draws with no generator, so that
+  // redrawing a view never spends one of the game's own random numbers.
+  const mirrored = scene.random !== undefined && scene.random() < 0.5;
+  scaleImage(
+    frame,
+    mirrored ? right : left,
+    (rect.bottom + rect.top * 3) >> 2,
+    mirrored ? left : right,
+    (rect.bottom * 15 + rect.top) >> 4,
+    picture,
+    0,
+    255,
+    monsterPaint(scene, monster),
+  );
+}
+
+/**
  * The part of `draw_map_square` (exe 3000:2848) that draws: the monster standing on the square,
  * mirrored when the square's own x is odd, and the ladder mark under it.
  */
@@ -210,7 +257,10 @@ function drawSquare(
   const face = projectSquare(x1, z1, x2, z2, leftX, rightX, view);
   if (!face) return;
 
-  const monster = scene.monsters.find((m) => m.x === face.square.x && m.y === face.square.y);
+  // The near corner of the square one step straight ahead. `draw_map_square` draws no monster
+  // for it (exe 3000:2f5e); `draw_3d_view` draws that one itself, zoomed into the view.
+  const engaged = x1 === -0.5 && z1 === 1.5;
+  const monster = engaged ? undefined : scene.monsters.find((m) => m.x === face.square.x && m.y === face.square.y);
   if (monster) {
     const picture = scene.pictures.monster(monster.picnum, monster.builtin);
     if (picture) {

@@ -5,7 +5,7 @@ import { newFrame, type Frame } from './frame';
 import { AHEAD_VIEW } from './geometry';
 import { floorTilePair, NO_PICTURES, type ViewPictures } from './pictures';
 import { parsePicRows } from './texture';
-import { VIEW_BLOCKED, renderFourViews, renderView, type ViewScene } from './render';
+import { VIEW_BLOCKED, renderFourViews, renderView, type ViewMonster, type ViewScene } from './render';
 import { FOUR_VIEWS } from './views';
 import { WALL_PALETTE } from './wall';
 
@@ -137,13 +137,96 @@ describe('a monster two squares ahead', () => {
     renderView(
       frame,
       scene(corridor(), {
-        monsters: [{ x: 5, y: 4, picnum: 0, builtin: true, colour: 20, colorSet: 2 }],
+        monsters: [{ x: 5, y: 3, picnum: 0, builtin: true, colour: 20, colorSet: 2 }],
       }),
       AHEAD_VIEW,
       0,
     );
     const bank = [...coloursIn(frame, 60, 40, 260, 160)].filter((colour) => colour >= 0x20 && colour < 0x40);
     expect(bank.length).toBeGreaterThan(0);
+  });
+});
+
+describe('the monster on the square in front of you', () => {
+  const monster: ViewMonster = { x: 5, y: 4, picnum: 0, builtin: true, colour: 20, colorSet: 2 };
+
+  /** A straight corridor with nothing in the way: open to (5, 4) and (5, 3). */
+  function straightAhead(): MapSquare[][] {
+    const rows = blankFloor();
+    rows[5][5].n = 3;
+    rows[4][5].n = 3;
+    return rows;
+  }
+
+  interface Box {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+  }
+
+  /**
+   * The rectangle a monster changed, as the pixels that differ between the view with it on the
+   * floor and the same view without. The walls are drawn either way, so what is left is the
+   * monster on its own.
+   */
+  function monsterBox(monsters: ViewMonster[], over: Partial<ViewScene> = {}): Box {
+    const rows = straightAhead();
+    const withOne = newFrame(SCREEN.width, SCREEN.height);
+    renderView(withOne, scene(rows, { ...over, monsters }), AHEAD_VIEW, 0);
+    const empty = newFrame(SCREEN.width, SCREEN.height);
+    renderView(empty, scene(rows, { ...over, monsters: [] }), AHEAD_VIEW, 0);
+
+    const box = { left: SCREEN.width, top: SCREEN.height, right: -1, bottom: -1 };
+    for (let y = 0; y < SCREEN.height; y++) {
+      for (let x = 0; x < SCREEN.width; x++) {
+        const at = y * SCREEN.width + x;
+        if (withOne.pixels[at] === empty.pixels[at]) continue;
+        box.left = Math.min(box.left, x);
+        box.right = Math.max(box.right, x);
+        box.top = Math.min(box.top, y);
+        box.bottom = Math.max(box.bottom, y);
+      }
+    }
+    return box;
+  }
+
+  it('stands in the same place however tall the character is', () => {
+    // 21 is a Humanoid's height and 4 is about the shortest a character rolls; the horizon the
+    // two of them see is a third of the view apart.
+    expect(monsterBox([monster], { horizonWeight: 21 })).toEqual(monsterBox([monster], { horizonWeight: 4 }));
+  });
+
+  it("is drawn into the view's own rectangle rather than the square's", () => {
+    // AHEAD_VIEW is 298..1302 across and 5..760 down of the 1600 x 1200 screen, which puts the
+    // rectangle at 465..1134 and 193..712, and on a 320 x 200 screen at 92..226 and 32..118.
+    // The picture's own margins keep its paint a little inside that.
+    expect(monsterBox([monster])).toEqual({ left: 92, top: 35, right: 221, bottom: 117 });
+  });
+
+  it('is not drawn a second time through the perspective', () => {
+    // Projected, the square one step ahead reaches up to row 16 of the 200 for a height of 21 —
+    // well above the rectangle the zoomed picture is drawn into.
+    expect(monsterBox([monster]).top).toBeGreaterThanOrEqual(32);
+  });
+
+  it('is far bigger than the same monster one square further off', () => {
+    const near = monsterBox([monster]);
+    const far = monsterBox([{ ...monster, y: 3 }]);
+    expect(far.right - far.left).toBeLessThan((near.right - near.left) / 2);
+    expect(far.bottom - far.top).toBeLessThan((near.bottom - near.top) / 2);
+  });
+
+  it("leaves a monster two squares off moving with the character's height", () => {
+    const tall = monsterBox([{ ...monster, y: 3 }], { horizonWeight: 21 });
+    const short = monsterBox([{ ...monster, y: 3 }], { horizonWeight: 4 });
+    expect(tall).not.toEqual(short);
+  });
+
+  it('is mirrored when the coin flip the view is given comes up under a half', () => {
+    const plain = monsterBox([monster], { random: () => 0.75 });
+    const flipped = monsterBox([monster], { random: () => 0.25 });
+    expect(flipped).not.toEqual(plain);
   });
 });
 
