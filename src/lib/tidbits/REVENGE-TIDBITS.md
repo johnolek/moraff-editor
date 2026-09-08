@@ -38,8 +38,8 @@ reads the function byte at BRUN30 `CS:00E9`.
 
 ### Half the files that look like programs are not
 
-The game folder holds eleven files with an executable's extension and only six of them are
-programs. Moraff gave his data files `.EXE` and `.COM` names, presumably so that nobody would
+Eighteen files in the game folder carry an `.EXE` or a `.COM` name and only seven of them hold
+any code. Moraff gave his data files an executable's extension, presumably so that nobody would
 delete or edit them.
 
 - `1.EXE` to `5.EXE` are the five character records, in plain text.
@@ -48,8 +48,9 @@ delete or edit them.
 - `F9.EXE` is the hall of fame, which is a picture.
 
 The text ones are BASIC `WRITE #` output, which is why the strings arrive in quotation marks and
-the numbers arrive with no padding at all. The real programs are `DUNSMALL.EXE`, `BEGIN.EXE`,
-`CHCHAR.EXE`, `NCD.EXE`, `F8.EXE` and the run-time; none of them is compressed.
+the numbers arrive with no padding at all. Moraff's own programs are `DUNSMALL.EXE`,
+`BEGIN.EXE`, `CHCHAR.EXE`, `NCD.EXE` and `F8.EXE`, with Microsoft's run-time beside them; none of
+the five is compressed.
 
 In the code: `rev-tools/docs/SURVEY.md` section 1.
 
@@ -176,7 +177,7 @@ exists. A regenerated character goes to 3, then 5, then 7: a dungeon of its own 
 In the code: [wallSide](source:ts/revmap.js/wallSide), and `rev-tools/docs/DUNGEON.md`
 section 5 on the fountain at `1000:3ED0`.
 
-### Your explored map is a row of twenty bits
+### Your explored map is twenty bits to a row
 
 The `<n>.BIN` beside a character record is a `BSAVE` of the array that remembers where it has
 walked: one number per row per level, with the twenty columns packed into it from the top bit
@@ -230,10 +231,10 @@ In the code: [wallSide](source:ts/revmap.js/wallSide) and [side](source:ts/revma
 the move test at `1000:548B` and the map at `1000:4B5F` (`rev-tools/docs/DUNGEON.md` sections 2
 to 4).
 
-### Nearly a third of the walls are a nine
+### Nearly a third of all the sides are a nine
 
 Of the 51,191 interior sides in the whole dungeon, 42.2% are a wall and 18.2% a door. The ten
-values are nowhere near evenly spread: 9 on its own accounts for 29% of every side in the game.
+values are nowhere near evenly spread: 9 on its own accounts for 29% of all the sides in the game.
 
 That is not a choice anybody made. `ABS(SIN(x))` spends most of its time near 1, so multiplying
 by ten and flooring lands on 9 far more often than on anything else, and the dungeon is walled up
@@ -265,8 +266,9 @@ either moves you or does not: no strength check, no die roll, no table. A door a
 walked through in exactly the same way, and the only difference between them is that the map
 draws a line with a gap in it.
 
-There are no secret doors either. The site's other two games have them, and this one has three
-kinds of side and no fourth.
+There are no secret doors either, and no teleporters. The vocabulary of sides the site's map
+draws with has a code for each, carried over from the other two games, and nothing in this
+dungeon ever produces one.
 
 In the code: [blocked](source:ts/revmap.js/blocked) and `rev-tools/docs/DUNGEON.md` section 3,
 on the four move directions at `1000:30D9`, `3192`, `3254` and `3316`.
@@ -309,8 +311,8 @@ The feature code is not the number of levels a ladder spans; it is folded down t
 off it twice, while it is still over three, and what is left is 1, 2 or 3 — how far the ladder
 goes. A ladder up is the square's own code. A ladder down is trickier: the game asks each of the
 three levels below in turn and takes the first whose folded code comes out equal to the distance,
-which is why the loop stops at three and why a ladder down and the ladder up that answers it are
-always the same square on two different levels.
+which is why the loop stops at three, and why a ladder down and the ladder up that answers it are
+the same square on two different levels — everywhere below the town, at any rate.
 
 In the code: [fold](source:ts/revmap.js/fold) and [feature](source:ts/revmap.js/feature), from
 the folding at `1000:5649` and the search at `1000:552B`.
@@ -322,7 +324,7 @@ alone — you land on the same square, one floor down — and the game remembers
 coordinates it left you on.
 
 That memory is the whole of the false floor. Every step asks what is on the square just stepped
-onto, and where the answer is nothing at all *and* the square is the one a chute dropped you on,
+onto, and where the answer is nothing at all **and** the square is the one a chute dropped you on,
 the game prints "False floor." and offers you the go-down prompt. So a false floor is not a
 feature of the dungeon: it is the square under a chute, and stepping through it is the same fall
 carrying on.
@@ -339,7 +341,7 @@ The dungeon's walls are for you. A monster's turn is one square, orthogonally, a
 that refuses it is another monster already standing there: the grid the game keeps them in holds
 slot numbers and nothing else, and there is no wall test anywhere on the path. What is
 conditional is the drawing — the redraw compares the distance against a sight table and skips a
-monster you cannot see — so one walks through three walls and appears beside you.
+monster you cannot see — so one crosses a wall out of sight and turns up beside you.
 
 There is a gate on the step, at `1000:758D`, and it is the wall rule's own shape with a 2 where
 the generation goes: over 7 and the step is dropped. Every shipped character has a generation
@@ -384,10 +386,10 @@ A monster taking its turn decides between wandering and coming at you by rolling
 level plus 35 and asking whether the result is under 15. On level 5 that is a wander fifteen
 turns in forty; on level 65, fifteen in a hundred. Deep monsters barely wander at all.
 
-The rate they get turns at leans the same way and then leans back. The odds of any monster moving
-on a given pass of the loop come from `165 - its level + your level`, so a deeper monster moves
-more often and a higher-level character sees the whole level move less often — but never below
-one pass in eight, whatever the arithmetic says.
+How often anything gets a turn at all leans the same way. The odds of a monster moving on a given
+pass of the loop come from `165 - its level + your level`, so a deeper monster moves more often,
+and a higher-level character sees the whole floor move less often — but never worse than one pass
+in eight, whatever the arithmetic says.
 
 In the code: `rev-tools/docs/MONSTERS.md` part 1, on the odds at `1000:7EEC` and the choice at
 `1000:73B6`.
@@ -395,8 +397,9 @@ In the code: `rev-tools/docs/MONSTERS.md` part 1, on the odds at `1000:7EEC` and
 ### Killing one puts a fresh one in its place
 
 A monster that runs out of hit points banks its experience and then, rather than being cleared
-out of its slot, is written over. The slot gets `INT(RND * 8 * level) + 2 * level + 1` hit points
-and a fresh square, rerolled until it lands somewhere nothing else is standing.
+out of its slot, is written over. The slot gets `INT(RND * 8 * depth) + 2 * depth + 1` hit points,
+where `depth` is the dungeon level, and a fresh square, rerolled until it lands somewhere nothing
+else is standing.
 
 So a level always holds its forty monsters. You cannot clear a floor, and everything you kill
 comes back at the depth you killed it at.
@@ -411,8 +414,8 @@ of it — are loaded once for the whole disk, not per character, and saved back 
 of the game. Every character on the disk shares them.
 
 Two consequences. A monster you ran away from is still wounded when you find it again, because
-what was left of it went back into the file. And a monster your brother's character softened up
-on level 12 is waiting there, softened, for yours.
+what was left of it went back into the file. And a monster another character on the disk softened
+up on level 12 is waiting there, softened, for yours.
 
 In the code: `rev-tools/docs/MONSTERS.md` part 2 and `rev-tools/docs/SURVEY.md` section 3, on the
 save at `1000:B5C8` and the survivor's remainder at `1000:8FB2`.
@@ -513,9 +516,9 @@ all of them, 400 to cure disease, 20,000 to remove poison, and 500,000 to gain a
 wounds gives back `INT(RND * 8) + 4` health points, which at 75 a go is the cheapest healing in
 the game and the slowest.
 
-Look at the shape of that list. Poison costs twenty times what healing every wound you have costs,
-and a level costs five hundred times *that*. The temple is where the money goes at the end of the
-game, and there is nothing else in the town to spend half a million on.
+Look at the shape of that list. Healing every wound you have costs 1,000; removing poison costs
+twenty times that, and a level five hundred times it. The temple is where the money goes at the
+end of the game, and there is nothing else in the town to spend half a million on.
 
 In the code: `rev-tools/docs/DUNGEON.md` section 9, on the menu at `1000:2663` and the level at
 `1000:2044`.
@@ -536,10 +539,9 @@ at `1000:2B67` and the bank's sign at `1000:236C`.
 
 ### The wizard's guild charges the level to the power 1.75
 
-The guild is the only building that will not sell you a thing; it tells you what magic items do,
-for 800 jewel pieces, and it sells spell levels 1 to 6 at `INT(level ^ 1.75 * 220)` each. The
-first level is 220 and the sixth is about 5,060, so the six of them together cost far more than
-the six times the first that a linear price would have.
+The guild sells two things. For 800 jewel pieces it tells you what the magic items do, and for
+`INT(level ^ 1.75 * 220)` it sells one level of spells, 1 to 6. The first level is 220 and the
+sixth about 5,060 — twenty-three times as much for six times as deep.
 
 In the code: `rev-tools/docs/DUNGEON.md` section 9, on the guild at `1000:2BB8` and the price at
 `1000:2DAE`.
@@ -549,7 +551,7 @@ In the code: `rev-tools/docs/DUNGEON.md` section 9, on the guild at `1000:2BB8` 
 Level 0 skips the branch that reads a square's own feature code and goes straight to the search
 for a ladder down, which is why the town has no ladder up and no chute. Inside that search sits a
 second branch only level 0 ever takes, and it is the whole difference between the town and
-everywhere else: below the town, a ladder goes down to a level whose folded code is *exactly* the
+everywhere else: below the town, a ladder goes down to a level whose folded code is **exactly** the
 distance; in the town, any level that folds to at least the distance will do.
 
 That is three ladders out of the town turned into ten, and ten is precisely what the shipped
@@ -567,7 +569,7 @@ the spill at `1000:55F9` (`rev-tools/docs/DUNGEON.md` section 9).
 
 ### Seven of the town's ladders lead to floor minus one
 
-The looser test the town uses takes any ladder that reaches *at least* as far as asked, which
+The looser test the town uses takes any ladder that reaches **at least** as far as asked, which
 means seven of its ten ladders down are longer than the trip they were picked for. The square at
 11, 6 of the town is a ladder down one level. The square at 11, 6 of level 1 — the same square,
 one floor down, the one the ladder lands you on — is a ladder up two, and two levels above
@@ -583,7 +585,7 @@ In the code: [feature](source:ts/revmap.js/feature) and `rev-tools/docs/DUNGEON.
 
 Your own swing adds the plus on your weapon to the roll, which is what a plus is for. The
 monster's swing, on the way past, adds the magic mace's plus to your armour class — in the
-routine that works out whether the monster hits *you*.
+routine that works out whether the monster hits **you**.
 
 So a magic mace is quietly worth more than it says: it is a weapon bonus and a defence bonus at
 once, and nothing on any screen mentions the second half.
@@ -636,9 +638,9 @@ BRUN30 stores a floating-point zero by writing the exponent byte and nothing els
 grounds that an exponent of zero is the whole of what makes a number zero — the other three bytes
 are never read again, so why write them.
 
-They do get written to disk, though. Eight rows of the town in every shipped explored map are
-zero, and the bytes underneath those zeroes are whatever happened to be in that memory when the
-array was dimensioned. They read back as zero and always will; they are just not blank.
+They do get written to disk, though. Eight rows of the town are zero in a new character's map,
+and the bytes underneath those zeroes are whatever happened to be in that memory when the array
+was dimensioned. They read back as zero and always will; they are just not blank.
 
 In the code: the explored-map writer in `src/lib/roller/rev-save-file.ts`, which writes them
 clean, from the `BSAVE` at `CHCHAR.EXE` offset `1557`.
@@ -655,15 +657,14 @@ level. The title screen is advertising a thing it claims to be.
 In the code: `rev-tools/docs/SURVEY.md` section 1, on `BEGIN.EXE`'s strings and `NCD.EXE`'s
 order text.
 
-### One file in the folder is not Moraff's and not the game's
+### One file in the folder has nothing to do with the game
 
 `COLOR.COM` is a real `.COM` file, 1,092 bytes, and it identifies itself as copyright Diamond
-Flower Electric — a video card utility from 1987 that came with somebody's graphics card. Nothing
-in the game runs it and nothing in the game mentions it; it was swept up with the rest of a
-directory and shipped.
+Flower Electric: a video-card utility dated 1987. Nothing in the game runs it and nothing in the
+game names it. It was bundled with the disk and never used.
 
-The other thing in there Moraff did not write is Microsoft's run-time, which the game cannot run
-without.
+The only other thing in the folder Moraff did not write is Microsoft's run-time, which the game
+cannot run a statement without.
 
 In the code: `rev-tools/docs/SURVEY.md` section 1.
 
@@ -678,7 +679,7 @@ In the code: `rev-tools/docs/SURVEY.md` section 1, on the character picker in `B
 
 ### The hall of fame is not a table, it is a picture
 
-`F9.EXE` is not a program and not a list of names and scores. It is a `BSAVE` image — a block of
+`F9.EXE` is not a program and not a text file. It is a `BSAVE` image — a block of
 memory written straight to disk — 1,789 bytes, of which the first seven are the header and the
 last is the end-of-file byte. `F8.EXE`, the program on the main menu that shows the hall of fame,
 `BLOAD`s it back to the address the header names and that is the whole of the feature.
@@ -712,10 +713,10 @@ In the code: `rev-tools/docs/SURVEY.md` section 3.
 
 The game runs in `SCREEN 1`, which is four colours at two bits a pixel, and it starts on
 background 0 with the palette set to 2. In `SCREEN 1` an even palette number is CGA palette 0 —
-black, green, red and brown. The `@` key steps the palette to 3, which is CGA palette 1 — black,
-cyan, magenta and white — and the `#` key steps the background colour through all sixteen. Those
-are not choices Moraff made about how a monster should look; they are the only two sets of
-colours the hardware had.
+black, green, red and brown. The `@` key steps the palette between 2 and 3, and 3 is CGA
+palette 1 — black, cyan, magenta and white — while the `#` key steps the background colour along.
+Those are not choices Moraff made about how a monster should look; they are the only two sets of
+colours `SCREEN 1` had to offer.
 
 In the code: `rev-tools/docs/MONSTERS.md` part 2, on the colour setup at `1000:0174` and the two
 keys at `1000:1038` and `1000:1003`.
