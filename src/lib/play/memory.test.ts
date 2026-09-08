@@ -246,6 +246,21 @@ describe('the maps kept beside the character', () => {
     expect(Object.keys(kept.maps)).toEqual(['0:3']);
   });
 
+  it('hands over every floor it has, the block in memory over what is stored', () => {
+    const kept = store();
+    const memory = new MapMemory(kept);
+    memory.enterFloor(0, 3);
+    memory.markStep(4, 7);
+    memory.enterFloor(1, 40);
+    memory.markStep(5, 8);
+
+    const floors = memory.exploredFloors();
+
+    expect(floors.map(({ dungeon, floor }) => `${dungeon}:${floor}`).sort()).toEqual(['0:3', '1:40']);
+    const walked = floors.find((floor) => floor.floor === 40)!;
+    expect(walked.bitmap[8 * 10]).toBe(1 << 5);
+  });
+
   it('loses everything learned since the last save, which is what a death does', () => {
     const kept = store();
     const first = new MapMemory(kept);

@@ -59,6 +59,19 @@ function setBit(bitmap: Uint8Array, x: number, y: number): void {
  */
 export type StoredMaps = Record<string, string>;
 
+/** One floor's bitmap and where in the game it belongs. */
+export interface MappedFloor {
+  dungeon: number;
+  floor: number;
+  bitmap: Uint8Array;
+}
+
+/** The dungeon and floor a stored key names, or null when it is not one of these keys. */
+function storedPlace(key: string): { dungeon: number; floor: number } | null {
+  const match = /^(-?\d+):(\d+)$/.exec(key);
+  return match ? { dungeon: Number(match[1]), floor: Number(match[2]) } : null;
+}
+
 /** Where a character's explored maps are read and written. */
 export interface MapStore {
   read(): StoredMaps;
@@ -238,6 +251,31 @@ export class MapMemory {
   forgetEverything(): void {
     this.store?.clear();
     this.forgetResident();
+  }
+
+  /**
+   * Every floor the character has a map of, by dungeon and floor: what is stored beside them,
+   * with the block in memory laid over the top.
+   *
+   * The block in memory is more than the game itself would have on disk at this moment, since it
+   * writes only on a quarter change, a module change and Q — the point here is to hand a player
+   * everything the site knows, not to reproduce what a crash would have left behind.
+   */
+  exploredFloors(): MappedFloor[] {
+    const floors = new Map<string, MappedFloor>();
+    for (const [key, stored] of Object.entries(this.store?.read() ?? {})) {
+      const place = storedPlace(key);
+      const bitmap = fromBase64(stored);
+      if (!place || !bitmap || bitmap.length !== FLOOR_BYTES) continue;
+      floors.set(key, { ...place, bitmap });
+    }
+    const held = this.held;
+    if (held) {
+      for (const [floor, bitmap] of this.resident) {
+        floors.set(`${held.dungeon}:${floor}`, { dungeon: held.dungeon, floor, bitmap });
+      }
+    }
+    return [...floors.values()];
   }
 
   /** Every known square of the floor being played, for a caller that wants the whole set rather
