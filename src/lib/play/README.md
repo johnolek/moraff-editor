@@ -187,7 +187,17 @@ exceptions: each wipes only the strip its own lines stand on, so the banner is s
 them and a box that was up loses only the lines those strips cover.
 
 `screenTakenOver` is the rest of what was drawn, which is the help, the V screen,
-the monster manual and the pages behind the P key, all of which draw across the four 3-D views.
+the monster manual, the pages behind the P key and the spell table, all of which draw across the
+four 3-D views.
+
+Each of those is drawn on black: the game fills the part of the screen it is about to draw on with
+colour 0 first. Most of those fills are lost in the decompilation, so the tab blacks the whole
+display out behind such a screen. `clearToBlack` in `src/lib/game/port/screens.ts` is for the ones
+that are not — `cast_a_spell` fills the top 0x21c of the screen for its big spell table and the
+whole message column for the miniature one — and it leaves the rectangle on the game as
+`blackedOut`, which the view carries as `screenCleared` and the tab blacks out instead of the
+display. Any other wipe takes that rectangle down again, which is how the screen comes back: the
+original repaints it from `movecontrol`, and the port draws a fresh one every time the tab draws.
 
 Everything goes through `src/lib/ui/GameScreen.svelte`, the same renderer the character roller
 uses, so a line lands exactly where the game's own `pfont` call puts it. With the top-down map
