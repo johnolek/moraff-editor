@@ -240,12 +240,16 @@ const STORE_GOODS: RevGoods[] = [
 const STORE_JOKE = ["I'm also selling the Brooklyn bridge,      want to it, too?"];
 const ALREADY_HAVE = 'You already have that weapon.';
 const DONT_NEED = "You don't need that anymore.";
+const NOT_FOR_A_WIZARD = ["You can't use that because you are a", '   magic user.'];
 
 /**
  * 1000:281E: the store.
  *
  * Its eighth line offers the town for a million and falls past the seven-target jump table to the
- * joke at 1000:2B67, so the town is never for sale however much money is in the purse.
+ * joke at 1000:2B67, so the town is never for sale however much money is in the purse. A suit of
+ * armour is refused only to a character who already wears that one or a better one — the four
+ * branches test `armour <= the suit's own number - 1` (1000:2A76, 2AAC, 2AE2, 2B18) — so a
+ * character with the money can buy field plate on the first day and never own the other three.
  */
 export async function revVisitStore(game: RevGame, desk: RevTownDesk): Promise<void> {
   const pc = game.pc;
@@ -266,6 +270,12 @@ export async function revVisitStore(game: RevGame, desk: RevTownDesk): Promise<v
     }
     const goods = STORE_GOODS[line];
     if (!goods) continue;
+    // 1000:2974: a wizard is refused every line but the first, which is the knife — the only
+    // weapon `F1.COM` says a wizard can use.
+    if (line > 0 && pc.cls !== 1) {
+      game.say(...NOT_FOR_A_WIZARD);
+      continue;
+    }
     if (goods.owned !== null && revValue(pc, goods.owned) === 1) {
       game.say(ALREADY_HAVE);
       continue;
