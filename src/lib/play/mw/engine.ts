@@ -238,6 +238,7 @@ export class MwGameSession {
     this.rows = MORAFFS_WORLD_MAP.floor(pc.floor, pc.dungeon);
     mwEnterLevel(this.game, this.floors, this.rows, pc.floor, this.game.rng);
     this.memory.enterFloor(pc.dungeon, pc.floor);
+    this.memory.markArrival(this.rows, pc.x, pc.y);
     mwSetOccupant(this.game, pc.x, pc.y, MW_SQUARE_PLAYER);
     this.game.pc.mapCursorY = this.game.mapViewRows >> 1;
     this.game.pc.mapCursorX = this.game.mapViewColumns >> 1;
@@ -432,6 +433,7 @@ export class MwGameSession {
     this.rows = MORAFFS_WORLD_MAP.floor(level, game.pc.dungeon);
     mwEnterLevel(game, this.floors, this.rows, level, game.rng);
     this.memory.enterFloor(game.pc.dungeon, level);
+    this.memory.markArrival(this.rows, game.pc.x, game.pc.y);
   }
 
   /**

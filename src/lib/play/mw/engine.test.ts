@@ -241,6 +241,28 @@ describe('the map the character discovers', () => {
     }
   });
 
+  it('knows the town a game starts in before the loop has taken a pass', () => {
+    const start = townWalk();
+    const session = startMwGame(mwCharacterFile({ floor: 0, dir: 0, ...start }), new BorlandRng(3));
+    expect(session.memory.isKnown(start.x, start.y)).toBe(true);
+    expect(session.memory.knownSquares().size).toBeGreaterThan(1);
+  });
+
+  it('knows where a chute has dropped the character, behind its own message', async () => {
+    const chute = findMwSquare(
+      3,
+      (square, x, y) =>
+        square.ladder === 0 &&
+        bundledMwDungeon.chute(x, y, 3, 0) !== 3 &&
+        bundledMwDungeon.trapdoor(x, y, 3, 0) === -1,
+    );
+    const session = playingMw(mwCharacterFile({ floor: 3, ...chute }));
+    await settleMw();
+    expect(session.view().place.floor).toBe(bundledMwDungeon.chute(chute.x, chute.y, 3, 0));
+    expect(session.memory.isKnown(chute.x, chute.y)).toBe(true);
+    expect(session.memory.knownSquares().size).toBeGreaterThan(1);
+  });
+
   it('keeps every square it has learned as the character walks', async () => {
     const start = townWalk();
     const session = playingMw(mwCharacterFile({ floor: 0, dir: 0, ...start }));
