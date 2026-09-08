@@ -45,8 +45,8 @@ export const REV_KEY = {
   mace: 0x4d,
   /** The sound, on or off (1000:1055). */
   sound: 0x4f,
-  /** Pause, which stops everything until a key (1000:0ED7); pray at the fight prompt
-   *  (1000:884A). */
+  /** Pause, which stops everything until a key (1000:0ED7). The fight prompt takes the same key
+   *  for the same screen (1000:884A calls the same 1000:7FFB). */
   pause: 0x50,
   /** Quit: the record and the maps are written and the game goes back to BEGIN (1000:0D7D). */
   quit: 0x51,

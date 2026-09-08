@@ -40,6 +40,10 @@ BASIC.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `chute.ts`, `fight.ts`,
   `attack.ts`, `kill.ts`, `town.ts`, `death.ts`, `advice.ts`, `help.ts`, `pause.ts`,
   `settings.ts` — so that two people can add two keys without touching the same file.
+* **The magic** — `spells.ts` (the twenty-four spells), `items.ts` (the twelve magic items, the
+  six pills and the nine wands), `treasure.ts` (what a kill drops), `fountain.ts`. `magic.ts`
+  names the record numbers all four read, `tables.ts` is `F1.COM` and `F2.COM`, and `desk.ts` is
+  the handful of things a menu asks the session for.
 * **`monsters.ts`** — the occupancy grid, the stocking, and the turn one monster takes.
   **`clock.ts`** — the poll those turns are rolled in.
 * **`memory.ts`** — `DIM M(20, 71)`, and the `<n>.BIN` it is saved as.
@@ -154,6 +158,32 @@ Three things are this game's own:
   `SCREEN 0` at 80 columns, the second colour a `~` line is drawn in, and the recolouring of the
   `Esc` and `#` markers at 1000:C47B.
 
+## The magic
+
+Twenty-four spells, twelve magic items, six pills and nine wands, and every word any of them says
+is a literal of the executable or a string of `F1.COM` and `F2.COM`. Four things about them are
+worth knowing before reading the code.
+
+* **The two sets of twelve are the same menu twice.** `1000:C5D0` is asked for a level of 1 to 6
+  and puts the level's two spells up; which set it reads is a flag the caller sets, so the C key
+  of the dungeon and the C key of the fight prompt are the same routine with a different table.
+  A spell the character has not been taught prints as a blank line and, chosen anyway, casts
+  nothing.
+* **A spellbook is the only way a character learns anything.** One kill in five drops one
+  (`1000:AA18`), for a level rolled against the depth and a set decided by a coin. Nothing else
+  in the game teaches a spell, and the wizard's guild sells only the sentence that says what one
+  does.
+* **The two clocks are not the clock.** The spells a fight casts on the character are timed in
+  *steps* — the counter at DGROUP B474 that every move counts and the top of every pass brings
+  back round to 1 — so standing still never spends one. The three potions that wear off are timed
+  against `TIMER`, which here is the monsters' own clock.
+* **Two of them are written down wrong and are kept that way.** `Feather' only stops at the `IF`
+  that zeroes a weight gone negative, so a character still carrying something falls into the next
+  line of the program, which is `Ascend': casting Feather floats them up a level as well. And the
+  bag of holding has nowhere to read how much treasure is being carried, so it works it back out
+  of the weight — and the second of the two sums, the one for a character in magic armour,
+  forgets to take the armour off.
+
 ## What is not built yet
 
 Every key the dungeon dispatches on has an entry in `REV_KEY_HANDLERS` and every one of them
@@ -162,19 +192,13 @@ it stands in for:
 
 | key | what the game does | where |
 | --- | --- | --- |
-| C | casts one of the twelve spells of `F1.COM` | 1000:35AC |
-| I | uses one of the scrolls and potions of `F2.COM` | 1000:1340 |
-| M | lists the magic items the character owns | 1000:3B16 |
-| T | takes a pill | 1000:7C49 |
-| W | uses a wand | 1000:7AA1 |
 | A | drops all the coins carried, which is what makes a character light | 1000:1918 |
-| B, P at the fight prompt | breathes fire, and prays | 1000:8985, 884A |
 
-With the spells and the items left out, three things that hang off them are left out with them: the
-Scroll of Seeing (`memory.ts` has the marking it does and nothing calls it), the fountain of youth
-at `1000:3D83` (the same), and the treasure a kill drops at `1000:A89F`, which is what the bank is
-for. The wizard's guild charges its prices and says so, since that much of it is the character
-rather than the pages.
+Two things a kill can hand over are left out with them. Past the coins and the spellbook,
+`1000:AB7F` rolls three more times and, on each, calls one of `1000:B1DF`, `B156` and `B0E3`;
+past those again, `1000:AC87` prints "YOU FIND... " and hands over something else. None of the
+four has been read out. And the "HIT RETURN" the kill waits at before any of it (`1000:A505`) is
+not a key this port asks for.
 
 ## Two things read out of the code that the documents had otherwise
 
