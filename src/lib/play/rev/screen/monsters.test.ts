@@ -20,7 +20,6 @@ function painted(frame: { pixels: Uint8Array }): number {
 describe('which name the view calls a slot', () => {
   it('folds the slot number and corrects the last two names', () => {
     expect(viewNameIndex(41, 3, 0)).toBe(2);
-    // The view corrects a name of 19 as well as 20, where the fight corrects only 20.
     expect(viewNameIndex(18, 3, 0)).toBe(11);
     expect(viewNameIndex(19, 3, 0)).toBe(12);
     expect(viewNameIndex(18, 9, 200)).toBe(21);

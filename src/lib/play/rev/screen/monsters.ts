@@ -1,6 +1,6 @@
 import { plot, type Frame } from '../../view3d/frame';
 import { closeUpOf, distantOf } from '../../../rev-bestiary/pictures';
-import { dungeonForLevel, type RevDrawing } from '../../../rev-bestiary/monsters';
+import { dungeonForLevel, nameIndexOf, type RevDrawing } from '../../../rev-bestiary/monsters';
 import { BLACK } from './colours';
 import { boxFilled, type ViewBox } from './paint';
 import { squareAtDepth, type RevViewPlace } from './views';
@@ -42,30 +42,19 @@ const AHEAD = [
   { x: 18, y: 24, distant: true, variant: 2 },
 ];
 
-/** How many names a dungeon has, and the modulus the slot number is folded by (1000:6D40). */
+/** How many names a dungeon has (1000:6D40). */
 const NAMES = 22;
-const NAME_MODULUS = 20;
-
-/** The first name the view corrects, and how far up or down it moves one (1000:6D6C). */
-const FIRST_CORRECTED_NAME = 19;
-const SHALLOWER_THAN = 7;
-const SHALLOW_STEP = 8;
-const STRONG_ABOVE = 140;
-const STRONG_STEP = 2;
 
 /**
  * Which of the dungeon's names a slot is, as the view works it out.
  *
- * `1000:6D6C` corrects a name of **19 or 20**, where the encounter's own copy of the same rule at
- * `1000:81A6` corrects only 20 -- so a view can draw one monster where a fight would name
- * another. The correction turns the name into a shallow-water one above level 7 and into one of
- * the two last names below it, if what `2.NUM` holds for the slot is big enough.
+ * The view keeps its own copy of the rule at `1000:6D40` to `6DA3`, in integer arithmetic rather
+ * than the encounter's single-precision, and the two come out the same: a name of 19 or 20 drops
+ * eight on a dungeon level below 7 and rises two where `2.NUM` holds more than 140 for the slot.
+ * So this is `nameIndexOf`, and a view names the monster a fight would name.
  */
 export function viewNameIndex(slot: number, level: number, strength: number): number {
-  const index = (slot % NAME_MODULUS) + 1;
-  if (index < FIRST_CORRECTED_NAME) return index;
-  if (level < SHALLOWER_THAN) return index - SHALLOW_STEP;
-  return Math.abs(strength) > STRONG_ABOVE ? index + STRONG_STEP : index;
+  return nameIndexOf(slot, level, strength);
 }
 
 /** The picture for a name, at the size the view wants it, or null where the file has none. */
