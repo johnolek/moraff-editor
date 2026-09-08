@@ -282,13 +282,21 @@ twenty, and every level stocks each of them twice. Two corrections follow at
 `1000:81A6`:
 
 ```
-81ca  IF NAME = 20 AND <dungeon level> < 7 THEN NAME = 12
-81e9  IF NAME = 20 AND ABS(HP%(S)) > 140 THEN NAME = 22
+81ca  IF NAME >= 19 AND NAME <= 20 AND <dungeon level> < 7 THEN NAME = NAME - 8
+81e9  IF NAME >= 19 AND NAME <= 20 AND ABS(HP%(S)) > 140 THEN NAME = NAME + 2
 ```
 
-`b6dc` is written in exactly one place, `1000:80D8`, so this is the whole of it:
-**name 21 is never reached at all** — `SPECTOR` in the first dungeon and `GHOST`
-in the second are in the file and are never met.
+The range test is easy to misread, because the two halves are written as their
+negations: `81A6` puts -1 in `bx` when the name is below 19, `81B5` puts -1 in
+`dx` when it is above 20, and `81C1` jumps past both corrections when the `OR`
+of the two is non-zero. So the pair 19 and 20 is corrected together: on a
+shallow level they become 11 and 12, and with over 140 hit points they become
+21 and 22.
+
+`b6dc` is written in exactly one place, `1000:80D8`, so this is the whole of it,
+and **the twenty-first name is reached only by the second correction** —
+`SPECTOR` in the first dungeon and `GHOST` in the second are what a strong
+name 19 is met as, 92 slots of the shipped tables between them.
 
 **Which level.** `1000:80DE` computes `INT((S + 40) / 40)`, which is the level
 the slot belongs to except on a level's fortieth slot, where it reads one too
