@@ -62,6 +62,9 @@ def run_once(module, level, water, town, seed_ax=0x2000):
         w16(0x00c7, 0)              # not monochrome
         w16(0x031d, 1 if water else 0)
         w16(0x2505, 1 if town else 0)
+        # The options menu's colour setting, 0..3.  The data segment holds 1, but roll_char
+        # (3000:4c77) writes 0 over it before anyone can play, so 0 is what a game is drawn in.
+        w16(0x4df2, 0)
         # fake far return address on the stack: push CS then IP (retf pops IP, CS)
         sp = 0xff00 - 4
         emu.writeRegister("SP", sp)
