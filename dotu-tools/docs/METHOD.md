@@ -167,7 +167,9 @@ Constants the 3-D view reads from the data segment, as found this way:
 Three helpers the view leans on, decoded from their instructions: `FUN_3000_2822(x)` is
 `floor(x - 0.5) + 0.5` and `FUN_3000_27fc(x)` is `ceil(x - 0.5) + 0.5`, snapping to a
 half-integer either way; `FUN_3000_3311(&sideways, &forward)` rounds both with the 0.499
-bias, then turns them by the facing at `DS:c664`, and in the two turning cases truncates
+bias (forward is floored after adding it; sideways is floored after adding it when positive
+and raised after subtracting it otherwise, so a half square goes toward zero), then turns
+them by the facing at `DS:c664`, and in the two turning cases truncates
 the forward value to an int on the way, which the port keeps.  The port itself is
 `src/lib/play/view3d/`; `dotu-tools/reference/scripts/render_3d.mjs` renders any square to
 a PNG.

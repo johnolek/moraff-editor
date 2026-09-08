@@ -62,12 +62,15 @@ export interface SquarePlace {
  * `FUN_3000_3311` (exe 3000:3311, unf.c "FUN_3000_3311"): turn a point in the view's coordinates
  * — sideways across the view, forward away from the character — into a square on the map.
  *
- * The 0.499 is the game's own rounding bias (DS:25df). Facings 2 and 3 truncate the forward
+ * The 0.499 is the game's own rounding bias (DS:25df): a positive sideways value is floored after
+ * adding it and any other is raised after taking it away, so a half square goes toward zero (the
+ * `fcompp` against zero at 3000:3348 falls through to `floor` only when zero is below the value).
+ * Facings 2 and 3 truncate the forward
  * coordinate to an integer on the way through, which the other two do not; that asymmetry is the
  * original's and is kept.
  */
 export function viewPointToSquare(sideways: number, forward: number, facing: number, at: SquarePlace): SquarePlace {
-  let across = Math.fround(sideways < 0 ? Math.floor(sideways + 0.499) : Math.ceil(sideways - 0.499));
+  let across = Math.fround(sideways > 0 ? Math.floor(sideways + 0.499) : Math.ceil(sideways - 0.499));
   let away = Math.fround(Math.floor(forward + 0.499));
 
   if (facing === 0) {

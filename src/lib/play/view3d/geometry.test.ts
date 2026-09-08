@@ -134,3 +134,12 @@ describe('a square off to one side', () => {
     expect(face!.right).toBeLessThanOrEqual(1000);
   });
 });
+
+describe('viewPointToSquare rounding', () => {
+  it('sends a half square toward zero on either side, as the fcompp at 3000:3348 does', () => {
+    expect(viewPointToSquare(0.5, 0, 0, { x: 10, y: 10 })).toEqual(viewPointToSquare(0, 0, 0, { x: 10, y: 10 }));
+    expect(viewPointToSquare(-0.5, 0, 0, { x: 10, y: 10 })).toEqual(viewPointToSquare(0, 0, 0, { x: 10, y: 10 }));
+    expect(viewPointToSquare(0.501, 0, 0, { x: 10, y: 10 }).x).toBe(11);
+    expect(viewPointToSquare(-0.501, 0, 0, { x: 10, y: 10 }).x).toBe(9);
+  });
+});
