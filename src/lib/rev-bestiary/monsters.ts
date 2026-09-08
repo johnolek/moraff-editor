@@ -102,13 +102,15 @@ const HIT_POINTS_FLOOR = data.constants.hitPointsFloor;
 /** The first level drawn from the second set of monsters (1000:4C6B). */
 export const SECOND_DUNGEON_FROM = data.constants.secondDungeonFrom;
 
-/** Name 20 is name 12 above this level, and name 22 when its hit points are over the other
- *  number (1000:81A6 to 1000:8211). */
-const NAME_20 = 20;
-const NAME_20_SHALLOW = 12;
-const NAME_20_SHALLOWER_THAN = 7;
-const NAME_20_STRONG = 22;
-const NAME_20_STRONG_ABOVE = 140;
+/** The two names the correction at 1000:81A6 takes, how far down it moves one on a shallow
+ *  level, and how far up when the hit points in `2.NUM` are over the other number
+ *  (1000:81A6 to 1000:8211). */
+const FIRST_CORRECTED_NAME = 19;
+const LAST_CORRECTED_NAME = 20;
+const SHALLOWER_THAN = 7;
+const SHALLOW_STEP = 8;
+const STRONG_ABOVE = 140;
+const STRONG_STEP = 2;
 
 /** The slot numbers a dungeon level owns: `40 * level - 39` to `40 * level` (1000:79C3). */
 export function slotsForLevel(level: number): [number, number] {
@@ -131,14 +133,15 @@ export function monsterLevelOf(slot: number): number {
  * Which of the twenty-two names a slot is (1000:80B0, corrected at 1000:81A6).
  *
  * The name is the slot number modulo 20 plus one, so the plain rule only ever reaches the first
- * twenty. What comes out as name 20 is then name 12 on a level shallower than 7, and name 22
- * when the number in `2.NUM` is over 140. Nothing ever reaches name 21.
+ * twenty. The range test at 1000:81A6 then takes a name of 19 or 20: on a level shallower than 7
+ * it becomes 11 or 12, and where the number in `2.NUM` is over 140 it becomes 21 or 22. Those
+ * last two are the only way the twenty-first and twenty-second names are ever reached.
  */
 export function nameIndexOf(slot: number, dungeonLevel: number, stored: number): number {
   const index = (slot % NAME_MODULUS) + 1;
-  if (index !== NAME_20) return index;
-  if (dungeonLevel < NAME_20_SHALLOWER_THAN) return NAME_20_SHALLOW;
-  return Math.abs(stored) > NAME_20_STRONG_ABOVE ? NAME_20_STRONG : index;
+  if (index < FIRST_CORRECTED_NAME || index > LAST_CORRECTED_NAME) return index;
+  if (dungeonLevel < SHALLOWER_THAN) return index - SHALLOW_STEP;
+  return Math.abs(stored) > STRONG_ABOVE ? index + STRONG_STEP : index;
 }
 
 /**
@@ -194,7 +197,8 @@ export function dungeonForLevel(level: number): RevDungeon {
   return level >= SECOND_DUNGEON_FROM ? DUNGEONS[1] : DUNGEONS[0];
 }
 
-/** A monster the game can never put in front of you: nothing ever comes out as name 21. */
+/** A monster the shipped `1.NUM` and `2.NUM` hold no slot for, so the game never puts it in
+ *  front of you. */
 export function neverMet(monster: RevMonster): boolean {
   return monster.count === 0;
 }

@@ -46,14 +46,15 @@ COLUMN_SCALE = 32
 # the file the plain rule only ever reaches the first twenty.
 NAMES_IN_TABLE = 22
 NAME_MODULUS = 20
-# Two corrections follow (1000:81A6-8211).  A monster that comes out as name 20
-# is name 12 instead above dungeon level 7, and name 22 when its hit points are
-# over 140; name 21 is never reached at all.
-NAME_20 = 20
-NAME_20_SHALLOW = 12
-NAME_20_SHALLOWER_THAN = 7
-NAME_20_STRONG = 22
-NAME_20_STRONG_ABOVE = 140
+# Two corrections follow (1000:81A6-8211).  The range test at 1000:81A6 takes a
+# name of 19 or 20: on a dungeon level below 7 it drops eight, to 11 or 12, and
+# where the hit points in `2.NUM` are over 140 it adds two, to 21 or 22.
+FIRST_CORRECTED_NAME = 19
+LAST_CORRECTED_NAME = 20
+SHALLOWER_THAN = 7
+SHALLOW_STEP = 8
+STRONG_ABOVE = 140
+STRONG_STEP = 2
 
 # The monster's own level is the level the slot belongs to (1000:80DE, which
 # computes `INT((slot + 40) / 40)` and so reads one too high on a level's last
@@ -185,11 +186,11 @@ def monster_level(slot):
 def name_index(slot, dungeon_level, stored):
     """Which of the twenty-two names a slot is (1000:80B0 and 1000:81A6)."""
     index = slot % NAME_MODULUS + 1
-    if index != NAME_20:
+    if index < FIRST_CORRECTED_NAME or index > LAST_CORRECTED_NAME:
         return index
-    if dungeon_level < NAME_20_SHALLOWER_THAN:
-        return NAME_20_SHALLOW
-    return NAME_20_STRONG if abs(stored) > NAME_20_STRONG_ABOVE else index
+    if dungeon_level < SHALLOWER_THAN:
+        return index - SHALLOW_STEP
+    return index + STRONG_STEP if abs(stored) > STRONG_ABOVE else index
 
 
 def hit_points(slot, stored):

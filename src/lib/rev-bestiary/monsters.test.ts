@@ -87,20 +87,31 @@ describe('a slot number', () => {
     expect(nameIndexOf(1, 1, 4)).toBe(2);
     expect(nameIndexOf(20, 1, 4)).toBe(1);
     expect(nameIndexOf(41, 2, 4)).toBe(2);
-    // Only slot 19 of a level's forty comes out as name 20, and that one is corrected below.
+    // Slots 18 and 19 of a level's forty come out as names 19 and 20, and both are corrected
+    // below.
+    expect(nameIndexOf(18, 10, 4)).toBe(19);
     expect(nameIndexOf(19, 10, 4)).toBe(20);
   });
 
-  it('sends name 20 to name 12 above level seven', () => {
+  it('sends names 19 and 20 down eight above level seven', () => {
+    expect(nameIndexOf(18, 6, 40)).toBe(11);
     expect(nameIndexOf(19, 6, 40)).toBe(12);
+    expect(nameIndexOf(18, 7, 40)).toBe(19);
     expect(nameIndexOf(19, 7, 40)).toBe(20);
   });
 
-  it('sends name 20 to name 22 once its hit points pass 140', () => {
+  it('sends names 19 and 20 up two once their hit points pass 140', () => {
+    expect(nameIndexOf(18, 10, 140)).toBe(19);
+    expect(nameIndexOf(18, 10, 141)).toBe(21);
     expect(nameIndexOf(19, 10, 140)).toBe(20);
     expect(nameIndexOf(19, 10, 141)).toBe(22);
     // The sign is a flag, and the test is on the size of the number.
     expect(nameIndexOf(19, 10, -141)).toBe(22);
+  });
+
+  it('leaves the names either side of the corrected pair alone', () => {
+    expect(nameIndexOf(17, 3, 200)).toBe(18);
+    expect(nameIndexOf(20, 3, 200)).toBe(1);
   });
 
   it('gives the monster a level for each of 2, 4, 8 and 16 it divides by', () => {
@@ -154,10 +165,10 @@ describe('the monsters standing on a level', () => {
     expect(wraith.levels[0]).toBe(7);
   });
 
-  it('has nothing that comes out as the twenty-first name', () => {
-    expect(neverMet(DUNGEONS[0].monsters[20])).toBe(true);
-    expect(neverMet(DUNGEONS[1].monsters[20])).toBe(true);
-    expect(DUNGEONS[0].monsters.filter(neverMet).map((monster) => monster.name)).toEqual(['SPECTOR']);
+  it('reaches the twenty-first name in both dungeons', () => {
+    expect(neverMet(DUNGEONS[0].monsters[20])).toBe(false);
+    expect(neverMet(DUNGEONS[1].monsters[20])).toBe(false);
+    expect(DUNGEONS.flatMap((dungeon) => dungeon.monsters.filter(neverMet))).toEqual([]);
   });
 });
 
@@ -214,11 +225,11 @@ describe('killing one', () => {
 });
 
 describe('the list', () => {
-  it('groups the two dungeons and the names nothing reaches', () => {
+  it('groups the two dungeons, and has no name the shipped disk misses', () => {
     const groups = monsterGroups();
-    expect(groups.map((group) => group.label)).toEqual(['Levels 1–34', 'Levels 35–70', 'Never met']);
-    expect(groups[0].monsters).toHaveLength(21);
-    expect(groups[2].monsters.map((monster) => monster.name)).toEqual(['SPECTOR', 'GHOST']);
+    expect(groups.map((group) => group.label)).toEqual(['Levels 1–34', 'Levels 35–70']);
+    expect(groups[0].monsters).toHaveLength(22);
+    expect(groups[1].monsters).toHaveLength(22);
   });
 
   it('keys a monster by its dungeon and its name number', () => {
