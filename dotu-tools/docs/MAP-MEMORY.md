@@ -62,6 +62,15 @@ file zeroes all 32. The dungeon layout is not in the file — it is regenerated
 from `myrand(x, y, floor, module)` (3000:81ba) every time, which is why the maps
 are the same in every game.
 
+**The name is three numbers, each written as itself plus `'0'`**
+(`unf.c:12253`–`unf.c:12255`): the character, the quarter and the module, in
+that order. `select_player` (`unf.c:11436`) waits for a keypress between `'0'`
+and `'9'` and stores it as `key - 0x1c`, so the character is 20 to 29 — which is
+also what its record is called — and the first letter of a map file runs `D` to
+`M`. `E14.DUN` is character 21's floors 32 to 63 of module 5. The `001.dun`,
+`010.dun` and `011.dun` in the game folder are character 0's, the attract-mode
+demo's.
+
 **Saved only on a quarter change, a module change, and Q.** `load_level_map`
 (2000:7687, `unf.c:12415`):
 ```c
