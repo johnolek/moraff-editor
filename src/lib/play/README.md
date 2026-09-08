@@ -257,7 +257,9 @@ the action.
 ## The floor
 
 `session.enterFloor(level)` is `load_level_map`: it generates the floor from
-`src/lib/map/game.ts`'s descriptor, loads the section's monster descriptions and stocks it.
+`src/lib/map/game.ts`'s descriptor, loads the section's monster descriptions and stocks it. It
+also marks where the character has landed — `MapMemory.markArrival`, which says why — since the
+map the tab draws behind an arrival's box would otherwise be blank.
 Stocking is `src/lib/map/stocking.ts`, which is already a port of `stock_level` and is the only
 one — the game's three-floor memory around it lives in `FloorMonsters`, so coming back up a
 ladder finds the monsters where they were left.
