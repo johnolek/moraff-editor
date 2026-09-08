@@ -73,6 +73,11 @@ describe('the control on the Play tab', () => {
     expect(PLAY_MODES.map((mode) => mode.label)).toEqual(['Faithful', 'Speedrun', 'Debug']);
     expect(PLAY_MODES.every((mode) => mode.how.length > 0)).toBe(true);
   });
+
+  it('does not promise that debug shows the top-down map, which the switch alone decides', () => {
+    const debug = PLAY_MODES.find((mode) => mode.id === 'debug')!;
+    expect(debug.how).not.toContain('top-down');
+  });
 });
 
 describe('the panel of numbers the game never prints', () => {

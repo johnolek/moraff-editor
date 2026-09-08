@@ -39,7 +39,8 @@ export const PLAY_MODES: { id: PlayMode; label: string; how: string }[] = [
   {
     id: 'debug',
     label: 'Debug',
-    how: 'The top-down map instead of the game screen: the whole floor, every monster, and the panel of numbers the game never prints.',
+    how:
+      "The whole floor and every monster on it, plus the numbers the game never prints: over the game's own screen and in the panel beside it.",
   },
 ];
 
