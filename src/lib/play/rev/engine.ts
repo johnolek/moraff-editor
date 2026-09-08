@@ -167,17 +167,21 @@ export class RevGameSession {
    * One tick of the monsters' clock: the passes of the `INKEY$` poll that much wall-clock time
    * is worth, each rolling 1000:7EEC through the run's generator.
    *
+   * The fight's own prompt polls as well (1000:86E2 before 1000:86E5), so the rest of the level
+   * keeps shuffling around while it is up; what does not happen there is a swing, since the
+   * monster's attack is only ever reached from the far side of a key.
+   *
    * It is written into the log as an input of its own, which is what lets a replay reproduce it
    * without a timer.
    */
   tick(): void {
-    if (this.game.over || this.game.fight !== null) return;
+    if (this.game.over) return;
     this.run?.input(REV_CLOCK_TICK);
     this.ticks += 1;
     const walker = revWalker(this.game);
     for (let pass = 0; pass < REV_POLLS_PER_TICK; pass++) revPoll(this.game.monsters, walker, this.game.lastMonsterLevel, this.game.rng);
     // 1000:08F6: a monster that has reached the character's square opens a fight at once.
-    if (this.monsterHere() > 0) {
+    if (this.game.fight === null && this.monsterHere() > 0) {
       const waiting = this.waiting;
       this.waiting = null;
       waiting?.(REV_CLOCK_TICK);
@@ -481,7 +485,7 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     const turn: RevTurn = { session, game, building: revBuildingUnder(pc.column, pc.row, pc.dungeonLevel) };
     // 1000:08F6 and 1000:0946: a monster on the character's own square opens a fight.
     if (game.fight === null && session.monsterHere() > 0) revMeetMonster(game, session.monsterHere());
-    const key = game.fight === null ? await session.poll() : await session.key();
+    const key = await session.poll();
     if (key === REV_RECORD_EDITED || key === REV_CLOCK_TICK) continue;
     // The words the last key printed come down when the next one arrives, which is what the
     // redraw at 1000:3029 does to them.

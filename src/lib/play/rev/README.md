@@ -70,8 +70,10 @@ Two things follow that are worth knowing before reading the numbers here.
   level (`1000:A3C8`). It is kept.
 
 **What this port does.** The poll is a display timer the session runs only while the loop is
-sitting at that `INKEY$` — never while a menu is up, never while a fight prompt is waiting, which
-is what `1000:2F71` does too. One tick stands for a fixed number of passes, and each of those
+sitting at an `INKEY$` — the dungeon's own at `1000:087F` and the fight prompt's at `1000:86E5`,
+both of which call `1000:7EEC` first, so the level keeps shuffling around while a fight is up. It
+does not run while a building's menu is waiting, which is `1000:2F71`, a plain blocking wait that
+calls nothing. One tick stands for a fixed number of passes, and each of those
 passes rolls through the run's own seeded generator exactly as the original rolls `RND`.
 
 **The tick rate is 200 ms carrying 65 passes.** 326 passes a second is a tick every 3.07 ms, which

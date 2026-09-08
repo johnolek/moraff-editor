@@ -183,3 +183,51 @@ describe('the town', () => {
     session.finish();
   });
 });
+
+describe('a fight', () => {
+  /** Stand the character on a dungeon level with a monster on their own square. */
+  async function beside(): Promise<RevGameSession> {
+    const { session } = await playing(9, record({ 25: 2, 23: 10, 24: 10, 142: 1 }));
+    session.enterLevel(2);
+    session.game.monsters.grid[22 * 10 + 10] = 41;
+    session.game.monsters.positions[41] = 32 * 10 + 10;
+    // A key of no consequence takes the loop round to the top, where the fight opens.
+    session.press(REV_KEY.stats);
+    await settled();
+    return session;
+  }
+
+  it('opens when a monster reaches the character', async () => {
+    const session = await beside();
+    expect(session.view().fight).not.toBeNull();
+    expect(session.view().fight?.slot).toBe(41);
+    session.finish();
+  });
+
+  it('takes a swing with the sword the character owns', async () => {
+    const session = await beside();
+    const before = session.view().fight!.hitPoints;
+    session.press(REV_KEY.sword);
+    await settled();
+    expect(session.view().banner.join(' ')).toMatch(/YOU DID/);
+    const after = session.view().fight;
+    expect(after === null || after.hitPoints < before).toBe(true);
+    session.finish();
+  });
+
+  it('refuses a weapon the character does not own', async () => {
+    const session = await beside();
+    session.press(REV_KEY.mace);
+    await settled();
+    expect(session.view().box.join(' ')).toContain('YOU DO NOT HAVE THAT');
+    session.finish();
+  });
+
+  it('keeps the rest of the level moving while the prompt is up', async () => {
+    const session = await beside();
+    const before = session.game.monsters.positions.slice(41, 81);
+    session.tick();
+    expect(session.game.monsters.positions.slice(41, 81)).not.toEqual(before);
+    session.finish();
+  });
+});
