@@ -39,8 +39,11 @@ const { parsePicRows } = await load('play/view3d/texture.ts');
 const { renderFourViews } = await load('play/view3d/render.ts');
 const { wallPictureFile } = await load('play/view3d/pictures.ts');
 const { viewLabels } = await load('play/view3d/views.ts');
-const { SCREEN_PIXELS } = await load('play/display.ts');
+const D = await load('play/display.ts');
+const { SCREEN_PIXELS } = D;
+const { newGame } = await load('game/port/state.ts');
 const { FONT_ADVANCE } = await load('roller/screen.ts');
+const { battleSpellLines } = await load('game/port/screens.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
 const fonts = JSON.parse(readFileSync(src('game/dotu-fonts.json'), 'utf8'));
 
@@ -106,7 +109,20 @@ renderFourViews(
   dir,
 );
 
-for (const line of viewLabels(exp, horizonWeight)) drawLine(line);
+// The zoom map draws only what the character has walked, and a script has walked nothing, so it
+// is given the whole floor.
+D.drawScreenFurniture(frame, { rows, at: { ...at, dir }, known: () => true });
+
+const game = newGame();
+game.pc.exp = exp;
+game.pc.height = horizonWeight;
+const text = [
+  ...D.keyMenuLines(),
+  ...battleSpellLines(game),
+  ...D.statusLines(game.pc),
+  ...viewLabels(exp, horizonWeight),
+];
+for (const line of text) drawLine(line);
 
 const palette = dungeonPalette(palettes, null, moduleIndex + 1, part);
 writeFileSync(out, encodePng(frame.width, frame.height, toRgba(frame, palette)));
@@ -128,7 +144,9 @@ function drawLine(line) {
   const toY = (y) => Math.trunc((frame.height * y) / 1200);
   const advance = line.spreadTo === undefined ? FONT_ADVANCE[line.font] : (line.spreadTo - line.x) / line.text.length;
   const face = fonts[['small', 'tall', 'bold'][line.font] ?? 'tall'];
-  const scale = Math.max(1, Math.round(toX(advance) / face.advance));
+  // The game scales its face to the step it is drawing at, so the glyph is stretched rather than
+  // multiplied: a letter fills the whole of its own cell whatever the step comes to.
+  const scale = toX(advance) / face.advance;
   const top = toY(line.y);
   for (let i = 0; i < line.text.length; i++) {
     const glyph = face.glyphs[line.text[i].toUpperCase()] ?? face.glyphs['?'];
@@ -137,10 +155,12 @@ function drawLine(line) {
     glyph.forEach((word, row) => {
       for (let bit = 0; word >> bit; bit++) {
         if (!(word & (1 << bit))) continue;
-        for (let dy = 0; dy < scale; dy++) {
-          for (let dx = 0; dx < scale; dx++) {
-            const x = left + bit * scale + dx;
-            const y = top + row * scale + dy;
+        const x1 = left + Math.round(bit * scale);
+        const x2 = left + Math.round((bit + 1) * scale) - 1;
+        const y1 = top + Math.round(row * scale);
+        const y2 = top + Math.round((row + 1) * scale) - 1;
+        for (let y = y1; y <= y2; y++) {
+          for (let x = x1; x <= x2; x++) {
             if (x >= 0 && y >= 0 && x < frame.width && y < frame.height) frame.pixels[y * frame.width + x] = line.colour;
           }
         }
