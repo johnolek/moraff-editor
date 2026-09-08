@@ -181,7 +181,9 @@ function drawGlyph(ctx: CanvasRenderingContext2D, square: MapSquare, x0: number,
   if (glyph !== 'down') diagonal(ctx, x0 + 1, y1, x1, y0 + 1);
   ctx.setLineDash([]);
   ctx.lineWidth = 1;
-  if (size >= LABEL_MIN_CELL) drawLabel(ctx, String(glyphDestination(square, floor)), x0 + 1 + w / 2, y0 + 1 + h / 2, size);
+  // The game's own map never writes the floor a glyph leads to; only the site's fully revealed
+  // map does.
+  if (!asTheGame && size >= LABEL_MIN_CELL) drawLabel(ctx, String(glyphDestination(square, floor)), x0 + 1 + w / 2, y0 + 1 + h / 2, size);
 }
 
 /** Floor a ladder, chute, trap door or false floor square leads to. A false floor is a chute

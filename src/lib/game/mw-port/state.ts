@@ -326,7 +326,8 @@ export interface MwSpellChoice {
   slot: number;
 }
 
-/** The stride of the occupancy grid, which is a floor's 80 columns (exe DS:448b). */
+/** The stride of the occupancy grid: 80 bytes a row, one more than the 79 columns the game
+ *  lets you walk (exe DS:448b holds the 79). */
 export const MW_FLOOR_COLUMNS = 80;
 
 /** How many rows a floor has (exe DS:448d). */
