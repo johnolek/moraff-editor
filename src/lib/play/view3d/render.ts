@@ -10,7 +10,7 @@ import {
   type ViewRect,
 } from './geometry';
 import { FLOOR_TILES, floorTilePair } from './pictures';
-import { scaleImage } from './scale';
+import { scaleImage, type ScaleOptions } from './scale';
 import { drawWall, DETAIL_TEXTURED, type WallScene } from './wall';
 import { FOUR_VIEWS, viewFacing } from './views';
 
@@ -180,6 +180,19 @@ function drawFloorAndCeiling(frame: Frame, scene: ViewScene, view: ViewFrame, re
 }
 
 /**
+ * How `scale_image2` (exe 4000:4818) is set up for a monster: DS:4fc1 the colour-set base, DS:4fbd
+ * the record's own colour byte, and DS:4fc5 the 140 rows a built-in monster is stretched from in
+ * the three water sections, which draws it short.
+ */
+function monsterPaint(scene: ViewScene, monster: ViewMonster): ScaleOptions {
+  return {
+    screen: scene.screen,
+    rows: scene.water && monster.builtin ? 140 : 200,
+    colours: { base: monster.colorSet << 4, tint: monster.colour },
+  };
+}
+
+/**
  * The part of `draw_map_square` (exe 3000:2848) that draws: the monster standing on the square,
  * mirrored when the square's own x is odd, and the ladder mark under it.
  */
@@ -213,11 +226,7 @@ function drawSquare(
         picture,
         from,
         to,
-        {
-          screen: scene.screen,
-          rows: scene.water && monster.builtin ? 140 : 200,
-          colours: { base: monster.colorSet << 4, tint: monster.colour },
-        },
+        monsterPaint(scene, monster),
       );
     }
   }
