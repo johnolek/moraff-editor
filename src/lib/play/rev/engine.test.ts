@@ -59,8 +59,12 @@ describe('the loop', () => {
 
   it('marks the square underfoot and nothing else', async () => {
     const { session } = await playing();
-    expect(session.game.memory.isKnown(10, 10, 0)).toBe(true);
-    expect(session.game.memory.isKnown(11, 10, 0)).toBe(false);
+    session.enterLevel(3);
+    session.press(REV_KEY.stats);
+    await settled();
+    expect(session.game.memory.isKnown(10, 10, 3)).toBe(true);
+    expect(session.game.memory.isKnown(11, 10, 3)).toBe(false);
+    expect(session.game.memory.isKnown(10, 9, 3)).toBe(false);
     session.finish();
   });
 

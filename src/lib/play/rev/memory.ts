@@ -1,5 +1,6 @@
 import { readStored, toBase64, fromBase64, writeStored } from '../../character/storage';
 import { COLUMNS, LEVELS, ROWS, mbfSingle } from '../../game/revmap.js';
+import { REV_TOWN_ROWS } from '../../game/rev-port/character';
 import { REV_MAP_SINGLES, revExploredBytes } from '../../roller/rev-save-file';
 import type { DiscoveredMap } from '../../map/draw-floor';
 
@@ -69,7 +70,16 @@ export class RevMapMemory {
    *  for — a replay, or a test. */
   constructor(private readonly store: RevMapStore | null = null) {
     const bytes = store?.read();
-    if (bytes && bytes.length > 0) this.load(bytes);
+    if (bytes && bytes.length > 0) {
+      this.load(bytes);
+      return;
+    }
+    // A character with no map beside them has never been played here, so they start with the one
+    // CHCHAR.EXE seeds into every new character: the twenty rows of the town its own DATA
+    // statement holds.
+    REV_TOWN_ROWS.forEach((mask, index) => {
+      this.rows[index + 1] = mask;
+    });
   }
 
   /** 1000:5417 with 1000:5449: is the square one the character has stood on? */

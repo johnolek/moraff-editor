@@ -128,6 +128,10 @@ Three things are this game's own:
 * **`1.NUM` and `2.NUM` last as long as the tab.** The original saves them on the way out
   (`1000:B5C8`), so the monsters are the state of the disk and are shared by every character on it.
   A browser has no disk to share, so each session starts from the shipped tables.
+* **A character with no map beside them starts with the town.** `CHCHAR.EXE` seeds twenty rows of
+  the town into every new character's `<n>.BIN` from a DATA statement of its own, and a character
+  who has never been played here gets the same twenty rows. A character imported from a game
+  folder brings their record but not their `.BIN`, so what they had walked in DOS is not here.
 * **The `.BIN` is a blob beside the roster entry.** The explored map is written where the original
   writes it — on Q, and just before a chute drops the character — as the same BSAVE image, so it
   reads back as the `<n>.BIN` it is. A death deletes it, which the original does too.

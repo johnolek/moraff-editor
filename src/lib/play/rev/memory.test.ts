@@ -18,6 +18,15 @@ function inHand(): RevMapStore & { bytes: Uint8Array | null } {
   };
 }
 
+describe('a new character', () => {
+  it('starts with the twenty rows of the town CHCHAR seeds into every one', () => {
+    const memory = new RevMapMemory();
+    // The Flea Bag Inn's own square is one of the four the seeded path has walked over.
+    expect(memory.isKnown(7, 3, 0)).toBe(true);
+    expect(memory.isKnown(7, 3, 1)).toBe(false);
+  });
+});
+
 describe('a step', () => {
   it('marks the square underfoot and nothing beside it', () => {
     const memory = new RevMapMemory();
@@ -30,9 +39,9 @@ describe('a step', () => {
 
   it('adds the bit once, since the guard above the add is what keeps it safe', () => {
     const memory = new RevMapMemory();
-    expect(memory.markStep(1, 1, 0)).toBe(true);
-    expect(memory.markStep(1, 1, 0)).toBe(false);
-    expect(memory.walkedSquares(0)).toEqual([{ column: 1, row: 1 }]);
+    expect(memory.markStep(1, 1, 1)).toBe(true);
+    expect(memory.markStep(1, 1, 1)).toBe(false);
+    expect(memory.walkedSquares(1)).toEqual([{ column: 1, row: 1 }]);
   });
 
   it('keeps every level at once, so returning to one loses nothing', () => {
@@ -47,8 +56,8 @@ describe('a step', () => {
 describe('the map the canvas draws', () => {
   it('answers in the canvas own zero-based coordinates', () => {
     const memory = new RevMapMemory();
-    memory.markStep(1, 1, 0);
-    const map = memory.discovered(0);
+    memory.markStep(1, 1, 4);
+    const map = memory.discovered(4);
     expect(map.known(0, 0)).toBe(true);
     expect(map.known(1, 0)).toBe(false);
   });
@@ -79,11 +88,11 @@ describe('the fountain of youth', () => {
 describe('the file beside the character', () => {
   it('writes a BSAVE image the explored-map reader reads back square for square', () => {
     const memory = new RevMapMemory();
-    memory.markStep(1, 1, 0);
-    memory.markStep(20, 19, 0);
+    memory.markStep(1, 1, 6);
+    memory.markStep(20, 19, 6);
     memory.markStep(7, 3, 5);
     const file = readBinFile('1.BIN', memory.bytes());
-    expect([...file.floors[0].squares].sort((a, b) => a - b)).toEqual([0, 18 * EXPLORED_STRIDE + 19]);
+    expect([...file.floors[6].squares].sort((a, b) => a - b)).toEqual([0, 18 * EXPLORED_STRIDE + 19]);
     expect([...file.floors[5].squares]).toEqual([2 * EXPLORED_STRIDE + 6]);
   });
 
