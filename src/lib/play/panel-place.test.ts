@@ -1,0 +1,46 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import { panelVisible } from './mode';
+
+/**
+ * Where the panel of numbers the game never prints sits on each of the three Play tabs.
+ *
+ * Every mode starts on the game's own screen now, so the panel has to stand beside the screen
+ * rather than beside the top-down map: it lives in the column down the right of the tab, which
+ * the switch between the two never touches. The tabs have no props to render them with — each
+ * plays whichever character is on the roster — so what is checked here is the markup.
+ */
+
+const TABS = [
+  { game: 'Dungeons of the Unforgiven', file: 'src/lib/play/Play.svelte', panel: '<Panel ' },
+  { game: "Moraff's World", file: 'src/lib/play/mw/MwPlay.svelte', panel: '<MwPanel ' },
+  { game: "Moraff's Revenge", file: 'src/lib/play/rev/RevPlay.svelte', panel: '<RevPanel ' },
+];
+
+describe('the panel of numbers the game never prints', () => {
+  it('is shown in debug alone, whichever of the two is on the stage', () => {
+    expect(panelVisible('faithful')).toBe(false);
+    expect(panelVisible('speedrun')).toBe(false);
+    expect(panelVisible('debug')).toBe(true);
+  });
+
+  for (const tab of TABS) {
+    const source = readFileSync(tab.file, 'utf8');
+    const column = { opens: source.indexOf('<aside class="side">'), closes: source.indexOf('</aside>') };
+
+    it(`stands in the column beside the stage on ${tab.game}'s tab`, () => {
+      const guard = source.indexOf('{#if panelVisible(mode)}');
+      expect(guard).toBeGreaterThan(column.opens);
+      expect(guard).toBeLessThan(column.closes);
+      // The mode is the whole of what the panel waits on: it is drawn right behind that guard.
+      expect(source.slice(guard, source.indexOf('{/if}', guard))).toContain(tab.panel);
+    });
+
+    it(`is drawn beside the game's own screen on ${tab.game}'s tab`, () => {
+      // Everything the switch chooses between is on the stage, which the column comes after, so
+      // the column and its panel are there whichever of the two is being shown.
+      expect(source).toContain("display === 'screen'");
+      expect(source.lastIndexOf("display === 'screen'")).toBeLessThan(column.opens);
+    });
+  }
+});
