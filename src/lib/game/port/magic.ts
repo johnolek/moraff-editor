@@ -191,12 +191,15 @@ export function writeScrollOrWand(game: Game, maxLevel: number, kind: number): b
     game.pc.scrolls[index] += 1;
     // DS:37f7 380b 258b 2d43
     game.say('THE SCROLL HAS BEEN', '   SUCCESSFULLY WRITTEN!', '', 'HIT ANY KEY');
+    // print_menu_only waits for the key its last line asks for, and takes the box down on it.
+    game.pressAnyKey();
     return true;
   }
   if (kind === 2) {
     game.pc.wands[index] += 5;
     // DS:3824 383c 258b 2d43
     game.say('YOU NOW HOLD A GLOWING,', '   CHARGED WAND IN HAND!', '', 'HIT ANY KEY');
+    game.pressAnyKey();
     return true;
   }
   // Nothing passes a kind other than 1 or 2. The original would put the spell menus up again
