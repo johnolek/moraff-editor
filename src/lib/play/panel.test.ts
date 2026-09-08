@@ -268,4 +268,28 @@ describe('the monsters on the floor', () => {
       { name: game.monsterKinds[1].name, level: 5, distance: 3 },
     ]);
   });
+
+  it('names the section boss however far off he is standing', () => {
+    const game = newGame({ pc: { x: 1, y: 1, level: 5 } });
+    const drawn: StockedMonster[] = [
+      { slot: 0, x: 60, y: 60, monsterId: 'section-1-22', level: 9, hp: 10 },
+      { slot: 1, x: 2, y: 1, monsterId: 'builtin-0', level: 4, hp: 10 },
+      { slot: 2, x: 3, y: 1, monsterId: 'builtin-1', level: 5, hp: 10 },
+    ];
+    for (const monster of drawn) Object.assign(game.monsters[monster.slot], { type: monster.slot === 0 ? 22 : monster.slot });
+    const listed = monstersNearby(game, drawn, 2);
+    expect(listed.map((monster) => monster.name)).toEqual([
+      game.monsterKinds[1].name,
+      game.monsterKinds[2].name,
+      'SHADOW GARGALON',
+    ]);
+    expect(listed[2].distance).toBe(118);
+  });
+
+  it('names the section boss only once when he is one of the nearest', () => {
+    const game = newGame({ pc: { x: 40, y: 50, level: 5 } });
+    const drawn: StockedMonster[] = [{ slot: 0, x: 41, y: 50, monsterId: 'section-1-22', level: 9, hp: 10 }];
+    Object.assign(game.monsters[0], { type: 22 });
+    expect(monstersNearby(game, drawn, 5)).toEqual([{ name: 'SHADOW GARGALON', level: 9, distance: 1 }]);
+  });
 });

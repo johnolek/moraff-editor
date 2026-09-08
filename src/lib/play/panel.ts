@@ -4,7 +4,7 @@ import { sectionOf } from '../game/dotu-files.js';
 import { monsterHpRange } from '../game/dotu-mech.js';
 import type { Game, PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
-import type { StockedMonster } from '../map/stocking';
+import { monsterById, type StockedMonster } from '../map/stocking';
 
 /**
  * The numbers the game keeps and never prints: the moves left on every spell, the charges on
@@ -320,21 +320,28 @@ export interface NearbyMonster {
 }
 
 /**
- * The monsters standing closest to the character, nearest first.
+ * The monsters standing closest to the character, nearest first, with the floor's Shadow boss
+ * behind them whenever he is standing on it.
+ *
+ * The boss is put down in the middle of the floor and only one square of it holds him, so the
+ * nearest few almost never reach him; listing him anyway is what tells a player looking for him
+ * that he is there at all, and how far off.
  *
  * The distance is pass_moment's own (exe 2000:a53c): it adds the two axes together and starts
  * walking a monster towards the character once that comes under `floor / 10 + 10`.
  */
 export function monstersNearby(game: Game, monsters: StockedMonster[], most: number): NearbyMonster[] {
   const pc = game.pc;
-  return monsters
-    .map((monster) => ({
-      name: game.monsterKinds[game.monsters[monster.slot].type]?.name ?? '',
-      level: monster.level,
-      distance: Math.abs(pc.x - monster.x) + Math.abs(pc.y - monster.y),
-    }))
-    .sort((left, right) => left.distance - right.distance)
-    .slice(0, most);
+  const away = (monster: StockedMonster) => Math.abs(pc.x - monster.x) + Math.abs(pc.y - monster.y);
+  const byDistance = [...monsters].sort((left, right) => away(left) - away(right));
+  const listed = byDistance.slice(0, most);
+  const boss = byDistance.find((monster) => monsterById(monster.monsterId).isBoss);
+  if (boss && !listed.includes(boss)) listed.push(boss);
+  return listed.map((monster) => ({
+    name: game.monsterKinds[game.monsters[monster.slot].type]?.name ?? '',
+    level: monster.level,
+    distance: away(monster),
+  }));
 }
 
 /** How far off a monster has to be before pass_moment leaves it standing where it is. */
