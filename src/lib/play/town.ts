@@ -17,6 +17,7 @@ import {
   stayTheNight,
   temple,
 } from '../game/port/town';
+import { ARMOURY, BANK, INN, STORE, TEMPLE, WEAPONRY } from './building';
 import { printMenus, printMenusEndingInAMenu } from './boxes';
 import type { GameSession, Turn } from './engine';
 import { KEY, menuEntry, menuKeys } from './keys';
@@ -29,8 +30,9 @@ import { KEY, menuEntry, menuKeys } from './keys';
  * and flea_inn (exe 2000:4fe7). What each one does to the character is ported in
  * `src/lib/game/port/town.ts`; what is here is the boxes they put up and the keys they read.
  *
- * The original draws a picture of the building over the whole screen behind these menus, out of
- * store.pic, temple.pic, bank.pic and inn.pic. This port draws none of the four.
+ * Each of them draws a picture of the building behind its menus, and the store draws a different
+ * one for each of its three screens. Setting `session.buildingScreen` is what puts one up; the
+ * pictures themselves are `building.ts`.
  *
  * The message text is the exact bytes of the game's own strings, read out of the data segment of
  * the unpacked executable. The comment on each say call gives the address of every line it
@@ -98,6 +100,7 @@ export async function enterBuilding(turn: Turn): Promise<void> {
   if (turn.building === 2) await visitTheTemple(session);
   if (turn.building === 3) await visitTheBank(session);
   if (turn.building === 4) await stayAtTheInn(session);
+  session.buildingScreen = null;
   // erase_menu_block (exe 4000:42b4) and erase_message_block (exe 4000:430e), which movecontrol
   // runs on the way back out to the map.
   session.game.eraseScreen();
@@ -108,6 +111,7 @@ export async function enterBuilding(turn: Turn): Promise<void> {
 async function store(session: GameSession): Promise<void> {
   const game = session.game;
   for (;;) {
+    session.buildingScreen = STORE;
     enterStore(game);
     const chosen = await session.choice(STORE_MENU);
     if (chosen === KEY.escape) return;
@@ -126,6 +130,7 @@ async function store(session: GameSession): Promise<void> {
  */
 async function buyAWeapon(session: GameSession): Promise<void> {
   const game = session.game;
+  session.buildingScreen = WEAPONRY;
   // DS:0c8e, the six of DS:0ca6, then DS:0d30 with the money after it
   game.say('PLEASE SELECT A WEAPON:', ...WEAPONS, `MONEY ON HAND: ${game.pc.money}`);
   const chosen = await session.choice(SHELF_MENU);
@@ -139,6 +144,7 @@ async function buyAWeapon(session: GameSession): Promise<void> {
  */
 async function buyASuitOfArmor(session: GameSession): Promise<void> {
   const game = session.game;
+  session.buildingScreen = ARMOURY;
   // DS:0d53, the six of DS:0d68, then DS:0d30 with the money after it
   game.say('PLEASE SELECT ARMOR:', ...ARMOR, `MONEY ON HAND: ${game.pc.money}`);
   const chosen = await session.choice(SHELF_MENU);
@@ -219,6 +225,7 @@ async function buyCrystals(session: GameSession): Promise<void> {
 async function visitTheTemple(session: GameSession): Promise<void> {
   const game = session.game;
   for (;;) {
+    session.buildingScreen = TEMPLE;
     // DS:101a with the money after it
     game.draw({ text: `MONEY WITH YOU: ${game.pc.money}`, x: 0x3a2, y: 0x301, font: 0, colour: 8 });
     enterTemple(game);
@@ -237,6 +244,7 @@ async function visitTheTemple(session: GameSession): Promise<void> {
 async function visitTheBank(session: GameSession): Promise<void> {
   const game = session.game;
   for (;;) {
+    session.buildingScreen = BANK;
     enterBank(game);
     const chosen = await session.choice(BANK_MENU);
     if (chosen === KEY.escape) return;
@@ -284,6 +292,7 @@ function bankPrompt(available: number): PromptLine[] {
  */
 async function stayAtTheInn(session: GameSession): Promise<void> {
   const game = session.game;
+  session.buildingScreen = INN;
   await printMenusEndingInAMenu(session, () => enterInn(game));
   const chosen = await session.choice(INN_MENU);
   if (menuEntry(chosen) === 1) await printMenus(session, () => stayTheNight(game));

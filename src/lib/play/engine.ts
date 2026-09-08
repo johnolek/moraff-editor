@@ -42,6 +42,7 @@ import {
 } from './screens';
 import { PLAQUE_DELAY_MS } from './plaque';
 import type { SectionScreen } from './section-screen';
+import type { TownBuilding } from './building';
 import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
@@ -164,6 +165,9 @@ export interface PlayView {
   /** The S key's screen, or null when it is not up: the section's five monsters in their panels
    *  and the slab its words are read off (`section-screen.ts`). */
   sectionScreen: SectionScreen | null;
+  /** The town building whose picture is on the screen, or null when the character is not in one
+   *  (`building.ts`). */
+  buildingScreen: TownBuilding | null;
   /** The HIT ANY KEY plaque (`plaque.ts`) while a box's wait is running, or null. */
   plaque: PlaqueState | null;
   /** The loop has come back: the character has quit or died. */
@@ -218,6 +222,11 @@ export class GameSession {
    * five panels of the section's wall material with its monsters standing in them.
    */
   sectionScreen: SectionScreen | null = null;
+  /**
+   * The town building the character is inside, whose picture stands on the screen for as long as
+   * they are dealing with it (`town.ts`), or null when they are not in one.
+   */
+  buildingScreen: TownBuilding | null = null;
   /**
    * The HIT ANY KEY plaque while the wait behind a message box is running: `blanked` for the hole
    * FUN_2000_3e73 (exe 2000:3e73) leaves in the screen while its delay counts out, and `showing`
@@ -659,6 +668,7 @@ export class GameSession {
       expandedMap: this.expandedMap,
       tablet: this.tablet,
       sectionScreen: this.sectionScreen,
+      buildingScreen: this.buildingScreen,
       plaque: this.plaque,
       over: this.over,
       dead: this.dead,

@@ -266,3 +266,36 @@ describe('the inn', () => {
     expect(session.game.pc.money).toBe(100);
   });
 });
+
+describe("the picture of the building the character is in", () => {
+  it('goes up on the store and changes with the shelf being looked at', async () => {
+    const session = standingOn(1, { money: 20 });
+    expect(session.buildingScreen).toBeNull();
+    await press(session, KEY.up);
+    expect(session.buildingScreen?.file).toBe('store.pic');
+    await press(session, 0x31);
+    expect(session.buildingScreen?.file).toBe('weaponry.pic');
+    await press(session, KEY.escape);
+    await press(session, 0x32);
+    expect(session.buildingScreen?.file).toBe('armoury.pic');
+  });
+
+  it('is the temple, the bank and the inn on their own squares', async () => {
+    for (const [building, file] of [
+      [2, 'temple.pic'],
+      [3, 'bank.pic'],
+      [4, 'inn.pic'],
+    ] as const) {
+      const session = standingOn(building, { money: 500, lev: 1 });
+      await press(session, KEY.up);
+      expect(session.buildingScreen?.file).toBe(file);
+    }
+  });
+
+  it('comes down again when the character leaves', async () => {
+    const session = standingOn(1, { money: 20 });
+    await press(session, KEY.up);
+    await press(session, KEY.escape);
+    expect(session.buildingScreen).toBeNull();
+  });
+});

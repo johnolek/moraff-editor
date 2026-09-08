@@ -3,7 +3,7 @@
   import { monsterById, type StockedMonster } from '../map/stocking';
   import type { Rgb } from '../game/dotu-pic.js';
   import { sectionInfo } from '../game/sections';
-  import { sectionPalette } from '../bestiary/pictures';
+  import { sectionPalette, townPalette } from '../bestiary/pictures';
   import { battleSpellLines } from '../game/port/screens';
   import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
   import type { DiscoveredMap } from '../map/draw-floor';
@@ -22,9 +22,10 @@
   } from './display';
   import type { PlaqueState } from './engine';
   import { blankPlaque, cycleGradientBank, drawPlaque } from './plaque';
+  import { drawBuilding, type TownBuilding } from './building';
   import { drawSectionScreen, type SectionScreen } from './section-screen';
   import { drawTablet } from './tablet';
-  import { viewPictures } from './view3d/browser';
+  import { buildingPictures, viewPictures } from './view3d/browser';
   import { newFrame, toRgba, type Frame } from './view3d/frame';
   import { renderFourViews, type KilledMonster, type ViewMonster } from './view3d/render';
   import { drawDotuScreenText } from './view3d/text';
@@ -64,6 +65,8 @@
     tablet?: string[] | null;
     /** The S key's screen, or null when it is not up: the section's monsters in their panels. */
     sectionScreen?: SectionScreen | null;
+    /** The town building the character is inside, whose picture stands over the views, or null. */
+    buildingScreen?: TownBuilding | null;
     /** The HIT ANY KEY plaque while a message box's wait is running, or null (`plaque.ts`). */
     plaque?: PlaqueState | null;
   }
@@ -85,6 +88,7 @@
     expandedMap = false,
     tablet = null,
     sectionScreen = null,
+    buildingScreen = null,
     plaque = null,
   }: Props = $props();
 
@@ -168,7 +172,11 @@
       // (exe 2000:4054) draws it where it stands rather than clearing anything first.
       if (plaque === 'blanked') blankPlaque(frame, SCREEN_PIXELS);
       if (plaque === 'showing') drawPlaque(frame, SCREEN_PIXELS, viewPictures(section?.section ?? 1).wall);
-      const palette = sectionPalette(place.module + 1, part, game.colourSetting);
+      // Walking into a building raises DS:2505 and calls set_palette again (exe 2000:c9ac), which
+      // copies the two shop tables over the banks the building picture is drawn out of.
+      const palette = buildingScreen
+        ? townPalette(place.module + 1, part, game.colourSetting)
+        : sectionPalette(place.module + 1, part, game.colourSetting);
       const rgba = toRgba(frame, palette);
       context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
       painted = plaque === 'showing' ? { frame, palette } : null;
@@ -224,6 +232,15 @@
       place.dir,
     );
     drawScreenFurniture(frame, floor);
+    // The building's picture goes over the views and the boxes around them, which is where the
+    // town routines draw it: movecontrol is not running while a building is being dealt with, so
+    // the screen underneath is whatever it left there.
+    if (buildingScreen) {
+      drawBuilding(frame, SCREEN_PIXELS, buildingScreen, {
+        building: buildingPictures(buildingScreen.file),
+        wall: viewPictures(section?.section ?? 1).wall,
+      });
+    }
     // A screen that takes the display over fills the rectangle it draws in with colour 0 first:
     // FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way and cast_a_spell the top of
     // the screen its spell table stands on. A screen whose rectangle the port does not know

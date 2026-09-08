@@ -254,6 +254,7 @@
             expandedMap={view.expandedMap}
             tablet={view.tablet}
             sectionScreen={view.sectionScreen}
+            buildingScreen={view.buildingScreen}
             plaque={view.plaque} />
         {:else}
           <FloorCanvas
