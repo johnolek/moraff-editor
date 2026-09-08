@@ -148,7 +148,7 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
 * **The town's pictures are not drawn.** The store, the temple, the bank and the inn fill the
   screen with a WORLD.PIC image behind their menus. The port shows the words alone.
 * **There is no world map.** FUN_3000_8235 walks the character over an overworld, and all it
-  does with where they stop is work a dungeon number out of the cell -- one of 31,000, each of
+  does with where they stop is work a dungeon number out of the cell — one of 31,000, each of
   them the same eighteen wall patterns behind a different number. The port asks for that number
   in the box instead and then runs the rest of that function's return path, so the gate still
   counts the number up to one whose floor 0 has a gate square and stands the character on it.

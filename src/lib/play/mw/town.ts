@@ -123,7 +123,7 @@ async function stayAtTheInn(session: MwGameSession): Promise<void> {
  *
  * The overworld itself is not built. All the game does with it in the end is pick a dungeon out
  * of where the player stopped walking, so this port asks for that number and runs the rest of
- * the path -- {@link gateArrival} and {@link walkIntoTheDungeon} -- with what was typed.
+ * the path — {@link gateArrival} and {@link walkIntoTheDungeon} — with what was typed.
  */
 async function leaveByTheGate(session: MwGameSession): Promise<void> {
   const game = session.game;
@@ -159,8 +159,8 @@ const WHICH_DUNGEON = [
  * it has just picked: the character stands on its gate square, on floor 0, and enter_level puts
  * them there.
  *
- * The original also throws away the explored map -- it deletes the eight `.DUN` files, blanks
- * all 32 floors in memory and forgets which block is loaded -- and this port keeps no explored
+ * The original also throws away the explored map — it deletes the eight `.DUN` files, blanks
+ * all 32 floors in memory and forgets which block is loaded — and this port keeps no explored
  * map to throw away. What it does not do is forget the monsters: the two floors behind the one
  * in play still belong to the dungeon being left, so climbing down a ladder soon after can find
  * the floor as the old dungeon left it. That is the original's own behaviour, since nothing
@@ -207,15 +207,15 @@ function gateSquare(dungeon: number): { x: number; y: number } | null {
  * FUN_3000_8235 (WORLD.EXE 3000:8235, mw.c "FUN_3000_8235") where it comes off the world map:
  * the dungeon the character walks into, and the square of its town they arrive on.
  *
- * The game works the number out of the overworld cell the player stopped walking on --
- * `(cx * cy * cx) / (abs(cy) + 1) % 31000` -- and then counts it up until floor 0 of that
+ * The game works the number out of the overworld cell the player stopped walking on —
+ * `(cx * cy * cx) / (abs(cy) + 1) % 31000` — and then counts it up until floor 0 of that
  * dungeon has a gate square that is not rock, so wherever they stop there is a way back off the
  * surface. `chosen` is where that count starts, which is the number this port asks the player
  * for instead of the overworld.
  *
  * The number is a signed 16-bit field of the character record, and the count wraps at 32767 the
- * way the original's does. Every dungeon the generator draws has gate squares -- the fewest in
- * the first few hundred is thirteen -- so in practice the count never moves at all.
+ * way the original's does. Every dungeon the generator draws has gate squares — the fewest in
+ * the first few hundred is thirteen — so in practice the count never moves at all.
  */
 function gateArrival(chosen: number): { dungeon: number; x: number; y: number } {
   let dungeon = chosen;
@@ -237,6 +237,21 @@ function gateArrival(chosen: number): { dungeon: number; x: number; y: number } 
  * The original draws each character as it is typed and takes letters and spaces too; this takes
  * the digits and shows what has been typed so far on the last line of the box.
  */
+async function typeANumber(session: MwGameSession): Promise<number> {
+  const typed: string[] = [];
+  const box = [...session.box];
+  for (;;) {
+    session.box = [...box.slice(0, 7), typed.join('')];
+    const key = await session.key();
+    const typedSomething = typed.length > 0;
+    if (typedSomething && (key === 0x0d || key === MW_ESCAPE)) {
+      return Number(typed.join('')) & 0xffff;
+    }
+    if (key === 0x08) typed.pop();
+    else if (key >= 0x30 && key <= 0x39 && typed.length < 9) typed.push(String.fromCharCode(key));
+  }
+}
+
 /**
  * The same prompt for the dungeon number, which the game never asks for and this port does.
  *
@@ -263,20 +278,5 @@ async function typeADungeonNumber(
     if (key === 0x08) typed.pop();
     else if (key === 0x2d && typed.length === 0) typed.push('-');
     else if (key >= 0x30 && key <= 0x39 && typed.length < 6) typed.push(String.fromCharCode(key));
-  }
-}
-
-async function typeANumber(session: MwGameSession): Promise<number> {
-  const typed: string[] = [];
-  const box = [...session.box];
-  for (;;) {
-    session.box = [...box.slice(0, 7), typed.join('')];
-    const key = await session.key();
-    const typedSomething = typed.length > 0;
-    if (typedSomething && (key === 0x0d || key === MW_ESCAPE)) {
-      return Number(typed.join('')) & 0xffff;
-    }
-    if (key === 0x08) typed.pop();
-    else if (key >= 0x30 && key <= 0x39 && typed.length < 9) typed.push(String.fromCharCode(key));
   }
 }
