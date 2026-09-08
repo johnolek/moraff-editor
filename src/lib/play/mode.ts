@@ -109,18 +109,6 @@ export function resetPlayDisplay(game: PortedGameId, mode: PlayMode): PlayDispla
 }
 
 /**
- * Whether the tab draws the game's own screen — the four 3-D views and the boxes around them —
- * rather than the top-down map of the floor.
- *
- * The game itself never draws a map of the floor the character is standing on, so the screen is
- * what faithful and speedrun show. Debug keeps the map, which is the only place on the site the
- * floor can be read square by square while it is being walked.
- */
-export function screenDrawn(mode: PlayMode): boolean {
-  return mode !== 'debug';
-}
-
-/**
  * Whether the column of numbers the game keeps and never prints is shown — the engaged monster's
  * hit points and the chance a swing lands, the charges on every wand and scroll, the turns left
  * on every spell, the odds the square underfoot holds a trap door, how many monsters are left
