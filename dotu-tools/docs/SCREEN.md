@@ -196,6 +196,33 @@ On the maroon box, the discovered squares drawn as small white and black cells (
 a square, white for its walls), with a white arrow on the character's square pointing the
 way it faces. The map shows only the handful of squares walked so far.
 
+`drawsquare` (exe 3000:87de) draws one cell, in this order: the fill, the four sides
+through `draw_side` (exe 3000:8432), a red dot on each of the four corners, and then the
+mark for whatever the square holds.
+
+* **The fill** is black, unless the square is one of the town's four buildings, which fills
+  it with the building's own number plus two — 3 for the store, 4 for the temple, 5 for the
+  bank, and 8 for the inn, whose 6 the game moves on rather than draw the cell in the
+  colour of the corner dots. That colour is the whole of what the map says about a
+  building: no mark is drawn over it.
+* **A side** is a white line along that edge of the cell, stopping a pixel short of both
+  corners, for anything `retdwall` does not call open — so a secret door and a module
+  teleporter are walls to look at. A door adds the gap in the wall a doorway is drawn as:
+  two white lines across the side, a pixel either side of its middle and a third of a cell
+  long each. There is a shorter three-pixel tick as well, which the two halves of the
+  routine disagree over — the side running along the top of a cell draws it only where the
+  cell is under eight pixels, and the side running down the left draws it always, under the
+  pair. A door on a side whose right-hand end would fall past the screen's last column
+  loses its ticks altogether, which is the map's own right edge.
+* **The marks** are asked about in order, each only on a square the last one left alone. A
+  ladder down draws the diagonal from the cell's top left corner and a ladder up the one
+  from its bottom left, in yellow. A trap door draws both, which makes a cross. A chute
+  draws both as well, with a plus sign through them, and swaps the yellow for pale blue —
+  and it is asked about only where `FUN_2000_7277` says the square was already known when
+  the character arrived on the floor, so a chute under their feet stays off the map until
+  they have left the floor and come back. Every diagonal is drawn twice, a pixel apart, on
+  a screen wider than 1000 pixels.
+
 `FUN_2000_59c0` (exe 2000:59c0) sizes it from a table the video mode indexes rather than by
 scaling. The side map the play screen shows gets eight-pixel cells in fifteen columns by
 twenty-six rows on a 640 by 480 screen and ten-pixel cells in nineteen by thirty-three at
