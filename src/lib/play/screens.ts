@@ -1,4 +1,4 @@
-import { menuLine } from '../game/port/screens';
+import { MENU_X, menuLine } from '../game/port/screens';
 import type { Game, ScreenLine } from '../game/port/state';
 import { BATTLE_SPELLS_BOX } from './display';
 
@@ -54,6 +54,36 @@ export function messageBoxLines(lines: string[]): ScreenLine[] {
   return lines.slice(0, MESSAGE_BOX_LINES).map((text, index) => menuLine(text, index));
 }
 
+/**
+ * Where the battle banner's five lines go, in the order engagement_timing (exe 2000:b782) prints
+ * them: the monster's level, its name, what killing it is worth, the line its type carries, and
+ * its hit points.
+ *
+ * Each is a plain pfont call at {@link MENU_X} in the body font, and the last of the five is
+ * print_battle_hp_info's own (exe 2000:b68d, at 2000:b76f). None of them is spread out the way a
+ * long menu line is.
+ *
+ * The hit points line lands third down the screen rather than last, and the gap it leaves — from
+ * 0x379 to 0x441, three lines of the block's own spacing — is where strike (exe 2000:7e36) draws
+ * the blow, at 0x3c9 and 0x3f1, over a banner nothing wipes for it.
+ */
+export const BATTLE_BANNER_Y = [0x329, 0x351, 0x441, 0x469, 0x379];
+
+/** The colour every one of the five is drawn in: the word at DS:0435, which is 15 and which
+ *  nothing in the game ever writes. */
+export const BATTLE_BANNER_COLOUR = 15;
+
+/** The battle banner's lines, ready for the screen renderer. */
+export function battleBannerLines(lines: string[]): ScreenLine[] {
+  return lines.slice(0, BATTLE_BANNER_Y.length).map((text, index) => ({
+    text,
+    x: MENU_X,
+    y: BATTLE_BANNER_Y[index],
+    font: 0,
+    colour: BATTLE_BANNER_COLOUR,
+  }));
+}
+
 /** What the game has drawn and where it stands, for {@link messageBoxScreen}. */
 export interface MessageBoxShowing {
   /** The eight strings the last box filled the buffer with. */
@@ -77,13 +107,9 @@ export interface MessageBoxShowing {
  * IT!" and FUN_3000_a1c4 puts "GOOD NEWS...", over whatever the block holds.
  *
  * The banner is engagement_timing (exe 2000:b782), which prints in that same block: it wipes the
- * eight lines with FUN_2000_2820 and draws its five over them, and movecontrol wipes the block
- * again as soon as there is no monster ahead any more (exe 2000:c308, the DS:c657 branch). Which
- * y each of the five goes on cannot be read back — pfont takes its coordinates as floats and the
- * decompilation loses every one of them, and the one call that does survive,
- * print_battle_hp_info's pfont(0x3a2, 0x379) for the last of the five, falls between the second
- * and the third of the block's own lines — so the port draws them on the block's own lines rather
- * than inventing a spacing for them.
+ * eight lines with FUN_2000_2820 and draws its five over them at {@link BATTLE_BANNER_Y}, and
+ * movecontrol wipes the block again as soon as there is no monster ahead any more (exe 2000:c308,
+ * the DS:c657 branch).
  */
 export function messageBoxScreen(showing: MessageBoxShowing): ScreenLine[] {
   const drawn = showing.drawn.filter(onMessageBox);
@@ -92,7 +118,7 @@ export function messageBoxScreen(showing: MessageBoxShowing): ScreenLine[] {
     ? []
     : showing.box.length > 0
       ? messageBoxLines(showing.box)
-      : messageBoxLines(showing.banner);
+      : battleBannerLines(showing.banner);
   return [...lines, ...drawn];
 }
 

@@ -27,7 +27,24 @@ describe('the message box on the screen', () => {
 
   it('shows the battle banner when nothing has been said', () => {
     const lines = messageBoxScreen({ box: [], banner: ['YOU ARE FIGHTING A LEVEL 3'], drawn: [] });
-    expect(lines.map((line) => [line.text, line.y])).toEqual([['YOU ARE FIGHTING A LEVEL 3', MENU_TOP]]);
+    expect(lines.map((line) => [line.text, line.y])).toEqual([['YOU ARE FIGHTING A LEVEL 3', 0x329]]);
+  });
+
+  it("puts the banner's five lines where engagement_timing prints them", () => {
+    // The order is the order the lines are printed in, which is not the order they stand in: the
+    // hit points line is print_battle_hp_info's own pfont at 0x379, third down the screen.
+    const banner = ['YOU ARE FIGHTING A LEVEL 3', 'WATER RAT', 'EXP. VALUE: 27', 'IT IS FAST!', 'IT HAS 9 HEALTH POINTS LEFT'];
+    const lines = messageBoxScreen({ box: [], banner, drawn: [] });
+    expect(lines.map((line) => [line.x, line.y])).toEqual([
+      [MENU_X, 0x329],
+      [MENU_X, 0x351],
+      [MENU_X, 0x441],
+      [MENU_X, 0x469],
+      [MENU_X, 0x379],
+    ]);
+    // pfont is given the string and a colour and nothing else: none of the five is spread out to
+    // the right edge the way a long menu line is.
+    expect(lines.every((line) => line.font === 0 && line.colour === 15 && line.spreadTo === undefined)).toBe(true);
   });
 
   it('gives the eight lines to a menu the game drew down them itself', () => {
