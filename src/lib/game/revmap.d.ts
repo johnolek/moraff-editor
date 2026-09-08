@@ -78,6 +78,8 @@ export function blocked(kind: number, column: number, row: number, level: number
 /** One side as the map draws it, with the four outer edges always a wall. */
 export function side(kind: number, column: number, row: number, level: number, generation?: number): Side;
 export function sides(column: number, row: number, level: number, generation?: number): Sides;
+/** Whether 7.NUM says a fixed feature is on the square. */
+export function featureMarked(column: number, row: number, level: number): boolean;
 /** The square's own feature code, before anything is made of the number. */
 export function featureCode(column: number, row: number, level: number, step?: number): number;
 /** Take 3 off twice while the code is over 3, which leaves how many levels a ladder spans. */

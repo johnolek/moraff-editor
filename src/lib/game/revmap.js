@@ -1,13 +1,16 @@
 // Moraff's Revenge dungeon generator -- the arithmetic BRUN30 does, and the rules DUNSMALL.EXE
-// works a floor out with.  Nothing in the game folder holds the dungeon: every wall, ladder and
-// chute comes out of the square's own coordinates when the game needs it.
+// works a floor out with.  Almost nothing in the game folder holds the dungeon: every wall comes
+// out of the square's own coordinates when the game needs it, and so does every ladder and chute,
+// but which squares carry one at all is read from 7.NUM.
 //
 // The walls go through the run-time's own SIN, which is why the whole of Microsoft Binary Format
 // single precision is here.  BRUN30 reduces an angle by multiplying by a single-precision
 // 1/(2*pi), and a wall's angle reaches 54,730, where that leaves about four correct digits: a
 // double-precision sin moves about one wall in two thousand.  rev-tools/docs/DUNGEON.md is the
 // write-up, and this file is a transcription of rev-tools/reference/mbf.py and revmap.py.
-// Plain ES module, no dependencies.
+// Plain ES module; its one import is 7.NUM as base64.
+
+import { REV7_B64 } from './rev7.b64.js';
 
 /**
  * A single is a sign, a 24-bit fraction and an excess-128 exponent, kept apart so that every
@@ -284,6 +287,38 @@ export function sides(column, row, level, generation = 1) {
   };
 }
 
+/** Both map-shaped arrays are `DIM x(20, 71)`, and BASIC lays a two-dimensional array out column
+ *  by column, so dungeon level L starts at element 21 * L with rows 0 to 20 after it.  Row 0 is
+ *  never used.  The four bytes are one Microsoft Binary Format single. */
+const LEVEL_STRIDE = 21;
+const BYTES_PER_SINGLE = 4;
+
+/** @type {Uint8Array | null} */
+let sevenNum = null;
+
+/** 7.NUM's array, decoded once.  1000:BBC8 BLOADs it to DGROUP 8366 at start-up and nothing in
+ *  the game ever writes it back, so the shipped bytes are the whole of it. */
+function featureTable() {
+  if (sevenNum === null) sevenNum = Uint8Array.from(atob(REV7_B64), (character) => character.charCodeAt(0));
+  return sevenNum;
+}
+
+/**
+ * Whether 7.NUM says a fixed feature is on the square.
+ *
+ * 1000:54CB indexes the array as `21 * level + row`, four bytes to a single, and hands the cell
+ * to the bit test at 1000:5449, which is `INT(AT(row, level) / 2 ^ (20 - column)) MOD 2` -- so
+ * column 1 is the top bit of twenty and column 20 the bottom one.  The automap reads it the same
+ * way at 1000:5285, with the column and row of the square it is drawing.
+ *
+ * The town is not a case of its own here: level 0 goes through the same lookup, and the ten
+ * squares it marks are the ten ladders down out of the town.
+ */
+export function featureMarked(column, row, level) {
+  const cell = mbfSingle(featureTable(), BYTES_PER_SINGLE * (LEVEL_STRIDE * level + row));
+  return Math.floor(cell / 2 ** (COLUMNS - column)) % 2 === 1;
+}
+
 /** The remainder the feature formula is taken modulo, and what is then taken off it. */
 const FEATURE_MODULUS = 300;
 const FEATURE_BIAS = 3;
@@ -297,10 +332,10 @@ const FEATURE_BIAS = 3;
  * three levels below it.  The arithmetic is ordinary single precision, not the run-time's SIN,
  * so a 24-bit rounding of each term is the whole of it.
  *
- * `7.NUM` is an index of this expression rather than a description of the dungeon: recomputing
- * it disagrees with the shipped file about 135 of 28,000 squares, which is what a 24-bit
- * mantissa costs when the product reaches 400,000.  The site has no 7.NUM, and the formula is
- * what rev-tools/reference/revmap.py draws from as well.
+ * 7.NUM is an index of this expression rather than a description of the dungeon, and the two are
+ * not the same table: recomputing the formula disagrees with the shipped file about 135 of
+ * 28,000 squares, which is what a 24-bit mantissa costs when the product reaches 400,000.  So
+ * the file decides which squares carry anything and this decides what it is.
  */
 export function featureCode(column, row, level, step = 0) {
   const single = Math.fround;
@@ -323,6 +358,10 @@ export function fold(code) {
 /**
  * What 1000:552B finds on a square: a ladder, a chute, or nothing.
  *
+ * 7.NUM comes first.  1000:54CB looks the square up there, and where the bit is clear 1000:5500
+ * puts 50 -- nothing is here -- on the square without asking the formula at all.  Only where the
+ * bit is set does the caller fall into 1000:552B and work out which feature it is.
+ *
  * The square's own code is a ladder going up when it is 1 to 9, folded down to 1, 2 or 3 by
  * 1000:5649.  A code of 0 is a chute -- the automap draws those as a circle (1000:52BB) and
  * H3.OVL's map key calls a circle a chute.  Otherwise each of the three levels below is asked
@@ -339,6 +378,7 @@ export function fold(code) {
  * @returns {{ kind: 'up' | 'down' | 'chute', span: number } | null}
  */
 export function feature(column, row, level) {
+  if (!featureMarked(column, row, level)) return null;
   if (level > 0) {
     const code = featureCode(column, row, level);
     // A chute on the bottom level would have nowhere to drop to, so it is left as bare floor.

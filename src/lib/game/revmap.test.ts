@@ -13,6 +13,7 @@ import {
   falseFloor,
   feature,
   featureCode,
+  featureMarked,
   floor,
   fold,
   mbfAbsolute,
@@ -194,6 +195,26 @@ describe('fold', () => {
   });
 });
 
+describe('featureMarked', () => {
+  // Row 5 of the town is 36 in 7.NUM, which is bits 5 and 2 of twenty. The columns run from the
+  // top bit down (1000:5449), so those are columns 15 and 18 -- two of the town's ten ladders.
+  it('picks the columns of a row out from the top bit down', () => {
+    const set = [];
+    for (let column = 1; column <= COLUMNS; column++) if (featureMarked(column, 5, 0)) set.push(column);
+    expect(set).toEqual([15, 18]);
+  });
+
+  it('marks 1,642 of the squares the game can reach', () => {
+    let marked = 0;
+    for (let level = 0; level <= LEVELS; level++) {
+      for (let row = 1; row <= ROWS; row++) {
+        for (let column = 1; column <= COLUMNS; column++) if (featureMarked(column, row, level)) marked++;
+      }
+    }
+    expect(marked).toBe(1642);
+  });
+});
+
 describe('feature', () => {
   // The four ladders 5.BIN's character used, from rev-tools/docs/DUNGEON.md section 7: each is
   // a ladder down on one level and the same ladder back up on the level it reaches.
@@ -256,6 +277,23 @@ describe('feature', () => {
       [20, 15, 1],
       [16, 19, 1],
     ]);
+  });
+
+  // 7.NUM is an index of the feature formula rather than a second copy of it, and the two
+  // disagree about 61 of the squares the game can reach. On 26 of them the formula alone puts a
+  // feature the file does not mark: two levels below (11, 18) of level 4 the code is 5, which
+  // folds to the two levels asked about, so without the file this square holds a ladder down.
+  it('leaves a square the formula puts a ladder on, where 7.NUM has no bit', () => {
+    expect(fold(featureCode(11, 18, 4, 2))).toBe(2);
+    expect(featureMarked(11, 18, 4)).toBe(false);
+    expect(feature(11, 18, 4)).toBeNull();
+  });
+
+  // The other 35 go the other way, and cost nothing: the file marks the square, the formula
+  // finds nothing on it, and 1000:563F leaves the code at 50 once the loop has run out.
+  it('leaves a square 7.NUM marks where the formula finds nothing', () => {
+    expect(featureMarked(19, 14, 9)).toBe(true);
+    expect(feature(19, 14, 9)).toBeNull();
   });
 
   it('reads a code of 0 as a chute', () => {
