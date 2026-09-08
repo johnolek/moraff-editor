@@ -288,6 +288,11 @@ export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
     const [left, top] = [fillX(frame, box.left), fillY(frame, box.top)];
     fillRect(frame, left, top, fillX(frame, box.right), fillY(frame, box.bottom), box.colour);
   }
+  drawZoomMapOnly(frame, floor);
+}
+
+/** The map beside the views on its own, without the boxes around it. */
+export function drawZoomMapOnly(frame: Frame, floor: ZoomMapFloor): void {
   const window = zoomMapWindow(frame.width);
   drawZoomMap(frame, floor, window, floor.at);
   drawFacingArrow(frame, window, floor.at.dir);

@@ -10,6 +10,7 @@ import {
   clearScreenRect,
   drawExpandedMap,
   drawScreenFurniture,
+  drawZoomMapOnly,
   EXPANDED_CELL,
   EXPANDED_COLUMNS,
   EXPANDED_GROUND,
@@ -224,17 +225,34 @@ describe('what the zoom map draws on one square', () => {
   const x0 = zoomMapLeft(SCREEN_PIXELS.width) + COLUMN * ZOOM_CELL;
   const y0 = ROW * ZOOM_CELL;
 
-  /** The map of a floor of open squares with one square given what the test is about. */
+  /**
+   * The map of a floor of open squares with one square given what the test is about. Only the
+   * cells of the map are drawn, since that is all these tests read: the four views and the boxes
+   * around them are the slow half of a screen and none of them reaches the map's own corner.
+   */
   function drawn(square: Partial<MapSquare>, chuteKnown = true): Frame {
     const rows: MapSquare[][] = Array.from({ length: 80 }, () => Array.from({ length: 80 }, open));
     Object.assign(rows[marked.y][marked.x], square);
     const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
-    drawScreenFurniture(frame, { rows, at, map: { known: () => true, knownOnArrival: () => chuteKnown } });
+    drawZoomMapOnly(frame, { rows, at, map: { known: () => true, knownOnArrival: () => chuteKnown } });
     return frame;
   }
 
   /** One pixel of that square's own cell, by how far it is from the cell's top left corner. */
   const dot = (frame: Frame, dx: number, dy: number): number => pixelAt(frame, x0 + dx, y0 + dy);
+
+  /**
+   * Where two drawings of the map differ, which is nowhere when they are the same picture. A
+   * plain loop rather than a deep compare of the two pixel arrays: those are three quarters of a
+   * million entries each, and comparing them that way takes seconds.
+   */
+  function differences(left: Frame, right: Frame): number[] {
+    const at: number[] = [];
+    for (let pixel = 0; pixel < left.pixels.length && at.length < 5; pixel++) {
+      if (left.pixels[pixel] !== right.pixels[pixel]) at.push(pixel);
+    }
+    return at;
+  }
 
   /** Two points, one on each diagonal and on neither of the other's two passes. */
   const DOWN_STROKE = [2, 2] as const;
@@ -251,8 +269,8 @@ describe('what the zoom map draws on one square', () => {
   it('lines every side but an open one, so a secret door and a teleporter are walls to look at', () => {
     expect(dot(drawn({ w: 3 }), 0, 5)).toBe(0);
     for (const side of [0, 1, 2, 4]) expect(dot(drawn({ w: side }), 0, 5)).toBe(ZOOM_SIDE_COLOUR);
-    expect(drawn({ w: 2 }).pixels).toEqual(drawn({ w: 0 }).pixels);
-    expect(drawn({ w: 4 }).pixels).toEqual(drawn({ w: 0 }).pixels);
+    expect(differences(drawn({ w: 2 }), drawn({ w: 0 }))).toEqual([]);
+    expect(differences(drawn({ w: 4 }), drawn({ w: 0 }))).toEqual([]);
   });
 
   it('ticks a door in a side running down the cell, with a short line under the long pair', () => {
@@ -285,7 +303,7 @@ describe('what the zoom map draws on one square', () => {
   });
 
   it('marks no chute on a square that was not known on arrival', () => {
-    expect(drawn({ chute: 4 }, false).pixels).toEqual(drawn({}).pixels);
+    expect(differences(drawn({ chute: 4 }, false), drawn({}))).toEqual([]);
   });
 
   it('colours a building in and says nothing else about it', () => {
@@ -298,7 +316,7 @@ describe('what the zoom map draws on one square', () => {
   });
 
   it('leaves a square with a ladder on it uncoloured, the way the game asks in that order', () => {
-    expect(drawn({ ladder: -1, town: 1 }).pixels).toEqual(drawn({ ladder: -1 }).pixels);
+    expect(differences(drawn({ ladder: -1, town: 1 }), drawn({ ladder: -1 }))).toEqual([]);
   });
 });
 
