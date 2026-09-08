@@ -331,3 +331,36 @@ describe("the monster's second swing", () => {
     expect(game.pc.hp).toBe(200);
   });
 });
+
+describe('the numbers a drain changed under the character', () => {
+  /** A game that counts what the loop threw the keyboard away for. */
+  function flushing(rng: Rng, scratch: number, pc: Partial<RevPc> = {}, fight: Partial<RevFight> = {}) {
+    const game = attacking(rng, scratch, pc, fight);
+    const flushes = { count: 0 };
+    game.flushKeys = () => {
+      flushes.count += 1;
+    };
+    return { game, flushes };
+  }
+
+  it('throws the keyboard away after a squash', () => {
+    const { game, flushes } = flushing(draws({ 4: 3 }), 15, { dungeonLevel: 40, hp: 200 }, { name: 18 });
+    swingAt(game);
+    expect(flushes.count).toBe(1);
+    expect(game.numbersChanged).toBe(false);
+  });
+
+  it('throws it away after each of the second dungeon and its drains', () => {
+    for (const fight of [{ name: 14 }, { kind: 5 }, { name: 15 }]) {
+      const { game, flushes } = flushing(draws({ 4: 3 }), 15, { dungeonLevel: 40, level: 3 }, fight);
+      swingAt(game);
+      expect(flushes.count).toBe(1);
+    }
+  });
+
+  it('leaves the keyboard alone when nothing of the character changed', () => {
+    const { game, flushes } = flushing(draws({ 4: 3 }), 15);
+    swingAt(game);
+    expect(flushes.count).toBe(0);
+  });
+});

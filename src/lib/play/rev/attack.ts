@@ -23,10 +23,10 @@ import type { RevGame } from './state';
  * * **The three points a shallow monster loses off a solid blow can never be taken** (1000:9B95).
  *   The test wants damage over four, and the only band that has run by then adds at most four.
  *
- * One thing the routine does that this port does not:
- *
- * * **The redraw of the character's numbers.** Each drain raises DGROUP B730, which 1000:9F84
- *   spends on a pause and a flush of the keyboard. Nothing on this screen needs it.
+ * One thing the routine does that this port does not: the **two seconds** 1000:9F84 holds the
+ * screen for when the character's numbers have changed under them (1000:2F1A). Nothing here
+ * waits, so only the other half of that moment is kept — the keys typed during it are thrown
+ * away, which is what `game.numbersChanged` is for.
  */
 
 /** What the monster's swing came to. */
@@ -151,6 +151,7 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
     damage += Math.trunc(pc.hp * 0.25);
     cells.damage = damage;
     game.banner.push(SQUASH);
+    game.numbersChanged = true;
   }
   pc.hp -= damage;
   game.banner.push(`IT DID ${damage} POINTS  `);
@@ -173,16 +174,19 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
       game.banner.push(YOU_FEEL_UNHEALTHY);
       pc.stats[3] -= 5;
       revFloorStats(pc);
+      game.numbersChanged = true;
     }
     // 1000:9EE9: kind 5 takes a point of strength on top of the level it has just drained.
     if (fight.kind === 5) {
       pc.stats[0] -= 1;
       game.banner.push(STRENGTH_DRAINED);
       revFloorStats(pc);
+      game.numbersChanged = true;
     }
     // 1000:9F1A: the pitbull, which leaves the character diseased as well.
     if (fight.name === 15) {
       game.banner.push(YOU_FEEL_SICK, AGILITY_IS_DRAINED);
+      game.numbersChanged = true;
       setRevValue(pc, REV_VALUE.disease, 1);
       pc.stats[4] -= 1;
       revFloorStats(pc);
@@ -222,6 +226,13 @@ export function revMonsterAttack(game: RevGame, save: () => void): RevMonsterSwi
     // 1000:9F63: a swing that killed the character leaves for the death at 1000:A013 rather than
     // swinging again. The loop is what asks about the death itself.
     if (game.pc.level < 0 || game.pc.hp < 0) return swing;
+    // 1000:9F84: two seconds at 1000:2F1A for the player to read the numbers that have just
+    // changed, and then the flush at 1000:2FCB of whatever they typed while reading. The screen
+    // here is not one that waits, so the pause is left out and the flush is not.
+    if (game.numbersChanged) {
+      game.numbersChanged = false;
+      game.flushKeys();
+    }
     // 1000:9FA5 rolls whether or not the flag allows a second swing, so the roll is spent either
     // way.
     const swingsAgain = revSwingsAgain(game);

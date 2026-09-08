@@ -139,6 +139,7 @@ export class RevGameSession {
     const pc = loadRevPlayer(file.bytes) ?? revPlayerFromValues(new Array<number>(340).fill(0));
     this.known = file.bytes.slice();
     this.game = newRevGame(pc, rng, new RevMapMemory(file.map ?? null));
+    this.game.flushKeys = () => this.flushKeys();
     // 1000:B98F: a character who has never been played has no fountain of youth yet, and the
     // load rolls one for them.
     if (revNeedsAFountain(pc)) revRollTheFountain(this.game);
@@ -162,6 +163,17 @@ export class RevGameSession {
       return;
     }
     if (this.queued.length < KEY_QUEUE) this.queued.push(key);
+  }
+
+  /**
+   * 1000:2FCB: the keys typed and not read yet are thrown away.
+   *
+   * The original reads `INKEY$` eighteen times over, which empties the BIOS buffer of whatever
+   * was typed while it was busy. Here that is the queue a key waits in when the loop is not at
+   * its poll.
+   */
+  flushKeys(): void {
+    this.queued = [];
   }
 
   /** 1000:2F71: the next key, once there is one. */

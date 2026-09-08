@@ -92,6 +92,15 @@ export interface RevGame {
   /** A ported function is owed a key it could not wait for. */
   keyOwed: boolean;
   /**
+   * DGROUP B730: the character's own numbers have changed under them, which in the whole game is
+   * only ever the second dungeon's stomper taking a quarter of their hit points (1000:9DBB) or
+   * one of its three drains (1000:9EE3, 9F14 and 9F40).
+   *
+   * 1000:9F84 spends it on two seconds for the player to read what changed and then a flush of
+   * the keyboard, so that the keys they typed while reading are not acted on.
+   */
+  numbersChanged: boolean;
+  /**
    * DGROUP B542: the delay 1000:0F00 asks for, which the original busy-waits in before a redraw
    * (1000:412A) so that several movement keys can be typed ahead of it. Nothing here redraws on
    * a timer, so nothing reads it.
@@ -133,6 +142,9 @@ export interface RevGame {
   say(...lines: string[]): void;
   /** 1000:2F71: the blocking wait a ported function asks for and cannot take itself. */
   pressAnyKey(): void;
+  /** 1000:2FCB: whatever has been typed and not read yet is thrown away, which the original does
+   *  with eighteen `INKEY$` reads. The session is what has a keyboard to empty. */
+  flushKeys(): void;
 }
 
 /** What a character has to be for the monsters to take a turn against them. */
@@ -175,6 +187,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     events: [],
     over: false,
     keyOwed: false,
+    numbersChanged: false,
     enterDelay: 0,
     background: 0,
     palette: 2,
@@ -188,6 +201,9 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     },
     pressAnyKey() {
       game.keyOwed = true;
+    },
+    flushKeys() {
+      // A game with no session around it has no keyboard to empty; `engine.ts` puts one here.
     },
   };
   return game;
