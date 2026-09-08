@@ -6,12 +6,17 @@ palettes.json (256-colour palettes emulated from unf.exe's set_palette for every
 module/section), and the town picture palette tables from the exe.
 
 Colour rules (scale_image2, exe 4000:4818, 256-colour mode), with base = colorSet << 4:
-  one pixel value carries the monster's tint -- 28 when the base is 0x20 or 0x40, 17 for
-  every other base.  That pixel is skipped when the tint equals the base (0x20/0x40) or is 0
-  (any other base), and otherwise takes the tint as a raw palette index, with the base NOT
-  added to it.  Every other value v lands at (v + base) & 0xff.  Shadow bosses (tint 32,
-  colour set 2) therefore have their tint pixels cut out: they are the section's ordinary
-  picture with holes where the tinted regions are.
+  In the 0x20 and 0x40 banks values 1..27 land at v + base.  Value 28 is the monster's tint:
+  it is skipped when the tint equals the base, and is otherwise a palette entry in its own
+  right, with no base added.  Values 29..31 take no colour from the picture at all -- they
+  read the 96..255 gradient bank at the screen row the pixel lands on, wrapped at 160 rows,
+  with 30 counting up the bank and 29 and 31 counting down it.
+  Every other bank substitutes in turn: 17 becomes the tint (and is skipped when the tint is
+  0), then 16 becomes 0, then 18 becomes the second tint, which is always 0.  The steps
+  cascade, so a tint of 16 falls through the next one and lands on the base entry.  What is
+  left lands at (v + base) & 0xff.
+  Shadow bosses (tint 32, colour set 2) therefore have their tint pixels cut out: they are
+  the section's ordinary picture with holes where the tinted regions are.
   picture = pictures[picnum + 2]  (pictures[0..1] are the ladders, [2..8] built-in monsters
   from UFMON.PIC, [9..12] the current section's four from UFMON<section>.PIC)
 """
@@ -47,17 +52,33 @@ def load_pics(name):
 base_pics = load_pics('ufmon.pic')            # 9 images: ladder down, ladder up, built-in 0..6
 section_pics = {s: load_pics('ufmon%d.pic' % s) for s in range(1, 21)}
 
-def pixel_index(v, tint, cset):
+# The drawer's second tint, DS:4fbf, which it substitutes for pixel value 18.  Nothing in the
+# executable ever writes that word, so it keeps the initial value 0 and pixel value 18 always
+# ends up on the colour set's base entry, exactly like pixel value 16.
+SECOND_TINT = 0
+
+def pixel_index(v, tint, cset, row):
     """Palette index for one monster pixel, or None when the game does not draw it
-    (exe 4000:4e0f..4eb6; the same rule as monsterPixelIndex in dotu-pic.js)."""
+    (exe 4000:4e0f..4eb6; the same rule as monsterPixelIndex in dotu-pic.js).  row is the
+    screen row the pixel lands on, which values 29..31 take their colour from."""
     if v == 0:
         return None
     base = cset << 4
     if base in (0x20, 0x40):
+        if v < 28:
+            return v + base
         if v == 28:
-            return None if tint == base else tint
-    elif v == 17:
-        return None if tint == 0 else tint
+            return None if tint == base else tint & 0xff
+        gradient_row = row % 160
+        return gradient_row + 0x60 if v == 30 else 0xff - gradient_row
+    if v == 17 and tint == 0:
+        return None
+    if v == 17:
+        v = tint
+    if v == 16:
+        v = 0
+    if v == 18:
+        v = SECOND_TINT
     return (v + base) & 0xff
 
 def render(rows, cset, tint, pal, water_rows=200):
@@ -65,7 +86,7 @@ def render(rows, cset, tint, pal, water_rows=200):
     put = im.putpixel
     for y, row in enumerate(rows[:water_rows]):
         for x, v in row:
-            idx = pixel_index(v, tint, cset)
+            idx = pixel_index(v, tint, cset, y)
             if idx is not None:
                 put((x, y), pal[idx] + (255,))
     return im
