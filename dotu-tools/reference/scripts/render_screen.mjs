@@ -17,6 +17,10 @@
 // --tablet N draws the stone tablet the little snake's words are read on, with UH2.BIN message N
 // (0 is the first of the town greetings).
 //
+// --section-screen draws the S key's screen: the section's five monsters in their panels with the
+// section's own words on the slab above them. --section-monster A..E turns to that monster's page
+// instead of the introduction, and --boss-dead stamps DEAD over the first panel.
+//
 // --expanded-map draws the X key's screen instead: the whole floor at seven pixels a square with
 // the headline under it, and with --boss X,Y the way to the section's Shadow boss beside it.
 //
@@ -70,6 +74,8 @@ const { setMonsterMap, MAP_PLAYER } = await load('game/port/state.ts');
 const { monsterIdOf, BOSS_KIND } = await load('play/floor.ts');
 const { bossSignpost } = await load('play/misc.ts');
 const { drawTablet } = await load('play/tablet.ts');
+const { drawSectionScreen } = await load('play/section-screen.ts');
+const { drawManualPage } = await load('play/manual.ts');
 const { tabletMessage } = await load('game/port/hints.ts');
 const { monsterById } = await load('map/stocking.ts');
 const palettes = JSON.parse(readFileSync(src('game/palettes.json'), 'utf8'));
@@ -136,6 +142,33 @@ if (args.tablet !== undefined) {
   drawTablet(frame, SCREEN_PIXELS, tabletMessage(num('tablet', 0)), wall);
   writeFileSync(out, encodePng(frame.width, frame.height, toRgba(frame, dungeonPalette(palettes, null, moduleIndex + 1, part))));
   console.log(`${out}  module ${moduleIndex} floor ${floor} (part ${part}) tablet ${num('tablet', 0)}`);
+  await server.close();
+} else
+
+// The S key's screen (monster_manual, exe 3000:c39d): the five panels of the section's wall
+// material with its monsters in them, the slab of the tablet lifted to the top, and the lines the
+// manual prints over both. The manual's own drawing code fills the lines in, so the script and the
+// Play tab put up the same screen.
+if (args['section-screen']) {
+  const manual = newGame();
+  manual.pc.module = moduleIndex;
+  manual.pc.level = floor;
+  if (args['boss-dead']) manual.pc.objective[moduleIndex] |= 1 << (part - 1);
+  const entry = JSON.parse(readFileSync(src('game/dotu-data.json'), 'utf8')).sections[section - 1];
+  const letter = String(args['section-monster'] ?? '').toUpperCase();
+  const block = [0, 2, 3, 4, 1]['ABCDE'.indexOf(letter)];
+  const host = { game: manual, sectionScreen: null };
+  const shown = block === undefined ? entry.intro : entry.descriptions.slice(block * 4, block * 4 + 4);
+  drawManualPage(host, section, part - 1, shown);
+  drawSectionScreen(frame, SCREEN_PIXELS, host.sectionScreen, {
+    wall,
+    overlay: picture('overlay.pic'),
+    monster: (picnum, isBuiltin) => (isBuiltin ? (builtin?.[picnum + 2] ?? null) : (own?.[picnum - 7] ?? null)),
+    ladder: (down) => builtin?.[down ? 0 : 1] ?? null,
+  });
+  drawDotuScreenText(frame, frame, manual.screen);
+  writeFileSync(out, encodePng(frame.width, frame.height, toRgba(frame, dungeonPalette(palettes, null, moduleIndex + 1, part))));
+  console.log(`${out}  module ${moduleIndex} floor ${floor} (section ${section}) manual ${letter || 'intro'}`);
   await server.close();
 } else
 
