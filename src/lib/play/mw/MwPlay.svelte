@@ -24,6 +24,7 @@
   import { characterMaps } from '../memory';
   import ScreenSwitch from '../ScreenSwitch.svelte';
   import {
+    debugDrawn,
     mapDrawn,
     monstersDrawn,
     panelVisible,
@@ -48,6 +49,7 @@
     MW_STATUS_BLOCK,
   } from '../../game/mw-port/screens';
   import { mwCorner, MW_CORNER_WIDTH, MW_MESSAGE_BOX } from './screens';
+  import { mwDebugMonsterLines } from './debug-screen';
 
   /** How many pixels a square is drawn at when the map is centred on the character. */
   const PLAY_CELL = 22;
@@ -97,6 +99,14 @@
       : mwMonsterViewLines(session.game, view.engaged.slot, monsterCorner),
   );
 
+  /** The chance the next swing lands, which debug mode adds under the hit points the game
+   *  prints for itself. */
+  const debugMonsterValues = $derived(
+    session === null || view?.engaged == null || !debugDrawn(mode)
+      ? []
+      : mwDebugMonsterLines(session.game, monsterCorner),
+  );
+
   /** The numbers along the bottom of the screen, which the game redraws after every action. The
    *  record they are read out of changes under the session, so the view is what says when. */
   const statusLines = $derived(view === null || session === null ? [] : mwStatusLines(session.game));
@@ -118,6 +128,7 @@
       ...statusLines,
       ...characteristicLines,
       ...monsterValues,
+      ...debugMonsterValues,
       ...(view.prompt === null
         ? []
         : [
