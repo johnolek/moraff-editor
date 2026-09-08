@@ -117,9 +117,9 @@ DOS they survive quitting. A browser has no such file, so they last as long as t
 
 ## What is not built yet
 
-**The world map**, and nothing else. The gate on top of the town puts its own box up and takes
-its own key; the answer that would walk out into the wilderness says so in the message box,
-which is the one call left to `mwNotBuiltYet`.
+Nothing. Every key movecontrol dispatches on is answered, and so is the gate on top of the town,
+which is the one place the game leaves the dungeon behind: it asks which dungeon to walk out
+into rather than drawing the overworld. `mwNotBuiltYet` in `screens.ts` has no callers left.
 
 The keys that are about the screen rather than the game — B the brick speed, O the sound, X the
 floor a third at a time, Z the 3-D view close up, and the three that step one colour of the
@@ -147,6 +147,11 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
   roster marks the entry instead and keeps the bytes.
 * **The town's pictures are not drawn.** The store, the temple, the bank and the inn fill the
   screen with a WORLD.PIC image behind their menus. The port shows the words alone.
+* **There is no world map.** FUN_3000_8235 walks the character over an overworld, and all it
+  does with where they stop is work a dungeon number out of the cell -- one of 31,000, each of
+  them the same eighteen wall patterns behind a different number. The port asks for that number
+  in the box instead and then runs the rest of that function's return path, so the gate still
+  counts the number up to one whose floor 0 has a gate square and stands the character on it.
 * **The mouse is left out**, and with it the "(TYPE NUMBER ON KEYBOARD)" line the write-scroll
   menu adds when one is attached.
 * **The hidden key is left out**: 0x7c hands out ten hit points.
