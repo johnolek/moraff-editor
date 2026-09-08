@@ -1,4 +1,4 @@
-import { BATTLE_TEXT_COLOUR, MENU_X, menuLine } from '../game/port/screens';
+import { BATTLE_HP_Y, BATTLE_TEXT_COLOUR, BLOW_Y, MENU_X, menuLine } from '../game/port/screens';
 import type { Game, ScreenLine } from '../game/port/state';
 import { BATTLE_SPELLS_BOX } from './display';
 
@@ -91,6 +91,16 @@ export interface MessageBoxShowing {
 }
 
 /**
+ * The three places a fight draws on the block without wiping the rest of it: the two lines of the
+ * blow and the hit points line.
+ *
+ * strike (exe 2000:7e36) and print_battle_hp_info (exe 2000:b68d) each wipe only the strip their
+ * own lines stand on, with FUN_2000_295b (exe 2000:295b), so the banner around them is left
+ * standing. Everything else that fills the block wipes the whole of it first.
+ */
+const DRAWN_BESIDE_THE_BANNER = [...BLOW_Y, BATTLE_HP_Y];
+
+/**
  * The message box as the screen has it.
  *
  * The eight lines hold whichever of the game's two ways of filling them came last, and the game
@@ -109,7 +119,9 @@ export interface MessageBoxShowing {
  */
 export function messageBoxScreen(showing: MessageBoxShowing): ScreenLine[] {
   const drawn = showing.drawn.filter(onMessageBox);
-  const filled = drawn.some((line) => line.y >= MESSAGE_BOX_LINES_TOP);
+  const filled = drawn.some(
+    (line) => line.y >= MESSAGE_BOX_LINES_TOP && !DRAWN_BESIDE_THE_BANNER.includes(line.y),
+  );
   const lines = filled
     ? []
     : showing.box.length > 0

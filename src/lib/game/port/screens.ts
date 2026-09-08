@@ -33,6 +33,17 @@ export const MENU_COLOUR = 6;
 export const BATTLE_TEXT_COLOUR = 15;
 
 /**
+ * The two lines strike (exe 2000:7e36) draws a blow on: "YOU HIT THE MONSTER!!!" on the first
+ * and the damage it did on the second. A miss is drawn on the second line with the first left
+ * empty, since the original builds both messages in the same buffer and only the hit is printed
+ * on its own.
+ */
+export const BLOW_Y = [0x3c9, 0x3f1];
+
+/** Where print_battle_hp_info (exe 2000:b68d) draws the monster's hit points. */
+export const BATTLE_HP_Y = 0x379;
+
+/**
  * How long a menu line has to be before the game spreads it out instead of printing it plainly.
  *
  * mset_gmenu measures the line and sends anything of 27 characters or more through FUN_4000_593f

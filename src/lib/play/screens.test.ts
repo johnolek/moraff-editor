@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { MENU_LINE_STEP, MENU_TOP, MENU_X, MESSAGE_LINE_Y, messageLine } from '../game/port/screens';
+import {
+  BATTLE_HP_Y,
+  BLOW_Y,
+  MENU_LINE_STEP,
+  MENU_TOP,
+  MENU_X,
+  MESSAGE_LINE_Y,
+  messageLine,
+} from '../game/port/screens';
 import type { ScreenLine } from '../game/port/state';
 import { messageBoxScreen, onMessageBox, screenTakenOver } from './screens';
 
@@ -53,6 +61,20 @@ describe('the message box on the screen', () => {
     const drawn = [{ text: '1) SPELLBOOKS', x: MENU_X, y: MENU_TOP, font: 0, colour: 6 }];
     const lines = messageBoxScreen({ box: ['SOMETHING SAID EARLIER'], banner: [], drawn });
     expect(lines.map((line) => line.text)).toEqual(['1) SPELLBOOKS']);
+  });
+
+  it('leaves the banner standing under the lines a fight draws beside it', () => {
+    // strike and print_battle_hp_info wipe only the strip their own lines stand on, so those
+    // three lines are the ones on the block that do not mean the block was filled again.
+    const blow = (text: string, y: number): ScreenLine => ({ text, x: MENU_X, y, font: 0, colour: 15 });
+    const drawn = [blow('YOU HIT THE MONSTER!!!', BLOW_Y[0]), blow('IT TAKES 7 POINTS OF DAMAGE!', BLOW_Y[1])];
+    const lines = messageBoxScreen({ box: [], banner: ['YOU ARE FIGHTING A LEVEL 3'], drawn });
+    expect(lines.map((line) => [line.text, line.y])).toEqual([
+      ['YOU ARE FIGHTING A LEVEL 3', MENU_TOP],
+      ['YOU HIT THE MONSTER!!!', BLOW_Y[0]],
+      ['IT TAKES 7 POINTS OF DAMAGE!', BLOW_Y[1]],
+    ]);
+    expect(messageBoxScreen({ box: [], banner: ['A LEVEL 3'], drawn: [blow('IT HAS 9 HEALTH POINTS LEFT', BATTLE_HP_Y)] })).toHaveLength(2);
   });
 
   it('counts a line across the views as the game taking the display over', () => {
