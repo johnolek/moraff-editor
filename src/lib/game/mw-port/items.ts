@@ -1,6 +1,7 @@
 import data from '../mw-data.json';
 import { HINT, loadHBin } from './hints';
-import type { MwGame } from './state';
+import { MW_FLOOR_ROWS, type MwGame } from './state';
+import { DUNGEON_XMAX as MW_LAST_COLUMN } from '../mwmap.js';
 
 /**
  * The three things a character does with what they are carrying: dropping it (drop_item,
@@ -363,11 +364,11 @@ export function askForAWish(game: MwGame, choice: number): void {
 
 /**
  * use_magic_item's fourth line: a stone of seeing, which marks every square of the floor that is
- * not rock as one the character has walked over.
+ * not rock as one the character has walked over — "SEEING STONE: MAPS ENTIRE LEVEL", as the
+ * game's own help puts it.
  *
- * The port has no explored map — the whole floor is drawn from the start — so the loop over
- * mark_explored (WORLD.EXE 2000:5263) has nothing to write and is left out. The stone is used
- * up all the same.
+ * The loop runs the reachable floor exactly, column 0 to 78 and row 0 to 109: wall_side walls
+ * off column 79 and everything past it, so nothing worth marking is missed.
  */
 export function useSeeingStone(game: MwGame): void {
   const pc = game.pc;
@@ -376,6 +377,11 @@ export function useSeeingStone(game: MwGame): void {
     return;
   }
   pc.seeingStones -= 1;
+  for (let x = 0; x < MW_LAST_COLUMN; x++) {
+    for (let y = 0; y < MW_FLOOR_ROWS; y++) {
+      if (!game.isSolid(x, y, pc.floor, pc.dungeon)) game.markExplored(x, y);
+    }
+  }
   game.recenterMap = true;
   loadHBin(game, HINT.seeingStone);
   game.pressAnyKey();

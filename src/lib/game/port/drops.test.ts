@@ -571,6 +571,27 @@ describe('useMagicItem', () => {
     expect(game.recenterMap).toBe(true);
   });
 
+  it('marks every square of the floor the stone of seeing shines on but the rock', async () => {
+    const marked: string[] = [];
+    const game = newGame({
+      rng: rolls(),
+      pc: { seeingStones: 1 },
+      choice: async () => 0x34,
+      solid: (x, y) => x === 3 && y === 4,
+      markKnown: (x, y) => marked.push(`${x},${y}`),
+    });
+    game.monsters[0].level = 40;
+    game.engaged = 0;
+    await useMagicItem(game);
+    expect(marked).toContain('0,0');
+    expect(marked).toContain(`${game.columns - 1},${game.rows - 1}`);
+    expect(marked).not.toContain('3,4');
+    // The loops stop one short on each axis, which costs the floor nothing.
+    expect(marked).not.toContain(`${game.columns},0`);
+    expect(marked).not.toContain(`0,${game.rows}`);
+    expect(marked.length).toBe(game.columns * game.rows - 1);
+  });
+
   it('teleports to the town on a stone of teleportation', async () => {
     const game = killing(rolls(), { teleportStones: 1, level: 40 }, 40, 0x35);
     await useMagicItem(game);

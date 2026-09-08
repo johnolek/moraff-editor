@@ -200,6 +200,7 @@ export class MwGameSession {
       rng,
       isSolid: (x, y, floor, dungeon) => bundledMwDungeon.solid(x, y, floor, dungeon),
       wallSide: (x, y, hv, floor, dungeon) => bundledMwDungeon.side(x, y, hv, floor, dungeon),
+      markExplored: (x, y) => this.memory.markKnown(x, y),
       pressAnyKey: () => {
         this.waitOwed = true;
         // A fight stops for a key only where it printed a real message box — the notice a level

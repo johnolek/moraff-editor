@@ -259,6 +259,21 @@ describe('useSeeingStone', () => {
     expect(game.pc.seeingStones).toBe(1);
     expect(game.messages[0]).toBe('SUDDENLY YOU FEEL THAT');
   });
+
+  it('maps every square of the floor but the rock, column 0 to 78 and row 0 to 109', () => {
+    const marked: string[] = [];
+    const game = newMwGame({
+      pc: { seeingStones: 1 },
+      isSolid: (x, y) => x === 3 && y === 4,
+      markExplored: (x, y) => marked.push(`${x},${y}`),
+    });
+    useSeeingStone(game);
+    expect(marked).toContain('0,0');
+    expect(marked).toContain('78,109');
+    expect(marked).not.toContain('3,4');
+    expect(marked).not.toContain('79,0');
+    expect(marked.length).toBe(79 * 110 - 1);
+  });
 });
 
 describe('useTeleportStone', () => {

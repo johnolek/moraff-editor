@@ -207,6 +207,7 @@ export class GameSession {
       monsterKinds: sectionMonsterKinds(sectionOf(pc.module, pc.level)),
       solid: (x, y, level, module) => bundledDungeon.solid(x, y, level, module),
       retdwall: (x, y, hv, level, module) => bundledDungeon.side(x, y, hv as 0 | 1, level, module),
+      markKnown: (x, y) => this.memory.markKnown(x, y),
       key: () => this.key(),
       choice: (allowed) => this.choice(allowed),
       pressAnyKey: () => {

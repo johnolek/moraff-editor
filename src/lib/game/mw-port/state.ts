@@ -501,6 +501,12 @@ export interface MwGame {
    * it, which is what `MwDungeon.side` in `../mwmap.js` already computes.
    */
   wallSide(x: number, y: number, hv: 0 | 1, floor: number, dungeon: number): number;
+  /**
+   * mark_explored (WORLD.EXE 2000:5263): mark the square known on the floor's explored bitmap. A
+   * game being played hands in the map its character has discovered; {@link newMwGame} keeps no
+   * map and remembers nothing.
+   */
+  markExplored(x: number, y: number): void;
 }
 
 /**
@@ -707,6 +713,7 @@ export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
     lastMonsterDamage: 0,
     movesTaken: 0,
     wallSide: () => 3,
+    markExplored: () => {},
     ...rest,
     messages,
     screen,

@@ -475,6 +475,12 @@ export interface Game {
    */
   retdwall(x: number, y: number, hv: number, level: number, module: number): number;
   /**
+   * FUN_2000_72de (exe 2000:72de): mark the square known on the floor's explored bitmap. A game
+   * being played hands in the map its character has discovered; {@link newGame} keeps no map and
+   * remembers nothing.
+   */
+  markKnown(x: number, y: number): void;
+  /**
    * get_choice (exe 2000:2d93) reading the direction menu Pass Wall prints: 1 north, 2 south, 3
    * east, 4 west, 5 cancel. The original reads the keyboard; the port asks whoever built the
    * game, and {@link newGame} cancels by default.
@@ -800,6 +806,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     rng: new BorlandRng(1),
     solid: () => false,
     retdwall: () => 3,
+    markKnown: () => {},
     chooseDirection: () => 5,
     chooseWeapon: () => null,
     chooseArmor: () => null,

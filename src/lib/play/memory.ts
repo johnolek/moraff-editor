@@ -121,6 +121,12 @@ export class MapMemory {
     return this.drawn.has(squareIndex(x, y));
   }
 
+  /** FUN_2000_72de (exe 2000:72de) from anywhere but a step or a view, which is the stone that
+   *  maps the level. The loop over the floor belongs to the game whose stone it is. */
+  markKnown(x: number, y: number): void {
+    setBit(this.live, x, y);
+  }
+
   /** FUN_2000_7210 (exe 2000:7210). */
   isKnown(x: number, y: number): boolean {
     return bitSet(this.live, x, y);
