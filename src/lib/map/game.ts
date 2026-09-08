@@ -172,6 +172,7 @@ const UNFORGIVEN_BUILDINGS: Building[] = [
 
 const UNFORGIVEN_DUN_FILES: ExploredMapFiles = {
   extension: '.DUN',
+  namesDungeon: true,
   hint: "Dungeons of the Unforgiven saves the squares your character has seen beside the save, in files named <character><quarter><module>.DUN — E14.DUN is character 21's floors 32 to 63 of Module V.",
   read: readDotuDunFile,
   summarize: quarterSummary,
@@ -250,6 +251,9 @@ const MORAFFS_WORLD_DUNGEON_KEY = 'moraff-tools.mw-dungeon';
 
 const MORAFFS_WORLD_DUN_FILES: ExploredMapFiles = {
   extension: '.DUN',
+  // The dungeon is not in the name, which is why the game deletes every one of a slot's files
+  // when the character walks into another dungeon.
+  namesDungeon: false,
   hint: "Moraff's World saves the squares your character has seen beside the save, in files named <slot><block>.DUN — 30.DUN is slot 3, floors 0 to 31.",
   read: readDunFile,
   summarize: loadedSummary,
@@ -306,6 +310,8 @@ const MORAFFS_REVENGE_GENERATION_KEY = 'moraff-tools.revenge-generation';
 
 const MORAFFS_REVENGE_BIN_FILES: ExploredMapFiles = {
   extension: '.BIN',
+  // One file holds every level of the one dungeon that character's generation gives it.
+  namesDungeon: false,
   hint: "Moraff's Revenge saves the squares your character has walked on in a file of its own beside the character, named <n>.BIN — 5.BIN is character 5, and holds every level at once.",
   read: readBinFile,
   summarize: exploredFloorCount,

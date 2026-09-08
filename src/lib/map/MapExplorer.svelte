@@ -56,9 +56,9 @@
   /** Stocked floors by "game:dungeon:floor", kept while other floors are browsed. The game
    *  keeps only the three floors most recently visited; nothing here is thrown away. */
   let stocked = $state(new Map<string, StockedMonster[]>());
-  /** Explored floors from the files dropped on the map, kept per game: one game's files say
-   *  nothing about another's dungeons. Nothing is stored, so a reload starts with none. */
-  let exploredFiles = $state(new Map<GameId, ExploredFloors>());
+  /** Explored floors from the files dropped on the map, by {@link exploredMapKey}. Nothing is
+   *  stored, so a reload starts with none. */
+  let exploredFiles = $state(new Map<string, ExploredFloors>());
   /** Why the files last dropped could not be read. */
   let exploredErrors = $state<string[]>([]);
   let floorCanvas: FloorCanvas;
@@ -78,7 +78,8 @@
   const beyondMapMonsters = $derived(monsters.filter((monster) => !isOnMap(monster, game.area)));
   /** Fit frames the floor the game shows plus whatever monsters were stocked beyond it. */
   const bounds = $derived(boundsIncluding(floorBounds(rows, game.area.rows), beyondMapMonsters));
-  const explored = $derived(exploredFiles.get(game.id) ?? NO_EXPLORED_FLOORS);
+  const exploredKey = $derived(exploredMapKey(game, dungeon));
+  const explored = $derived(exploredFiles.get(exploredKey) ?? NO_EXPLORED_FLOORS);
   const exploredHere = $derived(explored.get(floor) ?? null);
   const exploredCount = $derived(exploredHere ? exploredCounts(rows, exploredHere, game.area) : { seen: 0, rock: 0 });
   const cursorSquare = $derived(cursor ? rows[cursor.y][cursor.x] : null);
@@ -320,25 +321,39 @@
     if (game.stocking) stocked = new Map(stocked).set(stockKey, game.stocking.stock(rows, dungeon, floor));
   }
 
+  /**
+   * Which loaded files shade a floor. Dungeons of the Unforgiven's file names say which module
+   * the character walked, so a character's whole set can be dropped at once and each module is
+   * shaded with its own; the other two games' names say nothing about the dungeon, so their
+   * files shade whichever one is being looked at.
+   */
+  function exploredMapKey(forGame: MapGame, forDungeon: number): string {
+    return forGame.exploredMaps?.namesDungeon ? `${forGame.id}:${forDungeon}` : forGame.id;
+  }
+
   /** Reads the explored maps given onto the map, naming whichever of them cannot be read. */
   async function loadExploredFiles(files: File[]) {
     const maps = game.exploredMaps;
     if (!maps) return;
-    let floors = explored;
+    const loaded = new Map(exploredFiles);
     const errors: string[] = [];
     for (const file of files) {
       try {
-        floors = addExploredFloors(floors, maps.read(file.name, new Uint8Array(await file.arrayBuffer())));
+        const read = maps.read(file.name, new Uint8Array(await file.arrayBuffer()));
+        const key = exploredMapKey(game, read.dungeon ?? dungeon);
+        loaded.set(key, addExploredFloors(loaded.get(key) ?? NO_EXPLORED_FLOORS, read));
       } catch (error) {
         errors.push(error instanceof Error ? error.message : String(error));
       }
     }
-    exploredFiles = new Map(exploredFiles).set(game.id, floors);
+    exploredFiles = loaded;
     exploredErrors = errors;
   }
 
+  /** Only what the panel is showing is cleared, which for Dungeons of the Unforgiven is the
+   *  module being looked at rather than every module a file was loaded for. */
   function clearExploredFiles() {
-    exploredFiles = new Map(exploredFiles).set(game.id, new Map());
+    exploredFiles = new Map(exploredFiles).set(exploredKey, new Map());
     exploredErrors = [];
   }
 

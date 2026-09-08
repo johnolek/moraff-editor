@@ -61,6 +61,9 @@ export interface DunFile extends ExploredFile {
 export interface ExploredMapFiles {
   /** What the files are called, for the drop target and the square description. */
   extension: string;
+  /** Whether a file's name says which dungeon it was walked in, so that files of several of
+   *  them can be loaded at once and each dungeon shaded with its own. */
+  namesDungeon: boolean;
   /** The paragraph above the drop target, saying what the game saves and where. */
   hint: string;
   /** Reads one file. Throws with a line to show the user when it is not one of these. */
