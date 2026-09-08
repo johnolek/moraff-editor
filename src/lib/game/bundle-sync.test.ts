@@ -12,6 +12,7 @@ const copies: [string, string][] = [
   ['src/lib/game/mwmap.js', 'mw-tools/reference/mwmap.js'],
   ['src/lib/game/revmap.js', 'rev-tools/reference/revmap.js'],
   ['src/lib/game/dung.b64.js', 'mw-tools/data/dung.b64.js'],
+  ['src/lib/game/rev7.b64.js', 'rev-tools/data/rev7.b64.js'],
   ['src/lib/game/dotu-data.json', 'dotu-tools/data/dotu-data.json'],
   ['src/lib/game/dotu-fonts.json', 'dotu-tools/data/dotu-fonts.json'],
   ['src/lib/game/uroll.txt', 'dotu-tools/data/uroll.txt'],
