@@ -431,6 +431,7 @@
         {/if}
       </div>
       <aside class="side">
+        <div class="switch"><ScreenSwitch game="moraffsWorld" bind:display /></div>
         <div class="place">
           <span>{view.place.floor === 0 ? 'The surface' : `Floor ${view.place.floor}`}</span>
           <span>Dungeon {view.place.dungeon}</span>
@@ -450,7 +451,6 @@
           <button type="button" onclick={exportMaps}>Export maps</button>
         </div>
         <div class="keys">
-          <ScreenSwitch game="moraffsWorld" bind:display />
           <div class="key-note">Play mode:</div>
           <div class="styles">
             {#each PLAY_MODES as choice}

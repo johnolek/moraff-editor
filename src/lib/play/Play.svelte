@@ -284,6 +284,7 @@
         {/if}
       </div>
       <aside class="side">
+        <div class="switch"><ScreenSwitch game="unforgiven" bind:display /></div>
         <div class="place">
           <span>{view.place.floor === 0 ? 'Town' : `Floor ${view.place.floor}`}</span>
           <span>Module {view.place.module + 1}</span>
@@ -306,7 +307,6 @@
           <MessageBox lines={view.box} />
         {/if}
         <div class="keys">
-          <ScreenSwitch game="unforgiven" bind:display />
           <div class="key-note">Play mode:</div>
           <div class="styles">
             {#each PLAY_MODES as choice}

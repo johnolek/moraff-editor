@@ -33,7 +33,6 @@
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
-    margin-bottom: 10px;
   }
   button {
     padding: 6px 12px;

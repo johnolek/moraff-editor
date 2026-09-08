@@ -284,6 +284,7 @@
         {/if}
       </div>
       <aside class="side">
+        <div class="switch"><ScreenSwitch game="revenge" bind:display /></div>
         <div class="place">
           <span>{view.place.level === 0 ? 'The town' : `Level ${view.place.level}`}</span>
           <span>{view.place.column}, {view.place.row}</span>
@@ -314,7 +315,6 @@
           <button type="button" onclick={exportMaps}>Export maps</button>
         </div>
         <div class="keys">
-          <ScreenSwitch game="revenge" bind:display />
           <div class="key-note">Play mode:</div>
           <div class="styles">
             {#each PLAY_MODES as choice}
