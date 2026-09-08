@@ -52,6 +52,9 @@ export interface RevGame {
    *  (1000:3187 with 1000:0A4F). It is the clock the fight's own Speed and Strength run out on
    *  and nothing else uses it. */
   steps: number;
+  /** DGROUP B5B2: the spell level last typed at a cast prompt, which the wands that cast a
+   *  spell for nothing charge the character for again (1000:9555). */
+  spellLevel: number;
   /** DGROUP B6CC: how many more of the monster's turns a wand has taken away (1000:9A2F). */
   monsterHeld: number;
   /** DGROUP B6CE: what a wand has put on the character's next swing, once (1000:8CC5). */
@@ -159,6 +162,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     lastMonsterLevel: 0,
     arrowMode: 0,
     steps: 1,
+    spellLevel: 0,
     monsterHeld: 0,
     swingBonus: 0,
     shielding: 0,

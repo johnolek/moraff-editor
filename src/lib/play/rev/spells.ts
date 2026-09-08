@@ -130,6 +130,7 @@ export async function revCastInTheDungeon(game: RevGame, desk: RevMagicDesk): Pr
 async function askForALevel(game: RevGame, desk: RevMagicDesk, prompt: string): Promise<number | null> {
   game.say(prompt, REV_ESC_CAST_NO_SPELL);
   const level = typedNumber(await desk.poll());
+  game.spellLevel = level;
   if (level < 1) return null;
   if (level > REV_SPELL_LEVEL_COUNT || level > game.pc.spellPoints) {
     game.say(REV_NOT_ENOUGH_SPELL_POINTS);
@@ -602,6 +603,7 @@ export const REV_BATTLE_SPELLS: RevSpell[] = [
 export async function revCastInAFight(game: RevGame, desk: RevMagicDesk): Promise<void> {
   game.say(REV_WHAT_LEVEL, REV_ESC_CAST_NO_SPELL);
   const level = typedNumber(await desk.poll());
+  game.spellLevel = level;
   if (level < 1 || level > REV_SPELL_LEVEL_COUNT) return;
   if (level > game.pc.spellPoints) {
     game.say(REV_NOT_ENOUGH_SPELL_POINTS);
