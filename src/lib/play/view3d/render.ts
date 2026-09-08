@@ -110,7 +110,7 @@ export function renderView(frame: Frame, scene: ViewScene, rect: ViewRect, facin
       ftol(rect.left + across),
       ftol(rect.right - across),
     );
-    if (depth === 1) drawEngagedMonster(frame, scene, rect, facing, across);
+    if (depth === 1) drawEngagedMonster(frame, scene, rect, facing);
   }
   return 0;
 }
@@ -206,22 +206,28 @@ function monsterPaint(scene: ViewScene, monster: ViewMonster): ScaleOptions {
  *
  * `dotu-tools/docs/SCREEN.md` writes the numbers out, along with the second rectangle for narrow
  * screens that the original's own branch can never reach.
+ *
+ * `draw_3d_view` keeps this rectangle per view at DS:2318, DS:c67a, DS:c682 and DS:c68a (exe
+ * 3000:244f), which is how `movecontrol` finds it again to draw the skull.
  */
-function drawEngagedMonster(
-  frame: Frame,
-  scene: ViewScene,
-  rect: ViewRect,
-  facing: number,
-  narrowing: number,
-): void {
+export function engagedMonsterRect(rect: ViewRect): ViewRect {
+  const narrowing = slotNarrowing(rect.right - rect.left, 1);
+  return {
+    left: ftol(rect.left + narrowing / 2),
+    top: (rect.bottom + rect.top * 3) >> 2,
+    right: ftol(rect.right - narrowing / 2),
+    bottom: (rect.bottom * 15 + rect.top) >> 4,
+  };
+}
+
+function drawEngagedMonster(frame: Frame, scene: ViewScene, rect: ViewRect, facing: number): void {
   const ahead = viewPointToSquare(0, 1, facing, scene.at);
   const monster = scene.monsters.find((m) => m.x === ahead.x && m.y === ahead.y);
   if (!monster) return;
   const picture = scene.pictures.monster(monster.picnum, monster.builtin);
   if (!picture) return;
 
-  const left = ftol(rect.left + narrowing / 2);
-  const right = ftol(rect.right - narrowing / 2);
+  const { left, top, right, bottom } = engagedMonsterRect(rect);
   // A coin flip fresh for every draw mirrors the picture, which `scale_image2` does by being
   // handed a left edge greater than its right. The screen draws with no generator, so that
   // redrawing a view never spends one of the game's own random numbers.
@@ -229,9 +235,9 @@ function drawEngagedMonster(
   scaleImage(
     frame,
     mirrored ? right : left,
-    (rect.bottom + rect.top * 3) >> 2,
+    top,
     mirrored ? left : right,
-    (rect.bottom * 15 + rect.top) >> 4,
+    bottom,
     picture,
     0,
     255,
