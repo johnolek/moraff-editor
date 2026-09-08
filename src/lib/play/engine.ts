@@ -207,14 +207,17 @@ export class GameSession {
    * How many times the loop has drawn the four views, which is what the coin flip mirroring the
    * monster ahead is drawn from.
    *
-   * The original flips that coin on its own generator, fresh for every view of every pass (exe
-   * 3000:2323). This port cannot: the tab redraws the screen whenever anything about it changes,
-   * and spending the game's seeded generator per redraw would make a run unreplayable. Counting
-   * the passes gives a number that changes exactly as often as the original's draw does, and the
-   * flip is worked out from it alone, so nothing of the game is spent and a monster still turns
-   * to face the other way as the character acts.
+   * The original flips that coin on its own generator, fresh for every view of every drawing
+   * (exe 3000:2323). This port cannot: the tab redraws the screen whenever anything about it
+   * changes, and spending the game's seeded generator per redraw would make a run unreplayable.
+   * Counting the drawings gives a number that changes exactly as often as the original's draw
+   * does, and the flip is worked out from it alone, so nothing of the game is spent and a
+   * monster still turns to face the other way when the character moves.
    */
   viewsDrawn = 0;
+  /** Where the character was standing when the views were last drawn, which is what movecontrol
+   *  compares against to decide whether to draw them again. */
+  private drawnFrom: { x: number; y: number; level: number } | null = null;
   /** Called whenever the game is about to wait for a key, so the tab can draw what it is
    *  waiting with. */
   onChange: (() => void) | null = null;
@@ -512,6 +515,30 @@ export class GameSession {
     this.file.died();
   }
 
+  /**
+   * FUN_2000_ac9e (exe 2000:ac9e, unf.c "FUN_2000_ac9e"): the four 3-D views, as movecontrol
+   * draws them.
+   *
+   * The loop draws them where it waits for a key, and only when the redraw flag (DS:c607) is up
+   * or the character is not where they were when the views were last drawn; FUN_2000_ac9e puts
+   * the flag down again as it draws. Anything else — a swing, a spell, a screen the key opened —
+   * leaves the views exactly as they are, which is why the monster being fought does not turn
+   * round between one blow and the next.
+   *
+   * The port draws the screen from the game rather than leaving the last drawing on it, so what
+   * this counts is the drawings the original would have made: {@link viewsDrawn} is the whole of
+   * it, and the coin flip that mirrors the monster ahead is worked out from that number.
+   */
+  drawViews(): void {
+    const pc = this.game.pc;
+    const from = this.drawnFrom;
+    const moved = from === null || from.x !== pc.x || from.y !== pc.y || from.level !== pc.level;
+    if (!moved && !this.game.redrawView) return;
+    this.game.redrawView = false;
+    this.drawnFrom = { x: pc.x, y: pc.y, level: pc.level };
+    this.viewsDrawn += 1;
+  }
+
   /** Tell the Play tab to draw. */
   changed(): void {
     this.onChange?.();
@@ -672,14 +699,12 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     if (game.engaged === -1) pc.sleepTimer = 0;
     session.showBanner();
     if (pc.deepestFloor < pc.level) pc.deepestFloor = pc.level;
-    // FUN_2000_ac9e (exe 2000:ac9e): the four 3-D views, drawn where the loop waits for a key,
-    // and every square any of them draws is marked. The original draws them only when the
-    // character has moved or something has asked for a redraw, which marks the same squares
-    // either way — the geometry has not changed — and only leaves the monsters on the screen a
-    // moment stale. This draws them every pass, so the monsters that can be seen are the ones
-    // standing there now.
+    // Every square the four 3-D views draw is marked. The original marks them only on a pass it
+    // draws the views on, which marks the same squares either way — the geometry has not
+    // changed — and only leaves the monsters on the screen a moment stale. This marks them every
+    // pass, so the monsters that can be seen are the ones standing there now.
     session.memory.markViews(session.rows, pc.x, pc.y);
-    session.viewsDrawn += 1;
+    session.drawViews();
     const key = await session.keyOrEdit();
     // The square the pass was worked out from is the one the record has just replaced, so the
     // pass starts again rather than answering a key with what the character used to be.

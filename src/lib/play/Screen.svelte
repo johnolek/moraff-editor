@@ -137,10 +137,11 @@
     if (!context) return;
 
     const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
-    // The coin flip that mirrors the monster ahead (exe 3000:2323), drawn from the pass number
-    // rather than from the game's own generator: a run has to replay exactly, and the tab redraws
-    // the screen far more often than the loop draws the views. Seeded here, so a redraw within
-    // one pass gets the same four flips and the picture stands still while the player reads.
+    // The coin flip that mirrors the monster ahead (exe 3000:2323), drawn from the number of the
+    // drawing rather than from the game's own generator: a run has to replay exactly, and the tab
+    // redraws the screen far more often than the loop draws the views. Seeded here, so every
+    // redraw between two drawings gets the same four flips and the monster being fought stands
+    // the way round it was.
     const flips = new SeededRng(viewsDrawn);
     renderFourViews(
       frame,

@@ -8,6 +8,7 @@ import { MAP_PLAYER, monsterAt, newGame, type PlayerCharacter } from '../game/po
 import { EXPLORED_STRIDE } from '../map/explored';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
+import { facingAMonster } from './battle.test-support';
 import { GameSession, KEY_HANDLERS, runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
 import { VIEW_DEPTH, viewedSquares } from './memory';
@@ -500,14 +501,32 @@ describe('the map the character discovers', () => {
 });
 
 describe('the coin flip that mirrors the monster you are fighting', () => {
-  it('counts the drawings of the four views, one per pass of the loop', async () => {
-    const session = playing(characterFile({ level: 0 }));
+  it('counts the drawings the game would have made and not the passes of the loop', async () => {
+    const start = townWalk();
+    const session = playing(characterFile({ level: 0, dir: 0, ...start }));
     // The loop has drawn once and is waiting for its first key.
     expect(session.view().viewsDrawn).toBe(1);
+    // A key that neither moves the character nor asks for a redraw draws nothing again.
     await press(session, KEY.escape);
+    expect(session.view().viewsDrawn).toBe(1);
+    // A turn asks for one, and so does a step.
+    await press(session, KEY.arrowLeft);
     expect(session.view().viewsDrawn).toBe(2);
-    await press(session, KEY.escape);
+    await press(session, KEY.arrowRight);
     expect(session.view().viewsDrawn).toBe(3);
+    await press(session, KEY.arrowUp);
+    expect(session.view().place).toMatchObject({ x: start.x, y: start.y - 1 });
+    expect(session.view().viewsDrawn).toBe(4);
+  });
+
+  it('is left alone by a swing, so the monster keeps the way it is facing', async () => {
+    const session = await facingAMonster(new BorlandRng(5), { lev: 10, str: 60 });
+    const drawn = session.view().viewsDrawn;
+    for (let swing = 0; swing < 4; swing++) await press(session, KEY.fight);
+    // The monster has taken the blows and is still standing, so nothing has asked for a redraw.
+    expect(session.game.monsters[0].hp).toBeGreaterThan(0);
+    expect(session.game.monsters[0].hp).toBeLessThan(50);
+    expect(session.view().viewsDrawn).toBe(drawn);
   });
 
   it('leaves the game\'s own generator alone, so a run still replays', async () => {
