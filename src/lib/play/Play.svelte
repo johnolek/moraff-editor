@@ -12,7 +12,7 @@
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
   import { downloadRunLog } from './export-run';
   import { compassKeys, gameKey, INTERCEPTED_KEYS, KEY_BUTTONS } from './keys';
-  import { actionWords, milestoneNote, milestoneWords, RunRecorder } from './run';
+  import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from './run';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
   import { characterMaps } from './memory';
   import { mapDrawn, monstersDrawn, panelVisible, PLAY_MODES, readPlayMode, writePlayMode, type PlayMode } from './mode';
@@ -179,7 +179,7 @@
   }
 
   /** The game's own clock, which the panel calls "spent down here". */
-  const clockWords = (seconds: number) => `${seconds} second${seconds === 1 ? '' : 's'}`;
+  const clockWords = RUN_GAMES.unforgiven.clockWords;
 
   function isTyping(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;

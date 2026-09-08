@@ -12,7 +12,7 @@
   import MwPortrait from './MwPortrait.svelte';
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
   import { downloadRunLog } from '../export-run';
-  import { actionWords, milestoneNote, milestoneWords, RunRecorder } from '../run';
+  import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from '../run';
   import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_INTERCEPTED_KEYS, MW_KEY_BUTTONS } from './keys';
   import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import { characterMaps } from '../memory';
@@ -233,9 +233,8 @@
     if (run) downloadRunLog({ ...run.log(), mode: session?.mode ?? null });
   }
 
-  /** The game's own clock, which the panel calls "moves spent". It counts in fractions of a move,
-   *  and the panel rounds it the same way. */
-  const clockWords = (moves: number) => `${Math.round(moves)} move${Math.round(moves) === 1 ? '' : 's'}`;
+  /** The game's own clock, which the panel calls "moves spent". */
+  const clockWords = RUN_GAMES.moraffsWorld.clockWords;
 
   function isTyping(target: EventTarget | null): boolean {
     if (!(target instanceof HTMLElement)) return false;
