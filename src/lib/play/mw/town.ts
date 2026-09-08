@@ -122,16 +122,32 @@ async function stayAtTheInn(session: MwGameSession): Promise<void> {
  * leads out to the world map.
  *
  * The overworld itself is not built. All the game does with it in the end is pick a dungeon out
- * of where the player stopped walking, so this port runs the rest of that -- the return path of
- * {@link gateArrival} and {@link walkIntoTheDungeon} -- with the number it started from.
+ * of where the player stopped walking, so this port asks for that number and runs the rest of
+ * the path -- {@link gateArrival} and {@link walkIntoTheDungeon} -- with what was typed.
  */
 async function leaveByTheGate(session: MwGameSession): Promise<void> {
   const game = session.game;
   const menu = session.takeBoxes(() => loadHBin(game, WORLD_MAP_HINT));
   await session.showBoxes(menu);
   if ((await session.menuKey(2, 3)) !== 0x31) return;
-  walkIntoTheDungeon(session, game.pc.dungeon);
+  const asking = session.takeBoxes(() => game.say(...WHICH_DUNGEON));
+  await session.showBoxes(asking);
+  const chosen = await typeADungeonNumber(session, game.pc.dungeon);
+  if (chosen === null) return;
+  walkIntoTheDungeon(session, chosen);
 }
+
+/**
+ * What the box asks where the game would walk the character out onto the world map. The
+ * overworld's own number picker is the cell they stopped walking on; here it is typed.
+ */
+const WHICH_DUNGEON = [
+  'THERE IS NO WORLD MAP: PICK A DUNGEON INSTEAD.',
+  '',
+  'TYPE A DUNGEON NUMBER AND HIT',
+  '  ENTER, OR ESCAPE TO STAY IN',
+  '  THIS ONE.',
+];
 
 /**
  * The last of FUN_3000_8235 (WORLD.EXE 3000:8235), which is what the game does with the dungeon
@@ -216,6 +232,35 @@ function gateArrival(chosen: number): { dungeon: number; x: number; y: number } 
  * The original draws each character as it is typed and takes letters and spaces too; this takes
  * the digits and shows what has been typed so far on the last line of the box.
  */
+/**
+ * The same prompt for the dungeon number, which the game never asks for and this port does.
+ *
+ * The number is a signed 16-bit field of the character record and the world map's own formula
+ * lands on either side of zero, so a leading minus sign is taken as well as the digits. A lone
+ * minus sign reads as zero, which is what the `atoi` behind read_string makes of it.
+ *
+ * The two ends of it are chosen rather than ported, since there is no original to follow. The
+ * dungeon the character is in is already in the buffer, so Enter on its own goes back to the
+ * town they left from; Escape gives the gate up and comes back null, rather than taking what has
+ * been typed the way the bank's Escape does.
+ */
+async function typeADungeonNumber(
+  session: MwGameSession,
+  current: number,
+): Promise<number | null> {
+  const typed = [...String(current)];
+  const box = [...session.box];
+  for (;;) {
+    session.box = [...box.slice(0, 7), typed.join('')];
+    const key = await session.key();
+    if (key === MW_ESCAPE) return null;
+    if (key === 0x0d && typed.length > 0) return (Number(typed.join('')) << 16) >> 16;
+    if (key === 0x08) typed.pop();
+    else if (key === 0x2d && typed.length === 0) typed.push('-');
+    else if (key >= 0x30 && key <= 0x39 && typed.length < 6) typed.push(String.fromCharCode(key));
+  }
+}
+
 async function typeANumber(session: MwGameSession): Promise<number> {
   const typed: string[] = [];
   const box = [...session.box];
