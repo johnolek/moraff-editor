@@ -72,12 +72,12 @@ export async function openOptions(turn: Turn): Promise<void> {
 const GRAPHICS_MENU = 42;
 
 /** The port's answer for every one of them. */
-const NO_THREE_D_VIEWS = [
+const NOTHING_TO_SET = [
   'THE GRAPHICS MENU SETS UP THE',
   '3-D VIEWS AND THE WALLS AND',
   'FLOORS THEY ARE DRAWN WITH.',
-  'THIS PORT IS PLAYED ON THE MAP',
-  'AND DRAWS NONE OF THEM.',
+  'THIS PORT DRAWS THEM ONE WAY',
+  'AND HAS NOTHING TO SET.',
 ];
 
 /**
@@ -91,16 +91,16 @@ export async function openGraphics(turn: Turn): Promise<void> {
   resetViewCaches(game);
   const chosen = await session.choice(menuKeys(7));
   if (chosen === KEY.escape) return;
-  game.say(...NO_THREE_D_VIEWS);
+  game.say(...NOTHING_TO_SET);
   game.pressAnyKey();
 }
 
 /** The port's answer for the X key. */
-const MAP_ALREADY_DRAWN = [
+const NO_EXPANDED_MAP = [
   'THE GAME WOULD FILL THE SCREEN',
   'WITH THE FLOOR, A THIRD OF IT',
-  'AT A TIME. THE WHOLE FLOOR IS',
-  'ALREADY DRAWN HERE.',
+  'AT A TIME. THIS PORT DRAWS THE',
+  'SMALL MAP IN THE CORNER ONLY.',
 ];
 
 /**
@@ -108,23 +108,23 @@ const MAP_ALREADY_DRAWN = [
  * screen in three pieces and waits for a key on each of them.
  */
 export function expandTheMap(turn: Turn): void {
-  turn.game.say(...MAP_ALREADY_DRAWN);
+  turn.game.say(...NO_EXPANDED_MAP);
   turn.game.pressAnyKey();
 }
 
 /** The port's answer for the Z key. */
-const NO_FORWARD_VIEW = [
-  'THE GAME WOULD SWAP THE MAP',
-  'FOR THE VIEW AHEAD. THIS PORT',
-  'IS PLAYED ON THE MAP AND HAS',
-  'NO OTHER VIEW TO SWAP TO.',
+const ONLY_FOUR_VIEWS = [
+  'THE GAME WOULD FILL THE SCREEN',
+  'WITH THE VIEW AHEAD AND HIDE',
+  'THE ZOOM MAP. THIS PORT DRAWS',
+  'THE FOUR VIEWS ONLY.',
 ];
 
 /**
- * movecontrol's 0x7a branch (exe 2000:d69c): the Z key, which flips DS:c307 between the map and
- * the 3-D view of what is in front of the character.
+ * movecontrol's 0x7a branch (exe 2000:d69c): the Z key, which flips DS:c307 between the four
+ * views with the zoom map beside them and one view of what is ahead filling the screen.
  */
 export function zoomTheView(turn: Turn): void {
-  turn.game.say(...NO_FORWARD_VIEW);
+  turn.game.say(...ONLY_FOUR_VIEWS);
   turn.game.pressAnyKey();
 }

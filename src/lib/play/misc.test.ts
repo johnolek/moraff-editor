@@ -81,6 +81,6 @@ describe('the X and Z keys', () => {
     // The box waits for a key of its own, the way every print_menu_only does.
     await press(session, KEY.escape);
     await press(session, KEY.zoomView);
-    expect(session.box).toContain('THE GAME WOULD SWAP THE MAP');
+    expect(session.box).toContain('THE ZOOM MAP. THIS PORT DRAWS');
   });
 });

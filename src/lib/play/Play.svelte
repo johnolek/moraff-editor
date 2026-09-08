@@ -221,8 +221,8 @@
     <div class="page">
       <h2><PixelText text="Play" scale={2} /></h2>
       <p class="lead">
-        Dungeons of the Unforgiven, played in a browser: the game's own dungeon, its own monsters and its own keys, with
-        the map where the 3-D view used to be. The character on the roster is the one who walks, and the game saves them
+        Dungeons of the Unforgiven, played in a browser: the game's own dungeon, its own monsters and its own keys, on
+        the screen the game draws them on. The character on the roster is the one who walks, and the game saves them
         back where it would have saved them, so they can go on playing in DOS.
       </p>
       {#if !playable}

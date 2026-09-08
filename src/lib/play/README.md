@@ -35,7 +35,9 @@ something the original does, a comment says so.
   column with `pfont` and does not wait on.
 * **`arrival.ts`** — the hint the snake brings on arriving on a floor. **`office.ts`** — the step
   count `draw_monster_view` keeps, and the taunt the section boss sends every 250 of them.
-* **`Play.svelte`** — the tab: the map, the message box, the screens and the row of keys.
+* **`Play.svelte`** — the tab: the game's screen or the top-down map, the screens and the row of
+  keys. **`display.ts`, `Screen.svelte`** — the screen itself: the boxes `movecontrol` fills, the
+  key menu, the zoom map and the status block, over the four views of `view3d/`.
 * **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
   prints, beside the map, and the picture of the monster in front of the character over them.
 
@@ -284,9 +286,12 @@ this port does not have.
   the port has are kept as a display timer (`timed.ts`); the flashes while a hole is dug, whose
   message the port shows as a box rather than the one line the original draws it on, are still
   printed once.
-* **The map is drawn instead of the 3-D view.** What the views would have shown is still worked
-  out, since it is what the map remembers and what says which monsters can be seen (`memory.ts`);
-  in speedrun and in debug the whole floor and every monster on it are drawn instead.
+* **The screen is the game's own.** `display.ts` and `Screen.svelte` draw what `movecontrol`
+  draws — the four 3-D views, the key menu, the zoom map, the battle-spell box, the message box
+  and the status block, each where the game puts it. Debug mode swaps the whole thing for the
+  top-down map of the floor and the panel of numbers, which is the only place on the site a floor
+  can be read square by square while it is being walked. The zoom map shows the squares the
+  character has discovered in faithful and every square in the other two modes.
 * **No `?MON.MAP`.** The original reads the floor a character is loaded onto out of their monster
   map file; a browser has none, so a floor is stocked afresh on arrival.
 * **The `.DUN` is a blob beside the roster entry.** The explored maps are written and read where
