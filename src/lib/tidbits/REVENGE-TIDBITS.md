@@ -451,3 +451,114 @@ differ from `4A.NUM`'s — different creatures, drawn separately.
 
 In the code: `rev-tools/docs/MONSTERS.md` part 2 and `rev-tools/docs/SURVEY.md` section 3, on the
 swap at `1000:4C6B` and `1000:4C97`.
+
+## The town
+
+### The town is an ordinary floor with a table written on top of it
+
+Level 0 is twenty squares by nineteen with the same sine walls as everywhere else, computed with
+the level set to zero. What makes it the town is ten `IF column = c AND row = r` tests in a row,
+one after another, handing a number to a seven-way `ON ... GOTO`:
+
+- 7, 3 — the Flea Bag Inn
+- 3, 2 — the Yuppydom Inn
+- 18, 17 — the Kings Inn
+- 13, 3 — the bank
+- 7, 15 and 14, 12 — the temple
+- 18, 3 and 13, 18 and 2, 8 — the store
+- 6, 14 — the wizard's guild
+
+Three of the ten squares are the same store and two are the same temple, which is why ten squares
+hold seven buildings. There is no data file behind any of it, and no other level reaches the
+branch: both ways in test the level first, so nothing below the town has a building on it.
+
+In the code: [townBuilding](source:ts/revmap.js/townBuilding) and
+[TOWN_BUILDINGS](source:ts/revmap.js/TOWN_BUILDINGS), from the table at `1000:10FD` and the
+dispatch at `1000:132A` (`rev-tools/docs/DUNGEON.md` section 9).
+
+### A building is up a rope, and the game's own map never shows one
+
+Walking onto one of the ten squares tells you there is a rope above and to hit `U` to climb it,
+which is the ordinary go-up key doing something it does nowhere else. Nothing marks the square
+otherwise: the game's automap draws a symbol only where the feature index has a bit set, and not
+one of the ten buildings is in that file. The town on the game's own map is a blank grid with
+ropes you have to walk into to find.
+
+The map every new character starts with has walked over four of them, and only four — the Flea
+Bag Inn, the bank and one of the three stores, all along row 3, and then the temple at 14, 12,
+where the seeded path stops.
+
+In the code: `rev-tools/docs/DUNGEON.md` section 9, on the rope at `1000:12C6` and the climb at
+`1000:0DBD`.
+
+### Three inns, and the cheap ones can rob you
+
+A room at the Flea Bag Inn is 10 jewel pieces and heals one health point. A suite at the Yuppydom
+is 200 and heals three. A grand suite at the Kings Inn is 6,000, and a cleric on the staff heals
+every wound you have.
+
+Except that the two cheap ones also heal you completely if you are carrying rings of health, in
+which case the Kings Inn is six thousand jewel pieces for something the Flea Bag does for ten.
+What the cheap ones charge instead is risk: both roll afterwards, and one time in ten you wake up
+with your money set to zero and are told you were robbed. The Flea Bag rolls once more on top of
+that, against being sick. Say yes without the money and a guard throws you out.
+
+In the code: `rev-tools/docs/DUNGEON.md` section 9, on the three routines at `1000:1E0A`,
+`1F3D` and `1FCD` and the robbery at `1000:1EE2`.
+
+### The temple sells a level for half a million
+
+Its menu is five lines, and each one subtracts its own price: 75 to cure wounds, 1,000 to heal
+all of them, 400 to cure disease, 20,000 to remove poison, and 500,000 to gain a level. Curing
+wounds gives back `INT(RND * 8) + 4` health points, which at 75 a go is the cheapest healing in
+the game and the slowest.
+
+Look at the shape of that list. Poison costs twenty times what healing every wound you have costs,
+and a level costs five hundred times *that*. The temple is where the money goes at the end of the
+game, and there is nothing else in the town to spend half a million on.
+
+In the code: `rev-tools/docs/DUNGEON.md` section 9, on the menu at `1000:2663` and the level at
+`1000:2044`.
+
+### The store will sell you the town, and the bank will sell you the bank
+
+The store's list is seven lines of weapons and armour, from a knife at 10 jewel pieces to field
+plate armor at 10,000, and its `ON ... GOTO` has exactly seven targets. There is an eighth line
+on the screen: "8) The Town: 1000000 JP". Typing 8 falls off the end of the table into a routine
+that offers to throw in the Brooklyn bridge.
+
+The bank does the same joke without even a line to type. Its sign offers the bank itself for
+5,000,000 jewel pieces and "Heh heh heh", and nothing anywhere in the routine will take the
+money.
+
+In the code: `rev-tools/docs/DUNGEON.md` section 9, on the store at `1000:281E`, the eighth line
+at `1000:2B67` and the bank's sign at `1000:236C`.
+
+### The wizard's guild charges the level to the power 1.75
+
+The guild is the only building that will not sell you a thing; it tells you what magic items do,
+for 800 jewel pieces, and it sells spell levels 1 to 6 at `INT(level ^ 1.75 * 220)` each. The
+first level is 220 and the sixth is about 5,060, so the six of them together cost far more than
+the six times the first that a linear price would have.
+
+In the code: `rev-tools/docs/DUNGEON.md` section 9, on the guild at `1000:2BB8` and the price at
+`1000:2DAE`.
+
+### The town's ladders ask a looser question than the rest of the dungeon
+
+Level 0 skips the branch that reads a square's own feature code and goes straight to the search
+for a ladder down, which is why the town has no ladder up and no chute. Inside that search sits a
+second branch only level 0 ever takes, and it is the whole difference between the town and
+everywhere else: below the town, a ladder goes down to a level whose folded code is *exactly* the
+distance; in the town, any level that folds to at least the distance will do.
+
+That is three ladders out of the town turned into ten, and ten is precisely what the shipped
+feature index marks on level 0 — those squares and no others, with nothing left over on either
+side. It is a cleaner agreement than the rest of the dungeon manages.
+
+The branch went unread for a while because it assigns from an address nothing in the program ever
+writes. The address is not a variable at all: it is the compiler's second spill slot, filled four
+instructions earlier.
+
+In the code: [feature](source:ts/revmap.js/feature), from the town's branch at `1000:55DD` and
+the spill at `1000:55F9` (`rev-tools/docs/DUNGEON.md` section 9).
