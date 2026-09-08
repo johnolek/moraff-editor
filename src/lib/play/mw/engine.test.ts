@@ -252,3 +252,26 @@ describe('the map the character discovers', () => {
     for (const square of before) expect(after.has(square)).toBe(true);
   });
 });
+
+describe('falling down a chute', () => {
+  it("leaves the first line standing on its own before it says what happened", async () => {
+    const chute = findMwSquare(
+      3,
+      (square, x, y) =>
+        square.ladder === 0 &&
+        bundledMwDungeon.chute(x, y, 3, 0) !== 3 &&
+        bundledMwDungeon.trapdoor(x, y, 3, 0) === -1,
+    );
+    const session = playingMw(mwCharacterFile({ floor: 3, ...chute }));
+    await settleMw();
+    // The three lines are print_text calls down the strip at the top left, not a box of eight.
+    expect(session.game.screen.map((line) => line.text)).toEqual([
+      'UH OH... A SINKING FEELING...',
+      'YOU HAVE FALLEN DOWN A CHUTE!',
+      '  HIT ANY KEY TO CONTINUE...',
+    ]);
+    expect(session.view().box).toEqual([]);
+    // ...and the tab is holding the first of them alone, which is chute's own second and a half.
+    expect(session.view().screen.map((line) => line.text)).toEqual(['UH OH... A SINKING FEELING...']);
+  });
+});
