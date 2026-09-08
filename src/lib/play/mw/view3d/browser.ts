@@ -30,11 +30,15 @@ function images(file: string): PicRowImage[] | null {
 }
 
 /**
- * The ladder mark is WORLD.PIC's first image. `load_world_pic` (exe 2000:27b8) fills two picture
- * slots before it starts consulting the flag table, and both hold the same orange ladder, so which
- * of the two is asked for makes no difference to what is drawn — only where the square puts it.
+ * The two ladder marks are WORLD.PIC's first two images, which `load_world_pic` (exe 2000:27b8)
+ * loads into the two picture slots it fills before it starts consulting the flag table.
+ *
+ * They are the same orange ladder flipped top to bottom — image 1 is image 0's rows in reverse —
+ * so the black hole is in the ceiling on one and in the floor on the other. FUN_3000_2796 draws
+ * slot 0 in the top third of a square for a way up and slot 1 in the bottom third for a way down.
  */
-const LADDER_IMAGE = 0;
+const LADDER_UP_IMAGE = 0;
+const LADDER_DOWN_IMAGE = 1;
 
 export function mwViewPictures(): MwViewPictures {
   const world = images('world.pic');
@@ -44,7 +48,7 @@ export function mwViewPictures(): MwViewPictures {
       const index = pictureImageIndex(picture);
       return index === null ? null : (world?.[index] ?? null);
     },
-    ladder: () => world?.[LADDER_IMAGE] ?? null,
+    ladder: (down) => world?.[down ? LADDER_DOWN_IMAGE : LADDER_UP_IMAGE] ?? null,
   };
 }
 

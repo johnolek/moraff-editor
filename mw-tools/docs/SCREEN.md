@@ -39,8 +39,10 @@ SPELLS IN EFFECT 2
 QUIT-SAVE HELP (F1)
 ```
 
-Green with the key letter yellow: `B`, `W`, `Z`, `I`, `A`, `F`, `WAIT` wholly yellow, `M`,
-`V`, `C`, `X`, `L`, `P`, `E`, `O` in `SOUND ON`, `1`, `2`, `Q`, `F1`.
+Green with the key letter yellow: `B`, `W`, `Z`, `I`, `A`, `F`, the `T` of `WAIT`, `M`,
+`V`, `C`, `X`, `L`, `P`, `E`, `O` in `SOUND ON`, `1`, `2`, `Q`, `F1`.  Only that one letter
+of `WAIT` is yellow, not the word: the two passes are nineteen bytes each and the second
+holds `   T     E         `.
 
 ## The views
 
@@ -76,4 +78,11 @@ cyan, two columns: `STR: 38  CON: 11`, `INT: 39  DEX: 19`, `WIZ: 46  LUCK:46`.
 ## The zoom map
 
 On the maroon box, walked squares as black cells with white edges, the character's square
-yellow with a yellow arrow for the facing, a few squares of an L-shaped path.
+yellow, a few squares of an L-shaped path.
+
+There is no facing arrow, and there cannot be one: Moraff's World has no facing, and all
+four views are compass directions drawn at once.  The character's square is a cursor that
+blinks, filled each pass in the next of the sixteen palette entries in turn
+(FUN_2000_7c8a, exe 2000:7c8a) — the game's own help file tells the player to look closely
+for it.  It is always in the middle of the map, which is fourteen cells by thirty of eight
+pixels each and scrolls under the character rather than the other way about.
