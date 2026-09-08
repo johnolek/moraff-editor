@@ -2,6 +2,7 @@ import { LEVELS } from '../../game/revmap.js';
 import type { Rng } from '../../game/port/rng';
 import { REV_POLLS_PER_TICK, REV_TICK_MS, revPoll } from './clock';
 import { revFallDownAChute } from './chute';
+import { revNeedsAFountain, revRollTheFountain } from './fountain';
 import { revDie } from './death';
 import {
   revLeaveTheFight,
@@ -120,6 +121,9 @@ export class RevGameSession {
     const pc = loadRevPlayer(file.bytes) ?? revPlayerFromValues(new Array<number>(340).fill(0));
     this.known = file.bytes.slice();
     this.game = newRevGame(pc, rng, new RevMapMemory(file.map ?? null));
+    // 1000:B98F: a character who has never been played has no fountain of youth yet, and the
+    // load rolls one for them.
+    if (revNeedsAFountain(pc)) revRollTheFountain(this.game);
     this.game.monsters.stock(pc.dungeonLevel, rng);
     run?.watch(this.game.events, () => ({
       time: this.ticks,

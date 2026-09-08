@@ -22,4 +22,6 @@ export interface RevMagicDesk {
   enterLevel(level: number): void;
   /** 1000:19F7: the statistics screen, which several spells and two scrolls end at. */
   stats(): void;
+  /** 1000:B308: the record written back, which the fountain of youth does before it lets go. */
+  save(): void;
 }

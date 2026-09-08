@@ -39,7 +39,7 @@ export function revRolls(numbers: number[]): Rng {
 export function revTestGame(
   pc: RevPc,
   rng: Rng = revRolls([]),
-): { game: RevGame; desk: RevMagicDesk; keys: number[]; levels: number[]; statsShown: number } {
+): { game: RevGame; desk: RevMagicDesk; keys: number[]; levels: number[]; statsShown: number; saves: number } {
   const game = newRevGame(pc, rng);
   const keys: number[] = [];
   const levels: number[] = [];
@@ -48,6 +48,7 @@ export function revTestGame(
     keys,
     levels,
     statsShown: 0,
+    saves: 0,
     desk: {
       poll: async () => keys.shift() ?? null,
       wait: async () => keys.shift() ?? 0,
@@ -57,6 +58,9 @@ export function revTestGame(
       },
       stats() {
         out.statsShown += 1;
+      },
+      save() {
+        out.saves += 1;
       },
     },
   };

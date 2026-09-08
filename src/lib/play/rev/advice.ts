@@ -1,3 +1,4 @@
+import { REV_FOUNTAIN_PROMPT, revAtTheFountain } from './fountain';
 import { REV_UNBANKED_EXPERIENCE_VALUE, revValue } from './record';
 import type { RevGame } from './state';
 
@@ -6,6 +7,9 @@ import type { RevGame } from './state';
  *
  * The loop rolls `INT(RND * 7) + 1` and prints one of four lines when the roll picks it and the
  * character is in the state it is about. The other three rolls say nothing.
+ *
+ * The fountain of youth's own two lines are printed straight after them (1000:0844), on no roll
+ * at all, whenever the character is standing on it.
  */
 
 /** The experience the character would need for another level (1000:0742). It is what the first
@@ -15,6 +19,10 @@ export function revExperienceForNextLevel(level: number): number {
 }
 
 export function revAdvice(game: RevGame): string[] {
+  return [...revRolledAdvice(game), ...(revAtTheFountain(game) ? REV_FOUNTAIN_PROMPT : [])];
+}
+
+function revRolledAdvice(game: RevGame): string[] {
   const pc = game.pc;
   const roll = game.rng.random(7) + 1;
   const experience = pc.experience + revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE);
