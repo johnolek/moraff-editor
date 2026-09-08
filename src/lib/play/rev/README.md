@@ -42,6 +42,8 @@ BASIC.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `chute.ts`, `fight.ts`,
   `attack.ts`, `kill.ts`, `town.ts`, `death.ts`, `advice.ts`, `help.ts`, `pause.ts`,
   `settings.ts` — so that two people can add two keys without touching the same file.
+* **`pass.ts`** — 1000:3FFC, what the game does on the far side of every key whatever the key
+  was. The disease drain lives here.
 * **The magic** — `spells.ts` (the twenty-four spells), `items.ts` (the twelve magic items, the
   six pills and the nine wands), `treasure.ts` (what a kill drops), `fountain.ts`. `magic.ts`
   names the record numbers all four read, `tables.ts` is `F1.COM` and `F2.COM`, and `desk.ts` is
@@ -204,7 +206,7 @@ it stands in for:
 | --- | --- | --- |
 | A | drops all the coins carried, which is what makes a character light | 1000:1918 |
 
-## Two things read out of the code that the documents had otherwise
+## Three things read out of the code that the documents had otherwise
 
 * **`rev-tools/docs/MONSTERS.md` said a monster walks through walls.** The gate at `1000:758D` is
   not a hash: it is the wall rule itself, with the character's own generation as the divisor and
@@ -217,3 +219,9 @@ it stands in for:
   `1000:352F` compares the halved level against the level rather than against the halved level.
   The column and the row are never touched, so a chute is a fall of one, two or three levels onto
   the same square. The document is corrected.
+* **The disease is its own pass counter.** `rev-tools/docs/FAITHFUL-GAPS.md` had the drain
+  landing on every hundredth pass without saying what counts them, and there is no counter: value
+  144 is the flag the temple charges 400 jewel pieces to clear, it is set to 1 the moment a
+  character catches something, and 1000:4076 adds one to it on every pass. So the drain lands as
+  it reaches 100, 200 and so on; the count is saved with the character, and the cure putting it
+  back to 0 is what starts the next disease from the beginning.

@@ -5,18 +5,17 @@ Moraff's Revenge, read against the annotated BASIC of `DUNSMALL.EXE` in Septembe
 below. `dotu-tools/docs/FAITHFUL-GAPS.md` says what this list is and is not; the departures the
 port makes on purpose are the last section of `src/lib/play/rev/README.md`.
 
-Two of these are rules of the game rather than of the screen. They are first, and they are the
-only two entries in any of the three games' lists that change what a run does.
+One of these is a rule of the game rather than of the screen. It is first, and it is the only
+entry in any of the three games' lists that changes what a run does.
 
 ## The list
 
 | what the player sees or feels | where it comes from | state |
 |---|---|---|
-| **A disease costs you a characteristic as you walk.** Every hundredth pass with a disease takes a point off one of the six at random and says you feel sick. Without it a disease costs a player nothing at all and there is no reason to walk back for the cure. | The per-key routine 1000:3FFC: the test at 1000:406B, the drain at 1000:40A0–40D3 (`INT(RND * 6) + 1`), the line at 1000:40DF and the four-second hold at 1000:40EB. | filed MORF-232 — **changes the game**: the drain spends the run's generator, so the fixtures have to be written again |
 | **Rings of health heal you as you walk**, one point per ring per pass, up to your maximum. The port lists the rings and heals nobody. | 1000:4028–4068, capped at 1000:3B02. | filed MORF-233 — **changes the game** |
 | **The dead monster's picture stays under YOU KILLED IT!!** Both that and HIT RETURN are printed straight across the close-up, and nothing rubs the picture out until the treasure clears the screen. The port takes the picture away the instant the monster dies. | `LOCATE 16,24` at 1000:A4C7/A4D8 and `LOCATE 17,26` at 1000:A4F9, over the close-up at (225, 112). 1000:6BAF sees the emptied slot and returns without erasing; the only routine that blanks that box, 1000:58F7, is never reached from the kill. | filed MORF-234 |
 | **A fight is written straight over the map.** The hit line and the damage land on rows 11 and 10 in the middle of the screen, the monster's answer and every drain run down from row 20, and MONSTER BLOCKS WAY appears above the FRONT box. The port collects the lot into the message rows at the top. | 1000:8D00–8DDE and 1000:8D5D / 8D91 / 8DBE; 1000:9DAF, 9DC1, 9DE8 and the drains at 9E7C, 9EC6, 9F05, 9F28, 9F34; 1000:33EA and 1000:340C. | filed MORF-235 |
-| **Almost every message is held on the screen** — two seconds for SOUND ON, NOT ENOUGH SPELL POINTS, a wand with no effect and what a battle item did; four for the fountain, the locate spell and every refusal in the store, the temple and the inns; eight back to back when the Flea Bag Inn makes you sick. The port prints and carries on. | 1000:2F1A is `T=TIMER: WHILE TIMER-T < 2: WEND` and 1000:2F35 calls it twice. Sites listed on the item. | filed MORF-238 |
+| **Almost every message is held on the screen** — two seconds for SOUND ON, NOT ENOUGH SPELL POINTS, a wand with no effect and what a battle item did; four for the fountain, the locate spell and every refusal in the store, the temple and the inns; eight back to back when the Flea Bag Inn makes you sick. The port prints and carries on. | 1000:2F1A is `T=TIMER: WHILE TIMER-T < 2: WEND` and 1000:2F35 calls it twice. Sites listed on the item, the four seconds a disease drain holds its line for (1000:40EB) among them. | filed MORF-238 |
 | **The V and M keys take the whole screen.** V is a full character sheet — the armour worn, the weapons owned, six padded columns and the disease warning — and waits for a key. The port prints eight lines into the box and carries on, and the armour, the weapons and the disease line never appear. | V: CLS 1000:19F7, the sheet to 1000:1C41, the wait at 1000:1C4A, the redraw at 1000:1C69. M: CLS 1000:3B16, list to 1000:3D6E, wait 1000:3D70, redraw 1000:3D79. | filed MORF-237 |
 | **Three potions put a banner in the middle-top** while they last, and the fight rubs each out as its timer runs down. None of the three lines exists in the port. | 1000:7F43, printing at 1000:7F7D / 7F96 / 7FAF; blanked at 1000:8601, 8663, 86CA. | filed MORF-236 |
 | **The screen goes black and is taken over** by the treasure after a kill, by death, by quitting and by the pause key, and three of those lines are missing outright — the reincarnation line and the two the game jokes with while it saves. The coin list also loses four of its seven lines on the drawn screen. | Treasure CLS 1000:A890, magic table 1000:AC87 and AC90; death CLS 1000:A016 with the reincarnation at 1000:A160; quit CLS 1000:0D8E with the two lines at 1000:B5C8–B5F7; pause 1000:7FFE. | filed MORF-239 |
@@ -35,6 +34,9 @@ everything is `LINE`. There is exactly one `CIRCLE` (1000:52E1, the chute marker
 `PAINT`s (1000:6638 and 1000:6851, the door slabs), and the port draws all three. Of the 46 `LINE`
 sites, every one is inside a block the port already ports.
 
-**1000:3FFC is the per-key routine, not just the fight entry.** All four move routines, both
-turns, C/P/T/W and the stats screen call it, which is why the disease drain and the rings' healing
-are felt on every single step.
+**1000:3FFC is the per-key routine, not just the fight entry.** Every key comes back through it:
+most by the loop's own re-entry at 1000:0636, a step by the tail the four move routines share
+(1000:33CB), a wall by the branch each of them refuses on, a turn by the top of the pass
+(1000:0627), and C, P, T and W by calling it themselves. The one key that never reaches it is a
+step a monster stood in the way of (1000:33EA). That is why the disease drain and the rings'
+healing are felt on every single step.
