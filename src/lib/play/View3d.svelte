@@ -66,6 +66,7 @@
         screen: { width: WIDTH, height: HEIGHT },
         videoClass: 2,
         horizonWeight: height,
+        dir: place.dir,
         monsters: drawn,
         water: [4, 8, 20].includes(section?.section ?? 0),
       },

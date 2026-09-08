@@ -16,6 +16,16 @@ export const WALL_MATERIALS = [3, 4, 5] as const;
 export const FLOOR_TILES = [6, 7, 8, 9] as const;
 
 /**
+ * Which of the two pairs a square is laid with: 0 for images 6 and 7, 2 for 8 and 9. The pair
+ * turns over with every step, and the way the character faces is added in so that the floor does
+ * not change when they only turn on the spot (exe 3000:1698).
+ *
+ * `dir` is the way the character faces (DS:c02e) and not the way the view being drawn looks, so
+ * all four views of one screen lay their floors the same way.
+ */
+export const floorTilePair = (x: number, y: number, dir: number): number => ((x + y + (dir < 2 ? 1 : 0)) % 2) * 2;
+
+/**
  * Everything the 3-D view draws that comes out of a `.PIC` file. The renderer is handed one of
  * these rather than reaching for the files itself, so the same code runs in the browser (where
  * Vite inlines the pictures) and under Node (where a script reads them off disk).

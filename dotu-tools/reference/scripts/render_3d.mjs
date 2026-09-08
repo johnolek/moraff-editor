@@ -88,6 +88,7 @@ const scene = {
   screen,
   videoClass: 2,
   horizonWeight,
+  dir,
   monsters: [],
   water: [4, 8, 20].includes(section),
 };

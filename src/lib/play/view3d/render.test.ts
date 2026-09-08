@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { MapSquare } from '../../map/game';
 import { newFrame, type Frame } from './frame';
 import { AHEAD_VIEW } from './geometry';
-import { NO_PICTURES, type ViewPictures } from './pictures';
+import { floorTilePair, NO_PICTURES, type ViewPictures } from './pictures';
 import { parsePicRows } from './texture';
 import { VIEW_BLOCKED, renderFourViews, renderView, type ViewScene } from './render';
 import { FOUR_VIEWS } from './views';
@@ -52,6 +52,7 @@ function scene(rows: MapSquare[][], over: Partial<ViewScene> = {}): ViewScene {
     screen: SCREEN,
     videoClass: 2,
     horizonWeight: 21,
+    dir: 0,
     monsters: [],
     water: false,
     ...over,
@@ -166,5 +167,39 @@ describe('the four views of one screen', () => {
       const bottom = Math.trunc((479 * view.rect.bottom) / 1200);
       expect([...coloursIn(frame, left + 4, top + 4, right - 4, bottom - 4)].length).toBeGreaterThan(1);
     }
+  });
+});
+
+describe('which pair of floor tiles a square is laid with', () => {
+  const wallPictures = parsePicRows(readFileSync('src/lib/game/pics/ufwall1.pic'));
+
+  /** The pixels of a band of floor below the horizon, as a string, so two draws can be compared.
+   *  The two pairs of tiles are drawn from the same colours, so only their arrangement differs. */
+  function floorBand(at: { x: number; y: number }, dir: number): string {
+    const rows = blankFloor();
+    // A crossroads, so every one of the four ways is open and the floor is drawn whichever way
+    // the character faces.
+    for (const [x, y] of [[5, 5], [5, 4], [6, 5], [4, 5], [5, 6]]) {
+      rows[y][x] = { ...shut(), n: 3, s: 3, w: 3, e: 3 };
+    }
+    const frame = newFrame(SCREEN.width, SCREEN.height);
+    renderView(frame, scene(rows, { at, dir, pictures: { ...pictures(), wall: wallPictures } }), AHEAD_VIEW, dir);
+    const band: number[] = [];
+    for (let y = 90; y <= 120; y++) for (let x = 100; x <= 220; x++) band.push(frame.pixels[y * frame.width + x]);
+    return band.join(',');
+  }
+
+  it('turns the pair over between one square and the next', () => {
+    expect(floorTilePair(5, 5, 0)).not.toBe(floorTilePair(5, 4, 0));
+    expect(floorBand({ x: 5, y: 5 }, 0)).not.toEqual(floorBand({ x: 5, y: 4 }, 0));
+  });
+
+  it('keeps the pair when the character turns between north and south, or east and west', () => {
+    expect(floorTilePair(5, 5, 0)).toBe(floorTilePair(5, 5, 1));
+    expect(floorTilePair(5, 5, 2)).toBe(floorTilePair(5, 5, 3));
+  });
+
+  it('changes it when they turn from a north-south way to an east-west one', () => {
+    expect(floorTilePair(5, 5, 0)).not.toBe(floorTilePair(5, 5, 2));
   });
 });

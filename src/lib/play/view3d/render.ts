@@ -9,7 +9,7 @@ import {
   type ViewFrame,
   type ViewRect,
 } from './geometry';
-import { FLOOR_TILES } from './pictures';
+import { FLOOR_TILES, floorTilePair } from './pictures';
 import { scaleImage } from './scale';
 import { drawWall, DETAIL_TEXTURED, type WallScene } from './wall';
 import { FOUR_VIEWS, viewFacing } from './views';
@@ -36,6 +36,9 @@ export interface ViewMonster {
 export interface ViewScene extends Omit<WallScene, 'facing'> {
   /** DS:b8bd: the character's height, which is where the horizon sits. */
   horizonWeight: number;
+  /** DS:c02e: the way the character faces, which the floor tiles are picked by whichever of the
+   *  four views is being drawn. */
+  dir: number;
   monsters: ViewMonster[];
   /** The three water sections draw the built-in monsters short, with the overlay over them. */
   water: boolean;
@@ -115,7 +118,8 @@ export function renderView(frame: Frame, scene: ViewScene, rect: ViewRect, facin
  * `draw_3d_view` once for the way the character faces and once for each of the other three.
  */
 export function renderFourViews(frame: Frame, scene: ViewScene, facing: number): void {
-  for (const view of FOUR_VIEWS) renderView(frame, scene, view.rect, viewFacing(view.name, facing));
+  const party = { ...scene, dir: facing };
+  for (const view of FOUR_VIEWS) renderView(frame, party, view.rect, viewFacing(view.name, facing));
 }
 
 /** `retdwall` for the side the view looks through from the character's own square. */
@@ -130,9 +134,9 @@ function sideAhead(scene: ViewScene, facing: number): number {
 }
 
 /**
- * The floor and the ceiling, each laid as four quarters of one perspective tile mirrored about
- * the middle of the view. The pair of tiles alternates with the parity of the character's square,
- * which is what makes the floor change as you walk.
+ * The floor and the ceiling, each laid as two bands mirrored about the middle of the view. Which
+ * pair of the wall file's four tiles is used turns over with every step, which is what makes the
+ * floor change as you walk.
  *
  * Without the wall pictures in the bundle there are no tiles, and the two halves are filled flat.
  * The original's own banded gradient for that case (`draw_3d_view`'s DS:2322 branch) is not
@@ -152,23 +156,25 @@ function drawFloorAndCeiling(frame: Frame, scene: ViewScene, view: ViewFrame, re
     return;
   }
 
-  const pair = ((scene.at.x + scene.at.y) % 2) * 2;
-  const near = wall[FLOOR_TILES[pair]];
-  const far = wall[FLOOR_TILES[pair + 1]];
-  const colours = { base: 0x50, tint: 0 };
-  const options = { screen: scene.screen, colours };
+  const pair = floorTilePair(scene.at.x, scene.at.y, scene.dir);
+  const distant = wall[FLOOR_TILES[pair + 1]];
+  const underfoot = wall[FLOOR_TILES[pair]];
+  // The tiles carry no pixel the tint or the transparent value could stand in for, so the colour
+  // the last wall face left in DS:4fbd — which this pass does not set — cannot reach them.
+  const options = { screen: scene.screen, colours: { base: 0x50, tint: 0 } };
   const third = (a: number, b: number) => Math.trunc((2 * a + b) / 3);
 
-  // The near band runs from the horizon a third of the way to the edge; the far band covers the
-  // rest. Each is drawn twice, mirrored about the middle of the view.
+  // The square underfoot fills the two thirds of the band nearest the edge of the view and
+  // everything beyond it is crammed into the third by the horizon. Each is drawn twice, mirrored
+  // about the middle of the view.
   for (const edge of [rect.top, rect.bottom]) {
     const bend = third(horizon, edge);
     for (const [x1, x2] of [
       [midX, rect.right],
       [midX, rect.left],
     ]) {
-      if (near) scaleImage(frame, x1, horizon, x2, bend, near, 0, 246, options);
-      if (far) scaleImage(frame, x1, bend, x2, edge, far, 0, 251, options);
+      if (distant) scaleImage(frame, x1, horizon, x2, bend, distant, 0, 246, options);
+      if (underfoot) scaleImage(frame, x1, bend, x2, edge, underfoot, 0, 251, options);
     }
   }
 }
