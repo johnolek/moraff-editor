@@ -39,6 +39,9 @@ export function viewPictures(section: number): ViewPictures {
   };
 }
 
+/** The four images of a town building's picture, or null when the bundle has not got the file. */
+export const buildingPictures = (file: string): PicRowImage[] | null => images(file);
+
 /** Whether the bundle has the wall pictures, which decide whether the walls are drawn textured. */
 export const hasWallPictures = (section: number): boolean => images(wallPictureFile(section)) !== null;
 

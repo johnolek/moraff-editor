@@ -3,11 +3,13 @@ import {
   PIC_W,
   BRIGHT_COLOURS,
   builtinPictureIndex,
+  dimPalette,
   dungeonPalette,
   monsterPixelIndex,
   parsePic,
   renderImage,
   sectionPictureIndex,
+  vgaToRgb,
   type PicImage,
   type Rgb,
 } from '../game/dotu-pic.js';
@@ -63,6 +65,23 @@ export function pictureImages(file: string): PicImage[] {
  */
 export function sectionPalette(module: number, part: number, setting: number = BRIGHT_COLOURS): Rgb[] {
   return dungeonPalette(palettes, null, module, part, setting);
+}
+
+/** Every emulated palette, by the key `EmuPalette.py` wrote it under. */
+const allPalettes: Record<string, number[][]> = palettes;
+
+/**
+ * The palette while the character is inside a town building, which `set_palette` (exe 4000:12c3)
+ * builds with DS:2505 raised: the same section palette with the two shop tables copied over
+ * entries 32 to 95.
+ *
+ * That copy happens after the colour setting has blended the wall colours, so the setting shows
+ * on entries 16 to 31 and on nothing else. Asking `dimPalette` to stop before the 3-D walls' own
+ * bank is what leaves the rest alone.
+ */
+export function townPalette(module: number, part: number, setting: number = BRIGHT_COLOURS): Rgb[] {
+  const key = `m${module}_s${part}_town`;
+  return vgaToRgb(dimPalette(allPalettes[key], setting, true));
 }
 
 /** The monster drawn with the palette of the given section; module is 1-based. */
