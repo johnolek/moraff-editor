@@ -11,7 +11,7 @@ import { KEY } from './keys';
  * left and right turn them, and down turns them around. Moraff's World's are compass
  * directions: each arrow faces the character the way it points and steps that way.
  */
-export type MovementStyle = PortedGameId;
+export type MovementStyle = 'unforgiven' | 'moraffsWorld';
 
 /** Where the choice is kept, one key per game. */
 const PREFIX = 'moraff-tools.play.';
@@ -56,7 +56,12 @@ function isMovementStyle(value: unknown): value is MovementStyle {
   return MOVEMENT_STYLES.some((style) => style.id === value);
 }
 
-/** Whose arrows this game is played with: the player's choice, or the game's own. */
+/**
+ * Whose arrows this game is played with: the player's choice, or the game's own.
+ *
+ * Moraff's Revenge is not one of the two: it has both styles of its own and switches between them
+ * with Escape, so its Play tab reads the game's own variable rather than this.
+ */
 export function readMovementStyle(game: MovementStyle): MovementStyle {
   const stored = readStored(PREFIX + game + SUFFIX);
   return isMovementStyle(stored) ? stored : game;

@@ -1,19 +1,24 @@
 import type { PortedGameId } from '../app-state.svelte';
 import { SeededRng, type Rng } from '../game/port/rng';
-import { MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
+import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine';
 import { MW_KEY, mwTurn } from './mw/keys';
+import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile } from './rev/engine';
+import { REV_KEY } from './rev/keys';
 
 /**
  * The run log: everything a game played here was, written down as it is played.
  *
- * Both games are turn based and every random number they draw comes from one generator, so a run
- * is completely described by three things — the character's record as play began, the seed the
- * generator was started from, and the keys that were pressed, in order. Running the same engine
- * over those again reproduces the whole game, which is what lets a claimed ending be checked
- * rather than believed. `replayRun` is the check.
+ * Two of the three games are turn based and every random number they draw comes from one
+ * generator, so a run is completely described by three things — the character's record as play
+ * began, the seed the generator was started from, and the keys that were pressed, in order.
+ * Moraff's Revenge is not turn based, and the answer is the same shape: the ticks of the clock
+ * its monsters move on are written into the log as inputs of their own, so a replay makes the
+ * same number of them in the same places and needs no clock. Running the same engine over the
+ * three again reproduces the whole game, which is what lets a claimed ending be checked rather
+ * than believed. `replayRun` is the check.
  *
  * Nothing here touches the browser: the log is built and replayed under Node just as it is in a
  * tab.
@@ -23,7 +28,7 @@ import { MW_KEY, mwTurn } from './mw/keys';
  *  finds. */
 export const RUN_LOG_VERSION = 2;
 
-/** Which of the two playable games a run was played in. */
+/** Which of the playable games a run was played in. */
 export type RunGame = PortedGameId;
 
 /**
@@ -94,9 +99,38 @@ const MORAFFS_WORLD_ACTIONS = new Set<number>([
   MW_KEY.useItem, // useAnItem
 ]);
 
+/**
+ * The same in Moraff's Revenge, by the handler `REV_KEY_HANDLERS` and the fight prompt give it.
+ *
+ * All four arrows are here. Which of them steps depends on the movement mode Escape switches, and
+ * the log holds the key rather than what it did, so a run played with the turning arrows counts
+ * its turns as well as its steps. The five keys of the fight prompt are each a swing; C, I, T, W
+ * and A each spend the character's own moment even where this port has not built what they do,
+ * so they are counted.
+ */
+const MORAFFS_REVENGE_ACTIONS = new Set<number>([
+  REV_KEY.arrowUp,
+  REV_KEY.arrowDown,
+  REV_KEY.arrowLeft,
+  REV_KEY.arrowRight,
+  REV_KEY.down, // a ladder down, or the false floor a chute left
+  REV_KEY.up, // a ladder up, or the rope into one of the town's ten buildings
+  REV_KEY.sword, // the four swings of the fight prompt
+  REV_KEY.mace,
+  REV_KEY.knife,
+  REV_KEY.fists,
+  REV_KEY.breathe,
+  REV_KEY.cast,
+  REV_KEY.item,
+  REV_KEY.pill,
+  REV_KEY.wand,
+  REV_KEY.abandon,
+]);
+
 const ACTIONS: Record<RunGame, Set<number>> = {
   unforgiven: UNFORGIVEN_ACTIONS,
   moraffsWorld: MORAFFS_WORLD_ACTIONS,
+  revenge: MORAFFS_REVENGE_ACTIONS,
 };
 
 /** Whether a key the loop has dispatched counts as one of the run's actions. */
@@ -108,11 +142,13 @@ export function countsAsAction(game: RunGame, key: number): boolean {
  * What a run is verified against: the handful of things that happened in it worth naming.
  *
  * A boss is a section's Shadow boss in Dungeons of the Unforgiven (0 to 19) and one of the eight
- * quest bosses in Moraff's World (0 to 7); a level is the one the character woke on at the inn; a
- * dungeon is the module or the dungeon the character moved to. A death and a win have nothing to
+ * quest bosses in Moraff's World (0 to 7); a level is the one the character woke on at the inn,
+ * or bought at Moraff's Revenge's temple; a dungeon is the module or the dungeon the character
+ * moved to; a floor is the deepest one a Moraff's Revenge character has reached, which is what
+ * that game is measured by since it has only the one dungeon. A death and a win have nothing to
  * count, and `which` is 0 for them.
  */
-export type MilestoneKind = 'boss' | 'level' | 'dungeon' | 'death' | 'win';
+export type MilestoneKind = 'boss' | 'level' | 'dungeon' | 'floor' | 'death' | 'win';
 
 export interface Milestone {
   kind: MilestoneKind;
@@ -171,6 +207,7 @@ export function milestoneWords(milestone: Milestone, dungeonName: (dungeon: numb
   if (milestone.kind === 'boss') return `Boss ${milestone.which + 1} beaten`;
   if (milestone.kind === 'level') return `Level ${milestone.which}`;
   if (milestone.kind === 'dungeon') return dungeonName(milestone.which);
+  if (milestone.kind === 'floor') return `Floor ${milestone.which}`;
   return milestone.kind === 'win' ? 'Won' : 'Died';
 }
 
@@ -286,6 +323,8 @@ export class RunRecorder {
   private eventsRead = 0;
   /** The module or dungeon the character was last seen in, so that moving between them shows. */
   private dungeon = 0;
+  /** The deepest floor the character has reached, which only Moraff's Revenge counts. */
+  private deepest = 0;
 
   constructor(start: RunStart) {
     this.game = start.game;
@@ -308,6 +347,7 @@ export class RunRecorder {
     this.eventsRead = events.length;
     this.clock = clock;
     this.dungeon = clock().dungeon;
+    this.deepest = clock().floor;
   }
 
   /** A key on its way into the game. */
@@ -352,6 +392,13 @@ export class RunRecorder {
     if (now.dungeon !== this.dungeon) {
       this.dungeon = now.dungeon;
       reach('dungeon', now.dungeon);
+    }
+    // Moraff's Revenge has one dungeon and seventy levels of it, so how deep a character got is
+    // what a run of that game is measured by. The other two are measured by their modules and
+    // dungeons and their logs are left as they were.
+    if (this.game === 'revenge' && now.floor > this.deepest) {
+      this.deepest = now.floor;
+      reach('floor', now.floor);
     }
     while (this.eventsRead < this.events.length) {
       const event = runEvent(this.events[this.eventsRead++]);
@@ -511,6 +558,45 @@ async function replayMoraffsWorld(log: RunLog, run: RunRecorder): Promise<RunRep
   };
 }
 
+/**
+ * Moraff's Revenge, replayed.
+ *
+ * Its log holds two kinds of input: the keys the dungeon read, and {@link REV_CLOCK_TICK}, one
+ * for each tick of the clock the monsters moved on. A tick is not a key and is not pressed —
+ * `session.tick()` runs the passes of the poll it stands for, drawing the same numbers from the
+ * same generator, which is what makes a run that nobody was sitting still through replayable.
+ */
+async function replayMoraffsRevenge(log: RunLog, run: RunRecorder): Promise<RunReplay> {
+  const file: RevCharacterFile = {
+    bytes: run.record.slice(),
+    write(bytes) {
+      this.bytes = bytes;
+    },
+    died() {},
+  };
+  const session = startRevGame(file, run.rng, run);
+  void runRevDungeon(session);
+  await loopRuns();
+  for (const input of log.inputs) {
+    if (session.over) break;
+    if (input === REV_CLOCK_TICK) session.tick();
+    else session.press(input);
+    await loopRuns();
+  }
+  session.save();
+  session.finish();
+  const pc = session.game.pc;
+  return {
+    record: file.bytes,
+    place: { x: pc.column, y: pc.row, floor: pc.dungeonLevel, dungeon: 0, dir: pc.facing },
+    time: session.ticks,
+    actions: run.actions,
+    milestones: run.log().milestones,
+    over: session.over,
+    dead: session.dead,
+  };
+}
+
 export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
   unforgiven: {
     replay: replayUnforgiven,
@@ -522,6 +608,12 @@ export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
     // The clock counts in fractions of a move, which is rounded wherever it is shown.
     clockWords: (moves) => `${Math.round(moves)} move${Math.round(moves) === 1 ? '' : 's'}`,
     dungeonName: MORAFFS_WORLD_MAP.dungeonName,
+  },
+  revenge: {
+    replay: replayMoraffsRevenge,
+    // This game's clock is the ticks of the poll its monsters move on, which `rev/clock.ts` has.
+    clockWords: (ticks) => `${ticks} tick${ticks === 1 ? '' : 's'}`,
+    dungeonName: MORAFFS_REVENGE_MAP.dungeonName,
   },
 };
 

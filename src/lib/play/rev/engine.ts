@@ -140,7 +140,9 @@ export class RevGameSession {
     this.changed();
     return new Promise((resolve) => {
       this.waiting = (key) => {
-        if (key !== REV_RECORD_EDITED) this.run?.input(key);
+        // Neither of the two things that are not keys belongs in the log here: an edited record
+        // is not an input at all, and a tick has already written itself down.
+        if (key !== REV_RECORD_EDITED && key !== REV_CLOCK_TICK) this.run?.input(key);
         resolve(key);
       };
     });
