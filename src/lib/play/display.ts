@@ -274,6 +274,10 @@ export function drawScreenFurniture(frame: Frame, floor: ZoomMapFloor): void {
 /** The white `draw_side` (exe 3000:8432) lines every side of a cell that is not open. */
 export const ZOOM_SIDE_COLOUR = 15;
 
+/** The red the four corners of every cell are plotted in, which the game does on every screen
+ *  above the 640 by 350 one (exe 3000:899e). */
+export const ZOOM_CORNER_COLOUR = 6;
+
 /** `drawsquare` (exe 3000:87de) and `draw_side` (exe 3000:8432) for every square of the window. */
 function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
   const left = zoomMapLeft(frame.width);
@@ -305,8 +309,8 @@ function drawZoomMap(frame: Frame, floor: ZoomMapFloor): void {
 }
 
 /**
- * One square of the map, in the order `drawsquare` (exe 3000:87de) draws it: the fill and then
- * the four sides.
+ * One square of the map, in the order `drawsquare` (exe 3000:87de) draws it: the fill, the four
+ * sides, and a dot on each of the four corners.
  */
 function drawZoomSquare(frame: Frame, square: MapSquare, x: number, y: number): void {
   fillRect(frame, x + 1, y + 1, x + ZOOM_CELL, y + ZOOM_CELL, 0);
@@ -314,6 +318,10 @@ function drawZoomSquare(frame: Frame, square: MapSquare, x: number, y: number): 
   drawZoomSide(frame, square.n, x, y, true);
   drawZoomSide(frame, square.e, x + ZOOM_CELL, y, false);
   drawZoomSide(frame, square.s, x, y + ZOOM_CELL, true);
+  for (const corner of [x, x + ZOOM_CELL]) {
+    plot(frame, corner, y, ZOOM_CORNER_COLOUR);
+    plot(frame, corner, y + ZOOM_CELL, ZOOM_CORNER_COLOUR);
+  }
 }
 
 /**
