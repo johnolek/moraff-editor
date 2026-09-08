@@ -73,6 +73,20 @@ export interface RevGame {
   /** A ported function is owed a key it could not wait for. */
   keyOwed: boolean;
   /**
+   * DGROUP B542: the delay 1000:0F00 asks for, which the original busy-waits in before a redraw
+   * (1000:412A) so that several movement keys can be typed ahead of it. Nothing here redraws on
+   * a timer, so nothing reads it.
+   */
+  enterDelay: number;
+  /** DGROUP B46E: the colour the screen is drawn on, 0 to 16 (1000:0FF5). */
+  background: number;
+  /** DGROUP B472: the palette, which starts at 2 (1000:017D); an even number is the first of the
+   *  two `SCREEN 1` palettes. */
+  palette: number;
+  /** DGROUP B4BC: 0 with the sound on and 1 with it off (1000:1055, and the `PLAY` at
+   *  1000:05CB that reads it). */
+  sound: number;
+  /**
    * DGROUP B6CC: how many more of the monster's swings the pills the character has swallowed
    * will hold off. A pill adds ten (1000:7C3C) and a swing counts one off (1000:9A2F).
    */
@@ -136,6 +150,10 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     events: [],
     over: false,
     keyOwed: false,
+    enterDelay: 0,
+    background: 0,
+    palette: 2,
+    sound: 0,
     paralysis: 0,
     monsterSwing: { roll: 0, armourClass: 0, damage: 0 },
     shield: 0,

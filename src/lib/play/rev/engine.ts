@@ -16,6 +16,7 @@ import {
 import { revMonsterAttack } from './attack';
 import { revShowHelp } from './help';
 import { revPause } from './pause';
+import { revSetEnterDelay, revStepBackground, revStepPalette, revToggleSound } from './settings';
 import { revKillMonster } from './kill';
 import { REV_KEY, revArrowMode, revCompassArrow, revTurningArrow, revWrapFacing } from './keys';
 import { revFeatureUnder, revLookDown } from './ladders';
@@ -373,12 +374,12 @@ export const REV_KEY_HANDLERS: Record<number, RevKeyHandler> = {
   [REV_KEY.help]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
   [REV_KEY.f1]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
   [REV_KEY.pause]: { c: '1000:7FFB, the pause screen', run: (turn) => revPause(turn.game, turn.session.desk(), () => quitAndSave(turn)) },
-  [REV_KEY.enterDelay]: { c: '1000:0F00, the enter delay', run: (turn) => notBuiltYet(turn, 'set the delay between redraws') },
+  [REV_KEY.enterDelay]: { c: '1000:0F00, the enter delay', run: (turn) => revSetEnterDelay(turn.game, turn.session.desk()) },
   [REV_KEY.pill]: { c: '1000:7C49, take a pill', run: (turn) => notBuiltYet(turn, 'take a pill') },
   [REV_KEY.wand]: { c: '1000:7AA1, use a wand', run: (turn) => notBuiltYet(turn, 'use a wand') },
-  [REV_KEY.background]: { c: '1000:0FF5, the background colour', run: (turn) => notBuiltYet(turn, 'step the background colour on') },
-  [REV_KEY.palette]: { c: '1000:102A, the palette', run: (turn) => notBuiltYet(turn, 'swap the two CGA palettes') },
-  [REV_KEY.sound]: { c: '1000:1055, the sound', run: (turn) => notBuiltYet(turn, 'turn the sound on and off') },
+  [REV_KEY.background]: { c: '1000:0FF5, the background colour', run: (turn) => revStepBackground(turn.game) },
+  [REV_KEY.palette]: { c: '1000:102A, the palette', run: (turn) => revStepPalette(turn.game) },
+  [REV_KEY.sound]: { c: '1000:1055, the sound', run: (turn) => revToggleSound(turn.game) },
 };
 
 /** 1000:10BE: Escape counts the movement mode 0, 1, 0. */
