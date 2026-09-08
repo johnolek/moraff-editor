@@ -806,3 +806,113 @@ It is the same square every time, for every character, in every dungeon whose to
 square there.
 
 In the code: [use_magic_item](source:c/use_magic_item).
+
+## Trivia and history
+
+### The file called V, and the same five sums as the other game
+
+The first thing the game does is open a file called `V`, print it on the screen, and add up every
+byte in it in five different ways. The five sums have to come to exactly 1, 367, 4, 44,844 and
+174. If any one of them is off, a flag is set and the game exits a few calls later, before it ever
+shows you the character list.
+
+Dungeons of the Unforgiven does the same thing with the same five numbers, which means the same
+file, unchanged, two games apart. And neither of them checks that the file opened at all.
+
+In the code: [check_v_file](source:c/check_v_file).
+
+### The Flea Bag Inn is the other game's Flea Bag Inn
+
+Moraff's World has one inn. Its sign reads `WELCOME TO THE FLEA BAG INN`, `A WOODEN SIGN READS:`,
+and then the warning to check the bed carefully before lying down and that the management is not
+responsible for your possessions.
+
+Dungeons of the Unforgiven has five inns, one per module, and the third of them is the Flea Bag
+Inn — with a wooden sign, and the same eight lines. Two of them differ. The fourth names the price
+here and promises to make you comfortable there, and the third is the word `ACCOMODATIONS`, which
+Moraff's World spells with one M and the other game with two.
+
+In the code: [inn](source:c/inn) and [load_h_bin](source:c/load_h_bin).
+
+### One message nobody can be shown
+
+`H.BIN` holds everything the game says in an eight-line box: the eight quest bosses' warnings in
+verse, the little mouse's advice, the town greeting, what the poison and the disease say when they
+bite, the magic items, the wishes, and both endings of a death. Thirty-five records, and every one
+of them is asked for by number from somewhere in the code.
+
+Except record 28, which says you are near the bottom level of the beginner's version, that
+descending further may abruptly complete the game, and that the advanced version can be had by
+ringing (800) VGA-GAME. It is the shareware nag, still sitting in the advanced version's own data
+file, and nothing anywhere calls for it.
+
+In the code: [load_h_bin](source:c/load_h_bin) and [the arrival greeting](source:c/FUN_2000_248e).
+
+### Insert the game disk
+
+Before the character list the game looks for a file in the current directory, and if it is not
+there it puts up a box: insert the game disk in the diskette drive and hit any key, and note that
+you can only have one character per game disk on 360K drives.
+
+It then waits in a loop, retrying the open, watching for a drive change and letting Escape quit,
+and it has a whole `H.BIN` record of its own to say `THAT IS NOT THE GAME DISK`. Ten save slots
+are numbered files 0 to 9 in the game directory, 2,344 bytes each; the one-character rule is the
+floppy's, not the game's.
+
+In the code: [game_disk_prompt](source:c/game_disk_prompt) and
+[save_player](source:c/save_player).
+
+### The walls change colour every eleven floors, and the monsters barely notice
+
+The palette is rebuilt from scratch whenever you enter a floor. Entries 1 to 15 are the same
+fifteen colours every time — dark blue through to white, the fifteen the coloured balls are named
+after. Entries 16 to 31 are one of eleven wall colour sets, picked by the floor number modulo 11,
+and entries 48 to 63 one of seven gradients, picked modulo 7.
+
+The monster pictures only ever use pixel values 1 to 18, so of the whole wall set exactly one
+entry — number 18 — is ever reached by a monster, and it is nearly black in all eleven sets. The
+dungeon's colour changes every floor; the monsters standing in it do not.
+
+In the code: [set_palette](source:c/set_palette) and [draw_picture](source:c/draw_picture).
+
+### Four routines that ship and never run
+
+Nothing in the executable calls `random_walk`, which steps up or down while a roll on three keeps
+succeeding; or `random_run`, which counts consecutive coin flips won; or `roll_dice`, which is a
+proper "roll n dice of d" and sums them. Every damage roll in the shipped game is one die per 40
+points of margin, so none of the three was ever used.
+
+Neither is `seeded_pick`, which is an older version of the dungeon hash written as a chain of
+reseeds instead of as arithmetic. Dungeons of the Unforgiven carries the same four dead routines,
+in the same shapes.
+
+In the code: [random_walk](source:c/random_walk), [random_run](source:c/random_run),
+[roll_dice](source:c/roll_dice) and [seeded_pick](source:c/seeded_pick).
+
+### Almost every random number is a reading of the clock
+
+There are three ways of getting a random number and two of them reseed constantly. `random_n`,
+which drives the stocking, the monster's attack, the finds after a kill, every battle spell and
+the mouse's advice, reseeds on every single call from a running sum of BIOS tick readings. Your
+swing reseeds from the raw tick counter and the monster's from the tick counter plus 100. The trap
+door landing reseeds from the fixed number 10.
+
+The one genuinely random thing is anything that rolls twice without a reseed in between: the
+damage dice within a single swing, and the depth wander inside the stocking.
+
+That is also why the 145 monsters of a floor come out in diagonal stripes rather than scattered —
+consecutive seeds give answers that lie on a line, and the stocking reseeds before each one.
+
+In the code: [random_n](source:c/random_n), [strike](source:c/strike) and
+[generate_section](source:c/generate_section).
+
+### The second class is spelled two ways
+
+`ROLL.TXT`, which is where the class descriptions on the character creation screen come from,
+calls the second class a WORSHIPER. The table of class names inside the executable, which is what
+every other screen in the game prints, calls it a WORSHIPPER.
+
+Whichever you picked, the character sheet disagrees with the menu you picked it from.
+
+In the code: [MW_CLASS_NAMES](source:ts/character.ts/MW_CLASS_NAMES) and
+[roll_char](source:c/roll_char).
