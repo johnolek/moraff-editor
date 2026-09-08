@@ -118,10 +118,13 @@ describe("the monster's answer", () => {
   });
 
   it('starts its roll from whatever was last in the scratch cell', () => {
-    const game = started({ random: () => 0 } as Rng);
-    revMeetMonster(game, 39);
-    game.scratch = 40;
-    expect(revMonsterAttack(game).roll).toBeGreaterThan(40);
+    const roll = (scratch: number) => {
+      const game = started({ random: () => 0 } as Rng);
+      revMeetMonster(game, 39);
+      game.scratch = scratch;
+      return revMonsterAttack(game).roll;
+    };
+    expect(roll(40) - roll(0)).toBe(40);
   });
 
   it('answers a swing more often against a slow character', () => {

@@ -55,6 +55,9 @@ export function revArmourClass(game: RevGame): number {
 /**
  * The monster's swing. It comes off the character's hit points; the caller is what asks about
  * their death afterwards.
+ *
+ * The three damage bands each test the roll against the armour class plus `game.shield`
+ * (1000:9B61, 9C00 and 9C41), which is the only place the spell at 1000:9971 is read.
  */
 export function revMonsterAttack(game: RevGame): RevMonsterSwing {
   const fight = game.fight;
@@ -72,14 +75,16 @@ export function revMonsterAttack(game: RevGame): RevMonsterSwing {
   } while (x === 20);
   game.scratch = x;
   roll += x - 2;
-  if (fight.monsterLevel === 1) roll += roll;
+  // 1000:9AEF: the shallowest monster of all rolls two lower.
+  if (fight.monsterLevel === 1) roll -= 2;
 
-  if (roll > armourClass) damage += rng.random(4) + 1;
-  // 1000:9B95: a shallow monster that landed a blow does three less with it.
-  if (fight.monsterLevel <= 4 && damage !== 0) damage -= 3;
-  if (fight.kind === 3 && damage !== 0) game.banner.push(ITS_STUCK_TO_YOU);
-  if (roll - 15 > armourClass) damage += rng.random(12) + 1;
-  if (roll - 30 > armourClass) damage += rng.random(26) + 1;
+  const toBeat = armourClass + game.shield;
+  if (roll > toBeat) damage += rng.random(4) + 1;
+  // 1000:9B95: a shallow monster that landed a solid blow does three less with it.
+  if (fight.monsterLevel < 4 && damage > 4) damage -= 3;
+  if (fight.kind === 3 && damage > 0) game.banner.push(ITS_STUCK_TO_YOU);
+  if (roll - 15 > toBeat) damage += rng.random(12) + 1;
+  if (roll - 30 > toBeat) damage += rng.random(26) + 1;
 
   // 1000:9C82: four times how much deeper the monster is, and never worse than ten.
   let deeper = Math.round((fight.monsterLevel - pc.level) * 4);

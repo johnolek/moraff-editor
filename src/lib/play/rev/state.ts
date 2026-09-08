@@ -73,6 +73,11 @@ export interface RevGame {
   /** A ported function is owed a key it could not wait for. */
   keyOwed: boolean;
   /**
+   * DGROUP B706: what the spell at 1000:9971 adds for a hundred seconds to the number the
+   * monster's swing has to beat. The spells are not built, so nothing here ever raises it.
+   */
+  shield: number;
+  /**
    * DGROUP 52FC, the compiler's scratch cell, which hundreds of statements write and one reads
    * back without writing it first: the monster's d20 at 1000:9A96 accumulates into it where the
    * character's at 1000:8A14 assigns. It is here because that bug needs somewhere to live.
@@ -117,6 +122,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     events: [],
     over: false,
     keyOwed: false,
+    shield: 0,
     scratch: 0,
     say(...lines: string[]) {
       game.said.push(...lines);
