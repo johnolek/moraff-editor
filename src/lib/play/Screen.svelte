@@ -110,8 +110,9 @@
     plaque?: PlaqueState | null;
     /** The palette fade running over the screen (`fade.ts`), or null when none is. */
     fade?: Fade | null;
-    /** How long a new screen takes to appear, in milliseconds, revealed from the top down the
-     *  way a slow machine drew one (`mode.ts`). Nothing at all draws it in one go. */
+    /** How long a new screen takes to appear, in milliseconds, paint by paint in the order the
+     *  game drew it, the way a slow machine showed one (`mode.ts`). Nothing at all draws it in
+     *  one go. */
     redraw?: number;
   }
 
@@ -351,6 +352,9 @@
     onCanvas = { drawnFrom, rows, discovered };
 
     const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    // A slow redraw replays the frame's paints in the order they were made (`view3d/journal.ts`),
+    // so the frame keeps a journal of them while the slider asks for one.
+    if (revealed > 0) frame.journal = [];
     const floor = {
       rows,
       at: { x: place.x, y: place.y, dir: place.dir },
@@ -434,6 +438,10 @@
       paint();
       return;
     }
+    // movecontrol draws the map window before the four views (FUN_3000_8e75 at the top of the pass,
+    // FUN_2000_ac9e after the key is handled), so the map and the boxes go on the frame first and a
+    // slow redraw shows them first.
+    drawScreenFurniture(frame, floor);
     renderFourViews(
       frame,
       {
@@ -455,7 +463,6 @@
       },
       place.dir,
     );
-    drawScreenFurniture(frame, floor);
     // The boss's taunt stands on the play screen: boss_office_message (exe 3000:6c9d) wipes
     // nothing before it lays the panel down, so the views are still underneath it.
     if (bossOffice) drawBossOffice(frame, SCREEN_PIXELS, bossOffice, viewPictures(bossOffice.section));
