@@ -135,12 +135,13 @@ describe('the temple', () => {
 });
 
 describe('gaining a level', () => {
-  it('adds the roll, what health gave and the new level to both sets of hit points', () => {
+  it('adds the roll, what health gave and one to both sets of hit points', () => {
     const game = started(character({ level: 2, maxHp: 30, hp: 20 }), { random: () => 4 });
     revGainALevel(game);
     expect(game.pc.level).toBe(3);
-    expect(game.pc.maxHp).toBe(30 + 4 + 6 + 3);
-    expect(game.pc.hp).toBe(20 + 4 + 6 + 3);
+    expect(game.pc.maxHp).toBe(30 + 4 + 6 + 1);
+    expect(game.pc.hp).toBe(20 + 4 + 6 + 1);
+    expect(game.scratch).toBe(4 + 6 + 1);
   });
 });
 

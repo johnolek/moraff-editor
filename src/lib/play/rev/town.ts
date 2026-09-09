@@ -176,13 +176,18 @@ const NO_DIFFERENCE = "You don't feel any different.";
 const POISONED_VALUE = 145;
 
 /**
- * 1000:2044: a level gained. It is the temple's fifth spell and nothing else in the game reaches
- * it — no amount of experience gains a level on its own.
+ * 1000:2044: a level gained, which the temple's fifth spell buys outright and a night at an inn
+ * hands out for the experience the character has earned.
  */
 export function revGainALevel(game: RevGame): void {
   const pc = game.pc;
   pc.level += 1;
-  const gained = game.rng.random(15) + pc.fromHealth + pc.level;
+  // 1000:2054 to 206D: the hit points are the roll, the character's own health bonus and a flat
+  // one, and the flat one is the constant the level was raised by two instructions earlier —
+  // 1000:206B loads the address of the 1 again, not the address of the level.
+  const gained = game.rng.random(15) + pc.fromHealth + 1;
+  // 1000:2070: the gain is left in the scratch cell (`attack.ts` says what that cell is for).
+  game.scratch = gained;
   pc.maxHp += gained;
   pc.hp += gained;
   game.events.push({ kind: 'levelGained', level: pc.level });
