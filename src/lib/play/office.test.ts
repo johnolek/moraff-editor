@@ -77,6 +77,11 @@ describe("the boss's message", () => {
     expect(session.bossOffice).toEqual({ section: 1, lines: session.box });
     expect(session.game.pc.bossTaunts[0]).toBe(1);
     await press(session, KEY.arrowUp);
+    // The key erases the display, so the three lines go with the office and the dungeon is drawn
+    // again rather than the screen staying black.
     expect(session.bossOffice).toBeNull();
+    expect(session.game.screen.filter((line) => line.x === 400)).toEqual([]);
+    expect(session.game.blackedOut).toBeNull();
+    expect(session.box).toEqual([]);
   });
 });

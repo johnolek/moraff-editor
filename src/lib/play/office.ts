@@ -63,7 +63,9 @@ export async function randomEventsTick(turn: Turn): Promise<void> {
  * Reading it takes the display over. erase_menu_block (exe 4000:42b4) blanks it, the stone tablet
  * comes down across the bottom with the four lines of the taunt on it, and the boss stands in a
  * panel of the section's wall material with three lines of the big font beside it saying whose
- * office the message is from (`boss-office.ts`).
+ * office the message is from (`boss-office.ts`). The key the routine waits for at the end erases
+ * the display again, which is what takes the three lines off it and leaves movecontrol to draw
+ * the dungeon afresh.
  *
  * The port also keeps the four lines in the message box, where the column beside the map reads
  * them; the original has them on the tablet alone.
@@ -79,5 +81,6 @@ async function bossOfficeMessage(session: GameSession): Promise<void> {
   session.bossOffice = { section: sectionOf(game.pc.module, game.pc.level), lines };
   await game.key();
   session.bossOffice = null;
+  game.eraseScreen();
   session.box = [];
 }
