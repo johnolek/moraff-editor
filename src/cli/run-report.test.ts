@@ -30,6 +30,21 @@ describe('the verdict the verify-run command prints', () => {
     expect(report.lines).toContain('  Milestones  none');
   });
 
+  it('adds a run played in more than one sitting up over its sessions', async () => {
+    const report = await reportOnRun(fixture('unforgiven-chain-run.json'));
+
+    expect(report.ok).toBe(true);
+    expect(report.lines).toContain('  Sessions    2');
+    expect(report.lines).toContain('  Actions     6 actions');
+    expect(report.lines).toContain('  Clock       2 seconds');
+  });
+
+  it('says nothing about sessions for a run played in one sitting', async () => {
+    const report = await reportOnRun(fixture('unforgiven-run.json'));
+
+    expect(report.lines.some((line) => line.includes('Sessions'))).toBe(false);
+  });
+
   it('says what a run that has been tampered with failed on', async () => {
     const log = JSON.parse(fixture('unforgiven-run.json'));
     const report = await reportOnRun(JSON.stringify({ ...log, actions: log.actions + 1 }));

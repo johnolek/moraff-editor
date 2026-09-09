@@ -379,6 +379,7 @@ const FIXTURES = [
   { file: 'unforgiven-run.json', log: async () => runLogOf([await unforgivenRun()]) },
   { file: 'moraffs-world-run.json', log: async () => runLogOf([await moraffsWorldRun()]) },
   { file: 'moraffs-revenge-run.json', log: async () => runLogOf([await moraffsRevengeRun()]) },
+  { file: 'unforgiven-chain-run.json', log: unforgivenChain },
 ];
 
 function fixturePath(file: string): URL {
