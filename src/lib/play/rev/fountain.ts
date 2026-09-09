@@ -60,11 +60,18 @@ export function revNeedsAFountain(pc: RevPc): boolean {
  * Intelligence and wisdom set the base, the class multiplies it by the level two different ways,
  * and the class adds its own again on top. It is not a gain but a replacement, so a character
  * who has spent their spell points gets them all back here.
+ *
+ * It does its working in the compiler's scratch cell: 1000:2145 puts the base there and
+ * 1000:2173 (a wizard) or 1000:2197 (anyone else) writes the level's share over it, so what the
+ * routine leaves behind for the next monster's d20 to start from (`attack.ts`) is the second
+ * number, not the base.
  */
-export function revWorkOutSpellPoints(pc: RevPc): void {
+export function revWorkOutSpellPoints(game: RevGame): void {
+  const pc = game.pc;
   const base = Math.floor((pc.stats[1] - 12) / 3 + pc.stats[2] * 0.25 - 3);
   const wizard = pc.cls === 2;
   const fromLevel = wizard ? Math.floor((pc.level * base) / 3) + base : Math.floor((base * pc.level) / 6) + base;
+  game.scratch = fromLevel;
   pc.spellPoints = fromLevel + (wizard ? pc.level * 3 + 2 : pc.level - 4);
   if (pc.spellPoints < 1) pc.spellPoints = 0;
 }
@@ -92,7 +99,7 @@ export function revDrinkFromTheFountain(game: RevGame, desk: RevMagicDesk): void
   pc.generation += 2;
   setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, 0);
   for (let stat = 0; stat < REV_STAT_COUNT; stat++) pc.stats[stat] += 5;
-  revWorkOutSpellPoints(pc);
+  revWorkOutSpellPoints(game);
   revEndPreppedSpells(game);
   pc.dungeonLevel = 0;
   desk.save();

@@ -89,16 +89,27 @@ describe('drinking from the fountain of youth', () => {
 describe('the spell points a character has', () => {
   it('gives a wizard three a level over the base and a fighter one', () => {
     const wizard = revCharacter({ cls: 2, level: 6, stats: [15, 21, 20, 15, 15, 15] });
-    revWorkOutSpellPoints(wizard);
+    revWorkOutSpellPoints(revTestGame(wizard).game);
     expect(wizard.spellPoints).toBe(35);
     const fighter = revCharacter({ cls: 1, level: 6, stats: [15, 21, 20, 15, 15, 15] });
-    revWorkOutSpellPoints(fighter);
+    revWorkOutSpellPoints(revTestGame(fighter).game);
     expect(fighter.spellPoints).toBe(12);
   });
 
   it('never leaves a character with fewer than none', () => {
     const pc = revCharacter({ cls: 1, level: 1, stats: [15, 12, 4, 15, 15, 15] });
-    revWorkOutSpellPoints(pc);
+    revWorkOutSpellPoints(revTestGame(pc).game);
     expect(pc.spellPoints).toBe(0);
+  });
+
+  it('leaves the level\'s share in the scratch cell, as 1000:2173 and 2197 do', () => {
+    const wizard = revTestGame(revCharacter({ cls: 2, level: 6, stats: [15, 21, 20, 15, 15, 15] })).game;
+    wizard.scratch = 99;
+    revWorkOutSpellPoints(wizard);
+    expect(wizard.scratch).toBe(15);
+    const fighter = revTestGame(revCharacter({ cls: 1, level: 6, stats: [15, 21, 20, 15, 15, 15] })).game;
+    fighter.scratch = 99;
+    revWorkOutSpellPoints(fighter);
+    expect(fighter.scratch).toBe(10);
   });
 });

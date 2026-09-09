@@ -135,7 +135,7 @@ function revNightsExperience(game: RevGame): void {
     revGainALevel(game);
   }
   // 1000:20EB: the spell points are worked out again from the level the night has left.
-  revWorkOutSpellPoints(pc);
+  revWorkOutSpellPoints(game);
   pc.experience = Math.floor(pc.experience + revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE));
   setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, 0);
   // 1000:210F: a night in a bed is where the two prep spells wear off.
