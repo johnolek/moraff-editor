@@ -32,6 +32,7 @@ Environment variables, all optional:
 | `RUN_SERVER_PORT`     | `3580`                       | The port to answer on, behind the proxy          |
 | `RUN_SERVER_DATABASE` | `./server/data/runs.sqlite`  | The SQLite file, created with its directory      |
 | `RUN_SERVER_ORIGIN`   | `https://johnolek.github.io` | The site's origin, which browsers are told may read the answers |
+| `RUN_SERVER_ENGINES`  | `./server/engines`           | The directory of engine builds runs are replayed with |
 
 A page served from `http://localhost` on any port is allowed as well, so
 `pnpm dev` can talk to a server running on the same machine.

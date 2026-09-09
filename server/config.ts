@@ -10,12 +10,16 @@ export interface ServerConfig {
   databasePath: string;
   /** The deployed site's origin, which the browser has to be told may read the answers. */
   allowedOrigin: string;
+  /** The directory of engine builds, one per commit deployed, that runs are replayed with. */
+  enginesPath: string;
 }
 
 /** Claude's own range is 3500-3599; John assigns the port the server really runs on. */
 const DEFAULT_PORT = 3580;
 
 const DEFAULT_DATABASE_PATH = './server/data/runs.sqlite';
+
+const DEFAULT_ENGINES_PATH = './server/engines';
 
 /** The GitHub Pages site these tools are deployed to. */
 const DEFAULT_ALLOWED_ORIGIN = 'https://johnolek.github.io';
@@ -25,6 +29,7 @@ export function configFromEnvironment(environment: NodeJS.ProcessEnv = process.e
     port: portFrom(environment.RUN_SERVER_PORT),
     databasePath: environment.RUN_SERVER_DATABASE ?? DEFAULT_DATABASE_PATH,
     allowedOrigin: environment.RUN_SERVER_ORIGIN ?? DEFAULT_ALLOWED_ORIGIN,
+    enginesPath: environment.RUN_SERVER_ENGINES ?? DEFAULT_ENGINES_PATH,
   };
 }
 

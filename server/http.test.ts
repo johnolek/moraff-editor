@@ -8,6 +8,7 @@ const config: ServerConfig = {
   port: 0,
   databasePath: ':memory:',
   allowedOrigin: 'https://johnolek.github.io',
+  enginesPath: './server/engines',
 };
 
 describe('the run server over HTTP', () => {
