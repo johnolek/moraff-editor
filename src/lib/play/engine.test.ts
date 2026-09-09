@@ -245,8 +245,16 @@ describe('changing floors', () => {
     const file = characterFile({ level: 1, dir: 3, ...teleporter });
     const session = playing(file);
     await press(session, KEY.arrowUp);
-    expect(session.box[0]).toBe('YOU HAVE BEEN DETACHED FROM');
+    // The tunnel is drawn on the way through and waits for a key of its own before the module
+    // changes at all (exe 4000:771b).
+    expect(session.view().tunnel).toEqual({ module: 1, welcome: false });
+    expect(session.view().place.module).toBe(0);
     await press(session, KEY.escape);
+    expect(session.box[0]).toBe('YOU HAVE BEEN DETACHED FROM');
+    // The arrival box is read on the tunnel, which the key that answers it takes down.
+    expect(session.view().tunnel).toEqual({ module: 1, welcome: false });
+    await press(session, KEY.escape);
+    expect(session.view().tunnel).toBeNull();
     expect(session.view().place.module).toBe(1);
     expect(session.view().place.floor).toBe(0);
     // change_module saves the character where it drops them, before movecontrol loads the town.
@@ -514,6 +522,8 @@ describe('the map the character discovers', () => {
     const teleporter = findSquare(1, (square) => square.e === 4 && square.ladder === 0 && square.trapdoor === -1 && square.chute === 0);
     const session = playing(characterFile({ level: 1, dir: 3, ...teleporter }));
     await press(session, KEY.arrowUp);
+    // The key the crossing's welcome waits for, which is what lets the arrival happen.
+    await press(session, KEY.escape);
     const place = session.view().place;
     expect(place).toMatchObject({ module: 1, floor: 0 });
     expect(session.box[0]).toBe('YOU HAVE BEEN DETACHED FROM');

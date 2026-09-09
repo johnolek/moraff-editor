@@ -16,8 +16,9 @@ import { readRunLog, verifyRun, whatToSayAboutTheEngine } from './verify';
 /**
  * A short run of Dungeons of the Unforgiven, played headless with a seed of the test's own: three
  * steps, a turn and a swing, the first step being through the town's module teleporter, which is
- * a milestone. The Enters answer the boxes that step and that swing put up. The same keys always
- * make the same run, which is the whole point of a log.
+ * a milestone. The Escape after that step is the key the crossing's welcome waits for
+ * (`tunnel.ts`), and the Enters answer the boxes that step and that swing put up. The same keys
+ * always make the same run, which is the whole point of a log.
  */
 async function unforgivenRun(): Promise<RunLog> {
   const file = characterFile({ level: 0, dir: 0, ...teleporterSquare(), lev: 20, str: 60 });
@@ -35,7 +36,8 @@ async function unforgivenRun(): Promise<RunLog> {
   // Escape is the first thing the game reads and the first input the run writes down.
   if (session.tablet) await press(session, KEY.escape);
   await settle();
-  for (const key of [KEY.arrowUp, KEY.enter, KEY.arrowUp, KEY.arrowLeft, KEY.arrowUp, KEY.fight, KEY.enter]) {
+  const keys = [KEY.arrowUp, KEY.escape, KEY.enter, KEY.arrowUp, KEY.arrowLeft, KEY.arrowUp, KEY.fight, KEY.enter];
+  for (const key of keys) {
     await press(session, key);
   }
   session.save();
