@@ -89,9 +89,15 @@ const GAME_MENUS = ['chooseWeaponSlot', 'chooseArmorSlot', 'chooseDirection', 'c
 /**
  * A copy of the game to try a run on: everything a ported function reads, and none of the
  * screen. What it prints is thrown away and what it changes is never seen.
+ *
+ * The speaker is a side of the display in the same way, so the copy is given the sound switch
+ * turned off and the noises are left to the run that counts. A trial run is made again for every
+ * menu it stops at, so a copy that could make a noise would make it once per answer, and it
+ * would make it whatever the player has set the switch to.
  */
 function copyOfGame(game: MwGame, rng: Rng): MwGame {
   return newMwGame({
+    sound: false,
     pc: structuredClone(game.pc),
     slot: game.slot,
     rng,
