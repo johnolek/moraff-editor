@@ -35,13 +35,12 @@ something the original does, a comment says so.
   arriving on a floor: the map the character has discovered, which is the same engine in both
   games and so is shared with Moraff's World.
 * **`screens.ts`** — where the message box stands on the screen and what is in it, which is the
-  eight lines of `menuLine` in `src/lib/game/port/screens.ts` drawn in the same place a menu is,
-  plus `notBuiltYet`, which nothing here says any more. **`MessageBox.svelte`** is that box drawn
+  eight lines of `menuLine` in `src/lib/game/port/screens.ts` drawn in the same place a menu is.
+  **`MessageBox.svelte`** is that box drawn
   on its own, for the tab showing the map instead of the screen. **`boxes.ts`** is the rest of it: the several boxes a ported
   function printed shown one after another, since `print_menu_only` waits for a key after each of
-  them — `printMenus` for a synchronous function, `printMenusWhile` for one that asks menus of
-  its own halfway through, and `sayAsOneBox` for the handful of messages the game draws down that
-  column with `pfont` and does not wait on. A function that draws down that column *and* holds
+  them — `printMenus` for a synchronous function and `printMenusWhile` for one that asks menus of
+  its own halfway through. A function that draws down the message column *and* holds
   the screen between its lines — `chute.ts` is the one — draws them itself instead, since a frame
   keeps what `pfont` put on the screen and not what is in the box. A fight draws its own: `strike`,
   `print_battle_hp_info` and `defend` all call `pfont` and none of them waits, so they go through
@@ -155,9 +154,7 @@ the trap door, the town building, and `retdwall2` for the four sides — plus `s
 a handler asks for a step: set `turn.step = { dx, dy }` and the loop resolves it afterwards, the
 way the original resolves the flag the up arrow raises.
 
-Every key the original dispatches on has an entry and every one of them runs. A key added to the
-table before the function behind it is written says `NOT BUILT YET: <what the game does>` in the
-message box, which is `notBuiltYet` in `screens.ts`, so nothing is ever silently nothing.
+Every key the original dispatches on has an entry and every one of them runs.
 
 ## Showing a screen
 

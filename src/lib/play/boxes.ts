@@ -32,17 +32,6 @@ export function boxesOf(session: GameSession, print: () => void): string[][] {
   return boxes;
 }
 
-/**
- * Everything a ported function said, as one box.
- *
- * A few of the game's messages are pfont calls down the message column rather than boxes of
- * their own: chute (exe 2000:b532) draws three lines there and waits once at the end. The port
- * has them going through `say`, so this puts them up together the way the screen has them.
- */
-export function sayAsOneBox(session: GameSession, print: () => void): void {
-  session.showBox(boxesOf(session, print).flat());
-}
-
 /** Every box a ported function printed, shown in turn, each one waiting for a key. */
 export async function printMenus(session: GameSession, print: () => void): Promise<void> {
   for (const box of boxesOf(session, print)) {
