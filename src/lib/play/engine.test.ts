@@ -106,11 +106,14 @@ describe('walking', () => {
     expect(session.view().place.dir).toBe(1);
   });
 
-  it('says so when the way ahead is a wall', async () => {
+  it('says so on the strip above the box when the way ahead is a wall', async () => {
     const start = findSquare(0, (square) => square.n === 0 && square.s === 3);
     const session = playing(characterFile({ level: 0, dir: 0, ...start }));
     await press(session, KEY.arrowUp);
-    expect(session.box).toContain('THE WALL REFUSES TO MOVE');
+    expect(session.box).not.toContain('THE WALL REFUSES TO MOVE');
+    expect(session.game.screen).toContainEqual(
+      messageLine('THE WALL REFUSES TO MOVE', BATTLE_TEXT_COLOUR),
+    );
     expect(session.view().place).toMatchObject(start);
   });
 

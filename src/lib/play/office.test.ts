@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import { savePlayer } from '../game/port/record';
 import { BorlandRng } from '../game/port/rng';
+import { BATTLE_TEXT_COLOUR, messageLine } from '../game/port/screens';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
@@ -51,7 +52,11 @@ describe("the boss's message", () => {
     const session = startGame(file, new BorlandRng(3));
     void runMoveControl(session);
     for (let step = 0; step < 249; step++) await press(session, KEY.arrowUp);
-    expect(session.box[0]).toBe('THE WALL REFUSES TO MOVE');
+    // The wall's line is drawn on the strip above the box rather than said into it.
+    expect(session.game.screen).toContainEqual(
+      messageLine('THE WALL REFUSES TO MOVE', BATTLE_TEXT_COLOUR),
+    );
+    expect(session.box).toEqual([]);
     await press(session, KEY.arrowUp);
     expect(session.box[0]).toBe('A LITTLE SNAKE HAS A MESSAGE');
     await press(session, READ_THE_MESSAGE);

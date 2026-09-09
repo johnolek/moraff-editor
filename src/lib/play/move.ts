@@ -77,7 +77,11 @@ export async function resolveStep(turn: Turn): Promise<void> {
     return;
   }
   if (side === 0) {
-    game.say('THE WALL REFUSES TO MOVE'); // DS:1f1f
+    // exe 2000:dc66: the wall says so on the strip above the message box, in the colour every
+    // line of a fight is drawn in, and nothing waits or holds the screen afterwards. The line
+    // stands there until something else is drawn on that strip.
+    clearMessageLine(game);
+    game.draw(messageLine('THE WALL REFUSES TO MOVE', BATTLE_TEXT_COLOUR)); // DS:1f1f
     return;
   }
   if (monsterAt(game, pc.x + step.dx, pc.y + step.dy) !== -1) {
