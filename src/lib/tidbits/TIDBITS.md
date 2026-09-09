@@ -327,10 +327,11 @@ In the code: [passWall](source:ts/magic.ts/passWall), [pass_wall](source:c/pass_
 
 ### Everything more than a few steps away is standing still
 
-A monster only moves if it is within `floor / 10 + 10` squares of you, measured by walking
-distance rather than a straight line, and even then only four times in five. That is ten squares
-on floor 1 and twenty on floor 100. Anything further away stands exactly where it was placed,
-for as long as the floor stays in memory.
+A monster only moves if the two axes' distances add to less than `floor / 10 + 10`, and even then
+only four times in five. That is nine squares on floor 1 and nineteen on floor 100, and it is
+measured straight across the grid, through any wall in the way, so a monster on the far side of a
+partition counts as close. Anything further away stands exactly where it was placed, for as long
+as the floor stays in memory.
 
 When it does move it takes one step toward you, trying the x-axis first, left or right depending
 on which side of it you are on, and only if that step is blocked does it try the step up or down.
