@@ -1,4 +1,5 @@
 <script lang="ts">
+  import IndexedCanvas from '../ui/IndexedCanvas.svelte';
   import type { RevPicture } from './monsters';
   import { renderPicture } from './pictures';
 
@@ -13,31 +14,12 @@
 
   let { picture, palette, label, scale }: Props = $props();
 
-  let canvas: HTMLCanvasElement;
-
-  $effect(() => {
-    const image = renderPicture(picture, palette);
-    const context = canvas.getContext('2d');
-    if (!context) return;
-    context.putImageData(new ImageData(image.data, image.width, image.height), 0, 0);
-  });
+  const image = $derived(renderPicture(picture, palette));
 </script>
 
-<canvas
-  bind:this={canvas}
+<IndexedCanvas
+  {image}
   width={picture.width}
   height={picture.height}
-  style:width="{picture.width * scale}px"
-  aria-label={label}></canvas>
-
-<style>
-  canvas {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    background: #000;
-    border: 1px solid var(--line);
-    border-radius: 6px;
-    image-rendering: pixelated;
-  }
-</style>
+  shown="{picture.width * scale}px"
+  {label} />
