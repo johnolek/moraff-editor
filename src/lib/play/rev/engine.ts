@@ -6,7 +6,9 @@ import type { RevMagicDesk } from './desk';
 import { revAtTheFountain, revDrinkFromTheFountain, revNeedsAFountain, revRollTheFountain } from './fountain';
 import {
   revBreatheFire,
+  revExpiredPotionBanners,
   revMagicItemsOwned,
+  revPotionBanners,
   revTakeAPill,
   revUseAWandInAFight,
   revUseAWandInTheDungeon,
@@ -239,6 +241,9 @@ export class RevGameSession {
     this.game.seconds = (this.ticks * REV_TICK_MS) / 1000;
     const walker = revWalker(this.game);
     for (let pass = 0; pass < REV_POLLS_PER_TICK; pass++) revPoll(this.game.monsters, walker, this.game.lastMonsterLevel, this.game.rng);
+    // 1000:85BA: the fight's poll asks on every pass whether a potion has run down, so a banner
+    // goes while the player is sitting still and watching the level shuffle around.
+    if (this.game.fight !== null) revExpiredPotionBanners(this.game);
     // 1000:08F6: a monster that has reached the character's square opens a fight at once.
     if (this.game.fight === null && this.monsterHere() > 0) {
       const waiting = this.waiting;
@@ -626,6 +631,14 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     const turn: RevTurn = { session, game, building: revBuildingUnder(pc.column, pc.row, pc.dungeonLevel) };
     // 1000:08F6 and 1000:0946: a monster on the character's own square opens a fight.
     if (game.fight === null && session.monsterHere() > 0) revMeetMonster(game, session.monsterHere());
+    // 1000:845A and 1000:8517: a fight puts the three potion banners up again on the way to
+    // every one of its keys, and 1000:85BA rubs each out as its potion runs down before it waits
+    // for one. Neither happens outside a fight, which is why drinking in a corridor puts nothing
+    // on the screen until something comes along.
+    if (game.fight !== null) {
+      revPotionBanners(game);
+      revExpiredPotionBanners(game);
+    }
     const key = await session.poll();
     if (key === REV_RECORD_EDITED || key === REV_CLOCK_TICK) continue;
     // The words the last key printed come down when the next one arrives, which is what the

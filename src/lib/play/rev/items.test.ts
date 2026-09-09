@@ -7,8 +7,10 @@ import {
   REV_PREP_ITEMS,
   REV_SLIPPING_THROUGH,
   REV_TOO_DEEP,
+  revExpiredPotionBanners,
   revItemMenu,
   revMagicItemsOwned,
+  revPotionBanners,
   revTakeAPill,
   revUseAWand,
   revUseAWandInAFight,
@@ -297,5 +299,51 @@ describe('the list of magic the M key puts up', () => {
     expect(lines).toContain(' TELEPORT SCROLLS: 4 ');
     expect(lines).toContain(' 6 BLUE WAND CHARGES');
     expect(lines.filter((line) => line.endsWith(' PILLS'))).toHaveLength(6);
+  });
+});
+
+describe('the banners the three potions that wear off put up', () => {
+  it('puts one up for each potion still working, where the game prints it', () => {
+    const pc = revCharacter();
+    const { game } = revTestGame(pc);
+    game.seconds = 40;
+    setRevValue(pc, REV_MAGIC.speedUntil, 140);
+    setRevValue(pc, REV_MAGIC.fireUntil, 140);
+    revPotionBanners(game);
+    expect(game.kept.runs()).toEqual([
+      { row: 5, column: 20, text: 'YOU FEEL VERY AGILE. ' },
+      { row: 7, column: 20, text: 'B-BREATH FIRE ' },
+    ]);
+  });
+
+  it('puts none up for a potion that has run out', () => {
+    const pc = revCharacter();
+    const { game } = revTestGame(pc);
+    game.seconds = 200;
+    setRevValue(pc, REV_MAGIC.speedUntil, 140);
+    revPotionBanners(game);
+    expect(game.kept.runs()).toEqual([]);
+  });
+
+  it('takes them away one at a time, as each potion runs down', () => {
+    const pc = revCharacter();
+    const { game } = revTestGame(pc);
+    setRevValue(pc, REV_MAGIC.speedUntil, 140);
+    setRevValue(pc, REV_MAGIC.fireUntil, 300);
+    game.seconds = 40;
+    revPotionBanners(game);
+    game.seconds = 200;
+    revExpiredPotionBanners(game);
+    // Twenty spaces over a twenty-one character line, and the twenty-first was a space anyway.
+    expect(game.kept.runs()).toEqual([
+      { row: 5, column: 20, text: ' '.repeat(21) },
+      { row: 7, column: 20, text: 'B-BREATH FIRE ' },
+    ]);
+    game.seconds = 400;
+    revExpiredPotionBanners(game);
+    expect(game.kept.runs()).toEqual([
+      { row: 5, column: 20, text: ' '.repeat(21) },
+      { row: 7, column: 20, text: ' '.repeat(14) },
+    ]);
   });
 });

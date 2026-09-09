@@ -494,6 +494,60 @@ const YOU_HAVE = 'YOU HAVE ';
 const ITEMS_LISTED = 13;
 
 /**
+ * The three potions that wear off, as the banner each puts up while it lasts.
+ *
+ * `column` is 20 for all three and the rows are 5, 6 and 7 (1000:7F7D, 7F96 and 7FAF); the lines
+ * are the executable's own, trailing spaces and all. `blank` is how many spaces the fight's poll
+ * rubs each out with (1000:8610, 8672 and 86D9) — twenty for the first two, which leaves the
+ * twenty-first character of a twenty-one character line, though that character is a space.
+ */
+const REV_POTION_BANNERS = [
+  { until: REV_MAGIC.speedUntil, row: 5, line: 'YOU FEEL VERY AGILE. ', blank: 20 },
+  { until: REV_MAGIC.shieldingUntil, row: 6, line: 'YOUR BODY GLOWS.     ', blank: 20 },
+  { until: REV_MAGIC.fireUntil, row: 7, line: 'B-BREATH FIRE ', blank: 14 },
+];
+
+/** The column all three are printed at. */
+const POTION_BANNER_COLUMN = 20;
+
+/**
+ * 1000:7F43: the banners a fight puts up for the potions that are still working.
+ *
+ * It is called from 1000:845A, where the monster is met, and from 1000:8517, which the fight
+ * comes back through after every key of the character's — so the three lines are put up again
+ * on every round of a fight and never outside one. Each is printed while the second `TIMER` is
+ * to reach is still ahead of the clock.
+ */
+export function revPotionBanners(game: RevGame): void {
+  for (const banner of REV_POTION_BANNERS) {
+    if (revValue(game.pc, banner.until) > game.seconds) {
+      game.kept.printAt(banner.row, POTION_BANNER_COLUMN, banner.line);
+    }
+  }
+}
+
+/**
+ * 1000:85BA: the same three banners rubbed out as their potions run down, which the fight does
+ * on every pass of its own `INKEY$` poll (1000:8601, 8663 and 86CA).
+ *
+ * The three tests are each `<the second to reach> > 0 AND (<it> < TIMER OR <it> - TIMER > 400)`.
+ * The second half of that is a guard against `TIMER` having gone back round midnight underneath
+ * a potion, and the clock this port hands the game only ever counts up, so it never fires.
+ *
+ * What the original does at the same three places and this does not is take the potion itself
+ * off — the thirteen points of agility, the shield, and the second to reach set back to zero.
+ * Those are the character's own numbers rather than the screen, and this is only the screen.
+ */
+export function revExpiredPotionBanners(game: RevGame): void {
+  for (const banner of REV_POTION_BANNERS) {
+    const until = revValue(game.pc, banner.until);
+    if (until > 0 && until < game.seconds) {
+      game.kept.blank(banner.row, POTION_BANNER_COLUMN, banner.blank);
+    }
+  }
+}
+
+/**
  * 1000:8977: whether the potion of fire is still burning.
  *
  * The B key of the fight prompt is not even looked for otherwise, so a character whose potion
