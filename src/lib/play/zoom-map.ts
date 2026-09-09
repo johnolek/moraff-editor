@@ -179,6 +179,49 @@ export function drawZoomMarker(
 }
 
 /**
+ * Where a game's X key draws the whole floor: the window it fills the screen with, the square that
+ * window is centred on, the colour behind it and the colour the character's own square is left in.
+ */
+export interface ZoomMapExpansion {
+  window: ZoomMapWindow;
+  centre: { x: number; y: number };
+  ground: number;
+  cursor: number;
+}
+
+/**
+ * The map the X key fills the screen with, which both C games draw with the routine they draw the
+ * corner map with: the screen filled, the floor drawn over it from its own first square, and the
+ * character's square filled on top.
+ *
+ * `FUN_3000_8e75` (UNF.EXE 3000:8e75) and `FUN_3000_b066` (WORLD.EXE 3000:b066) are the two loops,
+ * and `FUN_2000_a068` (UNF.EXE 2000:a068) and `FUN_2000_7d00` (WORLD.EXE 2000:7d00) the two
+ * cursors, which fill the same rectangle: two pixels inside the cell, out to its far corner. Both
+ * games redraw that cursor in a new colour every time round the loop they wait for a key in, so it
+ * flickers; nothing here waits, so it is drawn once.
+ *
+ * Monsters are left to the caller, since debug mode marks them over the finished map.
+ */
+export function drawExpandedZoomMap(
+  frame: Frame,
+  floor: ZoomMapFloor,
+  style: ZoomMapStyle,
+  expanded: ZoomMapExpansion,
+): void {
+  fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, expanded.ground);
+  const { left, top, cell } = expanded.window;
+  drawZoomMap(frame, floor, expanded.window, expanded.centre, style);
+  fillRect(
+    frame,
+    left + cell * floor.at.x + 2,
+    top + cell * floor.at.y + 2,
+    left + cell * (floor.at.x + 1),
+    top + cell * (floor.at.y + 1),
+    expanded.cursor,
+  );
+}
+
+/**
  * The seven by seven square the arrow's own pixels stand in, for anything drawing the arrow over
  * the frame rather than into it.
  *

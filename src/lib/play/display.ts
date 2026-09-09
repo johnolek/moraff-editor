@@ -4,6 +4,7 @@ import { ARMOR_NAMES, WEAPON_NAMES } from '../game/port/drops';
 import type { PlayerCharacter, ScreenLine, ScreenRect } from '../game/port/state';
 import { fillRect, type Frame } from './view3d/frame';
 import {
+  drawExpandedZoomMap,
   drawZoomMap,
   drawZoomMarker,
   facingArrowRect,
@@ -343,18 +344,13 @@ export function drawZoomMapOnly(frame: Frame, floor: UnforgivenZoomMapFloor): vo
  * drawn once in the white the loop's own marker flashes in (exe 2000:c799).
  */
 export function drawExpandedMap(frame: Frame, floor: UnforgivenZoomMapFloor): void {
-  fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, EXPANDED_GROUND);
   const window = expandedMapWindow();
-  drawZoomMap(frame, floor, window, EXPANDED_CENTRE, UNFORGIVEN_ZOOM_MAP);
-  const cell = window.cell;
-  fillRect(
-    frame,
-    window.left + cell * floor.at.x + 2,
-    window.top + cell * floor.at.y + 2,
-    window.left + cell * (floor.at.x + 1),
-    window.top + cell * (floor.at.y + 1),
-    EXPANDED_MARKER,
-  );
+  drawExpandedZoomMap(frame, floor, UNFORGIVEN_ZOOM_MAP, {
+    window,
+    centre: EXPANDED_CENTRE,
+    ground: EXPANDED_GROUND,
+    cursor: EXPANDED_MARKER,
+  });
   drawZoomMonsters(frame, window, EXPANDED_CENTRE, floor.monsters ?? []);
 }
 
