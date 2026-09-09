@@ -8,10 +8,10 @@ import { MW_COLOURS } from './view3d/screen';
  * the brick speed, O the sound, X the whole floor at once, Z the 3-D view close up, and the
  * three that step one colour of the background on.
  *
- * X is the only one this port does. The others ask for something the port's screen does not
- * offer — a second brick speed, the PC speaker, the close-up view, a background colour of the
- * player's own — so the box says what the game would have done instead. The wording of those
- * boxes is this port's own.
+ * O and X are the two this port does. The others ask for something the port's screen does not
+ * offer — a second brick speed, the close-up view, a background colour of the player's own — so
+ * the box says what the game would have done instead. The wording of those boxes is this port's
+ * own.
  */
 
 /** movecontrol's 0x62 branch: B steps DS:4390 through 0, 1 and 2 and draws the view again. */
@@ -24,13 +24,14 @@ export function changeTheBrickSpeed(turn: MwTurn): void {
   );
 }
 
-/** movecontrol's 0x6f branch: O flips DS:119f, which every call to the PC speaker asks first. */
+/**
+ * movecontrol's 0x6f branch: O flips DS:119f, which every call to the PC speaker asks first, and
+ * draws the key menu again so that its sound line offers the opposite.
+ *
+ * The game says nothing about it: the line in the menu is the whole answer.
+ */
 export function switchTheSound(turn: MwTurn): void {
-  turn.game.say(
-    'THE GAME WOULD TURN THE SOUND',
-    'ON AND OFF. THIS PORT MAKES NO',
-    'SOUND AT ALL.',
-  );
+  turn.game.sound = !turn.game.sound;
 }
 
 /** The line across the expanded map (DS:340b), and where movecontrol draws it. */

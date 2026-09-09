@@ -5,10 +5,9 @@ import { MW_KEY } from './keys';
 /** A square of the town with nothing on it, so the key pressed is the only thing happening. */
 const townSquare = () => findMwSquare(0, (square) => square.ladder === 0);
 
-/** The first line of the box each of the six keys the port answers with words puts up. */
+/** The first line of the box each of the five keys the port answers with words puts up. */
 const BOXES: [number, string][] = [
   [MW_KEY.brickSpeed, 'THE GAME WOULD STEP THROUGH THE'],
-  [MW_KEY.sound, 'THE GAME WOULD TURN THE SOUND'],
   [MW_KEY.zoomView, 'THE GAME WOULD FILL THE SCREEN'],
   [MW_KEY.paletteGreen, 'THE GAME WOULD ADD SIXTEEN TO'],
   [MW_KEY.paletteBlue, 'THE GAME WOULD ADD SIXTEEN TO'],
@@ -42,6 +41,18 @@ describe('the keys that are about the screen', () => {
     const session = playingMw(mwCharacterFile({ floor: 0, ...townSquare() }));
     await pressMw(session, MW_KEY.zoomView);
     expect(session.box).toContain('WITH THE VIEW ONE WAY AND NAME');
+  });
+});
+
+describe('the O key', () => {
+  it('turns the sound off and on again and says nothing about it', async () => {
+    const session = playingMw(mwCharacterFile({ floor: 0, ...townSquare() }));
+    expect(session.view().sound).toBe(true);
+    await pressMw(session, MW_KEY.sound);
+    expect(session.view().sound).toBe(false);
+    expect(session.box).toEqual([]);
+    await pressMw(session, MW_KEY.sound);
+    expect(session.view().sound).toBe(true);
   });
 });
 
