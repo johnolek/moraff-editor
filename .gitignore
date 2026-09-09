@@ -1,6 +1,7 @@
 node_modules
 dist/
 dist-cli/
+server/data/
 .DS_Store
 __pycache__/
 games/

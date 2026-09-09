@@ -27,6 +27,6 @@ export default defineConfig({
   define: { __ENGINE_COMMIT__: JSON.stringify(engineCommit()) },
   plugins: [svelte(), viteSingleFile()],
   test: {
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'server/**/*.test.ts'],
   },
 });
