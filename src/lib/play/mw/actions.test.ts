@@ -139,14 +139,27 @@ describe('the dig', () => {
     expect(actionsPushed(session.game)).toEqual([]);
   });
 
+  it('counts the dig a monster interrupted, whose six moments are spent', async () => {
+    const start = findMwSquare(0, (square) => square.n === 3 && square.ladder === 0);
+    const session = playingMw(mwCharacterFile({ floor: 0, dir: 0, ...start }), highest, (ready) => {
+      const placed: MwStockedMonster = { ...ready.game.monsters[0], x: start.x, y: start.y - 1, hp: 4000, type: 1, depth: 3 };
+      Object.assign(ready.game.monsters[0], placed);
+      mwSetOccupant(ready.game, placed.x, placed.y, 0);
+    });
+    await pressMw(session, MW_KEY.down);
+    await pressMw(session, 0x31);
+    expect(session.game.screen.some((line) => line.text === 'A MONSTER WANTS TO HELP')).toBe(true);
+    expect(actionsPushed(session.game)).toEqual(['dug']);
+  });
+
   it('counts the hole once it has been dug', async () => {
     const start = findMwSquare(3, (square) => square.ladder === 0);
     const session = playingMw(mwCharacterFile({ floor: 3, dir: 0, ...start }));
     await pressMw(session, MW_KEY.down);
     await pressMw(session, 0x31);
-    // A monster that reached the character stops the dig, and then nothing was dug.
+    // A monster that reached the character stops the dig, which the test above is about.
     if (session.game.screen.some((line) => line.text === 'A MONSTER WANTS TO HELP')) {
-      expect(actionsPushed(session.game)).toEqual([]);
+      expect(actionsPushed(session.game)).toEqual(['dug']);
       return;
     }
     await pressMw(session, MW_KEY.escape);

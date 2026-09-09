@@ -61,10 +61,7 @@ export async function goUp(turn: MwTurn): Promise<void> {
 export async function goDown(turn: MwTurn): Promise<void> {
   const { game, session } = turn;
   if (turn.ladder < 1) {
-    if (await digAHole(turn)) {
-      turn.building = 0;
-      game.events.push({ kind: 'dug' });
-    }
+    if (await digAHole(turn)) turn.building = 0;
     return;
   }
   game.engaged = -1;

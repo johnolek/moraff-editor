@@ -150,14 +150,31 @@ describe('the dig', () => {
     expect(actionsPushed(session.game)).toEqual([]);
   });
 
+  it('counts the move the game makes for a Fighter too deep to dig', async () => {
+    const start = findSquare(20, (square) => square.ladder === 0 && square.chute === 0 && square.trapdoor === -1);
+    const session = standingOn(20, start, { cls: 0 });
+    await press(session, KEY.dig);
+    expect(session.box[0]).toBe('  SINCE YOU ARE A WORTHLESS');
+    expect(session.game.pc).not.toMatchObject(start);
+    expect(actionsPushed(session.game)).toEqual(['dug']);
+  });
+
+  it('counts the dig a monster interrupted, whose six moments are spent', async () => {
+    const session = await facingAMonster(lowest);
+    await press(session, KEY.dig);
+    await press(session, 0x31);
+    expect(session.view().box.map((line) => line.text)).toContain('A MONSTER WANTS TO HELP');
+    expect(actionsPushed(session.game)).toEqual(['dug']);
+  });
+
   it('counts the hole once it has been dug', async () => {
     const start = findSquare(3, (square) => square.ladder === 0 && square.chute === 0 && square.trapdoor === -1);
     const session = startPlaying(characterFile({ level: 3, dir: 0, ...start, cls: 3 }), new BorlandRng(3));
     await press(session, KEY.dig);
     await press(session, 0x31);
-    // A monster that reached the character stops the dig, and then nothing was dug.
+    // A monster that reached the character stops the dig, which the test above is about.
     if (session.view().box.map((line) => line.text).includes('A MONSTER WANTS TO HELP')) {
-      expect(actionsPushed(session.game)).toEqual([]);
+      expect(actionsPushed(session.game)).toEqual(['dug']);
       return;
     }
     await press(session, KEY.escape);

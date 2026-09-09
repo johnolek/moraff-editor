@@ -74,6 +74,8 @@ export async function digHole(turn: Turn): Promise<void> {
       showHint(game, FIGHTER_MOVED);
       game.pressAnyKey();
       relocate(game);
+      // The hole was refused, but the character is standing somewhere else on the floor for it.
+      game.events.push({ kind: 'dug' });
       return;
     }
     showHint(game, TOO_DEEP);
@@ -91,6 +93,8 @@ export async function digHole(turn: Turn): Promise<void> {
     clearMenuBlock(game);
     game.draw(messageLine('A MONSTER WANTS TO HELP', BATTLE_TEXT_COLOUR)); // DS:1b44
     if (!game.highSpeed) game.delay(MONSTER_HELPS_MS);
+    // No hole, but the six moments above are spent and the monsters have walked them.
+    game.events.push({ kind: 'dug' });
     return;
   }
   digging(game, DIG_LINE_MS);

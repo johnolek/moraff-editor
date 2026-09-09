@@ -69,7 +69,12 @@ const GIVE_UP_AFTER = 0x82;
 /** The rectangle the rescue searches for any open square at all. */
 const RESCUE = { fromX: 0x15, toX: 0x3a, fromY: 0x15, toY: 0x58 };
 
-/** @returns whether a hole was dug, which is what puts the character off a building square. */
+/**
+ * The run's own `dug` action is pushed here rather than by the caller, because a dig a monster
+ * interrupted has still spent its six moments even though no hole was made.
+ *
+ * @returns whether a hole was dug, which is what puts the character off a building square.
+ */
 export async function digAHole(turn: MwTurn): Promise<boolean> {
   const { game, session } = turn;
   const pc = game.pc;
@@ -112,6 +117,8 @@ export async function digAHole(turn: MwTurn): Promise<boolean> {
     mwClearMessageLine(game);
     game.draw(stripLine('A MONSTER WANTS TO HELP', MONSTER_HELPS_COLOUR)); // DS:3074
     game.delay(MONSTER_HELPS_MS);
+    // No hole, but the six moments above are spent and the monsters have walked them.
+    game.events.push({ kind: 'dug' });
     return false;
   }
   digging(game, DIG_LINE_MS);
@@ -154,6 +161,7 @@ export async function digAHole(turn: MwTurn): Promise<boolean> {
           pc.x = x;
           pc.y = y;
           session.enterFloor(pc.floor);
+          game.events.push({ kind: 'dug' });
           return true;
         }
       }
@@ -162,5 +170,6 @@ export async function digAHole(turn: MwTurn): Promise<boolean> {
   }
   innClearPreparation(game);
   session.enterFloor(landing);
+  game.events.push({ kind: 'dug' });
   return true;
 }
