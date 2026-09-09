@@ -16,6 +16,7 @@ problem here.
 
 ```bash
 pnpm build:server   # bundles server/ into dist-server/main.mjs
+pnpm build:engine   # bundles the engine into server/engines/<commit>/engine.mjs
 pnpm start:server   # runs dist-server/main.mjs
 ```
 
@@ -41,28 +42,67 @@ Checking it is up:
 
 ```bash
 curl http://127.0.0.1:3580/health
-# {"ok":true,"engineCommit":"<the commit it was built from>"}
+# {"ok":true,"engineCommit":"<the commit it was built from>","engines":["<and the ones it keeps>"]}
 ```
 
-`engineCommit` is how you tell which build is deployed: a run can only be
-replayed by the engine that played it, so the server has to be able to name
-the one it is carrying. A commit ending in `-dirty` was built from a working
-tree with changes in it and nobody can check that build out again.
+`engineCommit` is how you tell which build is deployed, and `engines` is every
+commit it can replay a run played on: a run can only be replayed by the engine
+that played it, so the server has to be able to name what it is carrying. A
+commit ending in `-dirty` was built from a working tree with changes in it and
+nobody can check that build out again.
 
-## Deploying by hand
+## Engine builds
 
-Build on your machine and copy the one file over. These are yours to run:
+A run says which commit of the engine it was played on, and a character's run
+can cross several of them as the site is rebuilt. Replaying a session with
+anything but its own engine shows nothing, so the server keeps a build of the
+engine for every commit it has ever deployed, in `RUN_SERVER_ENGINES`, one
+directory per commit:
+
+```
+engines/
+  0a1b2c…/engine.mjs
+  3d4e5f…/engine.mjs
+```
+
+`pnpm build:engine` writes the directory for the commit the working tree is on,
+so a deploy is both builds made on a clean checkout of the commit being
+deployed:
 
 ```bash
 pnpm build:server
+pnpm build:engine
+```
+
+Nothing is ever taken out of that directory. Deleting a build makes every run
+played on it unreplayable and there is no getting its verdict back; writing the
+same commit's build twice costs nothing, since it is the same build.
+
+A tree with changes in it builds into `<commit>-dirty`, and the server replays
+nothing with such a build: nobody can check that tree out again to see what it
+was. So a dirty build is fine to make and try on your own machine, and a deploy
+carrying one is plain to see in `/health`.
+
+## Deploying by hand
+
+Build on your machine and copy what it makes over. These are yours to run:
+
+```bash
+pnpm build:server
+pnpm build:engine
 scp dist-server/main.mjs box:/srv/moraff-run-server/main.mjs
+scp -r "server/engines/$(git rev-parse HEAD)" box:/srv/moraff-run-server/engines/
 ssh box 'sudo systemctl restart moraff-run-server'
 ```
+
+The second copy adds this commit's engine beside the ones earlier deploys left
+there, which is why the checkout has to be clean: a dirty tree has no directory
+under that name to copy.
 
 The first time, make somewhere for it to live and keep its data:
 
 ```bash
-ssh box 'sudo mkdir -p /srv/moraff-run-server /var/lib/moraff-run-server'
+ssh box 'sudo mkdir -p /srv/moraff-run-server/engines /var/lib/moraff-run-server'
 ```
 
 `/etc/systemd/system/moraff-run-server.service`:
@@ -76,6 +116,7 @@ After=network.target
 ExecStart=/usr/bin/node /srv/moraff-run-server/main.mjs
 Environment=RUN_SERVER_PORT=3580
 Environment=RUN_SERVER_DATABASE=/var/lib/moraff-run-server/runs.sqlite
+Environment=RUN_SERVER_ENGINES=/srv/moraff-run-server/engines
 Environment=RUN_SERVER_ORIGIN=https://johnolek.github.io
 User=moraff
 Restart=always
@@ -118,7 +159,9 @@ no server and the site behaves as it does today.
 
 One file, `RUN_SERVER_DATABASE`, holds every run the server has been sent and
 everything computed from them. Nothing else on the box is worth keeping: the
-server itself is a build of this repository.
+server itself is a build of this repository, and so is every engine under
+`RUN_SERVER_ENGINES` — a lost one comes back by checking its commit out and
+running `pnpm build:engine`.
 
 Copying the file while the server is running can catch it mid-write, so either
 stop it first, or let SQLite take the copy — `.backup` reads the file under the
