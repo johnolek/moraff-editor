@@ -178,29 +178,35 @@
 
 <PlayTab {game} {canvas} {press} {takeKey} {screen} {place} {afterModes} {sideFoot} />
 
+<!-- The game's own screen, which both displays draw: the stage in the screen display, and over
+     the map while the game has taken the display over with a page of its own. -->
+{#snippet gameScreen(stage: Stage)}
+  {@const view = stage.view}
+  {@const discovered = mapDrawn(stage.mode, stage.session.memory)}
+  <MwScreen
+    rows={view.rows}
+    place={view.place}
+    monsters={monstersDrawn(stage.mode, view)}
+    height={stage.session.game.pc.height}
+    ladderAt={(x, y) => bundledMwDungeon.ladder(x, y, view.place.floor, view.place.dungeon)}
+    surfaceFeatureAt={(x, y) => bundledMwDungeon.surface(x, y, view.place.floor, view.place.dungeon)}
+    discovered={discovered ?? { known: () => true, knownOnArrival: () => true }}
+    mapMonsters={zoomMapMonsters(stage.mode, view)}
+    lines={screenLines(stage)}
+    cleared={screenTakesOver(view)}
+    expandedMap={view.expandedMap}
+    barCorners={mwMonsterViewSides(stage.session.game).map((side) => side.corner)}
+    onmonster={(monster) => (openMonsterId = monster.monsterId)}
+    redraw={stage.redraw}
+  />
+{/snippet}
+
 {#snippet screen(stage: Stage)}
   {@const view = stage.view}
   {@const monsters = monstersDrawn(stage.mode, view)}
   {@const discovered = mapDrawn(stage.mode, stage.session.memory)}
   {#if stage.display === 'screen'}
-    <div class="game-screen">
-      <MwScreen
-        rows={view.rows}
-        place={view.place}
-        {monsters}
-        height={stage.session.game.pc.height}
-        ladderAt={(x, y) => bundledMwDungeon.ladder(x, y, view.place.floor, view.place.dungeon)}
-        surfaceFeatureAt={(x, y) => bundledMwDungeon.surface(x, y, view.place.floor, view.place.dungeon)}
-        discovered={discovered ?? { known: () => true, knownOnArrival: () => true }}
-        mapMonsters={zoomMapMonsters(stage.mode, view)}
-        lines={screenLines(stage)}
-        cleared={screenTakesOver(view)}
-        expandedMap={view.expandedMap}
-        barCorners={mwMonsterViewSides(stage.session.game).map((side) => side.corner)}
-        onmonster={(monster) => (openMonsterId = monster.monsterId)}
-        redraw={stage.redraw}
-      />
-    </div>
+    <div class="game-screen">{@render gameScreen(stage)}</div>
   {:else}
     {@const cornerLines = corner(view)}
     <FloorCanvas
@@ -243,10 +249,11 @@
       level={view.level}
       exp={view.exp}
       needed={experienceNeeded} />
-    <!-- With the map in the views' place there is nowhere on it to draw a screen the game
-         has taken the display over with, so it covers the map instead. -->
+    <!-- With the map in the views' place there is nowhere on it to draw a page the game has
+         taken the display over with, so the game's own screen covers the map instead,
+         letterboxed the way the screen display shows it. -->
     {#if screenTakesOver(view)}
-      <div class="overlay"><GameScreen lines={view.screen} colours={MW_SCREEN_COLOURS} /></div>
+      <div class="overlay">{@render gameScreen(stage)}</div>
     {/if}
   {/if}
   {#if openMonster}
@@ -304,10 +311,7 @@
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.85);
-    padding: 12px;
-  }
-  .overlay :global(.screen) {
-    width: min(100%, 1100px);
+    padding: var(--inset);
   }
   /* The four corners of the game's own screen, laid over the map the way it lays them over the
      3-D views: the message box top left, the monster faced top right, the character's own block
@@ -350,7 +354,8 @@
     height: 100%;
     padding: var(--inset);
   }
-  .game-screen :global(.screen) {
+  .game-screen :global(.screen),
+  .overlay :global(.screen) {
     width: min(100%, calc((100cqh - 2 * var(--inset)) * 4 / 3));
     max-height: 100%;
   }
