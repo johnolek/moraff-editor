@@ -58,7 +58,9 @@ BASIC.
   (1000:A016), the quit (1000:0D8E), the pause (1000:7FFE) and the magic table (1000:AC87) are
   the five, and the treasure's is the one that puts anything back — the flat map and the box
   between the views, and not the four views. `held.ts` — the two-second and four-second waits
-  the game leaves a message up for, as a display timer.
+  the game leaves a message up for, as a display timer. **`music.ts`** — the three tunes, the
+  reader that turns a BASIC `PLAY` string into notes, and the four-second wait the Kings Inn
+  takes in the hymn's place when the sound is off.
 * **`death.ts`** — 1000:A013, where two coin flips decide between the end of the character, a
   reincarnation and a raise. **`stats.ts`** — 1000:19F7, the V key's character sheet, which is
   the one screen the six characteristics are ever shown on; the formats they are printed with
@@ -229,10 +231,25 @@ Three things are this game's own:
   same two as `--palette` and `--background`, so a PNG of the screen can be made in whatever the
   tab is showing. `E` writes the redraw delay the way the game does, and what reads it is the tab's
   own redraw pace: the delay says how much a run of held arrows takes off the time a screen takes
-  to appear (`pace.ts`). `O` turns the sound off and on again as the game does and
-  says in the box that there is none to play. None of the four spends an action and none of them
+  to appear (`pace.ts`). `O` turns the sound off and on again as the game does, and there is
+  really sound to turn off. None of the four spends an action and none of them
   touches the character, so they go into the run log as the inputs they are and a replay comes out
   the same whatever colours it was played in.
+* **The three tunes are played.** There is one `PLAY` in the module (1000:05E2) and three
+  routines that set a string and fall into it: the temple's march (1000:05A0, played from
+  1000:2543), the death dirge (1000:05AC, from 1000:A013) and the Kings Inn's hymn (1000:05B8,
+  from 1000:1FC9). `music.ts` reads a BASIC `PLAY` string into notes — the frequencies from
+  BRUN30's own top-octave table at file offset 0xF8EC, the durations from the tempo and the
+  lengths — and hands them to the PC speaker of `src/lib/speaker.ts`. Every tune is prefixed
+  `MB`, so it is background music and nothing waits for it, here as there. The one thing behind
+  the music is the Kings Inn: at 1000:05BF the sound being off jumps to the four-second wait at
+  1000:2F35 instead of playing, so a night there takes as long either way, and that wait is a
+  held frame like every other (`held.ts`). The speaker is opened on the first key pressed in the
+  tab, since a browser will not start audio that nothing the player did asked for, and a replay
+  never opens one.
+* **The start-up loading tune is left out.** It is six fragments played one between each `BLOAD`
+  (1000:BBBC, BC18, BCDC, BE47, BF21 and BF30), and this port has nothing to load and no loading
+  screen to play them over.
 * **The help pages have no screen of their own.** `help.ts` shows `H1.OVL` to `H8.OVL` page by
   page in the message box, with the keys the original reads; what it leaves out is the switch to
   `SCREEN 0` at 80 columns, the second colour a `~` line is drawn in, and the recolouring of the
