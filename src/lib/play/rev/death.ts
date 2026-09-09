@@ -1,4 +1,5 @@
 import { REV_MAGIC } from './magic';
+import { revPlayDeathDirge } from './music';
 import { revValue, setRevValue } from './record';
 import { revClearScreen, revHitAnyKey, revSayGoodbye } from './screens';
 import { revArriveInTheTown } from './spells';
@@ -91,6 +92,8 @@ function takeOffTheBattleSpells(game: RevGame): void {
  */
 export async function revDie(game: RevGame, desk: RevTownDesk): Promise<boolean> {
   const pc = game.pc;
+  // 1000:A013: the dirge starts before the screen goes, so it is playing under the words.
+  revPlayDeathDirge(game);
   // 1000:A016: the death takes the whole screen, which is what finally rubs the dungeon out.
   revClearScreen(game);
   game.kept.locate(DEAD_ROW, 1);

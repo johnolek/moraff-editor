@@ -2,6 +2,7 @@ import { townBuilding } from '../../game/revmap.js';
 import type { RevMagicDesk } from './desk';
 import { REV_FOUR_SECONDS } from './held';
 import { revItemMenu } from './items';
+import { revPlayKingsInnHymn, revPlayTempleMarch } from './music';
 import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue, wearsRingsOfHealth } from './record';
 import { REV_ITEM_TABLE, revSpellsAt } from './tables';
 import type { RevGame } from './state';
@@ -79,8 +80,9 @@ export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDe
     // 1000:2014: the Kings Inn's own cleric, which is the whole of what the price buys.
     pc.hp = pc.maxHp;
     game.say(SLEEPING, 'A hotel staff cleric heals all of your', '   wounds.');
-    // 1000:203E. The four seconds are where the Kings Inn's hymn plays (1000:1FC9), so they are
-    // there whether or not there is anything to hear.
+    // 1000:1FC9: the hymn, which with the sound off is four seconds of nothing instead.
+    revPlayKingsInnHymn(game);
+    // 1000:203E: the wait the inn takes on top of that, whichever it was.
     game.delay(REV_FOUR_SECONDS);
     return;
   }
@@ -147,10 +149,12 @@ export async function revVisitBank(game: RevGame, desk: RevTownDesk): Promise<vo
   }
 }
 
-/** 1000:2522's own lines, and the five prices its `ON spell GOTO` subtracts. */
-const TEMPLE_OPENS = [
-  'A man in robes says, `Welcome to the',
-  '   temple.',
+/**
+ * 1000:2522's own lines, and the five prices its `ON spell GOTO` subtracts. The march is played
+ * between the two halves (1000:2543), so the temple is heard before it makes its offer.
+ */
+const TEMPLE_OPENS = ['A man in robes says, `Welcome to the', '   temple.'];
+const TEMPLE_ASKS = [
   '  Do you wish to purchase',
   "   a spell?'  You can hear many coins",
   '   jingling in his robes.',
@@ -188,6 +192,8 @@ export function revGainALevel(game: RevGame): void {
 export async function revVisitTemple(game: RevGame, desk: RevTownDesk): Promise<void> {
   const pc = game.pc;
   game.say(...TEMPLE_OPENS);
+  revPlayTempleMarch(game);
+  game.say(...TEMPLE_ASKS);
   for (;;) {
     game.say(`Your health points: ${Math.trunc(pc.hp)} of ${Math.trunc(pc.maxHp)}`, ...TEMPLE_MENU);
     const key = await desk.key();
