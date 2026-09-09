@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { SeededRng, type Rng } from '../../game/port/rng';
 import { HIT_POINTS_PER_LEVEL, monsterLevelOf } from '../../rev-bestiary/monsters';
-import { revMeetMonster, revMonsterAnswers, revOwnsWeapon, revSwing, revSwingTarget, revSwingWords } from './fight';
+import {
+  revMeetMonster,
+  revMonsterAnswers,
+  revOwnsWeapon,
+  revPrintTheSwing,
+  revSwing,
+  revSwingTarget,
+  revSwingWords,
+} from './fight';
+import { REV_KEY } from './keys';
 import { revKillMonster } from './kill';
 import { revMonsterAttack } from './attack';
 import { REV_VALUE, setRevValue, type RevPc } from './record';
@@ -184,10 +193,45 @@ describe('what a swing says', () => {
     expect(revSwingWords(game, { roll: 9, target: 1, damage: 4 })[0]).toBe('NICE SWING!');
   });
 
-  it('says one point rather than one points', () => {
+  it('says one point rather than one points, and none rather than no points', () => {
     const game = started({ random: () => 0 });
     expect(revSwingWords(game, { roll: 9, target: 1, damage: 1 })[1]).toBe('YOU DID 1 POINT.');
     expect(revSwingWords(game, { roll: 9, target: 1, damage: 2 })[1]).toBe('YOU DID 2 POINTS.');
+    expect(revSwingWords(game, { roll: 1, target: 9, damage: 0 })[1]).toBe('YOU DID 0 POINT.');
+  });
+});
+
+describe('where a swing writes what it says', () => {
+  it('puts the line on row 11 and the damage on row 10, over the map', () => {
+    const game = started({ random: () => 0 });
+    const swing = { roll: 9, target: 1, damage: 4 };
+    revPrintTheSwing(game, swing, revSwingWords(game, swing), REV_KEY.sword);
+    expect(game.kept.runs()).toEqual([
+      { row: 10, column: 1, text: 'YOU DID 4 POINTS.        ' },
+      { row: 11, column: 1, text: 'NICE SWING!              ' },
+    ]);
+  });
+
+  it('rubs the last swing out first, twenty-five columns of it and no more', () => {
+    const game = started({ random: () => 0 });
+    // Twenty-six characters, so the last of them is still there once SPACE$(25) has been over it.
+    game.kept.printAt(11, 1, 'A LINE THE LAST SWING LEFT');
+    const swing = { roll: 1, target: 9, damage: 0 };
+    revPrintTheSwing(game, swing, revSwingWords(game, swing), REV_KEY.sword);
+    expect(game.kept.runs()).toEqual([
+      { row: 10, column: 1, text: 'YOU DID 0 POINT.         ' },
+      { row: 11, column: 1, text: 'HA HA, YOU MISSED!       T' },
+    ]);
+  });
+
+  it('holds the miss line back for the breath of fire, which cannot miss', () => {
+    const game = started({ random: () => 0 });
+    const swing = { roll: 1, target: 9, damage: 0 };
+    revPrintTheSwing(game, swing, revSwingWords(game, swing), REV_KEY.breathe);
+    expect(game.kept.runs()).toEqual([
+      { row: 10, column: 1, text: 'YOU DID 0 POINT.         ' },
+      { row: 11, column: 1, text: ' '.repeat(25) },
+    ]);
   });
 });
 

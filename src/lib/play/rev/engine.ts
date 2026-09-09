@@ -28,6 +28,7 @@ import {
   revMonsterAnswers,
   revOwnsWeapon,
   revSwing,
+  revPrintTheSwing,
   revSwingWords,
   revWeaponFor,
   NO_SUCH_WEAPON,
@@ -546,6 +547,7 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
       const breath = revBreatheFire(game);
       if (breath === null) return;
       game.banner = revSwingWords(game, breath);
+      revPrintTheSwing(game, breath, game.banner, key);
       monsterAnswers(session);
       return;
     }
@@ -572,6 +574,7 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
   }
   const swing = revSwing(game, weapon);
   game.banner = revSwingWords(game, swing);
+  revPrintTheSwing(game, swing, game.banner, key);
   monsterAnswers(session);
 }
 

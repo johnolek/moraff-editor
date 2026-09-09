@@ -114,11 +114,38 @@ export const REV_FIGHT_LINES = [
   'OH SHIT!',
 ];
 
-/** 1000:8D38 and 1000:8D86: what the swing says, which is one of five either way. */
+/** 1000:8D38 and 1000:8D86: what the swing says, which is one of five either way.
+ *
+ * The `S.` is on the damage being over one rather than on its not being one (1000:8DE6), so a
+ * swing that did nothing says POINT rather than POINTS. */
 export function revSwingWords(game: RevGame, swing: RevSwing): string[] {
   const said = REV_FIGHT_LINES[game.rng.random(5) + (swing.damage === 0 ? 0 : 5)];
-  const points = `YOU DID ${swing.damage} POINT${swing.damage === 1 ? '.' : 'S.'}`;
+  const points = `YOU DID ${swing.damage} POINT${swing.damage > 1 ? 'S.' : '.'}`;
   return [said, points];
+}
+
+/** The two rows a swing writes on, twenty-five columns wide, straight over the map: `LOCATE 11,
+ *  1` at 1000:8D00 and `LOCATE 10, 1` at 1000:8D1F. */
+const SWING_SAID_ROW = 11;
+const SWING_POINTS_ROW = 10;
+const SWING_WIDTH = 25;
+
+/**
+ * 1000:8D00: where the two lines of a swing go.
+ *
+ * Row 11 is blanked and then row 10, and it is that second blank which leaves the cursor at the
+ * start of row 11 -- the hit and the miss lines are printed with no `LOCATE` of their own
+ * (1000:8D5D and 1000:8D91). The damage then goes back on row 10 above them.
+ *
+ * The miss line is held back for the breath of fire and for nothing else: the test at 1000:8D45
+ * wants the key not to have been `B`, since a breath cannot miss.
+ */
+export function revPrintTheSwing(game: RevGame, swing: RevSwing, words: string[], key: number): void {
+  game.kept.blank(SWING_SAID_ROW, 1, SWING_WIDTH);
+  game.kept.blank(SWING_POINTS_ROW, 1, SWING_WIDTH);
+  if (swing.damage === 0 && key !== REV_KEY.breathe) game.kept.print(words[0]);
+  if (swing.damage > 0) game.kept.print(words[0]);
+  game.kept.printAt(SWING_POINTS_ROW, 1, words[1]);
 }
 
 /** Whether the character owns the weapon (1000:87DB, 8805, 8830). */
