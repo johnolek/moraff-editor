@@ -169,6 +169,10 @@ export interface RevGame {
   /** 1000:2FCB: whatever has been typed and not read yet is thrown away, which the original does
    *  with eighteen `INKEY$` reads. The session is what has a keyboard to empty. */
   flushKeys(): void;
+  /** 1000:2F1A and 1000:2F35: leave the screen as it is for this long, which the original spends
+   *  in a busy loop and the port spends in a display timer (`held.ts`). Nothing of the game
+   *  waits; the session is what has a screen to hold. */
+  delay(ms: number): void;
 }
 
 /** What a character has to be for the monsters to take a turn against them. */
@@ -233,6 +237,9 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     },
     flushKeys() {
       // A game with no session around it has no keyboard to empty; `engine.ts` puts one here.
+    },
+    delay() {
+      // A game nobody is drawing has no screen to hold; `engine.ts` puts one here.
     },
   };
   return game;
