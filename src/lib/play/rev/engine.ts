@@ -45,10 +45,11 @@ import { revKillMonster } from './kill';
 import { REV_KEY, revArrowMode, revCompassArrow, revTurningArrow, revWrapFacing } from './keys';
 import { revFeatureUnder, revLookDown } from './ladders';
 import { RevMapMemory, type RevMapStore } from './memory';
-import { DEFAULT_PLAY_MODE, type PlayMode } from '../mode';
+import type { PlayMode } from '../mode';
+import { KeyedSession, RECORD_EDITED, type CharacterFile, type HeldFrames, type KeyHandler } from '../session';
 import { revStep, type RevStep } from './move';
 import { revPass } from './pass';
-import { loadRevPlayer, saveRevPlayer } from './record';
+import { loadRevPlayer, saveRevPlayer, type RevPc } from './record';
 import type { RunRecorder, RunSummary } from '../run';
 import { revAdvice } from './advice';
 import {
@@ -79,22 +80,14 @@ import { REV_NOT_BUILT, revClearScreen, revDrawTheDungeonAgain, revSayGoodbye } 
  * without any clock at all.
  */
 
-/** How many keys are kept for a loop that is not waiting for one yet. */
-const KEY_QUEUE = 4;
-
 /** Not a key: the loop's wait hands this back when the save editor has written the record. */
-export const REV_RECORD_EDITED = -0x201;
+export const REV_RECORD_EDITED = RECORD_EDITED;
 
 /** Not a key: one tick of the monsters' clock, which the log keeps where it happened. */
 export const REV_CLOCK_TICK = -0x202;
 
-/** Where the character record lives while it is being played. */
-export interface RevCharacterFile {
-  bytes: Uint8Array;
-  /** 1000:B308: keep these bytes as the character from now on. */
-  write(bytes: Uint8Array<ArrayBuffer>): void;
-  /** The character has died, which the roster marks and never undoes. */
-  died(): void;
+/** Where the character record lives while it is being played. `write` is 1000:B308. */
+export interface RevCharacterFile extends CharacterFile {
   /** 1000:B583 and 1000:B964: the explored map kept beside the record, the way the game keeps
    *  `<n>.BIN` beside `<n>.EXE`. */
   map?: RevMapStore;
@@ -130,23 +123,8 @@ export interface RevPlayView {
 }
 
 /** One character being played. */
-export class RevGameSession {
+export class RevGameSession extends KeyedSession<RevPc> {
   readonly game: RevGame;
-  over = false;
-  /** Why the play loop stopped, when it stopped because it threw (`loop.ts`), or null. */
-  stopped: string | null = null;
-  dead = false;
-  mode: PlayMode = DEFAULT_PLAY_MODE;
-  onChange: (() => void) | null = null;
-
-  private queued: number[] = [];
-  private waiting: ((key: number) => void) | null = null;
-  /** The record as the game last read it or wrote it back. */
-  private known: Uint8Array;
-  private edited: Uint8Array | null = null;
-  /** The loop is at the poll with nothing of the game's own part-way through, which is where a
-   *  tick of the monsters' clock belongs and where an edited record is safe to take. */
-  private polling = false;
   private timer: ReturnType<typeof setInterval> | null = null;
   /**
    * The screens the game asked to be left up for a moment (1000:2F1A), which the tab draws in
@@ -156,17 +134,17 @@ export class RevGameSession {
   private readonly held = new RevHeldScreens(() => this.changed());
 
   constructor(
-    readonly file: RevCharacterFile,
+    file: RevCharacterFile,
     rng: Rng,
-    readonly run: RunRecorder | null = null,
+    run: RunRecorder | null = null,
     sound = true,
   ) {
+    super(file, run);
     // A character is 340 numbers of text (1000:B6BF). Bytes that are not them are not a
     // character at all, and a game of a character made of zeroes would be checked against itself
     // and believed, so this stops instead.
     const pc = loadRevPlayer(file.bytes);
     if (!pc) throw new Error('These bytes are not a Moraff\'s Revenge character record.');
-    this.known = file.bytes.slice();
     this.game = newRevGame(pc, rng, new RevMapMemory(file.map ?? null), file.name ?? '');
     // 1000:0523: the answer to "Sound (Y or N)?" is the only thing that writes DGROUP B4BC
     // before the loop starts, and N is what puts a 1 there.
@@ -187,60 +165,31 @@ export class RevGameSession {
   /** How many ticks of the monsters' clock the run has spent, which is this game's own clock. */
   ticks = 0;
 
-  /** A key from the Play tab. */
-  press(key: number): void {
-    // Whatever is left of a held screen is given up: the original is not reading the keyboard
-    // while it holds one, so by the time a key of the player's is looked at the wait is over.
-    this.held.release();
-    const waiting = this.waiting;
-    if (waiting) {
-      this.waiting = null;
-      waiting(key);
-      return;
-    }
-    if (this.queued.length < KEY_QUEUE) this.queued.push(key);
+  protected override get frames(): HeldFrames {
+    return this.held;
   }
 
   /**
-   * 1000:2FCB: the keys typed and not read yet are thrown away.
-   *
-   * The original reads `INKEY$` eighteen times over, which empties the BIOS buffer of whatever
-   * was typed while it was busy. Here that is the queue a key waits in when the loop is not at
-   * its poll.
+   * A tick of the monsters' clock is not an input the player made: {@link tick} has already
+   * written it into the log where it happened, so the wait it ends must not write it again.
    */
-  flushKeys(): void {
-    this.queued = [];
-  }
-
-  /** 1000:2F71: the next key, once there is one. */
-  key(): Promise<number> {
-    const queued = this.queued.shift();
-    if (queued !== undefined) {
-      this.run?.input(queued);
-      return Promise.resolve(queued);
-    }
-    this.changed();
-    return new Promise((resolve) => {
-      this.waiting = (key) => {
-        // Neither of the two things that are not keys belongs in the log here: an edited record
-        // is not an input at all, and a tick has already written itself down.
-        if (key !== REV_RECORD_EDITED && key !== REV_CLOCK_TICK) this.run?.input(key);
-        resolve(key);
-      };
-    });
+  protected override took(key: number): void {
+    if (key !== REV_CLOCK_TICK) super.took(key);
   }
 
   /**
-   * 1000:087F: the poll. It waits for a key the way {@link key} does, and while it waits the
-   * monsters' clock runs.
+   * 1000:087F: the poll, which is where the loop waits at the top of a pass. While it waits the
+   * monsters' clock runs, and it is the one place a record written outside the game is taken.
    */
-  async poll(): Promise<number> {
-    this.polling = true;
+  poll(): Promise<number> {
+    return this.keyOrEdit();
+  }
+
+  protected override async waitForTheKey(): Promise<number> {
     this.startClock();
     try {
       return await this.key();
     } finally {
-      this.polling = false;
       this.stopClock();
     }
   }
@@ -274,9 +223,7 @@ export class RevGameSession {
     // 1000:08F6: a monster that has reached the character's square sends the loop through the
     // per-key routine, whose redraw opens the fight (1000:4969).
     if (this.game.fight === null && this.monsterHere() > 0) {
-      const waiting = this.waiting;
-      this.waiting = null;
-      waiting?.(REV_CLOCK_TICK);
+      this.wake(REV_CLOCK_TICK);
       drawAgain = true;
     }
     // Debug mode's panel prints the cursor the clock walks and the two slots it has marked awake,
@@ -301,23 +248,30 @@ export class RevGameSession {
     this.timer = null;
   }
 
-  /** 1000:B308 with the BSAVE it falls into: the record and the map, written back together. */
-  save(): void {
-    const bytes = saveRevPlayer(this.game.pc);
-    this.known = bytes.slice();
-    this.file.write(bytes);
+  /** 1000:B6BF: a record's 340 numbers as the character, or nothing where the bytes are not a
+   *  character at all. */
+  protected override readRecord(bytes: Uint8Array): RevPc | null {
+    return loadRevPlayer(bytes);
+  }
+
+  /** 1000:B308: the character back into the record it came from. */
+  protected override writeRecord(): Uint8Array<ArrayBuffer> {
+    return saveRevPlayer(this.game.pc);
+  }
+
+  /** The BSAVE 1000:B308 falls into: the map is written back with the record. */
+  override save(): void {
+    super.save();
     this.game.memory.save();
   }
 
   /** 1000:A249: the character's two files are deleted. The roster marks the entry instead and
    *  keeps the bytes, the way the other two games' ports do; the map really is thrown away. */
-  die(): void {
-    this.dead = true;
+  override die(): void {
     this.over = true;
     this.game.over = true;
-    this.run?.died();
     this.game.memory.forgetEverything();
-    this.file.died();
+    super.die();
   }
 
   /** 1000:4C28: the level changes, which re-stocks the monster grid. */
@@ -334,38 +288,19 @@ export class RevGameSession {
     }
   }
 
-  /** The save editor has written the record while the game is being played. */
-  recordEdited(bytes: Uint8Array): void {
-    if (sameBytes(bytes, this.known)) return;
-    this.edited = bytes;
-    if (!this.polling) return;
-    const waiting = this.waiting;
-    if (!waiting) return;
-    this.waiting = null;
-    waiting(REV_RECORD_EDITED);
-  }
-
-  /** Read the record again, if the save editor has written one. */
-  takeEdits(): void {
-    const bytes = this.edited;
-    if (bytes === null) return;
-    this.edited = null;
-    this.run?.edited();
-    this.known = bytes.slice();
-    this.file.bytes = bytes;
-    const read = loadRevPlayer(bytes);
-    if (!read) return;
+  /**
+   * Where a record the save editor wrote leaves the character standing.
+   *
+   * The way they are facing is the game's rather than the record's, since the record holds no
+   * facing at all: a session starts every character looking north (`record.ts`).
+   */
+  protected override placeEdited(record: RevPc): void {
     const level = this.game.pc.dungeonLevel;
-    Object.assign(this.game.pc, read, { facing: this.game.pc.facing });
+    Object.assign(this.game.pc, record, { facing: this.game.pc.facing });
     if (this.game.pc.dungeonLevel !== level) this.enterLevel(this.game.pc.dungeonLevel);
   }
 
-  changed(): void {
-    this.onChange?.();
-  }
-
-  /** Nothing is going to draw this session again. */
-  finish(): void {
+  override finish(): void {
     this.stopClock();
     this.held.stop();
   }
@@ -483,12 +418,6 @@ export function revReadNumber(key: number): number | null {
   return digit >= 0 && digit <= 9 ? digit : null;
 }
 
-function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
-  if (left.length !== right.length) return false;
-  for (let at = 0; at < left.length; at++) if (left[at] !== right[at]) return false;
-  return true;
-}
-
 /** Start playing a character. */
 export function startRevGame(
   file: RevCharacterFile,
@@ -508,11 +437,7 @@ export interface RevTurn {
 }
 
 /** One key the dungeon dispatches on. */
-export interface RevKeyHandler {
-  /** The function of the game the key runs, for anyone reading the table. */
-  c: string;
-  run(turn: RevTurn): void | Promise<void>;
-}
+export type RevKeyHandler = KeyHandler<RevTurn>;
 
 /** The keys 1000:0CD2 dispatches on, by the byte it compares. */
 export const REV_KEY_HANDLERS: Record<number, RevKeyHandler> = {
