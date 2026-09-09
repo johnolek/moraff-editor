@@ -79,6 +79,30 @@
 .play .map:fullscreen > :first-child {
   width: min(100vw, calc(100vh * 4 / 3));
 }
+/* Top right of the full-screen map: the way out, and an Escape key for a browser that will not
+   let the page keep the real one. */
+.play .fullscreen-bar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+}
+.play .fullscreen-bar button {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgb(0 0 0 / 70%);
+  color: var(--ink);
+  font: inherit;
+  font-family: var(--font-dos);
+  font-size: 16px;
+  cursor: pointer;
+}
+.play .fullscreen-bar button:hover {
+  color: var(--accent);
+}
 .play .over {
   position: absolute;
   inset: 0;

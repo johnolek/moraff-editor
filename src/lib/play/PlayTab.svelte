@@ -115,6 +115,36 @@
   /** Whether the browser will put an element alone on the display at all. */
   const fullscreenAllowed = typeof document !== 'undefined' && document.fullscreenEnabled;
 
+  /**
+   * The Keyboard Lock API, which Chromium has and the others do not: with Escape locked while the
+   * map is full screen, the key reaches the game instead of leaving full screen (a held Escape
+   * still leaves, which is the browser's own rule).
+   */
+  const keyboardLock = (typeof navigator !== 'undefined' ? navigator : undefined) as
+    | (Navigator & { keyboard?: { lock?: (keys?: string[]) => Promise<void>; unlock?: () => void } })
+    | undefined;
+  const escapeLockable = typeof keyboardLock?.keyboard?.lock === 'function';
+  /** Whether the map is alone on the display now. */
+  let fullscreen = $state(false);
+
+  async function enterFullscreen() {
+    if (!mapElement) return;
+    await mapElement.requestFullscreen();
+    if (escapeLockable) await keyboardLock?.keyboard?.lock?.(['Escape']).catch(() => undefined);
+  }
+
+  function onFullscreenChange() {
+    fullscreen = document.fullscreenElement === mapElement;
+    if (!fullscreen) keyboardLock?.keyboard?.unlock?.();
+  }
+
+  /** Escape for the game, from the button a browser that cannot keep the key gets instead. */
+  function pressEscape() {
+    if (!session || session.over) return;
+    const key = game.gameKey(new KeyboardEvent('keydown', { key: 'Escape' }));
+    if (key !== null) press(session, key);
+  }
+
   function leave() {
     session?.finish();
     session = null;
@@ -213,7 +243,7 @@
   const words = $derived(RUN_GAMES[game.id]);
 </script>
 
-<svelte:window onkeydown={onKeyDown} />
+<svelte:window onkeydown={onKeyDown} onfullscreenchange={onFullscreenChange} />
 
 <div class="play">
   {#if !session || !view}
@@ -237,6 +267,14 @@
     <div class="stage">
       <div class="map" bind:this={mapElement} style:filter={colourblindFilter(colourblind)}>
         {@render screen(stage)}
+        {#if fullscreen}
+          <div class="fullscreen-bar">
+            {#if !escapeLockable}
+              <button type="button" onclick={pressEscape}>Esc</button>
+            {/if}
+            <button type="button" onclick={() => void document.exitFullscreen()}>Exit full screen</button>
+          </div>
+        {/if}
         {#if view.over}
           <div class="over">
             <div class="over-box">
@@ -259,7 +297,7 @@
             bind:display
             bind:colourblind
             bind:redraw
-            onfullscreen={fullscreenAllowed ? () => void mapElement?.requestFullscreen() : undefined} />
+            onfullscreen={fullscreenAllowed ? () => void enterFullscreen() : undefined} />
         </div>
         <div class="place">{@render place(stage)}</div>
         {@render afterPlace?.(stage)}
