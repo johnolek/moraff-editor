@@ -285,6 +285,28 @@ showHint(game, TELEPORTER_MENU);                // the lines the menu prints
 const chosen = await session.choice([0x31, 0x32, 0x33]);
 ```
 
+### How fast a screen appears
+
+The Redraw speed slider on `ScreenSwitch.svelte` is the tab drawing a screen the way a machine
+slow enough to watch drew one: from the top row down, over the time the slider is set to, Instant
+at one end and two seconds at the other. The choice sits beside the mode and the display in
+`mode.ts`, one per game, and it is display only — the frame is worked out and finished before any
+row of it is shown, so the game, the monsters' clock and the run log come out the same whatever
+it is set to. `view3d/wipe.ts` is where the cursor has got to and `view3d/canvas.ts` the copying.
+
+Three things about it are decisions rather than arithmetic:
+
+* **A frame that arrives mid-wipe takes the wipe over where the cursor stands** rather than
+  starting again at the top, so typing faster than the wipe never queues screens up. The cursor
+  then carries on to the bottom, round to the top and back down to where it took over, so that no
+  row is left showing a screen the game had already moved on from.
+* **A frame the game holds is a frame** (`timed.ts`, and `rev/held.ts`), so a message left up for
+  two seconds appears the same way everything else does.
+* **Two things are still painted whole.** A fade and the plaque's crawl repaint many times a
+  second of their own accord and would undo a wipe as it started; and a canvas that goes off the
+  page finishes what it was drawing at once, which is the rule the arrow's flash and those two
+  animations already keep.
+
 ## A fight
 
 `fight.ts` is the F key, one swing, and Ctrl-F, which keeps swinging. `kill.ts` is the check
