@@ -41,25 +41,27 @@
 </div>
 
 <style>
+  /* The bar and its lettering are fractions of the orbs it stands between, so the whole foot of
+     the map is drawn at one size. */
   .exp {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: calc(var(--orb-size) * 0.04);
     width: 100%;
-    max-width: 420px;
+    max-width: calc(var(--orb-size) * 3.5);
   }
   .heading {
     display: flex;
     justify-content: space-between;
     gap: 12px;
     font-family: var(--font-dos);
-    font-size: 13px;
+    font-size: calc(var(--orb-size) * 0.13);
     color: var(--ink);
     text-shadow: 0 1px 2px #000;
   }
   .track {
     position: relative;
-    height: 16px;
+    height: calc(var(--orb-size) * 0.16);
     border: 1px solid var(--line);
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.72);
@@ -74,12 +76,12 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    padding: 0 8px;
+    padding: 0 calc(var(--orb-size) * 0.06);
     border-radius: 999px;
     background: rgba(0, 0, 0, 0.8);
     font-family: var(--font-dos);
-    font-size: 11px;
-    line-height: 14px;
+    font-size: calc(var(--orb-size) * 0.11);
+    line-height: calc(var(--orb-size) * 0.14);
     color: var(--accent);
     white-space: nowrap;
   }

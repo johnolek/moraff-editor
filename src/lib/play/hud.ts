@@ -9,8 +9,15 @@
 /** How long an orb or the bar takes to move from where it stood to where it now stands. */
 export const HUD_TWEEN_MS = 300;
 
-/** How wide across an orb is drawn, which is how much room the foot of the display takes. */
-export const HUD_ORB_PX = 96;
+/**
+ * How wide across an orb is drawn, at most.
+ *
+ * The whole foot of the display is worked out from it — the height of the bar the orbs stand in,
+ * the experience bar between them, the letters on both — so the display scales together. A map
+ * with little height to give gets smaller orbs than this, which is what keeps the bar from taking
+ * the floor with it (`MapHud.svelte`).
+ */
+export const HUD_ORB_PX = 192;
 
 /**
  * How full an orb is drawn, from 0 empty to 1 full.

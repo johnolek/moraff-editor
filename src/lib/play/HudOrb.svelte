@@ -36,6 +36,8 @@
 </div>
 
 <style>
+  /* The rim, the highlight and the lettering are all fractions of the orb, so an orb drawn
+     smaller on a short map is the same orb rather than a thin-rimmed one. */
   .orb {
     position: relative;
     width: var(--orb-size);
@@ -43,7 +45,11 @@
     border-radius: 50%;
     overflow: hidden;
     background: #05040a;
-    border: 2px solid var(--line);
+    border: calc(var(--orb-size) * 0.03) solid var(--line);
+    /* The dark ring and the shadow under it are what seat the orb in the stone of the bar. */
+    box-shadow:
+      0 0 0 2px rgba(0, 0, 0, 0.75),
+      0 6px 16px rgba(0, 0, 0, 0.6);
   }
   .health {
     --liquid-top: #ff4a4a;
@@ -62,7 +68,7 @@
     bottom: 0;
     background: linear-gradient(to top, var(--liquid-bottom), var(--liquid-top));
     /* The lighter line where the liquid meets the air. */
-    box-shadow: inset 0 3px 0 var(--meniscus);
+    box-shadow: inset 0 calc(var(--orb-size) * 0.03) 0 var(--meniscus);
   }
   /* The curve of the glass over the liquid: a highlight up on the left and the dark the sphere
      falls away into at its rim. */
@@ -71,7 +77,7 @@
     inset: 0;
     border-radius: 50%;
     background: radial-gradient(circle at 32% 26%, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0) 46%);
-    box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.8);
+    box-shadow: inset 0 0 calc(var(--orb-size) * 0.19) rgba(0, 0, 0, 0.8);
   }
   .numbers {
     position: absolute;
@@ -80,17 +86,17 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: calc(var(--orb-size) * 0.02);
     font-family: var(--font-dos);
     color: #fff;
     text-shadow: 0 0 4px #000, 0 1px 2px #000;
   }
   .count {
-    font-size: 16px;
+    font-size: calc(var(--orb-size) * 0.16);
     line-height: 1;
   }
   .what {
-    font-size: 11px;
+    font-size: calc(var(--orb-size) * 0.11);
     line-height: 1;
     opacity: 0.85;
   }
