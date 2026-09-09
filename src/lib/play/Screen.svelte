@@ -40,7 +40,8 @@
   import { drawSectionScreen, type SectionScreen } from './section-screen';
   import { drawTablet } from './tablet';
   import { buildingPictures, viewPictures } from './view3d/browser';
-  import { newFrame, toRgba, type Frame } from './view3d/frame';
+  import { framePainter } from './view3d/canvas';
+  import { newFrame, type Frame } from './view3d/frame';
   import { renderFourViews, type KilledMonster, type ViewMonster } from './view3d/render';
   import { drawDotuScreenText } from './view3d/text';
   import { viewLabels } from './view3d/views';
@@ -118,6 +119,8 @@
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
+  /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
+  const paintFrame = framePainter(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
   let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
   /** The screen as it was last painted, for the plaque's crawl and the fades to work from. */
   let painted = $state.raw<{ frame: Frame; palette: Rgb[] } | null>(null);
@@ -277,8 +280,7 @@
       // copies the two shop tables over the banks the building picture is drawn out of.
       // A fade's first step is drawn here so that nothing of the screen shows at full strength
       // before the animation below has its first frame.
-      const rgba = toRgba(frame, fade === null ? palette : fadedPalette(palette, fade, 0));
-      context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
+      paintFrame(context, frame, fade === null ? palette : fadedPalette(palette, fade, 0));
       painted = plaque === 'showing' || fade !== null ? { frame, palette } : null;
     };
     // The stone tablet the snake's words are read on (exe 3000:9026), which is a screen of its own:
@@ -427,8 +429,7 @@
     let request = 0;
     const tick = (now: number): void => {
       const step = Math.min(last, Math.floor((now - started) / FADE_STEP_MS));
-      const stepped = fadedPalette(holding.palette, running, step);
-      context.putImageData(new ImageData(toRgba(holding.frame, stepped), SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
+      paintFrame(context, holding.frame, fadedPalette(holding.palette, running, step));
       request = requestAnimationFrame(tick);
     };
     request = requestAnimationFrame(tick);
@@ -452,8 +453,7 @@
     let request = 0;
     const tick = (): void => {
       steps += 1;
-      const turned = cycleGradientBank(holding.palette, steps);
-      context.putImageData(new ImageData(toRgba(holding.frame, turned), SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
+      paintFrame(context, holding.frame, cycleGradientBank(holding.palette, steps));
       request = requestAnimationFrame(tick);
     };
     request = requestAnimationFrame(tick);

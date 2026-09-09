@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { toRgba, type Frame } from '../../view3d/frame';
+  import { framePainter } from '../../view3d/canvas';
+  import type { Frame } from '../../view3d/frame';
   import { revRgb } from './colours';
   import { SCREEN_HEIGHT, SCREEN_WIDTH } from './paint';
 
@@ -16,13 +17,15 @@
   let { screen, palette = 0, background = 0 }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
+  /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
+  const paintFrame = framePainter(SCREEN_WIDTH, SCREEN_HEIGHT);
 
   $effect(() => {
     const target = canvas;
     if (!target) return;
     const context = target.getContext('2d');
     if (!context) return;
-    context.putImageData(new ImageData(toRgba(screen, revRgb(palette, background)), SCREEN_WIDTH, SCREEN_HEIGHT), 0, 0);
+    paintFrame(context, screen, revRgb(palette, background));
   });
 </script>
 

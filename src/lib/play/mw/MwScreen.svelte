@@ -6,7 +6,8 @@
   import { floorPalette } from '../../mw-bestiary/pictures';
   import type { ScreenLine } from '../../game/port/state';
   import type { MwMonsterViewCorner } from '../../game/mw-port/screens';
-  import { fillRect, newFrame, toRgba, type Frame } from '../view3d/frame';
+  import { framePainter } from '../view3d/canvas';
+  import { fillRect, newFrame, type Frame } from '../view3d/frame';
   import { mwViewPictures } from './view3d/browser';
   import { mwHorizonWeight } from './view3d/geometry';
   import { renderMwView, type MwViewMonster, type MwViewScene } from './view3d/render';
@@ -86,6 +87,8 @@
   const HEIGHT = MW_SCREEN_PIXELS.height;
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
+  /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
+  const paintFrame = framePainter(WIDTH, HEIGHT);
 
   const drawn = $derived.by((): MwViewMonster[] =>
     monsters.flatMap((monster) => {
@@ -122,11 +125,7 @@
     if (expandedMap) {
       drawMwExpandedMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters, thumbnail: mwMonsterThumbnail });
       drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
-      context.putImageData(
-        new ImageData(toRgba(frame, floorPalette(place.floor)), WIDTH, HEIGHT),
-        0,
-        0,
-      );
+      paintFrame(context, frame, floorPalette(place.floor));
       return;
     }
 
@@ -142,7 +141,7 @@
     // screen, so the frame goes black before its lines are painted.
     if (cleared) fillRect(frame, 0, 0, WIDTH, HEIGHT, 0);
     drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
-    context.putImageData(new ImageData(toRgba(frame, floorPalette(place.floor)), WIDTH, HEIGHT), 0, 0);
+    paintFrame(context, frame, floorPalette(place.floor));
   });
 
   /**
