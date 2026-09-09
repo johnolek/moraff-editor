@@ -111,6 +111,8 @@ export interface RevPlayView {
   arrows: 'compass' | 'turning';
   over: boolean;
   dead: boolean;
+  /** The message the play loop threw and stopped on, or null. */
+  stopped: string | null;
   run: RunSummary | null;
 }
 
@@ -118,6 +120,8 @@ export interface RevPlayView {
 export class RevGameSession {
   readonly game: RevGame;
   over = false;
+  /** Why the play loop stopped, when it stopped because it threw (`loop.ts`), or null. */
+  stopped: string | null = null;
   dead = false;
   mode: PlayMode = DEFAULT_PLAY_MODE;
   onChange: (() => void) | null = null;
@@ -387,6 +391,7 @@ export class RevGameSession {
       arrows: revArrowMode(game.arrowMode),
       over: this.over,
       dead: this.dead,
+      stopped: this.stopped,
       run: this.run?.summary() ?? null,
     };
   }

@@ -130,6 +130,8 @@ export interface MwPlayView {
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
+  /** The message the play loop threw and stopped on, or null. */
+  stopped: string | null;
   /** How the run stands, or null for a game nobody is recording. */
   run: RunSummary | null;
 }
@@ -157,6 +159,8 @@ export class MwGameSession {
   banner: string[] = [];
   /** movecontrol has come back: the character has quit or died. */
   over = false;
+  /** Why the play loop stopped, when it stopped because it threw (`loop.ts`), or null. */
+  stopped: string | null = null;
   dead = false;
   /**
    * How much of the game the tab is showing (`../mode.ts`). Nothing the game does reads it; it
@@ -568,6 +572,7 @@ export class MwGameSession {
       engaged: game.engaged === -1 ? null : (drawn.find((monster) => monster.slot === game.engaged) ?? null),
       over: this.over,
       dead: this.dead,
+      stopped: this.stopped,
       run: this.run?.summary() ?? null,
     };
   }

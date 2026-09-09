@@ -16,6 +16,7 @@
   import { MW_DIG_PROMPT } from './view3d/screen';
   import type { ScreenLine } from '../../game/port/state';
   import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession, type MwPlayView } from './engine';
+  import { runPlayLoop } from '../loop';
   import { downloadMapFiles, mwMapFiles } from '../export-maps';
   import { downloadRunLog } from '../export-run';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from '../run';
@@ -220,7 +221,7 @@
     session = started;
     playingId = entry.id;
     view = started.view();
-    void runMwMoveControl(started);
+    void runPlayLoop(started, runMwMoveControl(started));
   }
 
   function leave() {
@@ -443,7 +444,13 @@
         {#if view.over}
           <div class="over">
             <div class="over-box">
-              <div class="line">{view.dead ? 'THE CHARACTER IS DEAD' : 'SAVED AND BACK ON THE ROSTER'}</div>
+              <!-- A loop that threw has stopped the game wherever it was, so the box says so
+                   rather than leaving the tab looking like a game still being played. -->
+              {#if view.stopped}
+                <div class="line stopped">The game stopped: {view.stopped}</div>
+              {:else}
+                <div class="line">{view.dead ? 'THE CHARACTER IS DEAD' : 'SAVED AND BACK ON THE ROSTER'}</div>
+              {/if}
               <button type="button" onclick={leave}>Leave the game</button>
             </div>
           </div>
@@ -662,6 +669,10 @@
     font-family: var(--font-dos);
     font-size: 24px;
     color: var(--accent);
+  }
+  .over-box .stopped {
+    max-width: 42ch;
+    text-align: center;
   }
   .run {
     display: flex;

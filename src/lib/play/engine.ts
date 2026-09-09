@@ -173,6 +173,8 @@ export interface PlayView {
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
+  /** The message the play loop threw and stopped on, or null. */
+  stopped: string | null;
   /** How the run stands, or null for a game nobody is recording. */
   run: RunSummary | null;
 }
@@ -208,6 +210,8 @@ export class GameSession {
   miniSpellMenu = false;
   /** movecontrol has come back: the character has quit or died. */
   over = false;
+  /** Why the play loop stopped, when it stopped because it threw (`loop.ts`), or null. */
+  stopped: string | null = null;
   dead = false;
   /**
    * The X key's map is up (`misc.ts`), which the original draws by filling the whole screen and
@@ -672,6 +676,7 @@ export class GameSession {
       plaque: this.plaque,
       over: this.over,
       dead: this.dead,
+      stopped: this.stopped,
       run: this.run?.summary() ?? null,
     };
   }

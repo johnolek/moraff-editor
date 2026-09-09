@@ -31,6 +31,7 @@
     type RevGameSession,
     type RevPlayView,
   } from './engine';
+  import { runPlayLoop } from '../loop';
   import { REV_FIGHT_KEY_BUTTONS, REV_KEY_BUTTONS, revGameKey } from './keys';
   import { revCharacterMap } from './memory';
   import RevScreenCanvas from './screen/RevScreenCanvas.svelte';
@@ -140,7 +141,7 @@
     session = started;
     playingId = entry.id;
     view = started.view();
-    void runRevDungeon(started);
+    void runPlayLoop(started, runRevDungeon(started));
   }
 
   function leave() {
@@ -290,7 +291,13 @@
         {#if view.over}
           <div class="over">
             <div class="over-box">
-              <div class="line">{view.dead ? 'THE CHARACTER IS DEAD' : 'SAVED AND BACK ON THE ROSTER'}</div>
+              <!-- A loop that threw has stopped the game wherever it was, so the box says so
+                   rather than leaving the tab looking like a game still being played. -->
+              {#if view.stopped}
+                <div class="line stopped">The game stopped: {view.stopped}</div>
+              {:else}
+                <div class="line">{view.dead ? 'THE CHARACTER IS DEAD' : 'SAVED AND BACK ON THE ROSTER'}</div>
+              {/if}
               <button type="button" onclick={leave}>Leave the game</button>
             </div>
           </div>
@@ -462,6 +469,10 @@
   .over-box .line {
     font-family: var(--font-dos);
     color: var(--accent);
+  }
+  .over-box .stopped {
+    max-width: 42ch;
+    text-align: center;
   }
   .side {
     width: 300px;
