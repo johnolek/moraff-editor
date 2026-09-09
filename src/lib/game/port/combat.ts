@@ -66,6 +66,36 @@ const DRAIN_COLOUR = 6;
 const PUFFBALL_MS = 1260;
 
 /**
+ * How long defend holds the strip empty before it writes the blow a monster landed
+ * (exe 2000:8b09), which is what makes a second swing that reads the same as the first visibly
+ * redraw. A miss goes straight up with no blank before it.
+ */
+const BLOW_BLANK_MS = 110;
+
+/**
+ * How long the blow stands before the box about a life drainer goes up (exe 2000:8c23), and
+ * again before a stat is drained or raised (exe 2000:8ddc).
+ */
+const DRAIN_MS = 500;
+
+/**
+ * How long the last thing said stands before the box about a poisoning or a disease
+ * (exe 2000:8e82). The pause is taken for every special a monster carries, the several that
+ * print nothing afterwards included.
+ */
+const AILMENT_MS = 250;
+
+/**
+ * The beat defend ends every swing on: exe 2000:8f47 for a hit, exe 2000:8f67 for a miss. It is
+ * what keeps two monsters' turns from arriving together.
+ *
+ * A third call at exe 2000:8f59 holds 350 ms, in a branch nested inside the same "did it miss?"
+ * test that reached it, so nothing can ever run it.
+ */
+const HIT_TAIL_MS = 150;
+const MISS_TAIL_MS = 100;
+
+/**
  * The line defend (exe 2000:82b7) draws on the strip above the message box, which is where every
  * blow a monster lands goes.
  *
@@ -295,6 +325,7 @@ function drainsAndAilments(game: Game, slot: number): void {
   const kind = game.monsterKinds[game.monsters[slot].type];
   const drain = kind.levelDrain;
   if ((drain < 0 || (drain !== 0 && pc.lev > 0)) && pc.resistDrainTimer < 1) {
+    game.delay(DRAIN_MS);
     if (drain < 1) {
       // The amount taken is the float 30.0 at DS:14df, not the monster's own number, which is
       // only what the message prints. Every experience drainer in the game holds -30, so the
@@ -317,6 +348,7 @@ function drainsAndAilments(game: Game, slot: number): void {
     game.reprintBattleInfo = true;
   }
   if (kind.statDrain !== 0) {
+    game.delay(DRAIN_MS);
     // FUN_2000_28be (exe 2000:28be): the strip the line is about to go on.
     clearMessageLine(game);
     const stat = gainOrDrain(game, kind.statDrain);
@@ -327,6 +359,7 @@ function drainsAndAilments(game: Game, slot: number): void {
   }
   if (kind.special !== 0) {
     if (kind.special !== 99) game.events.push({ kind: 'playerSaved' });
+    game.delay(AILMENT_MS);
     if (kind.special === 1 && pc.resistPoisonTimer < 1) {
       // DS:155b 1570 157c 1596 15b3 15cf 06f0 152a
       game.say(
@@ -443,10 +476,19 @@ export function defend(game: Game, slot: number): number {
     clearMessageLine(game);
     // DS:14ca, the monster's name, then DS:13fb with DS:14cf or DS:1402, or DS:14d6
     let line = `THE ${kind.name}`;
-    if (damage > 0) line += ` DOES ${damage}` + (damage === 1 ? ' POINT' : ' POINTS');
-    else line += ' MISSES!';
+    if (damage > 0) {
+      if (!game.repeatFight && !game.highSpeed) game.delay(BLOW_BLANK_MS);
+      line += ` DOES ${damage}` + (damage === 1 ? ' POINT' : ' POINTS');
+    } else {
+      line += ' MISSES!';
+    }
     game.draw(defendLine(line));
     if (damage > 0) drainsAndAilments(game, slot);
+    // The town is the floor the character cannot be attacked on, so the beat is never taken
+    // there; the flag and the option are what a player in a hurry turns it off with.
+    if (!game.repeatFight && !game.highSpeed && pc.level > 0) {
+      game.delay(damage > 0 ? HIT_TAIL_MS : MISS_TAIL_MS);
+    }
   }
   if (damage > 0) pc.hp -= damage;
   return damage;

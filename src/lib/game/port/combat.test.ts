@@ -383,6 +383,71 @@ describe('defend, the puffball', () => {
   });
 });
 
+describe('defend, the beats a swing is read out over', () => {
+  /**
+   * A mid fighter deep enough to be hit hard, with a monster whose description says nothing
+   * beyond the blow, and the delays whatever that monster does next asks for.
+   */
+  function swinging(overrides: Partial<MonsterKind> = {}): {
+    game: Game;
+    delays: number[];
+    swing: (until: 'a hit' | 'a miss') => number[];
+  } {
+    const { game } = fighting(2, FIGHTERS[1][1]);
+    game.pc.hp = 500000;
+    describeMonster(game, { breath: 0, levelDrain: 0, statDrain: 0, special: 0, ...overrides });
+    const delays: number[] = [];
+    game.delay = (ms) => void delays.push(ms);
+    return {
+      game,
+      delays,
+      swing: (until) => {
+        for (let attempt = 0; attempt < 500; attempt++) {
+          delays.length = 0;
+          const damage = defend(game, 0);
+          if (until === 'a hit' ? damage > 0 : damage === 0) return delays;
+        }
+        throw new Error(`the monster never landed ${until}`);
+      },
+    };
+  }
+
+  it('blanks the strip before a blow and settles once the blow is up', () => {
+    expect(swinging().swing('a hit')).toEqual([110, 150]);
+  });
+
+  it('settles a little longer on a miss, which it prints with no blank first', () => {
+    expect(swinging().swing('a miss')).toEqual([100]);
+  });
+
+  it('reads a drainer out one thing at a time', () => {
+    const { swing } = swinging({ levelDrain: -30, statDrain: -4, special: 1 });
+    expect(swing('a hit')).toEqual([110, 500, 500, 250, 150]);
+  });
+
+  it('keeps the drains apart even for a special with no box behind it', () => {
+    const { swing } = swinging({ special: 3 });
+    expect(swing('a hit')).toEqual([110, 250, 150]);
+  });
+
+  it.each([
+    ['the high speed option', 'highSpeed' as const],
+    ['the repeat-fight flag', 'repeatFight' as const],
+  ])('drops the blank and the settle under %s', (_name, flag) => {
+    const { game, swing } = swinging({ statDrain: -4 });
+    game[flag] = true;
+    // The 500 the stat drain takes is not gated on either: the game holds that one whatever the
+    // player has set.
+    expect(swing('a hit')).toEqual([500]);
+  });
+
+  it('takes no beat in the town, where nothing can attack anyway', () => {
+    const { game, swing } = swinging();
+    game.pc.level = 0;
+    expect(swing('a hit')).toEqual([110]);
+  });
+});
+
 describe('defend, asleep and held', () => {
   it.each([
     ['sleepTimer' as const],
