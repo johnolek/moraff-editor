@@ -77,15 +77,20 @@ something the original does, a comment says so.
   **`PortraitFrame.svelte`** is the box that picture sits in, which Moraff's World shares; each
   game hands its own picture in as a snippet.
 * **`hud.ts`, `MapHud.svelte`, `HudOrb.svelte`, `HudExpBar.svelte`** — what the map draws over
-  itself: the monster being fought centred at the top, a health orb and a spell orb in the bottom
-  corners and an experience bar between them. None of it is a port of anything. The map is the
+  itself: the monster being fought centred at the top, and along the foot a bar of dark stone with
+  a health orb and a spell orb standing in its ends and an experience bar between them. None of it
+  is a port of anything. The map is the
   site's own view of a game rather than a screen any game ever drew, so this is the site's own
   look; it takes no clicks and reads the games' numbers without writing any, so the game, the run
   log and a replay are the same with it and without it. `hud.ts` is the arithmetic: how full an
   orb stands, and which stretch of a game's experience curve the bar draws. A level is only
   handed over at an inn, so a character can walk around with the experience for several they have
   not been given; the bar steps on to the next stretch for each one and a badge names the level it
-  has reached. Moraff's World takes all of it but the close-up, since its map draws that picture
+  has reached. The numbers come off the view rather than off the character, since the character is
+  a plain object the game writes in place and nothing on the page would redraw when a blow lands;
+  everything on the bar is drawn as a fraction of an orb, and a map with little height to give
+  gets smaller orbs, so the bar never has more stone on it than the map has floor. Nothing on it
+  takes a click: the map underneath is dragged and hovered through it. Moraff's World takes all of it but the close-up, since its map draws that picture
   already. Moraff's Revenge takes none of it: its record keeps no maximum spell points, its map
   draws no monster, and the experience a kill is worth sits in a pot the game does not add up
   until the character has slept somewhere.
@@ -553,6 +558,8 @@ Nothing the game does reads it.
 | field | what it is |
 | --- | --- |
 | `place` | where the character is standing and which way they face |
+| `hp`, `maxHp`, `sp`, `maxSp` | the hit points and spell points, and what they can hold |
+| `level`, `exp` | the level the character has been given and the experience they have earned |
 | `rows` | the floor, as the map descriptor generates it |
 | `monsters` | every monster standing on the floor, for the map |
 | `box` | the message box: its eight lines and the bar above them |
