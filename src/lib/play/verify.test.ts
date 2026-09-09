@@ -150,7 +150,9 @@ describe('verifying a run', () => {
 
   it('fails a run with a key taken out of it', async () => {
     const log = await unforgivenRun();
-    const verdict = await verifyRun(runLogOf([{ ...log, inputs: log.inputs.slice(0, -2) }]));
+    // The first of them, so that every key after it answers something else and the run ends
+    // somewhere the log does not claim.
+    const verdict = await verifyRun(runLogOf([{ ...log, inputs: log.inputs.slice(1) }]));
 
     expect(verdict.status).toBe('failed');
   });
@@ -373,7 +375,10 @@ describe('reading a run log out of a file', () => {
  *
  * Writing them again, after a change to the engine that legitimately moves them:
  * `WRITE_RUN_FIXTURES=1 pnpm test src/lib/play/verify.test.ts`. A fixture that stops verifying
- * without one is the engine having changed a game under runs already played.
+ * without one is the engine having changed a game under runs already played. Writing them again
+ * puts all four in the chain shape and stamps them with this build's commit, so the three older
+ * ones have to be put back the way they were by hand afterwards, with only the numbers the change
+ * moved taken from what was written.
  */
 const FIXTURES = [
   { file: 'unforgiven-run.json', log: async () => runLogOf([await unforgivenRun()]) },
