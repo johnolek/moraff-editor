@@ -13,6 +13,9 @@
 // character, so the level, hit points and kill value FUN_2000_8b3f prints over its view are drawn
 // too. Give it more than once for a character with monsters on more than one side.
 //
+// --expanded draws the X key's screen instead: the whole floor over the whole screen, with the
+// way to the quest boss beside it when --beside has stood one of the eight next to the character.
+//
 // The text of the screen — the message box, the key menu, the numbers and the stats — is drawn
 // by the same play/mw/view3d/text.ts the site draws it with, in the game's own bitmap font.
 
@@ -52,7 +55,8 @@ const {
   MW_SCREEN_PIXELS,
   MW_DIG_PROMPT,
 } = await load('play/mw/view3d/screen.ts');
-const { drawMwZoomMap } = await load('play/mw/map.ts');
+const { drawMwExpandedMap, drawMwZoomMap } = await load('play/mw/map.ts');
+const { mwBossSignpost } = await load('play/mw/display.ts');
 const { drawMwScreenText } = await load('play/mw/view3d/text.ts');
 const { ladderPrompt } = await load('play/mw/ladders.ts');
 const { mwKeyMenuLines, mwMonsterViewSideLines, mwMonsterViewSides } = await load('game/mw-port/screens.ts');
@@ -147,7 +151,14 @@ const scene = {
 
 const frame = newFrame(screen.width, screen.height);
 
-if (only !== null) {
+if (args.expanded) {
+  drawMwExpandedMap(frame, { rows, at, map: { known: () => true, knownOnArrival: () => true } });
+  const signpost = mwBossSignpost(fight);
+  drawMwScreenText(frame, screen, [
+    { text: 'EXPANDED DUNGEON MAP, HIT ANY KEY...', x: 0, y: 0x47e, font: 0, colour: 15 },
+    ...(signpost ? [signpost] : []),
+  ]);
+} else if (only !== null) {
   renderMwView(frame, scene, MW_WHOLE_SCREEN_VIEW, only);
 } else {
   for (const [view, rect] of MW_VIEWS.entries()) renderMwView(frame, scene, rect, view);
