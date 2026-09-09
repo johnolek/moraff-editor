@@ -66,8 +66,8 @@ BASIC.
   the five, and the treasure's is the one that puts anything back — the flat map and the box
   between the views, and not the four views. `held.ts` — the two-second and four-second waits
   the game leaves a message up for, as a display timer. **`music.ts`** — the three tunes, the
-  reader that turns a BASIC `PLAY` string into notes, and the four-second wait the Kings Inn
-  takes in the hymn's place when the sound is off.
+  reader that turns a BASIC `PLAY` string into notes, and the four-second wait an inn takes in
+  the hymn's place when the sound is off.
 * **`death.ts`** — 1000:A013, where two coin flips decide between the end of the character, a
   reincarnation and a raise. **`stats.ts`** — 1000:19F7, the V key's character sheet, which is
   the one screen the six characteristics are ever shown on; the formats they are printed with
@@ -244,14 +244,15 @@ Three things are this game's own:
   the same whatever colours it was played in.
 * **The three tunes are played.** There is one `PLAY` in the module (1000:05E2) and three
   routines that set a string and fall into it: the temple's march (1000:05A0, played from
-  1000:2543), the death dirge (1000:05AC, from 1000:A013) and the Kings Inn's hymn (1000:05B8,
-  from 1000:1FC9). `music.ts` reads a BASIC `PLAY` string into notes — the frequencies from
+  1000:2543), the death dirge (1000:05AC, from 1000:A013) and the inns' hymn (1000:05B8, from
+  1000:1FC9, which all three inns reach through 1000:1FBD -- the robbed night and the sick one
+  included, since both rolls are made after it). `music.ts` reads a BASIC `PLAY` string into notes — the frequencies from
   BRUN30's own top-octave table at file offset 0xF8EC, the durations from the tempo and the
   lengths — and hands them to the PC speaker of `src/lib/speaker.ts`. Every tune is prefixed
   `MB`, so it is background music and nothing waits for it, here as there. The one thing behind
-  the music is the Kings Inn: at 1000:05BF the sound being off jumps to the four-second wait at
-  1000:2F35 instead of playing, so a night there takes as long either way, and that wait is a
-  held frame like every other (`held.ts`). The speaker is opened on the first key pressed in the
+  the music is the hymn: at 1000:05BF the sound being off jumps to the four-second wait at
+  1000:2F35 instead of playing, so a night at any inn takes as long either way, and that wait is
+  a held frame like every other (`held.ts`). The speaker is opened on the first key pressed in the
   tab, since a browser will not start audio that nothing the player did asked for, and a replay
   never opens one.
 * **The question the game opens with is the tab's checkbox.** 1000:0517 prints "Sound (Y or N)?"
