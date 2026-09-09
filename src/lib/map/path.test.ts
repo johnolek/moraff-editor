@@ -2,18 +2,23 @@ import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import type { MapSquare } from './game';
 import { MAP_ROWS, UNFORGIVEN_AREA } from './area';
-import { hasTeleporterSide, pathToNearestTeleporter, shortestPath } from './path';
+import { hasTeleporterSide, shortestPath } from './path';
 
 function square(overrides: Partial<MapSquare> = {}): MapSquare {
   return { n: 0, s: 0, w: 0, e: 0, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
 }
 
+/** The route the map's own teleporter button asks for: the search with the test `map/game.ts`
+ *  names as Dungeons of the Unforgiven's `routeTo`. */
+const toNearestTeleporter = (rows: MapSquare[][], start: { x: number; y: number }, passWall = false) =>
+  shortestPath(rows, start, hasTeleporterSide, UNFORGIVEN_AREA, passWall);
+
 // A 4-square corridor: open, door, secret door between the squares; a teleporter on the far east side.
 const corridor: MapSquare[][] = [[square({ e: 3 }), square({ w: 3, e: 1 }), square({ w: 1, e: 2 }), square({ w: 2, e: 4 })]];
 
-describe('pathToNearestTeleporter', () => {
+describe('the route to the nearest teleporter', () => {
   it('walks through open sides, doors and secret doors and counts them', () => {
-    expect(pathToNearestTeleporter(corridor, { x: 0, y: 0 })).toEqual({
+    expect(toNearestTeleporter(corridor, { x: 0, y: 0 })).toEqual({
       squares: [
         { x: 0, y: 0 },
         { x: 1, y: 0 },
@@ -29,20 +34,20 @@ describe('pathToNearestTeleporter', () => {
   });
 
   it('is a zero-step route when the start square touches a teleporter', () => {
-    expect(pathToNearestTeleporter(corridor, { x: 3, y: 0 })).toEqual({ squares: [{ x: 3, y: 0 }], hops: [], steps: 0, doors: 0, secretDoors: 0, passWalls: 0 });
+    expect(toNearestTeleporter(corridor, { x: 3, y: 0 })).toEqual({ squares: [{ x: 3, y: 0 }], hops: [], steps: 0, doors: 0, secretDoors: 0, passWalls: 0 });
   });
 
   it('does not walk through walls or teleporter sides', () => {
     const blocked: MapSquare[][] = [[square({ e: 3 }), square({ w: 3, e: 0 }), square({ w: 0, e: 4 })]];
-    expect(pathToNearestTeleporter(blocked, { x: 0, y: 0 })).toBeNull();
+    expect(toNearestTeleporter(blocked, { x: 0, y: 0 })).toBeNull();
     // The teleporter side east of square 0 is not a way through: from square 1 the route goes east.
     const behind: MapSquare[][] = [[square({ e: 4 }), square({ w: 0, e: 3 }), square({ w: 3, n: 4 })]];
-    expect(pathToNearestTeleporter(behind, { x: 0, y: 0 })?.steps).toBe(0);
-    expect(pathToNearestTeleporter(behind, { x: 1, y: 0 })?.steps).toBe(1);
+    expect(toNearestTeleporter(behind, { x: 0, y: 0 })?.steps).toBe(0);
+    expect(toNearestTeleporter(behind, { x: 1, y: 0 })?.steps).toBe(1);
   });
 
   it('returns null from rock', () => {
-    expect(pathToNearestTeleporter([[square({ solid: true })]], { x: 0, y: 0 })).toBeNull();
+    expect(toNearestTeleporter([[square({ solid: true })]], { x: 0, y: 0 })).toBeNull();
   });
 
   it('picks the shortest of several routes', () => {
@@ -51,17 +56,17 @@ describe('pathToNearestTeleporter', () => {
       [square({ e: 3, s: 3 }), square({ w: 3, s: 3 })],
       [square({ n: 3, e: 3 }), square({ n: 3, w: 3, s: 4 })],
     ];
-    expect(pathToNearestTeleporter(block, { x: 0, y: 0 })?.steps).toBe(2);
+    expect(toNearestTeleporter(block, { x: 0, y: 0 })?.steps).toBe(2);
   });
 });
 
-describe('pathToNearestTeleporter with Pass Wall', () => {
+describe('the route to the nearest teleporter with Pass Wall', () => {
   const rocks = (count: number) => Array.from({ length: count }, () => square({ solid: true }));
 
   it('crosses a wall the route is otherwise blocked by', () => {
     const blocked: MapSquare[][] = [[square({ e: 3 }), square({ w: 3, e: 0 }), square({ w: 0, e: 3 }), square({ w: 3, e: 4 })]];
-    expect(pathToNearestTeleporter(blocked, { x: 0, y: 0 })).toBeNull();
-    expect(pathToNearestTeleporter(blocked, { x: 0, y: 0 }, true)).toEqual({
+    expect(toNearestTeleporter(blocked, { x: 0, y: 0 })).toBeNull();
+    expect(toNearestTeleporter(blocked, { x: 0, y: 0 }, true)).toEqual({
       squares: [
         { x: 0, y: 0 },
         { x: 1, y: 0 },
@@ -81,7 +86,7 @@ describe('pathToNearestTeleporter with Pass Wall', () => {
     const open: MapSquare[][] = [
       [square({ e: 3 }), square({ w: 3, e: 3 }), square({ w: 3, e: 3 }), square({ w: 3, e: 3 }), square({ w: 3, e: 4 })],
     ];
-    expect(pathToNearestTeleporter(open, { x: 0, y: 0 }, true)).toMatchObject({ steps: 4, passWalls: 0 });
+    expect(toNearestTeleporter(open, { x: 0, y: 0 }, true)).toMatchObject({ steps: 4, passWalls: 0 });
   });
 
   it('casts only at the wall itself, not from the open squares before it', () => {
@@ -90,7 +95,7 @@ describe('pathToNearestTeleporter with Pass Wall', () => {
     const overRock: MapSquare[][] = [
       [square({ e: 3 }), square({ w: 3, e: 3 }), square({ w: 3, e: 0 }), ...rocks(2), square({ n: 4 })],
     ];
-    expect(pathToNearestTeleporter(overRock, { x: 0, y: 0 }, true)).toMatchObject({
+    expect(toNearestTeleporter(overRock, { x: 0, y: 0 }, true)).toMatchObject({
       squares: [
         { x: 0, y: 0 },
         { x: 1, y: 0 },
@@ -105,9 +110,9 @@ describe('pathToNearestTeleporter with Pass Wall', () => {
 
   it('reaches 19 squares and no further', () => {
     const nineteen: MapSquare[][] = [[square(), ...rocks(18), square({ n: 4 })]];
-    expect(pathToNearestTeleporter(nineteen, { x: 0, y: 0 }, true)).toMatchObject({ steps: 1, passWalls: 1 });
+    expect(toNearestTeleporter(nineteen, { x: 0, y: 0 }, true)).toMatchObject({ steps: 1, passWalls: 1 });
     const twenty: MapSquare[][] = [[square(), ...rocks(19), square({ n: 4 })]];
-    expect(pathToNearestTeleporter(twenty, { x: 0, y: 0 }, true)).toBeNull();
+    expect(toNearestTeleporter(twenty, { x: 0, y: 0 }, true)).toBeNull();
   });
 
   it('does not land past the last row of the map area', () => {
@@ -129,7 +134,7 @@ describe('pathToNearestTeleporter with Pass Wall', () => {
     const mixed: MapSquare[][] = [
       [square({ e: 1 }), square({ w: 1, e: 2 }), square({ w: 2, e: 0 }), ...rocks(1), square({ n: 4 })],
     ];
-    const route = pathToNearestTeleporter(mixed, { x: 0, y: 0 }, true)!;
+    const route = toNearestTeleporter(mixed, { x: 0, y: 0 }, true)!;
     expect(route).toMatchObject({ steps: 3, doors: 1, secretDoors: 1, passWalls: 1 });
     expect(route.hops).toEqual(['walk', 'walk', 'passWall']);
     expect(route.hops).toHaveLength(route.steps);

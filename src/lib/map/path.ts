@@ -1,4 +1,4 @@
-import { isOnMap, UNFORGIVEN_AREA, type MapArea } from './area';
+import { isOnMap, type MapArea } from './area';
 import type { MapSquare } from './game';
 import type { Point } from './viewport';
 
@@ -120,8 +120,4 @@ function buildRoute(rows: MapSquare[][], parent: Int32Array, end: number, width:
     if (side === 2) secretDoors++;
   }
   return { squares, hops, steps: squares.length - 1, doors, secretDoors, passWalls };
-}
-
-export function pathToNearestTeleporter(rows: MapSquare[][], start: Point, passWall = false): Route | null {
-  return shortestPath(rows, start, hasTeleporterSide, UNFORGIVEN_AREA, passWall);
 }
