@@ -2,7 +2,7 @@ import { attackTiming } from '../../game/mw-port/combat';
 import { bundledMwDungeon } from '../../game/mw-dungeon';
 import { recomputeWeight } from '../../game/mw-port/magic';
 import { mwMenuKey, mwLineMenuKey } from '../../game/mw-port/screens';
-import type { MwGame } from '../../game/mw-port/state';
+import type { MwCharacter, MwGame } from '../../game/mw-port/state';
 import { MW_SQUARE_PLAYER, mwClearMessageLine, mwSetOccupant, newMwGame } from '../../game/mw-port/state';
 import type { Rng } from '../../game/port/rng';
 import type { ScreenLine } from '../../game/port/state';
@@ -23,6 +23,7 @@ import { dropSomething } from './drop';
 import { swingAtMonster } from './fight';
 import { MwFloorMonsters, mwDrawnMonsters, mwEnterLevel } from './floor';
 import { MapMemory, type MapStore } from '../memory';
+import { KeyedSession, RECORD_EDITED, type CharacterFile, type HeldFrames, type KeyHandler } from '../session';
 import { killTheDead } from './kill';
 import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { MW_KEY } from './keys';
@@ -36,7 +37,7 @@ import {
   showSpellsInForce,
   showVitalStats,
 } from './letters';
-import { DEFAULT_PLAY_MODE, type PlayMode } from '../mode';
+import type { PlayMode } from '../mode';
 import { leaveSquare } from './moment';
 import { resolveStep, turnAndStep, waitAMoment } from './move';
 import { loadMwPlayer, saveMwPlayer } from './record';
@@ -57,23 +58,15 @@ import { explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
  * it dispatches on, the monsters' answer, and the step it resolves at the end.
  */
 
-/** How many keys are kept for a loop that is not waiting for one yet. */
-const KEY_QUEUE = 4;
-
 /**
  * Not a key: what the loop's wait hands back when the save editor has written the record while
- * the game was waiting for one, so the pass starts again with the character it now describes.
+ * the game was waiting for one.
  */
-export const MW_RECORD_EDITED = -1;
+export const MW_RECORD_EDITED = RECORD_EDITED;
 
-/** Where the character record lives while it is being played. */
-export interface MwCharacterFile {
-  /** The record as the roster holds it. */
-  bytes: Uint8Array;
-  /** save_player (WORLD.EXE 2000:58bf): keep these bytes as the character from now on. */
-  write(bytes: Uint8Array<ArrayBuffer>): void;
-  /** The character has died, which the roster marks and never undoes. */
-  died(): void;
+/** Where the character record lives while it is being played. `write` is save_player (WORLD.EXE
+ *  2000:58bf). */
+export interface MwCharacterFile extends CharacterFile {
   /** save_dun and load_dun (WORLD.EXE 2000:5298 and 2000:542b): the explored maps kept beside
    *  the record, the way the game keeps its `.DUN` files beside it. A caller with none — a
    *  replay, a test — plays with a map that lasts as long as the session. */
@@ -101,11 +94,7 @@ export interface MwTurn {
 }
 
 /** One key movecontrol dispatches on. */
-export interface MwKeyHandler {
-  /** The function of the game the key runs, for anyone reading the table. */
-  c: string;
-  run(turn: MwTurn): void | Promise<void>;
-}
+export type MwKeyHandler = KeyHandler<MwTurn>;
 
 /** What the Play tab draws. */
 export interface MwPlayView {
@@ -144,7 +133,7 @@ export interface MwPlayView {
  * One character being played: the game, the floor they stand on, the monsters that floor is
  * stocked with, and the keyboard the loop waits on.
  */
-export class MwGameSession {
+export class MwGameSession extends KeyedSession<MwCharacter> {
   readonly game: MwGame;
   readonly floors = new MwFloorMonsters();
   /** The map this character has discovered, which is what the Play tab draws in faithful mode
@@ -163,19 +152,6 @@ export class MwGameSession {
   banner: string[] = [];
   /** The X key's map is filling the screen (`display.ts`). */
   expandedMap = false;
-  /** movecontrol has come back: the character has quit or died. */
-  over = false;
-  /** Why the play loop stopped, when it stopped because it threw (`loop.ts`), or null. */
-  stopped: string | null = null;
-  dead = false;
-  /**
-   * How much of the game the tab is showing (`../mode.ts`). Nothing the game does reads it; it
-   * is here so that anything keeping a record of the run can say which mode it was played in.
-   */
-  mode: PlayMode = DEFAULT_PLAY_MODE;
-  /** Called whenever the game is about to wait for a key, so the tab can draw what it is
-   *  waiting with. */
-  onChange: (() => void) | null = null;
   /**
    * The delays the game holds a drawn message for (WORLD.EXE 1000:22a2), which the tab keeps to.
    * The loop runs straight past them; this is what decides which of the screens it drew is
@@ -183,9 +159,6 @@ export class MwGameSession {
    */
   private readonly timed = new TimedScreens(() => this.changed());
 
-  /** A key pressed while nothing was waiting for one, which is where DOS kept it too. */
-  private queued: number[] = [];
-  private waiting: ((key: number) => void) | null = null;
   /** A ported function has called wait_key and is owed a key once it has finished. */
   private waitOwed = false;
   /** How far through the fourteen lessons the little mouse has got (DS:4482). */
@@ -199,23 +172,16 @@ export class MwGameSession {
   private bannerShown = 0;
   /** The last group a delay held, which is what stays up when a fight ends on one. */
   private bannerHeld: string[] = [];
-  /** The record as the game last read it or wrote it back, which is how a record the save editor
-   *  has written is told from the game's own save. */
-  private known: Uint8Array;
-  /** A record the save editor has written, waiting for the loop to be between actions. */
-  private edited: Uint8Array | null = null;
-  /** The loop is waiting for the player's key with nothing of the game's own part-way through. */
-  private betweenActions = false;
 
   constructor(
-    readonly file: MwCharacterFile,
+    file: MwCharacterFile,
     rng: Rng,
     /** The run log this game is being written down in, or null for a game nobody is recording. */
-    readonly run: RunRecorder | null = null,
+    run: RunRecorder | null = null,
   ) {
+    super(file, run);
     this.memory = new MapMemory(file.maps ?? null);
     const pc = loadMwPlayer(file.bytes);
-    this.known = file.bytes.slice();
     this.game = newMwGame({
       pc,
       rng,
@@ -265,68 +231,8 @@ export class MwGameSession {
     }));
   }
 
-  /** A key from the Play tab. */
-  press(key: number): void {
-    // Whatever is left of a message's delay is given up: the original is not reading the keyboard
-    // while it waits, so by the time a key of the player's is looked at the wait is behind it.
-    this.timed.release();
-    const waiting = this.waiting;
-    if (waiting) {
-      this.waiting = null;
-      waiting(key);
-      return;
-    }
-    if (this.queued.length < KEY_QUEUE) this.queued.push(key);
-  }
-
-  /** The `while (kbhit()) getch();` of flush_keys (WORLD.EXE 4000:3532): whatever was typed
-   *  while the game was busy is thrown away rather than answering the next menu. */
-  flushKeys(): void {
-    this.queued = [];
-  }
-
-  /** getch (WORLD.EXE 1000:28b4): the next key, once there is one. */
-  key(): Promise<number> {
-    const queued = this.queued.shift();
-    if (queued !== undefined) {
-      this.took(queued);
-      return Promise.resolve(queued);
-    }
-    this.changed();
-    return new Promise((resolve) => {
-      this.waiting = (key) => {
-        this.took(key);
-        resolve(key);
-      };
-    });
-  }
-
-  /**
-   * A key the game has just read, which is where it reaches the run log.
-   *
-   * The log is what the game read rather than what the player pressed, because the two differ: a
-   * key typed while the game was busy is thrown away by {@link flushKeys} and never seen, so a
-   * replay that pressed it would act on a key this run did not. {@link MW_RECORD_EDITED} is not a
-   * key at all.
-   */
-  private took(key: number): void {
-    if (key !== MW_RECORD_EDITED) this.run?.input(key);
-  }
-
-  /**
-   * The key movecontrol waits for at the top of a pass, or {@link MW_RECORD_EDITED} when the save
-   * editor writes the record while it waits.
-   *
-   * Nothing of the game's own is running while the loop waits here, which is what makes it the
-   * one place a record written outside the game is safe to take.
-   */
-  async keyOrEdit(): Promise<number> {
-    this.betweenActions = true;
-    try {
-      return await this.key();
-    } finally {
-      this.betweenActions = false;
-    }
+  protected override get frames(): HeldFrames {
+    return this.timed;
   }
 
   /** FUN_2000_1fbd (WORLD.EXE 2000:1fbd): keys until one of the menu's own digits, or Escape. */
@@ -480,47 +386,29 @@ export class MwGameSession {
     this.memory.markArrival(this.rows, game.pc.x, game.pc.y);
   }
 
-  /**
-   * The save editor has written the character's record while the game is being played, and the
-   * game follows it. The record is read again at the next point the loop is between actions; a
-   * loop already waiting for a key is woken so that it takes the edit at once.
-   *
-   * The bytes the game itself last read or saved are the ones it already has, so its own save
-   * writing the record back is not an edit.
-   */
-  recordEdited(bytes: Uint8Array): void {
-    if (sameBytes(bytes, this.known)) return;
-    this.edited = bytes;
-    if (!this.betweenActions) return;
-    const waiting = this.waiting;
-    if (!waiting) return;
-    this.waiting = null;
-    waiting(MW_RECORD_EDITED);
+  /** load_player (WORLD.EXE 2000:580e): a record's bytes as the character. */
+  protected override readRecord(bytes: Uint8Array): MwCharacter {
+    return loadMwPlayer(bytes);
+  }
+
+  /** save_player (WORLD.EXE 2000:58bf): the character back into the record it came from. */
+  protected override writeRecord(): Uint8Array<ArrayBuffer> {
+    return saveMwPlayer(this.game.pc, this.file.bytes);
   }
 
   /**
-   * Read the record again, if the save editor has written one. The loop calls this at the top of
-   * a pass, where no ported function is part-way through.
+   * Where a record the save editor wrote leaves the character standing.
    *
-   * Everything the record holds becomes the character; everything it does not — the monsters
-   * standing on the floor, the monster being fought, the moves a step spends — is left exactly as
-   * it was. A record that puts the character on another floor arrives there the way a ladder
-   * would, and one that moves them about the floor they are on moves them on the occupancy grid
-   * with them.
+   * A record that puts them on another floor arrives there the way a ladder would, and one that
+   * moves them about the floor they are on moves them on the occupancy grid with them.
    */
-  takeEdits(): void {
-    const bytes = this.edited;
-    if (bytes === null) return;
-    this.edited = null;
-    this.run?.edited();
-    this.known = bytes.slice();
-    this.file.bytes = bytes;
+  protected override placeEdited(record: MwCharacter): void {
     const game = this.game;
     const pc = game.pc;
     const floor = pc.floor;
     const dungeon = pc.dungeon;
     leaveSquare(game);
-    Object.assign(pc, loadMwPlayer(bytes));
+    Object.assign(pc, record);
     // Starting a session works the carried weight out from what the character owns rather than
     // trusting the figure the record holds, and a record read again is worked out the same way.
     recomputeWeight(game);
@@ -532,28 +420,7 @@ export class MwGameSession {
     game.recenterMap = true;
   }
 
-  /** save_player (WORLD.EXE 2000:58bf): the record back into the character it came from. */
-  save(): void {
-    const bytes = saveMwPlayer(this.game.pc, this.file.bytes);
-    this.known = bytes.slice();
-    this.file.write(bytes);
-  }
-
-  /** The character is dead: the roster is told, and nothing more is written. */
-  die(): void {
-    this.dead = true;
-    this.run?.died();
-    this.file.died();
-  }
-
-  /** Tell the Play tab to draw. */
-  changed(): void {
-    this.onChange?.();
-  }
-
-  /** Nothing is going to draw this session again, so the message timer is dropped rather than
-   *  left holding the page — or a replay under Node — open. */
-  finish(): void {
+  override finish(): void {
     this.timed.stop();
   }
 
@@ -595,15 +462,6 @@ function trapdoorHere(session: MwGameSession): boolean {
   if (ladderUnder(game) !== 0) return false;
   const destination = trapdoorUnder(game);
   return destination !== -1 && game.pc.trapdoorKeys[Math.trunc(destination / 10) - 1] !== 0;
-}
-
-/** Whether two records hold the same bytes. */
-function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
-  if (left.length !== right.length) return false;
-  for (let at = 0; at < left.length; at++) {
-    if (left[at] !== right[at]) return false;
-  }
-  return true;
 }
 
 /** Start playing a character. */
