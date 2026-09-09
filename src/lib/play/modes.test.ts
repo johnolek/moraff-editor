@@ -80,7 +80,8 @@ describe("the details a click on a monster's picture opens", () => {
 
   it('keeps the keyboard off the game while it is up', () => {
     expect(source).toContain('if (openMonsterId !== null) {');
-    expect(source).toContain("if (event.key === 'Escape') openMonsterId = null;");
+    expect(source).toContain("if (event.key !== 'Escape') return;");
+    expect(source).toContain('openMonsterId = null;');
   });
 });
 

@@ -317,14 +317,17 @@
   });
 
   function onKeyDown(event: KeyboardEvent) {
-    if (app.tab !== 'play' || !session || session.over) return;
-    // The keyboard belongs to the details while they are up: Escape shuts them and nothing else
-    // reaches the game.
+    if (app.tab !== 'play') return;
+    // The keyboard belongs to the details while they are up: no key reaches the game, and only
+    // Escape is taken off the page, so the controls inside the card can still be typed in and
+    // tabbed between.
     if (openMonsterId !== null) {
-      if (event.key === 'Escape') openMonsterId = null;
+      if (event.key !== 'Escape') return;
+      openMonsterId = null;
       event.preventDefault();
       return;
     }
+    if (!session || session.over) return;
     if (isTyping(event.target)) return;
     const key = mwGameKey(event);
     if (key === null) return;
