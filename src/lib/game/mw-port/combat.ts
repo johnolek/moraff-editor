@@ -197,6 +197,13 @@ const MONSTER_HIT_MS = 0x15e;
 const PUFFBALL_MS = 0x4ec;
 
 /**
+ * The colour monster_turn prints the puffball's line in: the print_text call immediately before
+ * the delay at WORLD.EXE 2000:6367 names 6 outright, where every other line the fight puts on
+ * the strip takes the 15 at DS:1303.
+ */
+const PUFFBALL_COLOUR = 6;
+
+/**
  * The blank monster_turn opens every attack with (WORLD.EXE 2000:6a7c): the strip is wiped and
  * held empty for 110 ms before the blow is written on it. FUN_2000_7fb1 (WORLD.EXE 2000:7fb1)
  * runs the whole function once per attack, so a monster with several of them reads them out one
@@ -225,7 +232,10 @@ function puffball(game: MwGame, slot: number): number {
   const stat = puffballStat(game, amount);
   game.eraseScreen();
   // DS:276e / DS:2784, after the characteristic's own name
-  game.say(stat + (amount < 0 ? ' DRAINED BY PUFFBALL!' : ' RAISED BY PUFFBALL!'));
+  const said = stat + (amount < 0 ? ' DRAINED BY PUFFBALL!' : ' RAISED BY PUFFBALL!');
+  // The one line of a fight the game prints in the menu column's own colour rather than in the
+  // 15 every other line on the strip comes out in.
+  game.draw(mwMessageLine(said, PUFFBALL_COLOUR));
   game.delay(PUFFBALL_MS);
   mwSetOccupant(game, monster.x, monster.y, MW_SQUARE_EMPTY);
   // The slot is not freed. It is left holding a depth 0 monster of type 0 — an OGRE

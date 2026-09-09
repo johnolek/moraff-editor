@@ -182,6 +182,10 @@ describe('monsterTurn', () => {
     expect(monsterTurn(game, 0)).toBe(0);
     expect(game.pc.str).toBe(21);
     expect(game.messages).toContain('STRENGTH RAISED BY PUFFBALL!');
+    // The strip, in the menu column's own colour rather than the 15 the rest of a fight uses.
+    expect(game.screen).toEqual([
+      { text: 'STRENGTH RAISED BY PUFFBALL!', x: 0, y: 0, font: 0, colour: 6 },
+    ]);
     expect(mwOccupantAt(game, 5, 4)).toBe(-1);
     expect(game.monsters[0]).toEqual({ x: 100, y: 100, hp: 0, type: 0, depth: 0 });
     expect(game.redrawView).toBe(true);
