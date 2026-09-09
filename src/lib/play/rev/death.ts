@@ -1,3 +1,5 @@
+import { REV_MAGIC } from './magic';
+import { revValue, setRevValue } from './record';
 import { revClearScreen, revHitAnyKey, revSayGoodbye } from './screens';
 import { revArriveInTheTown } from './spells';
 import type { RevGame } from './state';
@@ -53,6 +55,29 @@ async function reincarnate(game: RevGame, desk: RevTownDesk): Promise<void> {
 }
 
 /**
+ * 1000:A05A to 1000:A0A1: a death takes the two spells a fight casts on the character off.
+ *
+ * The fight's own poll drops them when the step counter comes back round to where they were cast
+ * (1000:0A4F, `revCountDownBattleSpells`); a death drops them whatever the counter says, and
+ * hands back exactly what each cast gave — eleven points of agility for Speed (1000:9275 adds
+ * them, 1000:A075 takes them) and seven off what strength puts on a swing for Strength
+ * (1000:92F5 and 1000:A096). The strength here is the character's own, not the characteristic,
+ * so a death costs the swing rather than the record's strength; the town's routine at 1000:1C93
+ * is the other two spells, the ones cast in the dungeon, and takes those off elsewhere.
+ */
+function takeOffTheBattleSpells(game: RevGame): void {
+  const pc = game.pc;
+  if (revValue(pc, REV_MAGIC.battleSpeed) > 0) {
+    setRevValue(pc, REV_MAGIC.battleSpeed, 0);
+    pc.stats[4] -= 11;
+  }
+  if (revValue(pc, REV_MAGIC.battleStrength) > 0) {
+    setRevValue(pc, REV_MAGIC.battleStrength, 0);
+    pc.fromStrength -= 7;
+  }
+}
+
+/**
  * 1000:A013: the character's hit points have run out.
  *
  * The screen is cleared and told so, and then two rolls decide what becomes of them. The first,
@@ -61,11 +86,6 @@ async function reincarnate(game: RevGame, desk: RevTownDesk): Promise<void> {
  * what is left to a reincarnation and the rest to the raise: someone carries the body out and
  * rolls `INT(RND * 23) + 1` against its health, and on a roll the health can beat the character
  * is back in the town on the temple's square, one point of health the poorer.
- *
- * What this leaves out is the two spells that last until the town, which 1000:A05A to 1000:A0A1
- * takes off here rather than through the town's own routine at 1000:1C93 — and takes off wrong,
- * eleven points of agility where the spell gave seven. That is a rule of the game rather than
- * the screen, and it is filed as MORF-301.
  *
  * @returns whether the character is still alive.
  */
@@ -79,6 +99,7 @@ export async function revDie(game: RevGame, desk: RevTownDesk): Promise<boolean>
   // back to zero on the way out.
   if (pc.level < 0) pc.level = 0;
   if (pc.experience < 0) pc.experience = 0;
+  takeOffTheBattleSpells(game);
   // 1000:A0A4: nothing more is said and nothing is rolled again.
   if (game.rng.random(4) + 1 > 2) return theEnd(game);
   // 1000:A0C2.

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CARRIED_OUT, RAISE_FAILED, REINCARNATED, revDie, YOURE_DEAD } from './death';
 import { REV_BETTER_LUCK, REV_HIT_ANY_KEY } from './screens';
+import { REV_MAGIC } from './magic';
+import { revValue, setRevValue } from './record';
 import { revCharacter, revRolls } from './spells.test-support';
 import { newRevGame, type RevGame } from './state';
 import type { RevTownDesk } from './town';
@@ -65,6 +67,31 @@ describe('the death screen', () => {
     expect(game.pc.column).toBe(14);
     expect(game.pc.row).toBe(12);
     expect(game.kept.runs()).toContainEqual({ row: 25, column: 10, text: REV_HIT_ANY_KEY });
+  });
+
+  it('takes the eleven points of agility the fight\u2019s Speed gave back off', async () => {
+    // 1000:A063: the counter is over zero, so 1000:A075 takes the eleven off whatever step it is.
+    const game = dying([2], { stats: [15, 15, 15, 15, 26, 15] });
+    setRevValue(game.pc, REV_MAGIC.battleSpeed, 9);
+    await revDie(game, pressing);
+    expect(revValue(game.pc, REV_MAGIC.battleSpeed)).toBe(0);
+    expect(game.pc.stats[4]).toBe(15);
+  });
+
+  it('takes the seven the fight\u2019s Strength put on the swing back off', async () => {
+    // 1000:A083: the same for DGROUP B520, the strength the swing roll reads.
+    const game = dying([2], { fromStrength: 11 });
+    setRevValue(game.pc, REV_MAGIC.battleStrength, 9);
+    await revDie(game, pressing);
+    expect(revValue(game.pc, REV_MAGIC.battleStrength)).toBe(0);
+    expect(game.pc.fromStrength).toBe(4);
+  });
+
+  it('leaves both alone when neither counter is running', async () => {
+    const game = dying([2], { stats: [15, 15, 15, 15, 15, 15], fromStrength: 4 });
+    await revDie(game, pressing);
+    expect(game.pc.stats[4]).toBe(15);
+    expect(game.pc.fromStrength).toBe(4);
   });
 
   it('throws the ten points away when the roll picks the element before the first', async () => {
