@@ -1,4 +1,5 @@
 import { HistoryCursor } from './history';
+import type { RunSession } from './play/run';
 
 export type Tab = 'map' | 'play' | 'fight' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
 
@@ -58,6 +59,15 @@ export interface RosterEntry extends CurrentCharacter {
    * outside the game, which ends it for good.
    */
   leaderboard: Leaderboard | null;
+  /**
+   * The character's run: every sitting at the game it has been played in, oldest first.
+   *
+   * The game being played now is the last of them, written again after every key, so that a tab
+   * closed in the middle of one loses nothing. The count of actions runs on through the lot,
+   * which is what makes a speedrun of a character rather than of an evening. A character rolled
+   * before the site kept runs has none until it is played, and its first session starts one.
+   */
+  run: RunSession[];
 }
 
 /** A square of the dungeon to send the map to, taken from where a character stands. */

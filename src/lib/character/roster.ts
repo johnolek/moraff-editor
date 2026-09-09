@@ -1,5 +1,7 @@
 import type { Leaderboard, RosterEntry } from '../app-state.svelte';
 import { base64FromBytes } from '../bytes';
+import type { RunSession } from '../play/run';
+import { isRunSession } from '../play/verify';
 import { isLeaderboard } from './leaderboard';
 import { fromBase64, readStored, writeStored } from './storage';
 
@@ -23,6 +25,7 @@ interface StoredEntry {
   editedAt: string;
   dead?: boolean;
   leaderboard?: Leaderboard | null;
+  run?: RunSession[];
 }
 
 /** What is needed to put a character on the roster. */
@@ -59,6 +62,7 @@ export function newEntry(character: NewCharacter, now = new Date(), id = newId()
     editedAt: stamp,
     dead: false,
     leaderboard: character.imported ? null : (character.leaderboard ?? null),
+    run: [],
   };
 }
 
@@ -121,6 +125,7 @@ export function saveRoster(entries: RosterEntry[], currentId: string | null): bo
       editedAt: entry.editedAt,
       dead: entry.dead,
       leaderboard: entry.leaderboard,
+      run: entry.run,
     })),
   };
   return writeStored(ROSTER_KEY, JSON.stringify(stored));
@@ -147,7 +152,7 @@ export function loadRoster(): { entries: RosterEntry[]; currentId: string | null
 
 function entryFrom(value: unknown): RosterEntry | null {
   if (typeof value !== 'object' || value === null) return null;
-  const { id, game, name, slot, importedBytes, bytes, createdAt, editedAt, dead, leaderboard } = value as Partial<StoredEntry>;
+  const { id, game, name, slot, importedBytes, bytes, createdAt, editedAt, dead, leaderboard, run } = value as Partial<StoredEntry>;
   if (typeof id !== 'string' || typeof game !== 'string' || typeof name !== 'string') return null;
   if (typeof createdAt !== 'string' || typeof editedAt !== 'string' || typeof bytes !== 'string') return null;
   if (slot !== null && !Number.isInteger(slot)) return null;
@@ -165,5 +170,8 @@ function entryFrom(value: unknown): RosterEntry | null {
     dead: dead === true,
     // A roster stored before the site had leaderboards names no board, and reads as free play.
     leaderboard: isLeaderboard(leaderboard) ? leaderboard : null,
+    // A roster stored before the site kept runs names no sessions, and reads as a character that
+    // has never been played.
+    run: Array.isArray(run) ? run.filter(isRunSession) : [],
   };
 }

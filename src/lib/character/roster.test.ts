@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Leaderboard, RosterEntry } from '../app-state.svelte';
+import { RunRecorder, type RunSession } from '../play/run';
 import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, voidLeaderboard, withEntry, withoutEntry } from './roster';
 
 /** Enough of the browser's Storage to stand in for it. */
@@ -102,6 +103,41 @@ describe('the board a character is rolled for', () => {
   it('reads as free play when the stored board is not one this build knows', () => {
     storeEntries([{ ...storedEntry(rolledForTheBoard('faithful')), leaderboard: 'cheating' }]);
     expect(loadRoster().entries[0].leaderboard).toBeNull();
+  });
+});
+
+/** One sitting at a game, as the roster keeps it. */
+function playedSession(actions: number): RunSession {
+  const session = new RunRecorder({ game: 'unforgiven', name: 'NEWBIE', record: Uint8Array.from([9]) }).log();
+  return { ...session, actions };
+}
+
+describe("the sessions of a character's run", () => {
+  it('are none at all for a character that has just been rolled', () => {
+    expect(rolled().run).toEqual([]);
+  });
+
+  it('come back in order after the roster has been stored and read again', () => {
+    useStorage(fakeStorage());
+    const entry = rolled();
+    entry.run = [playedSession(4), playedSession(9)];
+    saveRoster([entry], entry.id);
+
+    expect(loadRoster().entries[0].run.map((session) => session.actions)).toEqual([4, 9]);
+  });
+
+  it('read as a character that has never been played in a roster stored before runs were kept', () => {
+    const { run, ...older } = storedEntry(rolled());
+    expect(run).toEqual([]);
+    storeEntries([older]);
+
+    expect(loadRoster().entries[0].run).toEqual([]);
+  });
+
+  it('leave out anything stored under them that is not a session at all', () => {
+    storeEntries([{ ...storedEntry(rolled()), run: [playedSession(4), { seed: 'not a seed' }] }]);
+
+    expect(loadRoster().entries[0].run.map((session) => session.actions)).toEqual([4]);
   });
 });
 
