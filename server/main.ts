@@ -11,7 +11,7 @@ import { createRunServer } from './http';
 
 const config = configFromEnvironment();
 const database = openRunDatabase(config.databasePath);
-const server = createRunServer(config);
+const server = createRunServer(config, database);
 
 server.listen(config.port, () => {
   console.log(`Run server listening on port ${config.port}`);

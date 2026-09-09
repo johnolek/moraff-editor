@@ -1,10 +1,12 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
+import type { DatabaseSync } from 'node:sqlite';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { ServerConfig } from './config';
+import { openRunDatabase } from './db';
 import { createRunServer } from './http';
 
 const enginesPath = mkdtempSync(join(tmpdir(), 'moraff-engines-'));
@@ -18,13 +20,15 @@ const config: ServerConfig = {
 };
 
 describe('the run server over HTTP', () => {
+  let database: DatabaseSync;
   let server: Server;
   let origin: string;
 
   beforeAll(async () => {
     mkdirSync(join(enginesPath, DEPLOYED), { recursive: true });
     writeFileSync(join(enginesPath, DEPLOYED, 'engine.mjs'), `export const ENGINE_COMMIT = '${DEPLOYED}';\n`);
-    server = createRunServer(config);
+    database = openRunDatabase(config.databasePath);
+    server = createRunServer(config, database);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -33,6 +37,7 @@ describe('the run server over HTTP', () => {
     await new Promise<void>((resolve, reject) => {
       server.close((thrown) => (thrown ? reject(thrown) : resolve()));
     });
+    database.close();
     rmSync(enginesPath, { recursive: true, force: true });
   });
 
@@ -96,6 +101,7 @@ describe('the run server over HTTP', () => {
     expect(allowed.headers.get('access-control-allow-origin')).toBe('https://johnolek.github.io');
     expect(allowed.headers.get('access-control-allow-methods')).toContain('POST');
     expect(allowed.headers.get('access-control-allow-headers')).toContain('Content-Type');
+    expect(allowed.headers.get('access-control-allow-headers')).toContain('Authorization');
 
     const refused = await fetch(`${origin}/health`, {
       method: 'OPTIONS',
