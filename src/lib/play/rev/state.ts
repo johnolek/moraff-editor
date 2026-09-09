@@ -51,6 +51,9 @@ export interface RevFight {
 /** DUNSMALL.EXE part way through a dungeon: the character, the level and what is being said. */
 export interface RevGame {
   pc: RevPc;
+  /** DGROUP B466: the character's name, which the original reads out of `F5.COM` and the
+   *  statistics screen puts in its heading. Here it is the roster entry's. */
+  name: string;
   rng: Rng;
   monsters: RevMonsters;
   memory: RevMapMemory;
@@ -205,9 +208,15 @@ export function revWalker(game: RevGame): RevWalker {
 }
 
 /** A dungeon as it stands the moment a character is loaded into it. */
-export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMapMemory()): RevGame {
+export function newRevGame(
+  pc: RevPc,
+  rng: Rng,
+  memory: RevMapMemory = new RevMapMemory(),
+  name = '',
+): RevGame {
   const game: RevGame = {
     pc,
+    name,
     rng,
     monsters: new RevMonsters(),
     memory,

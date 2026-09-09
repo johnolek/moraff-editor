@@ -136,6 +136,8 @@
       died: characterDied,
       // The explored map lives beside the roster entry, the way <n>.BIN lives beside <n>.EXE.
       map: revCharacterMap(entry.id),
+      // F5.COM holds the names in the game's own folder; here the roster entry does.
+      name: entry.name,
     };
     const run = new RunRecorder({ game: 'revenge', name: entry.name, record: entry.bytes });
     const started = startRevGame(file, run.rng, run);

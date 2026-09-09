@@ -587,6 +587,7 @@ async function replayMoraffsRevenge(log: RunLog, run: RunRecorder): Promise<RunR
       this.bytes = bytes;
     },
     died() {},
+    name: log.name,
   };
   const session = startRevGame(file, run.rng, run);
   void runPlayLoop(session, runRevDungeon(session));
