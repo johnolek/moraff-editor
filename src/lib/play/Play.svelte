@@ -8,7 +8,6 @@
   import { UNFORGIVEN_MAP } from '../map/game';
   import { FULL_FLOOR } from '../map/viewport';
   import WallTexture from '../map/WallTexture.svelte';
-  import GameScreen from '../ui/GameScreen.svelte';
   import MonsterDetail from '../bestiary/MonsterDetail.svelte';
   import { monsterGroups } from '../bestiary/monsters';
   import { expNeeded } from '../game/port/combat';
@@ -115,6 +114,26 @@
     return true;
   }
 
+  /**
+   * Whether the game has taken the display over with a screen of its own, which is when the map
+   * gives way to the game's own drawing of that screen.
+   *
+   * The screens the port draws for itself are named one by one; everything else the game covers
+   * the display with — the help, the V screen, the pages behind the P key — is lines drawn on a
+   * screen it has cleared, which is what `view.screen` holds.
+   */
+  function screenTakesOver(view: PlayView): boolean {
+    return (
+      view.screen.length > 0 ||
+      view.expandedMap ||
+      view.tablet !== null ||
+      view.sectionScreen !== null ||
+      view.buildingScreen !== null ||
+      view.bossOffice !== null ||
+      view.tunnel !== null
+    );
+  }
+
   /** A key on its way to the game. Under Moraff's World's arrows an arrow becomes the turn and
    *  the step that come to the same thing here, and the loop reads them one after the other. */
   function press(session: GameSession, key: number) {
@@ -132,39 +151,48 @@
 
 <PlayTab {game} {canvas} {press} {takeKey} {screen} {place} {afterRun} {afterModes} {sideFoot} />
 
+<!-- The game's own screen, which both displays draw: the stage in the screen display, and over
+     the map while the game has taken the display over with a screen of its own. -->
+{#snippet gameScreen(stage: Stage)}
+  {@const view = stage.view}
+  {@const route = teleporterRoute(stage)}
+  {@const kind = highlightedKind(stage.mode)}
+  <Screen
+    game={stage.session.game}
+    rows={view.rows}
+    place={view.place}
+    viewsFrom={view.viewsFrom}
+    monsters={monstersDrawn(stage.mode, view)}
+    box={view.box}
+    screen={view.screen}
+    screenCleared={view.screenCleared}
+    discovered={zoomMap(stage)}
+    mapMonsters={zoomMapMonsters(stage.mode, view)}
+    highlightMonsterId={kind}
+    routeSquares={route?.squares ?? []}
+    debug={debugDrawn(stage.mode)}
+    onmonster={(monster) => (openMonsterId = monster.monsterId)}
+    prompt={view.prompt}
+    killed={view.killed}
+    viewsDrawn={view.viewsDrawn}
+    expandedMap={view.expandedMap}
+    tablet={view.tablet}
+    sectionScreen={view.sectionScreen}
+    buildingScreen={view.buildingScreen}
+    bossOffice={view.bossOffice}
+    tunnel={view.tunnel}
+    plaque={view.plaque}
+    fade={view.fade}
+    redraw={stage.redraw} />
+{/snippet}
+
 {#snippet screen(stage: Stage)}
   {@const view = stage.view}
   {@const route = teleporterRoute(stage)}
   {@const monsters = monstersDrawn(stage.mode, view)}
   {@const kind = highlightedKind(stage.mode)}
   {#if stage.display === 'screen'}
-    <Screen
-      game={stage.session.game}
-      rows={view.rows}
-      place={view.place}
-      viewsFrom={view.viewsFrom}
-      {monsters}
-      box={view.box}
-      screen={view.screen}
-      screenCleared={view.screenCleared}
-      discovered={zoomMap(stage)}
-      mapMonsters={zoomMapMonsters(stage.mode, view)}
-      highlightMonsterId={kind}
-      routeSquares={route?.squares ?? []}
-      debug={debugDrawn(stage.mode)}
-      onmonster={(monster) => (openMonsterId = monster.monsterId)}
-      prompt={view.prompt}
-      killed={view.killed}
-      viewsDrawn={view.viewsDrawn}
-      expandedMap={view.expandedMap}
-      tablet={view.tablet}
-      sectionScreen={view.sectionScreen}
-      buildingScreen={view.buildingScreen}
-      bossOffice={view.bossOffice}
-      tunnel={view.tunnel}
-      plaque={view.plaque}
-      fade={view.fade}
-      redraw={stage.redraw} />
+    {@render gameScreen(stage)}
   {:else}
     <FloorCanvas
       bind:this={canvas}
@@ -198,11 +226,11 @@
     {#if view.prompt}
       <div class="prompt">{#each view.prompt as line}<div>{line.text}</div>{/each}</div>
     {/if}
-    <!-- The game's screen draws these across the four views; with the map in their place
-         there is nowhere on it to put them, so they cover the map the way they cover the
-         views. -->
-    {#if view.screen.length > 0}
-      <div class="overlay"><GameScreen lines={view.screen} /></div>
+    <!-- The game draws these across the four views; with the map in their place there is nowhere
+         on it to put them, so the game's own screen covers the map for as long as one of them is
+         up, letterboxed the way the screen display shows it. -->
+    {#if screenTakesOver(view)}
+      <div class="overlay">{@render gameScreen(stage)}</div>
     {/if}
   {/if}
   {#if openMonster}
@@ -272,10 +300,12 @@
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.85);
-    padding: 12px;
+    padding: var(--inset);
   }
+  /* The game's screen keeps its own 4:3 shape in the middle of the room the map had, which is
+     the stage's own height less what the overlay puts around it. */
   .overlay :global(.screen) {
-    width: min(100%, 1100px);
+    width: min(100%, calc((100cqh - 2 * var(--inset)) * 4 / 3));
   }
   .prompt {
     position: absolute;
