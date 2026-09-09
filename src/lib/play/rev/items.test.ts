@@ -92,6 +92,35 @@ describe('the scratch cell the item menu answers through', () => {
     expect(await menu('battle', true, [KEY('1')])).toMatchObject({ answer: 0, cell: 0 });
   });
 
+  it('has counted to four by the time the dungeon menu asks, as 1000:1378 to 13D2 do', async () => {
+    const pc = revCharacter();
+    const { game, desk, keys } = revTestGame(pc);
+    const wait = desk.wait;
+    let asking = 99;
+    desk.wait = () => {
+      asking = game.scratch;
+      return wait();
+    };
+    keys.push(KEY('1'));
+    await revItemMenu(game, desk, 'prep', false);
+    expect(asking).toBe(4);
+  });
+
+  it('leaves the cell alone at the fight prompt, since 1000:95BA counts elsewhere', async () => {
+    const pc = revCharacter();
+    const { game, desk, keys } = revTestGame(pc);
+    const wait = desk.wait;
+    let asking = 99;
+    desk.wait = () => {
+      asking = game.scratch;
+      return wait();
+    };
+    game.scratch = 7;
+    keys.push(KEY('1'));
+    await revItemMenu(game, desk, 'battle', true);
+    expect(asking).toBe(7);
+  });
+
   it('leaves the number standing where the dungeon is, since 1000:16D2 never clears it', async () => {
     expect(await menu('prep', false, [KEY('1')])).toMatchObject({ answer: 0, cell: 1 });
     expect(await menu('prep', false, [KEY('9')])).toMatchObject({ answer: 0, cell: 9 });

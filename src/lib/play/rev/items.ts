@@ -96,6 +96,10 @@ const LEAVE_KEYS = ['L'.charCodeAt(0), 'l'.charCodeAt(0)];
 /** How many lines each menu has. */
 const ITEMS_ON_A_MENU = 6;
 
+/** How many of the dungeon menu's lines are counted through the scratch cell (1000:1378 to
+ *  13D2); the last two ask a bit of the character's flags instead. */
+const LINES_COUNTED_IN_THE_CELL = 4;
+
 /**
  * 1000:1340 and 1000:95BA: one of the two menus, and the item the player picks off it.
  *
@@ -119,6 +123,11 @@ export async function revItemMenu(
     game.say(which === 'prep' ? REV_WHICH_ITEM : REV_WHICH_ITEM_IN_A_FIGHT);
     for (let item = 1; item <= ITEMS_ON_A_MENU; item++) {
       const line = lines[item - 1];
+      // 1000:1378, 1396, 13B4 and 13D2: the dungeon's menu puts each of its first four line
+      // numbers in the scratch cell, because 1000:18DE reads the cell to find out how many of
+      // that item the character owns. Its last two lines are printed without it, and the fight's
+      // menu counts in a register instead, so a four is what the dungeon's menu leaves standing.
+      if (which === 'prep' && item <= LINES_COUNTED_IN_THE_CELL) game.scratch = item;
       if (held(item) > 0) game.say(line);
       else game.say(which === 'prep' ? `${item})${NOTHING}` : `${item}${NOTHING_IN_A_FIGHT}`);
     }
