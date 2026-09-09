@@ -149,12 +149,12 @@ export interface RevSpell {
 }
 
 /** 1000:36AA: `Cure' heals a point for every point of wisdom, for one spell point. */
-function cure(game: RevGame, desk: RevMagicDesk): void {
+async function cure(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const pc = game.pc;
   pc.hp += pc.stats[2];
   pc.spellPoints -= 1;
   revCapHitPoints(pc);
-  desk.stats();
+  await desk.stats();
 }
 
 /** 1000:36D0: `Sense Level' says which level the character is on. */
@@ -165,23 +165,23 @@ function senseLevel(game: RevGame): void {
 
 /** 1000:36F4: `Strength' adds six to strength until the character is back in the town. Cast
  *  twice it does nothing at all and costs nothing. */
-function strength(game: RevGame, desk: RevMagicDesk): void {
+async function strength(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const pc = game.pc;
   if (revValue(pc, REV_MAGIC.preppedStrength) !== 0) return;
   pc.stats[0] += 6;
   setRevValue(pc, REV_MAGIC.preppedStrength, 1);
   pc.spellPoints -= 2;
-  desk.stats();
+  await desk.stats();
 }
 
 /** 1000:3729: `Speed' does the same for agility, and adds seven. */
-function speed(game: RevGame, desk: RevMagicDesk): void {
+async function speed(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const pc = game.pc;
   if (revValue(pc, REV_MAGIC.preppedSpeed) !== 0) return;
   pc.stats[4] += 7;
   setRevValue(pc, REV_MAGIC.preppedSpeed, 1);
   pc.spellPoints -= 2;
-  desk.stats();
+  await desk.stats();
 }
 
 /**
@@ -225,7 +225,7 @@ async function feather(game: RevGame, desk: RevMagicDesk, level: number): Promis
   if (pc.weight < 0) {
     pc.weight = 0;
     pc.spellPoints -= 4;
-    desk.stats();
+    await desk.stats();
     return;
   }
   await ascend(game, desk, level);

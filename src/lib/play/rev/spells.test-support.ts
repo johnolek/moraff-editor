@@ -56,7 +56,7 @@ export function revTestGame(
         levels.push(level);
         pc.dungeonLevel = level;
       },
-      stats() {
+      async stats() {
         out.statsShown += 1;
       },
       save() {

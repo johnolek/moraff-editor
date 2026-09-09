@@ -8,7 +8,7 @@ import { revAtTheFountain, revDrinkFromTheFountain, revNeedsAFountain, revRollTh
 import {
   revBreatheFire,
   revWearOffPotions,
-  revMagicItemsOwned,
+  revShowMagicItems,
   revPotionBanners,
   revTakeAPill,
   revUseAWandInAFight,
@@ -17,6 +17,7 @@ import {
   revUseAnItemInAFight,
 } from './items';
 import { revFloorStats } from './magic';
+import { revShowStats } from './stats';
 import {
   revCastInAFight,
   revCastInTheDungeon,
@@ -96,6 +97,9 @@ export interface RevCharacterFile {
   /** 1000:B583 and 1000:B964: the explored map kept beside the record, the way the game keeps
    *  `<n>.BIN` beside `<n>.EXE`. */
   map?: RevMapStore;
+  /** The character's name, which the original reads out of `F5.COM` (DGROUP B466) and the
+   *  statistics screen puts in its heading. */
+  name?: string;
 }
 
 /** What the Play tab draws. */
@@ -161,7 +165,7 @@ export class RevGameSession {
     const pc = loadRevPlayer(file.bytes);
     if (!pc) throw new Error('These bytes are not a Moraff\'s Revenge character record.');
     this.known = file.bytes.slice();
-    this.game = newRevGame(pc, rng, new RevMapMemory(file.map ?? null));
+    this.game = newRevGame(pc, rng, new RevMapMemory(file.map ?? null), file.name ?? '');
     this.game.flushKeys = () => this.flushKeys();
     this.game.delay = (ms) => this.hold(ms);
     // 1000:B98F: a character who has never been played has no fountain of youth yet, and the
@@ -407,7 +411,7 @@ export class RevGameSession {
         return key;
       },
       enterLevel: (level) => this.enterLevel(level),
-      stats: () => showStats({ session: this, game: this.game, building: 0 }),
+      stats: () => revShowStats(this.game, this.desk()),
       save: () => this.save(),
     };
   }
@@ -495,11 +499,11 @@ export interface RevKeyHandler {
 export const REV_KEY_HANDLERS: Record<number, RevKeyHandler> = {
   [REV_KEY.down]: { c: '1000:0DE0, the ladder down and the false floor', run: goDown },
   [REV_KEY.up]: { c: '1000:0DAF, the ladder up and the rope into a building', run: goUp },
-  [REV_KEY.stats]: { c: '1000:19F7, view_stats', run: showStats },
+  [REV_KEY.stats]: { c: '1000:19F7, the statistics screen', run: (turn) => revShowStats(turn.game, turn.session.desk()) },
   [REV_KEY.quit]: { c: '1000:0D7D, the save and the chain back to BEGIN', run: quitAndSave },
   [REV_KEY.escape]: { c: '1000:10BE, the movement-mode switch', run: switchArrows },
   [REV_KEY.cast]: { c: '1000:35AC, cast a spell', run: (turn) => revCastInTheDungeon(turn.game, turn.session.magic()) },
-  [REV_KEY.magic]: { c: '1000:3B16, the magic items owned', run: (turn) => turn.game.say(...revMagicItemsOwned(turn.game)) },
+  [REV_KEY.magic]: { c: '1000:3B16, the magic items owned', run: (turn) => revShowMagicItems(turn.game, turn.session.desk()) },
   [REV_KEY.item]: { c: '1000:1340, use an item', run: (turn) => revUseAnItem(turn.game, turn.session.magic()) },
   [REV_KEY.abandon]: { c: '1000:1918, drop all the coins', run: (turn) => notBuiltYet(turn, 'drop all of your coins') },
   [REV_KEY.help]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
@@ -562,21 +566,6 @@ async function enterBuilding(turn: RevTurn, building: number): Promise<void> {
   else if (building === 5) await revVisitTemple(turn.game, desk);
   else if (building === 6) await revVisitStore(turn.game, desk);
   else if (building === 7) await revVisitGuild(turn.game, desk, turn.session.magic());
-}
-
-/** 1000:19F7: the statistics screen. */
-function showStats(turn: RevTurn): void {
-  const pc = turn.game.pc;
-  turn.game.say(
-    `Player level: ${Math.trunc(pc.level)}`,
-    `Experience: ${Math.trunc(pc.experience + revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE))}`,
-    `Health points: ${Math.trunc(pc.hp)} of ${Math.trunc(pc.maxHp)}`,
-    `Spell points: ${Math.trunc(pc.spellPoints)}`,
-    `Player weight: ${Math.trunc(pc.weight)}`,
-    `Pocket money: ${Math.trunc(pc.money)}`,
-    `Money in bank: ${Math.trunc(pc.bank)}`,
-    pc.cls === 1 ? ' FIGHTER' : ' WIZARD',
-  );
 }
 
 /**

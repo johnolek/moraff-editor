@@ -46,6 +46,19 @@ export function revCharacterFile(bytes = revRecord()): RevCharacterFile & { dead
   };
 }
 
+/**
+ * The V key, which is what these tests spend a pass on when the key itself does not matter.
+ *
+ * It takes the whole screen and waits for a key of its own (1000:1C4A), so answering it is two
+ * presses: the second is eaten by the wait rather than starting a pass of its own.
+ */
+async function pressStats(session: RevGameSession): Promise<void> {
+  session.press(REV_KEY.stats);
+  await settled();
+  session.press(' '.charCodeAt(0));
+  await settled();
+}
+
 /** Let the loop take what it has been given and come back to waiting. */
 function settled(): Promise<unknown> {
   return new Promise((resolve) => setTimeout(resolve));
@@ -76,8 +89,7 @@ describe('the loop', () => {
     expect(session.game.said).toEqual([]);
     // ...and the tab is still showing the screen it was asked to hold.
     expect(session.view().box).toEqual([SOUND_OFF, NO_SOUND_HERE]);
-    session.press(REV_KEY.stats);
-    await settled();
+    await pressStats(session);
     expect(session.view().box).not.toContain(SOUND_OFF);
     session.finish();
   });
@@ -93,8 +105,7 @@ describe('the loop', () => {
   it('marks the square underfoot and nothing else', async () => {
     const { session } = await playing();
     session.enterLevel(3);
-    session.press(REV_KEY.stats);
-    await settled();
+    await pressStats(session);
     expect(session.game.memory.isKnown(10, 10, 3)).toBe(true);
     expect(session.game.memory.isKnown(11, 10, 3)).toBe(false);
     expect(session.game.memory.isKnown(10, 9, 3)).toBe(false);
@@ -257,8 +268,7 @@ describe('a fight', () => {
     session.game.monsters.grid[22 * 10 + 10] = 41;
     session.game.monsters.positions[41] = 32 * 10 + 10;
     // A key of no consequence takes the loop round to the top, where the fight opens.
-    session.press(REV_KEY.stats);
-    await settled();
+    await pressStats(session);
     return session;
   }
 
@@ -303,8 +313,7 @@ describe('walking away from a fight', () => {
     session.enterLevel(2);
     session.game.monsters.grid[22 * 10 + 10] = 41;
     session.game.monsters.positions[41] = 32 * 10 + 10;
-    session.press(REV_KEY.stats);
-    await settled();
+    await pressStats(session);
     session.press(REV_KEY.sword);
     await settled();
     const fight = session.game.fight;
@@ -335,13 +344,11 @@ describe('a disease', () => {
     // The count starts at 1 and the drain lands as it reaches 100, so the ninety-ninth key is
     // the one that costs a point.
     for (let key = 0; key < 98; key++) {
-      session.press(REV_KEY.stats);
-      await settled();
+      await pressStats(session);
     }
     expect(points()).toBe(before);
 
-    session.press(REV_KEY.stats);
-    await settled();
+    await pressStats(session);
 
     expect(points()).toBe(before - 1);
     expect(revValue(pc, REV_VALUE.disease)).toBe(100);
@@ -354,8 +361,7 @@ describe('a disease', () => {
     const pc = session.game.pc;
     const before = pc.stats.slice();
     for (let key = 0; key < 120; key++) {
-      session.press(REV_KEY.stats);
-      await settled();
+      await pressStats(session);
     }
     expect(pc.stats).toEqual(before);
     expect(revValue(pc, REV_VALUE.disease)).toBe(0);
@@ -370,8 +376,7 @@ describe('the rings of health', () => {
     expect(pc.hp).toBe(10);
 
     // The statistics screen comes back through the loop's own re-entry, which holds them back.
-    session.press(REV_KEY.stats);
-    await settled();
+    await pressStats(session);
     expect(pc.hp).toBe(10);
 
     for (const arrow of [REV_KEY.arrowUp, REV_KEY.arrowDown, REV_KEY.arrowLeft, REV_KEY.arrowRight]) {
