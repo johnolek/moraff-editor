@@ -495,6 +495,15 @@ export interface MwGame {
    */
   monsterTimers: number[];
   /**
+   * DS:119f: the sound switch, which the O key flips (exe 2000:aad5, the 0x6f branch). The four
+   * noises the game makes ask it first, and the key menu offers the opposite of whatever it is
+   * doing; see `sound.ts` and `mwKeyMenuLines`.
+   *
+   * It starts on. The flag is only ever flipped, never written from the code, so its first value
+   * is whatever the executable's data segment holds, which the packed file on disk does not show.
+   */
+  sound: boolean;
+  /**
    * DS:cd40: the direction the "YOU ARE FIGHTING THE MONSTER" banner was last drawn for, so it
    * is drawn again only when the character turns.
    */
@@ -719,6 +728,7 @@ export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
     chooseDirection: () => 5,
     chooseSpellToWrite: () => null,
     monsterTimers: Array.from({ length: MONSTER_SLOTS }, () => 0),
+    sound: true,
     engagedBanner: -1,
     lastStrikeDamage: 0,
     lastMonsterDamage: 0,
