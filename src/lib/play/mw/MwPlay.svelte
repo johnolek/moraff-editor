@@ -5,6 +5,7 @@
   import { characterDied, replaceCharacterBytes } from '../../character/current';
   import FloorCanvas from '../../map/FloorCanvas.svelte';
   import { MORAFFS_WORLD_MAP } from '../../map/game';
+  import PlayRoster from '../PlayRoster.svelte';
   import { FULL_FLOOR } from '../../map/viewport';
   import WallTexture from '../../map/WallTexture.svelte';
   import GameScreen from '../../ui/GameScreen.svelte';
@@ -412,6 +413,7 @@
           <button type="button" class="go" onclick={start}>Play as {character?.name}</button>
         </div>
       {/if}
+      <PlayRoster game={MORAFFS_WORLD_MAP.id} />
     </div>
   {:else}
     <div class="stage">
