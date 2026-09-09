@@ -74,7 +74,9 @@ export interface RunVerdict {
  *
  * An engine that is not this build's is a note rather than a failure: the two may well agree, and
  * a replay that then reproduces the run says they did. It is only worth reading as an excuse when
- * the replay diverges, which is why it is kept beside the verdict rather than folded into it.
+ * the replay diverges, which is why it is kept beside the verdict rather than folded into it. An
+ * engine whose commit ends in `-dirty` gets a note of its own even where the two strings are the
+ * same, since neither of them names the code it was built from.
  */
 export async function verifyRun(log: RunLog): Promise<RunVerdict> {
   const verdict: RunVerdict = {
@@ -89,11 +91,8 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
     replayed: null,
     ending: null,
   };
-  if (log.engine !== ENGINE_COMMIT) {
-    verdict.notes.push(
-      'The run was played on an engine other than this build, so a replay is only as good as the two agreeing.',
-    );
-  }
+  const engineNote = whatToSayAboutTheEngine(log.engine, ENGINE_COMMIT);
+  if (engineNote !== null) verdict.notes.push(engineNote);
   if (log.edits > 0) {
     verdict.reason = `The character's record was written from outside the game ${timesWords(log.edits)} while the run was played, and those records are not in the log.`;
     return verdict;
@@ -118,6 +117,24 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
   verdict.reason = firstMismatch(log, verdict.replayed);
   verdict.status = verdict.reason === null ? 'verified' : 'failed';
   return verdict;
+}
+
+/**
+ * What is worth saying about the engine a run was played on, or null when there is nothing: the
+ * log names this build's own commit, and that commit names the code it was built from.
+ *
+ * A commit with `-dirty` on it names no code at all. The tree it was built from had changes in it
+ * that nobody handed the run log can get back, so two dirty engines are not shown to be the same
+ * engine by their strings matching, and the run is replayed here with that said out loud.
+ */
+export function whatToSayAboutTheEngine(logEngine: string, buildEngine: string): string | null {
+  if (logEngine !== buildEngine) {
+    return 'The run was played on an engine other than this build, so a replay is only as good as the two agreeing.';
+  }
+  if (logEngine.endsWith('-dirty')) {
+    return 'The run was played on an engine built from a working tree with changes in it, which the commit does not name, so this build cannot be shown to be that same engine.';
+  }
+  return null;
 }
 
 /**

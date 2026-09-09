@@ -10,8 +10,8 @@ import { MW_KEY, mwTurn } from './mw/keys';
 import { runRevDungeon, startRevGame } from './rev/engine';
 import { revCharacterFile, revRecord } from './rev/engine.test';
 import { REV_KEY } from './rev/keys';
-import { RunRecorder, type RunLog } from './run';
-import { readRunLog, verifyRun } from './verify';
+import { ENGINE_COMMIT, RunRecorder, type RunLog } from './run';
+import { readRunLog, verifyRun, whatToSayAboutTheEngine } from './verify';
 
 /**
  * A short run of Dungeons of the Unforgiven, played headless with a seed of the test's own: three
@@ -76,6 +76,14 @@ async function moraffsWorldRun(): Promise<RunLog> {
   return run.log();
 }
 
+/** What a run this build played carries about its engine: nothing when the tree it was built from
+ *  was clean, and the note that a tree with changes in it cannot vouch for itself when it was not.
+ *  Either way it is what a run with nothing wrong with it comes back with. */
+function ownEngineNotes(): string[] {
+  const note = whatToSayAboutTheEngine(ENGINE_COMMIT, ENGINE_COMMIT);
+  return note === null ? [] : [note];
+}
+
 describe('verifying a run', () => {
   it('verifies a run of Dungeons of the Unforgiven, milestone and all', async () => {
     const log = await unforgivenRun();
@@ -83,7 +91,7 @@ describe('verifying a run', () => {
 
     expect(verdict.status).toBe('verified');
     expect(verdict.reason).toBeNull();
-    expect(verdict.notes).toEqual([]);
+    expect(verdict.notes).toEqual(ownEngineNotes());
     expect(verdict.replayed).toEqual({ actions: log.actions, time: log.time, milestones: log.milestones });
     expect(log.milestones).toEqual([{ kind: 'dungeon', which: 1, actions: 1, time: 0, floor: 0 }]);
     expect(verdict.ending).toMatchObject({ alive: true, won: false, place: { dungeon: 1 } });
@@ -150,6 +158,15 @@ describe('verifying a run', () => {
     expect(verdict.status).toBe('unverifiable');
     expect(verdict.reason).toBe("The replay stopped: These bytes are not a Moraff's Revenge character record.");
     expect(verdict.ending).toBeNull();
+  });
+
+  it('takes a run played on a working tree with changes in it for one it cannot vouch for', () => {
+    // Two dirty trees at the same commit can hold different code, so the strings matching says
+    // nothing.
+    expect(whatToSayAboutTheEngine('46f877a-dirty', '46f877a-dirty')).toBe(
+      'The run was played on an engine built from a working tree with changes in it, which the commit does not name, so this build cannot be shown to be that same engine.',
+    );
+    expect(whatToSayAboutTheEngine('46f877a', '46f877a')).toBeNull();
   });
 
   it('takes an engine that is not this build for a note rather than a failure', async () => {

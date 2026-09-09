@@ -108,8 +108,11 @@ what the log claims.
   failed. So is a run whose replay stopped: a loop that throws is caught by `loop.ts` and raised
   again where the replay ends, and the verdict carries the message it stopped on, since a log
   the engine could not play through says nothing about whether the log is honest.
-* **A note** — an engine commit that is not this build's. That is a warning and not a failure:
-  the two engines may well agree, and a replay that reproduces the run says they did.
+* **A note** — an engine commit that is not this build's, or one ending in `-dirty`. That is a
+  warning and not a failure: the two engines may well agree, and a replay that reproduces the run
+  says they did. `-dirty` is noted even where the two strings are identical, since a tree with
+  changes in it is not described by the commit it sits on and two such trees can hold different
+  code.
 
 `pnpm verify-run <run.json>` is the same check from a command line, with no browser: it builds
 `src/cli/verify-run.ts` for Node through `vite.verify.config.ts`, which defines
