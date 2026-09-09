@@ -65,20 +65,19 @@ describe('the monsters the map draws', () => {
   });
 
   it("is what the tab hands the game's own map in the corner in debug", () => {
-    expect(source).toContain('mapMonsters={zoomMapMonsters(mode, view)}');
+    expect(source).toContain('mapMonsters={zoomMapMonsters(stage.mode, view)}');
   });
 
   it('is what the tab hands the map, along with the map itself', () => {
-    expect(source).toContain('monsters={monstersDrawn(mode, view)}');
-    expect(source).toContain('discovered={discoveredMap}');
-    expect(source).toContain('mapDrawn(mode, playing.memory)');
+    expect(source).toContain('{@const monsters = monstersDrawn(stage.mode, view)}');
+    expect(source).toContain('{@const discovered = mapDrawn(stage.mode, stage.session.memory)}');
   });
 });
 
 describe("the numbers debug mode prints over the game's own screen", () => {
   it("is what the tab adds to the game's own lines", () => {
-    expect(source).toContain('...debugMonsterValues');
-    expect(source).toContain('!debugDrawn(mode)');
+    expect(source).toContain('mwDebugMonsterLines(game, monsterCorner(stage))');
+    expect(source).toContain('debugDrawn(stage.mode) && view.engaged != null');
   });
 });
 
@@ -90,7 +89,7 @@ describe('the panel of numbers the game never prints', () => {
   });
 
   it('is what the tab puts the panel behind', () => {
-    expect(source).toContain('{#if panelVisible(mode)}');
+    expect(source).toContain('{#if panelVisible(stage.mode)}');
   });
 });
 
@@ -132,8 +131,8 @@ describe("the details a click on a monster's picture opens", () => {
   });
 
   it('keeps the keyboard off the game while it is up', () => {
-    expect(source).toContain('if (openMonsterId !== null) {');
-    expect(source).toContain("if (event.key !== 'Escape') return;");
+    expect(source).toContain('if (openMonsterId === null) return false;');
+    expect(source).toContain("if (event.key !== 'Escape') return true;");
     expect(source).toContain('openMonsterId = null;');
   });
 });

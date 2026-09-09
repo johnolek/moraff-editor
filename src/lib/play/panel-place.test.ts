@@ -7,9 +7,12 @@ import { panelVisible } from './mode';
  *
  * Every mode starts on the game's own screen now, so the panel has to stand beside the screen
  * rather than beside the top-down map: it lives in the column down the right of the tab, which
- * the switch between the two never touches. The tabs have no props to render them with — each
- * plays whichever character is on the roster — so what is checked here is the markup.
+ * the switch between the two never touches. That column is `PlayTab.svelte`'s, and each game
+ * hands its own panel in as the snippet at the foot of it. The tabs have no props to render them
+ * with — each plays whichever character is on the roster — so what is checked here is the markup.
  */
+
+const shell = readFileSync('src/lib/play/PlayTab.svelte', 'utf8');
 
 const TABS = [
   { game: 'Dungeons of the Unforgiven', file: 'src/lib/play/Play.svelte', panel: '<Panel' },
@@ -24,25 +27,28 @@ describe('the panel of numbers the game never prints', () => {
     expect(panelVisible('debug')).toBe(true);
   });
 
+  it('is drawn in the column beside the stage rather than on it', () => {
+    const column = { opens: shell.indexOf('<aside class="side">'), closes: shell.indexOf('</aside>') };
+    const foot = shell.indexOf('{@render sideFoot?.(stage)}');
+    expect(foot).toBeGreaterThan(column.opens);
+    expect(foot).toBeLessThan(column.closes);
+    // Everything the switch chooses between is on the stage, which the column comes after, so
+    // the column and its panel are there whichever of the two is being shown.
+    expect(shell.indexOf('<div class="map"')).toBeLessThan(column.opens);
+  });
+
   for (const tab of TABS) {
     const source = readFileSync(tab.file, 'utf8');
-    const column = { opens: source.indexOf('<aside class="side">'), closes: source.indexOf('</aside>') };
 
-    it(`stands in the column beside the stage on ${tab.game}'s tab`, () => {
-      const guard = source.indexOf('{#if panelVisible(mode)}');
-      expect(guard).toBeGreaterThan(column.opens);
-      expect(guard).toBeLessThan(column.closes);
+    it(`is what the foot of the column holds on ${tab.game}'s tab`, () => {
+      const snippet = source.indexOf('{#snippet sideFoot(');
+      expect(snippet).toBeGreaterThan(-1);
+      const guard = source.indexOf('{#if panelVisible(stage.mode)}', snippet);
+      expect(guard).toBeGreaterThan(snippet);
       // The mode is the whole of what the panel waits on: it is drawn right behind that guard.
       // The tag alone is looked for, since a panel with props enough to wrap opens on its own
       // line.
       expect(source.slice(guard, source.indexOf('{/if}', guard))).toContain(tab.panel);
-    });
-
-    it(`is drawn beside the game's own screen on ${tab.game}'s tab`, () => {
-      // Everything the switch chooses between is on the stage, which the column comes after, so
-      // the column and its panel are there whichever of the two is being shown.
-      expect(source).toContain("display === 'screen'");
-      expect(source.lastIndexOf("display === 'screen'")).toBeLessThan(column.opens);
     });
   }
 });

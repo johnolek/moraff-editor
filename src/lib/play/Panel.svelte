@@ -43,6 +43,12 @@
     route = undefined,
   }: Props = $props();
 
+  // A route of no steps at all is the character standing beside the teleporter, which is the
+  // arrival the button is turned off by.
+  $effect(() => {
+    if (route && route.steps === 0) routing = false;
+  });
+
   const numbers = $derived.by(() => {
     const place = view.place;
     const pc = game.pc;
