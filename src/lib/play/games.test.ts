@@ -44,8 +44,10 @@ afterEach(() => {
 describe('a character played again', () => {
   it('goes on counting its actions where the session before it left off', async () => {
     const entry = rostered();
-    // A step the square lets through and a moment waited, each of which is one action.
-    const first = await playASession(entry, [KEY.arrowUp, KEY.enter]);
+    // Two moments waited, each of which is one action. A step would do as well when the way is
+    // clear, but the floor is stocked afresh every session and a monster standing in front of the
+    // character stops one.
+    const first = await playASession(entry, [KEY.enter, KEY.enter]);
     const spent = first.view().run!.actions;
 
     const second = await playASession(entry, [KEY.enter]);
@@ -70,7 +72,7 @@ describe('a character played again', () => {
 
   it('makes a chain of sessions that verifies as one run', async () => {
     const entry = rostered();
-    await playASession(entry, [KEY.arrowUp, KEY.arrowLeft, KEY.enter]);
+    await playASession(entry, [KEY.enter, KEY.arrowLeft, KEY.enter]);
     await playASession(entry, [KEY.enter, KEY.enter]);
 
     const verdict = await verifyRun(runLogOf(entry.run));
