@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MwRollerView } from './mw-session';
 import { MwRollerSession } from './mw-session';
 
-/** The text of everything showing, which is what the old string-only screen used to hand back. */
+/** The text of everything showing, one string a line. */
 function showing(view: MwRollerView): string[] {
   return view.screen.map((line) => (line.value === undefined ? line.text : line.text + line.value));
 }

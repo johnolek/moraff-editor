@@ -416,8 +416,7 @@ export function autokill(game: Game): boolean {
 }
 
 /**
- * power_weapon (exe 3000:dd64, unf.c "power_weapon"): Power Weapon I to III, which the function
- * catalog used to call battle_strength.
+ * power_weapon (exe 3000:dd64, unf.c "power_weapon"): Power Weapon I to III.
  *
  * The three spells put a 129, 199 or 399 damage die in the player's hands for 60 moves. `level`
  * is 1, 2 or 3; `strike` adds eight to it to reach the weapon table, which lands one row past
@@ -451,7 +450,7 @@ export function powerWeapon(game: Game, level: number): boolean {
 
 /**
  * protection (exe 3000:ddc9, unf.c "protection"): Minor Protection, Protection, Major
- * Protection and Ultra Protection, which the function catalog used to call battle_speed.
+ * Protection and Ultra Protection.
  *
  * The four spells take 2, 8, 18 and 32 off a monster's attack roll for 60 moves. `level` is 1,
  * 2, 3 or 4. The level is at save offset 0x7eb.

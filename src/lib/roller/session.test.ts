@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { RollerView } from './session';
 import { RecordedRandom, RollerSession } from './session';
 
-/** The text of everything showing, which is what the old string-only screen used to hand back. */
+/** The text of everything showing, one string a line. */
 function showing(view: RollerView): string[] {
   return view.screen.map((line) => (line.value === undefined ? line.text : line.text + line.value));
 }
