@@ -19,3 +19,28 @@ export function isLeaderboard(value: unknown): value is Leaderboard {
 export function leaderboardLabel(board: Leaderboard): string {
   return board === 'faithful' ? 'Faithful' : 'Speedrun';
 }
+
+/**
+ * What the roller offers before a roll: play the character for its own sake, or roll it for one
+ * of the two boards.
+ *
+ * The choice is made once, because it is the whole point of the lock: a board is a set of runs
+ * played the same way, and a character that could change the way it plays is not on one.
+ */
+export const LEADERBOARD_CHOICES: { id: Leaderboard | null; label: string; how: string }[] = [
+  {
+    id: null,
+    label: 'Free play',
+    how: 'Not on a leaderboard. Play the character however you like and change the mode whenever you want.',
+  },
+  {
+    id: 'faithful',
+    label: 'Leaderboard — faithful',
+    how: 'Locked to faithful for good: only what the game shows. Every run of this character goes on the faithful board.',
+  },
+  {
+    id: 'speedrun',
+    label: 'Leaderboard — speedrun',
+    how: 'Locked to speedrun for good: the whole floor, so a route can be planned. Every run of this character goes on the speedrun board.',
+  },
+];

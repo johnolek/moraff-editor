@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { app, type GameId } from '../app-state.svelte';
+  import { app, type GameId, type Leaderboard } from '../app-state.svelte';
   import { keepRolledCharacter } from '../character/current';
+  import { LEADERBOARD_CHOICES } from '../character/leaderboard';
   import { downloadBytes } from '../download';
   import { goToTab } from '../history';
   import { MW_CLASS_NAMES, MW_RACES, MINUTES_PER_YEAR } from '../game/mw-port/character';
@@ -133,6 +134,8 @@
   let view = $state.raw<View | null>(null);
   let typed = $state('');
   let note = $state('');
+  /** The board this roll is for, which is the lock the finished character carries for life. */
+  let leaderboard = $state<Leaderboard | null>(null);
   /** Whether the finished character has been put on the roster; a roll keeps it once. */
   let kept = false;
 
@@ -243,7 +246,7 @@
   function keepWhenDone() {
     if (!view || view.question !== null || kept) return;
     kept = true;
-    keepRolledCharacter(rolling, view.pc.name || fileName, slot, chosen.writeRecord(view.pc));
+    keepRolledCharacter(rolling, view.pc.name || fileName, slot, chosen.writeRecord(view.pc), leaderboard);
   }
 
   function answer(value: number | string) {
@@ -347,6 +350,23 @@
         <div class="row">
           {#each chosen.slots as number}
             <button type="button" class:picked={slot === number} onclick={() => (slot = number)}>{number}</button>
+          {/each}
+        </div>
+      </section>
+
+      <section>
+        <h3><PixelText text="Leaderboard" /></h3>
+        <p class="hint">
+          A character rolled for a leaderboard is locked to that board's mode for its whole life, so that every run of it can be
+          compared with the others on the board. Editing it in the Save Editor ends that for good.
+        </p>
+        <div class="boards">
+          {#each LEADERBOARD_CHOICES as choice}
+            <label>
+              <input type="radio" value={choice.id} bind:group={leaderboard} />
+              <span>{choice.label}</span>
+              <span class="how">{choice.how}</span>
+            </label>
           {/each}
         </div>
       </section>
@@ -494,6 +514,30 @@
     margin: 8px 0;
     color: var(--good);
     font-size: 13px;
+  }
+  .boards {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .boards label {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 0 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .boards input {
+    grid-row: span 2;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+  .boards .how {
+    grid-column: 2;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
   }
   .row,
   .choices {

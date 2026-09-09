@@ -1,4 +1,4 @@
-import { app, currentEntry, type GameId, type RosterEntry } from '../app-state.svelte';
+import { app, currentEntry, type GameId, type Leaderboard, type RosterEntry } from '../app-state.svelte';
 import { MORAFFS_REVENGE } from '../editor/games';
 import { isGameId, loadChosenGame, loadLastCharacter, saveChosenGame, saveLastCharacter } from '../game-choice';
 import { recordTab } from '../history';
@@ -38,9 +38,20 @@ export function importRevExploredMap(bytes: Uint8Array): RosterEntry | null {
   return entry;
 }
 
-/** Put a character that has just been rolled on the roster and start working on it. */
-export function keepRolledCharacter(game: string, name: string, slot: number | null, bytes: Uint8Array<ArrayBuffer>): void {
-  const entry = newEntry({ game, name, slot, bytes, imported: false });
+/**
+ * Put a character that has just been rolled on the roster and start working on it.
+ *
+ * `leaderboard` is the board the roller was asked to roll for, and null for a character to be
+ * played for its own sake. It can never be given later: a board is a chain of runs from the roll.
+ */
+export function keepRolledCharacter(
+  game: string,
+  name: string,
+  slot: number | null,
+  bytes: Uint8Array<ArrayBuffer>,
+  leaderboard: Leaderboard | null = null,
+): void {
+  const entry = newEntry({ game, name, slot, bytes, imported: false, leaderboard });
   app.roster = withEntry(app.roster, entry);
   chooseEntry(entry.id);
 }

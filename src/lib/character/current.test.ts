@@ -136,6 +136,23 @@ describe('a character rolled here', () => {
     keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'));
     expect(currentEntry()?.importedBytes).toBeNull();
   });
+
+  it('carries the board the roller was asked to roll it for', () => {
+    keepRolledCharacter('unforgiven', 'RACER', 23, saveFile('RACER'), 'speedrun');
+    expect(currentEntry()?.leaderboard).toBe('speedrun');
+  });
+
+  it('is on no board when the roller was not asked for one', () => {
+    keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'));
+    expect(currentEntry()?.leaderboard).toBeNull();
+  });
+});
+
+describe('an imported character', () => {
+  it('is on no board, since there is no chain of runs from a roll to compare it by', () => {
+    importCharacter('unforgiven', '21', saveFile('SAGEY'));
+    expect(currentEntry()?.leaderboard).toBeNull();
+  });
 });
 
 describe('the roster', () => {
