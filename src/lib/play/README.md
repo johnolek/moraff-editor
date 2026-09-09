@@ -396,6 +396,37 @@ The keys the player presses while the character is swinging are thrown away by `
 is the flush the original does at the end of every swing. That is also what stops Ctrl-F: reading
 the keyboard at all puts the repeat-fight flag down.
 
+## The Fight tab
+
+`fight-sim.ts` and `FightTab.svelte` are a fight on its own, without the walk to it: a copy of a
+character off the roster with its numbers typed over, one monster of a chosen kind, level and hit
+points standing in front of them, and the same engine between the two. Nothing in it is a port of
+anything — the original has no such screen — and it reuses the Play tab whole: `Screen.svelte` for
+the screen, `Panel.svelte` for the numbers the game never prints, and `runMoveControl` for the
+fight itself.
+
+Four things about it are decisions rather than arithmetic:
+
+* **It is set on a dungeon floor and not in the town**, although the town is where
+  `battle.test-support.ts` puts its fights. `call_check_eng` (exe 2000:a319) hands out no attacks
+  at all while the character stands on floor 0, so a town fight is one-sided. The floor is one the
+  monster can really be stocked on, which is what makes the section the game loads its monster
+  table from the monster's own.
+* **The floor is emptied first.** `load_level_map` stocks 145 monsters and a fight wants one, so
+  the rest go; an empty floor is the floor a character who had killed them all would be standing
+  on.
+* **The monster arrives on a second press.** cast_a_spell refuses a preparation spell with a
+  monster engaged (exe DS:206f) and `movecontrol` engages one on its first pass, so a monster put
+  down at the start would be a monster no preparation spell could be cast against.
+* **A spell button presses the player's own keys** — C, the list's digit and the spell's letter —
+  so the spell is cast_a_spell's and nothing here works out what a spell does. The copy is given
+  the spell in its book first, since the menu ignores the key for a spell the character has none
+  of and goes on waiting for another.
+
+The session carries no `RunRecorder`, so nothing fought here is written down as a run, and its
+`CharacterFile` writes nowhere: `died` does nothing, so a character killed in the simulator is
+not marked dead on the roster.
+
 ## The moment
 
 `passMoment` (exe 2000:a53c) is in `src/lib/game/port/moment.ts` with the two halves of a step it
