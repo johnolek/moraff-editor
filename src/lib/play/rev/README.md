@@ -195,8 +195,9 @@ Three things are this game's own:
   `rng.random(n)` gives.
 * **The four 3-D views are drawn.** They still mark nothing — the map is the squares walked on,
   full stop — but what they show is now worked out and drawn, monsters and all (`screen/`). In
-  speedrun and debug the map beside them is the whole level rather than the walked squares
-  (`../mode.ts`), and the site's own top-down map is still a switch away on the tab.
+  speedrun and debug the map beside them is the whole level rather than the walked squares,
+  debug alone marks every monster on it (`../mode.ts`), and the site's own top-down map is
+  still a switch away on the tab.
 * **The letters are read in capitals.** There is no `UCASE$` anywhere in the module, so a
   lower-case `d` matches none of the branches and does nothing at all. This port reads the
   character as typed and behaves the same way.

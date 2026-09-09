@@ -115,8 +115,12 @@ describe('the monsters the map draws', () => {
     expect(monstersDrawn('faithful', { ...sight, visible: [], engaged: null })).toEqual([]);
   });
 
-  it('is every monster on the floor in speedrun and in debug', () => {
-    expect(monstersDrawn('speedrun', sight)).toEqual(sight.monsters);
+  it('is what faithful draws in speedrun, since the monsters are rolled afresh every game', () => {
+    expect(monstersDrawn('speedrun', sight)).toEqual([monster(2), sight.engaged]);
+    expect(monstersDrawn('speedrun', { ...sight, visible: [], engaged: null })).toEqual([]);
+  });
+
+  it('is every monster on the floor in debug', () => {
     expect(monstersDrawn('debug', sight)).toEqual(sight.monsters);
     expect(monstersDrawn('debug', { ...sight, engaged: null })).toEqual(sight.monsters);
   });

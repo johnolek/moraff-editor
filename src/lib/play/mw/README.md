@@ -247,7 +247,8 @@ for Dungeons of the Unforgiven.
   game lays over them — and the top-down map of the floor is a switch away from it. On that map
   the picture of the monster being faced stands in for the view ahead, with the level, hit points
   and experience the game prints over that view over it; in speedrun and in debug the whole floor
-  and every monster on it are drawn rather than the squares walked (`../mode.ts`).
+  is drawn rather than the squares walked, and debug alone marks every monster on it
+  (`../mode.ts`).
 * **No `<slot>MON.MAP`.** The three floors of monsters live only as long as the tab is open.
 * **The `.DUN` files are a blob beside the roster entry.** The explored maps are written where
   the original writes them — when the character crosses out of the 32 floors in memory, on the

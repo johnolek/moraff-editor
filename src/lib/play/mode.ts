@@ -11,9 +11,10 @@ import type { StockedMonster } from '../map/stocking';
  * wand, the turns left on a spell, where the monsters on the floor are standing — and the tabs
  * were built showing all of it. This is the switch: **faithful** shows nothing the game does not
  * show, which is the map the character has discovered and the monsters its 3-D views would have
- * drawn; **speedrun** adds the whole floor and every monster standing on it, so that a run need
- * not be planned against the maps elsewhere on this site; and **debug** shows everything the
- * port knows.
+ * drawn; **speedrun** adds the whole floor, so that a run need not be planned against the maps
+ * elsewhere on this site, but marks only the monsters faithful marks, since the monsters are
+ * rolled afresh every game and finding them is part of the run; and **debug** shows everything
+ * the port knows.
  */
 export type PlayMode = 'faithful' | 'speedrun' | 'debug';
 
@@ -34,7 +35,7 @@ export const PLAY_MODES: { id: PlayMode; label: string; how: string }[] = [
   {
     id: 'speedrun',
     label: 'Speedrun',
-    how: 'The whole floor and every monster on it, so a route can be planned, but still none of the hidden numbers.',
+    how: "The whole floor, so a route can be planned, but only the monsters the game's views would draw, and none of the hidden numbers.",
   },
   {
     id: 'debug',
@@ -186,10 +187,11 @@ export interface MonstersInSight {
  * Faithful draws the ones the 3-D views drew this turn, which is every monster standing on a
  * square any of the four views reached, and the one being fought whether or not it is among
  * them: the game names that one itself, beside its picture, and Moraff's World points at it
- * without any line of sight at all. The other two modes draw the whole floor.
+ * without any line of sight at all. Speedrun draws the same: the monsters are rolled afresh
+ * every game, so finding them is part of the run (John, 2026-09-09). Debug draws the whole floor.
  */
 export function monstersDrawn(mode: PlayMode, sight: MonstersInSight): StockedMonster[] {
-  if (mode !== 'faithful') return sight.monsters;
+  if (mode === 'debug') return sight.monsters;
   const seen = [...sight.visible];
   const engaged = sight.engaged;
   if (engaged !== null && !seen.some((monster) => monster.slot === engaged.slot)) seen.push(engaged);

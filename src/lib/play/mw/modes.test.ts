@@ -46,13 +46,13 @@ async function facingOneOfMany() {
 }
 
 describe('the monsters the map draws', () => {
-  it('is the ones in sight in faithful, and the whole floor otherwise', async () => {
+  it('is the ones in sight in faithful and in speedrun, and the whole floor in debug', async () => {
     const view = await facingOneOfMany();
     const faithful = monstersDrawn('faithful', view);
     expect(faithful).toContain(view.engaged);
     expect(faithful).toEqual(view.visible);
     expect(faithful.length).toBeLessThan(view.monsters.length);
-    expect(monstersDrawn('speedrun', view)).toEqual(view.monsters);
+    expect(monstersDrawn('speedrun', view)).toEqual(faithful);
     expect(monstersDrawn('debug', view)).toEqual(view.monsters);
   });
 

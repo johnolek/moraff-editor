@@ -396,8 +396,9 @@ which both tabs offer as three radio buttons:
   module teleporter are plain walls, and a chute is marked only once the floor has been left and
   come back to. No panel of hidden numbers, and no monster but the ones the four 3-D views drew
   this turn, plus the one being fought, which the game names itself.
-* **speedrun** — the whole floor and every monster on it, so that a run need not be planned
-  against the maps elsewhere on this site, and still none of the hidden numbers.
+* **speedrun** — the whole floor, so that a run need not be planned against the maps elsewhere
+  on this site, but only the monsters faithful marks, since the monsters are rolled afresh every
+  game, and still none of the hidden numbers.
 * **debug** — everything: the whole floor, every monster on it, the panel of numbers below, and
   the three things below that the other two modes never show.
 
