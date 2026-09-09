@@ -38,7 +38,7 @@
     type PlayDisplay,
     type PlayMode,
   } from '../mode';
-  import { mwOnMessageLine } from '../../game/mw-port/state';
+
   import {
     mwCharacteristicLines,
     mwKeyMenuLines,
@@ -52,7 +52,7 @@
     MW_SCREEN,
     MW_STATUS_BLOCK,
   } from '../../game/mw-port/screens';
-  import { mwCorner, MW_CORNER_WIDTH, MW_MESSAGE_BOX } from './screens';
+  import { mwCorner, mwInMessageBox, MW_CORNER_WIDTH, MW_MESSAGE_BOX } from './screens';
   import { mwDebugMonsterLines } from './debug-screen';
 
   /** How many pixels a square is drawn at when the map is centred on the character. */
@@ -78,7 +78,7 @@
 
   /** A screen with a line outside the corner the message box lives in is one the game has taken
    *  the whole display over with; one that fits is drawn in that corner with the rest of it. */
-  const screenTakesOver = $derived(view !== null && !view.screen.every(mwOnMessageLine));
+  const screenTakesOver = $derived(view !== null && !view.screen.every(mwInMessageBox));
   const corner = $derived(
     view === null
       ? { lines: [], height: 0 }

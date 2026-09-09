@@ -1,4 +1,4 @@
-import type { MwGame } from '../../game/mw-port/state';
+import { mwOnMessageLine, type MwGame } from '../../game/mw-port/state';
 import type { ScreenLine } from '../../game/port/state';
 
 /**
@@ -60,6 +60,30 @@ const MW_STRIP_STEP = 0x28;
  */
 export const MW_CORNER_WIDTH = 0x2d0;
 
+/**
+ * How far down the screen the message box reaches. Everything that writes in the box wipes this
+ * far before it prints: FUN_2000_216b (WORLD.EXE 2000:216b) fills to y 0x1ac and the little
+ * mouse's advice (exe 3000:9383) to y 0x1ae, both from the top of the screen, so the strip a kill
+ * and a fight write on goes with the box.
+ */
+export const MW_MESSAGE_BOX_BOTTOM = 0x1ae;
+
+/**
+ * Whether a line the game has drawn stands in that corner of the screen rather than somewhere a
+ * screen of its own would put it. A line inside it is drawn with the message box; a line outside
+ * it is the game having taken the whole display over.
+ */
+export function mwInMessageBox(line: ScreenLine): boolean {
+  return line.x < MW_CORNER_WIDTH && line.y < MW_MESSAGE_BOX_BOTTOM;
+}
+
+/** The fill_rect (WORLD.EXE 4000:2020) the advice wipes that whole corner with before it writes. */
+export function mwClearMessageBox(game: MwGame): void {
+  for (let at = game.screen.length - 1; at >= 0; at -= 1) {
+    if (mwInMessageBox(game.screen[at])) game.screen.splice(at, 1);
+  }
+}
+
 /** Everything showing in the top left corner of the screen, and how tall it is. */
 export interface MwCorner {
   lines: ScreenLine[];
@@ -77,20 +101,34 @@ export interface MwCorner {
  * is in use and nothing is hidden. Every line keeps the x, the font and the colour the game gives
  * it, and each group keeps its own spacing.
  *
- * @param drawn the lines a ported function has drawn on the strip, which is where
+ * A line drawn further down that corner than the strip reaches — the little mouse's advice, which
+ * writes on the box's own last four rows — is left exactly where the game drew it, since it is
+ * already in the box's own grid and the game has wiped the box to make room for it.
+ *
+ * @param drawn the lines a ported function has drawn in that corner, which is where
  *   "YOU KILLED IT!" goes.
  * @param banner the fight's own lines, which the session collects out of the box.
  * @param box the message box, already placed by {@link mwMessageBoxLines}.
  */
 export function mwCorner(drawn: ScreenLine[], banner: string[], box: ScreenLine[]): MwCorner {
-  const lines: ScreenLine[] = drawn.map((line, index) => ({ ...line, y: index * MW_STRIP_STEP }));
+  const stripLines = drawn.filter(mwOnMessageLine);
+  const belowStrip = drawn.filter((line) => !mwOnMessageLine(line));
+  const lines: ScreenLine[] = stripLines.map((line, index) => ({
+    ...line,
+    y: index * MW_STRIP_STEP,
+  }));
   const bannerTop = lines.length * MW_STRIP_STEP;
   for (const [index, text] of banner.entries()) {
     lines.push({ text, x: 0, y: bannerTop + index * MW_STRIP_STEP, font: 0, colour: MW_TEXT_COLOUR });
   }
   const strip = bannerTop + banner.length * MW_STRIP_STEP;
   for (const line of box) lines.push({ ...line, y: line.y + strip });
-  return { lines, height: strip + MW_MESSAGE_BOX.y + box.length * MW_MESSAGE_BOX.step };
+  lines.push(...belowStrip);
+  const height = belowStrip.reduce(
+    (deepest, line) => Math.max(deepest, line.y + MW_MESSAGE_BOX.step),
+    strip + MW_MESSAGE_BOX.y + box.length * MW_MESSAGE_BOX.step,
+  );
+  return { lines, height };
 }
 
 /**
