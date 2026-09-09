@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { SeededRng } from '../../game/port/rng';
 import { REV_FOUR_SECONDS } from './held';
-import { DEATH_DIRGE, KINGS_INN_HYMN, revPlayKingsInnHymn, revPlayTones, TEMPLE_MARCH } from './music';
+import { DEATH_DIRGE, INN_HYMN, revPlayInnHymn, revPlayTones, TEMPLE_MARCH } from './music';
 import type { RevPc } from './record';
 import { newRevGame } from './state';
 
@@ -89,14 +89,14 @@ describe("the death dirge (1000:05AC)", () => {
   });
 });
 
-describe("the Kings Inn's hymn (1000:05B8)", () => {
+describe("the inns' hymn (1000:05B8)", () => {
   it('starts on a dotted E above the march and runs for eleven and a half seconds', () => {
-    expect(played(KINGS_INN_HYMN).slice(0, 4)).toEqual(['659/315', '0/45', '784/105', '0/15']);
-    expect(lasts(KINGS_INN_HYMN)).toBe(11520);
+    expect(played(INN_HYMN).slice(0, 4)).toEqual(['659/315', '0/45', '784/105', '0/15']);
+    expect(lasts(INN_HYMN)).toBe(11520);
   });
 });
 
-/** A character standing in the town, since the Kings Inn is the only caller that waits. */
+/** A character standing in the town, since an inn is the only place the hymn is played. */
 function sleeping(sound: number) {
   const pc: RevPc = {
     values: new Array<number>(340).fill(0),
@@ -131,13 +131,13 @@ function sleeping(sound: number) {
 describe('the hymn with the sound off', () => {
   it('waits the four seconds the game waits in its place (1000:05BF)', () => {
     const { game, waits } = sleeping(1);
-    revPlayKingsInnHymn(game);
+    revPlayInnHymn(game);
     expect(waits).toEqual([REV_FOUR_SECONDS]);
   });
 
   it('waits for nothing while the sound is on, because the tune is background music', () => {
     const { game, waits } = sleeping(0);
-    revPlayKingsInnHymn(game);
+    revPlayInnHymn(game);
     expect(waits).toEqual([]);
   });
 });

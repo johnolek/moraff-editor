@@ -8,6 +8,7 @@ import {
   setRevValue,
   type RevPc,
 } from './record';
+import { REV_FOUR_SECONDS } from './held';
 import { revRolls } from './spells.test-support';
 import { revStatsSheet } from './stats';
 import { newRevGame, type RevGame } from './state';
@@ -106,6 +107,41 @@ describe('the inns', () => {
     expect(revValue(game.pc, REV_VALUE.sword)).toBe(0);
     expect(game.said.join(' ')).toContain('robbed');
     expect(game.said.join(' ')).toContain('throw up');
+  });
+
+  it('sleeps at all three of them, as 1000:1FBD does', async () => {
+    for (const inn of [0, 1, 2]) {
+      const game = started(character());
+      await revStayAtInn(game, inn, desk('Y'));
+      expect(game.said).toContain('You are sleeping...');
+    }
+  });
+
+  it('says the Kings Inn\'s own two lines before the sleeping line (1000:201D)', async () => {
+    const game = started(character());
+    await revStayAtInn(game, 2, desk('Y'));
+    expect(game.said.slice(2)).toEqual([
+      'A hotel staff cleric heals all of your',
+      '   wounds.',
+      'You are sleeping...',
+    ]);
+  });
+
+  it("holds the screen for the hymn's four seconds at all three, sound off (1000:05BF)", async () => {
+    // The Kings Inn is the one that waits twice: the hymn's four seconds and its own at
+    // 1000:203E.
+    for (const [inn, waits] of [
+      [0, 1],
+      [1, 1],
+      [2, 2],
+    ]) {
+      const game = started(character());
+      game.sound = 1;
+      const held: number[] = [];
+      game.delay = (ms) => held.push(ms);
+      await revStayAtInn(game, inn, desk('Y'));
+      expect(held).toEqual(new Array<number>(waits).fill(REV_FOUR_SECONDS));
+    }
   });
 });
 

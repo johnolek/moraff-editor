@@ -4,7 +4,7 @@ import type { RevMagicDesk } from './desk';
 import { revWorkOutSpellPoints } from './fountain';
 import { REV_FOUR_SECONDS } from './held';
 import { revItemMenu } from './items';
-import { revPlayKingsInnHymn, revPlayTempleMarch } from './music';
+import { revPlayInnHymn, revPlayTempleMarch } from './music';
 import {
   REV_ARMOUR_VALUE,
   REV_UNBANKED_EXPERIENCE_VALUE,
@@ -57,6 +57,19 @@ const INNS = [
   { line: 'Kings Inn.  A grand suite   will cost 6000 jewel pieces.', price: 6000, heals: 0, routine: '1000:1FCD' },
 ];
 
+/**
+ * 1000:1FBD: the line every night ends up on, and the hymn behind it.
+ *
+ * All three inns call it (1000:1E75, 1FAB and 203B) once the price has been paid, and the
+ * robbery roll and the Flea Bag's own sickness roll are both made afterwards, so every night a
+ * character can afford hears the tune.
+ */
+function revSleep(game: RevGame): void {
+  game.say(SLEEPING);
+  // 1000:1FC9: the hymn, which with the sound off is four seconds of nothing instead.
+  revPlayInnHymn(game);
+}
+
 /** 1000:1EE2: one night in ten leaves the character with nothing — not the money, and not the
  *  weapons either. */
 function maybeRobbed(game: RevGame): void {
@@ -91,15 +104,14 @@ export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDe
   if (inn.heals === 0) {
     // 1000:2014: the Kings Inn's own cleric, which is the whole of what the price buys.
     pc.hp = pc.maxHp;
-    game.say(SLEEPING, 'A hotel staff cleric heals all of your', '   wounds.');
-    // 1000:1FC9: the hymn, which with the sound off is four seconds of nothing instead.
-    revPlayKingsInnHymn(game);
-    // 1000:203E: the wait the inn takes on top of that, whichever it was.
+    game.say('A hotel staff cleric heals all of your', '   wounds.');
+    revSleep(game);
+    // 1000:203E: the wait the inn takes on top of the tune, whichever it was.
     game.delay(REV_FOUR_SECONDS);
   } else {
     pc.hp += inn.heals;
     if (wearsRingsOfHealth(pc)) pc.hp = pc.maxHp;
-    game.say(SLEEPING);
+    revSleep(game);
     // 1000:1FAE: the Yuppydom leaves a twenty in the scratch cell that nothing reads.
     if (which === 1) game.scratch = 20;
     maybeRobbed(game);

@@ -3,7 +3,7 @@ import { REV_FOUR_SECONDS } from './held';
 import type { RevGame } from './state';
 
 /**
- * Moraff's Revenge's music: a march at the temple, a dirge on death and a hymn at the Kings Inn.
+ * Moraff's Revenge's music: a march at the temple, a dirge on death and a hymn at the inns.
  *
  * There is one `PLAY` in the whole module, at 1000:05E2, and three routines that set a string and
  * fall into it. Every tune is prefixed `MB`, so BASIC plays it in the background and the program
@@ -143,13 +143,13 @@ export const TEMPLE_MARCH =
 /** 1000:05AC: the dirge played over a dead character. */
 export const DEATH_DIRGE = 'T90O1MNL4F.FL8FL4F.G+L8GL4GL8FL4FL8EL4F.';
 
-/** 1000:05B8: the hymn the Kings Inn plays while the character sleeps. */
-export const KINGS_INN_HYMN =
+/** 1000:05B8: the hymn an inn plays while the character sleeps. */
+export const INN_HYMN =
   'T250O3MNL4E.G8>ED2C<E.G8>C<B2.F.>C8FE2CDC<AG2.E.G8>ED2C<E.G8>C<B2.F.>C8FE2CD<AB>C2.';
 
 const TEMPLE_MARCH_TONES = revPlayTones(TEMPLE_MARCH);
 const DEATH_DIRGE_TONES = revPlayTones(DEATH_DIRGE);
-const KINGS_INN_HYMN_TONES = revPlayTones(KINGS_INN_HYMN);
+const INN_HYMN_TONES = revPlayTones(INN_HYMN);
 
 /** 1000:05CB: the `PLAY` all three tunes share, which plays nothing while the sound is off. */
 function revPlay(game: RevGame, tones: readonly Tone[]): void {
@@ -168,16 +168,17 @@ export function revPlayDeathDirge(game: RevGame): void {
 }
 
 /**
- * 1000:05B8, played from 1000:1FC9 after "You are sleeping...".
+ * 1000:05B8, played from 1000:1FC9 after "You are sleeping...", which is a night at any of the
+ * three inns.
  *
  * This is the one tune with something behind it: at 1000:05BF the sound being off jumps to the
- * four-second wait at 1000:2F35 instead of playing, so a night at the Kings Inn takes the same
- * time whether or not there is anything to hear.
+ * four-second wait at 1000:2F35 instead of playing, so a night takes the same time whether or
+ * not there is anything to hear.
  */
-export function revPlayKingsInnHymn(game: RevGame): void {
+export function revPlayInnHymn(game: RevGame): void {
   if (game.sound === 1) {
     game.delay(REV_FOUR_SECONDS);
     return;
   }
-  revPlay(game, KINGS_INN_HYMN_TONES);
+  revPlay(game, INN_HYMN_TONES);
 }
