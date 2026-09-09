@@ -3,6 +3,7 @@ import { SeededRng } from '../../game/port/rng';
 import { formatRevRecord, REV_VALUE_COUNT } from '../../game/rev-port/record';
 import { REV_KEY } from './keys';
 import { NEEDS_A_CURE } from './pass';
+import { REV_GRAB_A_SANDWICH } from './screens';
 import { NO_SOUND_HERE, SOUND_OFF } from './settings';
 import { REV_VALUE, revValue } from './record';
 import { REV_CLOCK_TICK, RevGameSession, runRevDungeon, startRevGame, type RevCharacterFile } from './engine';
@@ -144,6 +145,10 @@ describe('the loop', () => {
     await settled();
     expect(session.over).toBe(true);
     expect(held.bytes).not.toBe(undefined);
+    // 1000:0D8E and 1000:B5C8: a cleared screen, a blank line and the sign-off on it.
+    expect(session.game.cleared).toBe('bare');
+    expect(session.view().box).toEqual(['', REV_GRAB_A_SANDWICH]);
+    expect(session.game.kept.runs()).toEqual([{ row: 2, column: 1, text: REV_GRAB_A_SANDWICH }]);
     session.finish();
   });
 

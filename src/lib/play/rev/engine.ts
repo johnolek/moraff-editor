@@ -65,7 +65,7 @@ import { drawRevScreen, type RevScreenState } from './screen/screen';
 import type { Frame } from '../view3d/frame';
 import { debugDrawn } from '../mode';
 import type { RevStanding } from './monsters';
-import { REV_NOT_BUILT } from './screens';
+import { REV_NOT_BUILT, revClearScreen, revDrawTheDungeonAgain, revSayGoodbye } from './screens';
 
 /**
  * The loop Moraff's Revenge is played in — the `INKEY$` poll at DUNSMALL.EXE 1000:087F and the
@@ -504,7 +504,7 @@ export const REV_KEY_HANDLERS: Record<number, RevKeyHandler> = {
   [REV_KEY.abandon]: { c: '1000:1918, drop all the coins', run: (turn) => notBuiltYet(turn, 'drop all of your coins') },
   [REV_KEY.help]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
   [REV_KEY.f1]: { c: '1000:C332, the help pages', run: (turn) => revShowHelp(turn.game, turn.session.desk()) },
-  [REV_KEY.pause]: { c: '1000:7FFB, the pause screen', run: (turn) => revPause(turn.game, turn.session.desk(), () => quitAndSave(turn)) },
+  [REV_KEY.pause]: { c: '1000:7FFB, the pause screen', run: (turn) => revPause(turn.game, turn.session.desk(), () => saveAndSignOff(turn.session)) },
   [REV_KEY.enterDelay]: { c: '1000:0F00, the enter delay', run: (turn) => revSetEnterDelay(turn.game, turn.session.desk()) },
   [REV_KEY.pill]: { c: '1000:7C49, take a pill', run: (turn) => revTakeAPill(turn.game, turn.session.magic()) },
   [REV_KEY.wand]: { c: '1000:7AA1, use a wand', run: (turn) => revUseAWandInTheDungeon(turn.game, turn.session.magic()) },
@@ -579,11 +579,25 @@ function showStats(turn: RevTurn): void {
   );
 }
 
-/** 1000:0D7D: Q saves everything and goes back to BEGIN. */
+/**
+ * 1000:B308 and 1000:B5C8: the character is written down and the game signs off.
+ *
+ * Both ways out of a game reach this: the dungeon's own Q and the Q of the pause screen. The
+ * two monster files 1000:B5C8 writes beside the words are the disk's in the original and are
+ * not kept, which `README.md` has as a departure of its own.
+ */
+function saveAndSignOff(session: RevGameSession): void {
+  session.save();
+  revSayGoodbye(session.game, false);
+  session.over = true;
+  session.game.over = true;
+}
+
+/** 1000:0D7D: Q clears the screen before it signs off, where the pause screen is cleared
+ *  already. */
 function quitAndSave(turn: RevTurn): void {
-  turn.session.save();
-  turn.session.over = true;
-  turn.game.over = true;
+  revClearScreen(turn.game);
+  saveAndSignOff(turn.session);
 }
 
 /** The keys the fight prompt takes and the dungeon does not (1000:87CA onwards). */
@@ -604,11 +618,7 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
     }
     // 1000:884A: the fight prompt's P is the same pause screen as the dungeon's, not a prayer.
     if (key === REV_KEY.pause) {
-      await revPause(game, session.desk(), () => {
-        session.save();
-        session.over = true;
-        game.over = true;
-      });
+      await revPause(game, session.desk(), () => saveAndSignOff(session));
     } else if (key === REV_KEY.cast) {
       await revCastInAFight(game, desk);
       monsterAnswers(session);
@@ -653,7 +663,7 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     session.takeEdits();
     if (session.over) return;
     if (pc.hp < 0) {
-      if (!revDie(game)) {
+      if (!(await revDie(game, session.desk()))) {
         session.die();
         return;
       }
@@ -726,7 +736,9 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     // between the views among it (1000:47EA into 1000:58F7). A fight never gets there: its own
     // loop goes back to 1000:84C1 instead, which is why the lines a swing prints stay up until
     // the next swing blanks them. The step a monster blocked does not either (1000:33EA).
-    if (game.fight === null && step !== 'monster') game.kept.clear();
+    // A game that has ended is not drawn over: 1000:0DAC chains to BEGIN from the screen it
+    // signed off on, and never comes back through the per-key routine.
+    if (game.fight === null && step !== 'monster' && !session.over) revDrawTheDungeonAgain(game);
     if (session.over) return;
   }
 }
