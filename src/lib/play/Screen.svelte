@@ -22,7 +22,8 @@
     ARROW_LIT_COLOUR,
     clearScreenRect,
     drawExpandedMap,
-    drawZoomMapOnly,
+    drawZoomMapMarker,
+    drawZoomMapWithoutMarker,
     expandedMapWindow,
     expandedMarkerRect,
     EXPANDED_CENTRE,
@@ -450,7 +451,10 @@
     // the paints a slow redraw replays, in that order (`view3d/journal.ts`).
     for (const box of SCREEN_BOXES) fillScreenBox(frame, box);
     if (revealed > 0) frame.journal = [];
-    drawZoomMapOnly(frame, floor);
+    // FUN_3000_caac prints the status block's lines at the top of the pass when they have
+    // changed, before the map window, which is the first thing a slowed machine shows moving.
+    drawDotuScreenText(frame, SCREEN_PIXELS, statusLines(game.pc));
+    drawZoomMapWithoutMarker(frame, floor);
     renderFourViews(
       frame,
       {
@@ -472,6 +476,8 @@
       },
       views.dir,
     );
+    // FUN_2000_9d17 draws the arrow after the four views.
+    drawZoomMapMarker(frame, place.dir);
     // The lines are printed by pfont as the game goes rather than drawn again with the screen, so
     // they are not replayed: they go up with the whole frame once the last paint is down.
     frame.journal = undefined;

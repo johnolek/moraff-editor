@@ -328,11 +328,24 @@ export interface UnforgivenZoomMapFloor extends ZoomMapFloor {
 
 /** The map beside the views on its own, without the boxes around it. */
 export function drawZoomMapOnly(frame: Frame, floor: UnforgivenZoomMapFloor): void {
+  drawZoomMapWithoutMarker(frame, floor);
+  drawZoomMapMarker(frame, floor.at.dir);
+}
+
+/**
+ * The map window as FUN_3000_8e75 draws it at the top of a pass, before the arrow: the arrow is
+ * FUN_2000_9d17's, drawn after the four views, so a slow redraw shows it last.
+ */
+export function drawZoomMapWithoutMarker(frame: Frame, floor: UnforgivenZoomMapFloor): void {
   const window = UNFORGIVEN_ZOOM_MAP.window(frame);
   drawZoomMap(frame, floor, window, floor.at, UNFORGIVEN_ZOOM_MAP);
-  drawZoomMarker(frame, window, UNFORGIVEN_ZOOM_MAP, floor.at.dir);
   drawZoomRoute(frame, window, floor.at, floor.route ?? []);
   drawZoomMonsters(frame, window, floor.at, floor.monsters ?? [], floor.thumbnail, floor.highlight);
+}
+
+/** FUN_2000_9d17 (exe 2000:9d17): the arrow on the character's own square. */
+export function drawZoomMapMarker(frame: Frame, dir: number): void {
+  drawZoomMarker(frame, UNFORGIVEN_ZOOM_MAP.window(frame), UNFORGIVEN_ZOOM_MAP, dir);
 }
 
 /**
