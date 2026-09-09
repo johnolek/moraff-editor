@@ -55,6 +55,12 @@
     explored?: { fileName(slot: number): string; write(pc: RolledCharacter): Uint8Array<ArrayBuffer> };
     /** The finished character read out under the game's own screen. */
     sheet(pc: RolledCharacter): SheetRow[];
+    /** What the first line of a menu is answered with: Moraff's Revenge reads its menus with
+     *  VAL, so the answer is the number printed beside the line; the other two number their
+     *  lines from zero. */
+    answerBase: 0 | 1;
+    /** What the game prints between a class menu's number and the class. */
+    classSeparator: string;
   }
 
   const GAMES: Record<GameId, GameRoller> = {
@@ -69,6 +75,8 @@
       newSession: (slot) => new RollerSession(ROLLER_PORT, slot),
       writeRecord: newCharacterFile,
       sheet: dotuSheet,
+      answerBase: 0,
+      classSeparator: ') ',
     },
     moraffsWorld: {
       name: "Moraff's World",
@@ -81,6 +89,8 @@
       newSession: (slot) => new RollerSession(MW_ROLLER_PORT, slot),
       writeRecord: newMwCharacterFile,
       sheet: mwSheet,
+      answerBase: 0,
+      classSeparator: ') ',
     },
     revenge: {
       name: "Moraff's Revenge",
@@ -94,6 +104,8 @@
       writeRecord: newRevCharacterFile,
       explored: { fileName: revExploredFileName, write: newRevExploredFile },
       sheet: revSheet,
+      answerBase: 1,
+      classSeparator: '=',
     },
   };
 
@@ -353,12 +365,18 @@
           <button type="button" onclick={() => answer(0)}>1) NORMAL DIFFICULTY</button>
           <button type="button" onclick={() => answer(1)}>2) I CAN HANDLE ANYTHING DIFFICULTY</button>
         </div>
-      {:else if view.question === 'race'}
+      {:else if view.question === 'race' || view.question === 'revRace'}
         <div class="choices grid">
           {#each chosen.races as race, index}
-            <button type="button" onclick={() => answer(index)}>{index + 1}) {race}</button>
+            <button
+              type="button"
+              class:picked={view.race === index + 1}
+              onclick={() => answer(index + chosen.answerBase)}>{index + 1}) {race}</button>
           {/each}
         </div>
+        {#if view.race !== null}
+          <p class="hint">The game moves along the row with the left and right arrows and takes the one it is on with Return.</p>
+        {/if}
       {:else if view.question === 'keepRerollDesign'}
         <div class="choices">
           <button type="button" onclick={() => answer(0)}>Y) KEEP THIS CHARACTER</button>
@@ -385,32 +403,16 @@
           />
           <button type="button" disabled={typed.trim() === ''} onclick={enterName}>Enter</button>
         </div>
-      {:else if view.question === 'class'}
+      {:else if view.question === 'class' || view.question === 'revClass'}
         <div class="choices grid">
           {#each chosen.classes as name, index}
-            <button type="button" onclick={() => answer(index)}>{index + 1}) {name}</button>
+            <button type="button" onclick={() => answer(index + chosen.answerBase)}>{index + 1}{chosen.classSeparator}{name}</button>
           {/each}
         </div>
-      {:else if view.question === 'revRace'}
-        <div class="choices grid">
-          {#each chosen.races as race, index}
-            <button
-              type="button"
-              class:picked={view.race === index + 1}
-              onclick={() => answer(index + 1)}>{index + 1}) {race}</button>
-          {/each}
-        </div>
-        <p class="hint">The game moves along the row with the left and right arrows and takes the one it is on with Return.</p>
       {:else if view.question === 'revKeep'}
         <div class="choices">
           <button type="button" onclick={() => answer(0)}>Y) KEEP THIS CHARACTER</button>
           <button type="button" onclick={() => answer(1)}>N) ROLL A NEW CHARACTER</button>
-        </div>
-      {:else if view.question === 'revClass'}
-        <div class="choices grid">
-          {#each chosen.classes as name, index}
-            <button type="button" onclick={() => answer(index + 1)}>{index + 1}={name}</button>
-          {/each}
         </div>
       {/if}
 
