@@ -6,6 +6,11 @@
 //   node dotu-tools/reference/scripts/render_screen.mjs --module 0 --floor 1 --x 57 --y 3 \
 //        --dir 0 --out screen.png [--height-of 21] [--exp 0] [--fight] [--killed] [--spells 2]
 //
+// --fight-type N puts another kind of monster on that square (under 22 is a built-in one) and
+// --fight-at N stands it that many squares out, which is what draws it through the perspective
+// rather than zoomed into the view; past the square straight ahead the swing's message box goes,
+// since nothing at that distance is being fought.
+//
 // --fight fills the message box the way it stands in the middle of a swing: the battle banner
 // engagement_timing prints, the two lines strike draws the blow on, and the hit points line
 // print_battle_hp_info puts back. It also stands the monster on the square being fought, which
@@ -136,9 +141,12 @@ const builtin = picture('ufmon.pic');
 const own = picture(`ufmon${section}.pic`);
 
 // The monster --fight is fought with, on the square the character faces: the fourth of the
-// section's own five kinds, which is what makes the banner name one of them.
+// section's own five kinds by default, which is what makes the banner name one of them.
+// --fight-type takes another row of the loaded table — anything under 22 is a built-in monster —
+// and --fight-at stands it that many squares out instead of on the square straight ahead.
 const [dx, dy] = [[0, -1], [0, 1], [-1, 0], [1, 0]][dir];
-const fought = { x: at.x + dx, y: at.y + dy, type: 23, hp: 480, level: 40 };
+const away = num('fight-at', 1);
+const fought = { x: at.x + dx * away, y: at.y + dy * away, type: num('fight-type', 23), hp: 480, level: 40 };
 
 /** A monster of the floor's table as the 3-D view wants it, which is what the play screen does. */
 function viewMonster(monster) {
@@ -278,7 +286,9 @@ const standing = building ? [] : [
   ...battleSpellLines(game),
   ...D.statusLines(game.pc),
   ...viewLabels(exp, horizonWeight),
-  ...(args.fight ? fightLines() : []),
+  // A monster standing further out is not the one an engagement is fought with, so the swing's
+  // own message box goes with it.
+  ...(args.fight && away === 1 ? fightLines() : []),
   ...bossOfficeLines,
 ];
 const cleared = game.blackedOut ?? (args['boss-office'] ? BOSS_OFFICE_PANEL : null);
