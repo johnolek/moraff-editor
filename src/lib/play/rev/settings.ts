@@ -1,4 +1,5 @@
 import { PALETTE_COUNT } from '../../rev-bestiary/pictures';
+import { REV_TWO_SECONDS } from './held';
 import type { RevGame } from './state';
 import type { RevTownDesk } from './town';
 
@@ -48,11 +49,19 @@ export function revCgaPalette(game: RevGame): number {
   return game.palette % PALETTE_COUNT;
 }
 
-/** 1000:1055: `O` turns the sound off and on again, where 0 is on. */
+/**
+ * 1000:1055: `O` turns the sound off and on again, where 0 is on.
+ *
+ * The line goes on row 1 (1000:1077), is left there for two seconds and is then rubbed out with
+ * nine spaces (1000:10A5 and 10B4), so it is gone before the player's next key. The port's own
+ * note that there is no sound to play stood under it and goes with it.
+ */
 export function revToggleSound(game: RevGame): void {
   game.sound += 1;
   if (game.sound === 2) game.sound = 0;
   game.say(game.sound === 0 ? SOUND_ON : SOUND_OFF, NO_SOUND_HERE);
+  game.delay(REV_TWO_SECONDS);
+  game.said = [];
 }
 
 /**

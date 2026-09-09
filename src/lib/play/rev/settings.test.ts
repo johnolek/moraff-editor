@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SeededRng } from '../../game/port/rng';
+import { REV_TWO_SECONDS } from './held';
 import type { RevPc } from './record';
 import {
   ENTER_DELAY_PROMPT,
@@ -91,13 +92,24 @@ describe('the palette', () => {
 describe('the sound', () => {
   it('turns off and on again, and says there is none to play either way', () => {
     const game = playing();
+    const held: string[][] = [];
+    const delays: number[] = [];
+    game.delay = (ms) => {
+      delays.push(ms);
+      held.push([...game.said]);
+    };
     revToggleSound(game);
     expect(game.sound).toBe(1);
-    expect(game.said).toEqual([SOUND_OFF, NO_SOUND_HERE]);
-    game.said = [];
     revToggleSound(game);
     expect(game.sound).toBe(0);
-    expect(game.said).toEqual([SOUND_ON, NO_SOUND_HERE]);
+    expect(held).toEqual([
+      [SOUND_OFF, NO_SOUND_HERE],
+      [SOUND_ON, NO_SOUND_HERE],
+    ]);
+    // 1000:10A5 holds each line for two seconds, and 1000:10B4 then rubs it out with nine
+    // spaces, so neither is still there when the player's next key arrives.
+    expect(delays).toEqual([REV_TWO_SECONDS, REV_TWO_SECONDS]);
+    expect(game.said).toEqual([]);
   });
 });
 
