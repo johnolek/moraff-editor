@@ -725,8 +725,9 @@ describe('monsterKilled', () => {
     expect(game.messages).toContain('YOU FIND...');
     expect(game.messages).toContain('NOTHING! (HIT ANY KEY)');
     // The kill's three messages share the strip above the box, so the last is all that stands,
-    // and each of the first two is held on the screen by the delay drawn behind it.
-    expect(delays).toEqual([1050, 750, 3000]);
+    // and each of the first two is held on the screen by the delay drawn behind it. The half
+    // second at the end is the beat the kill settles for before it says anything else.
+    expect(delays).toEqual([1050, 750, 3000, 500]);
     expect(game.screen).toEqual([
       { text: 'NOTHING! (HIT ANY KEY)', x: 0, y: 0, font: 0, colour: 8 },
     ]);

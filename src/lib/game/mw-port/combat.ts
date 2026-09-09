@@ -1092,6 +1092,13 @@ const BEFORE_THE_FIND_MS = 750;
 const FIND_MS = 3000;
 
 /**
+ * The beat monster_killed settles for between its last loot roll and the advice a level 0
+ * character gets about being injured or ready for the inn (WORLD.EXE 3000:e14d). Every kill takes
+ * it, whatever the character's level.
+ */
+const KILL_SETTLE_MS = 500;
+
+/**
  * monster_killed (WORLD.EXE 3000:d51c, mw.c "monster_killed"): the kill.
  *
  * The experience is added, a level drainer's pill and trap door key are handed over, the slot is
@@ -1151,6 +1158,7 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
     bossReward(game, type, () => choices.enhanceWeapon());
   }
   game.engaged = -1;
+  game.delay(KILL_SETTLE_MS);
   if (pc.lev !== 0) return;
   if (pc.hp + 15 < pc.maxHp) {
     // DS:6f7a 6f95, then DS:6fae 6fc9 6fe4 6fff 701c 7038 for a fighter and DS:704e 706a 7087
