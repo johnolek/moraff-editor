@@ -129,6 +129,8 @@ export interface MwPlayView {
   moves: number;
   /** The monster the character is facing, or null. */
   engaged: StockedMonster | null;
+  /** DS:119f, which the key menu's sound line offers the opposite of. */
+  sound: boolean;
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
@@ -575,6 +577,7 @@ export class MwGameSession {
       banner: this.timed.showingBanner(this.banner),
       moves: game.movesTaken,
       engaged: game.engaged === -1 ? null : (drawn.find((monster) => monster.slot === game.engaged) ?? null),
+      sound: game.sound,
       over: this.over,
       dead: this.dead,
       stopped: this.stopped,

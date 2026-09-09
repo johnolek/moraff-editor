@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { app, currentEntry } from '../../app-state.svelte';
+  import { armSpeaker } from '../../speaker';
   import { characterDied, replaceCharacterBytes } from '../../character/current';
   import FloorCanvas from '../../map/FloorCanvas.svelte';
   import { MORAFFS_WORLD_MAP } from '../../map/game';
@@ -144,8 +145,7 @@
     if (view === null || session === null) return [];
     return [
       ...corner.lines,
-      // The port makes no sound, so the menu always offers to turn it on.
-      ...mwKeyMenuLines(false),
+      ...mwKeyMenuLines(view.sound),
       ...statusLines,
       ...characteristicLines,
       ...sideMonsterValues,
@@ -358,6 +358,9 @@
   function press(key: number) {
     const playing = session;
     if (!playing) return;
+    // A browser starts audio only from something the player did, so the speaker is opened on the
+    // key rather than when the game starts.
+    armSpeaker();
     const arrow = style === MORAFFS_WORLD_MAP.id ? null : mwFacingArrow(key, playing.game.pc.dir);
     if (!arrow) playing.press(key);
     else if (arrow.step) playing.press(mwStepKey(arrow.dir));
