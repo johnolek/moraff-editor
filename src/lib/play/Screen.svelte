@@ -49,6 +49,7 @@
   import { drawBuilding, type TownBuilding } from './building';
   import { drawSectionScreen, type SectionScreen } from './section-screen';
   import { drawTablet } from './tablet';
+  import { drawModuleTunnel, type ModuleTunnel } from './tunnel';
   import { buildingPictures, viewPictures } from './view3d/browser';
   import { framePainter } from './view3d/canvas';
   import { newFrame, type Frame } from './view3d/frame';
@@ -103,6 +104,8 @@
     /** The section whose Shadow boss is taunting the character, or null when none is
      *  (`boss-office.ts`): its picture stands in a panel over the views. */
     bossOffice?: BossOffice | null;
+    /** The tunnel a module teleporter has drawn (`tunnel.ts`), or null when nobody is crossing. */
+    tunnel?: ModuleTunnel | null;
     /** The HIT ANY KEY plaque while a message box's wait is running, or null (`plaque.ts`). */
     plaque?: PlaqueState | null;
     /** The palette fade running over the screen (`fade.ts`), or null when none is. */
@@ -134,6 +137,7 @@
     sectionScreen = null,
     buildingScreen = null,
     bossOffice = null,
+    tunnel = null,
     plaque = null,
     fade = null,
     redraw = 0,
@@ -200,6 +204,7 @@
       !expandedMap &&
       !buildingScreen &&
       !bossOffice &&
+      !tunnel &&
       cleared === null &&
       !plaque,
   );
@@ -212,7 +217,7 @@
    * can be about. Every screen that takes the display over covers it.
    */
   const mapShowing = $derived(
-    expandedMap || (!tablet && !sectionScreen && !buildingScreen && cleared === null),
+    expandedMap || (!tablet && !sectionScreen && !buildingScreen && !tunnel && cleared === null),
   );
 
   /**
@@ -244,8 +249,9 @@
   const standing = $derived(
     // Walking into a town building blanks the whole display (erase_menu_block, exe 4000:42b4,
     // fills it with colour 0) and movecontrol is not running to put any of this back, so the only
-    // words on the screen are the ones the building itself printed.
-    buildingScreen
+    // words on the screen are the ones the building itself printed. The module tunnel is drawn
+    // over the whole display in the same way and is still up while the arrival box is read.
+    buildingScreen || tunnel
       ? box
       : [
           ...keyMenuLines(),
@@ -324,6 +330,7 @@
       sectionScreen,
       buildingScreen,
       bossOffice,
+      tunnel,
       plaque,
       fade,
       cleared,
@@ -376,6 +383,16 @@
       painter.reveal(context, frame, shown, animated ? 0 : revealed);
       painted = { frame, palette, crawls };
     };
+    // The module teleporter's tunnel (exe 4000:771b), which is drawn on a black screen and stands
+    // there until the key that answers the arrival box: that box is printed on the tunnel, and
+    // movecontrol only comes round to draw the screen again after it.
+    if (tunnel) {
+      drawModuleTunnel(frame, SCREEN_PIXELS, tunnel);
+      if (box.length > 0) fillScreenBox(frame, MESSAGE_BOX);
+      drawDotuScreenText(frame, SCREEN_PIXELS, text);
+      paint();
+      return;
+    }
     // The stone tablet the snake's words are read on (exe 3000:9026), which is a screen of its own:
     // the slab and its four lines and nothing else.
     if (tablet) {

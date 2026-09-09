@@ -158,6 +158,7 @@
       sectionScreen={view.sectionScreen}
       buildingScreen={view.buildingScreen}
       bossOffice={view.bossOffice}
+      tunnel={view.tunnel}
       plaque={view.plaque}
       fade={view.fade}
       redraw={stage.redraw} />
