@@ -340,8 +340,9 @@ export function drawZoomMapOnly(frame: Frame, floor: UnforgivenZoomMapFloor): vo
  * expanded size, with the character's own square filled on top.
  *
  * `FUN_2000_a068` (exe 2000:a068) is that last square, which the original redraws in a new colour
- * every time round the loop it waits for a key in, so it flickers; nothing here waits, so it is
- * drawn once in the white the loop's own marker flashes in (exe 2000:c799).
+ * every time round the loop it waits for a key in, so it flickers through the whole palette.
+ * Nothing here waits, so the frame gets one colour — the white the loop's own marker flashes in
+ * (exe 2000:c799) — and the tab flickers a canvas of its own over {@link expandedMarkerRect}.
  */
 export function drawExpandedMap(frame: Frame, floor: UnforgivenZoomMapFloor): void {
   const window = expandedMapWindow();
@@ -358,6 +359,20 @@ export function drawExpandedMap(frame: Frame, floor: UnforgivenZoomMapFloor): vo
 /** The colour the character's own square is left in, which is what movecontrol's marker flashes
  *  in on the map beside the views. */
 const EXPANDED_MARKER = 15;
+
+/**
+ * The pixels of the screen the character's own square covers on the X key's map: what
+ * `FUN_2000_a068` (exe 2000:a068) fills, which is two pixels inside the cell and out to the first
+ * pixel of the next one.
+ *
+ * The X branch's counter starts at 0 and goes up by one for every poll of the keyboard (exe
+ * 2000:d2fe), and its low byte is the colour, so the square walks palette entries 0 to 255 and
+ * round again for as long as the map is up.
+ */
+export function expandedMarkerRect(at: { x: number; y: number }): { x: number; y: number; size: number } {
+  const { left, top, cell } = expandedMapWindow();
+  return { x: left + cell * at.x + 2, y: top + cell * at.y + 2, size: cell - 1 };
+}
 
 /**
  * The colour a square with one of the town's four buildings on it is filled with: the building's

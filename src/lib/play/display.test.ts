@@ -12,6 +12,7 @@ import {
   drawExpandedMap,
   drawScreenFurniture,
   drawZoomMapOnly,
+  expandedMarkerRect,
   EXPANDED_CELL,
   EXPANDED_COLUMNS,
   EXPANDED_GROUND,
@@ -432,5 +433,13 @@ describe('the map the X key fills the screen with', () => {
     expect(pixelAt(frame, at.x * EXPANDED_CELL + 3, at.y * EXPANDED_CELL + 3)).toBe(15);
     // The square next door is a plain black one, so the mark is one square and not a smear.
     expect(pixelAt(frame, (at.x + 1) * EXPANDED_CELL + 3, at.y * EXPANDED_CELL + 3)).toBe(0);
+  });
+
+  it('gives the flickering square the pixels FUN_2000_a068 fills and no others', () => {
+    const rect = expandedMarkerRect(at);
+    expect(rect).toEqual({ x: at.x * EXPANDED_CELL + 2, y: at.y * EXPANDED_CELL + 2, size: EXPANDED_CELL - 1 });
+    // Its far corner is the first pixel of the next square along, which is where the fill stops.
+    expect(rect.x + rect.size - 1).toBe((at.x + 1) * EXPANDED_CELL);
+    expect(rect.y + rect.size - 1).toBe((at.y + 1) * EXPANDED_CELL);
   });
 });
