@@ -353,6 +353,12 @@ from the character's square, the wall ahead and then the sides, and back again f
 then the lines printed. Moraff's World and Moraff's Revenge keep a plainer reveal, from the top
 row down, which `view3d/wipe.ts` is the arithmetic of.
 
+The views are also drawn only when no key is waiting, as `movecontrol` draws them (it tests
+kbhit before the drawing), so keys typed ahead leave the four views as they were while the map
+follows every step; the views catch up once the keyboard is idle. The engine keeps the square and
+the facing they were last drawn from (`viewsFrom` on the view) and the screen draws them from
+there.
+
 Three things about it are decisions rather than arithmetic:
 
 * **A frame that arrives mid-reveal takes over** rather than waiting: a journal starts again
