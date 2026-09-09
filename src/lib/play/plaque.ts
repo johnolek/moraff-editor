@@ -64,6 +64,39 @@ export const GRADIENT_LAST = 0xff;
 const GRADIENT_ENTRIES = GRADIENT_LAST - GRADIENT_FIRST + 1;
 
 /**
+ * How many times a second the port turns the gradient bank.
+ *
+ * The original turns it once for every pass of a busy loop: `movecontrol` (exe 2000:c308) does it
+ * every time round the loop it waits for a key in, `FUN_2000_2a2e` (exe 2000:2a2e) once per poll
+ * behind a message box's plaque, and `FUN_2000_2d93` (exe 2000:2d93) once per poll while a menu
+ * waits for its choice. So the pace is the machine's rather than the game's, and one number sets
+ * it here instead. Everything that crawls takes it: the plaque's frame, the shimmer on a
+ * teleporter's face, the square the X key's map flickers and the 150 turns the module tunnel runs.
+ */
+export const GRADIENT_STEPS_PER_SECOND = 30;
+
+/** How long one of those turns lasts, for a timer that steps on its own rather than a repaint
+ *  that paces itself off the clock. */
+export const GRADIENT_STEP_MS = 1000 / GRADIENT_STEPS_PER_SECOND;
+
+/**
+ * Whether anything on this screen is drawn out of the gradient bank, which is what says the crawl
+ * has something to move.
+ *
+ * The original turns the palette whether or not the bank is on the screen, since turning it costs
+ * one write to the DAC. The port shows a turn by painting the whole 1024 by 768 frame again, so a
+ * screen with no such pixel on it — a message box on black, the X key's map — is left alone and no
+ * repaint loop runs at all.
+ */
+export function holdsGradientBank(frame: Frame): boolean {
+  const pixels = frame.pixels;
+  for (let at = 0; at < pixels.length; at++) {
+    if (pixels[at] >= GRADIENT_FIRST) return true;
+  }
+  return false;
+}
+
+/**
  * How much the palette entry steps down the frame. DS:4ec1 is the switch the options menu calls
  * the menu highlighting, and the data segment starts it at 1, so the band runs down the gradient
  * bank a step a row; set to 0 it would be one flat colour instead.
@@ -151,10 +184,11 @@ function drawPlaqueFrame(frame: Frame, rect: PlaqueRect): void {
  * game does once for every poll of the keyboard while it waits. Entry 96 takes what entry 255 held
  * and everything between takes its neighbour, so the colours crawl through entries 96 to 255.
  *
- * The original rotates the palette itself, so the whole screen's gradient bank crawls with the
- * plaque's frame — the distance shading on the walls as much as the plaque — and it does the same
- * wherever else it polls the keyboard, `movecontrol`'s own wait included. The port turns the bank
- * for the whole screen while the plaque is up, once a frame the browser draws.
+ * The rotation is of the palette itself, so everything on the screen drawn out of the bank crawls
+ * together: the plaque's frame, the distance shading on the walls, and the teleporter faces, whose
+ * picture values 18 and 19 read the bank by screen column (`view3d/texture.ts`, exe 4000:53d1).
+ * The port turns the bank for the whole screen wherever the game waits for a key, at
+ * {@link GRADIENT_STEPS_PER_SECOND}.
  */
 export function cycleGradientBank(palette: Rgb[], steps: number): Rgb[] {
   const turned = palette.slice();

@@ -6,6 +6,9 @@ import {
   drawPlaque,
   GRADIENT_FIRST,
   GRADIENT_LAST,
+  GRADIENT_STEP_MS,
+  GRADIENT_STEPS_PER_SECOND,
+  holdsGradientBank,
   plaqueRect,
   PLAQUE_SLAB_IMAGE,
 } from './plaque';
@@ -106,5 +109,29 @@ describe('the palette bank the frame crawls through', () => {
 
   it('comes back round after a whole turn of the bank', () => {
     expect(cycleGradientBank(palette(), GRADIENT_LAST - GRADIENT_FIRST + 1)).toEqual(palette());
+  });
+
+  it('steps at one pace, which the step in milliseconds is worked out from', () => {
+    expect(GRADIENT_STEP_MS).toBe(1000 / GRADIENT_STEPS_PER_SECOND);
+  });
+});
+
+describe('whether a screen has anything on it to crawl', () => {
+  const blank = (): Frame => newFrame(64, 32);
+
+  it('says a screen drawn out of the low colours alone has nothing', () => {
+    const frame = blank();
+    fillRect(frame, 0, 0, 63, 31, GRADIENT_FIRST - 1);
+    expect(holdsGradientBank(frame)).toBe(false);
+  });
+
+  it('says a screen with one pixel of the bank on it has something', () => {
+    const frame = blank();
+    frame.pixels[17 * 64 + 63] = GRADIENT_FIRST;
+    expect(holdsGradientBank(frame)).toBe(true);
+  });
+
+  it('says the plaque itself has something, since its bands are drawn in the bank', () => {
+    expect(holdsGradientBank(drawn())).toBe(true);
   });
 });
