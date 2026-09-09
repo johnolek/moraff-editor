@@ -28,6 +28,19 @@
 export const KEPT_ROWS = 25;
 export const KEPT_COLUMNS = 40;
 
+/**
+ * A line as the rows it is printed on, for words the game hands the screen as one string.
+ *
+ * A line of exactly forty characters fills its row and no more; a longer one carries on down the
+ * rows under it.
+ */
+export function revPrintedRows(text: string): string[] {
+  if (text.length <= KEPT_COLUMNS) return [text];
+  const rows: string[] = [];
+  for (let at = 0; at < text.length; at += KEPT_COLUMNS) rows.push(text.slice(at, at + KEPT_COLUMNS));
+  return rows;
+}
+
 /** A stretch of one row the game has printed on, ready for `drawText`. */
 export interface RevKeptRun {
   row: number;
@@ -60,20 +73,52 @@ export class RevKeptScreen {
   /**
    * `PRINT text`, at the cursor, ending the line.
    *
-   * Every print this keeps is a whole statement that leaves the cursor at the start of the next
-   * row — either because it ended with no separator, which is what makes the run-time write the
-   * newline, or because the next thing the game does is `LOCATE` somewhere else anyway. That is
-   * what puts a swing's hit line on row 11: 1000:8D00 blanks row 11 and then row 10, and the
-   * line at 1000:8D5D is printed with no `LOCATE` of its own.
+   * A statement that ends with no separator is what makes the run-time write the newline, and
+   * that is what puts a swing's hit line on row 11: 1000:8D00 blanks row 11 and then row 10, and
+   * the line at 1000:8D5D is printed with no `LOCATE` of its own.
    */
   print(text: string): void {
-    for (let at = 0; at < text.length; at++) {
-      const column = this.column + at;
-      if (column < 1 || column > KEPT_COLUMNS || this.row < 1 || this.row > KEPT_ROWS) continue;
-      this.cells[(this.row - 1) * KEPT_COLUMNS + (column - 1)] = text[at];
-    }
+    this.write(text);
     this.row += 1;
     this.column = 1;
+  }
+
+  /**
+   * `PRINT text;`, which leaves the cursor at the end of what it printed instead of starting a
+   * new row, so that whatever is printed next carries on from there.
+   *
+   * The buildings' typed prompts end that way (1000:23FB, 2427 and 0F32), which is how the
+   * number reader at 1000:21F3 comes to echo the digits on the same row as the question, and so
+   * does the temple's second line (1000:253D), which the march is played in the middle of.
+   */
+  printKeepingTheCursor(text: string): void {
+    this.write(text);
+  }
+
+  /**
+   * The characters onto the grid, wrapped the way the run-time wraps them.
+   *
+   * A character that would land past the fortieth column goes to the first column of the next
+   * row instead, and the wrap is only taken when there is another character to put there. So a
+   * line of exactly forty characters and the newline after it take one row between them, where a
+   * line of forty-one takes two rows and leaves the cursor on a third.
+   */
+  private write(text: string): void {
+    for (const character of text) {
+      if (this.column > KEPT_COLUMNS) {
+        this.row += 1;
+        this.column = 1;
+      }
+      if (this.row >= 1 && this.row <= KEPT_ROWS && this.column >= 1) {
+        this.cells[(this.row - 1) * KEPT_COLUMNS + (this.column - 1)] = character;
+      }
+      this.column += 1;
+    }
+  }
+
+  /** `CSRLIN` and `POS(0)`: where the next character printed would go (1000:2205 and 220F). */
+  cursor(): { row: number; column: number } {
+    return { row: this.row, column: this.column };
   }
 
   /** `LOCATE row, column: PRINT text`. */
