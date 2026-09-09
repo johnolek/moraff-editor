@@ -60,7 +60,22 @@ describe("the boss's message", () => {
     await press(session, KEY.arrowUp);
     expect(session.box[0]).toBe('A LITTLE SNAKE HAS A MESSAGE');
     await press(session, READ_THE_MESSAGE);
-    expect(session.box).toContain('A MESSAGE FROM');
+    // The taunt's own lines fill the box, and the three that say whose office it came from stand
+    // on the screen beside the boss's picture, which is up until a key takes it down.
+    expect(session.box).toHaveLength(4);
+    expect(session.game.screen).toContainEqual({
+      text: 'A MESSAGE FROM',
+      x: 400,
+      y: 0x1e,
+      font: 2,
+      colour: 15,
+    });
+    expect(session.game.screen.filter((line) => line.x === 400).map((line) => line.y)).toEqual([
+      0x1e, 0xbe, 0x15e,
+    ]);
+    expect(session.bossOffice).toEqual({ section: 1 });
     expect(session.game.pc.bossTaunts[0]).toBe(1);
+    await press(session, KEY.arrowUp);
+    expect(session.bossOffice).toBeNull();
   });
 });

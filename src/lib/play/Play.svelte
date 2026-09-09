@@ -256,6 +256,7 @@
             tablet={view.tablet}
             sectionScreen={view.sectionScreen}
             buildingScreen={view.buildingScreen}
+            bossOffice={view.bossOffice}
             plaque={view.plaque}
             fade={view.fade} />
         {:else}

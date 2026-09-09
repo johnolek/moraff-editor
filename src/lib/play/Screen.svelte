@@ -30,6 +30,7 @@
   import type { PlaqueState } from './engine';
   import { fadedPalette, fadeSteps, FADE_STEP_MS, type Fade } from './fade';
   import { blankPlaque, cycleGradientBank, drawPlaque } from './plaque';
+  import { BOSS_OFFICE_PANEL, drawBossOffice, type BossOffice } from './boss-office';
   import { drawBuilding, type TownBuilding } from './building';
   import { drawSectionScreen, type SectionScreen } from './section-screen';
   import { drawTablet } from './tablet';
@@ -75,6 +76,9 @@
     sectionScreen?: SectionScreen | null;
     /** The town building the character is inside, whose picture stands over the views, or null. */
     buildingScreen?: TownBuilding | null;
+    /** The section whose Shadow boss is taunting the character, or null when none is
+     *  (`boss-office.ts`): its picture stands in a panel over the views. */
+    bossOffice?: BossOffice | null;
     /** The HIT ANY KEY plaque while a message box's wait is running, or null (`plaque.ts`). */
     plaque?: PlaqueState | null;
     /** The palette fade running over the screen (`fade.ts`), or null when none is. */
@@ -99,6 +103,7 @@
     tablet = null,
     sectionScreen = null,
     buildingScreen = null,
+    bossOffice = null,
     plaque = null,
     fade = null,
   }: Props = $props();
@@ -114,8 +119,16 @@
   /** What a screen whose own fill the port does not know blacks out, which is all of it. */
   const WHOLE_DISPLAY: ScreenRect = { x: 0, y: 0, right: SCREEN_WINDOW.width, bottom: SCREEN_WINDOW.height };
 
-  /** The rectangle a screen that is up has been drawn on black, and null when none is up. */
-  const cleared = $derived(screen.length === 0 ? null : (screenCleared ?? WHOLE_DISPLAY));
+  /**
+   * The rectangle a screen that is up has been drawn on black, and null when none is up.
+   *
+   * The boss's taunt is the one screen that wipes nothing at all: its three lines are drawn
+   * straight over the play screen (`boss-office.ts`), so they do not mean the display has been
+   * taken over.
+   */
+  const cleared = $derived(
+    screen.length === 0 || bossOffice ? null : (screenCleared ?? WHOLE_DISPLAY),
+  );
 
   // Walking into a building raises DS:2505 and calls set_palette again (exe 2000:c9ac), which
   // copies the two shop tables over the banks the building picture is drawn out of.
@@ -133,7 +146,13 @@
    * asks for: the plaque's own poll is `FUN_2000_2a2e` (exe 2000:2a2e) and the arrow is not in it.
    */
   const arrowFlashing = $derived(
-    !tablet && !sectionScreen && !expandedMap && !buildingScreen && cleared === null && !plaque,
+    !tablet &&
+      !sectionScreen &&
+      !expandedMap &&
+      !buildingScreen &&
+      !bossOffice &&
+      cleared === null &&
+      !plaque,
   );
 
   /**
@@ -158,8 +177,14 @@
         ],
   );
 
+  /**
+   * What is standing over the lines the tab draws of its own accord: the black a screen was drawn
+   * on, or the panel the boss's taunt lays down over the key menu.
+   */
+  const covered = $derived(cleared ?? (bossOffice ? BOSS_OFFICE_PANEL : null));
+
   const text = $derived([
-    ...(cleared === null ? standing : standing.filter((line) => !inRect(cleared, line))),
+    ...(covered === null ? standing : standing.filter((line) => !inRect(covered, line))),
     ...screen,
     ...(debug ? debugMonsterLines(game) : []),
   ]);
@@ -281,6 +306,9 @@
       place.dir,
     );
     drawScreenFurniture(frame, floor);
+    // The boss's taunt stands on the play screen: boss_office_message (exe 3000:6c9d) wipes
+    // nothing before it lays the panel down, so the views are still underneath it.
+    if (bossOffice) drawBossOffice(frame, SCREEN_PIXELS, bossOffice, viewPictures(bossOffice.section));
     // A screen that takes the display over fills the rectangle it draws in with colour 0 first:
     // FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way and cast_a_spell the top of
     // the screen its spell table stands on. A screen whose rectangle the port does not know

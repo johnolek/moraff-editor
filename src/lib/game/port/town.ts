@@ -480,6 +480,15 @@ export function bossOfficeTaunt(game: Game): number | null {
   return bossTablet(section, pc.bossTaunts[section]);
 }
 
+/** The two fixed lines of the taunt's heading, DS:28ea and DS:28f9. */
+export const BOSS_OFFICE_HEADING = ['A MESSAGE FROM', 'THE OFFICE OF THE'];
+
+/**
+ * Where those three lines stand (exe 3000:6df8, 6e14 and 6e50): all at the same x, all in the
+ * big font in colour 15, down the right of the boss's picture.
+ */
+export const BOSS_OFFICE_TEXT = { x: 400, font: 2, colour: 15, rows: [0x1e, 0xbe, 0x15e] };
+
 /**
  * boss_office_message (exe 3000:6c9d, unf.c "boss_office_message"): the message itself, once the
  * player has asked to read it, and the count of the section's taunts that goes up with it.
@@ -487,8 +496,13 @@ export function bossOfficeTaunt(game: Game): number | null {
 export function readBossOfficeMessage(game: Game, tablet: number): void {
   const pc = game.pc;
   game.say(...tabletMessage(tablet));
-  // DS:28ea, 28f9, then the boss's name and DS:266e
-  game.say('A MESSAGE FROM', 'THE OFFICE OF THE', `${game.monsterKinds[22].name}:`);
+  const name = game.monsterKinds[22].name;
+  // DS:28ea, 28f9, then the boss's name with the ':' at DS:266e on the end. These are pfont
+  // calls beside the boss's own picture rather than a message box, so they stand on the screen
+  // where `src/lib/play/boss-office.ts` draws the panel.
+  [...BOSS_OFFICE_HEADING, `${name}:`].forEach((text, index) => {
+    game.draw({ text, x: BOSS_OFFICE_TEXT.x, y: BOSS_OFFICE_TEXT.rows[index], font: BOSS_OFFICE_TEXT.font, colour: BOSS_OFFICE_TEXT.colour });
+  });
   pc.bossTaunts[sectionNumber(pc.module, pc.level)] += 1;
 }
 

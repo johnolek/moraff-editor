@@ -43,6 +43,7 @@ import {
 import { PLAQUE_DELAY_MS } from './plaque';
 import type { SectionScreen } from './section-screen';
 import type { TownBuilding } from './building';
+import type { BossOffice } from './boss-office';
 import { fadeMs, type Fade } from './fade';
 import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
@@ -167,6 +168,9 @@ export interface PlayView {
   /** The town building whose picture is on the screen, or null when the character is not in one
    *  (`building.ts`). */
   buildingScreen: TownBuilding | null;
+  /** The boss's picture standing over the play screen while its taunt is read, or null
+   *  (`boss-office.ts`). */
+  bossOffice: BossOffice | null;
   /** The HIT ANY KEY plaque (`plaque.ts`) while a box's wait is running, or null. */
   plaque: PlaqueState | null;
   /** The palette fade running over the screen (`fade.ts`), or null when none is. */
@@ -230,6 +234,11 @@ export class GameSession {
    * they are dealing with it (`town.ts`), or null when they are not in one.
    */
   buildingScreen: TownBuilding | null = null;
+  /**
+   * The section whose Shadow boss is taunting the character (`office.ts`), whose picture the tab
+   * stands in a panel over the play screen, or null when no taunt is being read.
+   */
+  bossOffice: BossOffice | null = null;
   /**
    * The HIT ANY KEY plaque while the wait behind a message box is running: `blanked` for the hole
    * FUN_2000_3e73 (exe 2000:3e73) leaves in the screen while its delay counts out, and `showing`
@@ -698,6 +707,7 @@ export class GameSession {
       tablet: this.timed.showingTablet(this.tablet),
       sectionScreen: this.sectionScreen,
       buildingScreen: this.buildingScreen,
+      bossOffice: this.bossOffice,
       plaque: this.plaque,
       fade: this.timed.showingFade(),
       over: this.over,

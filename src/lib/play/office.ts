@@ -1,3 +1,4 @@
+import { sectionOf } from '../game/dotu-files.js';
 import { showHint } from '../game/port/drops';
 import type { Game } from '../game/port/state';
 import { bossOfficeTaunt, readBossOfficeMessage } from '../game/port/town';
@@ -58,7 +59,12 @@ export async function drawMonsterView(turn: Turn): Promise<void> {
  * boss_office_message (exe 3000:6c9d, unf.c "boss_office_message"): the taunt a section's Shadow
  * boss sends while it is still alive, which the snake offers and only shows if it is asked to.
  *
- * The original draws the boss's own picture beside the message and this port draws none.
+ * The boss's own picture stands beside the taunt in a panel of the section's wall material
+ * (`boss-office.ts`), on top of the play screen: the routine wipes nothing before it draws, and
+ * the key it waits for at the end is what takes the panel down again.
+ *
+ * What the port still does differently is the taunt's own four lines, which the original reads
+ * off the stone tablet brought down for them and this port prints in the message box.
  */
 async function bossOfficeMessage(session: GameSession): Promise<void> {
   const game = session.game;
@@ -68,6 +74,8 @@ async function bossOfficeMessage(session: GameSession): Promise<void> {
   const chosen = await session.choice(MESSAGE_MENU);
   if (chosen !== READ_IT) return;
   readBossOfficeMessage(game, tablet);
+  session.bossOffice = { section: sectionOf(game.pc.module, game.pc.level) };
   await game.key();
+  session.bossOffice = null;
   session.box = [];
 }
