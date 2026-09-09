@@ -119,6 +119,8 @@ export interface MwPlayView {
   box: ScreenLine[];
   /** A screen the game has taken the whole display over with; empty when there is none. */
   screen: ScreenLine[];
+  /** The X key's map is filling the screen, which covers the views and everything around them. */
+  expandedMap: boolean;
   /** The line FUN_2000_a9bd puts under the map on a square with a way off the floor. */
   prompt: string | null;
   /** attack_timing's lines about the monster being fought. */
@@ -157,6 +159,8 @@ export class MwGameSession {
    * so they are kept apart here the way they are on the screen.
    */
   banner: string[] = [];
+  /** The X key's map is filling the screen (`display.ts`). */
+  expandedMap = false;
   /** movecontrol has come back: the character has quit or died. */
   over = false;
   /** Why the play loop stopped, when it stopped because it threw (`loop.ts`), or null. */
@@ -562,6 +566,7 @@ export class MwGameSession {
       visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
       box: mwMessageBoxLines(this.box),
       screen: this.timed.showing(game.screen),
+      expandedMap: this.expandedMap,
       prompt: ladderPrompt(
         ladderUnder(game),
         pc.floor === 0 ? buildingUnder(game) : 0,

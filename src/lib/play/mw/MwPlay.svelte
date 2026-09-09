@@ -394,6 +394,7 @@
               mapMonsters={zoomMapMonsters(mode, view)}
               lines={screenLines}
               cleared={screenTakesOver}
+              expandedMap={view.expandedMap}
               barCorners={sideMonsters.map((side) => side.corner)}
             />
           </div>

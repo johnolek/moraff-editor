@@ -5,11 +5,10 @@ import { MW_KEY } from './keys';
 /** A square of the town with nothing on it, so the key pressed is the only thing happening. */
 const townSquare = () => findMwSquare(0, (square) => square.ladder === 0);
 
-/** The first line of the box each of the seven keys puts up. */
+/** The first line of the box each of the six keys the port answers with words puts up. */
 const BOXES: [number, string][] = [
   [MW_KEY.brickSpeed, 'THE GAME WOULD STEP THROUGH THE'],
   [MW_KEY.sound, 'THE GAME WOULD TURN THE SOUND'],
-  [MW_KEY.expandMap, 'THE GAME WOULD FILL THE SCREEN'],
   [MW_KEY.zoomView, 'THE GAME WOULD FILL THE SCREEN'],
   [MW_KEY.paletteGreen, 'THE GAME WOULD ADD SIXTEEN TO'],
   [MW_KEY.paletteBlue, 'THE GAME WOULD ADD SIXTEEN TO'],
@@ -39,11 +38,50 @@ describe('the keys that are about the screen', () => {
     }
   });
 
-  it('tells the map key and the 3-D view key apart', async () => {
+  it('says what the 3-D view key would have done', async () => {
     const session = playingMw(mwCharacterFile({ floor: 0, ...townSquare() }));
-    await pressMw(session, MW_KEY.expandMap);
-    expect(session.box).toContain('WITH THE FLOOR, A THIRD OF IT');
     await pressMw(session, MW_KEY.zoomView);
     expect(session.box).toContain('WITH THE VIEW ONE WAY AND NAME');
+  });
+});
+
+describe('the X key', () => {
+  it('fills the screen with the floor and waits for a key over it', async () => {
+    const session = playingMw(mwCharacterFile({ floor: 0, ...townSquare() }));
+    await pressMw(session, MW_KEY.expandMap);
+    expect(session.expandedMap).toBe(true);
+    expect(session.game.screen).toEqual([
+      { text: 'EXPANDED DUNGEON MAP, HIT ANY KEY...', x: 0, y: 0x47e, font: 0, colour: 15 },
+    ]);
+    expect(session.box).toEqual([]);
+    await pressMw(session, MW_KEY.escape);
+    expect(session.expandedMap).toBe(false);
+    expect(session.game.screen).toEqual([]);
+  });
+
+  it('points at the quest boss when slot 0 holds one', async () => {
+    const start = findMwSquare(0, (square) => square.ladder === 0);
+    const session = playingMw(mwCharacterFile({ floor: 0, ...start }), undefined, (playing) => {
+      const boss = playing.game.monsters[0];
+      boss.type = 0x6a;
+      boss.x = start.x;
+      boss.y = start.y - 8;
+    });
+    await pressMw(session, MW_KEY.expandMap);
+    expect(session.game.screen[1]).toEqual({
+      text: 'GO NORTH',
+      x: 0x4b0,
+      y: 0x442,
+      font: 0,
+      colour: 4,
+    });
+  });
+
+  it('says nothing about a boss when slot 0 holds an ordinary monster', async () => {
+    const session = playingMw(mwCharacterFile({ floor: 0, ...townSquare() }), undefined, (playing) => {
+      playing.game.monsters[0].type = 0x10;
+    });
+    await pressMw(session, MW_KEY.expandMap);
+    expect(session.game.screen).toHaveLength(1);
   });
 });

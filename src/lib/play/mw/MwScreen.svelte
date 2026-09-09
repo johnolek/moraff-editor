@@ -12,7 +12,7 @@
   import { renderMwView, type MwViewMonster, type MwViewScene } from './view3d/render';
   import { drawMwScreenText } from './view3d/text';
   import { drawMwMonsterBars } from './view3d/monster-bar';
-  import { drawMwZoomMap } from './map';
+  import { drawMwExpandedMap, drawMwZoomMap } from './map';
   import {
     MW_KEY_MENU_RECT,
     MW_MESSAGE_BOX_RECT,
@@ -52,6 +52,8 @@
     cleared?: boolean;
     /** One view over the whole screen, the way the Z key zooms one; null draws all four. */
     zoomed?: number | null;
+    /** The X key's map is filling the screen, which is drawn in place of the views. */
+    expandedMap?: boolean;
     /** The corner of every view with a monster standing beside the character, which is where a
      *  hit-point bar goes. */
     barCorners?: MwMonsterViewCorner[];
@@ -69,6 +71,7 @@
     mapMonsters = [],
     cleared = false,
     zoomed = null,
+    expandedMap = false,
     barCorners = [],
   }: Props = $props();
 
@@ -106,6 +109,19 @@
       ladderAt,
       surfaceFeatureAt,
     };
+
+    // The X key's map is a fill over the whole screen with the floor drawn on it (exe 2000:aad5),
+    // so the views and the boxes around them are not drawn at all while it is up.
+    if (expandedMap) {
+      drawMwExpandedMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters });
+      drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
+      context.putImageData(
+        new ImageData(toRgba(frame, floorPalette(place.floor)), WIDTH, HEIGHT),
+        0,
+        0,
+      );
+      return;
+    }
 
     if (zoomed === null) {
       for (const [view, rect] of MW_VIEWS.entries()) renderMwView(frame, scene, rect, view);
