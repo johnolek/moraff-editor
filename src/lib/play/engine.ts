@@ -838,7 +838,7 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     // movecontrol wipes nothing where it takes its key, so the last thing said stands in the box
     // until a box, a menu or one of the wipes above paints over it.
     const handler = KEY_HANDLERS[key];
-    session.run?.dispatched(key);
+    session.run?.dispatched();
     if (handler) await handler.run(turn);
     await session.settle();
     if (session.over) return;

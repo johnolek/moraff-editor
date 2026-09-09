@@ -585,7 +585,7 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     // screen to take it off.
     mwClearMessageLine(game);
     const handler = MW_KEY_HANDLERS[key];
-    session.run?.dispatched(key);
+    session.run?.dispatched();
     if (handler) await handler.run(turn);
     await session.settle();
     if (session.over) return;

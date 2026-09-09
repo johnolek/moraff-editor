@@ -7,7 +7,7 @@ import { runMoveControl, startGame, type CharacterFile, type GameSession } from 
 import { runPlayLoop } from './loop';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
-import { mwCharacterFile } from './mw/engine.test';
+import { findMwSquare, mwCharacterFile } from './mw/engine.test';
 import { runRevDungeon, startRevGame, type RevCharacterFile, type RevGameSession } from './rev/engine';
 import { revCharacterFile, revRecord } from './rev/engine.test';
 import { REV_KEY } from './rev/keys';
@@ -17,7 +17,6 @@ import { runFileName } from './export-run';
 import type { StoredMaps } from './memory';
 import {
   actionWords,
-  countsAsAction,
   ENGINE_COMMIT,
   isRunGame,
   milestoneNote,
@@ -60,8 +59,12 @@ function recordedGame(
 }
 
 /** The same in Moraff's World. */
-function recordedMwGame(seed = 7, before?: RunTotals): { run: RunRecorder; session: MwGameSession; file: MwCharacterFile } {
-  const file = mwCharacterFile();
+function recordedMwGame(
+  seed = 7,
+  before?: RunTotals,
+  overrides: Parameters<typeof mwCharacterFile>[0] = {},
+): { run: RunRecorder; session: MwGameSession; file: MwCharacterFile } {
+  const file = mwCharacterFile(overrides);
   const run = new RunRecorder({ game: 'moraffsWorld', name: 'GRIMWALD', record: file.bytes, seed, before });
   const session = startMwGame(file, run.rng, run);
   void runMwMoveControl(session);
@@ -303,44 +306,86 @@ describe('a run the save editor wrote a record into', () => {
 });
 
 describe('the actions a run counts', () => {
-  it('counts a step, a wait and a swing, and not the screens', async () => {
-    const { run, session } = recordedGame();
-    for (const key of [KEY.arrowUp, KEY.enter, KEY.fight, KEY.viewStats, KEY.expNeeded, KEY.pockets, KEY.expandMap]) {
+  it('counts the step and the moment waited, and not the keys that only draw', async () => {
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...townSquare() });
+    for (const key of [KEY.arrowUp, KEY.enter, KEY.viewStats, KEY.expNeeded, KEY.pockets, KEY.expandMap]) {
       await press(session, key);
     }
     session.finish();
 
-    expect(run.log().actions).toBe(3);
+    expect(run.log().actions).toBe(2);
   });
 
-  it("counts a turn in Moraff's World, where every arrow steps, and not in the other game", () => {
-    expect(countsAsAction('unforgiven', KEY.arrowLeft)).toBe(false);
-    expect(countsAsAction('unforgiven', KEY.arrowDown)).toBe(false);
-    expect(countsAsAction('moraffsWorld', MW_KEY.arrowLeft)).toBe(true);
-    expect(countsAsAction('moraffsWorld', MW_KEY.arrowDown)).toBe(true);
+  it('counts nothing for a turn, which costs the character nothing in either game', async () => {
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...townSquare() });
+    for (const key of [KEY.arrowLeft, KEY.arrowRight, KEY.arrowDown]) await press(session, key);
+    session.finish();
+    expect(run.log().actions).toBe(0);
+
+    const mw = recordedMwGame();
+    mwTurn(mw.session, 2);
+    mwTurn(mw.session, 0);
+    await settle();
+    mw.session.finish();
+    expect(mw.run.log().actions).toBe(0);
   });
 
-  it('counts the ladders, the trap door, the dig and the spells', () => {
-    for (const key of [KEY.up, KEY.down, KEY.trapDoor, KEY.dig, KEY.cast, KEY.useItem]) {
-      expect(countsAsAction('unforgiven', key)).toBe(true);
+  it('counts nothing for a key the game did nothing with', async () => {
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...townSquare() });
+    // Each of the three puts up a box that waits for a key of its own, which the Escape answers.
+    for (const key of [KEY.trapDoor, KEY.escape, KEY.fight, KEY.escape, KEY.up, KEY.escape]) {
+      await press(session, key);
     }
-    for (const key of [MW_KEY.up, MW_KEY.down, MW_KEY.trapDoor, MW_KEY.wait, MW_KEY.cast, MW_KEY.useItem]) {
-      expect(countsAsAction('moraffsWorld', key)).toBe(true);
-    }
+    session.finish();
+
+    expect(run.log().actions).toBe(0);
   });
 
-  it('leaves out the keys that only put something on the screen', () => {
-    for (const key of [KEY.viewStats, KEY.expNeeded, KEY.pockets, KEY.money, KEY.monsterManual, KEY.help, KEY.quit, KEY.options, KEY.graphics, KEY.expandMap, KEY.zoomView, KEY.armor, KEY.weapon, KEY.loseItem]) {
-      expect(countsAsAction('unforgiven', key)).toBe(false);
-    }
-    for (const key of [MW_KEY.viewStats, MW_KEY.expNeeded, MW_KEY.pockets, MW_KEY.money, MW_KEY.help, MW_KEY.quit, MW_KEY.save, MW_KEY.sound, MW_KEY.brickSpeed, MW_KEY.expandMap, MW_KEY.zoomView, MW_KEY.armor, MW_KEY.weapon, MW_KEY.loseItem, MW_KEY.escape]) {
-      expect(countsAsAction('moraffsWorld', key)).toBe(false);
-    }
+  it('counts nothing for a menu opened and left, and one for the thing done through it', async () => {
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...townSquare(), armorOwned: [1, 1, 0, 0, 0, 0, 0, 0], armor: 0 });
+    await press(session, KEY.armor);
+    await press(session, KEY.escape);
+    session.finish();
+    expect(run.log().actions).toBe(0);
+
+    await press(session, KEY.armor);
+    await press(session, 0x32);
+    session.finish();
+    expect(session.game.pc.armor).toBe(1);
+    expect(run.log().actions).toBe(1);
   });
 
-  it('counts each of the swings Ctrl-F takes, and not Ctrl-F itself', () => {
-    expect(countsAsAction('unforgiven', KEY.repeatFight)).toBe(false);
-    expect(countsAsAction('unforgiven', KEY.fight)).toBe(true);
+  it('counts each of the swings Ctrl-F takes, and not Ctrl-F itself', async () => {
+    const start = townSquare();
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...start, lev: 10, str: 60, cls: 2 });
+    plantAMonster(session, start, { hp: 100000, type: 0 });
+    // A pass round the loop with a key nothing is bound to, which is where attack_timing meets
+    // the monster and takes it up.
+    await press(session, KEY.escape);
+    await press(session, KEY.repeatFight);
+    for (let waited = 0; waited < 5; waited++) await settle();
+    session.press(KEY.escape);
+    for (let waited = 0; waited < 3; waited++) await settle();
+    session.finish();
+
+    const log = run.log();
+    const swings = log.inputs.filter((key) => key === KEY.fight).length;
+    expect(swings).toBeGreaterThan(1);
+    expect(log.actions).toBe(swings);
+  });
+
+  it("counts Moraff's World's arrows only where the step went through", async () => {
+    const walled = findMwSquare(0, (square) => square.n === 0 && square.s === 3 && square.ladder === 0);
+    const { run, session } = recordedMwGame(7, undefined, { floor: 0, dir: 0, ...walled });
+    await settle();
+    // The first arrow faces north into the wall and goes nowhere; the second steps south.
+    session.press(MW_KEY.arrowUp);
+    await settle();
+    session.press(MW_KEY.arrowDown);
+    await settle();
+    session.finish();
+
+    expect(run.log().actions).toBe(1);
   });
 });
 
@@ -450,7 +495,7 @@ function sessionLog(totals: RunTotals): RunSession {
 
 describe('a session of a run the character has played before', () => {
   it('counts its actions on from where the run stood', async () => {
-    const { run, session } = recordedGame({}, 12345, runSoFar(7, 30));
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...townSquare() }, 12345, runSoFar(7, 30));
     await press(session, KEY.arrowUp);
     session.finish();
 
@@ -481,7 +526,8 @@ describe('a session of a run the character has played before', () => {
   });
 
   it("counts on the same way in Moraff's World", async () => {
-    const { run, session } = recordedMwGame(7, runSoFar(7, 30));
+    const open = findMwSquare(0, (square) => square.n === 3 && square.ladder === 0);
+    const { run, session } = recordedMwGame(7, runSoFar(7, 30), { floor: 0, dir: 0, ...open });
     session.press(MW_KEY.arrowUp);
     await settle();
     session.finish();

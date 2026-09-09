@@ -14,7 +14,7 @@ describe('the verdict the verify-run command prints', () => {
     expect(report.ok).toBe(true);
     expect(report.lines[0]).toBe('BRAWLER — Dungeons of the Unforgiven, faithful');
     expect(report.lines[1]).toBe('Verified: the replay reached everything the log claims.');
-    expect(report.lines).toContain('  Actions     4 actions');
+    expect(report.lines).toContain('  Actions     3 actions');
     expect(report.lines).toContain('  Clock       1 second');
     expect(report.lines).toContain('  Milestones  Module II in the town after 1 action and 0 seconds');
     expect(report.lines).toContain('  Place       the town of Module II, at 37,84');
@@ -35,7 +35,7 @@ describe('the verdict the verify-run command prints', () => {
 
     expect(report.ok).toBe(true);
     expect(report.lines).toContain('  Sessions    2');
-    expect(report.lines).toContain('  Actions     6 actions');
+    expect(report.lines).toContain('  Actions     5 actions');
     expect(report.lines).toContain('  Clock       2 seconds');
   });
 

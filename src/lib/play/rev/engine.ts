@@ -633,7 +633,7 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     // redraw at 1000:3029 does to them.
     game.said = [];
     game.banner = [];
-    session.run?.dispatched(key);
+    session.run?.dispatched();
     // 1000:0636: coming back through the loop's own re-entry is what holds the rings back.
     game.ringsHeldBack = !KEYS_THE_RINGS_HEAL_ON.has(key);
     let step: RevStep | null = null;

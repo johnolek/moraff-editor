@@ -1,14 +1,13 @@
 import type { Leaderboard, PortedGameId } from '../app-state.svelte';
 import { base64FromBytes, bytesFromBase64 } from '../bytes';
+import { isActionKind } from '../game/action';
 import { SeededRng, type Rng } from '../game/port/rng';
 import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
 import { runPlayLoop, type PlayLoopSession } from './loop';
-import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine';
-import { MW_KEY, mwTurn } from './mw/keys';
+import { mwTurn } from './mw/keys';
 import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile } from './rev/engine';
-import { REV_KEY } from './rev/keys';
 
 /**
  * The run log: everything a character has played here, written down as it is played.
@@ -58,91 +57,6 @@ export const TURN_INPUTS = [-0x101, -0x102, -0x103, -0x104];
 /** Which facing a turn input asks for, or -1 for an input that is an ordinary key. */
 export function turnedTo(input: number): number {
   return TURN_INPUTS.indexOf(input);
-}
-
-/**
- * The keys of Dungeons of the Unforgiven that count as an action, each named with the handler
- * `KEY_HANDLERS` in `engine.ts` gives it.
- *
- * An action is a key the loop hands to a handler that spends a moment of the character's time, or
- * opens one of the town's buildings or a spell: a step, a swing, a cast, a night at the inn, a
- * dig. A key that only puts something on the screen — the stats, the experience table, the
- * pockets, the monster manual, the two spell lists, the money, the maps, the settings — is not an
- * action, and neither is a turn, which in this game costs the character nothing. Fewest actions is
- * the order a leaderboard puts runs in, so this is the number a run is judged by.
- *
- * It counts the keys the game was asked for rather than the moments it granted: a step into a wall
- * and a swing at nothing are each an action, the same as they are a key. Ctrl-F is not here
- * because it only raises the repeat flag; every swing it goes on to take arrives as an F of its
- * own and is counted as one.
- */
-const UNFORGIVEN_ACTIONS = new Set<number>([
-  KEY.arrowUp, // stepForward, and the step movecontrol resolves at the end of the pass
-  KEY.enter, // waitAMoment: leave the square and arrive on it again
-  KEY.down, // goDown: the ladder down, and change_module
-  KEY.up, // goUp: the ladder up, or into the store, the temple, the bank or the inn
-  KEY.trapDoor, // goThroughTrapDoor: trapdoor_dest
-  KEY.dig, // digHole: dig_hole spends a moment for each of its flashes
-  KEY.fight, // swingAtMonster: strike, and the time the swing costs
-  KEY.cast, // castASpell: cast_a_spell, which ends in pass_moment
-  KEY.useItem, // useAnItem: use_magic_item
-]);
-
-/** The same in Moraff's World, by the handler `MW_KEY_HANDLERS` in `mw/engine.ts` gives it. Its
- *  four arrows each face the character and step them, so all four are actions; the turn where the
- *  character stands, which this port does outside the loop, costs nothing and is not one. */
-const MORAFFS_WORLD_ACTIONS = new Set<number>([
-  MW_KEY.arrowUp, // turnAndStep
-  MW_KEY.arrowDown,
-  MW_KEY.arrowLeft,
-  MW_KEY.arrowRight,
-  MW_KEY.wait, // waitAMoment
-  MW_KEY.space, // the same branch as T
-  MW_KEY.down, // goDown: the ladder down, or dig_hole
-  MW_KEY.up, // goUp: the ladder up, or the town's buildings
-  MW_KEY.trapDoor, // goThroughTrapDoor
-  MW_KEY.fight, // swingAtMonster: strike and the two spend_time calls after it
-  MW_KEY.cast, // castAtTheSpellScreen: spell_screen
-  MW_KEY.useItem, // useAnItem
-]);
-
-/**
- * The same in Moraff's Revenge, by the handler `REV_KEY_HANDLERS` and the fight prompt give it.
- *
- * All four arrows are here. Which of them steps depends on the movement mode Escape switches, and
- * the log holds the key rather than what it did, so a run played with the turning arrows counts
- * its turns as well as its steps. The five keys of the fight prompt are each a swing; C, I, T, W
- * and A each spend the character's own moment, so they are counted — A included, though dropping
- * the coins it stands for is the one thing behind these keys this port has not built.
- */
-const MORAFFS_REVENGE_ACTIONS = new Set<number>([
-  REV_KEY.arrowUp,
-  REV_KEY.arrowDown,
-  REV_KEY.arrowLeft,
-  REV_KEY.arrowRight,
-  REV_KEY.down, // a ladder down, or the false floor a chute left
-  REV_KEY.up, // a ladder up, or the rope into one of the town's ten buildings
-  REV_KEY.sword, // the four swings of the fight prompt
-  REV_KEY.mace,
-  REV_KEY.knife,
-  REV_KEY.fists,
-  REV_KEY.breathe,
-  REV_KEY.cast,
-  REV_KEY.item,
-  REV_KEY.pill,
-  REV_KEY.wand,
-  REV_KEY.abandon,
-]);
-
-const ACTIONS: Record<RunGame, Set<number>> = {
-  unforgiven: UNFORGIVEN_ACTIONS,
-  moraffsWorld: MORAFFS_WORLD_ACTIONS,
-  revenge: MORAFFS_REVENGE_ACTIONS,
-};
-
-/** Whether a key the loop has dispatched counts as one of the run's actions. */
-export function countsAsAction(game: RunGame, key: number): boolean {
-  return ACTIONS[game].has(key);
 }
 
 /**
@@ -390,7 +304,14 @@ export class RunRecorder {
   /** The generator the game is played through, which is the seed and nothing else. */
   readonly rng: Rng;
   readonly inputs: number[] = [];
-  /** How many actions the run has spent, counting from the start of the chain. */
+  /**
+   * How many actions the run has spent, counting from the start of the chain.
+   *
+   * An action is a thing that happened to the character or to the world, which the games push
+   * onto their event lists as they do it (`src/lib/game/action.ts`); this counts them as it
+   * reads them. Fewest actions is the order a leaderboard puts runs in, so this is the number a
+   * run is judged by.
+   */
   actions: number;
   /** How many records written outside the game have reached the character in this session. */
   edits = 0;
@@ -445,10 +366,12 @@ export class RunRecorder {
     this.inputs.push(TURN_INPUTS[dir]);
   }
 
-  /** The loop has read a key and is about to hand it to its handler. */
-  dispatched(key: number): void {
+  /**
+   * The loop has read a key and is about to hand it to its handler, which is where everything the
+   * key before it did is written down.
+   */
+  dispatched(): void {
     this.note();
-    if (countsAsAction(this.game, key)) this.actions += 1;
   }
 
   /** A record the Save Editor wrote has reached the character, which is the end of what this log
@@ -471,6 +394,12 @@ export class RunRecorder {
   private note(): void {
     const clock = this.clock;
     if (clock === null) return;
+    const arrived = this.events.slice(this.eventsRead);
+    this.eventsRead = this.events.length;
+    // The actions are counted before anything is stamped with the count, so that a milestone
+    // reached by an action -- the module a step led to, the level a night at the inn handed over
+    // -- is stamped with the run including it rather than as it stood a moment before.
+    for (const event of arrived) if (isActionKind(event.kind)) this.actions += 1;
     const now = clock();
     const reach = (kind: MilestoneKind, which: number) =>
       this.milestones.push({ kind, which, actions: this.actions, time: this.time(), floor: now.floor });
@@ -485,8 +414,8 @@ export class RunRecorder {
       this.deepest = now.floor;
       reach('floor', now.floor);
     }
-    while (this.eventsRead < this.events.length) {
-      const event = runEvent(this.events[this.eventsRead++]);
+    for (const arrival of arrived) {
+      const event = runEvent(arrival);
       if (event === null) continue;
       if (event.kind === 'bossKilled') reach('boss', event.boss);
       if (event.kind === 'levelGained') reach('level', event.level);

@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { formatRevRecord, REV_VALUE_COUNT } from '../../game/rev-port/record';
-import { RunRecorder, countsAsAction, replayRun } from '../run';
+import { RunRecorder, replayRun } from '../run';
 import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile } from './engine';
 import { REV_KEY } from './keys';
 
-function record(): Uint8Array<ArrayBuffer> {
+function record(fields: Record<number, number> = {}): Uint8Array<ArrayBuffer> {
   const values = new Array<number>(REV_VALUE_COUNT).fill(0);
   for (let stat = 1; stat <= 6; stat++) values[stat - 1] = 3 * 15 + 237;
   values[10 - 1] = 1;
@@ -18,6 +18,7 @@ function record(): Uint8Array<ArrayBuffer> {
   values[23 - 1] = 10;
   values[24 - 1] = 10;
   values[26 - 1] = 1;
+  for (const [value, number] of Object.entries(fields)) values[Number(value) - 1] = number;
   return formatRevRecord(values);
 }
 
@@ -25,17 +26,40 @@ function settled(): Promise<unknown> {
   return new Promise((resolve) => setTimeout(resolve));
 }
 
-describe('the actions a run counts', () => {
-  it('counts a step, a ladder and a swing', () => {
-    expect(countsAsAction('revenge', REV_KEY.arrowUp)).toBe(true);
-    expect(countsAsAction('revenge', REV_KEY.down)).toBe(true);
-    expect(countsAsAction('revenge', REV_KEY.sword)).toBe(true);
-  });
+/** The record value the first colour of pill is counted in. */
+const FIRST_PILL = 162;
 
-  it('does not count the screen keys', () => {
-    expect(countsAsAction('revenge', REV_KEY.stats)).toBe(false);
-    expect(countsAsAction('revenge', REV_KEY.escape)).toBe(false);
-    expect(countsAsAction('revenge', REV_KEY.quit)).toBe(false);
+describe('the actions a run counts', () => {
+  it('counts nothing for the keys that only draw, and the pill swallowed through one', async () => {
+    const run = new RunRecorder({ game: 'revenge', name: 'FIGHTY', record: record({ [FIRST_PILL]: 2 }), seed: 11 });
+    const file: RevCharacterFile = {
+      bytes: run.record.slice(),
+      write(bytes) {
+        this.bytes = bytes;
+      },
+      died() {},
+    };
+    const session = startRevGame(file, run.rng, run);
+    void runRevDungeon(session);
+    await settled();
+    for (const key of [REV_KEY.stats, ' '.charCodeAt(0), REV_KEY.magic, ' '.charCodeAt(0), REV_KEY.sound]) {
+      session.press(key);
+      await settled();
+    }
+    // The pill menu opened and left, which is nothing at all.
+    session.press(REV_KEY.pill);
+    await settled();
+    session.press(REV_KEY.escape);
+    await settled();
+    expect(run.summary().actions).toBe(0);
+
+    session.press(REV_KEY.pill);
+    await settled();
+    session.press('1'.charCodeAt(0));
+    await settled();
+    session.finish();
+
+    expect(run.log().actions).toBe(1);
   });
 });
 
@@ -61,7 +85,9 @@ describe('a run', () => {
     const log = run.log();
     expect(log.inputs.filter((input) => input === REV_CLOCK_TICK)).toHaveLength(2);
     expect(log.inputs[log.inputs.length - 1]).toBe(REV_KEY.arrowRight);
-    expect(log.actions).toBe(1);
+    // The right arrow turns the character where they stand in this movement mode, and a turn is
+    // no action in any of the three games.
+    expect(log.actions).toBe(0);
   });
 
   it('replays to the same place, with the monsters where the ticks left them', async () => {

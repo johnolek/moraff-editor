@@ -44,10 +44,11 @@ afterEach(() => {
 describe('a character played again', () => {
   it('goes on counting its actions where the session before it left off', async () => {
     const entry = rostered();
-    const first = await playASession(entry, [KEY.arrowUp, KEY.arrowUp]);
+    // A step the square lets through and a moment waited, each of which is one action.
+    const first = await playASession(entry, [KEY.arrowUp, KEY.enter]);
     const spent = first.view().run!.actions;
 
-    const second = await playASession(entry, [KEY.arrowUp]);
+    const second = await playASession(entry, [KEY.enter]);
 
     expect(spent).toBe(2);
     expect(second.view().run!.actions).toBe(3);
@@ -69,8 +70,8 @@ describe('a character played again', () => {
 
   it('makes a chain of sessions that verifies as one run', async () => {
     const entry = rostered();
-    await playASession(entry, [KEY.arrowUp, KEY.arrowLeft, KEY.arrowUp]);
-    await playASession(entry, [KEY.arrowUp, KEY.enter]);
+    await playASession(entry, [KEY.arrowUp, KEY.arrowLeft, KEY.enter]);
+    await playASession(entry, [KEY.enter, KEY.enter]);
 
     const verdict = await verifyRun(runLogOf(entry.run));
 
