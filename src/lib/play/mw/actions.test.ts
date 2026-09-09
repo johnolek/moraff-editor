@@ -233,6 +233,22 @@ describe('the armor and the weapon', () => {
     expect(actionsPushed(session.game)).toEqual([]);
   });
 
+  it('counts nothing for picking the suit already being worn', async () => {
+    const session = inTheTown({ cls: 0, armorOwned: [1, 1, 0, 0, 0, 0, 0, 0], armor: 0 });
+    await pressMw(session, MW_KEY.armor);
+    await pressMw(session, 0x31);
+    expect(session.game.pc.armor).toBe(0);
+    expect(actionsPushed(session.game)).toEqual([]);
+  });
+
+  it('counts nothing for picking the weapon already in hand', async () => {
+    const session = inTheTown({ cls: 0, weaponsOwned: [1, 1, 0, 0, 0, 0, 0, 0], weapon: 0 });
+    await pressMw(session, MW_KEY.weapon);
+    await pressMw(session, 0x31);
+    expect(session.game.pc.weapon).toBe(0);
+    expect(actionsPushed(session.game)).toEqual([]);
+  });
+
   it('counts nothing for a class that may not wear what it picked', async () => {
     const session = inTheTown({ cls: 3, armorOwned: [1, 1, 0, 0, 0, 0, 0, 0], armor: 0 });
     await pressMw(session, MW_KEY.armor);

@@ -117,8 +117,9 @@ export async function changeArmor(turn: Turn): Promise<void> {
     turn.game.pressAnyKey();
     return;
   }
+  const wasWearing = pc.armor;
   pc.armor = slot;
-  turn.game.events.push({ kind: 'gearSwitched' });
+  if (slot !== wasWearing) turn.game.events.push({ kind: 'gearSwitched' });
 }
 
 /** The W key: the weapon in hand, out of the weapons the character is carrying. */
@@ -136,8 +137,9 @@ export async function changeWeapon(turn: Turn): Promise<void> {
     turn.game.pressAnyKey();
     return;
   }
+  const wasHolding = pc.weapon;
   pc.weapon = slot;
-  turn.game.events.push({ kind: 'gearSwitched' });
+  if (slot !== wasHolding) turn.game.events.push({ kind: 'gearSwitched' });
 }
 
 /**
