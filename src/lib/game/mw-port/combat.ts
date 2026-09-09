@@ -110,6 +110,16 @@ function bearing(game: MwGame, slot: number): string {
 }
 
 /**
+ * How long strike holds the strip empty after wiping it and before it writes what the swing did
+ * (WORLD.EXE 2000:5ec2), which is what makes a second swing that reads the same as the first
+ * visibly redraw.
+ *
+ * The game takes it only while DS:45c9 is 0, which is the layout the Z key cycles three of. This
+ * port is played on the map and never leaves that first layout, so it always applies.
+ */
+const STRIKE_BLANK_MS = 100;
+
+/**
  * strike (WORLD.EXE 2000:5bef, mw.c "strike"): one swing at the monster the character is
  * engaging. Returns the damage it did; zero is a miss.
  *
@@ -159,6 +169,7 @@ export function strike(game: MwGame): number {
     damage += game.rng.random(pc.lev);
   }
   game.eraseScreen();
+  game.delay(STRIKE_BLANK_MS);
   if (damage < 1) {
     game.say('YOU MISSED THE MONSTER'); // DS:271e
   } else {

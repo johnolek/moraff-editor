@@ -164,6 +164,15 @@ describe('strike', () => {
     const done = strike(game);
     expect(game.monsters[0].hp).toBe(500 - done);
   });
+
+  it("blanks the strip for a tenth of a second before it says what the swing did", () => {
+    const game = swinger(1, 79);
+    game.rng = { random: (n) => (n === 80 ? 79 : 1) };
+    const delays: number[] = [];
+    game.delay = (ms) => void delays.push(ms);
+    strike(game);
+    expect(delays).toEqual([100]);
+  });
 });
 
 describe('monsterTurn', () => {
