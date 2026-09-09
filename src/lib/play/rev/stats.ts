@@ -123,5 +123,5 @@ export async function revShowStats(game: RevGame, desk: RevTownDesk): Promise<vo
   game.say(...revStatsSheet(game));
   await revHitAnyKey(game, desk);
   // 1000:1C69.
-  revDrawTheDungeonAgain(game);
+  revDrawTheDungeonAgain(game, 'afterAScreen');
 }

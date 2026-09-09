@@ -17,10 +17,59 @@ export function revClearScreen(game: RevGame, keeping: RevClearedScreen = 'bare'
   game.said = [];
 }
 
-/** The dungeon is drawn over whatever was cleared (1000:4275). */
-export function revDrawTheDungeonAgain(game: RevGame): void {
+/**
+ * Which of the two places a redraw is reached from, which the routine reads as DGROUP B538.
+ *
+ * A key that takes the whole display over sets the flag to 1 on its way in — 1000:0E73 for the
+ * magic list, 1000:0EE5 for the pause — and the redraw at the end of an ordinary pass puts it
+ * back to 0 before it draws anything (1000:4317). So it is 1 exactly where a screen of that
+ * kind is being given back, and 0 everywhere else.
+ */
+export type RevRedraw = 'afterAPass' | 'afterAScreen';
+
+/** How many directions the compass has, which is what an offset that has gone round comes back
+ *  by (1000:582C). */
+const COMPASS = 4;
+
+/**
+ * The dungeon is drawn over whatever was cleared (1000:4275), and the arrow legend and the four
+ * 3-D views with it (1000:593C).
+ *
+ * The routine leaves a number in the compiler's scratch cell, which is how far round the
+ * compass the four arrows are drawn from where they belong, and it takes one of three paths:
+ *
+ * * 1000:5965: a screen is being given back on the level already drawn, so the views on the
+ *   screen still stand and the arrows go back exactly where they were. The offset is 0.
+ * * 1000:581C: the character is standing on the square the views were drawn from, so again only
+ *   the arrows move, by however far the character has turned since they were drawn.
+ * * Otherwise the views are scanned and drawn again (1000:59B9), which writes nothing in the
+ *   cell and leaves whatever the last thing to use it put there.
+ *
+ * The statistics screen is the one caller that does not come through here: it writes the 0
+ * itself (1000:1C5D) and then draws the arrows alone (1000:1C6C). Nothing it does can change the
+ * level, so the first path's answer is the same one.
+ */
+export function revDrawTheDungeonAgain(game: RevGame, after: RevRedraw): void {
   game.cleared = null;
   game.kept.clear();
+  const pc = game.pc;
+  const drawn = game.lastDrawn;
+  const sameLevel = drawn.level === pc.dungeonLevel;
+  if (after === 'afterAScreen' && sameLevel) {
+    game.scratch = 0;
+    return;
+  }
+  if (sameLevel && drawn.column === pc.column && drawn.row === pc.row) {
+    const turned = drawn.facing - pc.facing;
+    game.scratch = turned < 0 ? turned + COMPASS : turned;
+    return;
+  }
+  game.lastDrawn = {
+    level: pc.dungeonLevel,
+    column: pc.column,
+    row: pc.row,
+    facing: pc.facing,
+  };
 }
 
 /** 1000:020B, printed by 1000:C5B0: what a screen that has taken the display over waits with. */

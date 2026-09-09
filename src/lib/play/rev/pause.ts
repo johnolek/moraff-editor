@@ -36,5 +36,5 @@ export async function revPause(game: RevGame, desk: RevTownDesk, quit: () => voi
   // 1000:8036 clears the screen and 1000:0EE5 goes back to the top of the pass, which draws the
   // dungeon on it again.
   revClearScreen(game);
-  revDrawTheDungeonAgain(game);
+  revDrawTheDungeonAgain(game, 'afterAScreen');
 }

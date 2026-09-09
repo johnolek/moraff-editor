@@ -486,7 +486,7 @@ export async function revShowMagicItems(game: RevGame, desk: RevTownDesk): Promi
   game.say(...revMagicItemsOwned(game));
   await revHitAnyKey(game, desk);
   game.flushKeys();
-  revDrawTheDungeonAgain(game);
+  revDrawTheDungeonAgain(game, 'afterAScreen');
 }
 
 /**

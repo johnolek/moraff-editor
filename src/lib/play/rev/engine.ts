@@ -669,7 +669,7 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     // the next swing blanks them. The step a monster blocked does not either (1000:33EA).
     // A game that has ended is not drawn over: 1000:0DAC chains to BEGIN from the screen it
     // signed off on, and never comes back through the per-key routine.
-    if (game.fight === null && step !== 'monster' && !session.over) revDrawTheDungeonAgain(game);
+    if (game.fight === null && step !== 'monster' && !session.over) revDrawTheDungeonAgain(game, 'afterAPass');
     if (session.over) return;
   }
 }

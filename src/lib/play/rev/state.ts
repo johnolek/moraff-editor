@@ -23,6 +23,15 @@ import { REV_VALUE, revValue, type RevPc } from './record';
  */
 export type RevClearedScreen = 'bare' | 'map';
 
+/** Where the four 3-D views on the screen were drawn from, which is what the redraw remembers. */
+export interface RevDrawnFrom {
+  level: number;
+  column: number;
+  row: number;
+  /** 1 north, 2 east, 3 south, 4 west, the way the move code numbers the compass. */
+  facing: number;
+}
+
 /** Something worth writing down about a run, which `../run.ts` turns into a milestone. */
 export type RevEvent =
   | { kind: 'levelGained'; level: number }
@@ -130,6 +139,16 @@ export interface RevGame {
   /** The screen has been cleared and the dungeon has not been drawn over it yet, so what is on
    *  it is what has been printed since (`screens.ts`). */
   cleared: RevClearedScreen | null;
+  /**
+   * DGROUP B660, B662, B664 and B65E: the level, column, row and facing the four 3-D views on
+   * the screen were last scanned and drawn from (1000:59B9).
+   *
+   * The redraw compares them against where the character is now to work out how much of the
+   * screen it has to draw again, and `screens.ts` is where that comparison is. BASIC starts all
+   * four at zero, and level zero is the town, so the first redraw of a session finds the column
+   * and the row disagree instead.
+   */
+  lastDrawn: RevDrawnFrom;
   /** The eighty-column text page the help puts the display into (`screen/text-screen.ts`), or
    *  null while the game is in `SCREEN 1` — which is everywhere else. */
   textScreen: RevTextRun[] | null;
@@ -251,6 +270,7 @@ export function newRevGame(
     banner: [],
     kept: new RevKeptScreen(),
     cleared: null,
+    lastDrawn: { level: 0, column: 0, row: 0, facing: 0 },
     textScreen: null,
     events: [],
     over: false,
