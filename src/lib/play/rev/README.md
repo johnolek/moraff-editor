@@ -3,7 +3,7 @@
 The loop at `DUNSMALL.EXE 1000:087F` and everything that hangs off it. `../README.md` is the same
 thing for Dungeons of the Unforgiven and `../mw/README.md` for Moraff's World; the three games are
 three executables with three loops and three save layouts, so they are three engines. What they
-share is the tab, the map canvas, the run log and the roster.
+share is the tab (`../PlayTab.svelte`), the map canvas, the run log and the roster.
 
 Every function here is a cited port of the function it came from, bugs and all, and where this
 port declines to do something the original does, a comment says so. Addresses are offsets in
@@ -91,8 +91,14 @@ BASIC.
   `LOCATE`s and `PRINT`s stay on the screen until it writes over them, so they are held on a
   character grid of their own and drawn last, over everything else.
   `rev-tools/reference/render_screen.mjs` writes one out as a PNG.
-* **`RevPlay.svelte`** — the tab. **`RevPanel.svelte`** — the numbers the game keeps and never
-  prints, which `../mode.ts` shows in debug alone.
+* **`RevPlay.svelte`** — what this game puts in the Play tab: the game's screen or the top-down
+  map with the lines the game prints laid over it, the character's own numbers, the sound
+  checkbox and the note about the arrows. The tab around them is `../PlayTab.svelte` and this
+  game's row of its `PLAY_GAMES` table is in `../games.ts`. The view's place counts its column
+  and row from zero the way the other two games' do, so the tab and the map canvas agree; the
+  game's own numbers, which start at one, are what the record, the screen and the run log's
+  ending keep. **`RevPanel.svelte`** — the numbers the game keeps and never prints, which
+  `../mode.ts` shows in debug alone.
 
 ## The clock
 

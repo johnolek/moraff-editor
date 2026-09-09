@@ -7,7 +7,7 @@ something the original does, a comment says so.
 
 `../README.md` is the same thing for Dungeons of the Unforgiven. The two games are two
 executables with two loops and two save layouts, so they are two engines; what they share is the
-tab, the map canvas, the screen renderer and the roster.
+tab (`../PlayTab.svelte`), the map canvas, the screen renderer and the roster.
 
 ## The shape
 
@@ -48,9 +48,11 @@ tab, the map canvas, the screen renderer and the roster.
   of the monster in front of the character, in `../PortraitFrame.svelte`'s box.
 * **`view3d/`** — the 3-D views and the screen they sit on; see below. **`MwScreen.svelte`**
   paints them and lays the game's own lines of text over them.
-* **`MwPlay.svelte`** — the tab: the game's screen or the top-down map, whichever the switch is
-  set to, the screens and the row of keys. `src/App.svelte` picks it or Dungeons of the
-  Unforgiven's by the game showing.
+* **`MwPlay.svelte`** — what this game puts in the Play tab: the game's screen or the top-down
+  map, whichever the switch is set to, the four corners of that screen laid over the map, and the
+  panel. The tab around them is `../PlayTab.svelte`, which all three games share, and this game's
+  row of its `PLAY_GAMES` table is in `../games.ts`. `src/App.svelte` picks this wrapper or
+  Dungeons of the Unforgiven's by the game showing.
 
 ## The 3-D views
 

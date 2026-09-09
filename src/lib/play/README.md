@@ -54,8 +54,17 @@ something the original does, a comment says so.
   `game.draw` rather than through any of these.
 * **`arrival.ts`** — the hint the snake brings on arriving on a floor. **`office.ts`** — the step
   count `random_events_tick` keeps, and the taunt the section boss sends every 250 of them.
-* **`Play.svelte`** — the tab: the game's screen or the top-down map, the screens and the row of
-  keys. **`display.ts`, `Screen.svelte`** — the screen itself: the boxes `movecontrol` fills, the
+* **`PlayTab.svelte`, `games.ts`, `play-tab.css`** — the Play tab itself, which all three games
+  are played in: the landing page, the map or the game's own screen, the switch, the mode radios,
+  the run block and the over-box. Everything that is not the same in all three comes in as a
+  snippet — the screen, the place line, the numbers each game shows beside it, its own arrow
+  controls and its panel — or as a row of the `PLAY_GAMES` table: how a game is started, what its
+  loop is called, what a browser key means to it, and where on the floor its view says the
+  character is standing. The look is a plain stylesheet rather than a scoped one, because scoped
+  styles do not reach snippets written in another component; where one value has to serve all
+  three it is this game's.
+* **`Play.svelte`** — this game's snippets: the game's screen or the top-down map, the message
+  box, the two pictures and the panel. **`display.ts`, `Screen.svelte`** — the screen itself: the boxes `movecontrol` fills, the
   key menu, the zoom map, the status block and everything the game has printed, over the four
   views of `view3d/`. **`zoom-map.ts`** — the little map in the corner, which is the same routine
   in both C games (`drawsquare` here, `draw_map_square` in Moraff's World) and so is shared with
