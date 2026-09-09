@@ -500,6 +500,13 @@ export interface Game {
   battleInfoOn: boolean;
   /** DS:c649: the battle banner has been written over and has to be printed again. */
   reprintBattleInfo: boolean;
+  /**
+   * DS:2519: the box on the screen goes with the character's next step. FUN_2000_bcb6, which
+   * takes the character off a square, wipes the eight lines and the strip above them when this
+   * is up; explain_trapdoor, the EXP NEEDED screen, the end of kill_monster and a pass with a
+   * monster engaged raise it.
+   */
+  boxLeavesWithSquare: boolean;
   /** DS:c4dd: the line printed beside the monster during a fight. */
   monsterStatusLine: string;
   /**
@@ -897,6 +904,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     redrawView: false,
     battleInfoOn: false,
     reprintBattleInfo: false,
+    boxLeavesWithSquare: false,
     monsterStatusLine: '',
     menuBox: [],
     rng: new BorlandRng(1),

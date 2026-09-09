@@ -366,6 +366,8 @@ export async function killMonster(game: Game): Promise<void> {
       await bossReward(game, section);
     }
   }
+  // DS:2519: whatever the kill left in the box goes with the character's next step.
+  game.boxLeavesWithSquare = true;
   game.engaged = -1;
   if (game.highSpeed) return;
   game.delay(KILL_SETTLE_MS);

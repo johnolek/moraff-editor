@@ -565,6 +565,8 @@ export const EXP_NEEDED_LEVELS = 7;
  * is what `check_gain_level` asks for at level L - 1, the same as `src/lib/character/exp-needed.ts`.
  */
 export function expNeededScreen(game: Game): void {
+  // DS:2519: the box goes with the character's next step off the square (FUN_2000_bcb6).
+  game.boxLeavesWithSquare = true;
   const lines = Array.from({ length: EXP_NEEDED_LEVELS }, (unused, index) => {
     const needed = expNeeded(game, game.pc.lev + index).toFixed(0);
     return `${game.pc.lev + index + 1}) ${needed.padEnd(20)}`;

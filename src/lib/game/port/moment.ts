@@ -1,5 +1,6 @@
 import { callCheckEng, moveSeconds } from './combat';
 import { showHint } from './drops';
+import { clearMenuBlock, clearMessageLine } from './screens';
 import type { Game } from './state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
 
@@ -176,8 +177,16 @@ export function passMoment(game: Game): void {
 /**
  * FUN_2000_bcb6 (exe 2000:bcb6, unf.c "FUN_2000_bcb6"): take the character off the square they
  * are standing on, which movecontrol does before it moves them. The original also makes a noise.
+ *
+ * A box flagged to go with the step (DS:2519) — a trap door's, EXP NEEDED's, a kill's — is wiped
+ * here, which is why those boxes are gone the moment the character walks off.
  */
 export function leaveSquare(game: Game): void {
+  if (game.boxLeavesWithSquare) {
+    game.boxLeavesWithSquare = false;
+    clearMenuBlock(game);
+    clearMessageLine(game);
+  }
   setMonsterMap(game, game.pc.x, game.pc.y, MAP_EMPTY);
 }
 

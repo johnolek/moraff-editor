@@ -37,6 +37,8 @@ export function buildingUnder(game: Game): number {
  * after the number that the decompilation dropped.
  */
 export function explainTrapdoor(game: Game, destination: number): boolean {
+  // DS:2519: the box goes with the character's next step off the square (FUN_2000_bcb6).
+  game.boxLeavesWithSquare = true;
   const held = game.pc.keys[Math.trunc(destination / KEY_STEP)] !== 0;
   if (!held) {
     // DS:1baf 1bcc, DS:1be4 1bfc 1c16 1c2d 1c46 1c5d

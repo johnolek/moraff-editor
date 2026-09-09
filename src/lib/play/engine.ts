@@ -795,6 +795,9 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     }
     attackTiming(game);
     if (game.engaged === -1) pc.sleepTimer = 0;
+    // DS:2519: while a monster is engaged, the box on the screen is one that goes with the
+    // character's next step (FUN_2000_bcb6).
+    if (game.engaged !== -1) game.boxLeavesWithSquare = true;
     session.settleBanner();
     if (pc.deepestFloor < pc.level) pc.deepestFloor = pc.level;
     // Every square the four 3-D views draw is marked. The original marks them only on a pass it

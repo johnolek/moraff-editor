@@ -240,6 +240,18 @@ describe('changing floors', () => {
     expect(session.view().place.floor).toBe(3);
   });
 
+  it('takes the trap door’s box down with the first step off the square', async () => {
+    const door = findSquare(3, (square) => square.trapdoor >= 0 && square.ladder === 0 && square.n === 3);
+    const session = playing(characterFile({ level: 3, dir: 0, ...door }));
+    await settle();
+    expect(session.box[0]).toContain('TRAP DOOR');
+    // Stepping north: FUN_2000_bcb6 wipes a box flagged at DS:2519 as it takes the character off
+    // the square.
+    await press(session, KEY.arrowUp);
+    expect(session.view().place).toMatchObject({ x: door.x, y: door.y - 1 });
+    expect(session.box).toEqual([]);
+  });
+
   it('walks into a module teleporter and comes out in the next module’s town', async () => {
     const teleporter = findSquare(1, (square) => square.e === 4 && square.ladder === 0 && square.trapdoor === -1 && square.chute === 0);
     const file = characterFile({ level: 1, dir: 3, ...teleporter });
