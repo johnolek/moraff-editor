@@ -37,4 +37,19 @@ describe('the screen the view is drawn on', () => {
     ])];
     expect(rgba).toEqual([0, 0, 0, 255, 255, 128, 0, 255]);
   });
+
+  it('writes into a buffer it is handed rather than making one', () => {
+    const frame = newFrame(2, 1);
+    frame.pixels[0] = 1;
+    const out = new Uint8ClampedArray(new ArrayBuffer(8));
+    const rgba = toRgba(frame, [[0, 0, 0], [10, 20, 30]], out);
+    expect(rgba).toBe(out);
+    expect([...out]).toEqual([10, 20, 30, 255, 0, 0, 0, 255]);
+  });
+
+  it('leaves a colour off the end of the palette black', () => {
+    const frame = newFrame(2, 1);
+    frame.pixels[1] = 5;
+    expect([...toRgba(frame, [[7, 7, 7]])]).toEqual([7, 7, 7, 255, 0, 0, 0, 255]);
+  });
 });

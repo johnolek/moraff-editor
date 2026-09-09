@@ -61,15 +61,38 @@ export function drawLine(frame: Frame, x1: number, y1: number, x2: number, y2: n
   }
 }
 
-/** The frame as RGBA bytes, ready for an `ImageData` or a PNG. */
-export function toRgba(frame: Frame, palette: Rgb[]): Uint8ClampedArray<ArrayBuffer> {
-  const out = new Uint8ClampedArray(new ArrayBuffer(frame.width * frame.height * 4));
-  for (let at = 0; at < frame.pixels.length; at++) {
-    const [r, g, b] = palette[frame.pixels[at]] ?? [0, 0, 0];
-    out[at * 4] = r;
-    out[at * 4 + 1] = g;
-    out[at * 4 + 2] = b;
-    out[at * 4 + 3] = 255;
+/**
+ * The palette as one opaque RGBA word per index, so the pass below writes a whole pixel with a
+ * single store.
+ *
+ * The words are built by writing the bytes and reading them back as 32-bit numbers, which puts
+ * the components in whatever order this machine reads a word in and clamps them exactly the way
+ * writing them one at a time would have.
+ */
+function rgbaLookup(palette: Rgb[]): Uint32Array {
+  const bytes = new Uint8ClampedArray(256 * 4);
+  for (let index = 0; index < 256; index++) {
+    const [r, g, b] = palette[index] ?? [0, 0, 0];
+    bytes[index * 4] = r;
+    bytes[index * 4 + 1] = g;
+    bytes[index * 4 + 2] = b;
+    bytes[index * 4 + 3] = 255;
   }
-  return out;
+  return new Uint32Array(bytes.buffer);
+}
+
+/**
+ * The frame as RGBA bytes, ready for an `ImageData` or a PNG.
+ *
+ * `out` is written in place when it is given, which is how the screens keep one buffer for the
+ * life of the canvas instead of leaving three megabytes behind on every keypress. It has to be
+ * the frame's own size, and its bytes are all overwritten.
+ */
+export function toRgba(frame: Frame, palette: Rgb[], out?: Uint8ClampedArray<ArrayBuffer>): Uint8ClampedArray<ArrayBuffer> {
+  const pixels = frame.pixels;
+  const target = out ?? new Uint8ClampedArray(new ArrayBuffer(pixels.length * 4));
+  const lookup = rgbaLookup(palette);
+  const words = new Uint32Array(target.buffer, target.byteOffset, pixels.length);
+  for (let at = 0; at < pixels.length; at++) words[at] = lookup[pixels[at]];
+  return target;
 }
