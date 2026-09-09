@@ -349,6 +349,9 @@ export async function revTakeAPill(game: RevGame, desk: RevMagicDesk): Promise<v
     else game.say(`${revBasicNumber(colour)}${NO_MORE}`);
   }
   const colour = typedNumber(await desk.poll());
+  // 1000:7CDF: the colour typed goes in the scratch cell before it is looked at, and stays there
+  // through the two tests that turn it down (`attack.ts` says what that cell is for).
+  game.scratch = colour;
   if (colour < 1 || colour > REV_PILL_COLOURS) return;
   if (revPillsHeld(pc, colour) < 1) return;
   revSpendPill(pc, colour);
@@ -358,6 +361,9 @@ export async function revTakeAPill(game: RevGame, desk: RevMagicDesk): Promise<v
   // 1000:7D9D: the game's own wait for a key is what floors a characteristic a pill has taken
   // below one, and the pill calls it for that alone.
   revFloorStats(pc);
+  // 1000:7DA0: the characteristic the pill raises is worked out in the scratch cell, over the
+  // colour, and the game's own numbering for it is what stays there.
+  game.scratch = REV_STATS + 1 - colour;
   pc.stats[REV_STATS + 1 - lowered - 1] += 4;
 }
 

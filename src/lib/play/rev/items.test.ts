@@ -253,6 +253,25 @@ describe('the pills', () => {
     expect(game.said[1]).toBe(' 1 --------------- ');
     expect(game.said[2]).toBe(' 2 RED 2  ');
   });
+
+  it('leaves the colour typed in the scratch cell, as 1000:7CDF does', async () => {
+    const pc = revCharacter();
+    const { game, desk, keys } = revTestGame(pc);
+    game.scratch = 99;
+    keys.push(KEY('9'));
+    await revTakeAPill(game, desk);
+    expect(game.scratch).toBe(9);
+  });
+
+  it('ends with the characteristic it raised there instead, as 1000:7DA0 does', async () => {
+    const pc = revCharacter();
+    setRevValue(pc, 162, 3);
+    const { game, desk, keys } = revTestGame(pc);
+    game.scratch = 99;
+    keys.push(KEY('1'));
+    await revTakeAPill(game, desk);
+    expect(game.scratch).toBe(6);
+  });
 });
 
 describe('the wands', () => {
