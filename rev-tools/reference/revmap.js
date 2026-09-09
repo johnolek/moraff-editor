@@ -443,18 +443,26 @@ export function chuteLanding(column, row, level) {
  * The chute at 1000:3428 prints "YOU FELL DOWN A CHUTE!", drops the player one, two or three
  * levels without touching the column or the row ({@link chuteLanding}), and remembers the
  * square it left the player on (1000:356F).  1000:064D asks for the code of the square just
- * stepped onto, and where that is over 3 -- no ladder and no chute of its own -- and the square
- * is the one the chute dropped the player on, it prints "   False floor.   " (1000:567C) with
- * the D-GO DOWN prompt and the fall goes on another level.
+ * stepped onto, and where that is over 3 -- no ladder and no chute of its own -- and the column
+ * and the row are the ones the chute dropped the player on, it prints "   False floor.   "
+ * (1000:567C) with the D-GO DOWN prompt and the fall goes on one more level (1000:0E0F).
  *
- * The bottom level is left out: the fall from a false floor there would have nowhere to go.
+ * The level the test accepts is the landing level or one below it: 1000:069D compares the
+ * landing level against the level and 1000:06AD compares it against the level less one, and
+ * 1000:06BB takes either.  Nothing rewrites the landing after the drop, so a chute is followed
+ * by at most two of these -- the landing level, then the level under it, and no further.
+ *
+ * The bottom level is left out (1000:0680 wants a level below 70): the fall from a false floor
+ * there would have nowhere to go.
  */
 export function falseFloor(column, row, level) {
   if (level < 1 || level >= LEVELS) return false;
   if (feature(column, row, level) !== null) return false;
-  for (let above = level - 1; above >= level - DEEPEST_FALL && above >= 1; above--) {
+  const landings = [level, level - 1];
+  for (let above = level - 1; above >= level - DEEPEST_FALL - 1 && above >= 1; above--) {
     const chute = feature(column, row, above);
-    if (chute !== null && chute.kind === 'chute' && chuteLanding(column, row, above) === level) return true;
+    if (chute === null || chute.kind !== 'chute') continue;
+    if (landings.includes(chuteLanding(column, row, above))) return true;
   }
   return false;
 }

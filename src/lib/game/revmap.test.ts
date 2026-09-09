@@ -343,6 +343,15 @@ describe('falseFloor', () => {
     expect(falseFloor(9, 17, 28)).toBe(true);
   });
 
+  it('is the level under the landing as well, and no further', () => {
+    // The chute on (7, 16) of level 1 lands on level 2, so 2 and 3 both offer the drop.
+    expect(chuteLanding(7, 16, 1)).toBe(2);
+    expect(falseFloor(7, 16, 3)).toBe(true);
+    expect(falseFloor(7, 16, 4)).toBe(false);
+    expect(falseFloor(9, 17, 29)).toBe(true);
+    expect(falseFloor(9, 17, 30)).toBe(false);
+  });
+
   it('is not a level the fall goes straight past', () => {
     // The chute on (5, 3) of level 6 lands on level 8, so level 7 of that square is never
     // landed on, although nothing at all is on it.

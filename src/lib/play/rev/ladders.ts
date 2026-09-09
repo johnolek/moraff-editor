@@ -1,4 +1,4 @@
-import { feature, townBuilding } from '../../game/revmap.js';
+import { LEVELS, feature, townBuilding } from '../../game/revmap.js';
 import type { RevGame } from './state';
 
 /**
@@ -61,9 +61,16 @@ export function revLookDown(game: RevGame): void {
   if (pc.dungeonLevel === 0 && townBuilding(pc.column, pc.row) > 0) lines.push(ROPE_ABOVE);
   const code = game.feature;
   if (code > DEEPEST_LADDER) {
-    // 1000:064D: a square over the last chute's landing lets the fall go on another level.
+    // 1000:064D: the square the last chute landed on lets the fall go on another level, and so
+    // does the square one level under it — 1000:069D compares the landing level against the
+    // level and 1000:06AD against the level less one, and 1000:06BB takes either. Nothing
+    // writes the landing down again afterwards, so a chute is followed by two of these drops at
+    // the most. 1000:0680 wants a level above the deepest, since the drop has to go somewhere.
     const landing = game.chuteLanding;
-    if (landing && landing.column === pc.column && landing.row === pc.row && landing.level === pc.dungeonLevel) {
+    const atTheLanding = landing?.level === pc.dungeonLevel;
+    const oneUnderTheLanding = landing?.level === pc.dungeonLevel - 1;
+    const here = landing?.column === pc.column && landing?.row === pc.row;
+    if (here && (atTheLanding || oneUnderTheLanding) && pc.dungeonLevel < LEVELS) {
       game.feature = 1;
       lines.push(`${FALSE_FLOOR} ${GO_DOWN}`);
     }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { blocked } from '../../game/revmap.js';
+import { LEVELS, blocked } from '../../game/revmap.js';
 import { SeededRng } from '../../game/port/rng';
 import { REV_EAST, REV_NORTH, REV_SOUTH, REV_WEST } from './keys';
 import { MONSTER_BLOCKS_WAY, revStep } from './move';
@@ -116,5 +116,32 @@ describe('the line under the map', () => {
     revLookDown(game);
     expect(game.feature).toBe(1);
     expect(game.prompt).toContain('False floor');
+  });
+
+  it('calls the square one level under the landing a false floor as well', () => {
+    const game = newRevGame(character({ column: 4, row: 4, dungeonLevel: 3 }), new SeededRng(1));
+    game.feature = REV_NOTHING;
+    game.chuteLanding = { column: 4, row: 4, level: 2 };
+    revLookDown(game);
+    expect(game.feature).toBe(1);
+    expect(game.prompt).toContain('False floor');
+  });
+
+  it('stops two levels under the landing, since nothing writes the landing again', () => {
+    const game = newRevGame(character({ column: 4, row: 4, dungeonLevel: 4 }), new SeededRng(1));
+    game.feature = REV_NOTHING;
+    game.chuteLanding = { column: 4, row: 4, level: 2 };
+    revLookDown(game);
+    expect(game.feature).toBe(REV_NOTHING);
+    expect(game.prompt).toBeNull();
+  });
+
+  it('refuses the false floor on the deepest level, which has nowhere to drop to', () => {
+    const game = newRevGame(character({ column: 4, row: 4, dungeonLevel: LEVELS }), new SeededRng(1));
+    game.feature = REV_NOTHING;
+    game.chuteLanding = { column: 4, row: 4, level: LEVELS };
+    revLookDown(game);
+    expect(game.feature).toBe(REV_NOTHING);
+    expect(game.prompt).toBeNull();
   });
 });
