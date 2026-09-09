@@ -32,7 +32,7 @@ const server = await createServer({ root: ROOT, server: { middlewareMode: true }
 const load = (p) => server.ssrLoadModule(`/src/lib/${p}`);
 
 const { drawRevScreen } = await load('play/rev/screen/screen.ts');
-const { revRgb } = await load('play/rev/screen/colours.ts');
+const { revFrameRgb } = await load('play/rev/screen/colours.ts');
 const { toRgba } = await load('play/view3d/frame.ts');
 const { slotsOnLevel, dungeonForLevel, REV_STRENGTHS } = await load('rev-bestiary/monsters.ts');
 const { RevKeptScreen } = await load('play/rev/screen/kept.ts');
@@ -43,6 +43,8 @@ const { REV_MAGIC } = await load('play/rev/magic.ts');
 const { YOURE_DEAD, CARRIED_OUT, RAISE_FAILED } = await load('play/rev/death.ts');
 const { REV_BETTER_LUCK, REV_HIT_ANY_KEY } = await load('play/rev/screens.ts');
 const { revStatsSheet } = await load('play/rev/stats.ts');
+const { drawRevTextScreen } = await load('play/rev/screen/text-screen.ts');
+const { revHelpTextScreens, revNewHelpColours } = await load('play/rev/help.ts');
 const { REV_ARMOUR_VALUE, REV_VALUE, setRevValue } = await load('play/rev/record.ts');
 
 const args = {};
@@ -143,8 +145,12 @@ if (args.potions) {
   revPotionBanners({ pc, seconds: 0, kept });
 }
 
-const frame = drawRevScreen({ place, known, occupancy, words, kept, cleared });
-const rgba = toRgba(frame, revRgb(num('palette', 0), num('background', 0)));
+// --help <0 to 7> draws one of the eight help pages on its own eighty-column text screen
+// instead of the game's, which is the one screen of the game that is not SCREEN 1.
+const frame = args.help === undefined
+  ? drawRevScreen({ place, known, occupancy, words, kept, cleared })
+  : drawRevTextScreen(revHelpTextScreens(num('help', 0), revNewHelpColours())[num('chunk', 0)]);
+const rgba = toRgba(frame, revFrameRgb(frame, num('palette', 0), num('background', 0)));
 writeFileSync(out, encodePng(frame.width * scale, frame.height * scale, enlarge(rgba, frame.width, frame.height, scale)));
 console.log(
   `${out}  level ${place.level} at ${place.column},${place.row} facing ` +

@@ -1,13 +1,13 @@
 <script lang="ts">
   import { onScreen } from '../../../ui/on-screen.svelte';
-  import { framePainter } from '../../view3d/canvas';
+  import { framePainter, type FramePainter } from '../../view3d/canvas';
   import type { Frame } from '../../view3d/frame';
-  import { revRgb } from './colours';
-  import { SCREEN_HEIGHT, SCREEN_WIDTH } from './paint';
+  import { revFrameRgb } from './colours';
 
   interface Props {
-    /** The 320 by 200 buffer of colour indexes to paint, which is either the screen as the game
-     *  has it now or one the game asked to be held (`../held.ts`). */
+    /** The buffer of colour indexes to paint: the screen as the game has it now, one the game
+     *  asked to be held (`../held.ts`), or the help's eighty-column text page, which is 640 by
+     *  200 rather than 320 by 200 (`./text-screen.ts`). */
     screen: Frame;
     /** Which of `SCREEN 1`'s two colour sets the screen is in, the way the `@` key sets it. */
     palette?: number;
@@ -24,8 +24,15 @@
   /** Whether the tab the screen is on is the one showing, since every tab of the site stays
    *  mounted and a wipe behind one would be drawing for nobody. */
   const visible = onScreen(() => canvas);
-  /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
-  const painter = framePainter(SCREEN_WIDTH, SCREEN_HEIGHT);
+  /** A painter per screen mode, so every repaint writes over the same RGBA buffer. The wide one
+   *  is only ever made because the help asked for it. */
+  const painters = new Map<string, FramePainter>();
+  function painterFor(frame: Frame): FramePainter {
+    const key = `${frame.width}x${frame.height}`;
+    const made = painters.get(key) ?? framePainter(frame.width, frame.height);
+    painters.set(key, made);
+    return made;
+  }
   /** How long this screen takes to appear: the player's choice while the tab is showing. */
   const revealed = $derived(visible.showing ? redraw : 0);
 
@@ -34,17 +41,17 @@
     if (!target) return;
     const context = target.getContext('2d');
     if (!context) return;
-    painter.reveal(context, screen, revRgb(palette, background), revealed);
+    painterFor(screen).reveal(context, screen, revFrameRgb(screen, palette, background), revealed);
   });
 
   /** A screen going off the page part-drawn is shown whole at once, rather than leaving the
    *  player a half-drawn screen to come back to. */
   $effect(() => {
-    if (!visible.showing) painter.finish();
+    if (!visible.showing) for (const painter of painters.values()) painter.finish();
   });
 </script>
 
-<canvas class="screen" bind:this={canvas} width={SCREEN_WIDTH} height={SCREEN_HEIGHT}></canvas>
+<canvas class="screen" bind:this={canvas} width={screen.width} height={screen.height}></canvas>
 
 <style>
   .screen {

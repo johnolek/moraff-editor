@@ -2,6 +2,7 @@ import type { Rng } from '../../game/port/rng';
 import { RevMapMemory } from './memory';
 import { RevMonsters, type RevWalker } from './monsters';
 import { RevKeptScreen } from './screen/kept';
+import type { RevTextRun } from './screen/text-screen';
 import { REV_VALUE, revValue, type RevPc } from './record';
 
 /**
@@ -129,6 +130,9 @@ export interface RevGame {
   /** The screen has been cleared and the dungeon has not been drawn over it yet, so what is on
    *  it is what has been printed since (`screens.ts`). */
   cleared: RevClearedScreen | null;
+  /** The eighty-column text page the help puts the display into (`screen/text-screen.ts`), or
+   *  null while the game is in `SCREEN 1` — which is everywhere else. */
+  textScreen: RevTextRun[] | null;
   /** Things worth writing into a run log. */
   events: RevEvent[];
   /** The loop has come back: the character has quit or died. */
@@ -247,6 +251,7 @@ export function newRevGame(
     banner: [],
     kept: new RevKeptScreen(),
     cleared: null,
+    textScreen: null,
     events: [],
     over: false,
     keyOwed: false,

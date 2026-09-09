@@ -63,6 +63,7 @@ import {
 import { newRevGame, revWalker, type RevGame } from './state';
 import { revScreenStateOf } from './screen/from-game';
 import { drawRevScreen, type RevScreenState } from './screen/screen';
+import { drawRevTextScreen } from './screen/text-screen';
 import type { Frame } from '../view3d/frame';
 import { debugDrawn, panelVisible } from '../mode';
 import type { RevStanding } from './monsters';
@@ -382,6 +383,9 @@ export class RevGameSession {
    * it now.
    */
   screen(): Frame {
+    // The help's eighty-column page is a screen mode of its own and takes the display over
+    // whole, so nothing the game had on the screen shows behind it (`screen/text-screen.ts`).
+    if (this.game.textScreen) return drawRevTextScreen(this.game.textScreen);
     return this.held.showing() ?? drawRevScreen(this.screenState());
   }
 

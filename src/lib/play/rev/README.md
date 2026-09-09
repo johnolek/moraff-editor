@@ -264,10 +264,15 @@ Three things are this game's own:
 * **The start-up loading tune is left out.** It is six fragments played one between each `BLOAD`
   (1000:BBBC, BC18, BCDC, BE47, BF21 and BF30), and this port has nothing to load and no loading
   screen to play them over.
-* **The help pages have no screen of their own.** `help.ts` shows `H1.OVL` to `H8.OVL` page by
-  page in the message box, with the keys the original reads; what it leaves out is the switch to
-  `SCREEN 0` at 80 columns, the second colour a `~` line is drawn in, and the recolouring of the
-  `Esc` and `#` markers at 1000:C47B.
+* **The help pages have a screen of their own, and it is the one screen that is not `SCREEN 1`.**
+  1000:C33B switches to `SCREEN 0` at 80 columns, so `screen/text-screen.ts` is a 640 by 200
+  frame of the same 8 by 8 font at half the width, in CGA's sixteen colours rather than a
+  palette's four. Every line goes on in a colour of its own: a line beginning with `~` steps the
+  cycle at 1000:B9D6 first, which runs through the seven colours start-up filled the array at
+  DGROUP 19E6 with — 9 to 15, CGA's bright half, for the colour monitor the `NAME` file's flag
+  says this is. The menu and the fighting page then have their keys picked out in white
+  (1000:C47B): the `#`, the word `Esc`, and the first letter of every option, which 1000:C500
+  reads back off the screen a row at a time and prints again.
 
 ## The magic
 

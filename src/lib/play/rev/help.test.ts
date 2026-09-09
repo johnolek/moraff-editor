@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SeededRng } from '../../game/port/rng';
-import { HIT_ANY_KEY, revHelpChoice, revHelpChunks, revShowHelp } from './help';
+import { HIT_ANY_KEY, revHelpChoice, revHelpChunks, revHelpTextScreens, revNewHelpColours, revShowHelp } from './help';
 import type { RevPc } from './record';
 import { newRevGame, type RevGame } from './state';
 import type { RevTownDesk } from './town';
@@ -105,5 +105,66 @@ describe('leaving the help', () => {
     const { desk, game } = pressing(['X']);
     await revShowHelp(game, desk);
     expect(game.said).toEqual([]);
+  });
+});
+
+describe('the eighty-column page', () => {
+  const menu = revHelpTextScreens(0, revNewHelpColours())[0];
+
+  /** The line printed on a row, out of the runs that made the page. */
+  function rowOf(runs: typeof menu, row: number): { text: string; colour: number } {
+    const run = runs.filter((each) => each.row === row && each.column === 1)[0];
+    return { text: run?.text ?? '', colour: run?.colour ?? 0 };
+  }
+
+  it('puts every line of the file on its own row, blank rows and all', () => {
+    expect(rowOf(menu, 1).text).toBe('OPTIONS:');
+    expect(rowOf(menu, 2).text).toBe('');
+    expect(rowOf(menu, 3).text).toBe('View Stats--------Displays vital statistics of your character.');
+    expect(rowOf(menu, 25).text).toBe('Press any other key to return to the game.');
+  });
+
+  it('cycles the marked lines through the seven colours and leaves the rest alone', () => {
+    // 1000:B9D6's order: light green, cyan, red, magenta, yellow, white, then light blue again.
+    expect([3, 4, 5, 6, 8, 10, 11].map((row) => rowOf(menu, row).colour)).toEqual([10, 11, 12, 13, 14, 15, 9]);
+    // The two lines that carry on from the one above have no marker, so they keep its colour.
+    expect(rowOf(menu, 7).colour).toBe(rowOf(menu, 6).colour);
+    // The menu opens in what `SCREEN 0` left the colour at, since its first line has no marker.
+    expect(rowOf(menu, 1).colour).toBe(7);
+  });
+
+  it('gives the menu of pages and the line under it the colours the screenshot has', () => {
+    expect(rowOf(menu, 19)).toEqual({ text: 'FOR  MORE  HELP  PRESS:', colour: 9 });
+    expect(rowOf(menu, 21).colour).toBe(10);
+    expect(rowOf(menu, 25).colour).toBe(11);
+  });
+
+  it('picks the key of every option out in white', () => {
+    const white = menu.filter((run) => run.colour === 15 && run.column === 1 && run.text.length === 1);
+    // Rows 1 to 16, so the blank row and the two that carry on from the line above give spaces.
+    expect(white.map((run) => run.text).join('')).toBe('O VMQI C PAE@OTW');
+    expect(menu.filter((run) => run.row === 13 && run.column === 3)).toEqual([
+      { row: 13, column: 3, text: '#', colour: 15 },
+    ]);
+    expect(menu.filter((run) => run.row === 17 && run.colour === 15 && run.text === 'Esc')).toHaveLength(1);
+  });
+
+  it('ends every page but the menu with the prompt at the middle of the bottom row', () => {
+    const screens = revHelpTextScreens(1, revNewHelpColours());
+    const prompt = screens[screens.length - 1].filter((run) => run.text === HIT_ANY_KEY);
+    expect(prompt).toHaveLength(1);
+    expect(prompt[0].row).toBe(25);
+    expect(prompt[0].column).toBe(35);
+    expect(revHelpTextScreens(0, revNewHelpColours())[0].some((run) => run.text === HIT_ANY_KEY)).toBe(false);
+  });
+});
+
+describe('the screen the help takes over', () => {
+  it('is up while a page is showing and down again when the help closes', async () => {
+    const { desk, game } = pressing(['1', ...Array<string>(9).fill(' '), 'X']);
+    expect(game.textScreen).toBe(null);
+    const reading = revShowHelp(game, desk);
+    await reading;
+    expect(game.textScreen).toBe(null);
   });
 });

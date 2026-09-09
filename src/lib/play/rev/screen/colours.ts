@@ -1,4 +1,6 @@
 import { PALETTES } from '../../../rev-bestiary/monsters';
+import type { Frame } from '../../view3d/frame';
+import { SCREEN_WIDTH } from './paint';
 
 /**
  * The four colours `SCREEN 1` has, and which of them each part of the screen is drawn in.
@@ -61,10 +63,25 @@ export function revPalette(palette = 0, background = 0): string[] {
   return colours;
 }
 
-/** The same, as the `[r, g, b]` triples `toRgba` wants. */
+/** A `#rrggbb` as the `[r, g, b]` triple `toRgba` wants. */
+function rgbOf(colour: string): [number, number, number] {
+  const value = parseInt(colour.slice(1), 16);
+  return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
+}
+
+/** The four `SCREEN 1` colours as the triples `toRgba` wants. */
 export function revRgb(palette = 0, background = 0): [number, number, number][] {
-  return revPalette(palette, background).map((colour) => {
-    const value = parseInt(colour.slice(1), 16);
-    return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
-  });
+  return revPalette(palette, background).map(rgbOf);
+}
+
+/**
+ * The colours a frame is painted with, whichever screen mode drew it.
+ *
+ * Everything the game draws is `SCREEN 1`'s four, out of the palette the `@` key chose and the
+ * background the `#` key stepped. The help's page is the one exception: it is `SCREEN 0` at
+ * eighty columns, twice as wide on the same scan lines, and its indexes are CGA's sixteen.
+ */
+export function revFrameRgb(frame: Frame, palette = 0, background = 0): [number, number, number][] {
+  if (frame.width === SCREEN_WIDTH) return revRgb(palette, background);
+  return CGA_COLOURS.map(rgbOf);
 }
