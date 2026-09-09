@@ -2,6 +2,8 @@ import type { CurrentCharacter, GameId } from '../app-state.svelte';
 import { readString } from '../editor/fields';
 import { MORAFFS_REVENGE, MORAFFS_WORLD, UNFORGIVEN } from '../editor/games';
 import data from '../game/dotu-data.json';
+import { REV_CLASS_NAMES } from '../game/rev-port/character';
+import { loadRevPlayer, REV_ARMOUR_VALUE, REV_VALUE, revValue } from '../play/rev/record';
 
 /** How many bytes the name field takes. Moraff's World allows 32, Dungeons of the Unforgiven 18,
  *  and both stop at the first zero, so reading the longer of the two suits either game. */
@@ -61,7 +63,8 @@ export interface CharacterStatus {
   lev: number;
   exp: number;
   sp: number;
-  maxSp: number;
+  /** The spell points the character tops out at, or null for a game that keeps no maximum. */
+  maxSp: number | null;
   hp: number;
   maxHp: number;
   stats: StatusStat[];
@@ -76,6 +79,29 @@ export interface CharacterStatus {
 /** The labels the status block prints beside the six characteristics. */
 const STAT_LABELS = ['STR', 'INT', 'WIZ', 'CON', 'DEX', 'LUCK'];
 
+/** The same six for Moraff's Revenge, which has its own characteristics: strength, intelligence,
+ *  wisdom, health, agility and laziness. */
+const REV_STAT_LABELS = ['STR', 'INT', 'WIS', 'HEA', 'AGI', 'LAZ'];
+
+/** The five suits of Moraff's Revenge, in the order the store numbers them from the robes a new
+ *  character stands up in (1000:2A9A). */
+const REV_ARMOR_NAMES = ['ROBES', 'LEATHER', 'CHAIN', 'PLATE', 'FIELD PLATE'];
+
+/**
+ * The three weapons a Moraff's Revenge character can own, in the order the game's own statistics
+ * sheet prints them (1000:1B08). The game has no weapon in hand: every swing names the weapon it
+ * is thrown with, so what the record holds is which of the three the character owns.
+ */
+const REV_WEAPONS = [
+  { value: REV_VALUE.knife, name: 'KNIFE' },
+  { value: REV_VALUE.sword, name: 'SWORD' },
+  { value: REV_VALUE.mace, name: 'MACE' },
+];
+
+/** What the status block prints for a Moraff's Revenge character who owns no weapon, which is
+ *  what the F key swings with. */
+const REV_NO_WEAPON = 'FISTS';
+
 const WEAPON_NAMES = data.weapons.slice(0, 8).map((weapon) => weapon.name.toUpperCase());
 const ARMOR_NAMES = data.armor.map((armor) => armor.name.toUpperCase());
 const CLASS_NAMES = data.classes.map((entry) => entry.name);
@@ -87,6 +113,7 @@ const pick = (names: string[], index: number) => names[index] ?? UNKNOWN;
 
 /** The status block for the current character, or null for a game this build cannot read. */
 export function characterStatus(character: CurrentCharacter): CharacterStatus | null {
+  if (character.game === MORAFFS_REVENGE.id) return revengeStatus(character.bytes);
   const view = new DataView(character.bytes.buffer, character.bytes.byteOffset, character.bytes.byteLength);
   if (character.game === UNFORGIVEN.id) return unforgivenStatus(view, character.bytes);
   if (character.game === MORAFFS_WORLD.id) return moraffsWorldStatus(view, character.bytes);
@@ -144,6 +171,43 @@ function moraffsWorldStatus(view: DataView, bytes: Uint8Array): CharacterStatus 
       y: view.getInt16(0x7ae, true),
       floor: view.getInt16(0x7b0, true),
       dungeon: view.getInt16(0x7b2, true),
+    },
+  };
+}
+
+/**
+ * The Moraff's Revenge record, which `src/lib/play/rev/record.ts` reads and this only rearranges.
+ *
+ * The game draws no status block: its numbers are on the sheet the V key prints (1000:19F7), and
+ * these are that sheet's. Two of the fields the other two games have are missing rather than
+ * zero — the record holds no name and no maximum for the spell points, which every scroll and
+ * fountain simply adds to.
+ */
+function revengeStatus(bytes: Uint8Array): CharacterStatus | null {
+  const pc = loadRevPlayer(bytes);
+  if (pc === null) return null;
+  const owned = REV_WEAPONS.filter((weapon) => revValue(pc, weapon.value) === 1).map((weapon) => weapon.name);
+  return {
+    recordName: '',
+    cls: pc.cls === 1 ? REV_CLASS_NAMES[0] : REV_CLASS_NAMES[1],
+    armor: pick(REV_ARMOR_NAMES, revValue(pc, REV_ARMOUR_VALUE)),
+    weapon: owned.length > 0 ? owned.join(' ') : REV_NO_WEAPON,
+    lev: pc.level,
+    exp: pc.experience,
+    sp: pc.spellPoints,
+    maxSp: null,
+    hp: pc.hp,
+    maxHp: pc.maxHp,
+    stats: REV_STAT_LABELS.map((label, index) => ({ label, value: pc.stats[index] })),
+    hard: false,
+    battleSpells: [],
+    place: {
+      game: 'revenge',
+      // The game numbers its columns and rows from 1 and the map numbers both from 0.
+      x: pc.column - 1,
+      y: pc.row - 1,
+      floor: pc.dungeonLevel,
+      dungeon: pc.generation,
     },
   };
 }
@@ -207,13 +271,25 @@ export function expLabel(lev: number): string {
   return lev < 9 ? 'EXP:' : 'X:';
 }
 
+/**
+ * Which three of the six characteristics the folded line carries, by their place in the record.
+ * Every game keeps its own six in its own order, and the first, fourth and sixth are the same
+ * three ideas in all three of them: strength, the one health points are worked out from, and the
+ * one left over — luck in the two C games and laziness in Moraff's Revenge.
+ */
+const FOLDED_STATS = [0, 3, 5];
+
 /** The one line the panel is folded away to: who the character is and the numbers most worth
  *  keeping an eye on. */
 export function collapsedLine(status: CharacterStatus, name: string): string {
-  const stat = (label: string) => status.stats.find((entry) => entry.label === label)?.value ?? 0;
+  const stat = (at: number) => {
+    const entry = status.stats[at];
+    return entry ? `${entry.label} ${entry.value}` : '';
+  };
+  const spellPoints = status.maxSp === null ? `${Math.trunc(status.sp)}` : `${Math.trunc(status.sp)}/${Math.trunc(status.maxSp)}`;
   return (
     `${status.recordName || name} L:${status.lev}  ` +
-    `HP ${status.hp}/${status.maxHp}  SP ${Math.trunc(status.sp)}/${Math.trunc(status.maxSp)}  ` +
-    `STR ${stat('STR')} · CON ${stat('CON')} · LUCK ${stat('LUCK')}`
+    `HP ${status.hp}/${status.maxHp}  SP ${spellPoints}  ` +
+    `${stat(FOLDED_STATS[0])} · ${stat(FOLDED_STATS[1])} · ${stat(FOLDED_STATS[2])}`
   );
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { CurrentCharacter } from '../app-state.svelte';
-import { MORAFFS_WORLD, UNFORGIVEN } from '../editor/games';
+import { MORAFFS_REVENGE, MORAFFS_WORLD, UNFORGIVEN } from '../editor/games';
+import { REV_VALUE_COUNT } from '../game/rev-port/record';
+import { REV_ARMOUR_VALUE, REV_VALUE, revPlayerFromValues, saveRevPlayer, setRevValue, type RevPc } from '../play/rev/record';
 import {
   battleSpellsInEffect,
   characterFileName,
@@ -21,6 +23,14 @@ function file(game: typeof UNFORGIVEN, name: string): { character: CurrentCharac
     character: { game: game.id, name, slot: 21, bytes },
     view: new DataView(bytes.buffer),
   };
+}
+
+/** A Moraff's Revenge character file, written the way the game writes one, from a record of
+ *  nothing but the fields the test sets. */
+function revengeFile(fill: (pc: RevPc) => void): CurrentCharacter {
+  const pc = revPlayerFromValues(Array<number>(REV_VALUE_COUNT).fill(0));
+  fill(pc);
+  return { game: MORAFFS_REVENGE.id, name: '3.EXE', slot: 3, bytes: saveRevPlayer(pc) };
 }
 
 describe('the name in a record', () => {
@@ -145,6 +155,70 @@ describe('the status block of a Moraff’s World character', () => {
   });
 });
 
+describe('the status block of a Moraff’s Revenge character', () => {
+  const character = revengeFile((pc) => {
+    pc.cls = 2;
+    pc.stats = [18, 21, 16, 14, 12, 7];
+    pc.level = 6;
+    pc.experience = 250000;
+    pc.spellPoints = 23;
+    pc.hp = 41;
+    pc.maxHp = 55;
+    pc.column = 12;
+    pc.row = 9;
+    pc.dungeonLevel = 4;
+    pc.generation = 3;
+    setRevValue(pc, REV_ARMOUR_VALUE, 2);
+    setRevValue(pc, REV_VALUE.knife, 1);
+    setRevValue(pc, REV_VALUE.mace, 1);
+  });
+  const status = characterStatus(character)!;
+
+  it('has no name, because the record holds none', () => {
+    expect(status.recordName).toBe('');
+  });
+
+  it('names the class, the armour worn and every weapon owned', () => {
+    expect(status.cls).toBe('Wizard');
+    expect(status.armor).toBe('CHAIN');
+    expect(status.weapon).toBe('KNIFE MACE');
+  });
+
+  it('swings with fists when the character owns no weapon', () => {
+    expect(characterStatus(revengeFile(() => {}))!.weapon).toBe('FISTS');
+  });
+
+  it('reads the level, experience and health points through the shifts the record keeps them behind', () => {
+    expect(status.lev).toBe(6);
+    expect(status.exp).toBe(250000);
+    expect([status.hp, status.maxHp]).toEqual([41, 55]);
+  });
+
+  it('has spell points with no maximum, because the game keeps none', () => {
+    expect(status.sp).toBe(23);
+    expect(status.maxSp).toBeNull();
+  });
+
+  it('reads the six characteristics of this game', () => {
+    expect(status.stats).toEqual([
+      { label: 'STR', value: 18 },
+      { label: 'INT', value: 21 },
+      { label: 'WIS', value: 16 },
+      { label: 'HEA', value: 14 },
+      { label: 'AGI', value: 12 },
+      { label: 'LAZ', value: 7 },
+    ]);
+  });
+
+  it('reads the square as the map numbers it, with the generation for the dungeon', () => {
+    expect(status.place).toEqual({ game: 'revenge', x: 11, y: 8, floor: 4, dungeon: 3 });
+  });
+
+  it('is nothing at all for bytes that are not a character file', () => {
+    expect(characterStatus({ game: MORAFFS_REVENGE.id, name: '3.EXE', slot: 3, bytes: new Uint8Array(4) })).toBeNull();
+  });
+});
+
 describe('the battle spells in effect', () => {
   const empty = () => new DataView(new ArrayBuffer(UNFORGIVEN.fileSize!));
 
@@ -226,5 +300,16 @@ describe('the folded-away line', () => {
   it('falls back to what the app calls a character with no name in its record', () => {
     const { character } = file(UNFORGIVEN, '');
     expect(collapsedLine(characterStatus(character)!, 'Rolled character')).toContain('Rolled character');
+  });
+
+  it('carries the three characteristics of whichever game the character belongs to', () => {
+    const character = revengeFile((pc) => {
+      pc.stats = [18, 21, 16, 14, 12, 7];
+      pc.level = 6;
+      pc.hp = 41;
+      pc.maxHp = 55;
+      pc.spellPoints = 23;
+    });
+    expect(collapsedLine(characterStatus(character)!, '3.EXE')).toBe('3.EXE L:6  HP 41/55  SP 23  STR 18 · HEA 14 · LAZ 7');
   });
 });

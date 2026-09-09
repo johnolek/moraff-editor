@@ -178,7 +178,7 @@
         <div class="left">
           <div class="line cyan">ARMOR:{status.armor} &nbsp; WEAPON:{status.weapon}</div>
           <div class="line yellow">{levelLabel(status.lev)}{status.lev} &nbsp; {expLabel(status.lev)}{withSeparators(status.exp)}</div>
-          <div class="line green">SPELL POINTS:{points(status.sp)} OF {points(status.maxSp)}</div>
+          <div class="line green">SPELL POINTS:{points(status.sp)}{status.maxSp === null ? '' : ` OF ${points(status.maxSp)}`}</div>
           <div class="line green">HEALTH POINTS:{status.hp} OF {status.maxHp}</div>
         </div>
         <div class="stats">
