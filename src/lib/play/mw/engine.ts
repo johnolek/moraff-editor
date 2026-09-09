@@ -710,7 +710,10 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     await session.settle();
     if (session.over) return;
     if (turn.step.dx !== 0 || turn.step.dy !== 0) {
-      adviseTheWalker(session);
+      // A step taken straight after a floor's greeting spends the flag instead of the mouse's
+      // turn, so the two are never read one after the other.
+      if (game.justArrived) game.justArrived = false;
+      else adviseTheWalker(session);
       await session.settle();
     }
     await killTheDead(session);

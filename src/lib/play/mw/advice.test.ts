@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { bundledMwDungeon } from '../../game/mw-dungeon';
 import type { MwCharacter } from '../../game/mw-port/state';
-import type { Rng } from '../../game/port/rng';
+import { BorlandRng, type Rng } from '../../game/port/rng';
 import { adviseTheWalker } from './advice';
 import { startMwGame } from './engine';
-import { mwCharacterFile } from './engine.test';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { MW_KEY } from './keys';
 import { MW_MESSAGE_BOX } from './screens';
 
 /** Numbers handed out in the order the mouse asks for them, and 0 once the list runs out. */
@@ -88,5 +90,39 @@ describe("Moraff's World's little mouse", () => {
 
   it('spends the lesson it holds back rather than moving on to the next one', () => {
     expect(taughtLesson(4, { floor: 1 }).lessons.next).toBe(5);
+  });
+});
+
+describe("the step after a floor's own greeting", () => {
+  /** A square of the town with nothing on it and a way out to the north. */
+  const start = findMwSquare(
+    0,
+    (square, x, y) =>
+      square.n === 3 &&
+      square.ladder === 0 &&
+      bundledMwDungeon.surface(x, y, 0, 0) === 0 &&
+      bundledMwDungeon.trapdoor(x, y, 0, 0) === -1,
+  );
+
+  /** A character in a state the mouse has something to say about, so that a silent step means
+   *  the flag rather than a piece of advice that did not apply. */
+  const walking = () =>
+    playingMw(
+      mwCharacterFile({ floor: 0, dir: 1, hp: 10, maxHp: 200, poisonTimer: 20, ...start }),
+      new BorlandRng(3),
+    );
+
+  it('says nothing at all, and puts the flag back down', async () => {
+    const session = walking();
+    session.game.justArrived = true;
+    await pressMw(session, MW_KEY.arrowUp);
+    expect(session.game.screen).toEqual([]);
+    expect(session.game.justArrived).toBe(false);
+  });
+
+  it('is the only thing keeping the mouse quiet on that step', async () => {
+    const session = walking();
+    await pressMw(session, MW_KEY.arrowUp);
+    expect(session.game.screen[0].text).toBe('YOU HAVE BEEN POISONED. FOR');
   });
 });

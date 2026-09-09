@@ -271,6 +271,12 @@ describe('arrivalHint', () => {
     expect(arrivalHint(dead, 200)).toBe(-1);
   });
 
+  it('keeps the mouse quiet for a step, even on a floor that says nothing', () => {
+    const quiet = newMwGame({ rng: { random: () => 0 } });
+    expect(arrivalHint(quiet, 30)).toBe(-1);
+    expect(quiet.justArrived).toBe(true);
+  });
+
   it('shows one of the mouse hints one arrival in twelve', () => {
     const quiet = newMwGame({ rng: { random: () => 0 } });
     expect(arrivalHint(quiet, 30)).toBe(-1);

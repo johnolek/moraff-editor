@@ -387,6 +387,15 @@ export interface MwGame {
   rows: number;
   /** DS:cbee: the line printed beside the monster during a fight. */
   monsterStatusLine: string;
+  /**
+   * DS:11e5: a floor has just greeted the character and they have not stepped since.
+   *
+   * The arrival greeting raises it; the first step movecontrol takes afterwards lowers it and
+   * skips the little mouse's turn, so a floor's own greeting is never followed straight away by
+   * the mouse. It is a plain global rather than part of the character record, so it does not
+   * survive quitting the game, and nothing but that first step ever puts it back down.
+   */
+  justArrived: boolean;
   /** DS:123d: the map view has to be re-centred on the character. */
   recenterMap: boolean;
   /** DS:cd18: the view has to be redrawn. */
@@ -701,6 +710,7 @@ export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
     columns: MW_FLOOR_COLUMNS,
     rows: MW_FLOOR_ROWS,
     monsterStatusLine: '',
+    justArrived: false,
     recenterMap: false,
     redrawView: false,
     isSolid: () => false,

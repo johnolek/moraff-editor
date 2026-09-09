@@ -433,6 +433,9 @@ const BOSS_FLOORS: readonly (readonly [number, number])[] = [
  */
 export function arrivalHint(game: MwGame, floor: number): number {
   const killed = game.pc.killedBosses;
+  // The first statement of the routine, before any of the tests below: even a floor that says
+  // nothing keeps the little mouse quiet for a step.
+  game.justArrived = true;
   if (floor === 0) {
     loadHBin(game, HINT.town);
     return HINT.town;
