@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { Rng } from '../../game/port/rng';
-import { revMonsterAttack, type RevMonsterSwing } from './attack';
+import {
+  IT_MISSED,
+  ITS_STUCK_TO_YOU,
+  LEVEL_DRAINED,
+  SQUASH,
+  STRENGTH_DRAINED,
+  revMonsterAttack,
+  type RevMonsterSwing,
+} from './attack';
 import { REV_VALUE, revValue, type RevPc } from './record';
 import { newRevGame, type RevFight, type RevGame } from './state';
 
@@ -381,5 +389,42 @@ describe('the numbers a drain changed under the character', () => {
     const { game, flushes } = flushing(draws({ 4: 3 }), 15);
     swingAt(game);
     expect(flushes.count).toBe(0);
+  });
+});
+
+describe("where the monster's answer is written", () => {
+  it('prints a miss on row 7, over the top left of the map', () => {
+    const game = attacking(draws({}), 0);
+    swingAt(game);
+    expect(game.kept.runs()).toEqual([{ row: 7, column: 1, text: IT_MISSED }]);
+  });
+
+  it("puts SQUASH!! on row 7 and pushes the stomper's damage down to row 8", () => {
+    const game = attacking(draws({ 4: 3 }), 15, { dungeonLevel: 40, hp: 200 }, { name: 18 });
+    const swing = swingAt(game);
+    expect(game.kept.runs()).toEqual([
+      { row: 7, column: 1, text: SQUASH },
+      { row: 8, column: 1, text: `IT DID ${swing.damage} POINTS  ` },
+    ]);
+  });
+
+  it('runs the drains down the map from row 20', () => {
+    const game = attacking(
+      draws({ 4: 3, 10: 6 }),
+      15,
+      { dungeonLevel: 40, experience: 1000, level: 3, stats: [20, 10, 10, 15, 12, 14] },
+      { kind: 5 },
+    );
+    swingAt(game);
+    const rows = game.kept.runs().filter((run) => run.row >= 20);
+    expect(rows.map((run) => run.row)).toEqual([20, 21, 22]);
+    expect(rows[1].text).toBe(LEVEL_DRAINED);
+    expect(rows[2].text).toBe(STRENGTH_DRAINED);
+  });
+
+  it('prints what a monster of kind 3 stuck to you says on its own row above the rest', () => {
+    const game = attacking(draws({ 4: 3, 5: 4, ...NEARLY_ONE }), 15, {}, { kind: 3 });
+    swingAt(game);
+    expect(game.kept.runs()[0]).toEqual({ row: 5, column: 1, text: ITS_STUCK_TO_YOU });
   });
 });

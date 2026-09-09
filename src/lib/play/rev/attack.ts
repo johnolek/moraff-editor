@@ -54,6 +54,30 @@ export const STRENGTH_DRAINED = 'STRENGTH DRAINED!';
 export const YOU_FEEL_SICK = 'YOU FEEL SICK!';
 export const AGILITY_IS_DRAINED = 'AGILITY IS DRAINED!';
 
+/** `LOCATE 7, 1` at 1000:9A3D and 1000:9D4C: where the monster's answer is printed, over the top
+ *  left of the map. A second line follows it on row 8 without a `LOCATE` of its own. */
+const ANSWER_ROW = 7;
+
+/** `LOCATE 5, 1` at 1000:9BE8: the one line of the answer printed above the rest. */
+const STUCK_ROW = 5;
+
+/** `LOCATE 20, 1` at 1000:9DE8: the drains run down the map from there, one row each. */
+const DRAIN_ROW = 20;
+
+/**
+ * One line of the monster's answer: on the screen at the cursor, and in the list the tab shows
+ * when it is drawing its own map instead of the game's screen.
+ *
+ * Only three of the lines carry a `LOCATE`; the rest follow on down the rows from wherever one
+ * of those three left the cursor, which is what stacks the drains under each other.
+ */
+function says(game: RevGame, ...lines: string[]): void {
+  for (const line of lines) {
+    game.banner.push(line);
+    game.kept.print(line);
+  }
+}
+
 /** 1000:2F43: no characteristic is left under one, which every drain calls on its way out. */
 function revFloorStats(pc: RevPc): void {
   for (let index = 0; index < REV_STAT_COUNT; index++) {
@@ -96,7 +120,8 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
   // another pill ever puts it back up.
   if (game.paralysis > 1) {
     game.paralysis -= 1;
-    game.banner.push(IT_CANT_STRIKE);
+    game.kept.locate(ANSWER_ROW, 1);
+    says(game, IT_CANT_STRIKE);
     return { ...cells };
   }
   if (!fight) return { ...cells };
@@ -127,7 +152,10 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
   if (roll > toBeat) damage += rng.random(4) + 1;
   // 1000:9B95: a shallow monster that landed a solid blow does three less with it.
   if (fight.monsterLevel < 4 && damage > 4) damage -= 3;
-  if (fight.kind === 3 && damage > 0) game.banner.push(ITS_STUCK_TO_YOU);
+  if (fight.kind === 3 && damage > 0) {
+    game.kept.locate(STUCK_ROW, 1);
+    says(game, ITS_STUCK_TO_YOU);
+  }
   if (roll - 15 > toBeat) damage += rng.random(12) + 1;
   if (roll - 30 > toBeat) damage += rng.random(26) + 1;
 
@@ -145,8 +173,10 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
   if (fight.kind === 6) damage *= 2;
   if (damage < 0) damage = 0;
   cells.damage = damage;
+  // 1000:9D4C: the answer is printed from here down, whichever of its lines it turns out to be.
+  game.kept.locate(ANSWER_ROW, 1);
   if (damage === 0) {
-    game.banner.push(IT_MISSED);
+    says(game, IT_MISSED);
     return { ...cells };
   }
   const dungeon = dungeonForLevel(pc.dungeonLevel).number;
@@ -155,11 +185,13 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
   if (fight.name === 18 && dungeon === 2) {
     damage += Math.trunc(pc.hp * 0.25);
     cells.damage = damage;
-    game.banner.push(SQUASH);
+    says(game, SQUASH);
     game.numbersChanged = true;
   }
   pc.hp -= damage;
-  game.banner.push(`IT DID ${damage} POINTS  `);
+  says(game, `IT DID ${damage} POINTS  `);
+  // 1000:9DE8: whatever the blow took with it is written down the map from row 20.
+  game.kept.locate(DRAIN_ROW, 1);
 
   // 1000:9DF4: kind 5 drains a level off any blow it lands, at any depth. The character is
   // written back to disk on the spot, so the loss survives whatever happens next.
@@ -167,8 +199,8 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
     pc.experience = Math.trunc(pc.experience * 0.7);
     pc.level -= 1;
     pc.maxHp = pc.maxHp - rng.random(10) - pc.fromHealth + 1;
-    game.banner.push(REV_FIGHT_LINES[rng.random(5) + 10]);
-    game.banner.push(LEVEL_DRAINED);
+    says(game, REV_FIGHT_LINES[rng.random(5) + 10]);
+    says(game, LEVEL_DRAINED);
     if (pc.level >= 0) save();
   }
 
@@ -176,7 +208,7 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
   if (dungeon === 2) {
     // 1000:9E9F: the face of death, which leaves a character of level 25 or over alone.
     if (fight.name === 14 && pc.level < 25) {
-      game.banner.push(YOU_FEEL_UNHEALTHY);
+      says(game, YOU_FEEL_UNHEALTHY);
       pc.stats[3] -= 5;
       revFloorStats(pc);
       game.numbersChanged = true;
@@ -184,13 +216,13 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
     // 1000:9EE9: kind 5 takes a point of strength on top of the level it has just drained.
     if (fight.kind === 5) {
       pc.stats[0] -= 1;
-      game.banner.push(STRENGTH_DRAINED);
+      says(game, STRENGTH_DRAINED);
       revFloorStats(pc);
       game.numbersChanged = true;
     }
     // 1000:9F1A: the pitbull, which leaves the character diseased as well.
     if (fight.name === 15) {
-      game.banner.push(YOU_FEEL_SICK, AGILITY_IS_DRAINED);
+      says(game, YOU_FEEL_SICK, AGILITY_IS_DRAINED);
       game.numbersChanged = true;
       setRevValue(pc, REV_VALUE.disease, 1);
       pc.stats[4] -= 1;
