@@ -6,6 +6,9 @@
  * games already keep, so it never touches the game, the run log or a replay.
  */
 
+/** How long an orb or the bar takes to move from where it stood to where it now stands. */
+export const HUD_TWEEN_MS = 300;
+
 /**
  * How full an orb is drawn, from 0 empty to 1 full.
  *
