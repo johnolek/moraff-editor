@@ -31,6 +31,10 @@ The gate that turns a class away lives on the spell screen, and only when that s
 for your spell book. A scroll, a wand or a piece of magic paper goes straight past it, so anything
 you can write down, anyone can cast.
 
+Anyone but a fighter. The spell screen has a second gate ahead of that one, and it turns a fighter
+away from the spell book, a scroll and a wand alike: `FIGHTERS CAN ONLY CAST SPELLS BY USING MAGIC
+PAPER. KEEP LOOKING.` Magic paper is the one thing it lets through.
+
 In the code: [cast_spell](source:c/cast_spell), [spell_screen](source:c/spell_screen) and
 [mwCanCast](source:ts/spells.ts/mwCanCast).
 
@@ -84,17 +88,18 @@ every preparation spell and both battle lists, and only has the spell points to 
 In the code: [startingSpells](source:ts/character.ts/startingSpells) and
 [roll_char](source:c/roll_char).
 
-### Sleep is the one battle spell the ten cannot refuse
+### Sleep works on a boss
 
-Ten monsters — Zeus, the Devil and the eight quest bosses — carry a 100 in the byte the battle
-spells check, and Teleport Monster, Autokill, Drain Monster and both Hold Monsters answer that
-with `NO, THAT SILLY SPELL DOESTN'T WORK ON ME`. The holy hand grenade is caught and handed back.
+Only five spells ask whether a monster is one of the spell-proof ten: Teleport Monster, Autokill,
+Drain Monster and the two Hold Monsters. Nothing else does. Every damage spell in the game lands
+on Zeus, the Devil and the eight quest bosses as squarely as on anything else, and so does Sleep.
+"Ten monsters no spell touches", below, is about those five and what they refuse.
 
-Sleep never asks. It rolls once against the monster's own level and, on a zero, the monster does
-nothing for ten of its turns, boss or not. Against something with several thousand hit points a
-spell that buys free swings is worth more than a spell that does damage — though each sleeping
-turn also ends outright when a roll on 500 comes out below the floor number, so the deeper you
-are the less of the sleep you get.
+Sleep rolls once against the monster's own level and, on a zero, the monster does nothing for ten
+of its turns, boss or not. Against something with several thousand hit points a spell that buys
+free swings is worth more than a spell that does damage, though each sleeping turn also ends
+outright when a roll on 500 comes out below the floor number, so the deeper you are the less of
+the sleep you get.
 
 In the code: [sleep_monster](source:c/sleep_monster), [spell_proof](source:c/spell_proof) and
 [isSpellProof](source:ts/monsters.ts/isSpellProof).
