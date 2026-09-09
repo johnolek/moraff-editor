@@ -160,11 +160,17 @@ Three things are this game's own:
   a character can be downloaded and played on in DOS. A death writes nothing; the roster marks the
   entry and keeps the bytes.
 * **The town's pictures are not drawn.** The monsters' are.
-* **The four keys about the screen keep their numbers and nothing plays.** `#`, `@` and `E` write
-  the background colour, the palette and the redraw delay the way the game does, and `settings.ts`
-  is where the display reads them; nothing here redraws on a timer, so the delay is only kept. `O`
-  turns the sound off and on again as the game does and says in the box that there is none to
-  play.
+* **Two of the four keys about the screen change it; the other two only keep their numbers.**
+  `@` flips the screen between the two `SCREEN 1` palettes and `#` steps the colour standing
+  behind everything through CGA's sixteen, both as the game does (1000:1038 and 1000:0FF5).
+  `settings.ts` writes the two numbers, `screen/colours.ts` turns them into the four colours the
+  canvas paints the 320 by 200 buffer with, and `rev-tools/reference/render_screen.mjs` takes the
+  same two as `--palette` and `--background`, so a PNG of the screen can be made in whatever the
+  tab is showing. `E` writes the redraw delay the way the game does and nothing here redraws on a
+  timer, so that number is only kept. `O` turns the sound off and on again as the game does and
+  says in the box that there is none to play. None of the four spends an action and none of them
+  touches the character, so they go into the run log as the inputs they are and a replay comes out
+  the same whatever colours it was played in.
 * **The help pages have no screen of their own.** `help.ts` shows `H1.OVL` to `H8.OVL` page by
   page in the message box, with the keys the original reads; what it leaves out is the switch to
   `SCREEN 0` at 80 columns, the second colour a `~` line is drawn in, and the recolouring of the

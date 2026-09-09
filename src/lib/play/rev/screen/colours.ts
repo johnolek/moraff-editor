@@ -26,12 +26,44 @@ export const BROWN = 3;
  */
 export const TEXT = BROWN;
 
-/** The colours as `#rrggbb`, for a canvas or a PNG. `PALETTES` is the bestiary's own list. */
-export const revPalette = (palette = 0): string[] => PALETTES[palette] ?? PALETTES[0];
+/**
+ * CGA's sixteen colours, which is what the background can be set to.
+ *
+ * `COLOR background, palette` in `SCREEN 1` chooses the four-colour set with the palette and
+ * paints colour 0 -- the screen behind everything -- with one of these; the `#` key is what
+ * steps that number (1000:0FF5). The register the card holds it in is four bits wide, so the
+ * seventeenth step the key allows comes out as the first colour again.
+ */
+export const CGA_COLOURS = [
+  '#000000',
+  '#0000aa',
+  '#00aa00',
+  '#00aaaa',
+  '#aa0000',
+  '#aa00aa',
+  '#aa5500',
+  '#aaaaaa',
+  '#555555',
+  '#5555ff',
+  '#55ff55',
+  '#55ffff',
+  '#ff5555',
+  '#ff55ff',
+  '#ffff55',
+  '#ffffff',
+];
+
+/** The colours as `#rrggbb`, for a canvas or a PNG. `PALETTES` is the bestiary's own list, and
+ *  the background takes the place of its first colour. */
+export function revPalette(palette = 0, background = 0): string[] {
+  const colours = [...(PALETTES[palette] ?? PALETTES[0])];
+  colours[0] = CGA_COLOURS[background % CGA_COLOURS.length] ?? CGA_COLOURS[0];
+  return colours;
+}
 
 /** The same, as the `[r, g, b]` triples `toRgba` wants. */
-export function revRgb(palette = 0): [number, number, number][] {
-  return revPalette(palette).map((colour) => {
+export function revRgb(palette = 0, background = 0): [number, number, number][] {
+  return revPalette(palette, background).map((colour) => {
     const value = parseInt(colour.slice(1), 16);
     return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
   });

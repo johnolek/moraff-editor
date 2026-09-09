@@ -7,7 +7,8 @@
 //
 // The floor comes out of the wall rule, so no save file is needed; --walked says which squares
 // the map has been told the character has been on ("all", "none", or "cross" for a plus-shaped
-// patch around the character).
+// patch around the character).  --palette 0 or 1 picks the SCREEN 1 colour set the @ key flips
+// between and --background 0 to 15 the colour the # key steps, the way the tab reads them.
 //
 // The PNG writer is dotu-tools/reference/scripts/png.mjs, which render_3d.mjs uses as well.
 
@@ -81,7 +82,7 @@ if (args.fight) {
 }
 
 const frame = drawRevScreen({ place, known, occupancy, words });
-const rgba = toRgba(frame, revRgb(0));
+const rgba = toRgba(frame, revRgb(num('palette', 0), num('background', 0)));
 writeFileSync(out, encodePng(frame.width * scale, frame.height * scale, enlarge(rgba, frame.width, frame.height, scale)));
 console.log(
   `${out}  level ${place.level} at ${place.column},${place.row} facing ` +

@@ -12,6 +12,7 @@ import {
   revStepPalette,
   revToggleSound,
 } from './settings';
+import { CGA_COLOURS, revPalette } from './screen/colours';
 import { newRevGame, type RevGame } from './state';
 import type { RevTownDesk } from './town';
 
@@ -114,5 +115,27 @@ describe('the enter delay', () => {
     game.enterDelay = 4;
     await revSetEnterDelay(game, typing('X').desk);
     expect(game.enterDelay).toBe(4);
+  });
+});
+
+describe('the colours the screen is drawn in', () => {
+  it('flips the four between the two SCREEN 1 sets as the palette key does', () => {
+    const game = playing();
+    expect(revPalette(revCgaPalette(game))).toEqual(['#000000', '#00aa00', '#aa0000', '#aa5500']);
+    revStepPalette(game);
+    expect(revPalette(revCgaPalette(game))).toEqual(['#000000', '#00aaaa', '#aa00aa', '#aaaaaa']);
+  });
+
+  it('paints colour 0 with the background the background key steps', () => {
+    const game = playing();
+    revStepBackground(game);
+    expect(revPalette(revCgaPalette(game), game.background)[0]).toBe(CGA_COLOURS[1]);
+  });
+
+  it('comes back to the first colour on the step past the fifteenth, which the card has no bit for', () => {
+    const game = playing();
+    for (let press = 0; press < 16; press++) revStepBackground(game);
+    expect(game.background).toBe(16);
+    expect(revPalette(0, game.background)[0]).toBe(CGA_COLOURS[0]);
   });
 });

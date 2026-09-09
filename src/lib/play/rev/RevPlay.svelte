@@ -35,6 +35,7 @@
   import { revCharacterMap } from './memory';
   import RevScreenCanvas from './screen/RevScreenCanvas.svelte';
   import { revScreenStateOf } from './screen/from-game';
+  import { revCgaPalette } from './settings';
 
   /** How many pixels a square is drawn at when the map is centred on the character. */
   const PLAY_CELL = 26;
@@ -95,6 +96,18 @@
     const playing = session;
     if (!playing) return null;
     return revScreenStateOf(playing.game, { wholeFloor: mode !== 'faithful', debug: debugDrawn(mode) });
+  });
+
+  /**
+   * The colours the game's screen is drawn in: the `@` key flips between the two `SCREEN 1`
+   * palettes and the `#` key steps the colour behind everything. The view is read so that a
+   * press of either redraws the canvas.
+   */
+  const screenColours = $derived.by(() => {
+    void view;
+    const playing = session;
+    if (!playing) return { palette: 0, background: 0 };
+    return { palette: revCgaPalette(playing.game), background: playing.game.background };
   });
 
   /** The map the floor is drawn from: the squares walked in faithful mode, the whole level in
@@ -241,7 +254,7 @@
     <div class="stage">
       <div class="map">
         {#if display === 'screen' && gameScreen}
-          <RevScreenCanvas screen={gameScreen} />
+          <RevScreenCanvas screen={gameScreen} palette={screenColours.palette} background={screenColours.background} />
         {:else}
         <FloorCanvas
           bind:this={canvas}
