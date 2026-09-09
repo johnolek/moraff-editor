@@ -291,8 +291,12 @@ is where those go; the session keeps them as `session.tablet`, the tab draws the
 lines in place of everything else, and the key `FUN_3000_9026` waits for is owed the way
 `pressAnyKey`'s is and taken in `settle`. `load_level_map` puts the town's up before `movecontrol`
 has run a pass, so the loop takes that key before its first. The section boss's taunt is a tablet
-too and is not this one: `boss_office_message` draws it 250 units lower with the boss's picture
-over it and waits for nothing, so it stays in the box.
+too and is not this one: `boss_office_message` (exe 3000:6c9d) blanks the whole display, sets
+DS:2412 to 3 so that the slab comes down 0xfa lower, and lays the boss's own panel over the top of
+it, so `office.ts` and `boss-office.ts` draw that screen rather than `session.tablet`. The key it
+waits for erases the display again, which is what takes its three printed lines off the screen and
+leaves `movecontrol` to draw the dungeon afresh. The port keeps the four lines in the message box
+as well, where the column beside the map reads them.
 
 The S key's screen is a third. `section-screen.ts` and `manual.ts` are the two halves of
 `monster_manual` (exe 3000:c39d): five panels of the section's own wall material across the bottom
