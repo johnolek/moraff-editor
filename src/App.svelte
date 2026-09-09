@@ -87,8 +87,7 @@
   {/if}
   {#if !app.rosterKept}
     <p class="storage-note">
-      Could not save your characters: the browser's storage is full or turned off. Anything edited now will be gone
-      when this page is closed.
+      Not saving: this browser's storage is full or turned off, so nothing from here on is kept.
     </p>
   {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
