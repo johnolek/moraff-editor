@@ -1,5 +1,5 @@
 import { base64FromBytes } from '../bytes';
-import { fromBase64, readStored, writeStored } from '../character/storage';
+import { fromBase64, jsonStore } from '../character/storage';
 import {
   DUN_COLUMNS,
   DUN_FLOOR_BYTES,
@@ -97,25 +97,7 @@ const MAPS_PREFIX = 'moraff-tools.maps.';
 
 /** The explored maps kept beside one roster entry. */
 export function characterMaps(id: string): MapStore {
-  const key = MAPS_PREFIX + id;
-  return {
-    read() {
-      const text = readStored(key);
-      if (!text) return {};
-      try {
-        const parsed: unknown = JSON.parse(text);
-        return typeof parsed === 'object' && parsed !== null ? (parsed as StoredMaps) : {};
-      } catch {
-        return {};
-      }
-    },
-    write(maps) {
-      writeStored(key, JSON.stringify(maps));
-    },
-    clear() {
-      writeStored(key, JSON.stringify({}));
-    },
-  };
+  return jsonStore<StoredMaps>(MAPS_PREFIX + id);
 }
 
 /** The squares of a floor, as the map draws and the explored-map reader indexes them. */

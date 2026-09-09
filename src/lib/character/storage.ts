@@ -1,4 +1,4 @@
-import { bytesFromBase64 } from '../bytes';
+import { base64FromBytes, bytesFromBase64 } from '../bytes';
 
 /**
  * The browser's localStorage, or null when there is none to be had. Reading it throws outright
@@ -42,4 +42,56 @@ export function fromBase64(text: string): Uint8Array<ArrayBuffer> | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * One key of the store holding a JSON object.
+ *
+ * Reading a key that has never been written, or that holds anything but an object, gives a new
+ * empty object, so a caller can always write into what it reads back.
+ */
+export function jsonStore<T extends object>(key: string): {
+  read(): T;
+  write(value: T): void;
+  clear(): void;
+} {
+  return {
+    read() {
+      const text = readStored(key);
+      if (!text) return {} as T;
+      try {
+        const parsed: unknown = JSON.parse(text);
+        return typeof parsed === 'object' && parsed !== null ? (parsed as T) : ({} as T);
+      } catch {
+        return {} as T;
+      }
+    },
+    write(value) {
+      writeStored(key, JSON.stringify(value));
+    },
+    clear() {
+      writeStored(key, JSON.stringify({}));
+    },
+  };
+}
+
+/** One key of the store holding a run of bytes, base64 encoded. Reading gives null when there
+ *  are none there. */
+export function blobStore(key: string): {
+  read(): Uint8Array<ArrayBuffer> | null;
+  write(bytes: Uint8Array): void;
+  clear(): void;
+} {
+  return {
+    read() {
+      const text = readStored(key);
+      return text ? fromBase64(text) : null;
+    },
+    write(bytes) {
+      writeStored(key, base64FromBytes(bytes));
+    },
+    clear() {
+      writeStored(key, '');
+    },
+  };
 }

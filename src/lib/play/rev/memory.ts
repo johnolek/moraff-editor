@@ -1,5 +1,4 @@
-import { base64FromBytes } from '../../bytes';
-import { readStored, fromBase64, writeStored } from '../../character/storage';
+import { blobStore } from '../../character/storage';
 import { COLUMNS, LEVELS, ROWS, mbfSingle } from '../../game/revmap.js';
 import { REV_TOWN_ROWS } from '../../game/rev-port/character';
 import { REV_MAP_SINGLES, revExploredBytes } from '../../roller/rev-save-file';
@@ -39,19 +38,7 @@ const MAPS_PREFIX = 'moraff-tools.revenge-map.';
 
 /** The explored map kept beside one roster entry, as the game keeps `<n>.BIN` beside `<n>.EXE`. */
 export function revCharacterMap(id: string): RevMapStore {
-  const key = MAPS_PREFIX + id;
-  return {
-    read() {
-      const text = readStored(key);
-      return text ? fromBase64(text) : null;
-    },
-    write(bytes) {
-      writeStored(key, base64FromBytes(bytes));
-    },
-    clear() {
-      writeStored(key, '');
-    },
-  };
+  return blobStore(MAPS_PREFIX + id);
 }
 
 /** One character's explored map while they are being played. */
