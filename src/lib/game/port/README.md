@@ -144,6 +144,8 @@ between one screen of the roller and the next. `game.pressAnyKey()` is `mgetch_m
 
 * `state.ts` — the `Game` state, the monster and item tables, and `newGame()` for tests.
 * `rng.ts` — `Random(n)` over Borland's generator.
+* `sound.ts` — the four noises a fight makes, each with the gates it asks before it plays. The
+  speaker they go to is `src/lib/speaker.ts`, which the other two games share.
 * `combat.ts` — `strike` and `defend`, with the drains, the poison, the disease, the puffballs
   and the five breath weapons, and the clock that decides how many attacks an adjacent monster
   gets while the player acts: `check_engagement`, `call_check_eng`, `attack_timing`, the battle
