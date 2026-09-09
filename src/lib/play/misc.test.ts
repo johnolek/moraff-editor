@@ -70,11 +70,11 @@ describe('the O key', () => {
     expect(session.game.colourSetting).toBe(0);
     for (const want of [1, 2, 3, 0]) {
       await press(session, KEY.options);
-      const menu = [...session.box];
+      expect(session.box[0]).toBe('YOUR SPECIAL OPTIONS MENU:');
       await press(session, 0x32);
       expect(session.game.colourSetting).toBe(want);
-      // The game answers this switch by redrawing, so the menu is left as it stands.
-      expect(session.box).toEqual(menu);
+      // get_choice wipes the menu as it hands the key back, and this switch prints nothing after.
+      expect(session.box).toEqual([]);
     }
   });
 

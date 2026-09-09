@@ -4,7 +4,12 @@ import {
   drawSpellInventoryPage,
   POCKETS_MAGIC_ITEMS,
 } from '../game/port/inventory';
-import { clearStatsScreen, getChoice } from '../game/port/screens';
+import {
+  clearMenuBlock,
+  clearMessageLine,
+  clearStatsScreen,
+  getChoice,
+} from '../game/port/screens';
 import type { Game } from '../game/port/state';
 import type { Turn } from './engine';
 
@@ -38,10 +43,14 @@ export async function lookInPockets(turn: Turn): Promise<void> {
   game.eraseScreen();
 }
 
-/** get_choice (exe 2000:2d93) over the five lines of the menu. */
+/** get_choice (exe 2000:2d93) over the five lines of the menu, which wipes them as it returns,
+ *  Escape or not. */
 async function readMenu(game: Game): Promise<number | 'escape'> {
   for (;;) {
     const chosen = getChoice(1, 5, await game.key());
-    if (chosen !== null) return chosen;
+    if (chosen === null) continue;
+    clearMenuBlock(game);
+    clearMessageLine(game);
+    return chosen;
   }
 }

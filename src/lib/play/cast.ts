@@ -43,14 +43,22 @@ import { drinkAPotion } from './potions';
  * movecontrol spends on the spell afterwards.
  */
 
-/** Read keys the way the game's menu readers do: past every key the reader makes nothing of. */
+/**
+ * Read keys the way the game's menu readers do: past every key the reader makes nothing of, and
+ * then the eight lines and the strip above them are wiped before the answer is handed back,
+ * Escape or not (mset_gmenu at exe 2000:2c8f and get_choice at 2000:2e9a both end with
+ * FUN_2000_2820 and FUN_2000_28be).
+ */
 async function menuChoice(
   game: Game,
   reader: (key: number) => MenuChoice,
 ): Promise<number | 'escape'> {
   for (;;) {
     const choice = reader(await game.key());
-    if (choice !== null) return choice;
+    if (choice === null) continue;
+    clearMenuBlock(game);
+    clearMessageLine(game);
+    return choice;
   }
 }
 

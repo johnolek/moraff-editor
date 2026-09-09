@@ -371,11 +371,17 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     return super.key();
   }
 
-  /** get_choice (exe 2000:2d93): keys until one of the menu's own, or Escape. */
+  /**
+   * get_choice (exe 2000:2d93): keys until one of the menu's own, or Escape — and then the eight
+   * lines and the strip above them are wiped before the key is handed back (exe 2000:2e9a), so a
+   * menu left with Escape goes off the screen at once.
+   */
   async choice(allowed: number[]): Promise<number> {
     for (;;) {
       const key = await this.key();
-      if (key === KEY.escape || allowed.includes(key)) return key;
+      if (key !== KEY.escape && !allowed.includes(key)) continue;
+      this.wipeMessageBlock();
+      return key;
     }
   }
 
