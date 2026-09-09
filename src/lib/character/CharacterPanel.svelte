@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { app, currentEntry, type RosterEntry, type Tab } from '../app-state.svelte';
+  import { app, currentEntry, type Tab } from '../app-state.svelte';
   import { GAMES, UNFORGIVEN } from '../editor/games';
   import { goToTab } from '../history';
-  import { chooseCharacter, forgetCharacter, renameCharacter, restoreCharacterImport } from './current';
+  import CharacterList from './CharacterList.svelte';
   import { EXP_NEEDED_HEADING, expNeededRows } from './exp-needed';
   import { characterStatus, collapsedLine, expLabel, levelLabel, withSeparators } from './record';
   import { readStored, writeStored } from './storage';
@@ -13,9 +13,6 @@
   let collapsed = $state(readStored(COLLAPSED_KEY) === 'yes');
   let choosing = $state(false);
   let showingExpNeeded = $state(false);
-  /** The character whose name is being typed over, if any. */
-  let renaming = $state<string | null>(null);
-  let typedName = $state('');
 
   const character = $derived(currentEntry());
   const status = $derived.by(() => {
@@ -55,42 +52,6 @@
   }
 
   const points = (value: number) => String(Math.trunc(value));
-  /** The level in the list is read out of the record, which changes under it as the current
-   *  character is edited. */
-  const levelOf = (entry: RosterEntry) => {
-    void app.characterVersion;
-    return characterStatus(entry)?.lev ?? 0;
-  };
-  const editedOn = (when: string) => new Date(when).toLocaleDateString();
-
-  function choose(id: string) {
-    chooseCharacter(id);
-    choosing = false;
-  }
-
-  function startRename(entry: RosterEntry) {
-    renaming = entry.id;
-    typedName = entry.name;
-  }
-
-  function commitRename() {
-    if (renaming) renameCharacter(renaming, typedName);
-    renaming = null;
-  }
-
-  function onRenameKey(event: KeyboardEvent) {
-    if (event.key === 'Enter') commitRename();
-    if (event.key === 'Escape') renaming = null;
-  }
-
-  function remove(entry: RosterEntry) {
-    if (confirm(`Remove ${entry.name} from this browser?`)) forgetCharacter(entry.id);
-  }
-
-  function focusInput(node: HTMLInputElement) {
-    node.focus();
-    node.select();
-  }
 </script>
 
 <section class="character-panel">
@@ -106,35 +67,7 @@
 
   {#if choosing}
     {#if ours.length > 0}
-      <table class="chooser">
-        <thead>
-          <tr><th>Character</th><th>Level</th><th>Number</th><th>From</th><th>Edited</th><th></th></tr>
-        </thead>
-        <tbody>
-          {#each ours as entry (entry.id)}
-            <tr class:current={entry.id === character?.id}>
-              <td>
-                {#if renaming === entry.id}
-                  <input class="rename" bind:value={typedName} onkeydown={onRenameKey} onblur={commitRename} use:focusInput />
-                {:else}
-                  <button type="button" class="link" onclick={() => choose(entry.id)}>{entry.name}</button>
-                {/if}
-              </td>
-              <td>{levelOf(entry)}{entry.dead ? ' · dead' : ''}</td>
-              <td>{entry.slot ?? '—'}</td>
-              <td>{entry.importedBytes ? 'imported' : 'rolled'}</td>
-              <td>{editedOn(entry.editedAt)}</td>
-              <td class="actions">
-                <button type="button" class="link" onclick={() => startRename(entry)}>Rename</button>
-                {#if entry.importedBytes}
-                  <button type="button" class="link" onclick={() => restoreCharacterImport(entry.id)}>Restore the import</button>
-                {/if}
-                <button type="button" class="link" onclick={() => remove(entry)}>Remove</button>
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+      <CharacterList entries={ours} currentId={character?.id ?? null} onpicked={() => (choosing = false)} />
     {/if}
     {#if elsewhere > 0}
       <p class="elsewhere">{elsewhereLine}</p>
@@ -329,42 +262,10 @@
   .exp-needed .line {
     color: var(--mw-green);
   }
-  .chooser {
-    margin-bottom: 10px;
-    border-collapse: collapse;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .chooser th {
-    text-align: left;
-    font-weight: 600;
-    padding: 3px 16px 3px 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .chooser td {
-    padding: 4px 16px 4px 0;
-    border-bottom: 1px solid var(--line);
-    white-space: nowrap;
-  }
-  .chooser tr.current td {
-    color: var(--ink);
-  }
   .elsewhere {
     margin: 0 0 10px;
     color: var(--muted);
     font-size: 12px;
-  }
-  .chooser .actions {
-    display: flex;
-    gap: 12px;
-  }
-  .rename {
-    background: var(--panel-2);
-    color: var(--ink);
-    border: 1px solid var(--accent-dim);
-    border-radius: 4px;
-    padding: 2px 6px;
-    font: inherit;
   }
   .chevron {
     position: absolute;
