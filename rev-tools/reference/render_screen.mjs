@@ -19,6 +19,9 @@ import { encodePng } from '../../dotu-tools/reference/scripts/png.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+// --fight puts the fight's own lines up and --killed the screen a kill leaves: the dead
+// monster's picture with YOU KILLED IT!! and HIT RETURN printed across it.
+//
 // The screen is written in TypeScript, so it is loaded through Vite's own module loader rather
 // than by adding a runner to the project.
 const { createServer } = await import('vite');
@@ -29,6 +32,9 @@ const { drawRevScreen } = await load('play/rev/screen/screen.ts');
 const { revRgb } = await load('play/rev/screen/colours.ts');
 const { toRgba } = await load('play/view3d/frame.ts');
 const { slotsOnLevel, dungeonForLevel, REV_STRENGTHS } = await load('rev-bestiary/monsters.ts');
+const { RevKeptScreen } = await load('play/rev/screen/kept.ts');
+const { YOU_KILLED_IT } = await load('play/rev/kill.ts');
+const { REV_HIT_RETURN } = await load('play/rev/treasure.ts');
 
 const args = {};
 for (let i = 2; i < process.argv.length; i++) {
@@ -81,7 +87,18 @@ if (args.fight) {
   };
 }
 
-const frame = drawRevScreen({ place, known, occupancy, words });
+// What the game has printed and not painted over, which is the one part of the screen that is
+// not worked out from where the character is standing.
+const kept = new RevKeptScreen();
+if (args.killed) {
+  const here = occupancy.slotOn(place.column, place.row);
+  const fought = slotsOnLevel(place.level).find((slot) => slot.slot === here);
+  kept.picture = { name: fought?.name ?? 1, level: place.level };
+  kept.printAt(16, 24, YOU_KILLED_IT);
+  kept.printAt(17, 26, REV_HIT_RETURN);
+}
+
+const frame = drawRevScreen({ place, known, occupancy, words, kept });
 const rgba = toRgba(frame, revRgb(num('palette', 0), num('background', 0)));
 writeFileSync(out, encodePng(frame.width * scale, frame.height * scale, enlarge(rgba, frame.width, frame.height, scale)));
 console.log(
