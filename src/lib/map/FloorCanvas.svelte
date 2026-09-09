@@ -11,7 +11,7 @@
   import { drawTeleporters, teleporterHue, teleporterSegments } from './teleporters';
   import { centerOn, ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
   import { onScreen } from '../ui/on-screen.svelte';
-  import { renderWallTexture, wallTexture } from './wall-texture';
+  import { renderWallTexture, wallTexture, wallTilePattern } from './wall-texture';
   import { youAlpha } from './you';
 
   /** The marker's square, and the facing it is drawn pointing along where it has one. */
@@ -180,14 +180,6 @@
     return tile;
   }
 
-  /** The tile laid out across the canvas, moving with the floor as it is panned. */
-  function wallPattern(ctx: CanvasRenderingContext2D, tile: HTMLCanvasElement, view: Viewport): CanvasPattern | undefined {
-    const pattern = ctx.createPattern(tile, 'repeat');
-    if (!pattern) return undefined;
-    pattern.setTransform(new DOMMatrix().translateSelf(view.originX % tile.width, view.originY % tile.height));
-    return pattern;
-  }
-
   // The floor itself is drawn once into a static layer whenever rows, view or size change;
   // every frame then blits it and draws the overlays (teleporters, marks, route, cursor) on
   // top. Dependencies are read here, synchronously, so the effect re-runs when they change.
@@ -274,7 +266,7 @@
       const staticCtx = staticLayer.getContext('2d')!;
       staticCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const tile = wallTile(floor, dungeon);
-      const background = tile ? wallPattern(staticCtx, tile, view) : undefined;
+      const background = tile ? wallTilePattern(staticCtx, tile) : undefined;
       drawFloor(staticCtx, rows, { ...view, width, height, floor, teleporterHue: null, game, background, discovered, explored: explored ? (x, y) => isExplored(explored, x, y) : undefined });
       staticStale = false;
     }

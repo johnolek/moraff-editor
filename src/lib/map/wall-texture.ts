@@ -104,6 +104,21 @@ export function wallTexture(game: GameId, dungeon: number, floor: number): WallT
   return null;
 }
 
+/**
+ * One tile of the texture laid across a canvas, anchored to the canvas's own top left corner.
+ *
+ * The rock behind the map is a backdrop, not part of the map: the floor is what zooming and
+ * panning move, and the stone underneath stays where it is. So the pattern is given no transform
+ * of its own — a transform built from the map's viewport is what used to slide the stone about
+ * every time the map was zoomed.
+ */
+export function wallTilePattern(
+  ctx: CanvasRenderingContext2D,
+  tile: CanvasImageSource,
+): CanvasPattern | undefined {
+  return ctx.createPattern(tile, 'repeat') ?? undefined;
+}
+
 const drawn = new Map<string, RenderedImage>();
 
 /** The texture as the game draws it, at its own 256 by 200 pixels, or null when the site does

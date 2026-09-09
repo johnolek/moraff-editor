@@ -4,7 +4,7 @@ import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { newFrame, pixelAt } from '../play/view3d/frame';
 import { WALL_BASE, WALL_GRADIENT, WALL_TINT } from '../play/view3d/pictures';
 import { drawWallFace, type PicRowImage } from '../play/view3d/texture';
-import { renderWallTexture, wallTexture } from './wall-texture';
+import { renderWallTexture, wallTexture, wallTilePattern } from './wall-texture';
 
 /** The file each of the twenty sections draws its walls from, section 1 first. */
 const EXPECTED_FILES = [1, 2, 3, 4, 2, 3, 1, 4, 1, 2, 3, 1, 2, 1, 3, 2, 3, 2, 1, 4].map((n) => `ufwall${n}.pic`);
@@ -142,5 +142,36 @@ describe('the swatch and the wall faces of the 3-D view', () => {
     for (const value of [16, 17, 18]) {
       expect([value, texture.pixelIndex(value, 0)]).toEqual([value, faceColour(value)]);
     }
+  });
+});
+
+describe('the tile behind the map', () => {
+  /** A canvas context that hands back a pattern and remembers how it was asked for and what was
+   *  done to it afterwards. */
+  function patternContext() {
+    const asked: string[] = [];
+    const transformed: unknown[] = [];
+    const pattern = { setTransform: (matrix: unknown) => transformed.push(matrix) } as unknown as CanvasPattern;
+    const ctx = {
+      createPattern: (_tile: CanvasImageSource, repetition: string) => {
+        asked.push(repetition);
+        return pattern;
+      },
+    } as unknown as CanvasRenderingContext2D;
+    return { ctx, asked, transformed, pattern };
+  }
+
+  const tile = {} as CanvasImageSource;
+
+  it('repeats across the canvas', () => {
+    const { ctx, asked, pattern } = patternContext();
+    expect(wallTilePattern(ctx, tile)).toBe(pattern);
+    expect(asked).toEqual(['repeat']);
+  });
+
+  it('is anchored to the canvas, so zooming the map cannot move it', () => {
+    const { ctx, transformed } = patternContext();
+    wallTilePattern(ctx, tile);
+    expect(transformed).toEqual([]);
   });
 });
