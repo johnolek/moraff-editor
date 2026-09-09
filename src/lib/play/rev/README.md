@@ -21,6 +21,13 @@ BASIC.
 * **The map remembers the squares you walked on and nothing else.** No 3-D view marks anything.
   `memory.ts` is the whole of it, and it is not `../memory.ts`, which is the other two games'
   shared engine.
+* **A kill's experience is not the character's until they have slept on it.** It goes into a pot
+  of its own (record value 21, DGROUP B4DE) and the V sheet prints only the banked number
+  (B4E2), so nothing a character does in the dungeon moves the number they are shown. A night at
+  any of the three inns is where it is spent: `town.ts` gains a level for every threshold the two
+  together are past (1000:2094), then folds the pot into the banked number and empties it. The
+  temple's fifth spell buys a single level for 500,000 jewel pieces and is the only other way to
+  gain one.
 * **The monsters are the disk's, not a roll.** `1.NUM` and `2.NUM` say where every monster on all
   seventy levels is and what it has left; a level is never rolled, only cast into the occupancy
   grid.
