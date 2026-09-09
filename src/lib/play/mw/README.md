@@ -14,6 +14,10 @@ tab, the map canvas, the screen renderer and the roster.
 * **`engine.ts`** — `MwGameSession`, `startMwGame`, `runMwMoveControl` and the key table. The
   session holds the `MwGame`, the floor the character is standing on, the monsters it is stocked
   with, and the keyboard the loop waits on.
+* **`../session.ts`** — `KeyedSession`, the key queue, the record and the run log all three
+  games share. `MwGameSession` extends it and keeps what is this game's own: the pending boxes,
+  the banner a fight is drawn in and the two menu key readers. Its `placeEdited` is the hook that
+  works the carried weight out again and puts the character back on the occupancy grid.
 * **`keys.ts`** — the byte `movecontrol` dispatches on for every key, and the browser key events
   they come from. Moraff's World's arrows are compass directions rather than turns: the up arrow
   faces the character north and asks for a step north, whatever they were facing before.
@@ -91,7 +95,9 @@ const slot = await session.lineMenuKey(1, 8);  // FUN_2000_1d0b: 1 to 8, or -1 f
 ```
 
 `MwGameSession.press(key)` is what settles them; the Play tab calls it from its keydown handler.
-A key pressed while nothing is waiting is queued, four deep.
+A key pressed while nothing is waiting is queued, four deep. Both the queue and the wait are
+`KeyedSession`'s (`../session.ts`), which this game takes as it stands: nothing of Moraff's World
+happens at the top of a pass but the read itself.
 
 A ported function that is **not** async — a fight, a drop, a town menu — cannot wait, so
 `game.pressAnyKey()` (`wait_key`, WORLD.EXE 4000:3452) only remembers that a key is owed.

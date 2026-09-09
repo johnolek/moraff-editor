@@ -42,7 +42,10 @@ BASIC.
 
 * **`engine.ts`** — `RevGameSession`, `startRevGame`, `runRevDungeon` and the key table. The
   session holds the game, the keyboard the loop waits on and the display timer the monsters move
-  on.
+  on. The keyboard, the record and the run log are `KeyedSession`'s (`../session.ts`), which all
+  three games are played out of; what this game adds to it is the clock. `poll` is the core's
+  wait with the clock started around it, and the tick the clock writes into the log itself is
+  filtered out of the wait that ends on one, so a tick is written down exactly once.
 * **`state.ts`** — the DGROUP variables the loop reads and writes, each named by its address.
   **`record.ts`** — the 340 numbers of `<n>.EXE` as the game means them.
 * **`keys.ts`** — the byte the loop compares for every key, and the browser events they come from.

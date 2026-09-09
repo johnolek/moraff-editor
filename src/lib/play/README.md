@@ -12,6 +12,13 @@ something the original does, a comment says so.
   the keyboard the loop waits on.
 * **`keys.ts`** — the byte `movecontrol` dispatches on for every key, and the browser key events
   they come from.
+* **`session.ts`** — `KeyedSession`, which is the part of all three sessions that is not a port
+  of anything: the key queue and the wait the tab settles, the run log every key the game read is
+  written into, the record the save editor can write while the game is being played, the save and
+  the death. `GameSession` extends it and keeps what is this game's own — the timed frames, the
+  message box, the plaque, the tablet and the repeat-fight flag. Three hooks are per game:
+  `readRecord`, `writeRecord`, and `placeEdited`, which is where a record written from outside
+  leaves the character standing.
 * **`loop.ts`** — how all three games' loops are started, and the one thing they share besides the
   tab. A loop is an async function nobody awaits, so an error thrown inside one would otherwise be
   a rejected promise with nothing attached to it: the tab would freeze on its last drawing and a
@@ -139,7 +146,11 @@ const chosen = await game.choice([0x31]);  // get_choice (exe 2000:2d93): '1', o
 ```
 
 `GameSession.press(key)` is what settles them; the Play tab calls it from its keydown handler.
-A key pressed while nothing is waiting is queued, four deep.
+A key pressed while nothing is waiting is queued, four deep. The queue is `KeyedSession`'s
+(`session.ts`) and so is the wait, since all three games wait the same way; what this game adds
+is the repeat-fight flag, which `key` puts down before it looks at the queue — a key already
+typed stops the character swinging as surely as one the loop waited for — and `waitForTheKey`,
+where Ctrl-F's own swing is taken without reading the keyboard at all.
 
 A ported function that is **not** async — a spell, a fight — cannot wait, so `game.pressAnyKey()`
 (`mgetch_message`, exe 4000:418d) only remembers that a key is owed. `await session.settle()` in
