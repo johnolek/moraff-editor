@@ -131,8 +131,12 @@ of real time, over and over, for as long as the game is running.
 
 So there are good moments to attack and bad ones, on a five-second cycle, and nothing on screen
 tells you which is which. Only the first roll of the swing follows the clock; the damage dice
-after it move fast enough to look random. The monster's own attack does the same thing with the
-tick count plus 100.
+after it move fast enough to look random.
+
+The monster's own attack looks as though it does the same. It seeds from the tick count plus 100,
+and then takes its to-hit roll through `random_n`, which reseeds itself from a running sum of
+clock readings before it rolls anything. The seed it was handed never reaches a die. The sawtooth
+is yours alone.
 
 In the code: [strike](source:c/strike), [monster_turn](source:c/monster_turn) and
 [rand](source:c/rand). Borland's generator is a plain
@@ -904,10 +908,13 @@ In the code: [random_walk](source:c/random_walk), [random_run](source:c/random_r
 ### Almost every random number is a reading of the clock
 
 There are three ways of getting a random number and two of them reseed constantly. `random_n`,
-which drives the stocking, the monster's attack, the finds after a kill, every battle spell and
-the mouse's advice, reseeds on every single call from a running sum of BIOS tick readings. Your
-swing reseeds from the raw tick counter and the monster's from the tick counter plus 100. The trap
-door landing reseeds from the fixed number 10.
+which drives the monster's to-hit roll, the finds after a kill, every battle spell and the mouse's
+advice, reseeds on every single call from a running sum of BIOS tick readings. Your swing reseeds
+from the raw tick counter and takes the next number straight out. The monster's attack seeds from
+the tick counter plus 100 and then throws that away by calling `random_n`. The stocking has a
+fourth habit of its own: it reseeds from the clock plus a running counter before each of the 145
+monsters it places, and rolls the square out of that. The trap door landing reseeds from the fixed
+number 10.
 
 The one genuinely random thing is anything that rolls twice without a reseed in between: the
 damage dice within a single swing, and the depth wander inside the stocking.
