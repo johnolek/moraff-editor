@@ -1,3 +1,4 @@
+import { DRAINED_STATS } from '../bestiary/monsters';
 import data from '../game/mw-data.json';
 
 /**
@@ -260,9 +261,6 @@ export function killExperience(monster: MwMonster, depth: number): number {
   const capped = Math.min(Math.max(depth, 0), EXP_DEPTH_CAP);
   return monster.expMult * (EXP_SCALE * EXP_BASE ** capped + capped + 1);
 }
-
-/** The characteristics puffball_stat (exe 2000:603f) numbers 1 to 6. */
-const DRAINED_STATS = ['Strength', 'Intelligence', 'Wisdom', 'Constitution', 'Agility', 'Luck'];
 
 /** What the monster breathes, in the words the game prints, numbered 1 to 5. */
 const BREATH = ['fire', 'ice', 'acid', 'green phlegm', 'black slime'];

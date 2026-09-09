@@ -227,8 +227,12 @@ export function floorsOf(range: FloorRange): number[] {
   return Array.from({ length: range.to - range.from + 1 }, (_, i) => range.from + i);
 }
 
-/** statDrain 1..6 and -1..-6 name the stat the monster gives or takes (RE notes 4.3, 6.4). */
-const DRAINED_STATS = ['Strength', 'Intelligence', 'Wisdom', 'Constitution', 'Agility', 'Luck'];
+/**
+ * The six characteristics, in the order the stat-drain byte numbers them: 1..6 and -1..-6 name
+ * the one the monster gives or takes (DotU RE notes 4.3 and 6.4). Moraff's World numbers them
+ * the same way in puffball_stat at exe 2000:603f, and its bestiary reads this list.
+ */
+export const DRAINED_STATS = ['Strength', 'Intelligence', 'Wisdom', 'Constitution', 'Agility', 'Luck'];
 
 /** breath 1..5 (RE notes 6.4); only fire and ice are used by any monster. */
 const BREATH_ELEMENTS = ['fire', 'ice', 'acid', 'disease', 'poison'];
