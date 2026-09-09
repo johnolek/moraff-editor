@@ -95,7 +95,15 @@ export interface RevCharacterFile extends CharacterFile {
 
 /** What the Play tab draws. */
 export interface RevPlayView {
-  place: { column: number; row: number; level: number; facing: number };
+  /**
+   * Where the character is standing, counted from zero the way the other two games' views
+   * count it and the map canvas draws it.
+   *
+   * The game's own column and row start at one (DGROUP B4CA and B4D2), and everything that
+   * is a port of the game — the record, the screen, the run log's ending — keeps them that
+   * way. This is the tab's view, so it is the tab's numbering.
+   */
+  place: { x: number; y: number; level: number; facing: number };
   /** Every monster standing on the level, for the map. */
   monsters: RevStanding[];
   /** The ones the character can see, which in this game is the one on their own square alone. */
@@ -379,7 +387,7 @@ export class RevGameSession extends KeyedSession<RevPc> {
     const monsters = game.monsters.standing();
     const here = this.monsterHere();
     return {
-      place: { column: pc.column, row: pc.row, level: pc.dungeonLevel, facing: pc.facing },
+      place: { x: pc.column - 1, y: pc.row - 1, level: pc.dungeonLevel, facing: pc.facing },
       monsters,
       visible: monsters.filter((monster) => monster.slot === here),
       box: this.held.showingBox(game.said),

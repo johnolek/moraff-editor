@@ -89,7 +89,13 @@ describe('a run', () => {
     const ending = { place: session.view().place, bytes: file.bytes };
 
     const again = await replayRun(log);
-    expect(again.place).toMatchObject({ x: ending.place.column, y: ending.place.row, floor: ending.place.level });
+    // The replay's ending is where a run log's claim is checked against the game's own numbers,
+    // which count columns and rows from one; the tab's view counts them from zero.
+    expect(again.place).toMatchObject({
+      x: ending.place.x + 1,
+      y: ending.place.y + 1,
+      floor: ending.place.level,
+    });
     expect(again.record).toEqual(ending.bytes);
     expect(again.actions).toBe(log.actions);
   });

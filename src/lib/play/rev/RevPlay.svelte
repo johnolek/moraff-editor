@@ -128,8 +128,8 @@
       monsters={mapMonsters(stage)}
       discovered={discoveredMap(stage)}
       bounds={FULL_FLOOR}
-      you={{ x: view.place.column - 1, y: view.place.row - 1, dir: CANVAS_FACING[view.place.facing] ?? 0 }}
-      focus={{ x: view.place.column - 1, y: view.place.row - 1, cell: game.cell }}
+      you={{ x: view.place.x, y: view.place.y, dir: CANVAS_FACING[view.place.facing] ?? 0 }}
+      focus={{ x: view.place.x, y: view.place.y, cell: game.cell }}
     />
     <!-- The game's own screen prints all of this on the four message rows at its top left
          (`screen/text.ts`), so this is only for the tab showing the map in its place. -->
@@ -152,7 +152,8 @@
 
 {#snippet place(stage: Stage)}
   <span>{stage.view.place.level === 0 ? 'The town' : `Level ${stage.view.place.level}`}</span>
-  <span>{stage.view.place.column}, {stage.view.place.row}</span>
+  <!-- The game counts its columns and rows from one, and this line is the game's own numbers. -->
+  <span>{stage.view.place.x + 1}, {stage.view.place.y + 1}</span>
   <span>{['', 'North', 'East', 'South', 'West'][stage.view.place.facing] ?? ''}</span>
 {/snippet}
 

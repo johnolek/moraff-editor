@@ -76,7 +76,8 @@ async function playing(seed = 5, bytes = revRecord()): Promise<{ session: RevGam
 describe('the loop', () => {
   it('starts the character where the record left them', async () => {
     const { session } = await playing();
-    expect(session.view().place).toMatchObject({ column: 10, row: 10, level: 0 });
+    // The record's column and row are 10 and 10, counted from one; the view counts from zero.
+    expect(session.view().place).toMatchObject({ x: 9, y: 9, level: 0 });
     session.finish();
   });
 
@@ -143,7 +144,7 @@ describe('the loop', () => {
     await settled();
     const after = session.view().place;
     expect(after.facing).toBe(2);
-    expect(after.column === before.column + 1 || after.column === before.column).toBe(true);
+    expect(after.x === before.x + 1 || after.x === before.x).toBe(true);
     session.finish();
   });
 
@@ -161,7 +162,7 @@ describe('the loop', () => {
     const before = session.view().place;
     session.press(REV_KEY.arrowRight);
     await settled();
-    expect(session.view().place).toMatchObject({ column: before.column, row: before.row, facing: 2 });
+    expect(session.view().place).toMatchObject({ x: before.x, y: before.y, facing: 2 });
     session.finish();
   });
 
@@ -460,7 +461,7 @@ describe('the rings of health', () => {
       await settled();
       const after = session.view().place;
       // A wall holds them back the same way; only the arrow that steps heals.
-      if (after.column === before.column && after.row === before.row) {
+      if (after.x === before.x && after.y === before.y) {
         expect(pc.hp).toBe(10);
         continue;
       }

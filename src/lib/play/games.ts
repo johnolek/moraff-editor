@@ -188,9 +188,7 @@ export const PLAY_GAMES = {
     start: startMoraffsRevenge,
     loop: (session) => runRevDungeon(session),
     gameKey: revGameKey,
-    // The game counts its columns and rows from one (DGROUP B4CA and B4D2) and the map canvas
-    // counts from zero.
-    place: (view) => ({ x: view.place.column - 1, y: view.place.row - 1, floor: view.place.level }),
+    place: (view) => ({ x: view.place.x, y: view.place.y, floor: view.place.level }),
     mapFiles: (session, entry) => [revMapFile(session.game.memory.bytes(), entry.slot)],
   } satisfies PlayGame<RevGameSession, RevPlayView>,
 };
