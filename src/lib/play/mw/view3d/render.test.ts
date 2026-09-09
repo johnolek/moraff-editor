@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { MapSquare } from '../../../map/game';
 import mwPalettes from '../../../game/mw-palettes.json';
-import { newFrame, pixelAt, type Frame } from '../../view3d/frame';
+import { fillRect, newFrame, pixelAt, type Frame } from '../../view3d/frame';
+import { pixelDifference } from '../../view3d/frame.test-support';
 import { MW_VIEW_BLOCKED, mwPicturePixel, renderMwView, type MwViewScene } from './render';
 import { mwHorizonWeight, MW_VIEW_REACH } from './geometry';
 import { NO_MW_PICTURES, WALL_BASE, WALL_DOOR, WALL_STONE, type MwViewPictures } from './pictures';
@@ -113,12 +114,9 @@ describe('a view of a wall', () => {
     const frame = newFrame(640, 480);
     renderMwView(frame, scene(corridor(rock(), 5)), MW_WEST_VIEW, MW_VIEW_WEST);
     // The west view is x 113..286, y 172..412 once the 1600 x 1200 units are scaled to 640 x 480.
-    for (let y = 0; y < 480; y++) {
-      for (let x = 0; x < 640; x++) {
-        if (x >= 112 && x <= 287 && y >= 171 && y <= 413) continue;
-        expect(pixelAt(frame, x, y), `${x},${y}`).toBe(0);
-      }
-    }
+    const outside = { ...frame, pixels: frame.pixels.slice() };
+    fillRect(outside, 112, 171, 287, 413, 0);
+    expect(pixelDifference(outside.pixels, newFrame(640, 480).pixels)).toBeNull();
   });
 });
 
