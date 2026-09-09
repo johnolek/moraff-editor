@@ -214,23 +214,25 @@ earned the next one. So the cost is not a level lost, it is a level put further 
 In the code: [youth](source:ts/magic.ts/youth) and
 [what the next level costs](formula:exp-needed).
 
-### Drain Monster kills pay nothing
+### Drain Monster kills pay level-0 experience
 
 Drain Monster takes your wisdom off the monster's level, and a monster whose level is below your
 wisdom is emptied outright: level 0, no hit points, dead. The trouble is that the experience a
-kill pays is worked out from the monster's level after the draining, so what you get for a
-monster killed this way is what a level-0 monster is worth.
+kill pays is worked out from the monster's level after the draining, so what you get is what a
+level-0 monster is worth: six times the monster's own multiplier, which for the ordinary run of
+them is between 6 and 30. A level 60 monster with an ordinary multiplier would have paid over a
+million; drained, it pays 6.
 
 The spell also prints nothing at all when it works, which is why it feels like a dud.
 
 In the code: [drainMonster](source:ts/magic.ts/drainMonster),
 [drain_monster](source:c/drain_monster) and [what a kill is worth](formula:exp-value).
 
-### Ascend gives up two floors before it says it does
+### Ascend works two floors deeper than it admits
 
 The three Ascend spells refuse to work deep in the dungeon, and the message says they do not
-work below floor 64. The test is deeper than that: floor 65 still works and floor 66 is the
-first one that does not.
+work below floor 64. The test is deeper than that: it asks whether the floor is over 65, so
+floor 65 still works and floor 66 is the first one that does not.
 
 In the code: [ascend](source:ts/magic.ts/ascend) and
 [majorAscend](source:ts/magic.ts/majorAscend).
