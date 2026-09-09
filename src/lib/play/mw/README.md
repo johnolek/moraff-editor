@@ -52,7 +52,10 @@ tab (`../PlayTab.svelte`), the map canvas, the screen renderer and the roster.
   map, whichever the switch is set to, the four corners of that screen laid over the map, the
   heads-up display of `../MapHud.svelte` over it — the monster's close-up, and the health and
   spell orbs and the experience bar on their bar of stone along the foot of the map, in place of
-  the game's own status blocks — and the panel. The tab around them is `../PlayTab.svelte`, which all three games share, and this game's
+  the game's own status blocks — and the panel. A page the game takes the whole display over with
+  — the help, the statistics, a letter — is drawn by `MwScreen.svelte` in either display: on the
+  stage in the screen display, and over the map in the map one, letterboxed at 4:3 until the game
+  takes it down. The tab around them is `../PlayTab.svelte`, which all three games share, and this game's
   row of its `PLAY_GAMES` table is in `../games.ts`. `src/App.svelte` picks this wrapper or
   Dungeons of the Unforgiven's by the game showing.
 
