@@ -179,10 +179,11 @@ Every game is a run, written down as it is played, the same way the other two ar
 Three things are this game's own:
 
 * **The ticks are inputs**, as above.
-* **Its actions** are the four arrows, the two ladders, the five swings of the fight prompt and the
-  four keys that spend the character's own moment. Which arrow steps depends on the movement mode
-  Escape switches, and the log holds the key rather than what it did, so a run played with the
-  turning arrows counts its turns as well as its steps.
+* **Its actions** are counted by what happened rather than by how long it took, since this game
+  is not turn based: a step that went through, a ladder, the rope into a building, a drink from
+  the fountain of youth, a swing at the fight prompt, the breath of fire, a spell, an item, a pill
+  and a charge of a wand. An arrow that only turns is none, and neither is the A key, whose coins
+  this port does not drop.
 * **Its milestones** add the deepest level reached. The other two games are measured by the module
   or dungeon a character moved to; this one has a single dungeon seventy levels deep, so the depth
   is the number.

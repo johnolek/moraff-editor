@@ -124,9 +124,14 @@ played, so that a claimed ending can be checked by playing it again rather than 
   swings, which the loop takes without reading the keyboard, are written down where the loop
   takes them, and Moraff's World's turn where the character stands, which is no key of that
   game's, is an input of its own.
-* **The actions** — every key the loop hands to a handler that spends a moment or opens a
-  building or a spell, which is the number a leaderboard orders runs by. `UNFORGIVEN_ACTIONS` and
-  `MORAFFS_WORLD_ACTIONS` name the handler behind every key in them.
+* **The actions** — the things that happened to the character or to the world, which is the
+  number a leaderboard orders runs by. What counts is what the game did rather than what the
+  player typed: opening the spell menu and backing out is nothing and the spell cast through it
+  is one, K on a square with no trap door is nothing and going through one is one. Every handler
+  that does the thing pushes an event where it happens, and `src/lib/game/action.ts` is the list
+  of the kinds all three games push. A step into a wall and a swing at nothing are refused before
+  either turn-based game spends a moment on them, so neither is an action; in Moraff's Revenge,
+  which is not turn based, the rule is simply whether the thing happened.
 * **The milestones** — a boss killed, a level gained, a module or dungeon moved to, a death, the
   win, each with the action count and the game time it happened at. The three the ported routines
   alone know about arrive as `game.events`; the module or dungeon is read from the game itself, so
@@ -186,7 +191,10 @@ seeds of their own, which the tests verify and the command can be tried on. The 
 one-session files are in the shape a log had before a run was a chain, and are left that way on
 purpose: a log somebody kept from then still has to read, as a chain of one. A fixture that stops
 verifying is the engine having changed a game under runs already played in it; when that change
-is meant, write them again with `WRITE_RUN_FIXTURES=1 pnpm test src/lib/play/verify.test.ts`.
+is meant, write them again with `WRITE_RUN_FIXTURES=1 pnpm test src/lib/play/verify.test.ts` —
+which puts all four in the chain shape and stamps them with this build's commit, so the three
+older ones have to be put back the way they were afterwards with only the numbers that moved
+taken from what was written.
 
 ## Waiting for a key
 

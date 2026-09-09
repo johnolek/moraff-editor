@@ -118,9 +118,10 @@ the record play began with, the seed, the engine's commit and every input in ord
 action count and the milestones beside them. `../README.md` has the whole of it. Two things are
 this game's own:
 
-* Its four arrows each face the character and step them, so all four are actions; the turn where
-  the character stands, which `mwTurn` does outside the loop because the game has no key for it,
-  costs nothing and is an input of its own in the log rather than a key.
+* Its four arrows each face the character and step them, so any of them is an action where the
+  step went through; the turn where the character stands, which `mwTurn` does outside the loop
+  because the game has no key for it, costs nothing and is an input of its own in the log rather
+  than a key.
 * Its milestones come from `monster_killed`'s eight quest-boss bits and from the inn's level-up.
 
 ## Where the words go
