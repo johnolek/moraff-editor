@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RollerView } from './session';
-import { RecordedRandom, RollerSession } from './session';
+import { RecordedRandom, ROLLER_PORT, RollerSession } from './session';
 
 /** The text of everything showing, one string a line. */
 function showing(view: RollerView): string[] {
@@ -32,7 +32,7 @@ describe('RecordedRandom', () => {
 
 describe('RollerSession', () => {
   it('stops on the difficulty menu with the first screen showing', () => {
-    const session = new RollerSession(20);
+    const session = new RollerSession(ROLLER_PORT, 20);
     const view = session.view();
     expect(view.question).toBe('difficulty');
     expect(showing(view)[0]).toBe('PLEASE SELECT ONE:');
@@ -40,7 +40,7 @@ describe('RollerSession', () => {
   });
 
   it('walks the questions in the order roll_char asks them', () => {
-    const session = new RollerSession(20);
+    const session = new RollerSession(ROLLER_PORT, 20);
     expect(session.view().question).toBe('difficulty');
     session.answer(0);
     expect(session.view().question).toBe('continue');
@@ -62,7 +62,7 @@ describe('RollerSession', () => {
   });
 
   it('keeps the character it showed when the next answer comes in', () => {
-    const session = new RollerSession(20);
+    const session = new RollerSession(ROLLER_PORT, 20);
     session.answer(0);
     session.answer(0);
     session.answer(2);
@@ -86,7 +86,7 @@ describe('RollerSession', () => {
   });
 
   it('shows one screen at a time, the way the game clears between them', () => {
-    const session = new RollerSession(20);
+    const session = new RollerSession(ROLLER_PORT, 20);
     session.answer(0);
     const advice = session.view();
     expect(showing(advice)[0]).toBe('CREATING A CHARACTER:');
@@ -98,7 +98,7 @@ describe('RollerSession', () => {
   });
 
   it('counts the design points down from twenty-four on the screen itself', () => {
-    const session = new RollerSession(20);
+    const session = new RollerSession(ROLLER_PORT, 20);
     session.answer(0);
     session.answer(0);
     session.answer(0);
@@ -115,7 +115,7 @@ describe('RollerSession', () => {
   });
 
   it('rolls another character when the design screen is escaped', () => {
-    const session = new RollerSession(20);
+    const session = new RollerSession(ROLLER_PORT, 20);
     session.answer(0);
     session.answer(0);
     session.answer(0);
@@ -126,7 +126,7 @@ describe('RollerSession', () => {
   });
 
   it('records the character against the number it was told to use', () => {
-    const session = new RollerSession(27);
+    const session = new RollerSession(ROLLER_PORT, 27);
     session.answer(0);
     session.answer(0);
     session.answer(0);
@@ -139,7 +139,7 @@ describe('RollerSession', () => {
   });
 
   it('leaves the finished character and the class list on the screen at the end', () => {
-    const session = new RollerSession(20);
+    const session = new RollerSession(ROLLER_PORT, 20);
     for (const answer of [0, 0, 0, 0, 'HERO', 3, 0]) session.answer(answer);
     const view = session.view();
     expect(view.question).toBe(null);
@@ -149,7 +149,7 @@ describe('RollerSession', () => {
   });
 
   it('goes back to the first screen when it is restarted', () => {
-    const session = new RollerSession(20);
+    const session = new RollerSession(ROLLER_PORT, 20);
     session.answer(0);
     session.answer(0);
     session.answer(3);
