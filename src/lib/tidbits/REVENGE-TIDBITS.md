@@ -340,21 +340,21 @@ In the code: [chuteLanding](source:ts/revmap.js/chuteLanding) and
 
 ## Monsters
 
-### A monster comes through the wall at you
+### A monster is stopped by the same walls you are
 
-The dungeon's walls are for you. A monster's turn is one square, orthogonally, and the only thing
-that refuses it is another monster already standing there: the grid the game keeps them in holds
-slot numbers and nothing else, and there is no wall test anywhere on the path. What is
-conditional is the drawing — the redraw compares the distance against a sight table and skips a
-monster you cannot see — so one crosses a wall out of sight and turns up beside you.
+A monster's turn is one square, orthogonally, and two things can refuse it. One is another
+monster already standing there: the grid the game keeps them in holds slot numbers, and a square
+with a number in it is taken. The other is the wall, tested with the dungeon's own rule — the same
+sine of the same coordinates, divided by your character's own generation, floored to a band and
+compared with 7. So 8 and 9 turn a monster back and 6 and 7 let it through a door, exactly as they
+do you.
 
-There is a gate on the step, at `1000:758D`, and it is the wall rule's own shape with a 2 where
-the generation goes: over 7 and the step is dropped. Every shipped character has a generation
-of 1 and the fountain of youth only ever makes it odd, so whatever floor plan that expression
-describes, it is not the one you are standing in.
+What is conditional is the drawing. The redraw compares the distance against a sight table and
+skips a monster you cannot see, so one walks the length of a corridor out of sight and turns up
+beside you.
 
-In the code: `rev-tools/docs/MONSTERS.md` part 1, on the direction at `1000:7390`, the gate at
-`1000:758D` and the commit at `1000:7667`.
+In the code: `rev-tools/docs/MONSTERS.md` part 1, on the direction at `1000:7390`, the wall test
+at `1000:758D` and the commit at `1000:7667`.
 
 ### A slot number is the whole monster
 
@@ -439,13 +439,19 @@ was for, and what wrote it, is not in this program.
 In the code: `rev-tools/docs/MONSTERS.md` part 2, on the cap at `1000:8223` and the write-back at
 `1000:825A`.
 
-### No monster ever stands on the outer ring
+### No monster is ever put down on the outer ring
 
 When the stocking loop needs a square for a monster it rolls a row of 2 to 18 and a column of 2
 to 19. The floor is twenty by nineteen, so rows 1 and 19 and columns 1 and 20 — the whole border
-of every level — never hold a monster on any of the seventy floors.
+of every level — hold nothing at the moment a level is stocked.
 
-In the code: `rev-tools/docs/MONSTERS.md` part 2, on the stocking loop at `1000:7A2E`.
+They do not stay empty. Nothing about the border refuses a step onto it: a monster on row 2 that
+walks north is standing on row 1, and the only arithmetic the step does about the edge is a clamp
+to columns 1 to 20 and rows 1 to 19, which is there to keep it from walking off the grid
+altogether.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 2, on the stocking loop at `1000:7A2E` and the
+four clamps at `1000:75F0`, `7613`, `7636` and `765C`.
 
 ### Two casts of monsters, and depth alone decides which
 
