@@ -11,6 +11,8 @@
   import GameScreen from '../ui/GameScreen.svelte';
   import MonsterDetail from '../bestiary/MonsterDetail.svelte';
   import { monsterGroups } from '../bestiary/monsters';
+  import { expNeeded } from '../game/port/combat';
+  import MapHud from './MapHud.svelte';
   import MessageBox from './MessageBox.svelte';
   import MonsterCard from './MonsterCard.svelte';
   import Panel from './Panel.svelte';
@@ -178,6 +180,22 @@
       you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
       focus={{ x: view.place.x, y: view.place.y, cell: game.cell }}
     />
+    {@const pc = stage.session.game.pc}
+    <!-- The same monster the picture beside the map shows: the one standing straight ahead,
+         which is the one the game has a picture of on its own screen. -->
+    {@const facing = view.ahead ? view.engaged : null}
+    {#snippet closeUp()}
+      <Portrait monster={facing} module={view.place.module} floor={view.place.floor} />
+    {/snippet}
+    <MapHud
+      closeUp={facing ? closeUp : undefined}
+      hp={pc.hp}
+      maxHp={pc.maxHp}
+      sp={pc.sp}
+      maxSp={pc.maxSp}
+      level={pc.lev}
+      exp={pc.exp}
+      needed={(level) => expNeeded(stage.session.game, level)} />
     {#if view.prompt}
       <div class="prompt">{#each view.prompt as line}<div>{line.text}</div>{/each}</div>
     {/if}
