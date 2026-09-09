@@ -7,8 +7,11 @@ roughly the order they were useful.  The result is `FUNCTION-CATALOG.md` (647 fu
 
 ## 0. Getting a clean binary
 
-`unf.exe` is PKLITE-compressed.  `deark` unpacks it (the Borland copyright string at
-DS:0004 appearing in plain text is the tell that it worked).  The unpacked image was then
+`unf.exe` is PKLITE-compressed.  `deark` unpacks it, but only when told to decompress
+executables: `deark -opt execomp -o unf unf.exe` writes `unf.000.exe`, while plain
+`deark -o unf unf.exe` extracts nothing and prints "File seems to be compressed with
+PKLITE. Use -m pklite or -opt execomp".  (The Borland copyright string at DS:0004
+appearing in plain text is the tell that it worked.)  The unpacked image was then
 loaded into Ghidra 11.3 as 16-bit real mode x86.  To keep addresses stable and readable,
 the segments were re-laid on 64 KB "pages": `1000` = Borland runtime, `2000` = the WORLD
 module, `3000` = TOWN + MAGICFNC + CAT, `4000` = DISP, `5000+` = the video drivers,
@@ -123,14 +126,16 @@ nothing in it, and phantom `in_ST0` values stand where the maths was.  The geome
 3-D view is simply not in the decompilation.  It was read from the instruction stream
 instead, which takes three steps:
 
-1. Unpack `unf.exe` with `deark` (section 0).
+1. Unpack `unf.exe` with `deark -opt execomp -o unf unf.exe` (section 0).
 2. Patch Borland's emulated-8087 interrupts back into real FPU opcodes with
    `../decomp/ghidra-scripts/unemu87.py unf.000.exe unf.fpu.exe 0x30a00` — the third
    argument is where the data segment starts, so only code is patched.  Without this a
    disassembler shows `int 39h` where the float instruction should be.  The script walks
    the instructions from every function in `../decomp/functions.txt` rather than scanning
    for bytes, because the same pairs occur as data inside other instructions; it needs
-   `capstone`, as `adis.py` does.
+   `capstone`, as `adis.py` does.  Homebrew's Python does not carry `capstone` and will
+   not let `pip` add it, so run both scripts from a virtual environment made with
+   `python3 -m venv .venv && .venv/bin/pip install capstone`.
 3. Print a function with `../reference/scripts/adis.py --exe unf.fpu.exe 3000 342d 5617`
    (segment, offset, size; the size is in `../decomp/functions.txt`).  Every `lcall` is
    named from that file and every data-segment operand is annotated with the word and the
