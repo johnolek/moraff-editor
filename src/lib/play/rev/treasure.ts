@@ -225,7 +225,7 @@ export const REV_YOU_FIND_A_MACE = 'You find a mace.';
  * The trailing spaces are the game's own: each of the four is a name joined to the ` armor. ' at
  * 1000:0202.
  */
-const ARMOUR_WORN = [
+export const REV_ARMOUR_WORN = [
   'robes.    ',
   'leather armor. ',
   'chain armor. ',
@@ -253,7 +253,7 @@ function armourOrAWeapon(game: RevGame): void {
     const next = revValue(pc, REV_ARMOUR_VALUE) + 1;
     game.scratch = next;
     if (next > 3) return;
-    game.say(`You find ${ARMOUR_WORN[next]}`);
+    game.say(`You find ${REV_ARMOUR_WORN[next]}`);
     setRevValue(pc, REV_ARMOUR_VALUE, next);
     return;
   }
