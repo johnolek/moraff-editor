@@ -4,6 +4,14 @@ import { inTheTown, press } from './battle.test-support';
 import { KEY } from './keys';
 
 describe('the F1 help menu', () => {
+  it('fades the play screen away before it builds the help', async () => {
+    const session = inTheTown({ random: () => 0 });
+    await press(session, KEY.help);
+    // movecontrol runs FUN_4000_5c25 before it blanks the screen and draws the menu
+    // (exe 2000:cddc), so the tab is still showing the play screen going dark over it.
+    expect(session.view().fade).toBe('out');
+  });
+
   it('pads every label out to the width the exe holds it at', async () => {
     const session = inTheTown({ random: () => 0 });
     await press(session, KEY.f1);

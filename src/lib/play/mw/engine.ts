@@ -382,7 +382,7 @@ export class MwGameSession {
     }
     this.bannerHeld = said.slice(this.bannerShown).flat();
     this.bannerShown = said.length;
-    this.timed.hold(this.game.screen, ms, this.bannerHeld);
+    this.timed.hold(this.game.screen, ms, { banner: this.bannerHeld });
   }
 
   /**

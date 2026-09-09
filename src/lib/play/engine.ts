@@ -43,6 +43,7 @@ import {
 import { PLAQUE_DELAY_MS } from './plaque';
 import type { SectionScreen } from './section-screen';
 import type { TownBuilding } from './building';
+import { fadeMs, type Fade } from './fade';
 import { TimedScreens } from './timed';
 import { showBattleSpells, showExpNeeded, showPrepSpells, showStats } from './spellScreens';
 import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
@@ -168,6 +169,8 @@ export interface PlayView {
   buildingScreen: TownBuilding | null;
   /** The HIT ANY KEY plaque (`plaque.ts`) while a box's wait is running, or null. */
   plaque: PlaqueState | null;
+  /** The palette fade running over the screen (`fade.ts`), or null when none is. */
+  fade: Fade | null;
   /** The loop has come back: the character has quit or died. */
   over: boolean;
   dead: boolean;
@@ -341,6 +344,9 @@ export class GameSession {
     this.game.tablet = (...lines: string[]) => {
       this.tablet = lines;
       said(...lines);
+      // FUN_3000_9026 draws the slab and its lines on a screen it has already blanked and then
+      // brings the palette up (exe 3000:9124), so the tablet arrives out of black.
+      this.fadeScreen('in');
       this.waitOwed = true;
     };
     // movecontrol puts the map cursor in the middle of the view before its first pass. newGame
@@ -453,8 +459,10 @@ export class GameSession {
     while (this.waitOwed) {
       this.waitOwed = false;
       await this.keyWithPlaque();
-      // The key the tablet was waiting on is what takes it off the screen (exe 3000:9086, the
-      // fade FUN_4000_5c25 runs the moment the key arrives).
+      // The key the tablet was waiting on is what takes it off the screen (exe 3000:9086), and
+      // FUN_4000_5c25 fades it away first (exe 3000:92fc). The frame the fade runs over is what
+      // keeps it there while the game has already put it away.
+      if (this.tablet !== null) this.fadeScreen('out');
       this.tablet = null;
       this.wipeMessageBlock();
     }
@@ -496,6 +504,18 @@ export class GameSession {
   wipeMessageBlock(): void {
     clearMenuBlock(this.game);
     clearMessageLine(this.game);
+  }
+
+  /**
+   * FUN_4000_5b91 (exe 4000:5b91) and FUN_4000_5c25 (exe 4000:5c25): the screen brought up out of
+   * black or taken down into it, a DAC step at a time (`fade.ts`).
+   *
+   * The original busy-waits its way through the steps and nothing about the game changes while it
+   * does, so this is a held frame like every other delay: the screen as it stands is kept for as
+   * long as the fade lasts, the loop runs straight past, and a key gives up the rest of it.
+   */
+  fadeScreen(fade: Fade): void {
+    this.timed.hold(this.game.screen, fadeMs(fade), { fade, tablet: this.tablet });
   }
 
   /**
@@ -675,10 +695,11 @@ export class GameSession {
       killed: this.timed.holding ? this.killedWhileHeld : this.killed,
       viewsDrawn: this.viewsDrawn,
       expandedMap: this.expandedMap,
-      tablet: this.tablet,
+      tablet: this.timed.showingTablet(this.tablet),
       sectionScreen: this.sectionScreen,
       buildingScreen: this.buildingScreen,
       plaque: this.plaque,
+      fade: this.timed.showingFade(),
       over: this.over,
       dead: this.dead,
       stopped: this.stopped,

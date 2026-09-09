@@ -545,9 +545,15 @@ describe("the stone tablet the snake's words are read on", () => {
     // The words are on the tablet and not in the eight-line message box.
     expect(session.box).toEqual([]);
     expect(session.view().viewsDrawn).toBe(0);
+    // FUN_3000_9026 draws the slab on a blanked screen and brings the palette up under it.
+    expect(session.view().fade).toBe('in');
 
     await press(session, KEY.escape);
-    expect(session.view().tablet).toBeNull();
+    // The game has put the tablet away, and FUN_4000_5c25 is fading it off the screen, so the
+    // tab is still drawing it (`fade.ts`).
+    expect(session.tablet).toBeNull();
+    expect(session.view().fade).toBe('out');
+    expect(session.view().tablet?.[0]).toContain('As you reach the town');
     expect(session.box).toEqual([]);
     // The loop has taken the tablet's key and drawn its first pass.
     expect(session.view().viewsDrawn).toBe(1);
@@ -564,7 +570,7 @@ describe("the stone tablet the snake's words are read on", () => {
     expect(session.view().tablet?.[0]).toContain("You're in town");
     expect(session.view().tablet?.join(' ')).toContain('amateur explorer');
     await press(session, KEY.escape);
-    expect(session.view().tablet).toBeNull();
+    expect(session.tablet).toBeNull();
   });
 });
 

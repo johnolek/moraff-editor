@@ -28,6 +28,7 @@
     statusLines,
   } from './display';
   import type { PlaqueState } from './engine';
+  import { fadedPalette, fadeSteps, FADE_STEP_MS, type Fade } from './fade';
   import { blankPlaque, cycleGradientBank, drawPlaque } from './plaque';
   import { drawBuilding, type TownBuilding } from './building';
   import { drawSectionScreen, type SectionScreen } from './section-screen';
@@ -76,6 +77,8 @@
     buildingScreen?: TownBuilding | null;
     /** The HIT ANY KEY plaque while a message box's wait is running, or null (`plaque.ts`). */
     plaque?: PlaqueState | null;
+    /** The palette fade running over the screen (`fade.ts`), or null when none is. */
+    fade?: Fade | null;
   }
 
   let {
@@ -97,11 +100,12 @@
     sectionScreen = null,
     buildingScreen = null,
     plaque = null,
+    fade = null,
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
   let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
-  /** The screen as it was last painted, for the plaque's own animation to work from. */
+  /** The screen as it was last painted, for the plaque's crawl and the fades to work from. */
   let painted = $state.raw<{ frame: Frame; palette: Rgb[] } | null>(null);
 
   const section = $derived(sectionInfo(place.module, place.floor));
@@ -208,9 +212,11 @@
       if (plaque === 'showing') drawPlaque(frame, SCREEN_PIXELS, viewPictures(section?.section ?? 1).wall);
       // Walking into a building raises DS:2505 and calls set_palette again (exe 2000:c9ac), which
       // copies the two shop tables over the banks the building picture is drawn out of.
-      const rgba = toRgba(frame, palette);
+      // A fade's first step is drawn here so that nothing of the screen shows at full strength
+      // before the animation below has its first frame.
+      const rgba = toRgba(frame, fade === null ? palette : fadedPalette(palette, fade, 0));
       context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
-      painted = plaque === 'showing' ? { frame, palette } : null;
+      painted = plaque === 'showing' || fade !== null ? { frame, palette } : null;
     };
     // The stone tablet the snake's words are read on (exe 3000:9026), which is a screen of its own:
     // the slab and its four lines and nothing else.
@@ -334,6 +340,36 @@
   });
 
   /**
+   * A screen fading in or out (`fade.ts`), which is the same repaint the plaque's crawl is: the
+   * frame is drawn again in a palette stepped toward or away from black. The step is worked out
+   * from the clock rather than counted per animation frame, so the fade takes the time the
+   * game's own 7 ms delays take however often the browser draws.
+   *
+   * A CSS transition on the canvas would be cheaper and would not look the same: the DAC steps
+   * every component by one, so a dim colour is gone long before a bright one and the picture
+   * falls away to its highlights rather than dimming evenly.
+   */
+  $effect(() => {
+    const holding = painted;
+    const running = fade;
+    const target = canvas;
+    if (!holding || !target || running === null) return;
+    const context = target.getContext('2d');
+    if (!context) return;
+    const started = performance.now();
+    const last = fadeSteps(running);
+    let request = 0;
+    const tick = (now: number): void => {
+      const step = Math.min(last, Math.floor((now - started) / FADE_STEP_MS));
+      const stepped = fadedPalette(holding.palette, running, step);
+      context.putImageData(new ImageData(toRgba(holding.frame, stepped), SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
+      request = requestAnimationFrame(tick);
+    };
+    request = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(request);
+  });
+
+  /**
    * The plaque's frame crawling: FUN_2000_2a2e (exe 2000:2a2e) turns the palette's gradient bank
    * once for every poll of the keyboard while it waits, and everything drawn in that bank crawls
    * with it, the distance shading on the walls as much as the plaque's frame. The port turns it
@@ -343,7 +379,7 @@
   $effect(() => {
     const holding = painted;
     const target = canvas;
-    if (!holding || !target) return;
+    if (!holding || !target || plaque !== 'showing') return;
     const context = target.getContext('2d');
     if (!context) return;
     let steps = 0;

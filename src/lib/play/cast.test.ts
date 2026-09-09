@@ -29,9 +29,16 @@ function playing(file: CharacterFile, rng: Rng = new BorlandRng(3)): GameSession
   return session;
 }
 
-/** Press a key and let the loop get back to waiting for the next one. */
+/**
+ * Press a key and let the loop get back to waiting for the next one.
+ *
+ * The wait in front of the press is what a player has and a test otherwise does not: the loop
+ * reaches the point it is waiting at and puts up whatever it holds the screen with there, and
+ * the key then gives that up the way `GameSession.press` gives up any held frame.
+ */
 async function press(session: GameSession, ...keys: number[]): Promise<void> {
   for (const key of keys) {
+    await new Promise((resolve) => setTimeout(resolve));
     session.press(key);
     await new Promise((resolve) => setTimeout(resolve));
   }
@@ -228,8 +235,10 @@ describe('the screen the spell table is drawn on', () => {
   it('leaves a screen whose own fill the port does not know blacking the whole display out', async () => {
     const session = playing(wizard([MINOR_PROTECTION]));
     await press(session, KEY.help);
-    expect(session.view().screen.length).toBeGreaterThan(0);
-    expect(session.view().screenCleared).toBe(null);
+    // movecontrol fades the play screen away before it builds the help (`fade.ts`), so the tab
+    // is still showing that while the help itself is already on the game's own screen.
+    expect(session.game.screen.length).toBeGreaterThan(0);
+    expect(session.game.blackedOut).toBe(null);
   });
 });
 

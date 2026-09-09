@@ -1,4 +1,5 @@
 import type { ScreenLine } from '../game/port/state';
+import type { Fade } from './fade';
 
 /**
  * The delays both games hold a drawn message for — delay (exe 1000:2789) in Dungeons of the
@@ -24,7 +25,18 @@ interface Frame {
    * carries it separately; a frame with none shows whatever the game has in it now.
    */
   banner?: string[];
+  /**
+   * The stone tablet that was on Dungeons of the Unforgiven's screen when the frame was taken,
+   * for the same reason: it is a screen of its own rather than a set of drawn lines, and the
+   * fade that takes it down runs after the game has already put it away.
+   */
+  tablet?: string[] | null;
+  /** The palette fade this frame is the screen for (`fade.ts`), or none. */
+  fade?: Fade;
 }
+
+/** What a frame carries beside the lines on the screen. */
+type FrameExtras = Pick<Frame, 'banner' | 'tablet' | 'fade'>;
 
 export class TimedScreens {
   /** The frames still to show, oldest first. The one being shown is not among them. */
@@ -43,9 +55,15 @@ export class TimedScreens {
   }
 
   /** The game has drawn something and asked for the screen to be left as it is. */
-  hold(screen: ScreenLine[], ms: number, banner?: string[]): void {
+  hold(screen: ScreenLine[], ms: number, extras: FrameExtras = {}): void {
     if (ms <= 0) return;
-    this.queue.push({ screen: screen.map((line) => ({ ...line })), ms, banner: banner?.slice() });
+    this.queue.push({
+      screen: screen.map((line) => ({ ...line })),
+      ms,
+      banner: extras.banner?.slice(),
+      tablet: extras.tablet?.slice(),
+      fade: extras.fade,
+    });
     if (this.current === null) this.next();
   }
 
@@ -57,6 +75,17 @@ export class TimedScreens {
   /** The same for the strip a fight writes on, for a frame that was taken with one of its own. */
   showingBanner(banner: string[]): string[] {
     return this.current?.banner ?? banner;
+  }
+
+  /** The same for the stone tablet, which a fade holds on the screen after the game has put it
+   *  away. */
+  showingTablet(tablet: string[] | null): string[] | null {
+    return this.current?.tablet ?? tablet;
+  }
+
+  /** The fade the frame being shown is the screen for, or null when nothing is fading. */
+  showingFade(): Fade | null {
+    return this.current?.fade ?? null;
   }
 
   /**

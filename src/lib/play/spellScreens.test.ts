@@ -22,9 +22,16 @@ function playing(overrides: Partial<PlayerCharacter> = {}): GameSession {
   return session;
 }
 
-/** Press a key and let the loop get back to waiting for the next one. */
+/**
+ * Press a key and let the loop get back to waiting for the next one.
+ *
+ * The wait in front of the press is what a player has and a test otherwise does not: the loop
+ * reaches the point it is waiting at and puts up whatever it holds the screen with there, and
+ * the key then gives that up the way `GameSession.press` gives up any held frame.
+ */
 async function press(session: GameSession, ...keys: number[]): Promise<void> {
   for (const key of keys) {
+    await new Promise((resolve) => setTimeout(resolve));
     session.press(key);
     await new Promise((resolve) => setTimeout(resolve));
   }

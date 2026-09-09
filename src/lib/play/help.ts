@@ -43,6 +43,11 @@ const PAGE_STEP = 0x28;
 /** Show the help until the reader leaves it. */
 export async function showHelp(session: GameSession): Promise<void> {
   const game = session.game;
+  // movecontrol fades the play screen away before it blanks the screen and builds this one
+  // (exe 2000:cddc). Nothing fades it back: the original brings the snake's own box up out of
+  // black through FUN_3000_9026 and then fills the whole screen over the top of it to draw the
+  // menu, and this port draws neither the box nor its fade.
+  session.fadeScreen('out');
   for (;;) {
     drawMenu(game);
     const key = await game.key();

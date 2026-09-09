@@ -256,7 +256,8 @@
             tablet={view.tablet}
             sectionScreen={view.sectionScreen}
             buildingScreen={view.buildingScreen}
-            plaque={view.plaque} />
+            plaque={view.plaque}
+            fade={view.fade} />
         {:else}
           <FloorCanvas
             bind:this={canvas}

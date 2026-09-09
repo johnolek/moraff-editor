@@ -30,8 +30,15 @@ export function characterFile(
   };
 }
 
-/** Press a key and let the loop get as far as it can with it. */
+/**
+ * Press a key and let the loop get as far as it can with it.
+ *
+ * The wait in front of the press is what a player has and a test otherwise does not: the loop
+ * reaches the point it is waiting at and puts up whatever it holds the screen with there, and
+ * the key then gives that up the way `GameSession.press` gives up any held frame.
+ */
 export async function press(session: GameSession, key: number): Promise<void> {
+  await settle();
   session.press(key);
   await settle();
 }

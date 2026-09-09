@@ -189,6 +189,17 @@ game drew them at:
   `movecontrol`'s own wait included; the port turns the bank for the whole screen while the
   plaque is up, once a frame the browser draws, so the dungeon shimmers behind every box as it
   does in the game.
+* **A screen fading in or out** — `session.fadeScreen('in' | 'out')` and `fade.ts`, which are
+  `FUN_4000_5b91` (exe 4000:5b91) and `FUN_4000_5c25` (exe 4000:5c25): the DAC walked toward the
+  palette out of black in 64 steps, or down toward black in 60, with 7 ms between the steps. Two
+  screens run them — the snake's stone tablet, which comes up out of black and fades away again
+  when its key arrives, and the play screen, which the H key fades away before it builds the help
+  (exe 2000:cddc). It is a held frame like a delay's, so the loop runs straight past it and a key
+  gives up the rest; the frame carries the tablet as well as the lines, since the game has already
+  put the tablet away by the time the fade runs. The tab draws the fade by painting the frame
+  again in a stepped palette (`Screen.svelte`), which is the plaque's own path: the DAC steps
+  every component by one, so a picture falls away to its brightest colours rather than dimming
+  evenly the way a transparency would.
 * **A screen the game leaves up for a moment** — `game.delay(ms)`, which is the `delay` at
   1000:2789 the original busy-waits in. The screen as it stands at that call is kept as a frame
   by `timed.ts`, and the frames are shown in turn for as long as each asked for, so a kill's
@@ -377,6 +388,7 @@ Nothing the game does reads it.
 | `monsters` | every monster standing on the floor, for the map |
 | `box` | the message box: its eight lines and the bar above them |
 | `screen` | the screen the game has taken the display over with |
+| `fade` | the palette fade the tab is running over it (`fade.ts`), or none |
 | `prompt` | the ladder or doorway box |
 | `seconds` | game time spent, which `call_check_eng` counts |
 | `engaged` | the monster being faced, with its level and hit points |
