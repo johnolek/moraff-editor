@@ -900,10 +900,12 @@ Before the character list the game looks for a file in the current directory, an
 there it puts up a box: insert the game disk in the diskette drive and hit any key, and note that
 you can only have one character per game disk on 360K drives.
 
-It then waits in a loop, retrying the open, watching for a drive change and letting Escape quit,
-and it has a whole `H.BIN` record of its own to say `THAT IS NOT THE GAME DISK`. Ten save slots
-are numbered files 0 to 9 in the game directory, 2,344 bytes each; the one-character rule is the
-floppy's, not the game's.
+It then waits in a loop, and the loop watches the keyboard and nothing else. Any key retries the
+open, Escape quits, and with a mouse attached the right button quits and the left retries. Nothing
+in it looks at the drive, so a disk swapped in while the box is up does nothing until you press
+something. It has a whole `H.BIN` record of its own to say `THAT IS NOT THE GAME DISK`. Ten save
+slots are numbered files 0 to 9 in the game directory, 2,344 bytes each; the one-character rule is
+the floppy's, not the game's.
 
 In the code: [game_disk_prompt](source:c/game_disk_prompt) and
 [save_player](source:c/save_player).
@@ -915,9 +917,13 @@ fifteen colours every time — dark blue through to white, the fifteen the colou
 after. Entries 16 to 31 are one of eleven wall colour sets, picked by the floor number modulo 11,
 and entries 48 to 63 one of seven gradients, picked modulo 7.
 
-The monster pictures only ever use pixel values 1 to 18, so of the whole wall set exactly one
-entry — number 18 — is ever reached by a monster, and it is nearly black in all eleven sets. The
-dungeon's colour changes every floor; the monsters standing in it do not.
+The monster pictures use pixel values 1 to 18 and almost nothing else, so of the whole wall set
+only entry 18 is ever reached, and it is nearly black in all eleven sets. The dungeon's colour
+changes every floor; the monsters standing in it hardly notice.
+
+There is one exception in the whole file. Zeus has nine pixels of value 24, which is another wall
+entry and a much brighter one, so those nine pixels are the only thing in any monster picture that
+changes colour as you go down.
 
 In the code: [set_palette](source:c/set_palette) and [draw_picture](source:c/draw_picture).
 
