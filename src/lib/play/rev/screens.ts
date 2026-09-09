@@ -75,8 +75,9 @@ export function revDrawTheDungeonAgain(game: RevGame, after: RevRedraw): void {
 /**
  * `PRINT line;`, which leaves the cursor at the end of the line instead of starting a new row.
  *
- * Every prompt a number is typed at ends with the semicolon (1000:23FB, 2427 and 0F32), which is
- * what puts the digits beside the question rather than under it.
+ * The bank's two prompts end with the semicolon (1000:23FB and 2427), which is what puts the
+ * digits beside the question rather than under it, and so does the line the temple plays its
+ * march after (1000:253D).
  */
 export function revSayKeepingTheCursor(game: RevGame, line: string): void {
   game.said.push(line);
