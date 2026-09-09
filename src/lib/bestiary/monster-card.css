@@ -1,0 +1,76 @@
+/* The look every game's monster card shares. Global on purpose: Svelte scoped styles do not
+   reach the snippets the card is filled with, which are written in each game's own component.
+
+   Only the shell's own elements and the ones the games write into it are styled here. The
+   picker rows are left to each card, because the DotU card mounts LevelControl, whose own
+   `.pickers` is a three-column grid rather than a wrapping row. */
+.monster-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px 24px;
+}
+.monster-card .top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+}
+.monster-card .art {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.monster-card .facts {
+  flex: 1;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+/* The monster's own name, by class rather than by element so that the accent-coloured
+   headings SectionHeading draws inside the card are left alone. */
+.monster-card .name {
+  margin: 0;
+  line-height: 0;
+  color: var(--ink);
+}
+.monster-card .group {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.monster-card p {
+  margin: 0;
+  font-size: 14px;
+  max-width: 62ch;
+}
+.monster-card .note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 62ch;
+}
+.monster-card dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  margin: 12px 0 0;
+  font-size: 13px;
+}
+.monster-card dt {
+  color: var(--muted);
+}
+.monster-card dd {
+  margin: 0;
+}
+.monster-card ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.monster-card .effects {
+  color: var(--warn);
+}
+.monster-card code {
+  font-size: 12px;
+}
