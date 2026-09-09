@@ -578,9 +578,9 @@ point, so a caster whose luck came out in the twenties can start with a hundred-
 worth of refills. A fighter, who has no spell points to buy back, is given neither the roll nor
 the crystals.
 
-The bank balance is a field of its own a little further along the same record, and nothing in the
-roller ever writes it. Every character in the game, on either difficulty, walks into town with an
-empty account.
+The bank balance is a field of its own two places earlier in the same record, at 0x458 where the
+crystals are at 0x46c, and nothing in the roller ever writes it. Every character in the game, on
+either difficulty, walks into town with an empty account.
 
 In the code: [rollChar](source:ts/character.ts/rollChar),
 [the price of a magic crystal](formula:crystal-price) and
@@ -711,16 +711,21 @@ In the code: [rollChar](source:ts/character.ts/rollChar),
 
 ### The easy setting's spell point bonus never happens
 
-Normal difficulty is meant to buy a character two things that "I can handle anything" does not
-get: 25 extra health points and half again as many spell points. Only the health points arrive.
-The line that multiplies the spell points by 1.5 sits above the class table that works the spell
-points out, so it runs at a moment when the total is still zero, and it is guarded by a test that
-skips it while the total is zero, so it does not even multiply the zero. The class table then
+Normal difficulty is meant to buy a character two things at the roll that "I can handle anything"
+does not get: 25 extra health points and half again as many spell points. Only the health points
+arrive. The line that multiplies the spell points by 1.5 sits above the class table that works the
+spell points out, so it runs at a moment when the total is still zero, and it is guarded by a test
+that skips it while the total is zero, so it does not even multiply the zero. The class table then
 writes the real figure over the top of it.
 
 Two wizards with the same wisdom and intelligence therefore start with exactly the same spell
-points whichever difficulty they were rolled on. What the easy setting actually buys is the
-health, a pile of starting rubles and a gentler experience curve.
+points whichever difficulty they were rolled on. Everything else the setting buys is real, and
+there is more of it than the roll screen says: every swing you take adds your strength a second
+time, and 25 more on top if it is over 25; every money drop adds a roll on 7,000 rubles; magic
+crystals cost a third off; the starting purse is 500-odd rubles better and can be thousands
+better; and the next level always costs 1.4 times the last rather than twice it. The bill for all
+that comes at the end, where the teleporter out of Module IV refuses to carry an easy character
+into Module V.
 
 In the code: [rollChar](source:ts/character.ts/rollChar) and
 [what the next level costs](formula:exp-needed).
