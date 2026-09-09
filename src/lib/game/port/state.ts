@@ -223,7 +223,7 @@ export interface PlayerCharacter {
   /** 0x808, DS:c088: zero on every character, and read nowhere. */
   unread808: number;
   /**
-   * 0x80a, DS:c08a: 56 on every character. draw_monster_view reads it once and compares it with
+   * 0x80a, DS:c08a: 56 on every character. random_events_tick reads it once and compares it with
    * -1, so the note that comparison guards can never be shown.
    */
   unread80a: number;

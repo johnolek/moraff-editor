@@ -5,13 +5,14 @@ import { bossOfficeTaunt, readBossOfficeMessage } from '../game/port/town';
 import type { GameSession, Turn } from './engine';
 
 /**
- * draw_monster_view (exe 3000:6e85, unf.c "draw_monster_view"), which movecontrol runs once a
+ * random_events_tick (exe 3000:6e85, unf.c "random_events_tick"), which movecontrol runs once a
  * key has asked for a step.
  *
- * Most of what it does is draw the monster in front of the character in the 3-D view, which this
- * port draws the map instead of. What is left of it here is the count it keeps: every two
- * hundred and fiftieth step the little snake brings the message the section's boss has sent, and
- * the rest of the function is skipped that time round.
+ * Most of what it does is roll for one of the notes the game drops under a monster — the tour a
+ * new character is given and the eight warnings after it — which this port does not show. What
+ * is left of it here is the count it keeps: every two hundred and fiftieth step the little snake
+ * brings the message the section's boss has sent, and the rest of the function is skipped that
+ * time round.
  */
 
 /** How many steps apart the boss's messages are: the 0xfa the step count is taken modulo. */
@@ -22,7 +23,7 @@ const READ_IT = 0x31;
 const MESSAGE_MENU = [READ_IT, 0x32];
 
 /**
- * The two counts movecontrol and draw_monster_view keep in the data segment: DS:2414, the steps
+ * The two counts movecontrol and random_events_tick keep in the data segment: DS:2414, the steps
  * taken, and DS:0273, the step after an arrival that does not count. The character record has no
  * room for either, so they are kept beside the game they belong to.
  */
@@ -36,14 +37,14 @@ function countsOf(game: Game): { steps: number; skipOneStep: boolean } {
 
 /**
  * FUN_2000_31bc (exe 2000:31bc): arriving on a floor raises the flag that keeps movecontrol from
- * drawing the monster view for the first step taken there.
+ * running the tick for the first step taken there.
  */
-export function skipTheNextMonsterView(game: Game): void {
+export function skipTheNextTick(game: Game): void {
   countsOf(game).skipOneStep = true;
 }
 
-/** draw_monster_view, and movecontrol's own test of the flag an arrival raised. */
-export async function drawMonsterView(turn: Turn): Promise<void> {
+/** random_events_tick, and movecontrol's own test of the flag an arrival raised. */
+export async function randomEventsTick(turn: Turn): Promise<void> {
   const count = countsOf(turn.game);
   if (count.skipOneStep) {
     count.skipOneStep = false;

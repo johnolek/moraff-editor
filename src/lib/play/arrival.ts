@@ -1,7 +1,7 @@
 import { showHint } from '../game/port/drops';
 import { hintOnArrival } from '../game/port/hints';
 import type { Game } from '../game/port/state';
-import { skipTheNextMonsterView } from './office';
+import { skipTheNextTick } from './office';
 
 /**
  * FUN_2000_31bc (exe 2000:31bc, unf.c "FUN_2000_31bc"): the hint the snake brings on arriving on
@@ -15,7 +15,7 @@ import { skipTheNextMonsterView } from './office';
  * the boss's next message.
  */
 export function hintOnFloor(game: Game): void {
-  skipTheNextMonsterView(game);
+  skipTheNextTick(game);
   const hint = hintOnArrival(game.pc.module, game.pc.level, game.pc.objective[game.pc.module], game.rng);
   if (hint === null) return;
   showHint(game, hint);

@@ -186,7 +186,7 @@ export const SITUATIONS: Situation[] = [
     when:
       'While a monster is in view the game drops a four-line note under it. A character below level 3 gets the eleven notes of the tour, one at a time, on a one in six chance a turn; after that it picks one of eight warnings at random each turn and shows it only if it applies to you. The tour skips the note about the town when you are not in it and the note about curing when you are a fighter, who cannot cast.',
     snake: false,
-    c: 'draw_monster_view',
+    c: 'random_events_tick',
     entries: [
       uh(106, 'a character with no experience yet, as the game starts'),
       uh(105, 'a character with no experience yet, on its first move'),

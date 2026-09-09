@@ -174,7 +174,7 @@ BIOS tick counter, 18.2 per second, counted from program start and truncated to 
   the module teleporter's own two messages replaced.  UH2 72, 73 and 74 are the
   registration and "modules 2,3,4, and 5 are now available" pitches, sitting in the three
   empty cases at the end of the switch in 3000:6b8a.  UH2 81 is "TRY NOT TO DIE, IT'S BAD
-  FOR YOUR HEALTH", which `draw_monster_view` guards with `DAT_6000_c08a == -1` on a field
+  FOR YOUR HEALTH", which `random_events_tick` guards with `DAT_6000_c08a == -1` on a field
   that is 56 on every character.
 
 ## Sized for a bigger game

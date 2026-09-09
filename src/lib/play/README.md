@@ -46,7 +46,7 @@ something the original does, a comment says so.
   `print_battle_hp_info` and `defend` all call `pfont` and none of them waits, so they go through
   `game.draw` rather than through any of these.
 * **`arrival.ts`** — the hint the snake brings on arriving on a floor. **`office.ts`** — the step
-  count `draw_monster_view` keeps, and the taunt the section boss sends every 250 of them.
+  count `random_events_tick` keeps, and the taunt the section boss sends every 250 of them.
 * **`Play.svelte`** — the tab: the game's screen or the top-down map, the screens and the row of
   keys. **`display.ts`, `Screen.svelte`** — the screen itself: the boxes `movecontrol` fills, the
   key menu, the zoom map, the status block and everything the game has printed, over the four

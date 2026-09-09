@@ -3,7 +3,7 @@ import { BATTLE_TEXT_COLOUR, clearMessageLine, messageLine } from '../game/port/
 import { monsterAt } from '../game/port/state';
 import type { Turn } from './engine';
 import { changeModule } from './modules';
-import { drawMonsterView } from './office';
+import { randomEventsTick } from './office';
 
 /**
  * Turning and stepping: the four arrow keys, and the step movecontrol resolves at the end of
@@ -68,9 +68,9 @@ export function stepForward(turn: Turn): void {
 export async function resolveStep(turn: Turn): Promise<void> {
   const { game, step } = turn;
   const pc = game.pc;
-  // movecontrol runs draw_monster_view once a key has asked for a step, before the step is taken
-  // and whether or not the square ahead turns out to allow it.
-  if (step.dx !== 0 || step.dy !== 0) await drawMonsterView(turn);
+  // movecontrol runs random_events_tick once a key has asked for a step, before the step is
+  // taken and whether or not the square ahead turns out to allow it.
+  if (step.dx !== 0 || step.dy !== 0) await randomEventsTick(turn);
   const side = sideStepped(turn);
   if (side === MODULE_TELEPORTER) {
     await changeModule(turn);

@@ -873,7 +873,7 @@ every character ever rolled turns out to be -1.
 
 In the code: [allHints](source:ts/hints.ts/allHints),
 [FUN_3000_6b8a](source:c/FUN_3000_6b8a) and
-[draw_monster_view](source:c/draw_monster_view).
+[random_events_tick](source:c/random_events_tick).
 
 ### The intro demo has its own dungeon
 
