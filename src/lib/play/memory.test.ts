@@ -176,6 +176,29 @@ describe('the map the views build up', () => {
   });
 });
 
+describe('the map handed to whatever draws it', () => {
+  it('hands the same map back until a square is marked', () => {
+    const { rows, x, y } = corridorNorth(3);
+    const memory = new MapMemory();
+    memory.enterFloor(0, 1);
+    memory.markArrival(rows, x, y);
+    const first = memory.discovered();
+    memory.markStep(x, y);
+    memory.markViews(rows, x, y);
+    expect(memory.discovered()).toBe(first);
+    memory.markKnown(0, 0);
+    expect(memory.discovered()).not.toBe(first);
+  });
+
+  it('hands a new map out on a new floor', () => {
+    const memory = new MapMemory();
+    memory.enterFloor(0, 1);
+    const first = memory.discovered();
+    memory.enterFloor(0, 2);
+    expect(memory.discovered()).not.toBe(first);
+  });
+});
+
 describe('what arriving on a floor marks', () => {
   it('marks the square landed on and everything the views reach from it', () => {
     const { rows, x, y } = corridorNorth(3);

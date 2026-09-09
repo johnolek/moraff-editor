@@ -40,12 +40,21 @@ function bitSet(bitmap: Uint8Array, x: number, y: number): boolean {
   return (bitmap[y * ROW_BYTES + (x >> 3)] & (1 << x % 8)) !== 0;
 }
 
-/** FUN_2000_72de (exe 2000:72de), which has no bounds check of its own; the geometry of the
- *  dungeon is what keeps its callers inside the floor, so a mark that would land outside one is
- *  dropped here rather than written into the next floor's bitmap. */
-function setBit(bitmap: Uint8Array, x: number, y: number): void {
-  if (x < 0 || x >= DUN_COLUMNS || y < 0 || y >= DUN_ROWS) return;
-  bitmap[y * ROW_BYTES + (x >> 3)] |= 1 << x % 8;
+/**
+ * FUN_2000_72de (exe 2000:72de), which has no bounds check of its own; the geometry of the
+ * dungeon is what keeps its callers inside the floor, so a mark that would land outside one is
+ * dropped here rather than written into the next floor's bitmap.
+ *
+ * Says whether the square was not already known, which is how {@link MapMemory.discovered} knows
+ * the map it hands out still describes the floor.
+ */
+function setBit(bitmap: Uint8Array, x: number, y: number): boolean {
+  if (x < 0 || x >= DUN_COLUMNS || y < 0 || y >= DUN_ROWS) return false;
+  const at = y * ROW_BYTES + (x >> 3);
+  const mask = 1 << x % 8;
+  const already = (bitmap[at] & mask) !== 0;
+  bitmap[at] |= mask;
+  return !already;
 }
 
 /**
@@ -130,6 +139,10 @@ export class MapMemory {
   /** The squares the four views drew on the last turn, which is exactly the set of squares a
    *  monster standing on one can be seen on. */
   private drawn: Set<number> = new Set();
+  /** The map {@link discovered} last handed out, or null once a square has been marked since.
+   *  Handing the same object back while the floor is unchanged is what lets the Play tab tell
+   *  that a key drew nothing new on the little map. */
+  private handedOut: DiscoveredMap | null = null;
 
   /** Where the maps are read and written, or null for a game nobody is keeping them for — a
    *  replay, or a test. */
@@ -155,12 +168,13 @@ export class MapMemory {
     this.live = bitmap;
     this.arrival = bitmap.slice();
     this.drawn = new Set();
+    this.handedOut = null;
   }
 
   /** movecontrol (exe 2000:c308, unf.c:15405): the square under the character's feet, and no
    *  neighbour of it. */
   markStep(x: number, y: number): void {
-    setBit(this.live, x, y);
+    if (setBit(this.live, x, y)) this.handedOut = null;
   }
 
   /**
@@ -172,7 +186,7 @@ export class MapMemory {
     this.drawn = viewedSquares(rows, x, y);
     for (const index of this.drawn) {
       const column = index % EXPLORED_STRIDE;
-      setBit(this.live, column, (index - column) / EXPLORED_STRIDE);
+      if (setBit(this.live, column, (index - column) / EXPLORED_STRIDE)) this.handedOut = null;
     }
   }
 
@@ -203,7 +217,7 @@ export class MapMemory {
   /** FUN_2000_72de (exe 2000:72de) from anywhere but a step or a view, which is the stone that
    *  maps the level. The loop over the floor belongs to the game whose stone it is. */
   markKnown(x: number, y: number): void {
-    setBit(this.live, x, y);
+    if (setBit(this.live, x, y)) this.handedOut = null;
   }
 
   /** FUN_2000_7210 (exe 2000:7210). */
@@ -217,12 +231,18 @@ export class MapMemory {
     return bitSet(this.arrival, x, y);
   }
 
-  /** The floor as the game's own map draws it. */
+  /**
+   * The floor as the game's own map draws it.
+   *
+   * The same object comes back until a square is marked, so a screen drawn from it can skip a
+   * repaint on a key that discovered nothing.
+   */
   discovered(): DiscoveredMap {
-    return {
+    this.handedOut ??= {
       known: (x, y) => this.isKnown(x, y),
       knownOnArrival: (x, y) => this.wasKnownOnArrival(x, y),
     };
+    return this.handedOut;
   }
 
   /**
@@ -264,6 +284,7 @@ export class MapMemory {
     this.live = emptyFloor();
     this.arrival = emptyFloor();
     this.drawn = new Set();
+    this.handedOut = null;
   }
 
   /** The explored maps are deleted outright, which only Moraff's World does. */
