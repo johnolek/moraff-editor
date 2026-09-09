@@ -1,4 +1,5 @@
 import { DRAINED_STATS } from '../bestiary/monsters';
+import { expValue } from '../game/dotu-mech.js';
 import data from '../game/mw-data.json';
 
 /**
@@ -89,9 +90,6 @@ const HP_MAX = data.constants.hpMax;
 const BOSS_HP_PER_FLOOR = data.constants.bossHpPerFloor;
 const DEPTH_MAX = data.constants.depthMax;
 const DEPTH_DRIFT = data.constants.depthDrift;
-const EXP_BASE = data.constants.expBase;
-const EXP_SCALE = data.constants.expScale;
-const EXP_DEPTH_CAP = data.constants.expDepthCap;
 
 /** The puffball, which pops instead of fighting. */
 const PUFFBALL = 6;
@@ -254,12 +252,12 @@ function settleDepth(walked: number, floor: number): number {
 /**
  * What killing the monster is worth (exe 3000:b8d4, mw.c "experience_for_kill").
  *
- * The curve is the one Dungeons of the Unforgiven pays, constant for constant, and the depth it
- * is raised to stops counting at 130.
+ * Dungeons of the Unforgiven pays the same curve at exe 3000:a0fa: the same 1.23 and 5, the same
+ * stop at depth 130, so this is that routine with the monster's own multiplier. The game reads
+ * the depth out of an unsigned byte, which is what the floor at zero stands for here.
  */
 export function killExperience(monster: MwMonster, depth: number): number {
-  const capped = Math.min(Math.max(depth, 0), EXP_DEPTH_CAP);
-  return monster.expMult * (EXP_SCALE * EXP_BASE ** capped + capped + 1);
+  return expValue(Math.max(depth, 0), monster.expMult);
 }
 
 /** What the monster breathes, in the words the game prints, numbered 1 to 5. */
