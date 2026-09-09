@@ -87,8 +87,9 @@ is `wait_key` (exe 4000:3452), the wait that keeps a screen up until the player 
 The colour is a palette entry between 1 and 15. The ones `roll_char` uses are 2 blue, 3 light
 blue, 4 yellow, 5 orange, 6 red, 7 gold, 8 green and 15 white — the same numbers Dungeons of the
 Unforgiven's `roll_char` reaches for a year later, at the same coordinates, screen for screen.
-Moraff's World's own palette has not been read out of the executable, so what those entries look
-like is taken from the other game's; only the numbers here come from `mw.c`.
+What those entries look like comes from Moraff's World's own palette, `set_palette` (exe
+4000:10ee) as `src/lib/game/mw-palettes.json`, which agrees with the other game's on every entry
+but 5 and 12; the numbers here come from `mw.c`.
 
 Every line is the exact bytes of the game's own string, punctuation and spacing included — the
 runs of spaces inside a label are the gap the number is drawn into. The lines that come out of
