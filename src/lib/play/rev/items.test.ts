@@ -324,6 +324,25 @@ describe('the wands', () => {
     expect(pc.spellPoints).toBe(10);
   });
 
+  it('leaves the colour typed in the scratch cell, as 1000:7B36 does', async () => {
+    const pc = revCharacter();
+    setRevValue(pc, 168, 2);
+    const { game, desk, keys } = revTestGame(pc);
+    game.scratch = 99;
+    keys.push(KEY('1'));
+    await revUseAWand(game, desk);
+    expect(game.scratch).toBe(1);
+  });
+
+  it('leaves a colour it turned down there too, since 1000:7B36 writes before the tests', async () => {
+    const pc = revCharacter();
+    const { game, desk, keys } = revTestGame(pc);
+    game.scratch = 99;
+    keys.push(KEY('0'));
+    expect(await revUseAWand(game, desk)).toBe(0);
+    expect(game.scratch).toBe(0);
+  });
+
   it('the fourth wand holds the monster off and the fifth loads the next swing', async () => {
     const pc = revCharacter();
     setRevValue(pc, 171, 1);

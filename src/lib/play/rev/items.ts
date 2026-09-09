@@ -386,6 +386,9 @@ export async function revUseAWand(game: RevGame, desk: RevMagicDesk): Promise<nu
     else game.say(`${revBasicNumber(colour)}${NO_MORE}`);
   }
   const colour = typedNumber(await desk.poll());
+  // 1000:7B36: the colour typed goes in the scratch cell, which the menu then reads back four
+  // times over (1000:7B6C, 7B8E, 7BD5 and 7BE1) and never writes again.
+  game.scratch = colour;
   if (colour < 1 || colour > REV_WAND_COLOURS) return 0;
   if (revWandCharges(pc, colour) < 1) return 0;
   revSpendWandCharge(pc, colour);
