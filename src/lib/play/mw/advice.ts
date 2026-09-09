@@ -32,7 +32,7 @@ const LESSON_COLOUR = 3;
  * nothing is spread out to the box's right-hand edge. The fill_rect each of them starts with
  * covers the strip above the box as well as the box itself, so both go.
  */
-function squeak(session: MwGameSession, colour: number, lines: string[]): void {
+function printAdvice(session: MwGameSession, colour: number, lines: string[]): void {
   const game = session.game;
   session.clearBox();
   mwClearMessageBox(game);
@@ -143,14 +143,14 @@ export function adviseTheWalker(session: MwGameSession): void {
   if (pc.lev < 3 && game.rng.random(6) === 1) {
     const lesson = LESSONS[lessons.next % LESSONS.length];
     lessons.next += 1;
-    if (lesson.length > 0) squeak(session, LESSON_COLOUR, lesson);
+    if (lesson.length > 0) printAdvice(session, LESSON_COLOUR, lesson);
     return;
   }
   switch (game.rng.random(8)) {
     case 0:
       // DS:4ee0 4efb 4f15 4f31
       if (pc.hp < Math.trunc(pc.maxHp / 4)) {
-        squeak(session, 3, [
+        printAdvice(session, 3, [
           'YOU ARE BADLY DAMAGED. YOU',
           'SHOULD CURE YOURSELF WITH',
           'THE CURE SPELL OR GO SEARCH',
@@ -161,7 +161,7 @@ export function adviseTheWalker(session: MwGameSession): void {
     case 1:
       // DS:4f48 4f65 4f80 4e39
       if (pc.lev * 3 + 3 < pc.floor) {
-        squeak(session, 4, [
+        printAdvice(session, 4, [
           'I THINK YOU WILL NOT SURVIVE',
           'THIS DEEP - THE DEEPER YOU',
           'GO, THE MORE POWERFUL THE',
@@ -172,7 +172,7 @@ export function adviseTheWalker(session: MwGameSession): void {
     case 2:
       // DS:4f9a 4fb4 4fd1 4fee
       if (pc.weight * 2 < pc.loadedWeight) {
-        squeak(session, 5, [
+        printAdvice(session, 5, [
           'YOU ARE CARRYING A LOT OF',
           'WEIGHT. THIS ALLOWS MONSTERS',
           'TO TAKE MORE STRIKES AT YOU.',
@@ -183,7 +183,7 @@ export function adviseTheWalker(session: MwGameSession): void {
     case 3:
       // DS:5009 5021 503c 5059
       if (canLevelUp(game)) {
-        squeak(session, 6, [
+        printAdvice(session, 6, [
           'YOU ARE READY TO GAIN A',
           'LEVEL, WHICH WILL MAKE YOU',
           'MORE POWERFUL. YOU MUST STAY',
@@ -195,7 +195,7 @@ export function adviseTheWalker(session: MwGameSession): void {
       // DS:5074 5091 50ad 50c8. The three is the float at DS:45f1, so the advice comes once
       // the spell points are below a third of the maximum.
       if (pc.sp * 3 < pc.maxSp) {
-        squeak(session, 6, [
+        printAdvice(session, 6, [
           'YOU ARE RUNNING LOW ON SPELL',
           'POINTS. YOU CAN REGAIN YOUR',
           'SPELL POINTS BY STAYING AT',
@@ -206,7 +206,7 @@ export function adviseTheWalker(session: MwGameSession): void {
     case 5:
       // DS:50dc 50f6 510f 4f40
       if (pc.diseaseTimer > 0) {
-        squeak(session, 8, [
+        printAdvice(session, 8, [
           "YOU DON'T FEEL VERY WELL.",
           'YOU SHOULD REALLY TRY TO',
           'GET A CURE DISEASE AT A',
@@ -217,7 +217,7 @@ export function adviseTheWalker(session: MwGameSession): void {
     case 6:
       // DS:5127 5142 515c 5179
       if (pc.returnX === -1) {
-        squeak(session, 3, [
+        printAdvice(session, 3, [
           "DON'T YOU THINK YOU SHOULD",
           'BUY A RAISE DEAD CONTRACT',
           'WITH THE TEMPLE IN THE TOWN?',
@@ -228,7 +228,7 @@ export function adviseTheWalker(session: MwGameSession): void {
     case 7:
       // DS:5196 51b2 51cd
       if (pc.poisonTimer > 0) {
-        squeak(session, 7, [
+        printAdvice(session, 7, [
           'YOU HAVE BEEN POISONED. FOR',
           'A FEW JEWELS YOU CAN GET A',
           'CURE POISON AT A TEMPLE.',
