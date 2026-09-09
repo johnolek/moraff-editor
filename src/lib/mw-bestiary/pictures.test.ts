@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { parsePic } from '../game/dotu-pic.js';
+import { pixelDifference } from '../play/view3d/frame.test-support';
 import { MONSTERS } from './monsters';
 import {
   floorPalette,
@@ -43,7 +44,9 @@ describe('the bundled picture files', () => {
 
   it('is reachable through the bundle exactly as it is on disk', () => {
     const { images } = parsePic(readFileSync('src/lib/game/pics/mw/world.pic'));
-    expect(pictureImages().map((image) => [...image])).toEqual(images.map((image) => [...image]));
+    const bundled = pictureImages();
+    expect(bundled).toHaveLength(images.length);
+    expect(bundled.map((image, index) => pixelDifference(image, images[index]))).toEqual(images.map(() => null));
   });
 });
 
