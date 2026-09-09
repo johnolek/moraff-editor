@@ -30,8 +30,8 @@ pnpm dev
 - `src/lib/game/*.js` are verbatim copies of `dotu-tools/reference/`; a test diffs
   them. Edit the bundle first, then copy. Types live in the sibling `.d.ts` files.
 - The map explorer, the Play tab, the save editor, the monsters and the character
-  roller cover all three games; the spells cover DotU and Moraff's World; the
-  calculators, the formulas and the snake are DotU's alone.
+  roller cover all three games; the spells cover DotU and Moraff's World; the fight simulator,
+  the calculators, the formulas and the snake are DotU's alone.
 - The Tidbits tab follows the game switch: a game has one when
   `src/lib/tidbits/files.ts` names a file for it and `src/lib/tabs.ts` lists the
   tab for it.
