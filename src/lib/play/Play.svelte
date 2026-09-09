@@ -32,6 +32,7 @@
     PLAY_MODES,
     colourblindFilter,
     readPlayColourblind,
+    readPlayRedraw,
     readPlayDisplay,
     readPlayMode,
     sidePicturesVisible,
@@ -54,6 +55,7 @@
   let mode = $state<PlayMode>(readPlayMode('unforgiven'));
   let display = $state<PlayDisplay>(readPlayDisplay('unforgiven'));
   let colourblind = $state(readPlayColourblind('unforgiven'));
+  let redraw = $state(readPlayRedraw('unforgiven'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -340,7 +342,7 @@
         {/if}
       </div>
       <aside class="side">
-        <div class="switch"><ScreenSwitch game="unforgiven" bind:display bind:colourblind /></div>
+        <div class="switch"><ScreenSwitch game="unforgiven" bind:display bind:colourblind bind:redraw /></div>
         <div class="place">
           <span>{view.place.floor === 0 ? 'Town' : `Floor ${view.place.floor}`}</span>
           <span>Module {view.place.module + 1}</span>

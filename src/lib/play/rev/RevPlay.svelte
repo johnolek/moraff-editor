@@ -18,6 +18,7 @@
     PLAY_MODES,
     colourblindFilter,
     readPlayColourblind,
+    readPlayRedraw,
     readPlayDisplay,
     readPlayMode,
     writePlayMode,
@@ -59,6 +60,7 @@
   let mode = $state<PlayMode>(readPlayMode('revenge'));
   let display = $state<PlayDisplay>(readPlayDisplay('revenge'));
   let colourblind = $state(readPlayColourblind('revenge'));
+  let redraw = $state(readPlayRedraw('revenge'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -311,7 +313,7 @@
         {/if}
       </div>
       <aside class="side">
-        <div class="switch"><ScreenSwitch game="revenge" bind:display bind:colourblind /></div>
+        <div class="switch"><ScreenSwitch game="revenge" bind:display bind:colourblind bind:redraw /></div>
         <div class="place">
           <span>{view.place.level === 0 ? 'The town' : `Level ${view.place.level}`}</span>
           <span>{view.place.column}, {view.place.row}</span>

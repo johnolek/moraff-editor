@@ -35,6 +35,7 @@
     PLAY_MODES,
     colourblindFilter,
     readPlayColourblind,
+    readPlayRedraw,
     readPlayDisplay,
     readPlayMode,
     sidePicturesVisible,
@@ -74,6 +75,7 @@
   let mode = $state<PlayMode>(readPlayMode('moraffsWorld'));
   let display = $state<PlayDisplay>(readPlayDisplay('moraffsWorld'));
   let colourblind = $state(readPlayColourblind('moraffsWorld'));
+  let redraw = $state(readPlayRedraw('moraffsWorld'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -502,7 +504,7 @@
         {/if}
       </div>
       <aside class="side">
-        <div class="switch"><ScreenSwitch game="moraffsWorld" bind:display bind:colourblind /></div>
+        <div class="switch"><ScreenSwitch game="moraffsWorld" bind:display bind:colourblind bind:redraw /></div>
         <div class="place">
           <span>{view.place.floor === 0 ? 'The surface' : `Floor ${view.place.floor}`}</span>
           <span>Dungeon {view.place.dungeon}</span>

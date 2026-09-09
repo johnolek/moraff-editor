@@ -3,8 +3,12 @@
   import {
     COLOURBLIND_FILTER_ID,
     PLAY_DISPLAYS,
+    REDRAW_STEP_MS,
+    redrawWords,
+    SLOWEST_REDRAW_MS,
     writePlayColourblind,
     writePlayDisplay,
+    writePlayRedraw,
     type PlayDisplay,
   } from './mode';
 
@@ -14,9 +18,11 @@
     display: PlayDisplay;
     /** Whether the stage is drawn through the simulation this component defines. */
     colourblind: boolean;
+    /** How long the game's screen takes to appear, revealed from the top down. */
+    redraw: number;
   }
 
-  let { game, display = $bindable(), colourblind = $bindable() }: Props = $props();
+  let { game, display = $bindable(), colourblind = $bindable(), redraw = $bindable() }: Props = $props();
 
   function choose(which: PlayDisplay) {
     display = which;
@@ -25,6 +31,10 @@
 
   function toggleSimulation(input: HTMLInputElement) {
     writePlayColourblind(game, input.checked);
+  }
+
+  function chooseRedraw(input: HTMLInputElement) {
+    writePlayRedraw(game, Number(input.value));
   }
 </script>
 
@@ -37,6 +47,18 @@
 <label class="simulate">
   <input type="checkbox" bind:checked={colourblind} onchange={(event) => toggleSimulation(event.currentTarget)} />
   <span>Simulate red-green colourblindness</span>
+</label>
+
+<label class="redraw">
+  <span>Redraw speed</span>
+  <input
+    type="range"
+    min="0"
+    max={SLOWEST_REDRAW_MS}
+    step={REDRAW_STEP_MS}
+    bind:value={redraw}
+    oninput={(event) => chooseRedraw(event.currentTarget)} />
+  <span class="pace">{redrawWords(redraw)}</span>
 </label>
 
 <!-- Deuteranopia, the common form of red-green colourblindness, as the matrix Viénot, Brettel and
@@ -90,6 +112,26 @@
     color: var(--muted);
     font-size: 12px;
     cursor: pointer;
+  }
+  /* The slider and what it is set to, on one line under the simulation's checkbox. */
+  .redraw {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .redraw input {
+    flex: 1;
+    min-width: 80px;
+    max-width: 140px;
+    accent-color: var(--accent);
+  }
+  .redraw .pace {
+    min-width: 48px;
+    font-family: var(--font-dos);
   }
   .filters {
     position: absolute;
