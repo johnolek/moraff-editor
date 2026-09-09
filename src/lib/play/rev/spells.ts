@@ -69,6 +69,11 @@ const ESCAPE = 0x1b;
  * "cast no spell" (1000:C759). So does anything at all if a monster has walked onto the square
  * while the menu was up (1000:C707), which is the one thing that can happen to a character
  * standing still in front of a menu.
+ *
+ * The answer is handed back in the compiler's scratch cell rather than in a variable of its own,
+ * and 1000:917C and 918E are the fight's own C key reading it out of there. That cell is
+ * `game.scratch`, which a monster's next swing starts its d20 from (`attack.ts`), so what the
+ * menu leaves there is worth having right.
  */
 export async function revSpellMenu(
   game: RevGame,
@@ -77,6 +82,9 @@ export async function revSpellMenu(
   set: RevSpellSet,
 ): Promise<number> {
   const mask = knownMask(game.pc, level, set);
+  // 1000:C5EA and C603: the two lines are worked out from the scratch cell, so the mask stands
+  // in it until the answer replaces it.
+  game.scratch = mask;
   const spells = revSpellsAt(level, set);
   const offered = [(mask & 1) !== 0 ? spells[0]?.name ?? '' : '', (mask & 2) !== 0 ? spells[1]?.name ?? '' : ''];
   game.say(`LEVEL${revBasicNumber(level)}- SELECT ONE:  `, `1) ${offered[0]}`, `2) ${offered[1]}`, REV_CAST_NO_SPELL);
@@ -84,11 +92,22 @@ export async function revSpellMenu(
   for (;;) {
     const key = await desk.poll();
     // 1000:C6E7: a monster on the character's own square, outside a fight, ends the menu.
-    if (key === null) return NO_SPELL;
+    if (key === null) {
+      // 1000:C707
+      game.scratch = NO_SPELL;
+      return NO_SPELL;
+    }
     choice = typedNumber(key === ESCAPE ? '3'.charCodeAt(0) : key);
+    // 1000:C730: what was typed goes in the cell before it is looked at, so a key that is none
+    // of the three leaves its own number there while the menu asks again.
+    game.scratch = choice;
     if (choice >= 1 && choice <= NO_SPELL) break;
   }
-  if (offered[choice - 1] === '') return NO_SPELL;
+  if (offered[choice - 1] === '') {
+    // 1000:C79C
+    game.scratch = NO_SPELL;
+    return NO_SPELL;
+  }
   return choice;
 }
 

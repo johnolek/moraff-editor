@@ -48,6 +48,49 @@ describe("the dungeon's spell menu", () => {
   });
 });
 
+describe('the scratch cell the spell menu answers through', () => {
+  /** The menu run with the keys given, and what stood in the cell as each key was asked for. */
+  async function menu(pc: RevPc, typed: number[]): Promise<{ answer: number; cell: number; asking: number[] }> {
+    const { game, desk, keys } = revTestGame(pc);
+    const poll = desk.poll;
+    const asking: number[] = [];
+    desk.poll = () => {
+      asking.push(game.scratch);
+      return poll();
+    };
+    game.scratch = 99;
+    keys.push(...typed);
+    const answer = await revSpellMenu(game, desk, 1, 'prep');
+    return { answer, cell: game.scratch, asking };
+  }
+
+  it('holds the mask of the spells the level offers while it asks, as 1000:C5EA does', async () => {
+    const pc = revCharacter();
+    setRevValue(pc, 118, 2);
+    expect((await menu(pc, [KEY('2')])).asking).toEqual([2]);
+  });
+
+  it('holds the number that was chosen, as 1000:C730 does', async () => {
+    const pc = revCharacter();
+    knowsEverything(pc);
+    expect(await menu(pc, [KEY('2')])).toMatchObject({ answer: 2, cell: 2 });
+  });
+
+  it('holds a key that is none of the three while it asks again', async () => {
+    const pc = revCharacter();
+    knowsEverything(pc);
+    expect((await menu(pc, [KEY('7'), KEY('1')])).asking).toEqual([3, 7]);
+  });
+
+  it('holds the third answer for Escape, for a spell not known and for a monster arriving', async () => {
+    const known = revCharacter();
+    knowsEverything(known);
+    expect(await menu(known, [0x1b])).toMatchObject({ answer: 3, cell: 3 });
+    expect(await menu(revCharacter(), [KEY('1')])).toMatchObject({ answer: 3, cell: 3 });
+    expect(await menu(known, [])).toMatchObject({ answer: 3, cell: 3 });
+  });
+});
+
 describe("the dungeon's twelve spells", () => {
   it('turns a level and a choice into the arm of the ON GOTO the game jumps to', async () => {
     const pc = revCharacter({ hp: 10, maxHp: 100 });
