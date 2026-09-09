@@ -48,7 +48,7 @@ import { RevMapMemory, type RevMapStore } from './memory';
 import { DEFAULT_PLAY_MODE, type PlayMode } from '../mode';
 import { revStep, type RevStep } from './move';
 import { revPass } from './pass';
-import { REV_UNBANKED_EXPERIENCE_VALUE, loadRevPlayer, revValue, saveRevPlayer } from './record';
+import { loadRevPlayer, saveRevPlayer } from './record';
 import type { RunRecorder, RunSummary } from '../run';
 import { revAdvice } from './advice';
 import {
