@@ -1,9 +1,9 @@
 # Run server
 
 One Node process that answers HTTP on a port, keeps everything in one SQLite
-file, and allows the site's origin. Right now all it has is `GET /health`; the
-runs, the leaderboards and the feed are the rest of
-[MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
+file, and allows the site's origin. So far it answers `GET /health` and the two
+players endpoints below; the runs, the leaderboards and the feed are the rest
+of [MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
 
 It lives in this repository so one commit is one engine build: the code that
 will replay a run to check it is the same code the site played it with.
@@ -50,6 +50,25 @@ commit it can replay a run played on: a run can only be replayed by the engine
 that played it, so the server has to be able to name what it is carrying. A
 commit ending in `-dirty` was built from a working tree with changes in it and
 nobody can check that build out again.
+
+## Players
+
+Nobody signs up. The site makes each browser a random 32-byte secret, written
+base64url, and sends it as `Authorization: Bearer <secret>`; the server keeps
+only its SHA-256, so it can recognise a secret it is handed and cannot hand one
+out. Names go first come and are compared without regard to case.
+
+| Endpoint          | What it does                                                     |
+| ----------------- | ---------------------------------------------------------------- |
+| `POST /players`   | `{ "name": "..." }` claims the name for that secret, or renames it. 200 with the name that stands, 409 when another player holds it, 400 when the name or the secret is not one. |
+| `GET /players/me` | 200 with `{ "name": "..." }`, or 404 when that secret has claimed no name. |
+
+A name is 2 to 24 characters of ASCII letters, digits, spaces and `. _ - '`,
+trimmed. It is that narrow because SQLite's `NOCASE` folds `A-Z` and nothing
+else: a rule any wider would let two players hold names the boards cannot tell
+apart.
+
+Losing the browser's storage loses the secret, and nothing here gets it back.
 
 ## Engine builds
 
