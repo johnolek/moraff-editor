@@ -198,7 +198,7 @@ const MONSTERS: Topic = {
       id: 'monster-level-nudge',
       title: 'The nudge on a monster\'s level',
       explanation:
-        'The floor\'s level is not what gets stored. For each monster the game keeps tossing a one-in-three chance, and every time it comes up the level shifts by minus one, nothing or plus one. Two thirds of monsters therefore stand exactly at the floor\'s level and the rest tail away either side, so a level 45 floor is mostly level 45 with a scattering from about 41 to 49. Whatever comes out is held between 1 and 210. The hit points are already rolled by this point, so the nudge moves what a monster hits and is hit like without touching what it can take.',
+        'The floor\'s level is not what gets stored. For each monster the game keeps tossing a one-in-three chance, and every time it comes up the level shifts by minus one, nothing or plus one. Two thirds of monsters therefore stand exactly at the floor\'s level and the rest tail away either side, so a level 45 floor is mostly level 45 with a scattering from about 41 to 49. Whatever comes out has to land between 1 and 210: anything under becomes level 1, and so does anything over, though no floor is deep enough for that to happen since the deepest stocks level 165. The hit points are already rolled by this point, so the nudge moves what a monster hits and is hit like without touching what it can take.',
       inputs: 'The floor\'s base level, and the rolls.',
       origin: 'exe stock_level 2000:671e, stock_level in dotu-tools/decomp/unf.c. RE notes 4.1 and FAQ [MGEN].',
       c: 'stock_level',
