@@ -1,7 +1,7 @@
 import { attackTiming } from '../../game/mw-port/combat';
 import { bundledMwDungeon } from '../../game/mw-dungeon';
 import { recomputeWeight } from '../../game/mw-port/magic';
-import { mwMenuKey, mwLineMenuKey, MW_MONSTER_VIEW_CORNERS } from '../../game/mw-port/screens';
+import { mwMenuKey, mwLineMenuKey, MW_MONSTER_VIEW_CORNERS, mwMonsterViewLines } from '../../game/mw-port/screens';
 import type { MwCharacter, MwGame } from '../../game/mw-port/state';
 import { MW_SQUARE_PLAYER, mwClearMessageLine, mwSetOccupant, newMwGame } from '../../game/mw-port/state';
 import type { Rng } from '../../game/port/rng';
@@ -137,6 +137,12 @@ export interface MwPlayView {
    * redraw off it.
    */
   engagedFullHp: number;
+  /**
+   * The lines the game's own screen prints beside that monster in every mode — its level, its
+   * hit points and the experience for killing it — which the map's close-up shows the same way;
+   * empty when nothing is being faced.
+   */
+  engagedViewLines: string[];
   /**
    * The lines debug mode prints over that monster, which the map's close-up shows in debug mode
    * and in no other; empty when nothing is being faced.
@@ -480,6 +486,10 @@ export class MwGameSession extends KeyedSession<MwCharacter> {
       moves: game.movesTaken,
       engaged,
       engagedFullHp: engaged === null ? 0 : this.floors.fullHp(engaged.slot, engaged.hp),
+      engagedViewLines:
+        engaged === null
+          ? []
+          : mwMonsterViewLines(game, engaged.slot, MW_MONSTER_VIEW_CORNERS.north).map((line) => line.text.trimEnd()),
       // The map draws the one close-up wherever the monster stands, so the lines are broken at
       // the width of the view ahead, which is the corner the map's own screen uses too.
       engagedDebugLines: mwDebugMonsterLines(game, MW_MONSTER_VIEW_CORNERS.north).map((line) => line.text),

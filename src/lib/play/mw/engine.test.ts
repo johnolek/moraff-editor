@@ -369,15 +369,20 @@ describe('the monster the map draws a close-up of', () => {
     expect(session.view().engagedFullHp).toBe(4000);
   });
 
-  it('carries the lines debug mode prints over it, and none with nothing faced', async () => {
+  it('carries the lines the screen and debug mode print over it, and none with nothing faced', async () => {
     const session = playingMw(fighter(), highest, standInFront(400));
     await settleMw();
     const lines = session.view().engagedDebugLines;
     expect(lines[0]).toMatch(/^HIT:\d+\.\d%$/);
     expect(lines[1]).toMatch(/^IT HITS:\d+\.\d%$/);
+    const shown = session.view().engagedViewLines;
+    expect(shown[0]).toMatch(/^LEV(EL)?:\d+$/);
+    expect(shown[1]).toMatch(/^HP:\d+$/);
+    expect(shown[2]).toMatch(/\d$/);
     session.game.engaged = -1;
     expect(session.view().engaged).toBeNull();
     expect(session.view().engagedFullHp).toBe(0);
+    expect(session.view().engagedViewLines).toEqual([]);
     expect(session.view().engagedDebugLines).toEqual([]);
   });
 });
