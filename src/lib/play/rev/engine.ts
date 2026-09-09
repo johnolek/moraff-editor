@@ -1,6 +1,6 @@
 import { LEVELS } from '../../game/revmap.js';
 import type { Rng } from '../../game/port/rng';
-import { REV_POLLS_PER_TICK, REV_TICK_MS, revPoll } from './clock';
+import { REV_TICK_MS, revTick } from './clock';
 import { revFallDownAChute } from './chute';
 import { RevHeldScreens } from './held';
 import type { RevMagicDesk } from './desk';
@@ -260,7 +260,7 @@ export class RevGameSession {
     this.game.seconds = (this.ticks * REV_TICK_MS) / 1000;
     const walker = revWalker(this.game);
     const moves = this.game.monsters.moves;
-    for (let pass = 0; pass < REV_POLLS_PER_TICK; pass++) revPoll(this.game.monsters, walker, this.game.lastMonsterLevel, this.game.rng);
+    revTick(this.game.monsters, walker, this.game.lastMonsterLevel, this.game.rng);
     let drawAgain = this.game.monsters.moves !== moves;
     // 1000:85BA: the fight's poll asks on every pass whether a potion has run down, so the
     // agility and the shield go, and the banners with them, while the player is sitting still
