@@ -16,6 +16,7 @@
   import { armSpeaker } from '../speaker';
   import { isTyping } from '../ui/keys';
   import PixelText from '../ui/PixelText.svelte';
+  import BoardName from './BoardName.svelte';
   import { downloadMapFiles } from './export-maps';
   import { downloadRunLog } from './export-run';
   import type { PlayGame, PlaySession, PlayStage, PlayViewBase } from './games';
@@ -378,6 +379,7 @@
           {/if}
           {@render afterModes(stage)}
         </div>
+        <BoardName />
         {@render sideFoot?.(stage)}
       </aside>
     </div>
