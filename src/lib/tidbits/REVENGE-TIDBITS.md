@@ -559,14 +559,19 @@ money.
 In the code: `rev-tools/docs/DUNGEON.md` section 9, on the store at `1000:281E`, the eighth line
 at `1000:2B67` and the bank's sign at `1000:236C`.
 
-### The wizard's guild charges the level to the power 1.75
+### The wizard's guild sells you words
 
-The guild sells two things. For 800 jewel pieces it tells you what the magic items do, and for
-`INT(level ^ 1.75 * 220)` it sells one level of spells, 1 to 6. The first level is 220 and the
-sixth about 5,060 — twenty-three times as much for six times as deep.
+The guild sells two things and both of them are sentences. For 800 jewel pieces it tells you what
+the magic items do. For `INT(level ^ 1.75 * 220)` it reads out either the two prep spells of a
+level, 1 to 6, or the two battle spells, and takes the money. Nothing in the routine marks a
+spell as known or hands one over; the price buys the description, and the descriptions are all
+sitting in `F1.COM` on the disk.
 
-In the code: `rev-tools/docs/DUNGEON.md` section 9, on the guild at `1000:2BB8` and the price at
-`1000:2DAE`.
+The first level is 220 and the sixth about 5,060, twenty-three times as much for six times as
+deep, to be told what `GOD?` does.
+
+In the code: `rev-tools/docs/DUNGEON.md` section 9, on the guild at `1000:2BB8`, the price at
+`1000:2DAE` and the two branches at `1000:2E24` and `1000:2E91`.
 
 ### The town's ladders ask a looser question than the rest of the dungeon
 
