@@ -1,8 +1,8 @@
 <!-- One monster of Moraff's Revenge: its two pictures, and where on the disk it is standing. -->
 <script lang="ts">
   import { untrack } from 'svelte';
+  import MonsterCard from '../bestiary/MonsterCard.svelte';
   import { blockWheel } from '../editor/block-wheel';
-  import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import RevMonsterPicture from './RevMonsterPicture.svelte';
   import {
@@ -73,58 +73,48 @@
   });
 </script>
 
-<article>
-  <div class="top">
-    <div class="art">
-      <div class="pictures">
-        {#if closeUp}
-          <figure>
-            <RevMonsterPicture picture={closeUp} {palette} label="{entry.name}, close up" scale={CLOSE_UP_SCALE} />
-            <figcaption>Close up · {closeUp.width}×{closeUp.height}</figcaption>
-          </figure>
-        {/if}
-        {#if distant}
-          <figure>
-            <RevMonsterPicture picture={distant} {palette} label="{entry.name}, far off" scale={DISTANT_SCALE} />
-            <figcaption>Down the hall · {distant.width}×{distant.height}</figcaption>
-          </figure>
-        {/if}
-      </div>
-      <label class="palette">
-        Colours
-        <select value={palette} onchange={(event) => (palette = Number(event.currentTarget.value))}>
-          {#each PALETTE_NAMES as name, index}
-            <option value={index}>{name}</option>
-          {/each}
-        </select>
-      </label>
-    </div>
-    <div class="facts">
-      <h2><PixelText text={entry.name} scale={2} /></h2>
-      <p class="group">{groupLabel} · name {entry.index} of {dungeon.monsters.length} in {dungeon.nameFile}</p>
+<MonsterCard
+  name={entry.name}
+  groupLine="{groupLabel} · name {entry.index} of {dungeon.monsters.length} in {dungeon.nameFile}"
+  numbersTitle="Numbers"
+  {numbers}
+  effects={kindNotes}
+  {art}
+  {effectsNote}
+  {body} />
 
-      <section>
-        <SectionHeading title="Numbers" />
-        <dl>
-          {#each numbers as [label, value]}
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          {/each}
-        </dl>
-        {#if kindNotes.length > 0}
-          <ul class="effects">
-            {#each kindNotes as note}
-              <li>{note}</li>
-            {/each}
-          </ul>
-        {/if}
-        {#if alike.length > 0}
-          <p class="note">Drawn with the same picture as {alike.map((other) => other.name).join(', ')}.</p>
-        {/if}
-      </section>
-    </div>
+{#snippet art()}
+  <div class="pictures">
+    {#if closeUp}
+      <figure>
+        <RevMonsterPicture picture={closeUp} {palette} label="{entry.name}, close up" scale={CLOSE_UP_SCALE} />
+        <figcaption>Close up · {closeUp.width}×{closeUp.height}</figcaption>
+      </figure>
+    {/if}
+    {#if distant}
+      <figure>
+        <RevMonsterPicture picture={distant} {palette} label="{entry.name}, far off" scale={DISTANT_SCALE} />
+        <figcaption>Down the hall · {distant.width}×{distant.height}</figcaption>
+      </figure>
+    {/if}
   </div>
+  <label class="palette">
+    Colours
+    <select value={palette} onchange={(event) => (palette = Number(event.currentTarget.value))}>
+      {#each PALETTE_NAMES as name, index}
+        <option value={index}>{name}</option>
+      {/each}
+    </select>
+  </label>
+{/snippet}
 
+{#snippet effectsNote()}
+  {#if alike.length > 0}
+    <p class="note">Drawn with the same picture as {alike.map((other) => other.name).join(', ')}.</p>
+  {/if}
+{/snippet}
+
+{#snippet body()}
   <section>
     <SectionHeading title="Where it is" />
     <p>{levelLine}</p>
@@ -214,25 +204,9 @@
       </p>
     </section>
   {/if}
-</article>
+{/snippet}
 
 <style>
-  article {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 20px 24px;
-  }
-  .top {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-  }
-  .art {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
   .pictures {
     display: flex;
     align-items: flex-end;
@@ -247,49 +221,6 @@
   figcaption {
     font-size: 11px;
     color: var(--muted);
-  }
-  .facts {
-    flex: 1;
-    min-width: 240px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  h2 {
-    margin: 0;
-    line-height: 0;
-    color: var(--ink);
-  }
-  .group {
-    margin: 0;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .note {
-    margin: 6px 0 0;
-    font-size: 12px;
-    line-height: 1.5;
-    color: var(--muted);
-    max-width: 62ch;
-  }
-  dl {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 2px 12px;
-    margin: 12px 0 0;
-    font-size: 13px;
-  }
-  dt {
-    color: var(--muted);
-  }
-  dd {
-    margin: 0;
-  }
-  p {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.5;
-    max-width: 62ch;
   }
   table {
     border-collapse: collapse;
@@ -330,14 +261,5 @@
   }
   select {
     width: auto;
-  }
-  ul.effects {
-    margin: 8px 0 0;
-    padding-left: 18px;
-    font-size: 13px;
-    color: var(--warn);
-  }
-  code {
-    font-size: 12px;
   }
 </style>
