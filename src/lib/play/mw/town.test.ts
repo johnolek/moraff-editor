@@ -73,9 +73,6 @@ describe('the bank', () => {
     return session;
   }
 
-  /** The last line of the box, which is where the number being typed is shown. */
-  const typedSoFar = (session: MwGameSession) => session.box[session.box.length - 1];
-
   it('takes the amount typed when Escape ends it, the way Enter does', async () => {
     const session = await askingForADeposit();
     for (const digit of [0x31, 0x30, 0x30]) await pressMw(session, digit);

@@ -1,5 +1,5 @@
 import { BATTLE_HP_Y, BLOW_Y, menuLine } from '../game/port/screens';
-import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
+import type { ScreenLine, ScreenRect } from '../game/port/state';
 import { BATTLE_SPELLS_BOX } from './display';
 
 /**

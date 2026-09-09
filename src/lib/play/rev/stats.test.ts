@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { REV_ARMOUR_VALUE, REV_VALUE, setRevValue } from './record';
-import { REV_HIT_ANY_KEY } from './screens';
 import { revCharacter, revRolls } from './spells.test-support';
 import { REV_DISEASED, revPrintUsing, revShowStats, revStatsSheet } from './stats';
 import { newRevGame, type RevGame } from './state';

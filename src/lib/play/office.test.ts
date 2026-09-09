@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { bundledDungeon } from '../game/dungeon';
 import { savePlayer } from '../game/port/record';
 import { BorlandRng } from '../game/port/rng';
 import { BATTLE_TEXT_COLOUR, messageLine } from '../game/port/screens';

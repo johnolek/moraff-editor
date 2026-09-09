@@ -423,7 +423,7 @@ describe('an edit in the save editor', () => {
     const file = characterFile({ level: 0, dir: 0, ...start });
     const session = playing(file);
     await settle();
-    const moved = findSquare(0, (square, x, y) => x !== start.x || y !== start.y);
+    const moved = findSquare(0, (unused, x, y) => x !== start.x || y !== start.y);
     session.recordEdited(edited(file, moved));
     await settle();
     expect(session.view().place).toMatchObject(moved);

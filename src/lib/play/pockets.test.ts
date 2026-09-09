@@ -5,7 +5,7 @@ import { BorlandRng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { newCharacterFile } from '../roller/save-file';
 import { startPlaying } from './battle.test-support';
-import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
+import { GameSession, type CharacterFile } from './engine';
 import { KEY } from './keys';
 
 /** A character standing in the town, carrying whatever the test gives them. */
