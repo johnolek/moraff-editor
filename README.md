@@ -122,6 +122,13 @@ Layout:
   included.
 - `src/lib/editor/` — the save editor: a typed field schema per game and a Svelte
   component per field kind.
+- `src/lib/bestiary/` — the Monsters tab all three games mount, and each game's own
+  numbers beside it in `mw-bestiary/` and `rev-bestiary/`. `MonsterDatabase.svelte`
+  is the two panes, `MonsterCard.svelte` the card the picked monster is drawn on —
+  the picture, the name, the numbers table and the effects — and each game hands it
+  the rest of its card as snippets. Their shared look is in `monster-card.css`
+  rather than the shell's own `<style>`, because Svelte scopes styles to the
+  component the markup is written in and those snippets are written in each game's.
 
 Pushing `main` builds, tests and deploys to GitHub Pages.
 
