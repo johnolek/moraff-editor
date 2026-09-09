@@ -27,6 +27,10 @@
 // --expanded-map draws the X key's screen instead: the whole floor at seven pixels a square with
 // the headline under it, and with --boss X,Y the way to the section's Shadow boss beside it.
 //
+// --boss-office adds the taunt a section's Shadow boss sends: the panel of the section's wall
+// material with the boss standing in it and the three lines beside it, over the play screen the
+// routine wipes nothing of.
+//
 // --building NAME draws one of the six town screens over the views the way walking into it does:
 // store, weaponry, armoury, temple, bank or inn, each with its own frame, picture and heading,
 // and the whole screen in the town palette a building switches the game to.
@@ -82,6 +86,9 @@ const { monsterIdOf, BOSS_KIND } = await load('play/floor.ts');
 const { bossSignpost } = await load('play/misc.ts');
 const { drawTablet } = await load('play/tablet.ts');
 const { drawSectionScreen } = await load('play/section-screen.ts');
+const { drawBossOffice, BOSS_OFFICE_PANEL } = await load('play/boss-office.ts');
+const { readBossOfficeMessage } = await load('game/port/town.ts');
+const { sectionMonsterKinds } = await load('game/port/state.ts');
 const { drawPlaque } = await load('play/plaque.ts');
 const { drawManualPage } = await load('play/manual.ts');
 const { tabletMessage } = await load('game/port/hints.ts');
@@ -202,6 +209,13 @@ if (args['expanded-map']) {
   await server.close();
 } else {
 
+const pictures = {
+  wall,
+  overlay: picture('overlay.pic'),
+  monster: (picnum, isBuiltin) => (isBuiltin ? (builtin?.[picnum + 2] ?? null) : (own?.[picnum - 7] ?? null)),
+  ladder: (down) => builtin?.[down ? 0 : 1] ?? null,
+};
+
 renderFourViews(
   frame,
   {
@@ -210,12 +224,7 @@ renderFourViews(
     floor,
     module: moduleIndex,
     moduleCarried: 0,
-    pictures: {
-      wall,
-      overlay: picture('overlay.pic'),
-      monster: (picnum, isBuiltin) => (isBuiltin ? (builtin?.[picnum + 2] ?? null) : (own?.[picnum - 7] ?? null)),
-      ladder: (down) => builtin?.[down ? 0 : 1] ?? null,
-    },
+    pictures,
     detail: 0,
     screen: SCREEN_PIXELS,
     videoClass: 2,
@@ -236,6 +245,17 @@ D.drawScreenFurniture(frame, {
   at: { ...at, dir },
   map: { known: () => true, knownOnArrival: () => true },
 });
+
+// The taunt a section's Shadow boss sends (boss_office_message, exe 3000:6c9d), which stands on
+// the play screen: the panel with the boss in it, and the three lines the routine prints beside it.
+const bossOfficeLines = [];
+if (args['boss-office']) {
+  drawBossOffice(frame, SCREEN_PIXELS, { section }, pictures);
+  const taunting = newGame();
+  taunting.monsterKinds = sectionMonsterKinds(section);
+  readBossOfficeMessage(taunting, 0);
+  bossOfficeLines.push(...taunting.screen);
+}
 
 // The building the character has walked into, whose screen takes the display over.
 const building = args.building ? BUILDINGS[String(args.building).toUpperCase()] : null;
@@ -259,8 +279,9 @@ const standing = building ? [] : [
   ...D.statusLines(game.pc),
   ...viewLabels(exp, horizonWeight),
   ...(args.fight ? fightLines() : []),
+  ...bossOfficeLines,
 ];
-const cleared = game.blackedOut;
+const cleared = game.blackedOut ?? (args['boss-office'] ? BOSS_OFFICE_PANEL : null);
 const text = [...(cleared ? standing.filter((line) => !inRect(cleared, line)) : standing), ...drawnOnBlack];
 drawDotuScreenText(frame, frame, text);
 // The plaque the wait behind a message box puts up (exe 2000:3e73), over whatever is on the screen.
