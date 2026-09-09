@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { app } from './lib/app-state.svelte';
-  import { restoreGame, restoreRoster, switchGame } from './lib/character/current';
+  import { rememberNow, restoreGame, restoreRoster, switchGame } from './lib/character/current';
   import { GAME_CHOICES } from './lib/game-choice';
   import { goToTab, isAppHistoryState, recordTab, type AppHistoryState } from './lib/history';
   import { tabsFor } from './lib/tabs';
@@ -47,7 +47,9 @@
   }
 </script>
 
-<svelte:window onpopstate={onPopState} />
+<!-- An edit waits a moment before the roster is written, and a page on its way out would take
+     that write with it. -->
+<svelte:window onpopstate={onPopState} onpagehide={rememberNow} />
 
 <div class="app">
   <header>

@@ -7,6 +7,7 @@ import {
   importCharacter,
   importRevExploredMap,
   keepRolledCharacter,
+  rememberNow,
   renameCharacter,
   restoreCharacterImport,
   restoreGame,
@@ -166,11 +167,40 @@ describe('the roster', () => {
 });
 
 describe('editing the character', () => {
-  beforeEach(() => importCharacter('unforgiven', '21', saveFile('SAGEY')));
+  beforeEach(() => {
+    vi.useFakeTimers();
+    importCharacter('unforgiven', '21', saveFile('SAGEY'));
+  });
 
-  it('is what a reload comes back to', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it('is what a reload comes back to, once the typing has stopped', () => {
     currentEntry()!.bytes[0x816] = 99;
     characterEdited();
+    vi.runAllTimers();
+    app.roster = [];
+    restoreRoster();
+    expect(currentEntry()!.bytes[0x816]).toBe(99);
+  });
+
+  it('is written once for a burst of keystrokes', () => {
+    const writes = vi.spyOn(globalThis.localStorage, 'setItem');
+    for (const digit of [1, 2, 3, 4, 5]) {
+      currentEntry()!.bytes[0x816] = digit;
+      characterEdited();
+    }
+    expect(writes).not.toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(writes).toHaveBeenCalledTimes(1);
+  });
+
+  it('is written at once for a page on its way out', () => {
+    currentEntry()!.bytes[0x816] = 99;
+    characterEdited();
+    rememberNow();
     app.roster = [];
     restoreRoster();
     expect(currentEntry()!.bytes[0x816]).toBe(99);

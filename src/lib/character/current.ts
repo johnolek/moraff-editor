@@ -81,7 +81,7 @@ export function characterEdited(): void {
   const entry = currentEntry();
   if (entry) markEdited(entry);
   app.characterVersion++;
-  remember();
+  rememberSoon();
 }
 
 /** The character being played has died. */
@@ -99,7 +99,7 @@ export function replaceCharacterBytes(bytes: Uint8Array<ArrayBuffer>): void {
   entry.bytes = bytes;
   markEdited(entry);
   app.characterVersion++;
-  remember();
+  rememberSoon();
 }
 
 /** Show the other game. The character becomes the one last worked on under it; the rest of the
@@ -159,6 +159,41 @@ function lastCharacterOf(game: GameId): string | null {
   return theirs.find((entry) => entry.id === remembered)?.id ?? theirs[theirs.length - 1]?.id ?? null;
 }
 
+/**
+ * How long an edit waits before the roster is written.
+ *
+ * Long enough that typing a five digit number is one write rather than five, short enough that
+ * the write is done by the time anybody has reached for the keyboard again.
+ */
+const EDIT_PAUSE_MS = 400;
+
+/** The write an edit has asked for and that has not happened yet. */
+let pendingWrite: ReturnType<typeof setTimeout> | null = null;
+
+/** Write the roster now, whatever an edit was waiting for. */
+export function rememberNow(): void {
+  remember();
+}
+
 function remember(): void {
+  if (pendingWrite !== null) {
+    clearTimeout(pendingWrite);
+    pendingWrite = null;
+  }
   saveRoster(app.roster, app.characterId);
+}
+
+/**
+ * Write the roster once the edits have settled.
+ *
+ * Writing it means base64-ing the bytes of every character on it, and every keystroke in the save
+ * editor is an edit, so a burst of them is collected into one write. The first edit of a burst is
+ * what sets the timer; the ones after it join the write already coming.
+ */
+function rememberSoon(): void {
+  if (pendingWrite !== null) return;
+  pendingWrite = setTimeout(() => {
+    pendingWrite = null;
+    saveRoster(app.roster, app.characterId);
+  }, EDIT_PAUSE_MS);
 }
