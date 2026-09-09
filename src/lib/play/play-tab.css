@@ -1,0 +1,199 @@
+/* The look the three Play tabs share. Global on purpose: Svelte scoped styles do not reach the
+   snippets the tab is filled with, which are written in each game's own component, and the mode
+   radios in the shell and the arrow controls in a snippet have to look like one another.
+
+   Every rule is under `.play`, the tab's own root, so nothing outside the tab is touched.
+
+   Where one value has to serve all three tabs it is the Dungeons of the Unforgiven tab's, that
+   being the one the other two were drawn from. Moraff's World lost a 620px floor under its map
+   and a 1000px breakpoint, and Moraff's Revenge a 420px floor, a narrower side column and a
+   handful of smaller paddings.
+
+   What each game draws inside the map — the game's own screen, the corners it lays over the map,
+   the lines it prints on it — is left to that game's component, since none of it is shared. */
+.play {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.play .page {
+  padding: 24px;
+  max-width: 760px;
+}
+.play h2 {
+  margin: 0 0 14px;
+  line-height: 0;
+  color: var(--accent);
+}
+.play .lead,
+.play .hint {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.play .row {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+.play .go {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent-dim);
+  color: #1a1822;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.play .stage {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+.play .map {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  /* The screen is 4:3 and as wide as this column, so on a wide window the column stops
+     growing where the screen would run under the character panel at the foot of the page. */
+  max-width: min(100%, calc((100dvh - 22rem) * 4 / 3));
+  /* How far in from the edge of the map Moraff's World lays the corners of the game's screen. */
+  --inset: 10px;
+}
+.play .over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+}
+.play .over-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  padding: 20px 26px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #000;
+}
+.play .over-box .line {
+  font-family: var(--font-dos);
+  font-size: 24px;
+  color: var(--accent);
+}
+.play .over-box .stopped {
+  max-width: 42ch;
+  text-align: center;
+}
+.play .run {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.play .run .actions {
+  color: var(--ink);
+}
+.play .run .milestone {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+.play .run button {
+  margin-left: auto;
+}
+.play .run button + button {
+  margin-left: 0;
+}
+.play .over-box button,
+.play .run button {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.play .side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: clamp(300px, 26vw, 380px);
+  flex-shrink: 0;
+  padding: 12px;
+  border-left: 1px solid var(--line);
+  overflow-y: auto;
+}
+/* The message box is as tall as it is wide times its aspect ratio and holds nothing that takes
+   up room of its own, so a column with more in it than fits would otherwise squash it to
+   nothing. */
+.play .side .screen {
+  flex-shrink: 0;
+}
+/* Narrow enough that a column beside the map would leave the map the smaller of the two: the
+   side goes under the map instead and the whole tab scrolls. */
+@media (max-width: 900px) {
+  .play .stage {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .play .map {
+    flex: none;
+    height: min(70vh, 520px);
+  }
+  /* The message box is drawn to fill whatever it is given, so the column keeps roughly the
+     width it has beside the map rather than stretching it across the screen. */
+  .play .side {
+    width: 100%;
+    max-width: 460px;
+    border-left: none;
+    border-top: 1px solid var(--line);
+    overflow-y: visible;
+  }
+}
+.play .place {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.play .key-note {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.play .styles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.play .styles label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.play .styles input {
+  grid-row: span 2;
+  margin: 0;
+  accent-color: var(--accent);
+}
+.play .styles .how {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
