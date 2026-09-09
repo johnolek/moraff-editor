@@ -215,20 +215,32 @@ So `M(row, level) = 2097151` is a hard fingerprint that a level was scrolled
 rather than walked; nothing else in the game can produce it. There is no level
 guard, so it works in the town too.
 
-### 4.2 "MONSTER BLOCKS WAY" tells you about a monster through a wall
+### 4.2 "MONSTER BLOCKS WAY" is a fight's message, and tells you about a monster through a wall
 
 Each of the four move routines tests the destination square's occupancy
-**before** it tests the wall. Going north (`1000:30D9`–`3121`):
+**before** it tests the wall, and ANDs it with `b50e`. Going north
+(`1000:30D9`–`3121`):
 
 ```
+30df  cmp b50e, 1                      ; is a fight on?
 310d  cmp word ptr [di + 0x4e90], 0    ; grid(22*(row-1) + col)
+3118  and bx, cx                       ; both, or the step goes ahead
 311e  jmp 0x33ea                       ; -> "MONSTER BLOCKS WAY" (the literal at 33f9)
 3121  call 0x340c                      ; clear the message line
 3149  call 0x548b ; cmp 7 ; ja         ; only now the wall rule
 ```
 
-The same at `1000:31D4`, `3296` and `335B`. Walk into a wall that happens to
-have a monster behind it and the game says a monster is in the way — reporting a
+The same at `1000:31D4`, `3296` and `335B`. `b50e` says which of the two places
+the arrow came from: the dungeon's own dispatch clears it before every key
+(`1000:099F`) and the fight prompt sets it before handing the arrow to that
+same routine (`1000:8716`). So **in the dungeon nothing blocks a step**: you
+walk straight onto the monster, and the redraw the per-key routine falls into
+opens the fight against whoever is standing there (`1000:4969`). The message
+belongs to a fight, where it stops you stepping from the monster you are
+fighting onto a second one.
+
+When it does print, it prints early: walk into a wall that happens to have a
+monster behind it and the game says a monster is in the way — reporting a
 monster you cannot see, and refusing the move for the wrong reason.
 
 ### 4.3 The fountain of youth wipes every level but the town
@@ -316,8 +328,10 @@ other per-square memory.
    a door or a wall in the way ends that direction — and only the nearest one in
    each direction (plus, faithfully, whatever stands one square behind it), plus
    the one standing on your own square.
-6. **Walking into a wall that has a monster behind it** says MONSTER BLOCKS WAY
-   rather than refusing for the wall.
+6. **A step is only ever blocked by a monster from inside a fight**, and there
+   walking into a wall that has a monster behind it says MONSTER BLOCKS WAY
+   rather than refusing for the wall. In the dungeon you walk onto the monster
+   and the fight opens.
 7. **The map is saved with the character**: on Q, on quitting to DOS, on
    returning to the town, after a level drain, and just before a chute drops you.
    Death deletes both files.

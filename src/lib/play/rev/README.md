@@ -303,8 +303,21 @@ it stands in for:
 | --- | --- | --- |
 | A | drops all the coins carried, which is what makes a character light | 1000:1918 |
 
-## Four things read out of the code that the documents had otherwise
+## Six things read out of the code that the documents had otherwise
 
+* **`rev-tools/docs/MAP-MEMORY.md` had MONSTER BLOCKS WAY refusing any step onto a monster.** The
+  test is ANDed with DGROUP B50E standing at 1 (1000:30DF, 3198, 325A and 331C), and B50E says
+  where the arrow came from: the dungeon's dispatch clears it before every key (1000:099F) and the
+  fight prompt sets it (1000:8716). So the message belongs to a fight, where it stops a step from
+  the monster being fought onto a second one; in a corridor the character walks onto the monster
+  and the redraw opens the fight (1000:4969). The document is corrected.
+* **`rev-tools/docs/MONSTERS.md` had no account of how far a monster hears.** The range test at
+  1000:72C3 is written twice over and only the first half says anything: the second loads DGROUP
+  B60A, the row the redraw last cached for the character, where it means the monster's, so it is
+  always 0 and always passes. The columns are the whole of it, whichever axis the two share, and a
+  monster on the character's own column hears them from any distance up it. The document is
+  corrected, and so is the level the wander roll reads — DGROUP B6B4, the last monster met, not
+  the monster taking the turn.
 * **`rev-tools/docs/MONSTERS.md` said a monster walks through walls.** The gate at `1000:758D` is
   not a hash: it is the wall rule itself, with the character's own generation as the divisor and
   the same threshold the player's move test uses at `1000:314C`. A monster is stopped by a wall and

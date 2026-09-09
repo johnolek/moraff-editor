@@ -121,17 +121,48 @@ ones ever act.
 713d  IF <a fight is on> AND M <> <the one you are fighting> THEN GOTO 7667
 ```
 
+`1000:7196` to `1000:738D` is what sets the awake flag `b6a4` and the lined-up
+flag `b6a8` this monster moves on:
+
+```
+7196  b6a8 = <its column = your column OR its row = your row>
+71dc  IF <blocks away> < 4 AND M = AWAKE1 THEN b6a4 = 1 : GOTO 7390
+7234  IF <blocks away> < 5 AND M = AWAKE2 THEN b6a4 = 1 : GOTO 7390
+728c  IF M = AWAKE1 THEN AWAKE1 = 0
+72a2  IF M = AWAKE2 THEN AWAKE2 = 0
+72b8  IF b6a8 = 0 THEN GOTO 7390                    ' b6a4 left alone
+72c3  IF ABS(<its column> - <your column>) < 6 AND ABS(<your row> - <your row>) < 6 THEN
+7307    b6a8 = 1
+      ELSE
+7313    b6a8 = 0 : b6a4 = 0 : GOTO 7390
+7325  IF INT(RND * 600) >= b570 AND <invisibility> = 1 AND INT(RND * 10) < 5 THEN GOTO 7390
+7374  b6a4 = 1 : IF AWAKE1 = 0 THEN AWAKE1 = M
+```
+
+Two things there are worth reading twice. **The second half of `1000:72C3` is
+written against the wrong variable**: `1000:72E1` loads `b60a`, the row the
+redraw last cached for *the character* (`1000:42C1`), where it means the
+monster's, and takes it off `b4d2`, the character's row. It is therefore always
+0 and always under 6, and the range test is the columns alone — whichever axis
+the two share. A monster standing on your own column hears you from any
+distance up it. **And `b6a4` is a variable rather than an answer**: the two
+`GOTO 7390`s that skip it leave the previous monster's value in place, and only
+`1000:803D` (a monster met) and `1000:A36F` (one killed) put it back to 0.
+
 Then `1000:7390` picks a direction:
 
 ```
-73b6  IF <not awake> OR INT(RND * (<its level> + 35)) < 15 THEN
+73b6  IF <not awake> OR INT(RND * (b6b4 + 35)) < 15 THEN
 73e7    DIR = INT(RND * 4) + 1                      ' wander
       ELSE
 7403    DIR = <towards you, on one axis>            ' chase
 ```
 
-So a deeper monster chases more of the time: on level 5 it wanders 15 in 40
-turns, on level 65 only 15 in 100.
+`b6b4` is **not** this monster's level: it is the level of the last monster you
+met (`1000:80EF`) or the depth the last one was killed at (`1000:A3C8`), and 0
+until you have met anybody. So the odds of chasing are the same for every
+monster on the floor at once, and the clock at `1000:7EEC` reads the same
+variable for the same reason.
 
 `1000:7514` turns the direction into a destination one square away, clamped to
 columns 1 to 20 and rows 1 to 19 (`1000:7613`, `765C`, `75F0`, `7636`), and
