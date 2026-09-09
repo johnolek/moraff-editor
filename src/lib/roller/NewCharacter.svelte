@@ -24,6 +24,9 @@
 
   const STATS = ['STRENGTH', 'INTELLIGENCE', 'WISDOM', 'CONSTITUTION', 'AGILITY', 'LUCK'];
 
+  /** A character one of the three games has rolled. */
+  type RolledCharacter = PlayerCharacter | MwCharacter | RevCharacter;
+
   /**
    * Everything about the tab that is one game's rather than the other's.
    *
@@ -42,6 +45,10 @@
     fileName(slot: number): string;
     /** A fresh roll of this game's dice for that character number. */
     newSession(slot: number): Session;
+    /** The bytes of the character's own file, which is the whole record in all three games. */
+    writeRecord(pc: RolledCharacter): Uint8Array<ArrayBuffer>;
+    /** The second file Moraff's Revenge writes beside the record, which is the explored map. */
+    explored?: { fileName(slot: number): string; write(pc: RolledCharacter): Uint8Array<ArrayBuffer> };
   }
 
   const GAMES: Record<GameId, GameRoller> = {
@@ -54,6 +61,7 @@
       folder: 'Back up the file you are replacing first. Drop the download into your game folder next to UNF.EXE, keeping the name, and the character is waiting on the select screen.',
       fileName: slotFileName,
       newSession: (slot) => new RollerSession(ROLLER_PORT, slot),
+      writeRecord: newCharacterFile,
     },
     moraffsWorld: {
       name: "Moraff's World",
@@ -64,6 +72,7 @@
       folder: 'Back up the file you are replacing first. Drop the download into your game folder next to WORLD.EXE, keeping the name, and the character is waiting on the select screen.',
       fileName: mwSlotFileName,
       newSession: (slot) => new RollerSession(MW_ROLLER_PORT, slot),
+      writeRecord: newMwCharacterFile,
     },
     revenge: {
       name: "Moraff's Revenge",
@@ -74,6 +83,8 @@
       folder: 'Back up the files you are replacing first. A character is two files — the record and the explored map — and both go in your game folder next to DUNSMALL.EXE, keeping their names. The name goes in F5.COM, which holds one quoted name to a line with "END" on the last: put this character’s name on the line its number says, so character 3 is the third name in the file.',
       fileName: revRecordFileName,
       newSession: (slot) => new RollerSession(REV_ROLLER_PORT, slot),
+      writeRecord: newRevCharacterFile,
+      explored: { fileName: revExploredFileName, write: newRevExploredFile },
     },
   };
 
@@ -119,7 +130,7 @@
   }
 
   /** The finished character under the game's own screen, with the money the screen never shows. */
-  function sheetRows(pc: PlayerCharacter | MwCharacter | RevCharacter): [string, string][] {
+  function sheetRows(pc: RolledCharacter): [string, string][] {
     if ('unknown150' in pc) {
       return [
         ['RACE', REV_RACE_NAMES[pc.race - 1].toUpperCase()],
@@ -165,12 +176,6 @@
     ];
   }
 
-  /** The bytes of the character's own file, which is the whole record in all three games. */
-  function characterFile(pc: PlayerCharacter | MwCharacter | RevCharacter): Uint8Array<ArrayBuffer> {
-    if ('unknown150' in pc) return newRevCharacterFile(pc);
-    return 'ageMinutes' in pc ? newMwCharacterFile(pc) : newCharacterFile(pc);
-  }
-
   // A roll is one game's questions and one game's dice, so the switch in the header starts over.
   $effect(() => {
     slot = GAMES[rolling].slots[0];
@@ -192,7 +197,7 @@
   function keepWhenDone() {
     if (!view || view.question !== null || kept) return;
     kept = true;
-    keepRolledCharacter(rolling, view.pc.name || fileName, slot, characterFile(view.pc));
+    keepRolledCharacter(rolling, view.pc.name || fileName, slot, chosen.writeRecord(view.pc));
   }
 
   function answer(value: number | string) {
@@ -268,13 +273,13 @@
 
   function download() {
     if (!view) return;
-    save(characterFile(view.pc), fileName);
+    save(chosen.writeRecord(view.pc), fileName);
   }
 
   /** Moraff's Revenge keeps the explored map in a second file beside the record. */
   function downloadExplored() {
-    if (!view || !('unknown150' in view.pc)) return;
-    save(newRevExploredFile(view.pc), revExploredFileName(slot));
+    if (!view || !chosen.explored) return;
+    save(chosen.explored.write(view.pc), chosen.explored.fileName(slot));
   }
 </script>
 
@@ -404,8 +409,8 @@
         <div class="choices">
           <button type="button" class="go" onclick={openInEditor}>Open in the Save Editor</button>
           <button type="button" onclick={download}>Download file {fileName}</button>
-          {#if rolling === 'revenge'}
-            <button type="button" onclick={downloadExplored}>Download file {revExploredFileName(slot)}</button>
+          {#if chosen.explored}
+            <button type="button" onclick={downloadExplored}>Download file {chosen.explored.fileName(slot)}</button>
           {/if}
         </div>
         <p class="hint">{chosen.folder}</p>
