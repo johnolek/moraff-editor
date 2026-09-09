@@ -183,7 +183,7 @@ moves. A regenerated character goes to 3, then 5, then 7: a dungeon of its own e
 The fountain knows what it has done. Before it adds the two it walks the character's explored map
 and zeroes rows 1 to 20 of every level from 1 to 70, so months of filling in are thrown away with
 the dungeon they described. Level 0 is the one it does not touch, which leaves you the twenty
-rows of the town — drawn for a town whose walls have moved as well.
+rows of the town, drawn for a town whose walls have moved as well.
 
 In the code: [wallSide](source:ts/revmap.js/wallSide), and `rev-tools/docs/DUNGEON.md`
 section 5 on the map at `1000:3DCC` and the fountain at `1000:3ED0`.
@@ -304,8 +304,8 @@ The square's own coordinates go into
 `INT(((column + 7) ^ 1.3 * (row + 6) ^ 1.2 * (level + step + 1) ^ 1.1) MOD 300) - 3`, and the
 code that comes out says what is there: 0 a chute, 1 to 9 a ladder up out of this square, and 10
 or more sends the game asking the three levels below for a ladder down to one of them. The 50 is
-not a code the formula can produce. It is what the game writes when there is nothing here — when
-`7.NUM` has no bit for the square, or when the search below comes back empty-handed.
+not a code the formula can produce. It is what the game writes when there is nothing here, either
+because `7.NUM` has no bit for the square or because the search below came back empty-handed.
 
 `7.NUM` looks like the dungeon's feature file and is not. Every bit in it says only that a square
 holds something; which something still comes from the formula. And the file and the formula do
@@ -363,7 +363,7 @@ In the code: [chuteLanding](source:ts/revmap.js/chuteLanding) and
 
 A monster's turn is one square, orthogonally, and two things can refuse it. One is another
 monster already standing there: the grid the game keeps them in holds slot numbers, and a square
-with a number in it is taken. The other is the wall, tested with the dungeon's own rule — the same
+with a number in it is taken. The other is the wall, tested with the dungeon's own rule: the same
 sine of the same coordinates, divided by your character's own generation, floored to a band and
 compared with 7. So 8 and 9 turn a monster back and 6 and 7 let it through a door, exactly as they
 do you.
@@ -409,8 +409,8 @@ In the code: `rev-tools/docs/MONSTERS.md` part 2, on `1000:80B0` and the two cor
 A monster taking its turn decides between wandering and coming at you by rolling against a level
 plus 35 and asking whether the result is under 15, so the bigger that level is, the less anything
 wanders. How often a monster gets a turn at all comes from `165 - the same level + your level`,
-and the bigger it is the more often the floor moves — but never oftener than one pass of the loop
-in eight, whatever the arithmetic says.
+and the bigger it is the more often the floor moves, though never oftener than one pass of the
+loop in eight, whatever the arithmetic says.
 
 The level in both is one variable, and it is not the level of the monster taking the step. Two
 places write it. One is the attack message, which fills it in from the monster that has just
