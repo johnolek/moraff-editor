@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { MapSquare } from '../../map/game';
 import { newFrame, type Frame } from './frame';
 import { AHEAD_VIEW } from './geometry';
-import { floorTilePair, NO_PICTURES, OVERLAY_SKULL, type ViewPictures } from './pictures';
+import { floorTilePair, NO_PICTURES, OVERLAY_SKULL, OVERLAY_WATER, type ViewPictures } from './pictures';
 import { scaleImage } from './scale';
 import { parsePicRows } from './texture';
 import {
@@ -235,6 +235,65 @@ describe('the monster on the square in front of you', () => {
     const plain = monsterBox([monster], { random: () => 0.75 });
     const flipped = monsterBox([monster], { random: () => 0.25 });
     expect(flipped).not.toEqual(plain);
+  });
+});
+
+describe("the water a section pours over a built-in monster", () => {
+  const overlayPictures = parsePicRows(readFileSync('src/lib/game/pics/overlay.pic'));
+  const monster: ViewMonster = { x: 5, y: 4, picnum: 0, builtin: true, colour: 20, colorSet: 2 };
+
+  /** A straight corridor: open to (5, 4) and (5, 3), so a monster can stand on either. */
+  function straightAhead(): MapSquare[][] {
+    const rows = blankFloor();
+    rows[5][5].n = 3;
+    rows[4][5].n = 3;
+    return rows;
+  }
+
+  /** The view with the coin flips pinned, so that two drawings can be compared pixel for pixel. */
+  function drawn(over: Partial<ViewScene>): Frame {
+    const frame = newFrame(SCREEN.width, SCREEN.height);
+    const at = { ...pictures(), overlay: overlayPictures };
+    renderView(frame, scene(straightAhead(), { pictures: at, random: () => 0.75, ...over }), AHEAD_VIEW, 0);
+    return frame;
+  }
+
+  /** The same view with the overlay file missing, which is what DS:031b being 0 leaves. */
+  const dry = (over: Partial<ViewScene>): Frame => drawn({ ...over, pictures: pictures() });
+
+  it('lays the overlay into the rectangle the monster was drawn short into', () => {
+    const expected = dry({ water: true, monsters: [monster] });
+    const rect = engagedMonsterRect(AHEAD_VIEW);
+    scaleImage(expected, rect.left, rect.top, rect.right, rect.bottom, overlayPictures[OVERLAY_WATER], 0, 255, {
+      screen: SCREEN,
+      colours: { base: 0x3a, tint: monster.colour },
+    });
+    expect([...drawn({ water: true, monsters: [monster] }).pixels]).toEqual([...expected.pixels]);
+  });
+
+  it('leaves a monster of the section\'s own five dry', () => {
+    const own = { ...monster, builtin: false };
+    expect([...drawn({ water: true, monsters: [own] }).pixels]).toEqual([...dry({ water: true, monsters: [own] }).pixels]);
+  });
+
+  it('pours none of it in a section that is not one of the three', () => {
+    expect([...drawn({ water: false, monsters: [monster] }).pixels]).toEqual([...dry({ water: false, monsters: [monster] }).pixels]);
+  });
+
+  it('mirrors it on a flip of its own, drawn after the monster\'s', () => {
+    // The monster takes the first number and the overlay the second, so a generator that turns
+    // over between them draws the two the opposite ways round.
+    let asked = 0;
+    const alternating = () => (asked++ % 2 === 0 ? 0.75 : 0.25);
+    const together = drawn({ water: true, monsters: [monster], random: () => 0.75 });
+    expect([...drawn({ water: true, monsters: [monster], random: alternating }).pixels]).not.toEqual([
+      ...together.pixels,
+    ]);
+  });
+
+  it('pours it over a monster at a distance as well, which draw_map_square does too', () => {
+    const far = [{ ...monster, y: 3 }];
+    expect([...drawn({ water: true, monsters: far }).pixels]).not.toEqual([...dry({ water: true, monsters: far }).pixels]);
   });
 });
 

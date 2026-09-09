@@ -11,8 +11,9 @@ import {
   type ViewFrame,
   type ViewRect,
 } from './geometry';
-import { FLOOR_TILES, floorTilePair, OVERLAY_SKULL } from './pictures';
+import { FLOOR_TILES, floorTilePair, OVERLAY_SKULL, OVERLAY_WATER } from './pictures';
 import { scaleImage, type ScaleOptions } from './scale';
+import type { PicRowImage } from './texture';
 import { drawWall, DETAIL_TEXTURED, type WallScene } from './wall';
 import { FOUR_VIEWS, viewFacing } from './views';
 
@@ -164,6 +165,13 @@ function drawSkull(frame: Frame, scene: ViewScene, facing: number): void {
   const picture = scene.pictures.monster(killed.monster.picnum, killed.monster.builtin);
   if (picture) {
     scaleImage(frame, left, top, right, bottom, picture, 0, 255, monsterPaint(scene, killed.monster));
+    // The screen the original paints the skull onto still has the water the view drew over this
+    // monster, so the redraw puts it back too. It goes on the way round the monster under it did,
+    // rather than on a flip of its own: there is no drawing here in the original to roll for.
+    const water = waterOverlay(scene, killed.monster);
+    if (water) {
+      scaleImage(frame, left, top, right, bottom, water, 0, 255, waterOverlayPaint(scene, killed.monster));
+    }
   }
   // The base is set at exe 2000:daf1 and the tint is left at whatever the last monster drawn set
   // it to. Nothing turns on that: the skull's every pixel is under 28, which is the only value
@@ -245,6 +253,32 @@ function monsterPaint(scene: ViewScene, monster: ViewMonster): ScaleOptions {
 }
 
 /**
+ * `overlay.pic`'s first image, drawn over a monster the water sections have just drawn short,
+ * which is what makes it look like it is standing in water.
+ *
+ * Both sites that draw a monster follow it with this — `draw_3d_view` at 3000:24c8 for the square
+ * straight ahead and `draw_map_square` at 3000:307c for every other one — and both test the same
+ * two things: that the monster was stretched from 140 rows rather than 200, and that `overlay.pic`
+ * was loaded at all (DS:031b). So the water is drawn at every distance, exactly as the monster is.
+ *
+ * The overlay goes into the monster's own rectangle and the same window of source columns, out of
+ * all 200 of its rows, and each site mirrors it the way that site mirrors a picture.
+ */
+function waterOverlay(scene: ViewScene, monster: ViewMonster): PicRowImage | null {
+  if (!scene.water || !monster.builtin) return null;
+  return scene.pictures.overlay?.[OVERLAY_WATER] ?? null;
+}
+
+/**
+ * How `scale_image2` is set up for it (exe 3000:24dd and 3000:3091): the whole 200 rows, the base
+ * moved to 0x3a in a 256-colour mode, and the tint left holding the monster's own colour byte,
+ * which nothing between the two calls writes.
+ */
+function waterOverlayPaint(scene: ViewScene, monster: ViewMonster): ScaleOptions {
+  return { screen: scene.screen, colours: { base: 0x3a, tint: monster.colour } };
+}
+
+/**
  * The last step of `draw_3d_view`'s walk back toward the character (exe 3000:21e7): the monster
  * one square ahead — the one an engagement is fought with — drawn into a rectangle of the view
  * rather than through the perspective. `draw_map_square` leaves that square's monster to this.
@@ -293,6 +327,23 @@ function drawEngagedMonster(frame: Frame, scene: ViewScene, rect: ViewRect, faci
     255,
     monsterPaint(scene, monster),
   );
+
+  const water = waterOverlay(scene, monster);
+  if (!water) return;
+  // A second coin flip, drawn after the monster's (exe 3000:24fe), so the water can lie the
+  // other way round from the thing standing in it.
+  const overlayMirrored = scene.random !== undefined && scene.random() < 0.5;
+  scaleImage(
+    frame,
+    overlayMirrored ? right : left,
+    top,
+    overlayMirrored ? left : right,
+    bottom,
+    water,
+    0,
+    255,
+    waterOverlayPaint(scene, monster),
+  );
 }
 
 /**
@@ -334,6 +385,22 @@ function drawSquare(
         to,
         monsterPaint(scene, monster),
       );
+      const water = waterOverlay(scene, monster);
+      // The map squares mirror the overlay the same way they mirror the monster: on the square's
+      // own x, which is read again rather than rolled (exe 3000:30b2).
+      if (water) {
+        scaleImage(
+          frame,
+          mirrored ? face.right : face.left,
+          face.top,
+          mirrored ? face.left : face.right,
+          face.bottom,
+          water,
+          from,
+          to,
+          waterOverlayPaint(scene, monster),
+        );
+      }
     }
   }
 
