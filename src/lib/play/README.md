@@ -90,7 +90,10 @@ something the original does, a comment says so.
   a plain object the game writes in place and nothing on the page would redraw when a blow lands;
   everything on the bar is drawn as a fraction of an orb, and a map with little height to give
   gets smaller orbs, so the bar never has more stone on it than the map has floor. Nothing on it
-  takes a click: the map underneath is dragged and hovered through it.
+  takes a click: the map underneath is dragged and hovered through it. The bar measures itself and
+  hands the map its height, which `FloorCanvas.svelte` takes as `coveredBottom`: the strip the bar
+  hides is not canvas the character can be seen on, so a step towards the foot of the map moves
+  the map while they are still in the open rather than once they are behind the stone.
 
   Two more things go with the close-up. `HudMonsterBar.svelte` is a vertical vessel of the same
   glass down its left, filling to the hit points the monster was stocked with and draining on the
