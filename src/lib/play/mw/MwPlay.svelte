@@ -229,7 +229,6 @@
         <div class="status" style:color={MW_SCREEN_COLOURS[5]}>{view.prompt}</div>
       {/if}
     </div>
-    {@const pc = stage.session.game.pc}
     <!-- The map is the site's own view, so the game's status blocks and its corner picture of the
          monster give way to the heads-up display (John, 2026-09-09). -->
     {#snippet closeUp()}
@@ -237,12 +236,12 @@
     {/snippet}
     <MapHud
       closeUp={view.engaged ? closeUp : undefined}
-      hp={pc.hp}
-      maxHp={pc.maxHp}
-      sp={pc.sp}
-      maxSp={pc.maxSp}
-      level={pc.lev}
-      exp={pc.exp}
+      hp={view.hp}
+      maxHp={view.maxHp}
+      sp={view.sp}
+      maxSp={view.maxSp}
+      level={view.level}
+      exp={view.exp}
       needed={experienceNeeded} />
     <!-- With the map in the views' place there is nowhere on it to draw a screen the game
          has taken the display over with, so it covers the map instead. -->
