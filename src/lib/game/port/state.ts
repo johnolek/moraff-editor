@@ -474,6 +474,14 @@ export interface Game {
   enemyDir: number;
   /** DS:0431: what the last monster attack did to the player. */
   lastMonsterDamage: number;
+  /**
+   * DS:0437, which Ctrl-F puts up (exe 2000:d285): the loop takes F rather than reading a key,
+   * so the character keeps swinging. Anything that reads the keyboard puts it down again.
+   *
+   * `defend` (exe 2000:82b7) reads it as well as the loop does: the beats it holds a swing for
+   * are dropped while the character is swinging on its own, so a repeat runs at full speed.
+   */
+  repeatFight: boolean;
   /** DS:047b: how many seconds of game time the character has spent, counted as a float. */
   secondsElapsed: number;
   /** DS:2328: how many columns of a floor the game lets the player reach. */
@@ -870,6 +878,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
     engagedAhead: -1,
     enemyDir: -1,
     lastMonsterDamage: 0,
+    repeatFight: false,
     secondsElapsed: 0,
     columns: DUNGEON_XMAX,
     rows: DUNGEON_YMAX,

@@ -244,9 +244,16 @@ export class GameSession {
   mode: PlayMode = DEFAULT_PLAY_MODE;
   /**
    * DS:0437, which Ctrl-F puts up (exe 2000:d285): the loop takes F rather than reading a key,
-   * so the character keeps swinging. `fight.ts` is what reads it.
+   * so the character keeps swinging. `fight.ts` is what reads it here, and `defend` reads it in
+   * the game itself, which is where the flag is kept.
    */
-  repeatFight = false;
+  get repeatFight(): boolean {
+    return this.game.repeatFight;
+  }
+
+  set repeatFight(up: boolean) {
+    this.game.repeatFight = up;
+  }
   /** The monster the skull is standing over, until the loop draws the views again. */
   killed: KilledOnScreen | null = null;
   /**
