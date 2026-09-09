@@ -61,7 +61,7 @@ export const TABLET_SLAB_IMAGE = 5;
  * which puts the picture's values in the palette's picture bank rather than in the wall colours
  * the same image wears in the corridor.
  */
-const SLAB_BASE = 0x23;
+export const SLAB_BASE = 0x23;
 
 /**
  * The tint the slab's value-17 pixels take. `FUN_3000_9026` sets no tint of its own, so the
