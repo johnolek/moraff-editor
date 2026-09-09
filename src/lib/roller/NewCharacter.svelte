@@ -14,6 +14,7 @@
   import { MW_SLOTS, mwSlotFileName, newMwCharacterFile } from './mw-save-file';
   import { MwRollerSession } from './mw-session';
   import RevScreen from './RevScreen.svelte';
+  import { MW_SCREEN_COLOURS, SCREEN_COLOURS } from './screen';
   import { newRevCharacterFile, newRevExploredFile, REV_SLOTS, revExploredFileName, revRecordFileName } from './rev-save-file';
   import { RevRollerSession } from './rev-session';
   import { newCharacterFile, slotFileName, SLOTS } from './save-file';
@@ -303,7 +304,7 @@
           <RevScreen lines={revShowing} width={'width' in view ? view.width : 80} />
         {/if}
       {:else}
-        <GameScreen lines={showing} />
+        <GameScreen lines={showing} colours={rolling === 'moraffsWorld' ? MW_SCREEN_COLOURS : SCREEN_COLOURS} />
       {/if}
 
       {#if view.question === 'continue'}

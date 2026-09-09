@@ -7,7 +7,7 @@
   import { FULL_FLOOR } from '../../map/viewport';
   import WallTexture from '../../map/WallTexture.svelte';
   import GameScreen from '../../ui/GameScreen.svelte';
-  import { SCREEN_COLOURS } from '../../roller/screen';
+  import { MW_SCREEN_COLOURS } from '../../roller/screen';
   import PixelText from '../../ui/PixelText.svelte';
   import MwMonsterDetail from '../../mw-bestiary/MwMonsterDetail.svelte';
   import { MONSTERS, monsterGroups } from '../../mw-bestiary/monsters';
@@ -411,7 +411,7 @@
   {:else}
     <div class="stage">
       <!-- The overlays are drawn in the game's own palette entries, the way it draws them. -->
-      <div class="map" style:--status-colour={SCREEN_COLOURS[5]} style:filter={colourblindFilter(colourblind)}>
+      <div class="map" style:--status-colour={MW_SCREEN_COLOURS[5]} style:filter={colourblindFilter(colourblind)}>
         {#if display === 'screen'}
           <div class="game-screen">
             <MwScreen
@@ -445,15 +445,19 @@
         />
         {#if corner.lines.length > 0}
           <div class="corner top-left" style:--share={MW_CORNER_WIDTH / MW_SCREEN.width}>
-            <GameScreen lines={corner.lines} window={cornerWindow} />
+            <GameScreen lines={corner.lines} window={cornerWindow} colours={MW_SCREEN_COLOURS} />
           </div>
         {/if}
         <div class="corner top-right" style:--share={MONSTER_TOP.width / MW_SCREEN.width}>
           {#if view.engaged}
             <div class="monster">
               <MwPortrait monster={view.engaged} floor={view.place.floor} />
-              <div class="values top"><GameScreen lines={monsterValues} window={MONSTER_TOP} /></div>
-              <div class="values bottom"><GameScreen lines={monsterValues} window={MONSTER_BOTTOM} /></div>
+              <div class="values top">
+                <GameScreen lines={monsterValues} window={MONSTER_TOP} colours={MW_SCREEN_COLOURS} />
+              </div>
+              <div class="values bottom">
+                <GameScreen lines={monsterValues} window={MONSTER_BOTTOM} colours={MW_SCREEN_COLOURS} />
+              </div>
             </div>
           {/if}
           {#if view.prompt}
@@ -462,16 +466,16 @@
         </div>
         <div class="bottom-blocks">
           <div class="block" style:flex={MW_STATUS_BLOCK.right}>
-            <GameScreen lines={statusLines} window={STATUS_WINDOW} />
+            <GameScreen lines={statusLines} window={STATUS_WINDOW} colours={MW_SCREEN_COLOURS} />
           </div>
           <div class="block" style:flex={CHARACTERISTICS_WIDTH}>
-            <GameScreen lines={characteristicLines} window={CHARACTERISTICS_WINDOW} />
+            <GameScreen lines={characteristicLines} window={CHARACTERISTICS_WINDOW} colours={MW_SCREEN_COLOURS} />
           </div>
         </div>
         <!-- With the map in the views' place there is nowhere on it to draw a screen the game
              has taken the display over with, so it covers the map instead. -->
         {#if screenTakesOver}
-          <div class="overlay"><GameScreen lines={view.screen} /></div>
+          <div class="overlay"><GameScreen lines={view.screen} colours={MW_SCREEN_COLOURS} /></div>
         {/if}
         {/if}
         {#if openMonster}

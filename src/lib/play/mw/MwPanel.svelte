@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { MwGame } from '../../game/mw-port/state';
-  import { SCREEN_COLOURS } from '../../roller/screen';
+  import { MW_SCREEN_COLOURS } from '../../roller/screen';
   import type { MwPlayView } from './engine';
   import {
     mwAilments,
@@ -48,9 +48,9 @@
      counting down to something unpleasant, and entry 15 for a monster's name. -->
 <div
   class="panel"
-  style:--number={SCREEN_COLOURS[7]}
-  style:--number-bad={SCREEN_COLOURS[6]}
-  style:--number-name={SCREEN_COLOURS[15]}>
+  style:--number={MW_SCREEN_COLOURS[7]}
+  style:--number-bad={MW_SCREEN_COLOURS[6]}
+  style:--number-name={MW_SCREEN_COLOURS[15]}>
   {#snippet rows(lines: MwPanelLine[], bad = false)}
     <dl>
       {#each lines as line}
