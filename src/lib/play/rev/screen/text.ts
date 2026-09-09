@@ -1,6 +1,7 @@
 import type { Frame } from '../../view3d/frame';
 import { TEXT } from './colours';
 import { drawText } from './font';
+import { revPrintedRows } from './kept';
 
 /**
  * Everything on the screen that is a `LOCATE` and a `PRINT`: the message lines, the spells the
@@ -57,7 +58,14 @@ export function basicNumber(value: number): string {
   return `${value < 0 ? '-' : ' '}${rounded}${' '}`;
 }
 
-/** The message lines, top left: rows 1 to 4, and the town's own line on row 5. */
+/**
+ * The message lines, top left: rows 1 to 4, and the town's own line on row 5.
+ *
+ * A line too long for the forty columns takes the row under it as well, the way the run-time
+ * wraps one, and pushes what would have been on that row down. The inns are what this is for:
+ * 1000:1DCE prints a line of sixty-nine characters at `LOCATE 1, 1` and both halves are on the
+ * screen.
+ */
 export function drawMessages(screen: Frame, words: RevWords): void {
   if (words.fight) {
     const { monsterLevel, monsterName, yourHealth, itsHealth } = words.fight;
@@ -67,7 +75,10 @@ export function drawMessages(screen: Frame, words: RevWords): void {
     drawText(screen, 'ITS HEALTH POINTS:', 4, 1, TEXT);
     drawText(screen, basicNumber(itsHealth), 4, 21, TEXT);
   } else {
-    words.messages.slice(0, MESSAGE_ROWS).forEach((line, at) => drawText(screen, line, at + 1, 1, TEXT));
+    words.messages
+      .flatMap(revPrintedRows)
+      .slice(0, MESSAGE_ROWS)
+      .forEach((line, at) => drawText(screen, line, at + 1, 1, TEXT));
   }
   if (words.inTown) drawText(screen, "YOU'RE IN TOWN", 5, 1, TEXT);
 }

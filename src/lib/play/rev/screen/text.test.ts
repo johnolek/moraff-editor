@@ -72,6 +72,15 @@ describe('the message lines', () => {
     expect(readRow(screen, 1)).toBe('YOU FELL DOWN A CHUTE!');
     expect(readRow(screen, 2)).toBe('SECOND');
   });
+
+  it("shows both halves of the inn's line and pushes the rows under it down", () => {
+    const screen = newFrame(320, 200);
+    const inn = 'You are at the Flea Bag Inn.  A room       will cost 10 jewel pieces.';
+    drawMessages(screen, words({ messages: [inn, 'ADVICE'] }));
+    expect(readRow(screen, 1)).toBe('You are at the Flea Bag Inn.  A room');
+    expect(readRow(screen, 2)).toBe('   will cost 10 jewel pieces.');
+    expect(readRow(screen, 3)).toBe('ADVICE');
+  });
 });
 
 describe('the spells panel', () => {
