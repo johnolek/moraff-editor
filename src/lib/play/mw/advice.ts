@@ -1,4 +1,5 @@
 import { canLevelUp } from '../../game/mw-port/levels';
+import type { MwCharacter } from '../../game/mw-port/state';
 import type { MwGameSession } from './engine';
 import { mwClearMessageBox, MW_MESSAGE_BOX } from './screens';
 
@@ -8,7 +9,8 @@ import { mwClearMessageBox, MW_MESSAGE_BOX } from './screens';
  *
  * A character below their third level gets one of fourteen lessons instead, one step in thirty:
  * FUN_3000_8b27 (exe 3000:8b27) has a case for the first eleven and nothing at all for the last
- * three, so three steps out of every fourteen that reach it say nothing.
+ * three, so three steps out of every fourteen that reach it say nothing, and two more of the
+ * eleven are held back unless they apply to the character (see {@link lessonIsDrawn}).
  *
  * The original draws these four lines at a time on the bottom half of the message box, each in a
  * colour of its own rather than in the box's colour 5, and the flag at DS:4484 that would show
@@ -126,6 +128,23 @@ const LESSONS: string[][] = [
   [],
 ];
 
+/**
+ * Whether the lesson at this place in the list is drawn at all.
+ *
+ * Two of FUN_3000_8b27's cases test the character before they print. Case 4, the lesson that
+ * says monsters live in the dungeon and you are in the town, tests DS:c8a2, the floor, so it is
+ * only drawn on the surface. Case 7, the lesson about casting a cure, tests DS:c11c, the class,
+ * and class 0 is the Fighter, who has no spells to cast.
+ *
+ * The counter at DS:4482 is stepped by the caller before the case is reached, so a lesson held
+ * back costs the character its turn: that step says nothing rather than saying the next lesson.
+ */
+function lessonIsDrawn(index: number, pc: MwCharacter): boolean {
+  if (index === 4) return pc.floor === 0;
+  if (index === 7) return pc.cls !== 0;
+  return true;
+}
+
 /** How far through the fourteen lessons the game has got, which it keeps at DS:4482. */
 export interface MwLessons {
   next: number;
@@ -141,9 +160,10 @@ export function adviseTheWalker(session: MwGameSession): void {
   const pc = game.pc;
   if (game.rng.random(5) !== 0) return;
   if (pc.lev < 3 && game.rng.random(6) === 1) {
-    const lesson = LESSONS[lessons.next % LESSONS.length];
+    const index = lessons.next % LESSONS.length;
+    const lesson = LESSONS[index];
     lessons.next += 1;
-    if (lesson.length > 0) printAdvice(session, LESSON_COLOUR, lesson);
+    if (lesson.length > 0 && lessonIsDrawn(index, pc)) printAdvice(session, LESSON_COLOUR, lesson);
     return;
   }
   switch (game.rng.random(8)) {

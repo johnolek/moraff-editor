@@ -55,6 +55,15 @@ describe("Moraff's World's little mouse", () => {
     expect(session.box).toEqual(['SOMETHING THE LAST KEY SAID']);
   });
 
+  /** A character below their third level, standing where the lesson at this place is next. */
+  function taughtLesson(index: number, state: Partial<MwCharacter>) {
+    const session = startMwGame(mwCharacterFile({ lev: 1 }), new ScriptedRng([0, 1]));
+    Object.assign(session.game.pc, state);
+    session.lessons.next = index;
+    adviseTheWalker(session);
+    return session;
+  }
+
   it('draws a lesson on the same rows, in the one colour the lessons come in', () => {
     const session = startMwGame(mwCharacterFile({ lev: 1 }), new ScriptedRng([0, 1]));
     adviseTheWalker(session);
@@ -65,5 +74,19 @@ describe("Moraff's World's little mouse", () => {
       [0x186, 3],
     ]);
     expect(session.game.screen[0].text).toBe('OBJECTIVE: USE ARROW KEYS TO');
+  });
+
+  it('only says you are in the town while the character is on the surface', () => {
+    expect(taughtLesson(4, { floor: 0 }).game.screen[0].text).toBe('MONSTERS ARE ONLY FOUND IN');
+    expect(taughtLesson(4, { floor: 1 }).game.screen).toEqual([]);
+  });
+
+  it('never tells a Fighter to cast a cure', () => {
+    expect(taughtLesson(7, { cls: 1 }).game.screen[0].text).toBe('IF YOU ARE DAMAGED, CAST A');
+    expect(taughtLesson(7, { cls: 0 }).game.screen).toEqual([]);
+  });
+
+  it('spends the lesson it holds back rather than moving on to the next one', () => {
+    expect(taughtLesson(4, { floor: 1 }).lessons.next).toBe(5);
   });
 });
