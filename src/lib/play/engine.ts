@@ -468,6 +468,11 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * game leaves the arrival box standing with its plaque up, so the port takes a key for each.
    */
   async crossToModule(module: number): Promise<void> {
+    // The rings cover every pixel of the display (every row and every column has an edge on it),
+    // so nothing printed before the crossing survives it; only the arrival box, printed after the
+    // welcome's key, is ever on the tunnel.
+    this.game.eraseScreen();
+    this.box = [];
     this.tunnel = { module, welcome: false };
     this.changed();
     await this.keyWithPlaque({

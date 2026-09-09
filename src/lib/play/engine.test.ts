@@ -244,11 +244,16 @@ describe('changing floors', () => {
     const teleporter = findSquare(1, (square) => square.e === 4 && square.ladder === 0 && square.trapdoor === -1 && square.chute === 0);
     const file = characterFile({ level: 1, dir: 3, ...teleporter });
     const session = playing(file);
+    // A line left on the screen and a box left up before the crossing: the tunnel covers both.
+    session.game.draw(messageLine('THE WALL REFUSES TO MOVE', 4));
+    session.box = ['STALE'];
     await press(session, KEY.arrowUp);
     // The tunnel is drawn on the way through and waits for a key of its own before the module
     // changes at all (exe 4000:771b).
     expect(session.view().tunnel).toEqual({ module: 1, welcome: false });
     expect(session.view().place.module).toBe(0);
+    expect(session.game.screen).toEqual([]);
+    expect(session.box).toEqual([]);
     await press(session, KEY.escape);
     expect(session.box[0]).toBe('YOU HAVE BEEN DETACHED FROM');
     // The arrival box is read on the tunnel, which the key that answers it takes down.
