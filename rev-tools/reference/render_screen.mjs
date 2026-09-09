@@ -19,8 +19,9 @@ import { encodePng } from '../../dotu-tools/reference/scripts/png.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-// --fight puts the fight's own lines up and --killed the screen a kill leaves: the dead
-// monster's picture with YOU KILLED IT!! and HIT RETURN printed across it.
+// --fight puts the fight's own lines up, --killed the screen a kill leaves (the dead monster's
+// picture with YOU KILLED IT!! and HIT RETURN printed across it) and --potions the three
+// banners a fight prints while the potions of speed, shielding and fire last.
 //
 // The screen is written in TypeScript, so it is loaded through Vite's own module loader rather
 // than by adding a runner to the project.
@@ -35,6 +36,8 @@ const { slotsOnLevel, dungeonForLevel, REV_STRENGTHS } = await load('rev-bestiar
 const { RevKeptScreen } = await load('play/rev/screen/kept.ts');
 const { YOU_KILLED_IT } = await load('play/rev/kill.ts');
 const { REV_HIT_RETURN } = await load('play/rev/treasure.ts');
+const { revPotionBanners } = await load('play/rev/items.ts');
+const { REV_MAGIC } = await load('play/rev/magic.ts');
 
 const args = {};
 for (let i = 2; i < process.argv.length; i++) {
@@ -96,6 +99,11 @@ if (args.killed) {
   kept.picture = { name: fought?.name ?? 1, level: place.level };
   kept.printAt(16, 24, YOU_KILLED_IT);
   kept.printAt(17, 26, REV_HIT_RETURN);
+}
+if (args.potions) {
+  const pc = { values: new Array(340).fill(0), seconds: 0 };
+  for (const value of [REV_MAGIC.speedUntil, REV_MAGIC.shieldingUntil, REV_MAGIC.fireUntil]) pc.values[value - 1] = 100;
+  revPotionBanners({ pc, seconds: 0, kept });
 }
 
 const frame = drawRevScreen({ place, known, occupancy, words, kept });

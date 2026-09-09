@@ -211,7 +211,11 @@ worth knowing before reading the code.
 * **The two clocks are not the clock.** The spells a fight casts on the character are timed in
   *steps* — the counter at DGROUP B474 that every move counts and the top of every pass brings
   back round to 1 — so standing still never spends one. The three potions that wear off are timed
-  against `TIMER`, which here is the monsters' own clock.
+  against `TIMER`, which here is the monsters' own clock. The banners those three put up are
+  read off that clock and go as each runs out (1000:7F43 and 1000:85BA); what the same three
+  tests do to the character — the thirteen points of agility and the shield handed back — is not
+  ported yet, which `rev-tools/docs/FAITHFUL-GAPS.md` has as the one row of its list that is not
+  about the screen.
 * **Three of them are written down wrong and are kept that way.** `Feather' only stops at the
   `IF` that zeroes a weight gone negative, so a character still carrying something falls into the
   next line of the program, which is `Ascend': casting Feather floats them up a level as well.
