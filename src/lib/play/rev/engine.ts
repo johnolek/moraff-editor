@@ -43,7 +43,7 @@ import { RevMapMemory, type RevMapStore } from './memory';
 import { DEFAULT_PLAY_MODE, type PlayMode } from '../mode';
 import { revStep, type RevStep } from './move';
 import { revPass } from './pass';
-import { REV_UNBANKED_EXPERIENCE_VALUE, loadRevPlayer, revPlayerFromValues, revValue, saveRevPlayer } from './record';
+import { REV_UNBANKED_EXPERIENCE_VALUE, loadRevPlayer, revValue, saveRevPlayer } from './record';
 import type { RunRecorder, RunSummary } from '../run';
 import { revAdvice } from './advice';
 import {
@@ -141,7 +141,11 @@ export class RevGameSession {
     rng: Rng,
     readonly run: RunRecorder | null = null,
   ) {
-    const pc = loadRevPlayer(file.bytes) ?? revPlayerFromValues(new Array<number>(340).fill(0));
+    // A character is 340 numbers of text (1000:B6BF). Bytes that are not them are not a
+    // character at all, and a game of a character made of zeroes would be checked against itself
+    // and believed, so this stops instead.
+    const pc = loadRevPlayer(file.bytes);
+    if (!pc) throw new Error('These bytes are not a Moraff\'s Revenge character record.');
     this.known = file.bytes.slice();
     this.game = newRevGame(pc, rng, new RevMapMemory(file.map ?? null));
     this.game.flushKeys = () => this.flushKeys();
