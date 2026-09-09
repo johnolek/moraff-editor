@@ -134,10 +134,6 @@ export interface GameSchema {
   onSave?: (bytes: Uint8Array) => void;
 }
 
-export const SCALAR_KINDS: ReadonlySet<string> = new Set<ScalarKind>(['string', 'uint8', 'int8', 'uint16', 'int16', 'uint32', 'int32', 'float32', 'float64']);
-
 /** Fields that span the full width of a section instead of sitting in its grid. */
 export const WIDE_KINDS: ReadonlySet<Field['kind']> = new Set(['owned_list', 'checkbox_list', 'counter_list', 'spell_list']);
 
-/** Fields that read a text record rather than the bytes. */
-export const TEXT_KINDS: ReadonlySet<Field['kind']> = new Set(['text_number', 'text_enum']);
