@@ -103,10 +103,12 @@ pnpm verify-run <run.json>   # check a run downloaded from a Play tab
 
 `verify-run` plays a run's log through the engine again and says whether it
 reaches what the log claims — the actions, the game's clock and every milestone
-in order — with where it ended and a hash of the record it ended with. It exits
-0 for a run that is what it claims to be, 1 for one that is not or that cannot
-be checked, and 2 when there is no file to read. There are two recorded runs to
-try it on in `src/lib/play/fixtures/`.
+in order — with where it ended and a hash of the record it ended with. A log is
+every session the character has been played in, so it checks each of them in
+turn and that each one starts from the record the one before it ended with. It
+exits 0 for a run that is what it claims to be, 1 for one that is not or that
+cannot be checked, and 2 when there is no file to read. There are recorded runs
+to try it on in `src/lib/play/fixtures/`.
 
 Layout:
 

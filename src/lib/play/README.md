@@ -97,15 +97,27 @@ something the original does, a comment says so.
 
 ## The run
 
-Every game is a run, and a run is written down as it is played, so that a claimed ending can be
-checked by playing it again rather than believed. `run.ts` is all of it and nothing in it draws,
-so it runs under Node as well as in a tab.
+A character's run is every sitting at the game it has been played in, written down as it is
+played, so that a claimed ending can be checked by playing it again rather than believed.
+`run.ts` is all of it and nothing in it draws, so it runs under Node as well as in a tab.
 
-* **The log** — the character's record as play began, the seed the run's generator was started
-  from, the commit the engine was built from, and every input in order, with the actions, the
-  game's clock and the milestones the run claims. That is the whole of a run: both games are turn
-  based and every random number comes from the one generator, so the same three things put
-  through the same engine make the same game again.
+* **A session** — one sitting: the character's record as that sitting began, the seed its
+  generator was started from, the commit the engine was built from, and every input in order,
+  with the actions, the game's clock and the milestones it claims. That is the whole of one
+  game: both games are turn based and every random number comes from the one generator, so the
+  same three things put through the same engine make the same game again.
+* **The chain** — the sessions of a character's run, oldest first, each starting from the record
+  the one before it left behind. The count of actions and the game's own clock run on through the
+  lot, so leaving the game and playing the character again goes on from where the count stood
+  rather than starting it over, and a milestone is stamped with what the whole run had spent when
+  it was reached. `RunRecorder` is handed what the run had come to `before` this session, and
+  `runTotals` adds a chain up.
+* **Where it is kept** — on the roster entry (`RosterEntry.run`), beside the record and in the
+  browser with it. The session being played is the last of the chain, written again wherever the
+  record is written, which is after every key, so a tab closed in the middle of a game loses
+  nothing and the next session starts from a record the run can be followed to. The loop writes
+  it down once more where it comes back, since a death is the last thing a run has to say and the
+  game saves no record over it.
 * **The inputs** are what the game *read*, not what the player pressed, which is why they are
   taken in `GameSession.key` rather than in `press`: a key typed while the character is swinging
   is thrown away by the flush at the end of the swing and the game never sees it. Ctrl-F's own
@@ -119,33 +131,42 @@ so it runs under Node as well as in a tab.
   win, each with the action count and the game time it happened at. The three the ported routines
   alone know about arrive as `game.events`; the module or dungeon is read from the game itself, so
   every way of changing one is caught.
-* **`replayRun(log)`** builds a session from the log and presses its keys in order, and hands back
-  the record, the place, the clock, the actions and the milestones it ended with. A replay never
-  raises the repeat-fight flag, since those swings are in the log already.
+* **`replayRun(session, before)`** builds a game from the session and presses its keys in order,
+  and hands back the place, the clock, the actions and the milestones it ended with, along with
+  the record the game itself last wrote — which is the record the roster is left holding, and so
+  the one the next session of the chain has to start from. A replay never raises the repeat-fight
+  flag, since those swings are in the log already.
 * **`RUN_GAMES`** is the one table of what a run needs of the game it was played in: the loop that
   replays it, the game's own words for its clock and its own name for a dungeon. A game with a
   line here can be recorded, replayed and checked, and nothing that does any of the three knows
   which games there are.
-* **`export-run.ts`** is the download, which is the one part of this that touches the page; the
-  clicking of a link is `src/lib/download.ts`, where every download on the site goes.
+* **`export-run.ts`** is the download — the whole chain, which is what Export run hands over —
+  and it is the one part of this that touches the page; the clicking of a link is
+  `src/lib/download.ts`, where every download on the site goes.
 
 The engine commit comes from `__ENGINE_COMMIT__`, which `vite.config.ts` defines from `git
 rev-parse HEAD`; vitest reads the same config, so a test sees it too.
 
 ## Checking a run
 
-`verify.ts` is the verdict: `verifyRun(log)` replays the log and says whether what comes back is
-what the log claims.
+`verify.ts` is the verdict: `verifyRun(log)` replays every session of the chain, each from the
+record it says it began with and counting on from what the sessions before it came to, and says
+whether what comes back is what the log claims.
 
-* **Verified** — the replay spent the same actions, its clock reached the same number, and it
-  reached the same milestones in the same order, each at the same action count, clock and floor.
-  The verdict carries the ending as well: where the character stood, whether they are alive, dead
-  or have won, and a SHA-256 of the record the run ended with.
-* **Failed** — the first thing that differs, in words, milestone by milestone.
+* **Verified** — every session spent the same actions, its clock reached the same number, and it
+  reached the same milestones in the same order, each at the same action count, clock and floor;
+  and every session started from the record the replay of the one before it ended with, byte for
+  byte. That second check is what stops a run being padded with a session of somebody else's
+  character, or with the same session twice. The verdict carries the run's totals and the ending
+  as well: where the character stood, whether they are alive, dead or have won, and a SHA-256 of
+  the record the run ended with.
+* **Failed** — the first thing that differs, in words, milestone by milestone, naming the session
+  it was in for a run played in more than one sitting; or the session that does not start where
+  the one before it ended.
 * **Unverifiable** — nothing can be said either way. A run is only replayable from its own
   beginning to its own end, and a record the Save Editor wrote while the game was being played is
-  not in the log: the log counts those as `edits`, and a run with any is unverifiable rather than
-  failed. So is a run whose replay stopped: a loop that throws is caught by `loop.ts` and raised
+  not in the log: each session counts those as `edits`, and a run with any in any of its sessions
+  is unverifiable rather than failed. So is a run whose replay stopped: a loop that throws is caught by `loop.ts` and raised
   again where the replay ends, and the verdict carries the message it stopped on, since a log
   the engine could not play through says nothing about whether the log is honest.
 * **A note** — an engine commit that is not this build's, or one ending in `-dirty`. That is a
@@ -160,10 +181,12 @@ what the log claims.
 that is what it claims to be, 1 for one that is not or cannot be checked, and 2 when there is no
 file to read. Nothing the command imports touches Svelte or the page.
 
-`fixtures/` holds one recorded run per game, played headless with a seed of their own, which the
-tests verify and the command can be tried on. A fixture that stops verifying is the engine having
-changed a game under runs already played in it; when that change is meant, write them again with
-`WRITE_RUN_FIXTURES=1 pnpm test src/lib/play/verify.test.ts`.
+`fixtures/` holds one recorded run per game and one character played twice, played headless with
+seeds of their own, which the tests verify and the command can be tried on. The three
+one-session files are in the shape a log had before a run was a chain, and are left that way on
+purpose: a log somebody kept from then still has to read, as a chain of one. A fixture that stops
+verifying is the engine having changed a game under runs already played in it; when that change
+is meant, write them again with `WRITE_RUN_FIXTURES=1 pnpm test src/lib/play/verify.test.ts`.
 
 ## Waiting for a key
 
