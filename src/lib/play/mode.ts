@@ -122,10 +122,13 @@ const SOUND_SUFFIX = '.sound';
  * Moraff's Revenge asks on the way in: "Sound (Y or N)?" at DUNSMALL.EXE 1000:0517, over the
  * title screen, and it takes nothing but an upper-case Y or N (1000:0523). N writes 1 into
  * DGROUP B4BC, the flag the `O` key flips in play, and Y leaves it at the 0 it starts as. This
- * port draws no title screen, so the tab asks instead.
+ * port draws no title screen, so the tab asks instead. The other two games start with their
+ * switch (DS:022b, DS:119f) set from the same choice, and their O keys flip it in play.
+ *
+ * Off until the player says otherwise (John, 2026-09-09).
  */
 export function readPlaySound(game: PortedGameId): boolean {
-  return readStored(PREFIX + game + SOUND_SUFFIX) !== 'off';
+  return readStored(PREFIX + game + SOUND_SUFFIX) === 'on';
 }
 
 export function writePlaySound(game: PortedGameId, on: boolean): void {

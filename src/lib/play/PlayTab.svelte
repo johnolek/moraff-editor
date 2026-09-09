@@ -29,6 +29,7 @@
     readPlayColourblind,
     readPlayDisplay,
     readPlayMode,
+    readPlaySound,
     readPlayRedraw,
     writePlayMode,
     type PlayDisplay,
@@ -69,7 +70,7 @@
   let {
     game,
     canvas = null,
-    sound = true,
+    sound = readPlaySound(game.id),
     press,
     takeKey,
     screen,

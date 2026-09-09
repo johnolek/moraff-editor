@@ -194,22 +194,22 @@ describe('the switch between the screen and the map', () => {
 });
 
 describe('the sound a game starts with', () => {
-  it('is on until it has been turned off', () => {
+  it('is off until it has been turned on', () => {
     useStorage(fakeStorage());
-    expect(readPlaySound('revenge')).toBe(true);
+    expect(readPlaySound('revenge')).toBe(false);
   });
 
   it('remembers the choice for one game without touching the other', () => {
     useStorage(fakeStorage());
-    writePlaySound('revenge', false);
-    expect(readPlaySound('revenge')).toBe(false);
-    expect(readPlaySound('unforgiven')).toBe(true);
+    writePlaySound('revenge', true);
+    expect(readPlaySound('revenge')).toBe(true);
+    expect(readPlaySound('unforgiven')).toBe(false);
   });
 
-  it('is on where there is nowhere to remember anything', () => {
+  it('is off where there is nowhere to remember anything', () => {
     useStorage(undefined);
-    writePlaySound('revenge', false);
-    expect(readPlaySound('revenge')).toBe(true);
+    writePlaySound('revenge', true);
+    expect(readPlaySound('revenge')).toBe(false);
   });
 });
 

@@ -117,7 +117,7 @@ function recorder(game: PortedGameId, entry: RosterEntry, sound?: boolean): RunR
   return new RunRecorder({ game, name: entry.name, record: entry.bytes, sound, leaderboard: entry.leaderboard });
 }
 
-function startUnforgiven(entry: RosterEntry): GameSession {
+function startUnforgiven(entry: RosterEntry, sound: boolean): GameSession {
   const file: CharacterFile = {
     ...playedFile(entry),
     // The explored maps live beside the roster entry, the way the game's .DUN files live beside
@@ -125,13 +125,19 @@ function startUnforgiven(entry: RosterEntry): GameSession {
     maps: characterMaps(entry.id),
   };
   const run = recorder('unforgiven', entry);
-  return startGame(file, run.rng, run);
+  const session = startGame(file, run.rng, run);
+  // DS:022b starts at 0, sound on; the tab's choice stands in for that (`mode.ts`).
+  session.game.sound = sound;
+  return session;
 }
 
-function startMoraffsWorld(entry: RosterEntry): MwGameSession {
+function startMoraffsWorld(entry: RosterEntry, sound: boolean): MwGameSession {
   const file: MwCharacterFile = { ...playedFile(entry), maps: characterMaps(entry.id) };
   const run = recorder('moraffsWorld', entry);
-  return startMwGame(file, run.rng, run);
+  const session = startMwGame(file, run.rng, run);
+  // DS:119f starts at 0, sound on; the tab's choice stands in for that (`mode.ts`).
+  session.game.sound = sound;
+  return session;
 }
 
 function startMoraffsRevenge(entry: RosterEntry, sound: boolean): RevGameSession {

@@ -568,6 +568,9 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     this.memory.enterFloor(game.pc.module, level);
     this.memory.markArrival(this.rows, game.pc.x, game.pc.y);
     game.recenterMap = true;
+    // load_level_map greets a character every time floor 0 is loaded (exe 2000:7687 tests
+    // DS:2320, which nothing ever sets), so the snake's tablet is read on every arrival in town.
+    greetTheTown(this);
   }
 
   /** load_player (exe 2000:7867): a record's bytes as the character. */
