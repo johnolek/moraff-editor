@@ -48,6 +48,7 @@ import {
   screenTakenOver,
 } from './screens';
 import { PLAQUE_DELAY_MS } from './plaque';
+import { TUNNEL_CRAWL_MS, type ModuleTunnel } from './tunnel';
 import type { SectionScreen } from './section-screen';
 import type { TownBuilding } from './building';
 import type { BossOffice } from './boss-office';
@@ -160,6 +161,8 @@ export interface PlayView {
   /** The boss's picture standing over the play screen while its taunt is read, or null
    *  (`boss-office.ts`). */
   bossOffice: BossOffice | null;
+  /** The module teleporter's tunnel (`tunnel.ts`), or null when the character is not crossing. */
+  tunnel: ModuleTunnel | null;
   /** The HIT ANY KEY plaque (`plaque.ts`) while a box's wait is running, or null. */
   plaque: PlaqueState | null;
   /** The palette fade running over the screen (`fade.ts`), or null when none is. */
@@ -223,6 +226,11 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * stands in a panel over the play screen, or null when no taunt is being read.
    */
   bossOffice: BossOffice | null = null;
+  /**
+   * The tunnel a module teleporter draws (`tunnel.ts`), which stands on the screen from the
+   * crossing until the key that answers the arrival box, or null when nobody is crossing.
+   */
+  tunnel: ModuleTunnel | null = null;
   /**
    * The HIT ANY KEY plaque while the wait behind a message box is running: `blanked` for the hole
    * FUN_2000_3e73 (exe 2000:3e73) leaves in the screen while its delay counts out, and `showing`
@@ -411,14 +419,28 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * with that hole in the screen, and the plaque is drawn on it; the high speed option at DS:00c3
    * skips the delay, so with that on the plaque is there at once. The pause is a display timer of
    * the same kind the message delays are (`timed.ts`) and the game waits on nothing but the key.
+   *
+   * @param before the one thing that ever stands in front of that delay: the module tunnel turns
+   *   the gradient bank 150 times before it prints its welcome (exe 4000:771b), and the plaque
+   *   goes up after the welcome rather than with the tunnel.
    */
-  private async keyWithPlaque(): Promise<number> {
-    if (this.game.highSpeed) this.plaque = 'showing';
+  private async keyWithPlaque(before?: { ms: number; then: () => void }): Promise<number> {
+    const raisePlaque = (): void => {
+      if (this.game.highSpeed) this.plaque = 'showing';
+      else {
+        this.plaque = 'blanked';
+        this.timed.after(PLAQUE_DELAY_MS, () => {
+          this.plaque = 'showing';
+          this.changed();
+        });
+      }
+      this.changed();
+    };
+    if (before === undefined) raisePlaque();
     else {
-      this.plaque = 'blanked';
-      this.timed.after(PLAQUE_DELAY_MS, () => {
-        this.plaque = 'showing';
-        this.changed();
+      this.timed.after(before.ms, () => {
+        before.then();
+        raisePlaque();
       });
     }
     try {
@@ -428,6 +450,32 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       this.plaque = null;
       this.changed();
     }
+  }
+
+  /**
+   * FUN_4000_771b (exe 4000:771b) and the wait that follows it: the tunnel is drawn on a black
+   * screen, the gradient bank is turned 150 times over it, "WELCOME TO MODULE" and the module's
+   * numeral are printed on it, and FUN_4000_41e5 spins on the keyboard behind the plaque until a
+   * key arrives. `tunnel.ts` is the drawing.
+   *
+   * Those 150 turns are a display timer of the same kind the plaque's own delay is: the original
+   * spins in a loop that reads nothing, so the game waits for the key alone and the tab counts the
+   * turns out. Two departures. `erase_message_block` (exe 4000:430e) throws away everything typed
+   * while the tunnel is on the screen; here a key given during it gives up the rest of it and
+   * answers the welcome, which is what a key does to every other screen the port holds. And that
+   * key answers the welcome only: by the code the same one would go on to answer the arrival
+   * box's wait as well, since FUN_2000_4054 reads the keyboard without draining it, but the real
+   * game leaves the arrival box standing with its plaque up, so the port takes a key for each.
+   */
+  async crossToModule(module: number): Promise<void> {
+    this.tunnel = { module, welcome: false };
+    this.changed();
+    await this.keyWithPlaque({
+      ms: TUNNEL_CRAWL_MS,
+      then: () => {
+        this.tunnel = { module, welcome: true };
+      },
+    });
   }
 
   /**
@@ -596,6 +644,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       sectionScreen: this.sectionScreen,
       buildingScreen: this.buildingScreen,
       bossOffice: this.bossOffice,
+      tunnel: this.tunnel,
       plaque: this.plaque,
       fade: this.timed.showingFade(),
       over: this.over,
