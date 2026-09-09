@@ -259,9 +259,9 @@ export const GENERAL_HINTS = [8, 9, 10, 11, 12, 13, 14, 15];
  *
  * load_level_map shows this on arriving at floor 0, and what it picks by is not the character's
  * level but the deepest floor they have reached — the running maximum at DS:c179, which
- * movecontrol raises to the current floor on every pass round its loop. Nothing loads that
- * maximum from the save, so it starts at zero every time the game is started and the snake
- * greets a returning player as a wimp until they go back down.
+ * movecontrol raises to the current floor on every pass round its loop. That address is inside
+ * the character record, at offset 0x8f9 of the block save_player writes, so the maximum goes to
+ * disk and comes back with the character.
  */
 export function townTablet(deepestFloor: number): number | null {
   const thresholds = [4, 8, 12, 16, 20, 30, 40, 60, 80, 100];

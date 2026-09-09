@@ -745,18 +745,18 @@ the line and click instead.
 In the code: [designYourOwn](source:ts/character.ts/designYourOwn) and
 [roll_char](source:c/roll_char).
 
-### The snake calls you a wimp every time you start the game
+### The snake greets you by how deep you have been, not by how good you are
 
-The greeting for walking into town is picked by the deepest floor you have reached, not by your
-level. Below floor 4 it is `'Hail novice adventurer! You are still a wimp! Keep trying.'`, and it
-works up through ten of them; from floor 100 the snake has nothing left to say and the tablet
-does not come up at all.
+The greeting for walking into town is picked by the deepest floor you have ever reached, and your
+level does not come into it. Below floor 4 it is `'Hail novice adventurer! You are still a wimp!
+Keep trying.'`, and it works up through ten of them; from floor 100 the snake has nothing left to
+say and the tablet does not come up at all.
 
-The depth it reads is a running maximum kept in memory and raised to the current floor as you
-walk. Nothing writes it into the save file and nothing reads it back out of one, so it is zero
-again every time the game starts. A character who has been to floor 90 is greeted as a wimp on
-the way back in, and has to go down four floors before the snake will admit they are `no longer
-the weakest player in the world!`
+The depth it reads is a running maximum, raised to the current floor as you walk. It sits inside
+the character record at offset 0x8f9, and the save writes the whole 2,695-byte block, so it goes
+to disk and comes back with the character. The only adventurer the snake calls a wimp is one who
+has never been below floor 4. A level 1 character who took a chute to floor 40 by accident is
+`no longer the weakest player in the world!` for good.
 
 In the code: [townTablet](source:ts/hints.ts/townTablet) and
 [FUN_3000_9488](source:c/FUN_3000_9488).
@@ -799,11 +799,17 @@ prints "Type `UNFORGIV' to start this game" and quits. The second argument decid
 mouse is looked for at all, the digit is the resolution and the last number is the SVGA chipset
 for the three highest modes.
 
-### The walls wear the last monster's colour
+### The walls are painted by a routine of their own
 
-Wall textures are drawn with the same tinting rule as monsters, and the tint is simply whichever
-monster was drawn most recently. Each wall set has around 3,000 tinted pixels, so the corridor
-quietly takes its accent colour from the last thing you looked at.
+Wall textures look as though they go through the monster drawer, and they do not. They have a
+texture mapper to themselves with its own colour rule, and the routine that calls it writes the
+tint before every face: 12 for a plain wall face, and 15, 1 or 0 for the others. Nothing about
+the last monster you looked at reaches it.
+
+What the walls do inherit is the section. Their base is a number nothing in the executable ever
+writes, so it keeps the 16 it starts at, and a wall is always drawn in palette entries 16 to 31,
+which are the section's own wall colours. That is why the same corridor is green stone in
+section 1 and red brick in section 6.
 
 ### The sign nobody has ever read
 
@@ -856,10 +862,11 @@ five.
 WITH POWER. The teleporter that carries a character from one module to the next ended up with two
 other messages, and this one was left where it was.
 
-Three more are the sales pitch. The notes that appear under a monster while a new character finds
-its feet come out of a switch with fourteen cases, and the last three are written out with nothing
-in them: PLEASE REGISTER THIS GAME, MODULES 2,3,4, AND 5 ARE NOW AVAILABLE! and the one about the
-monsters waiting in them. The registered game carries all three and can never print any of them.
+Three more are the sales pitch. While a character is under level 3 the game's random-events tick
+puts up a tutorial tablet now and then, one of fourteen cases of a switch, and the last three
+cases are written out with nothing in them: PLEASE REGISTER THIS GAME, MODULES 2,3,4, AND 5 ARE
+NOW AVAILABLE! and the one about the monsters waiting in them. The registered game carries all
+three and can never print any of them.
 
 The fifth is TRY NOT TO DIE, IT'S BAD FOR YOUR HEALTH, which is shown when a field that is 56 on
 every character ever rolled turns out to be -1.

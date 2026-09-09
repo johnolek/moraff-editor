@@ -203,16 +203,17 @@ BIOS tick counter, 18.2 per second, counted from program start and truncated to 
   **Lucky charms** are in both combat formulas and nothing in the game grants one.
 * **Monster arrays are cached by floor number only** (three floors, no module in the key),
   so switching modules can hand you another dungeon's floor.
-* **Palette entries 64..79** are never rewritten after a shop, and **the wall tint** is
-  whatever monster was drawn last — both leak state across screens.
+* **Palette entries 64..79** are never rewritten after a shop, so they leak the last shop's
+  colours across screens.  (The wall tint does not: `FUN_3000_342d` writes DS:4fbd itself
+  before every face — see `PICTURES.md` section 4.)
 * **The `v` file has no NULL check**: `fopen` fails, `fgetc(NULL)` reads memory from
   DS:0000 (the Borland copyright string), and the loop runs until it meets a `~` byte.
 * **A power weapon spell** replaces only the damage die; the held weapon's hit bonus,
   plus and speed still apply, so the best play is to keep your best weapon in hand.
-* **The town greeting resets when the game does.**  `FUN_3000_9488` picks the greeting from
-  DS:c179, the deepest floor reached, which `movecontrol` raises as you walk and nothing ever
-  writes to or reads from the save file.  Every session starts a floor-90 character back at
-  "You are still a wimp!".
+* **The town greeting follows the deepest floor reached, not the level.**  `FUN_3000_9488`
+  picks it from DS:c179, which `movecontrol` raises as you walk.  That is offset 0x8f9 of the
+  0xa87-byte block `save_player` writes, so it is saved and reloaded with the character; only a
+  brand-new one is greeted with "You are still a wimp!".
 
 ## How much time a spell costs, and why it matters against a boss
 
