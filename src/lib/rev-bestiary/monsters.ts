@@ -316,7 +316,13 @@ export function monsterGroups(): RevMonsterGroup[] {
 
 /** The id the list keys a monster by, since both dungeons number their names 1 to 22. */
 export function monsterId(dungeon: RevDungeon, monster: RevMonster): string {
-  return `${dungeon.number}:${monster.index}`;
+  return monsterIdFor(dungeon, monster.index);
+}
+
+/** The same id from the numbers alone, for a caller holding the name a slot works out rather
+ *  than the monster itself. */
+export function monsterIdFor(dungeon: RevDungeon, nameIndex: number): string {
+  return `${dungeon.number}:${nameIndex}`;
 }
 
 /** The monster an id names, and the dungeon it belongs to. */

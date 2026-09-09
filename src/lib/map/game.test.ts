@@ -152,10 +152,11 @@ describe('Moraff’s Revenge', () => {
     expect(hasDungeon(MORAFFS_REVENGE_MAP, -1)).toBe(false);
   });
 
-  it('has no trap doors, no secret doors and no monsters', () => {
+  it('has no trap doors and no secret doors, and stocks every level below the town', () => {
     expect(MORAFFS_REVENGE_MAP.trapdoorLanding).toBeNull();
-    expect(MORAFFS_REVENGE_MAP.stocking).toBeNull();
     expect(MORAFFS_REVENGE_MAP.features).toEqual({ secretDoors: false, trapdoors: false, falseFloors: true });
+    expect(MORAFFS_REVENGE_MAP.stocking?.stocks(1, 0)).toBe(false);
+    expect(MORAFFS_REVENGE_MAP.stocking?.stocks(1, 1)).toBe(true);
   });
 
   it('walks to a ladder, which is all its floors hold worth walking to', () => {

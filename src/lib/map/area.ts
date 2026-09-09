@@ -38,9 +38,14 @@ export const MORAFFS_WORLD_AREA: MapArea = { columns: MW_DUNGEON_XMAX, rows: MW_
  */
 export const MORAFFS_REVENGE_AREA: MapArea = { columns: REVENGE_COLUMNS, rows: REVENGE_ROWS };
 
-/** Whether a square is one of the squares the game shows. */
+/**
+ * Whether a square is one of the squares the game shows.
+ *
+ * A negative coordinate is off the map on the other side. Moraff's Revenge is where that comes
+ * up: an empty slot of its `1.NUM` names the square north-west of the corner the game draws from.
+ */
 export function isOnMap(point: Point, area: MapArea): boolean {
-  return point.x < area.columns && point.y < area.rows;
+  return point.x >= 0 && point.y >= 0 && point.x < area.columns && point.y < area.rows;
 }
 
 /** Visits every square of a floor that is inside that area, row by row from the north-west. */

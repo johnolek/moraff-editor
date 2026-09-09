@@ -16,6 +16,7 @@ import {
 } from './explored';
 import { MODULE_NUMERALS } from './labels';
 import { MORAFFS_WORLD_STOCKING } from './mw-stocking';
+import { MORAFFS_REVENGE_STOCKING } from './rev-stocking';
 import { hasTeleporterSide } from './path';
 import { UNFORGIVEN_STOCKING, type MonsterCountGroup, type StockedMonster } from './stocking';
 
@@ -385,7 +386,7 @@ export const MORAFFS_REVENGE_MAP: MapGame = {
   buildings: MORAFFS_REVENGE_BUILDINGS,
   buildingOn: (square) => square.town ?? 0,
   routeTo: { noun: 'ladder', matches: hasLadder },
-  stocking: null,
+  stocking: MORAFFS_REVENGE_STOCKING,
   exploredMaps: MORAFFS_REVENGE_BIN_FILES,
   pngName: (generation, floor) => `revenge-generation-${generation}-${floor === 0 ? 'town' : `floor-${floor}`}.png`,
   modules: false,

@@ -11,5 +11,6 @@ describe('isOnMap', () => {
     expect(isOnMap({ x: 79, y: 0 }, UNFORGIVEN_AREA)).toBe(false);
     expect(isOnMap({ x: 0, y: 104 }, UNFORGIVEN_AREA)).toBe(false);
     expect(isOnMap({ x: 79, y: 109 }, UNFORGIVEN_AREA)).toBe(false);
+    expect(isOnMap({ x: -1, y: -1 }, UNFORGIVEN_AREA)).toBe(false);
   });
 });
