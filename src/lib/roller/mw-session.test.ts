@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { MwRollerView } from './mw-session';
-import { MwRollerSession } from './mw-session';
+import { MW_ROLLER_PORT, type MwRollerView } from './mw-session';
+import { RollerSession } from './session';
 
 /** The text of everything showing, one string a line. */
 function showing(view: MwRollerView): string[] {
   return view.screen.map((line) => (line.value === undefined ? line.text : line.text + line.value));
 }
 
-describe('MwRollerSession', () => {
+describe('the Moraff’s World roller', () => {
   it('stops on the instructions, which the game holds up until a key is hit', () => {
-    const session = new MwRollerSession(0);
+    const session = new RollerSession(MW_ROLLER_PORT, 0);
     const view = session.view();
     expect(view.question).toBe('continue');
     expect(showing(view)[0]).toBe('CREATING A CHARACTER:');
@@ -17,7 +17,7 @@ describe('MwRollerSession', () => {
   });
 
   it('walks the questions in the order roll_char asks them', () => {
-    const session = new MwRollerSession(0);
+    const session = new RollerSession(MW_ROLLER_PORT, 0);
     expect(session.view().question).toBe('continue');
     session.answer(0);
     expect(session.view().question).toBe('race');
@@ -37,7 +37,7 @@ describe('MwRollerSession', () => {
   });
 
   it('keeps the character it showed when the next answer comes in', () => {
-    const session = new MwRollerSession(0);
+    const session = new RollerSession(MW_ROLLER_PORT, 0);
     session.answer(0);
     session.answer(2);
     const rolled = { ...session.view().pc };
@@ -60,7 +60,7 @@ describe('MwRollerSession', () => {
   });
 
   it('shows one screen at a time, the way the game clears between them', () => {
-    const session = new MwRollerSession(0);
+    const session = new RollerSession(MW_ROLLER_PORT, 0);
     session.answer(0);
     const race = session.view();
     expect(showing(race)).toContain('RACE SELECTION:');
@@ -73,7 +73,7 @@ describe('MwRollerSession', () => {
   });
 
   it('counts the design points down from twenty-four on the screen itself', () => {
-    const session = new MwRollerSession(0);
+    const session = new RollerSession(MW_ROLLER_PORT, 0);
     session.answer(0);
     session.answer(0);
     session.answer(2);
@@ -89,7 +89,7 @@ describe('MwRollerSession', () => {
   });
 
   it('rolls another character when the design screen is escaped', () => {
-    const session = new MwRollerSession(0);
+    const session = new RollerSession(MW_ROLLER_PORT, 0);
     session.answer(0);
     session.answer(3);
     session.answer(2);
@@ -99,7 +99,7 @@ describe('MwRollerSession', () => {
   });
 
   it('records the character against the slot it was told to use', () => {
-    const session = new MwRollerSession(7);
+    const session = new RollerSession(MW_ROLLER_PORT, 7);
     session.answer(0);
     session.answer(0);
     session.answer(0);
@@ -111,7 +111,7 @@ describe('MwRollerSession', () => {
   });
 
   it('goes back to the first screen when it is restarted', () => {
-    const session = new MwRollerSession(0);
+    const session = new RollerSession(MW_ROLLER_PORT, 0);
     session.answer(0);
     session.answer(3);
     session.restart();
@@ -120,7 +120,7 @@ describe('MwRollerSession', () => {
   });
 
   it('finishes with health and spell points, and the class list still showing', () => {
-    const session = new MwRollerSession(0);
+    const session = new RollerSession(MW_ROLLER_PORT, 0);
     session.answer(0);
     session.answer(7);
     session.answer(0);

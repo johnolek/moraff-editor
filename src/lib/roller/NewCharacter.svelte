@@ -4,7 +4,7 @@
   import { downloadBytes } from '../download';
   import { goToTab } from '../history';
   import { MW_CLASS_NAMES, MW_RACES, MINUTES_PER_YEAR } from '../game/mw-port/character';
-  import type { MwCharacter } from '../game/mw-port/state';
+  import type { MwCharacter, MwGame } from '../game/mw-port/state';
   import { CLASS_NAMES, RACES, typedName } from '../game/port/character';
   import type { Game, PlayerCharacter, ScreenLine } from '../game/port/state';
   import { REV_CLASS_NAMES, REV_RACE_NAMES, REV_STAT_NAMES, revTypedName } from '../game/rev-port/character';
@@ -14,7 +14,7 @@
   import PixelText from '../ui/PixelText.svelte';
   import { DESIGN_STAT_KEYS, rollerKey, type RollerScreen } from './keys';
   import { MW_SLOTS, mwSlotFileName, newMwCharacterFile } from './mw-save-file';
-  import { MwRollerSession } from './mw-session';
+  import { MW_ROLLER_PORT, type MwRollerView } from './mw-session';
   import RevScreen from './RevScreen.svelte';
   import { MW_SCREEN_COLOURS, SCREEN_COLOURS } from './screen';
   import { newRevCharacterFile, newRevExploredFile, REV_SLOTS, revExploredFileName, revRecordFileName } from './rev-save-file';
@@ -52,8 +52,8 @@
     },
   };
 
-  type Session = RollerSession<Game, RollerView> | MwRollerSession | RevRollerSession;
-  type View = RollerView | ReturnType<MwRollerSession['view']> | ReturnType<RevRollerSession['view']>;
+  type Session = RollerSession<Game, RollerView> | RollerSession<MwGame, MwRollerView> | RevRollerSession;
+  type View = RollerView | MwRollerView | ReturnType<RevRollerSession['view']>;
 
   let slot = $state(SLOTS[0]);
   let session = $state.raw<Session | null>(null);
@@ -158,7 +158,7 @@
 
   function start() {
     const started =
-      rolling === 'revenge' ? new RevRollerSession(slot) : rolling === 'moraffsWorld' ? new MwRollerSession(slot) : new RollerSession(ROLLER_PORT, slot);
+      rolling === 'revenge' ? new RevRollerSession(slot) : rolling === 'moraffsWorld' ? new RollerSession(MW_ROLLER_PORT, slot) : new RollerSession(ROLLER_PORT, slot);
     session = started;
     view = started.view();
     typed = '';

@@ -1,11 +1,10 @@
 import { typedName } from '../game/port/character';
-import type { MwQuestion } from './mw-session';
 import type { RevQuestion } from './rev-session';
 import type { Question } from './session';
 
 /** A screen the roller waits at: one of the game's own, or the character number the tab asks
  *  for before a roll starts. */
-export type RollerScreen = Question | MwQuestion | RevQuestion | 'number';
+export type RollerScreen = Question | RevQuestion | 'number';
 
 /** What a key does at the screen showing. */
 export type RollerAction =
