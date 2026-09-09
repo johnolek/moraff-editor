@@ -224,11 +224,12 @@ game would have done, the way `../misc.ts` answers the same keys for Dungeons of
   square in a new colour every time round the wait, and it takes the counter raw where the corner
   map's FUN_2000_7c8a takes it modulo 16, so that square runs through the whole palette. The port
   draws it once, in the corner map's own cursor colour.
-* **The map is drawn instead of the 3-D view.** What the four views would have shown is still
-  worked out, since it is what the map remembers and what says which monsters can be seen
-  (`../memory.ts`); in speedrun and in debug the whole floor and every monster on it are drawn
-  instead (`../mode.ts`). The picture of the monster being faced stands in for the view ahead in
-  every mode, with the level, hit points and experience the game prints over that view over it.
+* **The screen is the game's own.** `view3d/` and `MwScreen.svelte` draw what `movecontrol`
+  draws — the four views, the message box, the key menu, the zoom map and the lines of text the
+  game lays over them — and the top-down map of the floor is a switch away from it. On that map
+  the picture of the monster being faced stands in for the view ahead, with the level, hit points
+  and experience the game prints over that view over it; in speedrun and in debug the whole floor
+  and every monster on it are drawn rather than the squares walked (`../mode.ts`).
 * **No `<slot>MON.MAP`.** The three floors of monsters live only as long as the tab is open.
 * **The `.DUN` files are a blob beside the roster entry.** The explored maps are written where
   the original writes them — when the character crosses out of the 32 floors in memory, on the

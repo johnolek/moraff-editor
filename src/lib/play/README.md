@@ -441,8 +441,9 @@ reading it is what sends the panel back to the record.
 ## What is not built yet
 
 Nothing. Every key movecontrol dispatches on is answered. The one that is about the screen rather
-than the game — Z, which swaps the map for the 3-D view ahead — says what the game would have done
-with a display this port does not have.
+than the game — Z, which swaps the four views and the zoom map for one view of what is ahead
+filling the screen — says what the game would have done, since this port draws the four views
+only.
 
 ## Where this leaves the original
 
@@ -482,9 +483,6 @@ with a display this port does not have.
   `CharacterFile.write`, which is the real 2,697-byte file with its checksum, so a character can
   be downloaded and played on in DOS. Death writes nothing, neither the record nor the map, which
   is what the original does; the roster marks the entry instead.
-* **The town's pictures are not drawn.** `g_store`, `temple`, `bank` and `flea_inn` fill the
-  screen with `store.pic`, `temple.pic`, `bank.pic` and `inn.pic` behind their menus, and
-  `boss_office_message` draws the boss beside its taunt. The port shows the words alone.
 * **The settings menus set almost nothing.** One of the thirteen switches behind O and G is a
   rule of the game rather than of the screen — the high speed option at DS:00c3, which the port
   keeps. The rest are the palette, the mouse, the menu highlighting and the 3-D views, and each
