@@ -17,6 +17,7 @@ import {
   showHint,
 } from './drops';
 import { sectionNumber } from './hints';
+import { playDeath, playMonsterKilled } from './sound';
 import { checkGainLevel } from './levels';
 import { MESSAGE_LINE_Y, clearMessageLine, messageLine } from './screens';
 import type { Game } from './state';
@@ -296,8 +297,11 @@ export function drainerBonus(game: Game): void {
  *
  * The two messages at the end — that the character is hurt, and that they have earned a level —
  * are only given while the character is still level 0, which is the level a new one starts at.
+ *
+ * The two-note chime is the first thing it does, so the player hears the kill before reading it.
  */
 export async function killMonster(game: Game): Promise<void> {
+  playMonsterKilled(game);
   const pc = game.pc;
   const slot = game.engaged;
   const monster = game.monsters[slot];
@@ -376,8 +380,11 @@ export async function killMonster(game: Game): Promise<void> {
  *
  * The original then reloads the floor around the body; the port records nothing, the way the
  * ported spells that change floor do.
+ *
+ * The dirge is the first thing it does, before the snake says anything.
  */
 export function playerDies(game: Game): void {
+  playDeath(game);
   game.pc.hp = -100;
   showHint(game, 26);
   showHint(game, 117 + game.rng.random(5));
