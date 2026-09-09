@@ -505,8 +505,17 @@ only.
   `CharacterFile.write`, which is the real 2,697-byte file with its checksum, so a character can
   be downloaded and played on in DOS. Death writes nothing, neither the record nor the map, which
   is what the original does; the roster marks the entry instead.
-* **The settings menus set almost nothing.** One of the thirteen switches behind O and G is a
-  rule of the game rather than of the screen — the high speed option at DS:00c3, which the port
-  keeps. The rest are the palette, the mouse, the menu highlighting and the 3-D views, and each
-  of those says so in a box.
+* **The four noises the game makes are made.** `src/lib/speaker.ts` is the PC speaker: one
+  square-wave oscillator, because channel 2 of the 8253 holds one frequency at a time.
+  `src/lib/game/port/sound.ts` is the game's four wrappers around it — the sweep up when the
+  blow lands, the sweep down when the monster's does, the chime over a dead monster and the dirge
+  over a dead character — each called where the original calls it and each asking the sound
+  switch DS:022b first. The speaker is opened on the first key pressed in the tab, since a
+  browser will not start audio that nothing the player did asked for, and a session nobody is
+  listening to — a replay, the verifier under Node — never opens one. Nothing waits for a sound
+  to finish, exactly as nothing waits for a held frame.
+* **The settings menus set almost nothing.** Two of the thirteen switches behind O and G are
+  rules of the game rather than of the screen — the high speed option at DS:00c3 and the sound
+  switch at DS:022b, both of which the port keeps. The rest are the palette, the mouse, the menu
+  highlighting and the 3-D views, and each of those says so in a box.
 * **The two hidden keys are left out**: 0xfb turns saving off and 0xfe hands out ten hit points.
