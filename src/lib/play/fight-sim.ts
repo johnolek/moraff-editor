@@ -1,8 +1,10 @@
 import { levelDistribution } from '../bestiary/distribution';
 import type { Monster } from '../bestiary/monsters';
 import { rollHp } from '../bestiary/roll';
+import { SPELL_MENU_KEYS, SPELL_MENU_NAMES, spellIndex } from '../game/port/inventory';
 import { savePlayer } from '../game/port/record';
 import type { Rng } from '../game/port/rng';
+import { portedSpell } from '../game/port/spell-index';
 import { MAP_EMPTY, MAP_PLAYER, setMonsterMap, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
@@ -31,6 +33,10 @@ const FIGHT_SLOT = 0;
 
 /** The way the character faces, which is the way the monster is put down. */
 const NORTH = 0;
+
+/** The ten lines of a spell list, three spells to a line. */
+const SPELL_LINES = 10;
+const SPELLS_PER_LINE = 3;
 
 /** The monster the fight is against, as the setup form has it. */
 export interface FightMonster {
@@ -275,6 +281,98 @@ export function fightOutcome(session: GameSession, sent: boolean): FightOutcome 
   if (session.dead) return 'characterDead';
   if (!sent) return 'waiting';
   return fightMonster(session).hp < 1 ? 'monsterDead' : 'fighting';
+}
+
+/** One spell the Fight tab has a button for. */
+export interface FightSpell {
+  /** The list cast_a_spell's first menu numbers from 1: 1 preparation, 2 wizard battle, 3 priest
+   *  battle. */
+  type: number;
+  /** 0..9, the line of that list. */
+  level: number;
+  /** 0..2, the place on the line. */
+  slot: number;
+  /** The name the game's own menu prints for it. */
+  name: string;
+}
+
+/** One of the three lists of buttons. */
+export interface FightSpellList {
+  title: string;
+  spells: FightSpell[];
+}
+
+/**
+ * The spells that would end a fight by leaving it rather than changing it: the two that walk the
+ * character through a wall or somewhere else on the floor, and the five that carry them to
+ * another floor. `spell-index.ts` names the function of `magic.ts` every spell runs.
+ */
+const SPELLS_THAT_LEAVE = new Set([
+  'ascend',
+  'descend',
+  'doubleAscend',
+  'majorAscend',
+  'majorDescend',
+  'passWall',
+  'relocateSpell',
+]);
+
+function fightSpells(type: number): FightSpell[] {
+  const spells: FightSpell[] = [];
+  for (let level = 0; level < SPELL_LINES; level++) {
+    for (let slot = 0; slot < SPELLS_PER_LINE; slot++) {
+      if (SPELLS_THAT_LEAVE.has(portedSpell(type, level, slot).fn)) continue;
+      spells.push({ type, level, slot, name: SPELL_MENU_NAMES[type][level * SPELLS_PER_LINE + slot] });
+    }
+  }
+  return spells;
+}
+
+/**
+ * A button for every preparation and battle spell that changes a fight, in the game's own
+ * order.
+ *
+ * The permanent list is left out whole: those spells take a month, cannot be cast below the town
+ * and are paid for out of the character's maximum spell points.
+ */
+export const FIGHT_SPELL_LISTS: FightSpellList[] = [
+  { title: 'Preparation spells', spells: fightSpells(1) },
+  { title: 'Wizard battle spells', spells: fightSpells(2) },
+  { title: 'Priest battle spells', spells: fightSpells(3) },
+];
+
+/**
+ * The three keys cast_a_spell (exe 2000:e017) reads to cast one spell out of the spellbook: the
+ * C key, the line of its first menu (exe DS:2507), and the spell's own letter in the table.
+ */
+export function castKeys(spell: FightSpell): number[] {
+  return [KEY.cast, 0x31 + spell.type, SPELL_MENU_KEYS.charCodeAt(spell.level * SPELLS_PER_LINE + spell.slot)];
+}
+
+/**
+ * Cast a spell the way a player casts one: the three keys pressed into the session one after
+ * another, so the spell itself is cast_a_spell's and nothing here works out what a spell does.
+ *
+ * The copy is given the spell in its book first. The menu ignores the key for a spell the
+ * character has none of and goes on waiting for another, so without that the button would leave
+ * the spell table standing open.
+ */
+export async function castFightSpell(session: GameSession, spell: FightSpell): Promise<void> {
+  session.game.pc.spellbook[spellIndex(spell.type, spell.level, spell.slot)] = 1;
+  // The last spell may have left a message box standing, and a box waits for a key of its own
+  // before the loop asks for the next one. Escape is that key, and with no box waiting it is a
+  // key movecontrol does nothing with, so it costs the character nothing either way.
+  session.press(KEY.escape);
+  await settle();
+  for (const key of castKeys(spell)) {
+    session.press(key);
+    await settle();
+  }
+}
+
+/** Fill the copy's spell points up, so that a cast is not refused for want of them. */
+export function fillSpellPoints(session: GameSession): void {
+  session.game.pc.sp = session.game.pc.maxSp;
 }
 
 /** Let the loop get as far as it can with the keys it has been given. */

@@ -1,22 +1,30 @@
 import { describe, expect, it } from 'vitest';
 import { monsterLevelBase } from '../game/dotu-mech.js';
+import { spellIndex } from '../game/port/inventory';
 import { SeededRng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
 import { monsterTypeOf } from './floor';
 import {
+  castFightSpell,
   fightMonster,
   fightOutcome,
   fightSquare,
+  fillSpellPoints,
   monsterLevelRange,
   rollFightHp,
   sendInTheMonster,
   startFight,
+  FIGHT_SPELL_LISTS,
   type FightMonster,
   type FightSetup,
 } from './fight-sim';
 import { monsterById } from '../map/stocking';
+
+/** The class byte of a Sage, who is the one class allowed both lists of battle spells out of
+ *  their own spellbook. A Fighter casts nothing out of one at all. */
+const SAGE = 5;
 
 /** A setup with the numbers a test cares about typed into it, the way the form types them. */
 function setup(
@@ -29,6 +37,15 @@ function setup(
     character,
     monster: { monsterId: 'builtin-0', module: 0, floor: 1, level: 1, hp: 40, ...monster },
   };
+}
+
+/** The spell of one of the three lists by the place it stands in the game's own table. */
+function spellAt(list: number, level: number, slot: number) {
+  const found = FIGHT_SPELL_LISTS[list].spells.find(
+    (spell) => spell.level === level && spell.slot === slot,
+  );
+  if (!found) throw new Error(`no spell at level ${level + 1} slot ${slot + 1} of list ${list}`);
+  return found;
 }
 
 describe('the square a fight is set on', () => {
@@ -140,5 +157,67 @@ describe('sending the monster in', () => {
     fightMonster(session).hp = 0;
     expect(fightOutcome(session, true)).toBe('monsterDead');
     session.finish();
+  });
+});
+
+describe('a spell button', () => {
+  it('casts a preparation spell through the game’s own spell code', async () => {
+    const session = startFight(setup({ cls: SAGE, sp: 10, maxSp: 10 }), new SeededRng(7));
+    // The second spell of the preparation list's first line is ENCHANT WEAPON LEVEL 1, which
+    // set_temp_weapon_plus writes a 1 into.
+    await castFightSpell(session, spellAt(0, 0, 1));
+    expect(session.game.pc.tempWeaponPlus).toBe(1);
+    expect(session.game.pc.sp).toBe(9);
+    session.finish();
+  });
+
+  it('casts a battle spell the character’s class is allowed', async () => {
+    const session = startFight(setup({ cls: SAGE, sp: 10, maxSp: 10 }), new SeededRng(8));
+    // The third spell of the wizard list's first line is MINOR PROTECTION, which is protection
+    // level 1 for sixty moves.
+    await castFightSpell(session, spellAt(1, 0, 2));
+    expect(session.game.pc.protection).toBe(1);
+    // Sixty moves, less the one the cast itself spends.
+    expect(session.game.pc.protectionTime).toBe(59);
+    session.finish();
+  });
+
+  it('gives the copy the spell in its book, since the menu ignores one it does not have', async () => {
+    const built = setup({ cls: SAGE, sp: 10, maxSp: 10 });
+    const session = startFight(built, new SeededRng(9));
+    const spell = spellAt(0, 0, 1);
+    expect(built.character.spellbook[spellIndex(spell.type, spell.level, spell.slot)]).toBe(0);
+    await castFightSpell(session, spell);
+    expect(session.game.pc.spellbook[spellIndex(spell.type, spell.level, spell.slot)]).toBe(1);
+    session.finish();
+  });
+
+  it('refuses the spell when there are no points for it, and casts it once they are filled', async () => {
+    const session = startFight(setup({ cls: SAGE, sp: 0, maxSp: 10 }), new SeededRng(10));
+    await castFightSpell(session, spellAt(0, 0, 1));
+    expect(session.game.pc.tempWeaponPlus).toBe(0);
+    fillSpellPoints(session);
+    await castFightSpell(session, spellAt(0, 0, 1));
+    expect(session.game.pc.tempWeaponPlus).toBe(1);
+    session.finish();
+  });
+});
+
+describe('the spells a fight has buttons for', () => {
+  it('are the preparation and the two battle lists, and not the permanent one', () => {
+    expect(FIGHT_SPELL_LISTS.map((list) => list.title)).toEqual([
+      'Preparation spells',
+      'Wizard battle spells',
+      'Priest battle spells',
+    ]);
+  });
+
+  it('leaves out the ones that would end the fight by walking away from it', () => {
+    const named = FIGHT_SPELL_LISTS.flatMap((list) => list.spells.map((spell) => spell.name));
+    expect(named).not.toContain('PASS WALL');
+    expect(named).not.toContain('RELOCATE');
+    expect(named).not.toContain('MAJOR DESCEND');
+    expect(named).toContain('HEAL ALL WOUNDS');
+    expect(named).toContain('AUTOKILL');
   });
 });
