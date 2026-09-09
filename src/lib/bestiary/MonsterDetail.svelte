@@ -15,10 +15,10 @@
   import SourceLink from '../source/SourceLink.svelte';
   import { percent } from '../ui/format';
   import BarChart from '../ui/BarChart.svelte';
-  import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import { binHp, hpDistribution, levelDistribution } from './distribution';
   import LevelControl from './LevelControl.svelte';
+  import MonsterCard from './MonsterCard.svelte';
   import MonsterPicture from './MonsterPicture.svelte';
   import { describeEffects, homeFloor, isPuffball, stockingOdds, whereItAppears, type Monster } from './monsters';
   import { hitChance, toHitTotal, totalNeededToBeatDefense, type ToHitFighter } from './to-hit';
@@ -115,40 +115,29 @@
   });
 </script>
 
-<article>
-  <div class="top">
-    <div class="art">
-      <MonsterPicture {entry} module={module + 1} part={section.part} />
-    </div>
-    <div class="facts">
-      <h2><PixelText text={entry.name} scale={2} /></h2>
-      <p class="group">{groupLabel}</p>
+<MonsterCard
+  name={entry.name}
+  groupLine={groupLabel}
+  numbersTitle="Stats"
+  numbers={stats}
+  {effects}
+  {art}
+  {aboveNumbers}
+  {body} />
 
-      <section>
-        <SectionHeading title="Type" />
-        <p class="quote">{entry.type.text}</p>
-        <p class="note">Type {entry.type.type}</p>
-      </section>
+{#snippet art()}
+  <MonsterPicture {entry} module={module + 1} part={section.part} />
+{/snippet}
 
-      <section>
-        <SectionHeading title="Stats" />
-        <dl>
-          {#each stats as [label, value]}
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          {/each}
-        </dl>
-        {#if effects.length > 0}
-          <ul class="effects">
-            {#each effects as effect}
-              <li>{effect}</li>
-            {/each}
-          </ul>
-        {/if}
-      </section>
-    </div>
-  </div>
+{#snippet aboveNumbers()}
+  <section>
+    <SectionHeading title="Type" />
+    <p class="quote">{entry.type.text}</p>
+    <p class="note">Type {entry.type.type}</p>
+  </section>
+{/snippet}
 
+{#snippet body()}
   {#if entry.description}
     <section>
       <SectionHeading title="Description" />
@@ -226,77 +215,13 @@
       />
     </div>
   </section>
-</article>
+{/snippet}
 
 <style>
-  article {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 20px 24px;
-  }
-  .top {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-  }
-  .art {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .facts {
-    flex: 1;
-    min-width: 240px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  h2 {
-    margin: 0;
-    line-height: 0;
-    color: var(--ink);
-  }
-  .group {
-    margin: 0;
-    font-size: 13px;
-    color: var(--muted);
-  }
   .quote {
     margin: 0;
     color: var(--mw-cyan);
     font-size: 13px;
-  }
-  .note {
-    margin: 6px 0 0;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  dl {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 2px 12px;
-    margin: 12px 0 0;
-    font-size: 13px;
-  }
-  dt {
-    color: var(--muted);
-  }
-  dd {
-    margin: 0;
-  }
-  p {
-    margin: 0;
-    font-size: 14px;
-    max-width: 62ch;
-  }
-  ul {
-    margin: 8px 0 0;
-    padding-left: 18px;
-    font-size: 13px;
-  }
-  .effects li {
-    color: var(--warn);
   }
   .to-hit {
     display: flex;
