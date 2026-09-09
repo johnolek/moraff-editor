@@ -9,6 +9,33 @@ export interface Frame {
   height: number;
   /** `height * width` palette indices, row by row. */
   pixels: Uint8Array;
+  /**
+   * The rectangles the frame was painted in, in the order they were painted, for a tab that
+   * wants to show the screen appearing the way the game drew it (`journal.ts`). A frame has one
+   * only while such a tab has asked for it; the paints below note nothing otherwise.
+   */
+  journal?: PaintRect[];
+}
+
+/** One rectangle a paint wrote, both edges included, clipped to the frame. */
+export interface PaintRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+}
+
+/** Note a rectangle just painted on a frame that keeps a journal; a rectangle off the frame or
+ *  empty is not a paint. */
+export function notePaint(frame: Frame, left: number, top: number, right: number, bottom: number): void {
+  const journal = frame.journal;
+  if (!journal) return;
+  const x1 = Math.max(0, Math.min(left, right));
+  const x2 = Math.min(frame.width - 1, Math.max(left, right));
+  const y1 = Math.max(0, Math.min(top, bottom));
+  const y2 = Math.min(frame.height - 1, Math.max(top, bottom));
+  if (x1 > x2 || y1 > y2) return;
+  journal.push({ left: x1, top: y1, right: x2, bottom: y2 });
 }
 
 export const newFrame = (width: number, height: number): Frame => ({
@@ -27,6 +54,7 @@ export function fillRect(frame: Frame, left: number, top: number, right: number,
   const y1 = Math.max(0, Math.min(top, bottom));
   const y2 = Math.min(frame.height - 1, Math.max(top, bottom));
   for (let y = y1; y <= y2; y++) frame.pixels.fill(colour, y * frame.width + x1, y * frame.width + x2 + 1);
+  notePaint(frame, x1, y1, x2, y2);
 }
 
 /** Set one pixel, ignoring anything off the screen. The game's own drivers mostly do not clip. */
@@ -41,6 +69,7 @@ export function drawLine(frame: Frame, x1: number, y1: number, x2: number, y2: n
   let y = Math.round(y1);
   const endX = Math.round(x2);
   const endY = Math.round(y2);
+  notePaint(frame, x, y, endX, endY);
   const stepX = x < endX ? 1 : -1;
   const stepY = y < endY ? 1 : -1;
   const spanX = Math.abs(endX - x);

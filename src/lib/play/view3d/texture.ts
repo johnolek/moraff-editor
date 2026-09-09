@@ -1,4 +1,4 @@
-import type { Frame } from './frame';
+import { notePaint, type Frame } from './frame';
 
 /**
  * `FUN_4000_4f8f` (exe 4000:4f8f): the wall drawer's own texture mapper, which nothing else in
@@ -70,6 +70,7 @@ function column(frame: Frame, x: number, from: number, to: number, colour: numbe
   const top = Math.max(0, Math.min(from, to));
   const bottom = Math.min(frame.height - 1, Math.max(from, to));
   for (let y = top; y <= bottom; y++) frame.pixels[y * frame.width + x] = colour;
+  notePaint(frame, x, top, x, bottom);
 }
 
 /** How a 5-bit picture value becomes a palette index for a wall. */

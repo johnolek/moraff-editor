@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fillRect, newFrame, pixelAt, toRgba } from './frame';
+import { drawLine, fillRect, newFrame, notePaint, pixelAt, toRgba } from './frame';
 
 describe('the screen the view is drawn on', () => {
   it('starts black', () => {
@@ -51,5 +51,31 @@ describe('the screen the view is drawn on', () => {
     const frame = newFrame(2, 1);
     frame.pixels[1] = 5;
     expect([...toRgba(frame, [[7, 7, 7]])]).toEqual([7, 7, 7, 255, 0, 0, 0, 255]);
+  });
+});
+
+describe('the journal of paints', () => {
+  it('is kept only by a frame that asked for one', () => {
+    const frame = newFrame(4, 3);
+    fillRect(frame, 0, 0, 1, 1, 7);
+    expect(frame.journal).toBeUndefined();
+  });
+
+  it('notes a rectangle fill and a line, clipped to the frame and in order', () => {
+    const frame = newFrame(4, 3);
+    frame.journal = [];
+    fillRect(frame, 3, 2, 1, 1, 7);
+    drawLine(frame, 0, 0, 9, 0, 5);
+    expect(frame.journal).toEqual([
+      { left: 1, top: 1, right: 3, bottom: 2 },
+      { left: 0, top: 0, right: 3, bottom: 0 },
+    ]);
+  });
+
+  it('does not note a paint that lies off the frame', () => {
+    const frame = newFrame(4, 3);
+    frame.journal = [];
+    notePaint(frame, 10, 10, 12, 12);
+    expect(frame.journal).toEqual([]);
   });
 });

@@ -1,5 +1,5 @@
 import { glyphRows, pixelFont } from '../../ui/pixel-font';
-import { plot, type Frame } from './frame';
+import { notePaint, plot, type Frame } from './frame';
 
 /**
  * The one place Dungeons of the Unforgiven still draws a .FNT glyph at 1024 by 768.
@@ -36,6 +36,9 @@ export interface MenuScreen {
 const toX = (screen: MenuScreen, x: number): number => Math.trunc(((screen.width - 1) * x) / UNITS_X);
 const toY = (screen: MenuScreen, y: number): number => Math.trunc(((screen.height - 1) * y) / UNITS_Y);
 
+/** How many bits a glyph row holds, which is how wide the box its pixels are plotted in is. */
+const GLYPH_WIDTH = 8;
+
 /**
  * One glyph, drawn at its own size. `FUN_4000_09a5` (exe 4000:09a5) plots one screen pixel per
  * set bit and leaves the rest of the box alone, so nothing behind a line is painted over, and it
@@ -43,11 +46,14 @@ const toY = (screen: MenuScreen, y: number): number => Math.trunc(((screen.heigh
  */
 function drawGlyph(frame: Frame, char: string, left: number, top: number, colour: number): void {
   if (char === ' ') return;
-  glyphRows(face, char).forEach((row, r) => {
+  const rows = glyphRows(face, char);
+  rows.forEach((row, r) => {
     for (let bit = 0; row >> bit; bit++) {
       if (row & (1 << bit)) plot(frame, left + bit, top + r, colour);
     }
   });
+  // A glyph is one paint of the journal: the box its bits are plotted in.
+  notePaint(frame, left, top, left + GLYPH_WIDTH - 1, top + rows.length - 1);
 }
 
 /**

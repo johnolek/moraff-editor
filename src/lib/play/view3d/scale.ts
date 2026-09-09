@@ -1,5 +1,5 @@
 import { picturePixelIndex as pixelIndex } from '../../game/dotu-pic.js';
-import { plot, type Frame } from './frame';
+import { notePaint, plot, type Frame } from './frame';
 import type { PicRowImage } from './texture';
 
 /**
@@ -122,5 +122,8 @@ export function scaleImage(
       }
       at = runEnd + 1;
     }
+    // One row of runs is one paint of the journal: scale_image2 draws a picture a row at a time,
+    // so that is how a slow machine shows one arriving.
+    notePaint(frame, xL, destY, xR, destY);
   }
 }
