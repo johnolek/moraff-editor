@@ -5,7 +5,6 @@ import type { PicRowImage } from './texture';
  * loads them. `dotu-tools/pics/walls/_sheet_ufwall1.png` is the whole file drawn out.
  */
 export const WALL_DOOR = 0;
-export const WALL_SECRET = 1;
 export const WALL_TELEPORTER_SIGN = 2;
 /** The three materials a plain wall is drawn with. */
 export const WALL_MATERIALS = [3, 4, 5] as const;

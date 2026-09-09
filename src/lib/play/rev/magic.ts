@@ -51,13 +51,6 @@ const FIRST_PILL_VALUE = 162;
 /** DGROUP 1B92's element 28: the first of the nine wand colours (1000:7ACB). */
 const FIRST_WAND_VALUE = 168;
 
-/**
- * The nine items the game counts, in the order `F2.COM` names them and the two menus offer
- * them: the four scrolls the dungeon uses (1000:16E4) and the five potions a fight uses
- * (1000:98ED).
- */
-export const REV_ITEM_COUNT = 9;
-
 /** How many pill colours and wand colours there are (1000:7CCE and 1000:7B25). */
 export const REV_PILL_COLOURS = 6;
 export const REV_WAND_COLOURS = 9;

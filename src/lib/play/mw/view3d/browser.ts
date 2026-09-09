@@ -52,9 +52,6 @@ export function mwViewPictures(): MwViewPictures {
   };
 }
 
-/** Whether the bundle has WALL.PIC, which decides whether the walls are drawn textured. */
-export const hasMwWallPictures = (): boolean => images('wall.pic') !== null;
-
 function decodeDataUrl(url: string): Uint8Array {
   const binary = atob(url.slice(url.indexOf(',') + 1));
   const bytes = new Uint8Array(binary.length);

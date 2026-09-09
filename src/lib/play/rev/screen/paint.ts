@@ -31,10 +31,6 @@ export function cint(value: number): number {
   return down % 2 === 0 ? down : down + 1;
 }
 
-/** How wide and how tall a box is, in pixels. */
-export const boxWidth = (view: ViewBox): number => view.right - view.left + 1;
-export const boxHeight = (view: ViewBox): number => view.bottom - view.top + 1;
-
 /** Copy a box's own frame onto the screen at the corner the `VIEW` gave it. */
 export function blit(screen: Frame, box: Frame, left: number, top: number): void {
   for (let y = 0; y < box.height; y++) {

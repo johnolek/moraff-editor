@@ -6,10 +6,6 @@
  * as a bare `ftol()` call. The expressions here are the FPU instruction stream.
  */
 
-/** The game draws into a 1600 x 1200 space whatever the video mode is (`GameScreen.svelte`). */
-export const SCREEN_UNITS_X = 1600;
-export const SCREEN_UNITS_Y = 1200;
-
 /** DS:2316 = 650. `draw_3d_view` stops at `650 / 20 + 3` squares (exe 3000:0f75). */
 export const VIEW_REACH = Math.floor(650 / 20) + 3;
 

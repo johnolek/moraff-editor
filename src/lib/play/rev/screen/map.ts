@@ -16,9 +16,6 @@ import { boxFilled, boxOutline } from './paint';
 export const squareLeft = (column: number): number => 8 * column - 8;
 export const squareTop = (row: number): number => 8 * row + 37;
 
-/** How big the whole map is, which is what 1000:49F8 saves and puts back. */
-export const MAP_BOX = { left: 0, top: 32, right: 160, bottom: 199 };
-
 /** What the map needs of the game to draw a floor. */
 export interface RevMapView {
   level: number;

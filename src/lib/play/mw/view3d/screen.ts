@@ -74,17 +74,6 @@ export const MW_VIEWS: ViewRect[] = [MW_FRONT_VIEW, MW_BACK_VIEW, MW_WEST_VIEW, 
 export const MW_WHOLE_SCREEN_VIEW: ViewRect = { left: 0, top: 0, right: 0x63f, bottom: 0x4af };
 
 /**
- * The boxes FUN_2000_8b3f blanks before it redraws the views at a new size, which are the four
- * rectangles a little larger than the views themselves.
- */
-export const MW_VIEW_BOXES: ViewRect[] = [
-  { left: 721, top: 0, right: 1158, bottom: 602 },
-  { left: 721, top: 603, right: 1158, bottom: 1199 },
-  { left: 279, top: 428, right: 719, bottom: 1032 },
-  { left: 1160, top: 428, right: 1599, bottom: 1032 },
-];
-
-/**
  * The message box down the left. movecontrol (exe 2000:aad5) clears 0 to 0x2d0 by 0 to 0x1ae;
  * FUN_2000_216b, which prints the eight-line box, stops two units short at 0x1ac.
  */

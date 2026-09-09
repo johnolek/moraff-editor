@@ -4,7 +4,7 @@ import { experienceNeeded } from '../../game/mw-port/levels';
 import { mwSpellTimers } from '../../game/mw-port/screens';
 import type { MwCharacter, MwGame } from '../../game/mw-port/state';
 import { MONSTERS, WEAPONS, hpRange } from '../../mw-bestiary/monsters';
-import { monsterDefence, mwHitChance, toHitTotal } from '../../mw-bestiary/to-hit';
+import { mwHitChance, toHitTotal } from '../../mw-bestiary/to-hit';
 import type { MapSquare } from '../../map/game';
 import type { StockedMonster } from '../../map/stocking';
 import { stepCost } from './moment';
@@ -151,14 +151,6 @@ export function mwEngagedMonster(game: MwGame): MwEngagedMonster | null {
     experience: experienceForKill(game, game.engaged),
     hitChance: mwHitChance(total, kind, monster.depth, WEAPONS[pc.weapon].damageDie),
   };
-}
-
-/** What the monster takes off a swing, for anyone reading the chance beside it. */
-export function mwMonsterDefence(game: MwGame): number | null {
-  if (game.engaged === -1) return null;
-  const monster = game.monsters[game.engaged];
-  const kind = MONSTERS[monster.type];
-  return kind ? monsterDefence(kind, monster.depth) : null;
 }
 
 /** One of the monsters standing on the floor, by how far off it is. */
