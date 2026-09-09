@@ -50,7 +50,8 @@ tab (`../PlayTab.svelte`), the map canvas, the screen renderer and the roster.
   paints them and lays the game's own lines of text over them.
 * **`MwPlay.svelte`** — what this game puts in the Play tab: the game's screen or the top-down
   map, whichever the switch is set to, the four corners of that screen laid over the map, the
-  heads-up display of `../MapHud.svelte` over it — the monster's close-up, and the health and
+  heads-up display of `../MapHud.svelte` over it — the monster's close-up, with the bar of its
+  hit points beside it and, in debug mode, `debug-screen.ts`'s lines over it, and the health and
   spell orbs and the experience bar on their bar of stone along the foot of the map, in place of
   the game's own status blocks — and the panel. A page the game takes the whole display over with
   — the help, the statistics, a letter — is drawn by `MwScreen.svelte` in either display: on the

@@ -76,13 +76,13 @@ something the original does, a comment says so.
   map's heads-up display (`MapHud.svelte`) shows at the top of the map.
   **`PortraitFrame.svelte`** is the box that picture sits in, which Moraff's World shares; each
   game hands its own picture in as a snippet.
-* **`hud.ts`, `MapHud.svelte`, `HudOrb.svelte`, `HudExpBar.svelte`** — what the map draws over
-  itself: the monster being fought centred at the top, and along the foot a bar of dark stone with
-  a health orb and a spell orb standing in its ends and an experience bar between them. None of it
-  is a port of anything. The map is the
-  site's own view of a game rather than a screen any game ever drew, so this is the site's own
-  look; it takes no clicks and reads the games' numbers without writing any, so the game, the run
-  log and a replay are the same with it and without it. `hud.ts` is the arithmetic: how full an
+* **`hud.ts`, `MapHud.svelte`, `HudOrb.svelte`, `HudExpBar.svelte`, `HudMonsterBar.svelte`** —
+  what the map draws over itself: the monster being fought centred at the top, and along the foot
+  a bar of dark stone with a health orb and a spell orb standing in its ends and an experience bar
+  between them. None of it is a port of anything. The map is the site's own view of a game rather
+  than a screen any game ever drew, so this is the site's own look; it takes no clicks and reads
+  the games' numbers without writing any, so the game, the run log and a replay are the same with
+  it and without it. `hud.ts` is the arithmetic: how full an
   orb stands, and which stretch of a game's experience curve the bar draws. A level is only
   handed over at an inn, so a character can walk around with the experience for several they have
   not been given; the bar steps on to the next stretch for each one and a badge names the level it
@@ -90,10 +90,23 @@ something the original does, a comment says so.
   a plain object the game writes in place and nothing on the page would redraw when a blow lands;
   everything on the bar is drawn as a fraction of an orb, and a map with little height to give
   gets smaller orbs, so the bar never has more stone on it than the map has floor. Nothing on it
-  takes a click: the map underneath is dragged and hovered through it. Moraff's World takes all of it but the close-up, since its map draws that picture
-  already. Moraff's Revenge takes none of it: its record keeps no maximum spell points, its map
-  draws no monster, and the experience a kill is worth sits in a pot the game does not add up
-  until the character has slept somewhere.
+  takes a click: the map underneath is dragged and hovered through it.
+
+  Two more things go with the close-up. `HudMonsterBar.svelte` is a vertical vessel of the same
+  glass down its left, filling to the hit points the monster was stocked with and draining on the
+  orbs' own tween; it is shown in every mode, because the game's own message box already prints
+  the hit points a monster has left after every swing. Over the picture stand the lines debug mode
+  prints over the monster on the game's own screen — `debugMonsterLines` here and
+  `mw/debug-screen.ts`'s `mwDebugMonsterLines` — in the site's own type, under `debugDrawn(mode)`
+  and so in no other mode. Both are read off the view (`engagedFullHp` and `engagedDebugLines`)
+  for the same reason the character's own numbers are, and the hit points a monster was stocked
+  with are remembered by `floor.ts` and `mw/floor.ts`, since a monster's record holds only the hit
+  points it has left; a monster that arrived on a floor from anywhere else has the first hit
+  points seen for it taken as its mark.
+
+  Moraff's World takes all of this. Moraff's Revenge takes none of it: its record keeps no maximum
+  spell points, its map draws no monster, and the experience a kill is worth sits in a pot the
+  game does not add up until the character has slept somewhere.
 
 ## The run
 
