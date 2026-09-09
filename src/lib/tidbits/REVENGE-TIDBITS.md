@@ -116,16 +116,20 @@ first place.
 ### A characteristic is stored three times as big
 
 The six characteristics go into the file as `3 × stat + 237`, so the 255 to 303 the shipped
-records hold is a range of 6 to 22. That is worth knowing before you read the game's own advice:
-`CHCHAR.EXE` tells a first-time player to hold out for "a high strength (22 or more)", and 22 is
-not a high roll, it is the top of the scale.
+records hold is a range of 6 to 22. That is five characters, not a scale. The roll hands out a
+race's four to nine points and then scatters between 52 and 61 more over the six one at a time,
+which puts the average characteristic around 13 and puts no ceiling anywhere above it.
 
-The characteristics never appear on the game's statistics screen at all. `CHCHAR.EXE` is the
-only program that ever shows them, and only for as long as you are deciding whether to keep the
-roll — after that you play the character without being told what it has.
+Which makes the game's own advice a harder ask than it sounds. `CHCHAR.EXE` tells a first-time
+player to hold out for "a high strength (22 or more)", and for a human that is about one roll in
+230.
 
-In the code: `rev-tools/docs/SURVEY.md` section 3, on the read-back at `1000:B6BF` and the write
-at `1000:B342`.
+The statistics screen shows all six, six lines of `PRINT USING`, and the formats it prints them
+with are sitting in `F1.COM` in among the spell descriptions: `Strength:    ### `,
+`Intelligence:### `, and four more.
+
+In the code: `rev-tools/docs/SURVEY.md` section 3, on the read-back at `1000:B6BF`, the write at
+`1000:B342` and the six lines at `1000:1A9A`.
 
 ### Your character starts at level zero
 

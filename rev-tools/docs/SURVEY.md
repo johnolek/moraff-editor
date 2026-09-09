@@ -507,9 +507,11 @@ the five shipped characters hold is level 0. A new character is given
 `level = 0` at `1000:3E39`, reincarnation resets it to 0 at `1000:A172`, buying
 a level at the temple for 500,000 jewel pieces adds 1 at `1000:2044`, and the
 statistics screen prints the variable with nothing done to it at `1000:1BAF`.
-The characteristics never reach that screen at all; `CHCHAR.EXE` is the only
-program that shows them, and only while the player is deciding whether to keep
-the roll.
+The six characteristics reach the same screen just above it: `1000:1A9A` to
+`1ADD` is `FOR I = 1 TO 6`, a `PRINT USING` with the format string at `2126(I)`
+and the characteristic at `1F92(I)`. The six formats are read out of `F1.COM`,
+where they sit between the spell descriptions — `"Strength:    ### "`,
+`"Intelligence:### "` and four more.
 
 Decoded, the five characters on this disk are:
 
