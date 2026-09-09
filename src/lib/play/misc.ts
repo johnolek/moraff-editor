@@ -51,8 +51,8 @@ const NOT_A_PORT_SETTING = [
  * The first entry is the high speed option (DS:00c3), which stops the game saying that money was
  * found, throws away the drops the character has no use for, and skips most of its delays; the
  * second steps the colour setting (DS:4df2) round its four values; the last shows what the game
- * has to say about sound. The three in between turn the mouse on and off, move it, and pick how
- * the menu highlights a line.
+ * has to say about sound and turns the sound switch (DS:022b) off and on again behind it. The
+ * three in between turn the mouse on and off, move it, and pick how the menu highlights a line.
  */
 export async function openOptions(turn: Turn): Promise<void> {
   const { game, session } = turn;
@@ -69,7 +69,10 @@ export async function openOptions(turn: Turn): Promise<void> {
     game.colourSetting = (game.colourSetting + 1) % COLOUR_SETTINGS;
     return;
   } else if (entry === 6) {
+    // The game shows its message about sound and flips DS:022b behind it (exe 2000:d9ca). It
+    // waits for the key before flipping, which nothing in between can tell apart.
     showHint(game, NO_SOUND);
+    game.sound = !game.sound;
   } else {
     game.say(...NOT_A_PORT_SETTING);
   }

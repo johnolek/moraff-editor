@@ -675,6 +675,16 @@ export interface Game {
    */
   highSpeed: boolean;
   /**
+   * DS:022b: the sound switch, which the last entry of the O menu flips (exe 2000:d9ca). The four
+   * noises the game makes ask it first; see `sound.ts`.
+   *
+   * It starts on. The flag is only ever flipped, never written from the code, so its first value
+   * is whatever the data segment of the executable holds, which the PKLITE-packed file on disk
+   * does not show; a game that is silent until its menu is opened would not be one anybody
+   * reported the fight noises of.
+   */
+  sound: boolean;
+  /**
    * DS:4df2: the options menu's colour setting, 0 to 3. 0 draws the wall colours at full
    * strength and every other setting blends them toward grey. roll_char (exe 3000:4c77) gives a
    * new character 0, and the game saves the setting with the character at DS:c18f.
@@ -911,6 +921,7 @@ export function newGame(overrides: GameOverrides = {}): Game {
 
     // kills and town
     highSpeed: false,
+    sound: true,
     colourSetting: BRIGHT_COLOURS,
     dollarCapWarned: false,
     ...rest,

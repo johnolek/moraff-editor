@@ -45,11 +45,17 @@ describe('the O key', () => {
     expect(session.box).toContain('HIGH SPEED MODE IS NO');
   });
 
-  it("gives the game's own answer about sound", async () => {
+  it("gives the game's own answer about sound and turns the sound off and on", async () => {
     const session = inTheTown(lowest);
+    expect(session.game.sound).toBe(true);
     await press(session, KEY.options);
     await press(session, 0x36);
     expect(session.box).toContain('SOUND DOES NOT DO MUCH IN');
+    expect(session.game.sound).toBe(false);
+    await press(session, KEY.escape);
+    await press(session, KEY.options);
+    await press(session, 0x36);
+    expect(session.game.sound).toBe(true);
   });
 
   it('says what it has instead for the switches that are the DOS screen', async () => {
