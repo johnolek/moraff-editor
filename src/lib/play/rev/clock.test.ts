@@ -5,7 +5,7 @@ import { REV_POLLS_PER_SECOND, REV_POLLS_PER_TICK, REV_TICK_MS, revPoll, revTick
 import { RevMonsters, type RevWalker } from './monsters';
 
 const walker: RevWalker = {
-  column: 10, row: 10, facing: 1, level: 1, generation: 1, weight: 150, invisible: 0, fighting: 0,
+  column: 10, row: 10, facing: 1, level: 1, generation: 1, weight: 150, invisible: 0, fighting: 0, fought: 0,
   lastMonsterLevel: 0,
 };
 

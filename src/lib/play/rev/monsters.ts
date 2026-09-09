@@ -55,8 +55,11 @@ export interface RevWalker {
   /** Element 5 of the ten-value array (DGROUP 6034), the invisibility spell's counter. The
    *  notice roll at 1000:7342 tests it against 1 exactly, so any larger number is no help. */
   invisible: number;
-  /** The slot the character is fighting, or 0 for no fight (DGROUP B50E with B69C). */
+  /** DGROUP B50E: 1 while a fight is up and 0 the rest of the time. */
   fighting: number;
+  /** DGROUP B69C: the slot the last fight was against. Only 1000:8068, where a monster is met,
+   *  ever writes it, so it still names that monster long after the fight is over. */
+  fought: number;
   /** The level of the last monster the character met, or 0 until they have met one (DGROUP
    *  B6B4). The wander roll reads this rather than the level of the monster taking the turn. */
   lastMonsterLevel: number;
@@ -171,12 +174,14 @@ export class RevMonsters {
    * fought monster's included.
    */
   act(slot: number, walker: RevWalker, rng: Rng): void {
-    const engaged = walker.fighting !== 0 && slot === walker.fighting;
     const unnoticed = rng.random(700) - 400 > walker.weight;
-    if (!engaged && unnoticed) return;
+    // 1000:70A1 asks for "no fight on" and "not the slot the fight was against" separately
+    // rather than for "not the monster being fought", and B69C is never cleared, so the monster
+    // of the last fight goes on acting every turn once that fight is over.
+    if (walker.fighting !== 1 && slot !== walker.fought && unnoticed) return;
     const at = this.squareOf(slot);
     if (at.column === walker.column && at.row === walker.row) return;
-    if (engaged) {
+    if (walker.fighting === 1 && slot === walker.fought) {
       // 1000:7166: the monster being fought is marked awake and lined up whatever it was before,
       // and steps straight onto the character's square.
       this.awake = 1;

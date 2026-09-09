@@ -62,7 +62,9 @@ export function revMeetMonster(game: RevGame, slot: number): RevFight {
   };
   game.fight = fight;
   game.lastMonsterLevel = monsterLevel;
-  // 1000:803D: the awake flag the monsters' turn shares between them, put back to nothing.
+  // 1000:8068 and 1000:803D: the slot the fight is against, and the awake flag the monsters'
+  // turn shares between them put back to nothing.
+  game.lastFought = slot;
   game.monsters.awake = 0;
   return fight;
 }

@@ -60,6 +60,10 @@ export interface RevGame {
   /** DGROUP B6B4 outside a fight: the level of the last monster met, which the clock reads and
    *  which the kill sets to the dungeon level. */
   lastMonsterLevel: number;
+  /** DGROUP B69C: the slot the last fight was against. 1000:8068, where a monster is met, is the
+   *  only place that writes it, so it goes on naming that monster once the fight is over — which
+   *  the monsters' own turn reads (`monsters.ts`). */
+  lastFought: number;
   /** DGROUP B524: 0 for the turning arrows the game starts in, 1 for the compass arrows of the
    *  flat map. `revArrowMode` in `keys.ts` is where the test the game makes on it is read. */
   arrowMode: number;
@@ -203,7 +207,8 @@ export function revWalker(game: RevGame): RevWalker {
     generation: pc.generation,
     weight: pc.weight,
     invisible: revValue(pc, REV_VALUE.invisibility),
-    fighting: game.fight?.slot ?? 0,
+    fighting: game.fight === null ? 0 : 1,
+    fought: game.lastFought,
     lastMonsterLevel: game.lastMonsterLevel,
   };
 }
@@ -222,6 +227,7 @@ export function newRevGame(
     monsters: new RevMonsters(),
     memory,
     lastMonsterLevel: 0,
+    lastFought: 0,
     arrowMode: 0,
     ringsHeldBack: false,
     steps: 1,

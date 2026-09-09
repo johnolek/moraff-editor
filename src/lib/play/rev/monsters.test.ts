@@ -30,7 +30,7 @@ function alone(slot: number, column: number, row: number): RevMonsters {
 
 function walker(fields: Partial<RevWalker> = {}): RevWalker {
   return {
-    column: 10, row: 10, facing: 1, level: 1, generation: 1, weight: 150, invisible: 0, fighting: 0,
+    column: 10, row: 10, facing: 1, level: 1, generation: 1, weight: 150, invisible: 0, fighting: 0, fought: 0,
     lastMonsterLevel: 0, ...fields,
   };
 }
@@ -106,6 +106,16 @@ describe('a monster acting', () => {
     expect(monsters.squareOf(1)).toEqual(before);
   });
 
+  it('acts anyway for the slot the last fight was against, long after that fight', () => {
+    const remembered = alone(3, 13, 7);
+    remembered.act(3, walker({ weight: 0, fought: 3 }), cycling(699, 20, 0));
+    expect(remembered.heading).toBe(1);
+
+    const forgotten = alone(3, 13, 7);
+    forgotten.act(3, walker({ weight: 0, fought: 0 }), cycling(699, 20, 0));
+    expect(forgotten.heading).toBe(0);
+  });
+
   it('rolls the wander against the last monster met, not the one moving', () => {
     // The notice roll comes first and has to pass; every draw after it is the top of its range.
     const ranges: number[] = [];
@@ -145,7 +155,7 @@ describe('a monster acting', () => {
     monsters.stock(1, highest);
     monsters.positions[1] = 32 * 9 + 10;
     monsters.stock(1, highest);
-    monsters.act(1, walker({ fighting: 1 }), highest);
+    monsters.act(1, walker({ fighting: 1, fought: 1 }), highest);
     expect(monsters.squareOf(1)).toEqual({ slot: 1, column: 10, row: 10 });
     expect(monsters.slotOn(10, 10)).toBe(1);
   });
