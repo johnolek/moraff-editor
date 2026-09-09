@@ -28,8 +28,7 @@ tab, the map canvas, the screen renderer and the roster.
   Dungeons of the Unforgiven's; **`memory.ts`** is the little this game does differently with it,
   which is that a death and the gate throw the maps away.
 * **`record.ts`** — `load_player` and `save_player` over the whole 2,344-byte record.
-* **`screens.ts`** — where the message box goes, and `mwNotBuiltYet`. **`boxes.ts`** is the rest
-  of it: showing the several boxes a ported function printed in one go one after another.
+* **`screens.ts`** — where the message box goes.
 * **`replay.ts`** — how a ported function that stops for a menu is run at all.
 * **`menus.ts`** — the menus `movecontrol` and the spells build themselves.
 * **`advice.ts`** — the little mouse: eight pieces of advice and fourteen lessons.
@@ -201,7 +200,7 @@ DOS they survive quitting. A browser has no such file, so they last as long as t
 
 Nothing. Every key movecontrol dispatches on is answered, and so is the gate on top of the town,
 which is the one place the game leaves the dungeon behind: it asks which dungeon to walk out
-into rather than drawing the overworld. `mwNotBuiltYet` in `screens.ts` has no callers left.
+into rather than drawing the overworld.
 
 X is a screen of its own: it clears the display, fills it with the whole floor at seven pixels a
 square and prints the way to the floor's quest boss beside it, which is the branch a screen wider

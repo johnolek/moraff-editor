@@ -136,11 +136,3 @@ function inTheBattleSpellsPanel(line: ScreenLine): boolean {
 export function screenTakenOver(drawn: ScreenLine[]): ScreenLine[] {
   return drawn.filter((line) => !onMessageBox(line) && !inTheBattleSpellsPanel(line));
 }
-
-/**
- * A key movecontrol reads that this port does not run yet: the message box says what the game
- * would have done, so the key is never silently nothing.
- */
-export function notBuiltYet(game: Game, what: string): void {
-  game.say(`NOT BUILT YET: ${what}`);
-}
