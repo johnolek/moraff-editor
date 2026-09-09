@@ -338,12 +338,14 @@ function castTempleSpell(game: RevGame, spell: number): string {
     return 'You feel perfect.';
   }
   if (spell === 3) {
-    // 1000:271E and 2763: nothing to cure and the words are the only thing the money buys.
+    // 1000:271E: the money is gone by here, so a character with nothing to cure has bought the
+    // sentence alone.
     if (revValue(pc, REV_VALUE.disease) === 0) return NO_DIFFERENCE;
     setRevValue(pc, REV_VALUE.disease, 0);
     return "You don't feel sick anymore.";
   }
   if (spell === 4) {
+    // 1000:2763, which is the same again for the poison.
     if (revValue(pc, POISONED_VALUE) === 0) return NO_DIFFERENCE;
     setRevValue(pc, POISONED_VALUE, 0);
     return 'The poison is gone.';
