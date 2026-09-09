@@ -536,11 +536,11 @@ Four functions are all a tab asks of it: `panelVisible(mode)`, `monstersDrawn(mo
 `mapDrawn(mode, memory)`, which hands `FloorCanvas` the discovered map or nothing, and
 `sidePicturesVisible(display)`.
 
-The picture of the monster in front of the character and the swatch of the floor's wall texture
-stand beside the map, where nothing else draws them. With the game's own screen on the stage the
-views draw both already, so every mode leaves them off until the map is chosen. Moraff's
-World's picture is the game's own, with the values it prints over it; this game's is an addition,
-and is kept because it was asked for.
+The swatch of the floor's wall texture stands beside the map, where nothing else draws it. With
+the game's own screen on the stage the views draw it on every wall already, so every mode
+leaves it off until the map is chosen. The monster in front of the character is the map's own
+heads-up display's (`MapHud.svelte`), centred at the top of the map, since the map is the
+site's view and the game's screen is the game's (John, 2026-09-09).
 
 The mode belongs to the tab, and each session carries the one it is being played in as
 `session.mode`, so that anything keeping a record of a run can say which mode it was played in.
