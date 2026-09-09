@@ -1,6 +1,8 @@
 import type { RevMagicDesk } from './desk';
 import type { RevSwing } from './fight';
 import { REV_TWO_SECONDS } from './held';
+import { revClearScreen, revDrawTheDungeonAgain, revHitAnyKey } from './screens';
+import type { RevTownDesk } from './town';
 import { revKillMonster } from './kill';
 import {
   REV_MAGIC,
@@ -149,19 +151,19 @@ function scrollOfSeeing(game: RevGame): void {
 }
 
 /** 1000:1797: `A Scroll of Healing' puts the hit points back to the maximum. */
-function scrollOfHealing(game: RevGame, desk: RevMagicDesk): void {
+async function scrollOfHealing(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const pc = game.pc;
   pc.hp = pc.maxHp;
   revSpendItem(pc, 3);
-  desk.stats();
+  await desk.stats();
 }
 
 /** 1000:17B4: `A Spell Point Scroll' is worth ten spell points. */
-function spellPointScroll(game: RevGame, desk: RevMagicDesk): void {
+async function spellPointScroll(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const pc = game.pc;
   pc.spellPoints += 10;
   revSpendItem(pc, 4);
-  desk.stats();
+  await desk.stats();
 }
 
 /** 1000:17D6's own numbers: what the bag holds, what a pound of treasure weighs, and the weight
@@ -210,7 +212,7 @@ function floorSlosher(game: RevGame, desk: RevMagicDesk): void {
 /** One of the six on a menu, with the address of the arm of the `ON ... GOTO` it is. */
 interface RevItem {
   c: string;
-  use(game: RevGame, desk: RevMagicDesk): void;
+  use(game: RevGame, desk: RevMagicDesk): void | Promise<void>;
 }
 
 /** 1000:16EA's six: what the I key does outside a fight. */
@@ -293,14 +295,14 @@ export const REV_BATTLE_ITEMS: RevItem[] = [
 export async function revUseAnItem(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const choice = await revItemMenu(game, desk, 'prep', false);
   if (choice === 0) return;
-  REV_PREP_ITEMS[choice - 1].use(game, desk);
+  await REV_PREP_ITEMS[choice - 1].use(game, desk);
 }
 
 /** 1000:95BA: the I key at the fight prompt. */
 export async function revUseAnItemInAFight(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const choice = await revItemMenu(game, desk, 'battle', true);
   if (choice === 0) return;
-  REV_BATTLE_ITEMS[choice - 1].use(game, desk);
+  await REV_BATTLE_ITEMS[choice - 1].use(game, desk);
 }
 
 /** 1000:7C5A and 1000:7AAA: what the pill and wand menus ask. */
@@ -368,7 +370,7 @@ export async function revUseAWand(game: RevGame, desk: RevMagicDesk): Promise<nu
   revSpendWandCharge(pc, colour);
   // 1000:7BC9: the ninth wand heals in full, and does it before the five that have a routine.
   if (colour === REV_WAND_COLOURS) pc.hp = pc.maxHp;
-  if (colour <= 5) REV_WANDS[colour - 1].use(game, desk);
+  if (colour <= 5) await REV_WANDS[colour - 1].use(game, desk);
   return colour;
 }
 
@@ -440,7 +442,22 @@ export async function revUseAWandInTheDungeon(game: RevGame, desk: RevMagicDesk)
 }
 
 /**
- * 1000:3B16: the M key, which lists every magic thing the character owns.
+ * 1000:3B16: the M key, which takes the whole screen for the list.
+ *
+ * The screen is cleared, the list is printed from row 1 down, the game waits for a key
+ * (1000:3D70) and then empties the keyboard, clears the screen and draws the dungeon again
+ * (1000:3D73 to 3D79).
+ */
+export async function revShowMagicItems(game: RevGame, desk: RevTownDesk): Promise<void> {
+  revClearScreen(game);
+  game.say(...revMagicItemsOwned(game));
+  await revHitAnyKey(game, desk);
+  game.flushKeys();
+  revDrawTheDungeonAgain(game);
+}
+
+/**
+ * 1000:3B1C onwards: every magic thing the character owns, a line each.
  *
  * It reads the whole of the second array rather than the nine items `F2.COM` names — the four
  * lines past the end of that table print with a blank where the name goes — and the pills are

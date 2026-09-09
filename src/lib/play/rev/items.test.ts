@@ -14,6 +14,7 @@ import {
   revUseAWand,
   revUseAWandInAFight,
   revUseAWandInTheDungeon,
+  revShowMagicItems,
   revUseAnItem,
   revWearOffPotions,
 } from './items';
@@ -299,6 +300,29 @@ describe('the list of magic the M key puts up', () => {
     expect(lines).toContain(' TELEPORT SCROLLS: 4 ');
     expect(lines).toContain(' 6 BLUE WAND CHARGES');
     expect(lines.filter((line) => line.endsWith(' PILLS'))).toHaveLength(6);
+  });
+});
+
+describe('the magic items screen', () => {
+  it('takes the screen over, waits for a key and gives it back', async () => {
+    const pc = revCharacter();
+    setRevValue(pc, REV_MAGIC.ringsOfHealth, 2);
+    setRevValue(pc, REV_WORN.ringsOfHealth, 16);
+    const { game } = revTestGame(pc);
+    let onTheScreen: string[] = [];
+    await revShowMagicItems(game, {
+      key: async () => {
+        onTheScreen = game.kept.runs().map((run) => run.text);
+        return ' '.charCodeAt(0);
+      },
+      number: async () => null,
+    });
+    // 1000:3B19: the list is on a cleared screen from row 1 down, with the wait under it.
+    expect(onTheScreen[0]).toBe('YOU HAVE THE FOLLOWING MAGIC ITEMS:');
+    expect(onTheScreen).toContain('Hit any key');
+    // 1000:3D79.
+    expect(game.cleared).toBeNull();
+    expect(game.kept.runs()).toEqual([]);
   });
 });
 
