@@ -11,7 +11,7 @@ import {
   type Milestone,
   type MilestoneKind,
   type RunGame,
-  type RunLog,
+  type RunSession,
 } from './run';
 
 /**
@@ -82,7 +82,7 @@ export interface RunVerdict {
  * engine whose commit ends in `-dirty` gets a note of its own even where the two strings are the
  * same, since neither of them names the code it was built from.
  */
-export async function verifyRun(log: RunLog): Promise<RunVerdict> {
+export async function verifyRun(log: RunSession): Promise<RunVerdict> {
   const verdict: RunVerdict = {
     status: 'unverifiable',
     reason: null,
@@ -152,7 +152,7 @@ export function whatToSayAboutTheEngine(logEngine: string, buildEngine: string):
  * The milestones are compared one by one and in order, since a run is a sequence rather than a
  * bag: reaching the same things in another order is another run.
  */
-function firstMismatch(log: RunLog, replayed: RunTotals): string | null {
+function firstMismatch(log: RunSession, replayed: RunTotals): string | null {
   if (replayed.actions !== log.actions) {
     return `The replay spent ${actionWords(replayed.actions)} and the log claims ${actionWords(log.actions)}.`;
   }
@@ -211,7 +211,7 @@ async function recordHash(record: Uint8Array): Promise<string> {
  * A run log out of the text of a file, or null when the text is not one this build reads: not
  * JSON, not the shape of a log, a log of another version, or a game this build has no engine for.
  */
-export function readRunLog(text: string): RunLog | null {
+export function readRunLog(text: string): RunSession | null {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
@@ -221,7 +221,7 @@ export function readRunLog(text: string): RunLog | null {
   return isRunLog(parsed) ? parsed : null;
 }
 
-function isRunLog(value: unknown): value is RunLog {
+function isRunLog(value: unknown): value is RunSession {
   if (typeof value !== 'object' || value === null) return false;
   const log = value as Record<string, unknown>;
   return (

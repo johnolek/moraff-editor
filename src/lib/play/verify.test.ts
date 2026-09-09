@@ -10,7 +10,7 @@ import { MW_KEY, mwTurn } from './mw/keys';
 import { runRevDungeon, startRevGame } from './rev/engine';
 import { revCharacterFile, revRecord } from './rev/engine.test';
 import { REV_KEY } from './rev/keys';
-import { ENGINE_COMMIT, RunRecorder, type RunLog } from './run';
+import { ENGINE_COMMIT, RunRecorder, type RunSession } from './run';
 import { readRunLog, verifyRun, whatToSayAboutTheEngine } from './verify';
 
 /**
@@ -20,7 +20,7 @@ import { readRunLog, verifyRun, whatToSayAboutTheEngine } from './verify';
  * (`tunnel.ts`), and the Enters answer the boxes that step and that swing put up. The same keys
  * always make the same run, which is the whole point of a log.
  */
-async function unforgivenRun(): Promise<RunLog> {
+async function unforgivenRun(): Promise<RunSession> {
   const file = characterFile({ level: 0, dir: 0, ...teleporterSquare(), lev: 20, str: 60 });
   const run = new RunRecorder({
     game: 'unforgiven',
@@ -47,7 +47,7 @@ async function unforgivenRun(): Promise<RunLog> {
 
 /** The same in Moraff's World: four steps around a dungeon floor, a turn where the character
  *  stands, a moment waited and a swing at nothing. */
-async function moraffsWorldRun(): Promise<RunLog> {
+async function moraffsWorldRun(): Promise<RunSession> {
   const start = findMwSquare(
     3,
     (square, x, y) => square.n === 3 && square.s === 3 && square.w === 3 && x > 5 && y > 5 && square.ladder === 0,
@@ -212,7 +212,7 @@ describe('verifying a run', () => {
  * below, and two ticks of the clock the monsters move on — which is the thing about this game a
  * log has to hold that the other two do not.
  */
-async function moraffsRevengeRun(): Promise<RunLog> {
+async function moraffsRevengeRun(): Promise<RunSession> {
   const file = revCharacterFile(revRecord({ 23: 15, 24: 5 }));
   const run = new RunRecorder({
     game: 'revenge',

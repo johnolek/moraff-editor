@@ -220,8 +220,8 @@ export function milestoneNote(milestone: Milestone, clock: string): string {
   return `After ${actionWords(milestone.actions)} and ${clock}, ${where}.`;
 }
 
-/** One game, played, as it is written down and handed about. */
-export interface RunLog {
+/** One sitting at a game, played, as it is written down and handed about. */
+export interface RunSession {
   version: number;
   /** The commit of the engine the run was played on. */
   engine: string;
@@ -431,7 +431,7 @@ export class RunRecorder {
     return { actions: this.actions, milestones: this.milestones.map((milestone) => ({ ...milestone })) };
   }
 
-  log(): RunLog {
+  log(): RunSession {
     const summary = this.summary();
     return {
       version: RUN_LOG_VERSION,
@@ -475,7 +475,7 @@ export interface RunReplay {
  * that does any of those three has to know which games there are.
  */
 export interface RunGameEngine {
-  replay(log: RunLog, run: RunRecorder): Promise<RunReplay>;
+  replay(recorded: RunSession, run: RunRecorder): Promise<RunReplay>;
   /** "12 seconds" in Dungeons of the Unforgiven, "12 moves" in Moraff's World. */
   clockWords(time: number): string;
   /** The game's own name for one of its modules or dungeons. */
@@ -483,30 +483,30 @@ export interface RunGameEngine {
 }
 
 /**
- * Play a run log through the engine again and hand back where it ended.
+ * Play a run session through the engine again and hand back where it ended.
  *
  * This is the check MORF-145 is for: a claimed ending is believed because the same engine, given
  * the same record, the same seed and the same keys, arrives at the same place. It runs under Node
  * as well as in a browser, since nothing here draws.
  *
- * The engine it runs is this build's. A log whose `engine` is not {@link ENGINE_COMMIT} was made
+ * The engine it runs is this build's. A session whose `engine` is not {@link ENGINE_COMMIT} was made
  * by another one and its ending is only as good as the two engines agreeing; the caller is what
  * compares them.
  */
-export async function replayRun(log: RunLog): Promise<RunReplay> {
-  const record = bytesFromBase64(log.record);
+export async function replayRun(recorded: RunSession): Promise<RunReplay> {
+  const record = bytesFromBase64(recorded.record);
   const run = new RunRecorder({
-    game: log.game,
-    name: log.name,
+    game: recorded.game,
+    name: recorded.name,
     record,
-    seed: log.seed,
-    startedAt: log.startedAt,
-    mode: log.mode,
-    leaderboard: log.leaderboard,
-    sound: log.sound,
+    seed: recorded.seed,
+    startedAt: recorded.startedAt,
+    mode: recorded.mode,
+    leaderboard: recorded.leaderboard,
+    sound: recorded.sound,
     replaying: true,
   });
-  return RUN_GAMES[log.game].replay(log, run);
+  return RUN_GAMES[recorded.game].replay(recorded, run);
 }
 
 /** Let the loop take what it has been given and come back to waiting for the next key. */
@@ -525,7 +525,7 @@ function stoppedReplay(session: PlayLoopSession): void {
   if (session.stopped !== null) throw new Error(session.stopped);
 }
 
-async function replayUnforgiven(log: RunLog, run: RunRecorder): Promise<RunReplay> {
+async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise<RunReplay> {
   const file: CharacterFile = {
     bytes: run.record.slice(),
     write(bytes) {
@@ -536,7 +536,7 @@ async function replayUnforgiven(log: RunLog, run: RunRecorder): Promise<RunRepla
   const session = startGame(file, run.rng, run);
   void runPlayLoop(session, runMoveControl(session));
   await loopRuns();
-  for (const input of log.inputs) {
+  for (const input of recorded.inputs) {
     if (session.over) break;
     session.press(input);
     await loopRuns();
@@ -558,7 +558,7 @@ async function replayUnforgiven(log: RunLog, run: RunRecorder): Promise<RunRepla
   };
 }
 
-async function replayMoraffsWorld(log: RunLog, run: RunRecorder): Promise<RunReplay> {
+async function replayMoraffsWorld(recorded: RunSession, run: RunRecorder): Promise<RunReplay> {
   const file: MwCharacterFile = {
     bytes: run.record.slice(),
     write(bytes) {
@@ -569,7 +569,7 @@ async function replayMoraffsWorld(log: RunLog, run: RunRecorder): Promise<RunRep
   const session = startMwGame(file, run.rng, run);
   void runPlayLoop(session, runMwMoveControl(session));
   await loopRuns();
-  for (const input of log.inputs) {
+  for (const input of recorded.inputs) {
     if (session.over) break;
     const dir = turnedTo(input);
     if (dir === -1) session.press(input);
@@ -599,19 +599,19 @@ async function replayMoraffsWorld(log: RunLog, run: RunRecorder): Promise<RunRep
  * `session.tick()` runs the passes of the poll it stands for, drawing the same numbers from the
  * same generator, which is what makes a run that nobody was sitting still through replayable.
  */
-async function replayMoraffsRevenge(log: RunLog, run: RunRecorder): Promise<RunReplay> {
+async function replayMoraffsRevenge(recorded: RunSession, run: RunRecorder): Promise<RunReplay> {
   const file: RevCharacterFile = {
     bytes: run.record.slice(),
     write(bytes) {
       this.bytes = bytes;
     },
     died() {},
-    name: log.name,
+    name: recorded.name,
   };
   const session = startRevGame(file, run.rng, run, run.sound ?? true);
   void runPlayLoop(session, runRevDungeon(session));
   await loopRuns();
-  for (const input of log.inputs) {
+  for (const input of recorded.inputs) {
     if (session.over) break;
     if (input === REV_CLOCK_TICK) session.tick();
     else session.press(input);
