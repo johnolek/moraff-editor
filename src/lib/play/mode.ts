@@ -199,3 +199,39 @@ export function zoomMapMonsters(mode: PlayMode, sight: { monsters: StockedMonste
 export function mapDrawn(mode: PlayMode, memory: { discovered(): DiscoveredMap }): DiscoveredMap | null {
   return mode === 'faithful' ? memory.discovered() : null;
 }
+
+/** Where the choice is kept, one key per game, beside the mode and the display. */
+const REDRAW_SUFFIX = '.redraw';
+
+/** A screen that appears all at once, which is what a game shows until the slider is moved. */
+export const INSTANT_REDRAW_MS = 0;
+
+/** The slowest a screen can be made to appear: two seconds from the top row to the bottom. */
+export const SLOWEST_REDRAW_MS = 2000;
+
+/** What one notch of the slider is worth. */
+export const REDRAW_STEP_MS = 100;
+
+/**
+ * How long a new screen takes to appear, revealed row by row from the top down.
+ *
+ * A machine slow enough to watch drew a screen a row at a time as the processor reached it, and
+ * this is the tab doing the same on purpose. Nothing of the game is behind it: the frame is
+ * worked out and finished before any of it is shown, so the wipe only decides when the pixels
+ * reach the canvas. The game, the monsters' clock and the run log run exactly as they do with it
+ * at Instant.
+ */
+export function readPlayRedraw(game: PortedGameId): number {
+  const stored = Number(readStored(PREFIX + game + REDRAW_SUFFIX));
+  if (!Number.isFinite(stored) || stored <= 0) return INSTANT_REDRAW_MS;
+  return Math.min(stored, SLOWEST_REDRAW_MS);
+}
+
+export function writePlayRedraw(game: PortedGameId, ms: number): void {
+  writeStored(PREFIX + game + REDRAW_SUFFIX, String(ms));
+}
+
+/** What the slider says it is set to, which is a whole number of tenths of a second. */
+export function redrawWords(ms: number): string {
+  return ms <= 0 ? 'Instant' : `${(ms / 1000).toFixed(1)} s`;
+}

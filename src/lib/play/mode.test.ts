@@ -10,13 +10,18 @@ import {
   panelVisible,
   PLAY_DISPLAYS,
   PLAY_MODES,
+  INSTANT_REDRAW_MS,
   readPlayColourblind,
   readPlayDisplay,
   readPlayMode,
+  readPlayRedraw,
+  redrawWords,
+  SLOWEST_REDRAW_MS,
   sidePicturesVisible,
   writePlayColourblind,
   writePlayDisplay,
   writePlayMode,
+  writePlayRedraw,
   zoomMapMonsters,
 } from './mode';
 
@@ -211,5 +216,46 @@ describe('the colourblindness simulation', () => {
   it('points the stage at the filter only while it is on', () => {
     expect(colourblindFilter(true)).toBe(`url(#${COLOURBLIND_FILTER_ID})`);
     expect(colourblindFilter(false)).toBe(null);
+  });
+});
+
+describe('how long a screen takes to appear', () => {
+  it('is instant until the slider is moved', () => {
+    useStorage(fakeStorage());
+    expect(INSTANT_REDRAW_MS).toBe(0);
+    expect(readPlayRedraw('unforgiven')).toBe(0);
+  });
+
+  it('remembers the choice for one game without touching the other', () => {
+    useStorage(fakeStorage());
+    writePlayRedraw('unforgiven', 600);
+    expect(readPlayRedraw('unforgiven')).toBe(600);
+    expect(readPlayRedraw('moraffsWorld')).toBe(0);
+  });
+
+  it('takes nothing slower than the slowest the slider goes', () => {
+    useStorage(fakeStorage());
+    writePlayRedraw('revenge', SLOWEST_REDRAW_MS + 5000);
+    expect(readPlayRedraw('revenge')).toBe(SLOWEST_REDRAW_MS);
+  });
+
+  it('reads a stored value that is not a number as instant', () => {
+    const storage = fakeStorage();
+    storage.setItem('moraff-tools.play.revenge.redraw', 'slowly');
+    useStorage(storage);
+    expect(readPlayRedraw('revenge')).toBe(0);
+  });
+
+  it('is instant where there is nowhere to remember anything', () => {
+    useStorage(undefined);
+    writePlayRedraw('moraffsWorld', 900);
+    expect(readPlayRedraw('moraffsWorld')).toBe(0);
+  });
+
+  it('says what the slider is set to', () => {
+    expect(redrawWords(0)).toBe('Instant');
+    expect(redrawWords(100)).toBe('0.1 s');
+    expect(redrawWords(1500)).toBe('1.5 s');
+    expect(redrawWords(SLOWEST_REDRAW_MS)).toBe('2.0 s');
   });
 });
