@@ -540,7 +540,7 @@ describe('useMagicItem', () => {
     await useMagicItem(game);
     expect(game.pc.level).toBe(6);
     expect(game.pc.slosher).toBe(1);
-    expect(game.events).toEqual([{ kind: 'levelChanged', from: 5, to: 6 }]);
+    expect(game.events).toEqual([{ kind: 'levelChanged', from: 5, to: 6 }, { kind: 'itemUsed' }]);
   });
 
   it('refuses to slosh past two thirds of the way down the module', async () => {
@@ -597,7 +597,7 @@ describe('useMagicItem', () => {
     await useMagicItem(game);
     expect(game.pc.teleportStones).toBe(0);
     expect(game.pc.level).toBe(0);
-    expect(game.events).toEqual([{ kind: 'levelChanged', from: 40, to: 0 }]);
+    expect(game.events).toEqual([{ kind: 'levelChanged', from: 40, to: 0 }, { kind: 'itemUsed' }]);
     expect(game.engaged).toBe(-1);
   });
 

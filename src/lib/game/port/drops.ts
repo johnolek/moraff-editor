@@ -586,7 +586,10 @@ export async function loseItem(game: Game): Promise<void> {
     if (choice === 1) {
       game.say("OWE! IT JUST WON'T COME OFF!", 'HIT ANY KEY...'); // DS:180f 0c5a
     } else {
-      if (pc.armorOwned[choice - 1] > 0) pc.armorOwned[choice - 1] -= 1;
+      if (pc.armorOwned[choice - 1] > 0) {
+        pc.armorOwned[choice - 1] -= 1;
+        game.events.push({ kind: 'dropped' });
+      }
       if (pc.armor === choice - 1 && pc.armorOwned[choice - 1] === 0) pc.armor = 0;
     }
   }
@@ -596,15 +599,20 @@ export async function loseItem(game: Game): Promise<void> {
     if (choice === 1) {
       game.say("OWE! IT JUST WON'T COME OFF!", 'HIT ANY KEY...'); // DS:180f 0c5a
     } else {
-      if (pc.weaponsOwned[choice - 1] > 0) pc.weaponsOwned[choice - 1] -= 1;
+      if (pc.weaponsOwned[choice - 1] > 0) {
+        pc.weaponsOwned[choice - 1] -= 1;
+        game.events.push({ kind: 'dropped' });
+      }
       if (pc.weapon === choice - 1 && pc.weaponsOwned[choice - 1] === 0) pc.weapon = 0;
     }
   }
   if (kind === 0x33) {
     showHint(game, 87);
     const choice = await game.choice(THREE_WAYS);
-    if (choice === 0x31) pc.money = 0;
-    else if (choice === 0x33) showHint(game, 88);
+    if (choice === 0x31) {
+      if (pc.money !== 0) game.events.push({ kind: 'dropped' });
+      pc.money = 0;
+    } else if (choice === 0x33) showHint(game, 88);
   }
   computeWeight(game);
 }
@@ -625,6 +633,10 @@ export async function loseItem(game: Game): Promise<void> {
 export async function useMagicItem(game: Game): Promise<void> {
   const pc = game.pc;
   let notCarried = false;
+  // Three of the six lines can be picked and still leave everything as it was: the slosher too
+  // deep to slip through, the grenade a monster catches, and the joke behind becoming God. This
+  // is what says one of the six was really spent, which is what a run counts.
+  let used = false;
   showHint(game, 23);
   const choice = (await game.choice(SIX_ITEMS)) - 0x30;
   if (choice === 1) {
@@ -640,6 +652,7 @@ export async function useMagicItem(game: Game): Promise<void> {
         pc.y = game.rng.random(game.rows - 5) + 2;
       }
       game.events.push({ kind: 'levelChanged', from, to: pc.level });
+      used = true;
       game.recenterMap = true;
     } else {
       game.say("DOESN'T WORK THIS DEEP!", '', 'HIT ANY KEY...'); // DS:19c8 06f0 0c5a
@@ -652,6 +665,7 @@ export async function useMagicItem(game: Game): Promise<void> {
       game.say('YOU FEEL GREAT! HIT A KEY...'); // DS:1a15
       pc.hp = pc.maxHp;
       pc.healingPotions -= 1;
+      used = true;
     }
   }
   if (choice === 3) showHint(game, 24);
@@ -660,6 +674,7 @@ export async function useMagicItem(game: Game): Promise<void> {
       notCarried = true;
     } else {
       pc.seeingStones -= 1;
+      used = true;
       // Every square of the floor that is not rock is marked known. The two loops stop one
       // short on each axis, `<` where the bounds are the last column and row rather than the
       // count of them, and lose nothing by it: column 79 is rock in every module and floor, and
@@ -678,6 +693,7 @@ export async function useMagicItem(game: Game): Promise<void> {
       notCarried = true;
     } else {
       pc.teleportStones -= 1;
+      used = true;
       const from = pc.level;
       pc.level = 0;
       game.events.push({ kind: 'levelChanged', from, to: 0 });
@@ -707,6 +723,7 @@ export async function useMagicItem(game: Game): Promise<void> {
         showHint(game, 84);
       } else {
         pc.grenades -= 1;
+        used = true;
         game.monsters[game.engaged].hp = -100;
         // DS:1a6b 1a85 06f0 0c5a
         game.say('A MASSIVE EXPLOSION KILLS', '  THE MONSTER INSTANTLY.', '', 'HIT ANY KEY...');
@@ -716,4 +733,5 @@ export async function useMagicItem(game: Game): Promise<void> {
     }
   }
   if (notCarried) showHint(game, 85);
+  if (used) game.events.push({ kind: 'itemUsed' });
 }

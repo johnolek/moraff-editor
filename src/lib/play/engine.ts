@@ -770,6 +770,7 @@ function waitAMoment(turn: Turn): void {
   leaveSquare(turn.game);
   turn.game.redrawView = true;
   arriveSquare(turn.game);
+  turn.game.events.push({ kind: 'waited' });
 }
 
 /**

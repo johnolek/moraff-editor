@@ -73,7 +73,7 @@ export async function resolveStep(turn: Turn): Promise<void> {
   if (step.dx !== 0 || step.dy !== 0) await randomEventsTick(turn);
   const side = sideStepped(turn);
   if (side === MODULE_TELEPORTER) {
-    await changeModule(turn);
+    if (await changeModule(turn)) game.events.push({ kind: 'stepped' });
     return;
   }
   if (side === 0) {
@@ -110,6 +110,10 @@ export async function resolveStep(turn: Turn): Promise<void> {
       game.monsterTimers[game.engaged] = game.rng.random(pc.dex + 20);
     }
   }
+  // Each of the four branches below refuses a step off the edge of the floor, so what says the
+  // step happened -- and with it the moment arriveSquare spends -- is the character being
+  // somewhere else afterwards.
+  const from = { x: pc.x, y: pc.y };
   if (step.dy < 0 && pc.y > 0) {
     leaveSquare(game);
     pc.y -= 1;
@@ -138,6 +142,7 @@ export async function resolveStep(turn: Turn): Promise<void> {
     arriveSquare(game);
     if (pc.mapCursorX < 1) game.recenterMap = true;
   }
+  if (pc.x !== from.x || pc.y !== from.y) game.events.push({ kind: 'stepped' });
   if (pc.maxHp < pc.hp) pc.hp = pc.maxHp;
 }
 

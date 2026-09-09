@@ -64,9 +64,13 @@ export async function goUp(turn: Turn): Promise<void> {
   if (turn.ladder < 0) {
     session.enterFloor(game.pc.level + turn.ladder);
     hintOnFloor(game);
+    game.events.push({ kind: 'ladderTaken' });
     return;
   }
   if (turn.building !== 0) {
+    // The building is counted on the way in rather than on the way out, so that what a player is
+    // shown while they are inside one already has it.
+    game.events.push({ kind: 'buildingEntered' });
     await enterBuilding(turn);
     return;
   }
@@ -87,9 +91,10 @@ export async function goDown(turn: Turn): Promise<void> {
     return;
   }
   if (BOTTOM_LEVEL[game.pc.module] < game.pc.level + turn.ladder) {
-    await changeModule(turn);
+    if (await changeModule(turn)) game.events.push({ kind: 'ladderTaken' });
     return;
   }
   session.enterFloor(game.pc.level + turn.ladder);
   hintOnFloor(game);
+  game.events.push({ kind: 'ladderTaken' });
 }

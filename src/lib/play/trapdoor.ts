@@ -84,4 +84,5 @@ export function goThroughTrapDoor(turn: Turn): void {
   game.pc.level = turn.trapdoor;
   hintOnFloor(game);
   session.enterFloor(turn.trapdoor);
+  game.events.push({ kind: 'trapdoorTaken' });
 }

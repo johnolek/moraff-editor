@@ -462,6 +462,7 @@ export function castSpell(
     return { seconds: 0, battleSpellsShown };
   }
   if (!spellEffect(game, type, level, slot)) return { seconds: 0, battleSpellsShown };
+  game.events.push({ kind: 'cast' });
   const shown = viewBattleSpells(game, battleSpellsShown);
   if (source === CAST_SPELLBOOK) pc.sp -= spellCost(level);
   else spellsOwned(pc, source)[spellIndex(type, level, slot)] -= 1;

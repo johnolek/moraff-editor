@@ -65,6 +65,7 @@ export async function drinkAPotion(turn: Turn): Promise<void> {
     return;
   }
   pc.potions[potion.slot] -= 1;
+  game.events.push({ kind: 'itemUsed' });
   pc[potion.raise] += RAISED_BY;
   pc[potion.drop] -= DROPPED_BY;
   showHint(game, potion.hint);

@@ -37,6 +37,7 @@ export function swingAtMonster(turn: Turn): void {
   // was typed while the swing was on the screen.
   turn.session.flushKeys();
   spendAttackTime(game);
+  game.events.push({ kind: 'swung' });
 }
 
 /**

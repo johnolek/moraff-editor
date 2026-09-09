@@ -114,4 +114,5 @@ export async function digHole(turn: Turn): Promise<void> {
   while (game.solid(pc.x, pc.y, landing, pc.module)) relocate(game);
   endBattleSpells(game);
   session.enterFloor(landing);
+  game.events.push({ kind: 'dug' });
 }
