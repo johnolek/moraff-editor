@@ -2,7 +2,7 @@ import { sameBytes } from '../bytes';
 import type { PlayLoopSession } from './loop';
 import type { PlayMode } from './mode';
 import { DEFAULT_PLAY_MODE } from './mode';
-import type { RunRecorder } from './run';
+import type { RunRecorder, RunSession } from './run';
 
 /**
  * The keyboard, the record and the run log the three games are played out of.
@@ -37,6 +37,11 @@ export interface CharacterFile {
   write(bytes: Uint8Array<ArrayBuffer>): void;
   /** The character has died, which the roster marks and never undoes. */
   died(): void;
+  /**
+   * Keep this session as the newest of the character's run. The roster is what has a run to keep
+   * it in; a replay, which plays a session rather than living one, has none.
+   */
+  keepRun?(session: RunSession): void;
 }
 
 /**
@@ -213,11 +218,23 @@ export abstract class KeyedSession<Record> implements PlayLoopSession {
     this.placeEdited(record);
   }
 
-  /** The record back into the character it came from. */
+  /** The record back into the character it came from, with the run as it stands beside it. */
   save(): void {
     const bytes = this.writeRecord();
     this.known = bytes.slice();
     this.file.write(bytes);
+    this.keepRun();
+  }
+
+  /**
+   * Write the run down as it stands.
+   *
+   * It goes wherever the record goes, so that the two never disagree about how far the game got:
+   * the next session of this character's run starts from the record left behind here, and a
+   * replay of the session written here has to arrive at exactly those bytes.
+   */
+  keepRun(): void {
+    if (this.run) this.file.keepRun?.(this.run.log());
   }
 
   /** The character is dead: the roster is told, and nothing more is written. */

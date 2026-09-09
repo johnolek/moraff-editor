@@ -1,5 +1,5 @@
 import type { PortedGameId, RosterEntry } from '../app-state.svelte';
-import { characterDied, replaceCharacterBytes } from '../character/current';
+import { characterDied, replaceCharacterBytes, runSessionPlayed } from '../character/current';
 import type { ZipEntry } from '../zip';
 import {
   runMoveControl,
@@ -24,7 +24,7 @@ import {
   type RevPlayView,
 } from './rev/engine';
 import { revGameKey } from './rev/keys';
-import { RunRecorder, type RunTotals } from './run';
+import { RunRecorder, runTotals, type RunTotals } from './run';
 
 /**
  * What the Play tab needs of the game it is playing.
@@ -100,6 +100,9 @@ export interface PlayGame<Session extends PlaySession<View>, View extends PlayVi
 
 /** The record on the roster, as a game reads and writes it while it is being played. */
 function playedFile(entry: RosterEntry): CharacterFile {
+  // Where this game goes in the character's run: on the end of the sessions it has already been
+  // played in, written again every time the record is.
+  const at = entry.run.length;
   return {
     bytes: entry.bytes,
     write(bytes) {
@@ -107,14 +110,27 @@ function playedFile(entry: RosterEntry): CharacterFile {
       replaceCharacterBytes(bytes);
     },
     died: characterDied,
+    keepRun: (session) => runSessionPlayed(entry, at, session),
   };
 }
 
-/** Every game is a run: a seed of its own, and every key that follows written down beside it.
- *  The board the character is locked to goes in as play begins, since nothing in a game changes
- *  it. */
+/**
+ * Every game is a session of the character's run: a seed of its own, and every key that follows
+ * written down beside it. It goes on counting from what the sessions before it came to, so that
+ * leaving the game and playing on does not start the count again.
+ *
+ * The board the character is locked to goes in as play begins, since nothing in a game changes
+ * it.
+ */
 function recorder(game: PortedGameId, entry: RosterEntry, sound?: boolean): RunRecorder {
-  return new RunRecorder({ game, name: entry.name, record: entry.bytes, sound, leaderboard: entry.leaderboard });
+  return new RunRecorder({
+    game,
+    name: entry.name,
+    record: entry.bytes,
+    sound,
+    leaderboard: entry.leaderboard,
+    before: runTotals(entry.run),
+  });
 }
 
 function startUnforgiven(entry: RosterEntry, sound: boolean): GameSession {

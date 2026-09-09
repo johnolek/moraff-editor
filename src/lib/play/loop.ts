@@ -21,6 +21,8 @@ export interface PlayLoopSession {
   stopped: string | null;
   /** Draw the session again. */
   changed(): void;
+  /** Write the run down as it stands. */
+  keepRun(): void;
 }
 
 /**
@@ -31,10 +33,14 @@ export interface PlayLoopSession {
  * is a bug in the engine and the stack is the only place the line it threw on is written down.
  */
 export function runPlayLoop(session: PlayLoopSession, loop: Promise<void>): Promise<void> {
-  return loop.catch((thrown: unknown) => {
-    console.error('The play loop stopped', thrown);
-    session.stopped = thrown instanceof Error ? thrown.message : String(thrown);
-    session.over = true;
-    session.changed();
-  });
+  return loop
+    .catch((thrown: unknown) => {
+      console.error('The play loop stopped', thrown);
+      session.stopped = thrown instanceof Error ? thrown.message : String(thrown);
+      session.over = true;
+      session.changed();
+    })
+    // A death is the last thing a run has to say and the game writes no record over it, so the
+    // run is written down once more where the loop comes back rather than at the last save.
+    .finally(() => session.keepRun());
 }

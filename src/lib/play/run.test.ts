@@ -4,6 +4,7 @@ import { bundledDungeon } from '../game/dungeon';
 import { loadPlayer, savePlayer } from '../game/port/record';
 import { characterFile, floorSquare, press, settle, teleporterSquare, townSquare } from './battle.test-support';
 import { runMoveControl, startGame, type CharacterFile, type GameSession } from './engine';
+import { runPlayLoop } from './loop';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
 import { mwCharacterFile } from './mw/engine.test';
@@ -176,6 +177,46 @@ describe('the run log', () => {
     session.finish();
 
     expect(run.log().inputs).toEqual([MW_KEY.arrowUp, TURN_INPUTS[2], MW_KEY.viewStats]);
+  });
+});
+
+describe('the run kept beside the record', () => {
+  it('is written again every time the record is, so a tab closed mid-game loses nothing', async () => {
+    const kept: RunSession[] = [];
+    const file: CharacterFile = { ...characterFile(), keepRun: (session) => void kept.push(session) };
+    const run = new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record: file.bytes, seed: 12345 });
+    const session = startGame(file, run.rng, run);
+    void runPlayLoop(session, runMoveControl(session));
+    await settle();
+    if (session.tablet) await press(session, KEY.escape);
+    await press(session, KEY.arrowUp);
+    await press(session, KEY.arrowLeft);
+
+    expect(kept.length).toBeGreaterThanOrEqual(2);
+    expect(kept[kept.length - 1].inputs).toEqual(run.log().inputs);
+    expect(kept[kept.length - 1].actions).toBe(run.log().actions);
+  });
+
+  it('is written once more where the loop comes back, so a death is in it', async () => {
+    const kept: RunSession[] = [];
+    const file: CharacterFile = {
+      ...characterFile({ level: 0, dir: 0, ...townSquare() }),
+      keepRun: (session) => void kept.push(session),
+    };
+    const run = new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record: file.bytes, seed: 12345 });
+    const session = startGame(file, run.rng, run);
+    const loop = runPlayLoop(session, runMoveControl(session));
+    await press(session, KEY.escape);
+    await press(session, KEY.arrowUp);
+    session.game.pc.hp = -1;
+    await press(session, KEY.escape);
+    // FUN_2000_9232 prints two of UH.BIN's messages and waits for a key after each.
+    await press(session, KEY.enter);
+    await press(session, KEY.enter);
+    await loop;
+
+    expect(session.dead).toBe(true);
+    expect(kept[kept.length - 1].milestones.some((milestone) => milestone.kind === 'death')).toBe(true);
   });
 });
 

@@ -3,6 +3,7 @@ import { MORAFFS_REVENGE } from '../editor/games';
 import { isGameId, loadChosenGame, loadLastCharacter, saveChosenGame, saveLastCharacter } from '../game-choice';
 import { recordTab } from '../history';
 import { revCharacterMap } from '../play/rev/memory';
+import type { RunSession } from '../play/run';
 import { tabFor } from '../tabs';
 import { recordName, slotFromFileName } from './record';
 import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, voidLeaderboard, withEntry, withoutEntry } from './roster';
@@ -113,6 +114,18 @@ export function characterDied(): void {
   if (entry) markDead(entry);
   app.characterVersion++;
   remember();
+}
+
+/**
+ * Keep the session being played as the newest of the character's run.
+ *
+ * `at` is where the session belongs in the run: everything before it is left as it is, and the
+ * session written there last time is written over. The roster follows soon after, the same way an
+ * edit in the save editor does, so a burst of keys is one write.
+ */
+export function runSessionPlayed(entry: RosterEntry, at: number, session: RunSession): void {
+  entry.run = [...entry.run.slice(0, at), session];
+  rememberSoon();
 }
 
 /** The editor has swapped in a different set of bytes for the same character. */
