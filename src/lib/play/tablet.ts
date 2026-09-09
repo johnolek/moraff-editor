@@ -46,6 +46,12 @@ const SLAB = { top: 0x122, bottom: 0x398, split: 799 };
  * which is what leaves the bottom half of that screen free for the five monsters.
  */
 export const TABLET_RAISED = -0x122;
+/**
+ * The 3 the section boss's taunt puts in DS:2412 before it asks for the tablet
+ * (`boss_office_message`, exe 3000:6c9d), which leaves the top of the screen free for the boss's
+ * picture and the three lines beside it (`boss-office.ts`).
+ */
+export const TABLET_LOWERED = 0xfa;
 const SLAB_LEFT = { x1: 1, x2: SLAB.split, srcX1: 0, srcX2: 0xd2 };
 const SLAB_RIGHT = { x1: 800, x2: 0x63e, srcX1: 0x28, srcX2: 0xff };
 
@@ -125,6 +131,30 @@ export interface TabletScreen {
 }
 
 /**
+ * The four lines cut into the slab, moved by `offset` with it: the `FUN_4000_069a` pairs of
+ * `FUN_3000_9026` (exe 3000:9026), each of which is given the same offset as the slab.
+ *
+ * A blank line is skipped: `FUN_4000_069a` spreads whatever it is given across the width it is
+ * given, and a line of nothing but the padding spaces has no letters to spread.
+ */
+export function drawTabletLines(
+  frame: Frame,
+  screen: TabletScreen,
+  lines: string[],
+  offset: number,
+): void {
+  lines.slice(0, TABLET_LINES).forEach((line, index) => {
+    if (line.trim() === '') return;
+    const text = line.slice(0, TABLET_WIDTH).padEnd(TABLET_WIDTH);
+    const top = TEXT_TOP + offset + index * TEXT_STEP;
+    const bottom = TEXT_BOTTOM + offset + index * TEXT_STEP;
+    for (const pass of TEXT_PASSES) {
+      drawStrokeLine(frame, screen, 'dotu', text, TEXT_X, top, TEXT_TO, bottom, pass.colour, pass.pen);
+    }
+  });
+}
+
+/**
  * The tablet, over a screen of its own.
  *
  * The original blacks the whole palette before it draws the slab and fades it back up afterwards
@@ -140,13 +170,5 @@ export function drawTablet(
 ): void {
   fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, 0);
   drawTabletSlab(frame, screen, wall, 0, SLAB_TINT);
-  lines.slice(0, TABLET_LINES).forEach((line, index) => {
-    if (line.trim() === '') return;
-    const text = line.slice(0, TABLET_WIDTH).padEnd(TABLET_WIDTH);
-    const top = TEXT_TOP + index * TEXT_STEP;
-    const bottom = TEXT_BOTTOM + index * TEXT_STEP;
-    for (const pass of TEXT_PASSES) {
-      drawStrokeLine(frame, screen, 'dotu', text, TEXT_X, top, TEXT_TO, bottom, pass.colour, pass.pen);
-    }
-  });
+  drawTabletLines(frame, screen, lines, 0);
 }
