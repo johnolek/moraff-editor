@@ -36,7 +36,13 @@
   } from './display';
   import type { PlaqueState } from './engine';
   import { fadedPalette, fadeSteps, FADE_STEP_MS, type Fade } from './fade';
-  import { blankPlaque, cycleGradientBank, drawPlaque } from './plaque';
+  import {
+    blankPlaque,
+    cycleGradientBank,
+    drawPlaque,
+    GRADIENT_STEPS_PER_SECOND,
+    holdsGradientBank,
+  } from './plaque';
   import { BOSS_OFFICE_PANEL, drawBossOffice, type BossOffice } from './boss-office';
   import { drawBuilding, type TownBuilding } from './building';
   import { drawSectionScreen, type SectionScreen } from './section-screen';
@@ -138,8 +144,17 @@
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
   const painter = framePainter(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
   let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
-  /** The screen as it was last painted, for the plaque's crawl and the fades to work from. */
-  let painted = $state.raw<{ frame: Frame; palette: Rgb[] } | null>(null);
+  /** The screen as it was last painted, for the palette crawl and the fades to work from, with
+   *  whether anything on it is drawn out of the gradient bank the crawl turns. */
+  let painted = $state.raw<{ frame: Frame; palette: Rgb[]; crawls: boolean } | null>(null);
+  /**
+   * How far the gradient bank has been turned (`plaque.ts`), which carries across every repaint.
+   *
+   * The original never puts the bank back: it turns while the game waits and stays where it was
+   * left while a key is handled. Counting from zero for each screen instead would snap the walls
+   * and the teleporter faces back to their starting colours on every keypress.
+   */
+  let crawlStep = 0;
   /** How long this screen takes to appear: the player's choice, and nothing at all behind a tab
    *  nobody is looking at, where a wipe would be drawing for no one. */
   const revealed = $derived(visible.showing ? redraw : 0);
@@ -341,16 +356,19 @@
       // copies the two shop tables over the banks the building picture is drawn out of.
       // A fade's first step is drawn here so that nothing of the screen shows at full strength
       // before the animation below has its first frame.
-      // Neither a fade nor the plaque's crawl is revealed a row at a time: both repaint the whole
-      // screen many times a second below, which would undo a wipe as soon as it started.
+      // Neither a fade nor the plaque going up is revealed a row at a time: the fade repaints the
+      // whole screen many times a second below, and a plaque is a corner of the screen changing
+      // rather than a screen arriving. The crawl repaints too, and waits a wipe out instead.
       const animated = fade !== null || plaque === 'showing';
-      painter.reveal(
-        context,
-        frame,
-        fade === null ? palette : fadedPalette(palette, fade, 0),
-        animated ? 0 : revealed,
-      );
-      painted = plaque === 'showing' || fade !== null ? { frame, palette } : null;
+      const crawls = holdsGradientBank(frame);
+      const shown =
+        fade !== null
+          ? fadedPalette(palette, fade, 0)
+          : crawls
+            ? cycleGradientBank(palette, crawlStep)
+            : palette;
+      painter.reveal(context, frame, shown, animated ? 0 : revealed);
+      painted = { frame, palette, crawls };
     };
     // The stone tablet the snake's words are read on (exe 3000:9026), which is a screen of its own:
     // the slab and its four lines and nothing else.
@@ -516,24 +534,39 @@
   });
 
   /**
-   * The plaque's frame crawling: FUN_2000_2a2e (exe 2000:2a2e) turns the palette's gradient bank
-   * once for every poll of the keyboard while it waits, and everything drawn in that bank crawls
-   * with it, the distance shading on the walls as much as the plaque's frame. The port turns it
-   * once a frame the browser draws and repaints the whole screen in the turned palette, which is
-   * what the game's own display shows.
+   * The gradient bank crawling, which is what the game does with every poll of the keyboard:
+   * movecontrol turns it once each time round the loop it waits for a key in (exe 2000:c308),
+   * FUN_2000_2a2e once per poll behind a message box's plaque (exe 2000:2a2e), and FUN_2000_2d93
+   * once per poll while a menu waits for its choice (exe 2000:2d93). The rotation is of the
+   * palette, so everything painted in entries 96 to 255 moves together — a teleporter's face, the
+   * distance shading on the walls, the plaque's own frame — and it stops as soon as a key is
+   * handled, because the game is drawing rather than waiting.
+   *
+   * The port repaints the whole screen in the turned palette, so it only runs where the frame has
+   * a pixel out of the bank on it, and paces the turns off the clock rather than making one per
+   * frame the browser draws. A hidden tab draws no frames, so the crawl stops with it.
    */
   $effect(() => {
     const holding = painted;
     const target = canvas;
-    if (!holding || !target || plaque !== 'showing' || !visible.showing) return;
+    if (!holding?.crawls || !target || fade !== null || !visible.showing) return;
     const context = target.getContext('2d');
     if (!context) return;
-    let steps = 0;
+    let last = performance.now();
     let request = 0;
-    const tick = (): void => {
-      steps += 1;
-      painter.paint(context, holding.frame, cycleGradientBank(holding.palette, steps));
+    const tick = (now: number): void => {
       request = requestAnimationFrame(tick);
+      // A screen still being revealed a row at a time is left to finish: painting the whole of it
+      // here would show the rest of it the moment the wipe started.
+      if (painter.wiping) {
+        last = now;
+        return;
+      }
+      const steps = Math.floor(((now - last) * GRADIENT_STEPS_PER_SECOND) / 1000);
+      if (steps === 0) return;
+      last += (steps * 1000) / GRADIENT_STEPS_PER_SECOND;
+      crawlStep += steps;
+      painter.paint(context, holding.frame, cycleGradientBank(holding.palette, crawlStep));
     };
     request = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(request);

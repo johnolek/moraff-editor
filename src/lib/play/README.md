@@ -206,12 +206,19 @@ game drew them at:
   Those bands are exclusive-ORed into the screen in the palette's gradient bank, and
   `FUN_2000_2a2e` rotates that bank once for every poll of the keyboard, which sets them crawling.
   `session.plaque` says how far along that wait the screen is; the delay is a display timer like
-  the frames are and is kept in `timed.ts` with them. Two departures: the original's rotation is of
-  the palette, so the whole screen's gradient bank crawls with the plaque — the walls' distance
-  shading as much as the frame — and it runs wherever else the game polls the keyboard,
-  `movecontrol`'s own wait included; the port turns the bank for the whole screen while the
-  plaque is up, once a frame the browser draws, so the dungeon shimmers behind every box as it
-  does in the game.
+  the frames are and is kept in `timed.ts` with them.
+* **The crawl**, which is that rotation and is not the plaque's alone. `FUN_4000_3b44` (exe
+  4000:3b44) turns palette entries 96 to 255 by one, and the game makes that turn every time it
+  polls the keyboard: `movecontrol`'s own wait (exe 2000:c308), the plaque's `FUN_2000_2a2e`, and
+  `FUN_2000_2d93` while a menu waits for its choice. Because the rotation is of the palette,
+  everything painted out of the bank moves together — the walls' distance shading, a teleporter's
+  face, the plaque's frame — and it stops the moment a key is handled, because the game is drawing
+  rather than waiting. `Screen.svelte` repaints the whole screen in the turned palette, so it runs
+  only where the painted frame has a pixel out of the bank on it (`holdsGradientBank`, scanned once
+  per paint) and waits out a top-down wipe rather than painting over it. The one departure is the
+  pace: the original's is one turn per pass of a busy loop and so is the machine's, and the port
+  uses `GRADIENT_STEPS_PER_SECOND` in `plaque.ts`, which is also what the X key's flickering square
+  and the module tunnel's 150 turns step at.
 * **A screen fading in or out** — `session.fadeScreen('in' | 'out')` and `fade.ts`, which are
   `FUN_4000_5b91` (exe 4000:5b91) and `FUN_4000_5c25` (exe 4000:5c25): the DAC walked toward the
   palette out of black in 64 steps, or down toward black in 60, with 7 ms between the steps. Two
@@ -325,10 +332,11 @@ Three things about it are decisions rather than arithmetic:
   row is left showing a screen the game had already moved on from.
 * **A frame the game holds is a frame** (`timed.ts`, and `rev/held.ts`), so a message left up for
   two seconds appears the same way everything else does.
-* **Two things are still painted whole.** A fade and the plaque's crawl repaint many times a
-  second of their own accord and would undo a wipe as it started; and a canvas that goes off the
-  page finishes what it was drawing at once, which is the rule the arrow's flash and those two
-  animations already keep.
+* **Two things are still painted whole.** A fade repaints many times a second of its own accord
+  and would undo a wipe as it started; and a canvas that goes off the page finishes what it was
+  drawing at once, which is the rule the arrow's flash and the two animations already keep. The
+  crawl repaints as often and does the opposite, since it runs on nearly every screen of the
+  dungeon: it leaves a wipe alone until the wipe has reached the bottom.
 
 ## A fight
 
