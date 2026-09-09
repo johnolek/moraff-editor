@@ -12,10 +12,17 @@ import type { RevGame } from './state';
  * at all, whenever the character is standing on it.
  */
 
-/** The experience the character would need for another level (1000:0742). It is what the first
- *  line is about, and nothing in the game gains a level from it — only the temple does. */
+/**
+ * The experience another level takes (1000:0742, and the same expression again at 1000:20A0,
+ * where a night at an inn spends it).
+ *
+ * The level is raised by 1.1 twice over, which is easy to miss in a listing. BRUN30's arithmetic
+ * routines put SI and DI back the way they found them before they return (BRUN30 CS:1F6B), so
+ * the second call at 1000:0751 raises the running total by the 1.1 that the call before it left
+ * in DI.
+ */
 export function revExperienceForNextLevel(level: number): number {
-  return 1.2 ** level ** 1.1 * 900 + level ** 2.4 * 180 - 650;
+  return 1.2 ** ((level ** 1.1) ** 1.1) * 900 + level ** 2.4 * 180 - 650;
 }
 
 export function revAdvice(game: RevGame): string[] {
@@ -26,7 +33,8 @@ function revRolledAdvice(game: RevGame): string[] {
   const pc = game.pc;
   const roll = game.rng.random(7) + 1;
   const experience = pc.experience + revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE);
-  if (roll === 1 && experience >= revExperienceForNextLevel(pc.level)) return ['You should stay at an Inn.'];
+  // 1000:0783: the advice wants the experience past the threshold, not level with it.
+  if (roll === 1 && experience > revExperienceForNextLevel(pc.level)) return ['You should stay at an Inn.'];
   if (roll === 2 && 0.25 * pc.maxHp > pc.hp) return ['You could use a cure!'];
   if (roll === 3 && 2 * pc.level + 2 < pc.dungeonLevel) return ["I don't think you'll survive down here."];
   if (roll === 4 && pc.treasure > 0) return ['Go to bank to cash in treasure'];
