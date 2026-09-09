@@ -497,20 +497,24 @@ In the code: [townBuilding](source:ts/revmap.js/townBuilding) and
 [TOWN_BUILDINGS](source:ts/revmap.js/TOWN_BUILDINGS), from the table at `1000:10FD` and the
 dispatch at `1000:132A` (`rev-tools/docs/DUNGEON.md` section 9).
 
-### A building is up a rope, and the game's own map never shows one
+### A building is up a rope, and the map draws it as a letter
 
 Walking onto one of the ten squares tells you there is a rope above and to hit `U` to climb it,
-which is the ordinary go-up key doing something it does nowhere else. Nothing marks the square
-otherwise: the game's automap draws a symbol only where the feature index has a bit set, and not
-one of the ten buildings is in that file. The town on the game's own map is a blank grid with
-ropes you have to walk into to find.
+which is the ordinary go-up key doing something it does nowhere else.
+
+The map marks them, though not the way it marks anything else. Ladders and chutes are drawn only
+where the feature index has the square's bit set, and not one of the ten buildings is in that
+file; the buildings are a pass of their own, with the same ten `IF column = c AND row = r` tests
+the ground floor uses, stamping a 7 by 7 letter on each square you have already walked on. `B` is
+the bank, `T` the temple, `I` an inn, `S` a store and `W` the wizard's guild. The five sprites are
+made at start-up by printing the word `SBTIW` and reading the characters back off the screen.
 
 The map every new character starts with has walked over four of them, and only four — the Flea
 Bag Inn, the bank and one of the three stores, all along row 3, and then the temple at 14, 12,
 where the seeded path stops.
 
 In the code: `rev-tools/docs/DUNGEON.md` section 9, on the rope at `1000:12C6` and the climb at
-`1000:0DBD`.
+`1000:0DBD`, and `rev-tools/docs/MAP-MEMORY.md` on the letters at `1000:C102`.
 
 ### Three inns, and the cheap ones can rob you
 
