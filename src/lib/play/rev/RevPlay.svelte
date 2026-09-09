@@ -264,7 +264,11 @@
     <div class="stage">
       <div class="map" style:filter={colourblindFilter(colourblind)}>
         {#if display === 'screen' && gameScreen}
-          <RevScreenCanvas screen={gameScreen} palette={screenColours.palette} background={screenColours.background} />
+          <RevScreenCanvas
+            screen={gameScreen}
+            palette={screenColours.palette}
+            background={screenColours.background}
+            {redraw} />
         {:else}
         <FloorCanvas
           bind:this={canvas}
