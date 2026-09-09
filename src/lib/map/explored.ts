@@ -32,7 +32,7 @@ const HEADER_BYTES = 4;
 const ROW_BITMAP_BYTES = 16;
 const ROW_BYTES = DUN_COLUMNS / 8;
 
-/** The squares of one floor a file marks as seen, each as y * DUN_COLUMNS + x. */
+/** The squares of one floor a file marks as seen, each as y * EXPLORED_STRIDE + x. */
 export type ExploredSquares = ReadonlySet<number>;
 
 export interface ExploredFloor {

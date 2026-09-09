@@ -106,8 +106,8 @@ const MORAFFS_WORLD_ACTIONS = new Set<number>([
  * All four arrows are here. Which of them steps depends on the movement mode Escape switches, and
  * the log holds the key rather than what it did, so a run played with the turning arrows counts
  * its turns as well as its steps. The five keys of the fight prompt are each a swing; C, I, T, W
- * and A each spend the character's own moment even where this port has not built what they do,
- * so they are counted.
+ * and A each spend the character's own moment, so they are counted — A included, though dropping
+ * the coins it stands for is the one thing behind these keys this port has not built.
  */
 const MORAFFS_REVENGE_ACTIONS = new Set<number>([
   REV_KEY.arrowUp,

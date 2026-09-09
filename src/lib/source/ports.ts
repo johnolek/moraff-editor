@@ -106,7 +106,8 @@ const MORAFFS_WORLD_SOURCES = {
   'src/lib/mw-spells/effects.ts': mwEffectsSource,
 };
 
-/** The Moraff's Revenge files. Its dungeon is all the site has of that game so far. */
+/** The Moraff's Revenge files. Its dungeon generator is the only one of that game's files the
+ *  Source tab shows so far. */
 const MORAFFS_REVENGE_SOURCES = {
   'src/lib/game/revmap.js': revmapSource,
 };

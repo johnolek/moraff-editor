@@ -6,7 +6,8 @@ import type { ScreenLine } from '../../game/port/state';
  * down the left of the screen, and the screens that take the whole display over.
  *
  * Both are drawn in the grid print_text (WORLD.EXE 4000:0b14) works in, 1600 across and 1200
- * down, and both go through `src/lib/roller/screen.ts`, which is the same renderer the character
+ * down. On the game's screen `MwScreen.svelte` paints them into the frame with the views; on the
+ * top-down map they go through `src/lib/roller/screen.ts`, which is the renderer the character
  * roller's screens use.
  */
 
