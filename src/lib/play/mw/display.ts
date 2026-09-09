@@ -53,7 +53,7 @@ const LAST_BOSS = 0x6f;
  *
  * It reads monster slot 0, which is where generate_section puts the quest boss, and says nothing
  * unless that slot still holds one of the eight: a floor with no boss, and one whose boss has been
- * killed and had its slot filled with something else, both get no signpost at all. The axis with
+ * killed and had its slot emptied down to type 0, both get no signpost at all. The axis with
  * further to go wins, and a tie between the two goes to north or south. `../misc.ts` has Dungeons
  * of the Unforgiven's, which is the same function three years earlier.
  */
