@@ -1021,8 +1021,9 @@ export function preparationList(game: MwGame, levelIndex: number, slot: number):
       return false;
     }
     if (slot === 1) return raisePrepWeapon(game, 5) !== 0;
-    // Major Descend: exactly twenty-five floors, never past 75, and refused from floor 66 down —
-    // so it is only castable between floors 1 and 65 anyway.
+    // Major Descend: twenty-five floors down clamped to 75, so a full twenty-five only down to
+    // floor 50. Refused from floor 66 down, and with no refusal for the town, so it is castable
+    // from floor 0 to floor 65.
     if (slot === 2) {
       if (pc.floor > 65) {
         sayNotBelowSixtyFour(game);

@@ -190,7 +190,7 @@ export const MW_SPELL_EFFECTS: MwSpellEffect[] = [
   {
     from: 'spell_effect (2000:d358)',
     effect:
-      'Exactly twenty-five floors down, not the "at least 25" of the help text, and never past floor 75. Refused from floor 66 down, so it is only castable between floors 1 and 65 anyway.',
+      'Twenty-five floors down, not the "at least 25" of the help text, and clamped to floor 75, so it is a full twenty-five only down to floor 50. Refused from floor 66 down; it has no refusal for the town, so it is castable from floor 0 to floor 65.',
   },
   {
     from: 'spell_effect (2000:d358)',

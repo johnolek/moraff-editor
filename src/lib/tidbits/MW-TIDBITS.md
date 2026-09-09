@@ -344,8 +344,8 @@ In the code: [monsters_move](source:c/monsters_move).
 ### Youth halves your age
 
 The help text offers ten years off. What the spell does is halve the age field outright, with a
-floor at about thirty days, and give back nothing of the strength and constitution that ageing
-took.
+floor of 15,744 minutes, which is about eleven days, and give back nothing of the strength and
+constitution that ageing took.
 
 Age is kept as a count of minutes — years times 525,600 — and everything that prints it divides by
 525,600 again, which is why a character who has been played has an age like 37.5 years. Halving it
@@ -358,15 +358,19 @@ In the code: [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS),
 
 ### Ascend and Descend put you anywhere on the floor
 
-All six of the floor-changing spells describe themselves as moving you straight up or straight
+All five of the floor-changing spells describe themselves as moving you straight up or straight
 down, into the open space above or below where you stand. None of them does. Each one rolls
 squares of the destination floor until it finds one that is not rock and drops you there, so a
 Descend is a Relocate with a floor change attached and you can arrive anywhere at all.
 
-The depth limits are not what the messages say either. Descend is refused on floor 124 and deeper;
-Ascend is refused from floor 66 down while the message names the 64th; and Major Descend is twenty
-five floors exactly rather than the "at least 25" it advertises, which with the floor 66 refusal
-means it is only ever castable between floors 1 and 65.
+The depth limits are not what the messages say either. Descend is refused on floor 124 and deeper.
+The three Ascends are refused from floor 66 down while the message names the 64th, and refused in
+the town on top of that.
+
+Major Descend takes the Ascends' refusal and not their town one, so it is the one floor spell you
+can cast standing in the town. Nor is it the "at least 25" it advertises, or even twenty five
+exactly: it adds 25 and then clamps the answer to floor 75. That is a full twenty five floors only
+down to floor 50, fifteen from floor 60, and ten from floor 65, which is as deep as it will go.
 
 In the code: [spell_effect](source:c/spell_effect) and
 [MW_SPELL_EFFECTS](source:ts/effects.ts/MW_SPELL_EFFECTS).
