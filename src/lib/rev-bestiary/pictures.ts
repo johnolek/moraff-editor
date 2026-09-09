@@ -1,3 +1,4 @@
+import { rgbFromHex } from '../colours';
 import { DUNGEONS, PALETTES, type RevDungeon, type RevMonster, type RevPicture } from './monsters';
 
 /**
@@ -52,12 +53,6 @@ export function dungeons(): RevDungeon[] {
   return DUNGEONS;
 }
 
-/** One `#rrggbb` string as the three bytes it holds. */
-function rgb(colour: string): [number, number, number] {
-  const value = parseInt(colour.slice(1), 16);
-  return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
-}
-
 /**
  * The picture as pixels, in one of the two palettes.
  *
@@ -66,7 +61,7 @@ function rgb(colour: string): [number, number, number] {
  * drawn over something else wants — a square of the map, rather than a black box on it.
  */
 export function renderPicture(picture: RevPicture, palette: number, showBackground = true): RenderedPicture {
-  const colours = PALETTES[palette].map(rgb);
+  const colours = PALETTES[palette].map(rgbFromHex);
   const data = new Uint8ClampedArray(picture.width * picture.height * 4);
   for (let y = 0; y < picture.height; y++) {
     const row = picture.rows[y];

@@ -1,3 +1,4 @@
+import { rgbFromHex } from '../../../colours';
 import { PALETTES } from '../../../rev-bestiary/monsters';
 import type { Frame } from '../../view3d/frame';
 import { SCREEN_WIDTH } from './paint';
@@ -63,15 +64,9 @@ export function revPalette(palette = 0, background = 0): string[] {
   return colours;
 }
 
-/** A `#rrggbb` as the `[r, g, b]` triple `toRgba` wants. */
-function rgbOf(colour: string): [number, number, number] {
-  const value = parseInt(colour.slice(1), 16);
-  return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
-}
-
 /** The four `SCREEN 1` colours as the triples `toRgba` wants. */
 export function revRgb(palette = 0, background = 0): [number, number, number][] {
-  return revPalette(palette, background).map(rgbOf);
+  return revPalette(palette, background).map(rgbFromHex);
 }
 
 /**
@@ -83,5 +78,5 @@ export function revRgb(palette = 0, background = 0): [number, number, number][] 
  */
 export function revFrameRgb(frame: Frame, palette = 0, background = 0): [number, number, number][] {
   if (frame.width === SCREEN_WIDTH) return revRgb(palette, background);
-  return CGA_COLOURS.map(rgbOf);
+  return CGA_COLOURS.map(rgbFromHex);
 }
