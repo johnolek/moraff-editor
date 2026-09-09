@@ -76,6 +76,19 @@ export function markDead(entry: RosterEntry, now = new Date()): void {
   markEdited(entry, now);
 }
 
+/**
+ * Take the character off the leaderboard it was rolled for. Says whether it was on one.
+ *
+ * Nothing puts it back: a board is a chain of runs from the roll, and a record written from
+ * outside the game breaks the chain wherever it lands.
+ */
+export function voidLeaderboard(entry: RosterEntry, now = new Date()): boolean {
+  if (entry.leaderboard === null) return false;
+  entry.leaderboard = null;
+  markEdited(entry, now);
+  return true;
+}
+
 /** Stamp the time a character was last changed. */
 export function markEdited(entry: RosterEntry, now = new Date()): void {
   entry.editedAt = now.toISOString();

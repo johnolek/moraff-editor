@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Leaderboard, RosterEntry } from '../app-state.svelte';
-import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
+import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, voidLeaderboard, withEntry, withoutEntry } from './roster';
 
 /** Enough of the browser's Storage to stand in for it. */
 function fakeStorage(): Storage {
@@ -101,6 +101,29 @@ describe('the board a character is rolled for', () => {
 
   it('reads as free play when the stored board is not one this build knows', () => {
     storeEntries([{ ...storedEntry(rolledForTheBoard('faithful')), leaderboard: 'cheating' }]);
+    expect(loadRoster().entries[0].leaderboard).toBeNull();
+  });
+});
+
+describe('a record written from outside the game', () => {
+  it('takes the character off its board and stamps the change', () => {
+    const entry = rolledForTheBoard('faithful');
+    expect(voidLeaderboard(entry, EDITED_AT)).toBe(true);
+    expect(entry.leaderboard).toBeNull();
+    expect(entry.editedAt).toBe(EDITED_AT.toISOString());
+  });
+
+  it('leaves a character that was on no board alone', () => {
+    const entry = rolled();
+    expect(voidLeaderboard(entry, EDITED_AT)).toBe(false);
+    expect(entry.editedAt).toBe(ROLLED_AT.toISOString());
+  });
+
+  it('keeps the character off the board once the roster has been stored and read again', () => {
+    useStorage(fakeStorage());
+    const entry = rolledForTheBoard('speedrun');
+    voidLeaderboard(entry, EDITED_AT);
+    saveRoster([entry], entry.id);
     expect(loadRoster().entries[0].leaderboard).toBeNull();
   });
 });

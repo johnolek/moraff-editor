@@ -54,3 +54,15 @@ export const LEADERBOARD_CHOICES: { id: Leaderboard | null; label: string; how: 
 export function lockedPlayNote(board: Leaderboard): string {
   return `Locked: this character was rolled for the ${board} leaderboard, so every run of it is played this way.`;
 }
+
+/**
+ * What the Save Editor asks before it writes into a character rolled for a board.
+ *
+ * The editor's records are not in the run log, so a replay has no way of putting the character
+ * back into them: a board's runs stop being comparable the moment one of them is written from
+ * outside the game. So the place is given up rather than the edit refused, and the player is told
+ * which of the two they are choosing.
+ */
+export function leaderboardEditWarning(board: Leaderboard): string {
+  return `This character was rolled for the ${board} board. Editing it here takes it off that board for good, and its runs will stop counting. Edit it anyway?`;
+}

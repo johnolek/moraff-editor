@@ -1,7 +1,15 @@
 <script lang="ts">
   import './editor.css';
   import { app, currentEntry } from '../app-state.svelte';
-  import { characterEdited, importCharacter, importRevExploredMap, replaceCharacterBytes, unloadCharacter } from '../character/current';
+  import {
+    characterEdited,
+    importCharacter,
+    importRevExploredMap,
+    replaceCharacterBytes,
+    unloadCharacter,
+    voidCurrentLeaderboard,
+  } from '../character/current';
+  import { leaderboardEditWarning } from '../character/leaderboard';
   import { characterFileName } from '../character/record';
   import { downloadBytes } from '../download';
   import { isRevExploredFile } from '../map/explored';
@@ -26,6 +34,9 @@
   let toast = $state<{ message: string; warn: boolean } | null>(null);
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
   let fileInput = $state<HTMLInputElement>();
+  /** The record as the roster last accepted it, so that an edit a locked character's owner will
+   *  not pay for can be put back. */
+  let kept = new Uint8Array();
 
   /** What the file this is editing is called, which is the character's number when it has one. */
   const fileName = $derived.by(() => {
@@ -48,6 +59,7 @@
       record: values && { values },
       pristine: bytes.slice(),
     };
+    kept = bytes.slice();
     version++;
   }
 
@@ -57,13 +69,48 @@
    * and the character on the roster is given the new bytes.
    */
   function edited() {
-    if (doc?.record && doc.game.writeRecord) {
+    if (!doc) return;
+    if (!mayWrite()) {
+      undoEdit();
+      return;
+    }
+    if (doc.record && doc.game.writeRecord) {
       const bytes = doc.game.writeRecord(doc.record.values);
       doc.bytes = bytes;
       replaceCharacterBytes(bytes);
-      return;
+    } else {
+      characterEdited();
     }
-    characterEdited();
+    kept = doc.bytes.slice();
+  }
+
+  /**
+   * Whether the edit may go through to the character. A character rolled for a leaderboard is
+   * asked about first, because writing a record here takes it off that board for good; saying no
+   * leaves the character exactly as it was.
+   */
+  function mayWrite(): boolean {
+    const board = currentEntry()?.leaderboard ?? null;
+    if (board === null) return true;
+    if (!confirm(leaderboardEditWarning(board))) return false;
+    voidCurrentLeaderboard();
+    return true;
+  }
+
+  /**
+   * Put the record back as the roster last had it and draw the fields from it again.
+   *
+   * The field components write straight into the bytes and only then say that they have, so an
+   * edit that is refused has already happened by the time this runs and is undone rather than
+   * stopped. A game whose record is text writes its numbers instead and leaves the bytes alone,
+   * and reading the record again is what puts those numbers back.
+   */
+  function undoEdit() {
+    if (!doc) return;
+    doc.bytes.set(kept);
+    const values = doc.game.readRecord?.(doc.bytes) ?? null;
+    doc = { ...doc, record: values && { values } };
+    version++;
   }
 
   // The character can be made current somewhere else — rolled in the New Character tab, chosen
@@ -138,11 +185,12 @@
   }
 
   function discard() {
-    if (!doc) return;
+    if (!doc || !mayWrite()) return;
     const bytes = doc.pristine.slice();
     const values = doc.game.readRecord?.(bytes) ?? null;
     doc = { ...doc, bytes, view: new DataView(bytes.buffer), record: values && { values } };
     version++;
+    kept = bytes.slice();
     replaceCharacterBytes(bytes);
     showToast('Changes discarded');
   }

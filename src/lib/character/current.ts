@@ -5,7 +5,7 @@ import { recordTab } from '../history';
 import { revCharacterMap } from '../play/rev/memory';
 import { tabFor } from '../tabs';
 import { recordName, slotFromFileName } from './record';
-import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
+import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, voidLeaderboard, withEntry, withoutEntry } from './roster';
 
 /** Put a save file that has just been read on the roster and start working on it. */
 export function importCharacter(game: string, fileName: string, bytes: Uint8Array<ArrayBuffer>): void {
@@ -85,6 +85,18 @@ export function restoreCharacterImport(id: string): void {
   if (!entry || !restoreImport(entry)) return;
   app.characterVersion++;
   remember();
+}
+
+/**
+ * The current character is about to be written from outside the game, so it leaves the board it
+ * was rolled for. Says whether it was on one.
+ */
+export function voidCurrentLeaderboard(): boolean {
+  const entry = currentEntry();
+  if (!entry || !voidLeaderboard(entry)) return false;
+  app.characterVersion++;
+  remember();
+  return true;
 }
 
 /** A field of the current character has been edited in place. */

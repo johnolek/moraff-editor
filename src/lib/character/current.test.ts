@@ -14,6 +14,7 @@ import {
   restoreRoster,
   switchGame,
   unloadCharacter,
+  voidCurrentLeaderboard,
 } from './current';
 import { RevMapMemory, revCharacterMap } from '../play/rev/memory';
 import { REV_VALUE_COUNT } from '../game/rev-port/record';
@@ -145,6 +146,27 @@ describe('a character rolled here', () => {
   it('is on no board when the roller was not asked for one', () => {
     keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'));
     expect(currentEntry()?.leaderboard).toBeNull();
+  });
+});
+
+describe('taking the current character off its board', () => {
+  it('ends the lock and keeps the roster written that way', () => {
+    keepRolledCharacter('unforgiven', 'RACER', 23, saveFile('RACER'), 'faithful');
+    expect(voidCurrentLeaderboard()).toBe(true);
+    expect(currentEntry()?.leaderboard).toBeNull();
+
+    restoreRoster();
+    expect(currentEntry()?.leaderboard).toBeNull();
+  });
+
+  it('says there was nothing to end for a character on no board', () => {
+    keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'));
+    expect(voidCurrentLeaderboard()).toBe(false);
+  });
+
+  it('says there was nothing to end when no character is being worked on', () => {
+    unloadCharacter();
+    expect(voidCurrentLeaderboard()).toBe(false);
   });
 });
 
