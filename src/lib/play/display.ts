@@ -1,5 +1,4 @@
 import { expLabel, levelLabel } from '../character/record';
-import type { MapSquare } from '../map/game';
 import { ARMOR_NAMES, WEAPON_NAMES } from '../game/port/drops';
 import type { PlayerCharacter, ScreenLine, ScreenRect } from '../game/port/state';
 import { fillRect, type Frame } from './view3d/frame';
@@ -8,7 +7,6 @@ import {
   drawZoomMap,
   drawZoomMarker,
   facingArrowRect,
-  zoomMapSquare,
   type ZoomMapFloor,
   type ZoomMapStyle,
   type ZoomMapWindow,

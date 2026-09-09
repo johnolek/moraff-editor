@@ -3,7 +3,6 @@ import { giveHint } from './hints';
 import { spellEffect } from './magic';
 import {
   clearMessageLine,
-  clearRect,
   clearStatsScreen,
   clearToBlack,
   drawMenu,

@@ -6,7 +6,6 @@ import type { ViewRect } from '../../view3d/geometry';
 import {
   MW_VIEW_REACH,
   ftol,
-  horizonRow,
   mwProjectSquare,
   slotNarrowing,
   type SquarePlace,

@@ -42,11 +42,6 @@ const ARMOR_SLOT = 'armorSlot';
 const DIRECTION = 'direction';
 const WRITE_SPELL = 'writeSpell';
 
-/** The three menus Write Scroll and Enchant Wand walk through, as one answer. */
-const WRITE_CATEGORY = 'writeCategory';
-const WRITE_LEVEL = 'writeLevel';
-const WRITE_SLOT = 'writeSlot';
-
 /** How much game time a spell can ask for before movecontrol spends it a minute at a time. */
 const A_MINUTE = 0x3c;
 const TOO_LONG = 30000;

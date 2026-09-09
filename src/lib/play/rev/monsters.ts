@@ -80,9 +80,6 @@ export class RevMonsters {
   /** How many steps the monsters have taken between them. Nothing in the game counts this; the
    *  Play tab reads it to tell a clock tick that moved somebody from one that moved nobody. */
   moves = 0;
-  /** The level the grid holds, so that nothing walks on a level nobody is standing on. */
-  private level = -1;
-
   /**
    * 1000:7932: the grid is cleared and the level's forty slots are cast into it, each rerolled
    * while another monster stands on its square. Level 0 is left empty — nothing walks in the
@@ -90,7 +87,6 @@ export class RevMonsters {
    */
   stock(level: number, rng: Rng): void {
     this.grid.fill(0);
-    this.level = level;
     this.cursor = SLOTS_PER_LEVEL * level - (SLOTS_PER_LEVEL - 1);
     if (level === 0) return;
     for (let slot = this.cursor; slot <= SLOTS_PER_LEVEL * level; slot++) {

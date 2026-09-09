@@ -1,4 +1,3 @@
-import type { PortedGameId } from '../app-state.svelte';
 import { readStored, writeStored } from '../character/storage';
 import { GAME_CHOICES } from '../game-choice';
 
