@@ -125,7 +125,13 @@ describe('the HIT RETURN a kill waits at', () => {
     keys.push(REV_KEY.enter, KEY('L'));
     await revTreasureFromAKill(game, desk);
     expect(game.kept.picture).toBeNull();
-    expect(game.kept.runs()).toEqual([]);
+    // 1000:A890 clears the screen and the list prints from row 1 down, every line of it.
+    expect(game.cleared).toBe('map');
+    expect(game.kept.runs()).toEqual([
+      { row: 1, column: 1, text: 'YOU HAVE FOUND:' },
+      { row: 2, column: 1, text: 'COPPER         2125 ' },
+      { row: 3, column: 1, text: 'T=TAKE COINS  L=LEAVE COINS' },
+    ]);
   });
 });
 

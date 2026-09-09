@@ -1,5 +1,6 @@
 import type { RevMagicDesk } from './desk';
 import { REV_FOUR_SECONDS } from './held';
+import { revClearScreen } from './screens';
 import { REV_KEY } from './keys';
 import { REV_FEEL_VERY_GOOD } from './items';
 import {
@@ -296,8 +297,9 @@ async function offerTheCoins(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const coins = revRollTreasure(game);
   if (coins.value <= 0) return;
   // 1000:A890: the treasure takes the screen over, which is what finally rubs out the dead
-  // monster and the two lines printed across it.
-  game.kept.clear();
+  // monster and the two lines printed across it. 1000:A896 and A899 put the flat map and the
+  // box between the views back on it, and nothing else; the coin list prints from row 1.
+  revClearScreen(game, 'map');
   game.say(...revTreasureFound(coins));
   if (pc.weight + coins.weight >= TOO_HEAVY_AT) {
     game.say(REV_TOO_HEAVY);
@@ -388,7 +390,11 @@ const BOOK_SUBJECTS = ['strength.', 'learning.', 'wizdom.', 'health.', 'agility.
  */
 async function theTable(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const rng = game.rng;
+  // 1000:AC87, AC8D and AC90: the screen is cleared, the keyboard is emptied and the screen is
+  // cleared again, so the table's own line is on a screen with nothing else on it at all.
+  revClearScreen(game);
   game.flushKeys();
+  revClearScreen(game);
   game.say(REV_YOU_FIND);
   // 1000:ACA2: four seconds with the line alone on a screen the table has just cleared.
   game.delay(REV_FOUR_SECONDS);
