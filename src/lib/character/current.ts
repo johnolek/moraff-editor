@@ -1,12 +1,22 @@
-import { app, currentEntry, type GameId, type Leaderboard, type RosterEntry } from '../app-state.svelte';
+import { app, currentEntry, entryById, type GameId, type Leaderboard, type RosterEntry } from '../app-state.svelte';
 import { MORAFFS_REVENGE } from '../editor/games';
-import { isGameId, loadChosenGame, loadLastCharacter, saveChosenGame, saveLastCharacter } from '../game-choice';
+import {
+  isGameId,
+  loadChosenGame,
+  loadCurrentCharacter,
+  loadLastCharacter,
+  saveChosenGame,
+  saveCurrentCharacter,
+  saveLastCharacter,
+} from '../game-choice';
 import { recordTab } from '../history';
 import { revCharacterMap } from '../play/rev/memory';
 import type { RunSession } from '../play/run';
 import { tabFor } from '../tabs';
+import { carryOverStoredRoster } from './carry-over';
 import { recordName, slotFromFileName } from './record';
-import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, voidLeaderboard, withEntry, withoutEntry } from './roster';
+import { markDead, markEdited, newEntry, restoreImport, voidLeaderboard, withEntry, withoutEntry } from './roster';
+import { dropCharacter, keepPlayed, readRoster, type PlayedSession } from './roster-db';
 
 /** Put a save file that has just been read on the roster and start working on it. */
 export function importCharacter(game: string, fileName: string, bytes: Uint8Array<ArrayBuffer>): void {
@@ -19,6 +29,7 @@ export function importCharacter(game: string, fileName: string, bytes: Uint8Arra
   });
   app.roster = withEntry(app.roster, entry);
   chooseEntry(entry.id);
+  keepNow(entry);
 }
 
 /**
@@ -55,6 +66,7 @@ export function keepRolledCharacter(
   const entry = newEntry({ game, name, slot, bytes, imported: false, leaderboard });
   app.roster = withEntry(app.roster, entry);
   chooseEntry(entry.id);
+  keepNow(entry);
 }
 
 export function chooseCharacter(id: string): void {
@@ -70,14 +82,17 @@ export function renameCharacter(id: string, name: string): void {
   const entry = app.roster.find((candidate) => candidate.id === id);
   if (!entry || name.trim() === '') return;
   entry.name = name.trim();
-  remember();
+  keepNow(entry);
 }
 
 export function forgetCharacter(id: string): void {
   app.roster = withoutEntry(app.roster, id);
   if (app.characterId === id) app.characterId = null;
   app.characterVersion++;
-  remember();
+  changedCharacters.delete(id);
+  for (const session of changedSessions) if (session.startsWith(`${id}/`)) changedSessions.delete(session);
+  saveCurrentCharacter(app.characterId);
+  void keeping(dropCharacter(id));
 }
 
 /** Put the file a character was imported from back as the character. */
@@ -85,7 +100,7 @@ export function restoreCharacterImport(id: string): void {
   const entry = app.roster.find((candidate) => candidate.id === id);
   if (!entry || !restoreImport(entry)) return;
   app.characterVersion++;
-  remember();
+  keepNow(entry);
 }
 
 /**
@@ -96,36 +111,42 @@ export function voidCurrentLeaderboard(): boolean {
   const entry = currentEntry();
   if (!entry || !voidLeaderboard(entry)) return false;
   app.characterVersion++;
-  remember();
+  keepNow(entry);
   return true;
 }
 
 /** A field of the current character has been edited in place. */
 export function characterEdited(): void {
   const entry = currentEntry();
-  if (entry) markEdited(entry);
+  if (entry) {
+    markEdited(entry);
+    keepSoon(entry);
+  }
   app.characterVersion++;
-  rememberSoon();
 }
 
 /** The character being played has died. */
 export function characterDied(): void {
   const entry = currentEntry();
-  if (entry) markDead(entry);
+  if (entry) {
+    markDead(entry);
+    keepNow(entry);
+  }
   app.characterVersion++;
-  remember();
 }
 
 /**
  * Keep the session being played as the newest of the character's run.
  *
  * `at` is where the session belongs in the run: everything before it is left as it is, and the
- * session written there last time is written over. The roster follows soon after, the same way an
- * edit in the save editor does, so a burst of keys is one write.
+ * session written there last time is written over. That one session and the character's record
+ * are what goes to the store, soon after, the same way an edit in the save editor does, so a
+ * burst of keys is one write.
  */
 export function runSessionPlayed(entry: RosterEntry, at: number, session: RunSession): void {
   entry.run = [...entry.run.slice(0, at), session];
-  rememberSoon();
+  changedSessions.add(sessionKey(entry.id, at));
+  keepSoon(entry);
 }
 
 /** The editor has swapped in a different set of bytes for the same character. */
@@ -135,7 +156,7 @@ export function replaceCharacterBytes(bytes: Uint8Array<ArrayBuffer>): void {
   entry.bytes = bytes;
   markEdited(entry);
   app.characterVersion++;
-  rememberSoon();
+  keepSoon(entry);
 }
 
 /** Show the other game. The character becomes the one last worked on under it; the rest of the
@@ -157,12 +178,22 @@ export function restoreGame(): void {
   if (current && current.game !== stored) chooseEntry(lastCharacterOf(stored));
 }
 
-/** Bring back the characters the last visit left behind. */
-export function restoreRoster(): void {
-  const { entries, currentId } = loadRoster();
-  app.roster = entries;
-  app.characterId = currentId;
+/**
+ * Bring back the characters the last visit left behind, which is the one thing the site waits on
+ * before it can show a character: the database answers a question at a time rather than at once
+ * the way localStorage did.
+ */
+export async function restoreRoster(): Promise<void> {
+  await carryOverStoredRoster();
+  const entries = await readRoster();
+  app.roster = entries ?? [];
+  const stored = loadCurrentCharacter();
+  app.characterId = app.roster.some((entry) => entry.id === stored) ? stored : null;
   app.characterVersion++;
+  // A browser that will not open a database will not write one either, so the notice goes up
+  // now rather than waiting for the first character to be changed.
+  app.rosterKept = entries !== null;
+  loaded = true;
 }
 
 function chooseEntry(id: string | null): void {
@@ -175,7 +206,7 @@ function chooseEntry(id: string | null): void {
     setGame(entry.game);
     saveLastCharacter(entry.game, entry.id);
   }
-  remember();
+  saveCurrentCharacter(id);
 }
 
 function setGame(game: GameId): void {
@@ -196,40 +227,91 @@ function lastCharacterOf(game: GameId): string | null {
 }
 
 /**
- * How long an edit waits before the roster is written.
+ * How long an edit waits before the character is written.
  *
  * Long enough that typing a five digit number is one write rather than five, short enough that
  * the write is done by the time anybody has reached for the keyboard again.
  */
 const EDIT_PAUSE_MS = 400;
 
+/**
+ * Whether the roster has been read.
+ *
+ * Nothing is written before it has. Reading the database is a wait, and a page closed during
+ * that wait fires the same write a page on its way out always does; with an empty roster behind
+ * it, that write would say the character in hand is no character at all.
+ */
+let loaded = false;
+
 /** The write an edit has asked for and that has not happened yet. */
 let pendingWrite: ReturnType<typeof setTimeout> | null = null;
 
-/** Write the roster now, whatever an edit was waiting for. */
-export function rememberNow(): void {
-  remember();
+/** The write asked for last, which is what a page on its way out waits on when there is nothing
+ *  new to write. */
+let writing: Promise<void> = Promise.resolve();
+
+/** Follow a write, so that the notice says whether the browser is keeping the characters. */
+function keeping(kept: Promise<boolean>): Promise<void> {
+  writing = kept.then((ok) => void (app.rosterKept = ok));
+  return writing;
 }
 
-function remember(): void {
+/** The characters whose record or fields have changed and are not in the store yet, by id. */
+const changedCharacters = new Set<string>();
+
+/** The sessions that have been played into and are not in the store yet, each named by the
+ *  character it belongs to and where it comes in that character's run. */
+const changedSessions = new Set<string>();
+
+function sessionKey(id: string, at: number): string {
+  return `${id}/${at}`;
+}
+
+/** Write whatever is waiting now, whatever an edit was waiting for. Says when it is written. */
+export function rememberNow(): Promise<void> {
+  return write();
+}
+
+/** The character has changed in a way there is nothing to be gained by waiting over. */
+function keepNow(entry: RosterEntry): void {
+  changedCharacters.add(entry.id);
+  void write();
+}
+
+/**
+ * Write the character once the changes have settled.
+ *
+ * Every keystroke in the save editor is an edit, and every key in a game writes both the record
+ * and the session it was pressed in, so a burst of them is collected into one write. The first
+ * change of a burst is what sets the timer; the ones after it join the write already coming.
+ */
+function keepSoon(entry: RosterEntry): void {
+  changedCharacters.add(entry.id);
+  if (pendingWrite === null) pendingWrite = setTimeout(write, EDIT_PAUSE_MS);
+}
+
+function write(): Promise<void> {
   if (pendingWrite !== null) {
     clearTimeout(pendingWrite);
     pendingWrite = null;
   }
-  app.rosterKept = saveRoster(app.roster, app.characterId);
+  if (!loaded) return writing;
+  saveCurrentCharacter(app.characterId);
+  const characters = [...changedCharacters]
+    .map((id) => entryById(id))
+    .filter((entry): entry is RosterEntry => entry !== null);
+  const sessions = [...changedSessions]
+    .map(playedSession)
+    .filter((played): played is PlayedSession => played !== null);
+  changedCharacters.clear();
+  changedSessions.clear();
+  if (characters.length === 0 && sessions.length === 0) return writing;
+  return keeping(keepPlayed(characters, sessions));
 }
 
-/**
- * Write the roster once the edits have settled.
- *
- * Writing it means base64-ing the bytes of every character on it, and every keystroke in the save
- * editor is an edit, so a burst of them is collected into one write. The first edit of a burst is
- * what sets the timer; the ones after it join the write already coming.
- */
-function rememberSoon(): void {
-  if (pendingWrite !== null) return;
-  pendingWrite = setTimeout(() => {
-    pendingWrite = null;
-    app.rosterKept = saveRoster(app.roster, app.characterId);
-  }, EDIT_PAUSE_MS);
+/** The session a key names, or null for one whose character has left the roster since. */
+function playedSession(key: string): PlayedSession | null {
+  const at = key.lastIndexOf('/');
+  const entry = entryById(key.slice(0, at));
+  return entry ? { entry, at: Number(key.slice(at + 1)) } : null;
 }

@@ -1,22 +1,8 @@
+import 'fake-indexeddb/auto';
+import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { app, currentEntry, entryById } from '../app-state.svelte';
-import {
-  characterEdited,
-  chooseCharacter,
-  forgetCharacter,
-  importCharacter,
-  importRevExploredMap,
-  keepRolledCharacter,
-  rememberNow,
-  renameCharacter,
-  restoreCharacterImport,
-  restoreGame,
-  restoreRoster,
-  switchGame,
-  unloadCharacter,
-  voidCurrentLeaderboard,
-} from './current';
 import { RevMapMemory, revCharacterMap } from '../play/rev/memory';
+import { RunRecorder } from '../play/run';
 import { REV_VALUE_COUNT } from '../game/rev-port/record';
 import { revPlayerFromValues, saveRevPlayer } from '../play/rev/record';
 import { characterStatus } from './record';
@@ -65,14 +51,58 @@ function saveFile(name: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
-beforeEach(() => {
+/**
+ * The app state and the database it is kept in are both read fresh for every test: the store
+ * holds on to the database it opened, so one test's characters would otherwise turn up in the
+ * next.
+ */
+type State = typeof import('../app-state.svelte');
+type Current = typeof import('./current');
+
+let app: State['app'];
+let currentEntry: State['currentEntry'];
+let entryById: State['entryById'];
+let characterEdited: Current['characterEdited'];
+let chooseCharacter: Current['chooseCharacter'];
+let forgetCharacter: Current['forgetCharacter'];
+let importCharacter: Current['importCharacter'];
+let importRevExploredMap: Current['importRevExploredMap'];
+let keepRolledCharacter: Current['keepRolledCharacter'];
+let rememberNow: Current['rememberNow'];
+let renameCharacter: Current['renameCharacter'];
+let restoreCharacterImport: Current['restoreCharacterImport'];
+let restoreGame: Current['restoreGame'];
+let restoreRoster: Current['restoreRoster'];
+let runSessionPlayed: Current['runSessionPlayed'];
+let switchGame: Current['switchGame'];
+let unloadCharacter: Current['unloadCharacter'];
+let voidCurrentLeaderboard: Current['voidCurrentLeaderboard'];
+
+beforeEach(async () => {
+  vi.resetModules();
+  globalThis.indexedDB = new IDBFactory();
   useStorage(fakeStorage());
   vi.stubGlobal('history', fakeHistory());
-  app.roster = [];
-  app.characterId = null;
-  app.game = 'unforgiven';
-  app.tab = 'map';
-  app.rosterKept = true;
+  ({ app, currentEntry, entryById } = await import('../app-state.svelte'));
+  ({
+    characterEdited,
+    chooseCharacter,
+    forgetCharacter,
+    importCharacter,
+    importRevExploredMap,
+    keepRolledCharacter,
+    rememberNow,
+    renameCharacter,
+    restoreCharacterImport,
+    restoreGame,
+    restoreRoster,
+    runSessionPlayed,
+    switchGame,
+    unloadCharacter,
+    voidCurrentLeaderboard,
+  } = await import('./current'));
+  // Nothing is written before the roster has been read, which is what a visit starts with.
+  await restoreRoster();
 });
 
 afterEach(() => {
@@ -150,12 +180,13 @@ describe('a character rolled here', () => {
 });
 
 describe('taking the current character off its board', () => {
-  it('ends the lock and keeps the roster written that way', () => {
+  it('ends the lock and keeps the roster written that way', async () => {
     keepRolledCharacter('unforgiven', 'RACER', 23, saveFile('RACER'), 'faithful');
     expect(voidCurrentLeaderboard()).toBe(true);
     expect(currentEntry()?.leaderboard).toBeNull();
 
-    restoreRoster();
+    await rememberNow();
+    await restoreRoster();
     expect(currentEntry()?.leaderboard).toBeNull();
   });
 
@@ -222,19 +253,30 @@ describe('the roster', () => {
     expect(currentEntry()).toBeNull();
   });
 
-  it('comes back after a reload, still on the same character', () => {
+  it('comes back after a reload, still on the same character', async () => {
     const id = currentEntry()!.id;
+    await rememberNow();
     app.roster = [];
     app.characterId = null;
-    restoreRoster();
-    expect(app.roster.map((entry) => entry.name)).toEqual(['SAGEY', 'NEWBIE']);
+    await restoreRoster();
+    // Both were made in the same millisecond, so the order they come back in is their ids'.
+    expect(app.roster.map((entry) => entry.name).sort()).toEqual(['NEWBIE', 'SAGEY']);
     expect(currentEntry()?.id).toBe(id);
+  });
+
+  it('leaves a character that was removed off it after a reload', async () => {
+    forgetCharacter(app.roster[1].id);
+    await rememberNow();
+    await restoreRoster();
+    expect(app.roster.map((entry) => entry.name)).toEqual(['SAGEY']);
   });
 });
 
 describe('editing the character', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    // Only the timer an edit waits on is faked: the store's own work is scheduled elsewhere and
+    // would never come back if it were.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     importCharacter('unforgiven', '21', saveFile('SAGEY'));
   });
 
@@ -243,48 +285,42 @@ describe('editing the character', () => {
     vi.useRealTimers();
   });
 
-  it('is what a reload comes back to, once the typing has stopped', () => {
+  it('is what a reload comes back to, once the typing has stopped', async () => {
     currentEntry()!.bytes[0x816] = 99;
     characterEdited();
     vi.runAllTimers();
+    await rememberNow();
     app.roster = [];
-    restoreRoster();
+    await restoreRoster();
     expect(currentEntry()!.bytes[0x816]).toBe(99);
   });
 
-  it('is written once for a burst of keystrokes', () => {
-    const writes = vi.spyOn(globalThis.localStorage, 'setItem');
+  it('is written once for a burst of keystrokes', async () => {
+    const written = vi.spyOn(IDBObjectStore.prototype, 'put');
     for (const digit of [1, 2, 3, 4, 5]) {
       currentEntry()!.bytes[0x816] = digit;
       characterEdited();
     }
-    expect(writes).not.toHaveBeenCalled();
+    expect(written).not.toHaveBeenCalled();
     vi.runAllTimers();
-    expect(writes).toHaveBeenCalledTimes(1);
+    await rememberNow();
+    expect(written).toHaveBeenCalledTimes(1);
   });
 
-  it('is written at once for a page on its way out', () => {
+  it('is written at once for a page on its way out', async () => {
     currentEntry()!.bytes[0x816] = 99;
     characterEdited();
-    rememberNow();
+    await rememberNow();
     app.roster = [];
-    restoreRoster();
+    await restoreRoster();
     expect(currentEntry()!.bytes[0x816]).toBe(99);
   });
 
-  it('says so when the browser will not keep the roster', () => {
-    vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => {
-      throw new Error('quota exceeded');
-    });
-    characterEdited();
-    vi.runAllTimers();
-    expect(app.rosterKept).toBe(false);
-  });
-
-  it('stops saying so once a write goes through', () => {
+  it('stops saying the roster is not being kept once a write goes through', async () => {
     app.rosterKept = false;
     characterEdited();
     vi.runAllTimers();
+    await rememberNow();
     expect(app.rosterKept).toBe(true);
   });
 
@@ -295,6 +331,64 @@ describe('editing the character', () => {
     restoreCharacterImport(currentEntry()!.id);
     expect(currentEntry()!.bytes[0x816]).toBe(0);
     expect(currentEntry()!.bytes).not.toBe(before);
+  });
+});
+
+describe('a session played into a character', () => {
+  it('writes that session and that character, and nothing else on the roster', async () => {
+    importCharacter('unforgiven', '21', saveFile('SAGEY'));
+    keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'));
+    await rememberNow();
+    const entry = currentEntry()!;
+    const run = new RunRecorder({ game: 'unforgiven', name: entry.name, record: entry.bytes });
+    run.input(0x1b);
+    const written = vi.spyOn(IDBObjectStore.prototype, 'put');
+
+    runSessionPlayed(entry, 0, run.log());
+    await rememberNow();
+
+    expect(written).toHaveBeenCalledTimes(2);
+  });
+
+  it('is what the character comes back with after a reload', async () => {
+    keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'));
+    const entry = currentEntry()!;
+    const run = new RunRecorder({ game: 'unforgiven', name: entry.name, record: entry.bytes });
+    run.input(0x1b);
+    runSessionPlayed(entry, 0, run.log());
+    await rememberNow();
+
+    await restoreRoster();
+    expect(currentEntry()!.run).toEqual(entry.run);
+  });
+});
+
+describe('a browser that keeps no database', () => {
+  /** The store opens the database once and keeps it, so a visit with none is its own module. */
+  async function visitWithoutADatabase() {
+    vi.resetModules();
+    Reflect.deleteProperty(globalThis, 'indexedDB');
+    const state = await import('../app-state.svelte');
+    const current = await import('./current');
+    await current.restoreRoster();
+    return { state, current };
+  }
+
+  it('says the characters are not being kept as soon as the roster is read', async () => {
+    const { state } = await visitWithoutADatabase();
+    expect(state.app.roster).toEqual([]);
+    expect(state.app.rosterKept).toBe(false);
+  });
+
+  it('goes on working on a character that cannot be written', async () => {
+    const { state, current } = await visitWithoutADatabase();
+    state.app.rosterKept = true;
+
+    current.importCharacter('unforgiven', '21', saveFile('SAGEY'));
+    await current.rememberNow();
+
+    expect(state.app.roster).toHaveLength(1);
+    expect(state.app.rosterKept).toBe(false);
   });
 });
 

@@ -1,32 +1,9 @@
 import type { Leaderboard, RosterEntry } from '../app-state.svelte';
-import { base64FromBytes } from '../bytes';
-import type { RunSession } from '../play/run';
-import { isRunSession } from '../play/verify';
-import { isLeaderboard } from './leaderboard';
-import { fromBase64, readStored, writeStored } from './storage';
 
-/** Where the characters kept in the browser live. */
-const ROSTER_KEY = 'moraff-tools.roster';
-
-/** A roster as it goes into storage: the byte arrays as base64, everything else as it is. */
-interface StoredRoster {
-  entries: StoredEntry[];
-  currentId: string | null;
-}
-
-interface StoredEntry {
-  id: string;
-  game: string;
-  name: string;
-  slot: number | null;
-  importedBytes: string | null;
-  bytes: string;
-  createdAt: string;
-  editedAt: string;
-  dead?: boolean;
-  leaderboard?: Leaderboard | null;
-  run?: RunSession[];
-}
+/**
+ * A character on the roster: what one is made of and what happens to it. Where the roster is
+ * kept is `roster-db.ts`; nothing here touches a store.
+ */
 
 /** What is needed to put a character on the roster. */
 export interface NewCharacter {
@@ -108,70 +85,4 @@ export function restoreImport(entry: RosterEntry, now = new Date()): boolean {
   entry.bytes = entry.importedBytes.slice();
   markEdited(entry, now);
   return true;
-}
-
-/** Keep the roster in the browser. Says whether it went in. */
-export function saveRoster(entries: RosterEntry[], currentId: string | null): boolean {
-  const stored: StoredRoster = {
-    currentId,
-    entries: entries.map((entry) => ({
-      id: entry.id,
-      game: entry.game,
-      name: entry.name,
-      slot: entry.slot,
-      importedBytes: entry.importedBytes ? base64FromBytes(entry.importedBytes) : null,
-      bytes: base64FromBytes(entry.bytes),
-      createdAt: entry.createdAt,
-      editedAt: entry.editedAt,
-      dead: entry.dead,
-      leaderboard: entry.leaderboard,
-      run: entry.run,
-    })),
-  };
-  return writeStored(ROSTER_KEY, JSON.stringify(stored));
-}
-
-/** What was stored, with anything this build cannot read left out. */
-export function loadRoster(): { entries: RosterEntry[]; currentId: string | null } {
-  const empty = { entries: [], currentId: null };
-  const text = readStored(ROSTER_KEY);
-  if (!text) return empty;
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    return empty;
-  }
-  if (typeof parsed !== 'object' || parsed === null) return empty;
-  const { entries, currentId } = parsed as Partial<StoredRoster>;
-  if (!Array.isArray(entries)) return empty;
-  const restored = entries.map(entryFrom).filter((entry): entry is RosterEntry => entry !== null);
-  const current = restored.some((entry) => entry.id === currentId) ? currentId! : null;
-  return { entries: restored, currentId: current };
-}
-
-function entryFrom(value: unknown): RosterEntry | null {
-  if (typeof value !== 'object' || value === null) return null;
-  const { id, game, name, slot, importedBytes, bytes, createdAt, editedAt, dead, leaderboard, run } = value as Partial<StoredEntry>;
-  if (typeof id !== 'string' || typeof game !== 'string' || typeof name !== 'string') return null;
-  if (typeof createdAt !== 'string' || typeof editedAt !== 'string' || typeof bytes !== 'string') return null;
-  if (slot !== null && !Number.isInteger(slot)) return null;
-  const decoded = fromBase64(bytes);
-  if (!decoded || decoded.length === 0) return null;
-  return {
-    id,
-    game,
-    name,
-    slot: slot ?? null,
-    importedBytes: typeof importedBytes === 'string' ? fromBase64(importedBytes) : null,
-    bytes: decoded,
-    createdAt,
-    editedAt,
-    dead: dead === true,
-    // A roster stored before the site had leaderboards names no board, and reads as free play.
-    leaderboard: isLeaderboard(leaderboard) ? leaderboard : null,
-    // A roster stored before the site kept runs names no sessions, and reads as a character that
-    // has never been played.
-    run: Array.isArray(run) ? run.filter(isRunSession) : [],
-  };
 }

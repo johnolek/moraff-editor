@@ -30,10 +30,13 @@
   onMount(() => {
     // Read the entry first: restoring the game rewrites it to say which tab that game is showing.
     const state = history.state;
-    restoreRoster();
-    restoreGame();
-    if (isAppHistoryState(state)) restore(state);
-    recordTab(app);
+    // The roster is read out of the database, which answers a moment later, so the site puts up
+    // its default game and tab and settles on the remembered ones as soon as the answer is in.
+    void restoreRoster().then(() => {
+      restoreGame();
+      if (isAppHistoryState(state)) restore(state);
+      recordTab(app);
+    });
   });
 
   function onPopState(event: PopStateEvent) {
