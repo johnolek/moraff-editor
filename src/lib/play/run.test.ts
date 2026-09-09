@@ -19,6 +19,8 @@ import {
   actionWords,
   ENGINE_COMMIT,
   isRunGame,
+  lastMilestones,
+  MILESTONES_SHOWN,
   milestoneNote,
   milestoneWords,
   replayRun,
@@ -784,6 +786,26 @@ describe('the words a run is shown with', () => {
     expect(milestoneNote({ kind: 'level', which: 5, actions: 4, time: 12, floor: 0 }, '12 moves')).toBe(
       'After 4 actions and 12 moves, in the town.',
     );
+  });
+
+  it('keeps the last few milestones on the line and folds the rest away', () => {
+    const at = { actions: 4, time: 12, floor: 3 };
+    const levels: Milestone[] = [1, 2, 3, 4, 5, 6].map((level) => ({ kind: 'level', which: level, ...at }));
+
+    const line = lastMilestones(levels);
+
+    expect(line.shown.map((milestone) => milestone.which)).toEqual([3, 4, 5, 6]);
+    expect(line.earlier.map((milestone) => milestone.which)).toEqual([1, 2]);
+  });
+
+  it('folds nothing away while the milestones still fit', () => {
+    const at = { actions: 4, time: 12, floor: 3 };
+    const levels: Milestone[] = [1, 2, 3, 4].map((level) => ({ kind: 'level', which: level, ...at }));
+
+    expect(levels).toHaveLength(MILESTONES_SHOWN);
+    expect(lastMilestones(levels).shown).toEqual(levels);
+    expect(lastMilestones(levels).earlier).toEqual([]);
+    expect(lastMilestones([]).shown).toEqual([]);
   });
 
   it('names the file a run downloads as after the character', () => {

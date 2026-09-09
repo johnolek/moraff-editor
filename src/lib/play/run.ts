@@ -149,6 +149,26 @@ export function milestoneNote(milestone: Milestone, clock: string): string {
   return `After ${actionWords(milestone.actions)} and ${clock}, ${where}.`;
 }
 
+/** How many milestones the Play tab's run line has room to show one by one. */
+export const MILESTONES_SHOWN = 4;
+
+/**
+ * A run's milestones split into the last few and everything before them.
+ *
+ * The milestones are the whole chain's rather than this sitting's, so a character played for
+ * long enough has more of them than a line can hold. The newest are the ones worth reading, and
+ * the line folds the rest away behind a count of them.
+ */
+export function lastMilestones(milestones: readonly Milestone[]): {
+  earlier: Milestone[];
+  shown: Milestone[];
+} {
+  return {
+    earlier: milestones.slice(0, Math.max(0, milestones.length - MILESTONES_SHOWN)),
+    shown: milestones.slice(-MILESTONES_SHOWN),
+  };
+}
+
 /** One sitting at a game, played, as it is written down. */
 export interface RunSession {
   /** The commit of the engine this session was played on. */
