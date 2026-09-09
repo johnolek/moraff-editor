@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { bytesFromBase64 } from '../bytes';
 import { bundledDungeon } from '../game/dungeon';
 import { loadPlayer, savePlayer } from '../game/port/record';
 import { characterFile, floorSquare, press, settle, teleporterSquare, townSquare } from './battle.test-support';
@@ -16,7 +17,6 @@ import type { StoredMaps } from './memory';
 import {
   actionWords,
   countsAsAction,
-  decodeRecord,
   ENGINE_COMMIT,
   isRunGame,
   milestoneNote,
@@ -85,7 +85,7 @@ describe('the run log', () => {
     expect(log.startedAt).toBe('2026-09-07T00:00:00.000Z');
     expect(log.engine).toBe(ENGINE_COMMIT);
     expect(log.inputs).toEqual([KEY.arrowUp, KEY.arrowLeft, KEY.viewStats]);
-    expect(decodeRecord(log.record)).toEqual(record);
+    expect(bytesFromBase64(log.record)).toEqual(record);
   });
 
   it('keeps the sound the game was set up with, and nothing for a game with no such flag', () => {
@@ -110,7 +110,7 @@ describe('the run log', () => {
     session.save();
     session.finish();
 
-    expect(decodeRecord(run.log().record)).toEqual(record);
+    expect(bytesFromBase64(run.log().record)).toEqual(record);
   });
 
   it('draws a seed of its own for every run', () => {

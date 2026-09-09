@@ -1,3 +1,5 @@
+import { bytesFromBase64 } from '../bytes';
+
 /**
  * The browser's localStorage, or null when there is none to be had. Reading it throws outright
  * in a browser set to block site data, so every access goes through here.
@@ -31,18 +33,12 @@ export function writeStored(key: string, value: string): boolean {
   }
 }
 
-export function toBase64(bytes: Uint8Array): string {
-  let text = '';
-  for (const byte of bytes) text += String.fromCharCode(byte);
-  return btoa(text);
-}
-
+/** The bytes a stored base64 string holds, or null when the store holds something that is not
+ *  base64 at all -- anything may have written to it, so a bad value is answered rather than
+ *  thrown. */
 export function fromBase64(text: string): Uint8Array<ArrayBuffer> | null {
   try {
-    const binary = atob(text);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return bytes;
+    return bytesFromBase64(text);
   } catch {
     return null;
   }

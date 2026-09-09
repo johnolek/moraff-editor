@@ -1,3 +1,4 @@
+import { bytesFromDataUrl } from '../../../bytes';
 import { pictureImageIndex } from '../../../mw-bestiary/pictures';
 import { parsePicRows, type PicRowImage } from '../../view3d/texture';
 import type { MwViewPictures } from './pictures';
@@ -24,7 +25,7 @@ function images(file: string): PicRowImage[] | null {
   const cached = parsed.get(file);
   if (cached !== undefined) return cached;
   const url = picUrls[`../../../game/pics/mw/${file}`];
-  const decoded = url ? parsePicRows(decodeDataUrl(url)) : null;
+  const decoded = url ? parsePicRows(bytesFromDataUrl(url)) : null;
   parsed.set(file, decoded);
   return decoded;
 }
@@ -50,11 +51,4 @@ export function mwViewPictures(): MwViewPictures {
     },
     ladder: (down) => world?.[down ? LADDER_DOWN_IMAGE : LADDER_UP_IMAGE] ?? null,
   };
-}
-
-function decodeDataUrl(url: string): Uint8Array {
-  const binary = atob(url.slice(url.indexOf(',') + 1));
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
 }

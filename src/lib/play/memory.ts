@@ -1,4 +1,5 @@
-import { fromBase64, readStored, toBase64, writeStored } from '../character/storage';
+import { base64FromBytes } from '../bytes';
+import { fromBase64, readStored, writeStored } from '../character/storage';
 import { DUN_COLUMNS, DUN_ROWS, EXPLORED_STRIDE, FLOORS_PER_BLOCK, type ExploredSquares } from '../map/explored';
 import type { DiscoveredMap } from '../map/draw-floor';
 import type { MapSquare } from '../map/game';
@@ -255,7 +256,7 @@ export class MapMemory {
     if (!this.store || !this.held) return;
     const maps = this.store.read();
     for (const [floor, bitmap] of this.resident) {
-      maps[`${this.held.dungeon}:${floor}`] = toBase64(bitmap);
+      maps[`${this.held.dungeon}:${floor}`] = base64FromBytes(bitmap);
     }
     this.store.write(maps);
   }

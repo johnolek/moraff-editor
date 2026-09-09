@@ -1,4 +1,5 @@
-import { readStored, toBase64, fromBase64, writeStored } from '../../character/storage';
+import { base64FromBytes } from '../../bytes';
+import { readStored, fromBase64, writeStored } from '../../character/storage';
 import { COLUMNS, LEVELS, ROWS, mbfSingle } from '../../game/revmap.js';
 import { REV_TOWN_ROWS } from '../../game/rev-port/character';
 import { REV_MAP_SINGLES, revExploredBytes } from '../../roller/rev-save-file';
@@ -52,7 +53,7 @@ export function revCharacterMap(id: string): RevMapStore {
       return text ? fromBase64(text) : null;
     },
     write(bytes) {
-      writeStored(key, toBase64(bytes));
+      writeStored(key, base64FromBytes(bytes));
     },
     clear() {
       writeStored(key, '');

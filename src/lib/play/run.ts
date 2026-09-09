@@ -1,4 +1,5 @@
 import type { PortedGameId } from '../app-state.svelte';
+import { base64FromBytes, bytesFromBase64 } from '../bytes';
 import { SeededRng, type Rng } from '../game/port/rng';
 import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
@@ -266,20 +267,6 @@ export interface RunLog {
   edits: number;
 }
 
-/** The bytes of a base64 string from a run log. */
-export function decodeRecord(record: string): Uint8Array {
-  const binary = atob(record);
-  const bytes = new Uint8Array(binary.length);
-  for (let at = 0; at < binary.length; at++) bytes[at] = binary.charCodeAt(at);
-  return bytes;
-}
-
-function encodeRecord(bytes: Uint8Array): string {
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
-}
-
 /** A seed of its own for every run, from the best randomness the platform has. */
 function drawSeed(): number {
   const bits = new Uint32Array(1);
@@ -442,7 +429,7 @@ export class RunRecorder {
       name: this.name,
       startedAt: this.startedAt,
       seed: this.seed,
-      record: encodeRecord(this.record),
+      record: base64FromBytes(this.record),
       inputs: [...this.inputs],
       actions: summary.actions,
       time: this.clock?.().time ?? 0,
@@ -493,7 +480,7 @@ export interface RunGameEngine {
  * compares them.
  */
 export async function replayRun(log: RunLog): Promise<RunReplay> {
-  const record = decodeRecord(log.record);
+  const record = bytesFromBase64(log.record);
   const run = new RunRecorder({
     game: log.game,
     name: log.name,

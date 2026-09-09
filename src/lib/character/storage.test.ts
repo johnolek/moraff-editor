@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { fromBase64, readStored, toBase64, writeStored } from './storage';
+import { base64FromBytes } from '../bytes';
+import { fromBase64, readStored, writeStored } from './storage';
 
 /** Enough of the browser's Storage to stand in for it. */
 export function fakeStorage(): Storage {
@@ -25,7 +26,7 @@ afterEach(() => useStorage(undefined));
 describe('base64', () => {
   it('round trips every byte value', () => {
     const all = Uint8Array.from({ length: 256 }, (_, index) => index);
-    expect([...fromBase64(toBase64(all))!]).toEqual([...all]);
+    expect([...fromBase64(base64FromBytes(all))!]).toEqual([...all]);
   });
 
   it('is null for text that is not base64', () => {

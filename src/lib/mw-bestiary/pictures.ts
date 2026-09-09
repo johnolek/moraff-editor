@@ -1,3 +1,4 @@
+import { bytesFromDataUrl } from '../bytes';
 import { PIC_H, PIC_W, parsePic, renderImage, vgaToRgb, type PicImage, type Rgb } from '../game/dotu-pic.js';
 import data from '../game/mw-data.json';
 import mwPalettes from '../game/mw-palettes.json';
@@ -42,13 +43,13 @@ let walls: PicImage[] | null = null;
 
 /** The 37 images of WORLD.PIC, decoded on first use. */
 export function pictureImages(): PicImage[] {
-  if (!parsed) parsed = parsePic(decodeDataUrl(picUrls['../game/pics/mw/world.pic'])).images;
+  if (!parsed) parsed = parsePic(bytesFromDataUrl(picUrls['../game/pics/mw/world.pic'])).images;
   return parsed;
 }
 
 /** The two images of WALL.PIC, the door and the wall, decoded on first use. */
 export function wallImages(): PicImage[] {
-  if (!walls) walls = parsePic(decodeDataUrl(picUrls['../game/pics/mw/wall.pic'])).images;
+  if (!walls) walls = parsePic(bytesFromDataUrl(picUrls['../game/pics/mw/wall.pic'])).images;
   return walls;
 }
 
@@ -103,11 +104,4 @@ export function renderMonster(monster: MwMonster, floor: number): RenderedImage 
   if (index === null) return null;
   const palette = floorPalette(floor);
   return renderImage(pictureImages()[index], palette, (value) => pixelIndex(value, monster.colour));
-}
-
-function decodeDataUrl(url: string): Uint8Array {
-  const binary = atob(url.slice(url.indexOf(',') + 1));
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
 }

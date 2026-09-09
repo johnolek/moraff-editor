@@ -1,3 +1,4 @@
+import { bytesFromDataUrl } from '../bytes';
 import {
   PIC_H,
   PIC_W,
@@ -44,7 +45,7 @@ export function bundledPictureImages(file: string): PicImage[] | null {
   if (cached) return cached;
   const url = picUrls[`../game/pics/${file}`];
   if (!url) return null;
-  const { images } = parsePic(decodeDataUrl(url));
+  const { images } = parsePic(bytesFromDataUrl(url));
   parsed.set(file, images);
   return images;
 }
@@ -92,11 +93,4 @@ export function renderMonster(entry: Monster, module: number, part: number): Ren
   return renderImage(images[index], sectionPalette(module, part), (v, row) =>
     monsterPixelIndex(v, entry.color, entry.colorSet, row),
   );
-}
-
-function decodeDataUrl(url: string): Uint8Array {
-  const binary = atob(url.slice(url.indexOf(',') + 1));
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
 }

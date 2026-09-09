@@ -1,5 +1,6 @@
 import type { RosterEntry } from '../app-state.svelte';
-import { fromBase64, readStored, toBase64, writeStored } from './storage';
+import { base64FromBytes } from '../bytes';
+import { fromBase64, readStored, writeStored } from './storage';
 
 /** Where the characters kept in the browser live. */
 const ROSTER_KEY = 'moraff-tools.roster';
@@ -91,8 +92,8 @@ export function saveRoster(entries: RosterEntry[], currentId: string | null): bo
       game: entry.game,
       name: entry.name,
       slot: entry.slot,
-      importedBytes: entry.importedBytes ? toBase64(entry.importedBytes) : null,
-      bytes: toBase64(entry.bytes),
+      importedBytes: entry.importedBytes ? base64FromBytes(entry.importedBytes) : null,
+      bytes: base64FromBytes(entry.bytes),
       createdAt: entry.createdAt,
       editedAt: entry.editedAt,
       dead: entry.dead,

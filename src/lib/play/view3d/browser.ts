@@ -1,3 +1,4 @@
+import { bytesFromDataUrl } from '../../bytes';
 import { parsePicRows, type PicRowImage } from './texture';
 import { wallPictureFile, type ViewPictures } from './pictures';
 
@@ -19,7 +20,7 @@ function images(file: string): PicRowImage[] | null {
   const cached = parsed.get(file);
   if (cached !== undefined) return cached;
   const url = picUrls[`../../game/pics/${file}`];
-  const decoded = url ? parsePicRows(decodeDataUrl(url)) : null;
+  const decoded = url ? parsePicRows(bytesFromDataUrl(url)) : null;
   parsed.set(file, decoded);
   return decoded;
 }
@@ -41,10 +42,3 @@ export function viewPictures(section: number): ViewPictures {
 
 /** The four images of a town building's picture, or null when the bundle has not got the file. */
 export const buildingPictures = (file: string): PicRowImage[] | null => images(file);
-
-function decodeDataUrl(url: string): Uint8Array {
-  const binary = atob(url.slice(url.indexOf(',') + 1));
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-  return bytes;
-}
