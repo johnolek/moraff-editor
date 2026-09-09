@@ -166,7 +166,7 @@ export class RevMonsters {
       return;
     }
     const state = this.noticing(slot, at, walker, rng);
-    const direction = this.chooseDirection(slot, at, walker, state, rng);
+    const direction = this.chooseDirection(at, walker, state, rng);
     this.step(slot, at, direction, walker);
   }
 
@@ -210,7 +210,7 @@ export class RevMonsters {
    * An awake one that is lined up with the character closes along the axis they share; one that
    * is not moves across the way the character is facing.
    */
-  private chooseDirection(slot: number, at: RevStanding, walker: RevWalker, state: { awake: boolean; lined: boolean }, rng: Rng): number {
+  private chooseDirection(at: RevStanding, walker: RevWalker, state: { awake: boolean; lined: boolean }, rng: Rng): number {
     if (!state.awake || rng.random(walker.lastMonsterLevel + 35) < 15) return rng.random(4) + 1;
     if (!state.lined) {
       if (walker.facing === NORTH || walker.facing === SOUTH) return at.column > walker.column ? WEST : EAST;
