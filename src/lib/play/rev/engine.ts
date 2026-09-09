@@ -472,10 +472,12 @@ function goDown(turn: RevTurn): void {
   // character is standing on it.
   if (revAtTheFountain(game)) {
     revDrinkFromTheFountain(game, turn.session.magic());
+    game.events.push({ kind: 'fountainDrunk' });
     return;
   }
   if (game.feature < 1 || game.feature > 3) return;
   turn.session.enterLevel(game.pc.dungeonLevel + game.feature);
+  game.events.push({ kind: 'ladderTaken' });
 }
 
 /** 1000:0DAF: U takes a ladder up, or climbs the rope into a town building. */
@@ -487,16 +489,22 @@ async function goUp(turn: RevTurn): Promise<void> {
   }
   if (game.feature >= 0) return;
   turn.session.enterLevel(game.pc.dungeonLevel + game.feature);
+  game.events.push({ kind: 'ladderTaken' });
 }
 
 /** 1000:132A: `ON building GOTO`, the seven routines the ten squares lead to. */
 async function enterBuilding(turn: RevTurn, building: number): Promise<void> {
   const desk = turn.session.desk();
-  if (building >= 1 && building <= 3) await revStayAtInn(turn.game, building - 1, desk);
+  // The three squares past the seventh building lead nowhere, so nothing happens on them. The
+  // building is counted on the way in rather than on the way out, so that what a player is shown
+  // while they are inside one already has it.
+  if (building < 1 || building > 7) return;
+  turn.game.events.push({ kind: 'buildingEntered' });
+  if (building <= 3) await revStayAtInn(turn.game, building - 1, desk);
   else if (building === 4) await revVisitBank(turn.game, desk);
   else if (building === 5) await revVisitTemple(turn.game, desk);
   else if (building === 6) await revVisitStore(turn.game, desk);
-  else if (building === 7) await revVisitGuild(turn.game, desk, turn.session.magic());
+  else await revVisitGuild(turn.game, desk, turn.session.magic());
 }
 
 /**
@@ -531,6 +539,7 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
     if (key === REV_KEY.breathe) {
       const breath = revBreatheFire(game);
       if (breath === null) return;
+      game.events.push({ kind: 'breathed' });
       game.banner = revSwingWords(game, breath);
       revPrintTheSwing(game, breath, game.banner, key);
       monsterAnswers(session);
@@ -554,6 +563,7 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
     return;
   }
   const swing = revSwing(game, weapon);
+  game.events.push({ kind: 'swung' });
   game.banner = revSwingWords(game, swing);
   revPrintTheSwing(game, swing, game.banner, key);
   monsterAnswers(session);

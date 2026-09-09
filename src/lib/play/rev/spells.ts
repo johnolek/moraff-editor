@@ -137,6 +137,7 @@ export async function revCastInTheDungeon(game: RevGame, desk: RevMagicDesk): Pr
   if (level === null) return;
   const choice = await revSpellMenu(game, desk, level, 'prep');
   if (choice === NO_SPELL) return;
+  game.events.push({ kind: 'cast' });
   await REV_PREP_SPELLS[revSpellArm(game, level, choice) - 1].cast(game, desk, level);
 }
 
@@ -661,5 +662,6 @@ export async function revCastInAFight(game: RevGame, desk: RevMagicDesk): Promis
   }
   const choice = await revSpellMenu(game, desk, level, 'battle');
   if (choice === NO_SPELL) return;
+  game.events.push({ kind: 'cast' });
   await REV_BATTLE_SPELLS[revSpellArm(game, level, choice) - 1].cast(game, desk, level);
 }

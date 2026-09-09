@@ -319,6 +319,7 @@ export const REV_BATTLE_ITEMS: RevItem[] = [
 export async function revUseAnItem(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const choice = await revItemMenu(game, desk, 'prep', false);
   if (choice === 0) return;
+  game.events.push({ kind: 'itemUsed' });
   await REV_PREP_ITEMS[choice - 1].use(game, desk);
 }
 
@@ -326,6 +327,7 @@ export async function revUseAnItem(game: RevGame, desk: RevMagicDesk): Promise<v
 export async function revUseAnItemInAFight(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const choice = await revItemMenu(game, desk, 'battle', true);
   if (choice === 0) return;
+  game.events.push({ kind: 'itemUsed' });
   await REV_BATTLE_ITEMS[choice - 1].use(game, desk);
 }
 
@@ -364,6 +366,7 @@ export async function revTakeAPill(game: RevGame, desk: RevMagicDesk): Promise<v
   if (colour < 1 || colour > REV_PILL_COLOURS) return;
   if (revPillsHeld(pc, colour) < 1) return;
   revSpendPill(pc, colour);
+  game.events.push({ kind: 'itemUsed' });
   let lowered = colour + 3;
   if (lowered > REV_STATS) lowered -= REV_STATS;
   pc.stats[lowered - 1] -= 2;
@@ -401,6 +404,7 @@ export async function revUseAWand(game: RevGame, desk: RevMagicDesk): Promise<nu
   if (colour < 1 || colour > REV_WAND_COLOURS) return 0;
   if (revWandCharges(pc, colour) < 1) return 0;
   revSpendWandCharge(pc, colour);
+  game.events.push({ kind: 'itemUsed' });
   // 1000:7BC9: the ninth wand heals in full, and does it before the five that have a routine.
   if (colour === REV_WAND_COLOURS) pc.hp = pc.maxHp;
   if (colour <= 5) await REV_WANDS[colour - 1].use(game, desk);
