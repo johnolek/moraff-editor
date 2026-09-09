@@ -98,11 +98,29 @@
     }),
   );
 
+  /**
+   * Everything the frame is drawn from that is plain data, as one string.
+   *
+   * The tab is handed a fresh view for every key the game takes, including the ones that change
+   * nothing on the screen, and rebuilding the whole 1024 by 768 frame for one of those costs as
+   * much as rebuilding it for a step. The floor and the discovered map are not in here because
+   * both keep their identity while they are unchanged, so they are compared as they are; the two
+   * square readers are not either, since what they answer is settled by the floor and the dungeon.
+   */
+  const drawnFrom = $derived(
+    JSON.stringify({ place, lines, drawn, mapMonsters, height, cleared, zoomed, expandedMap, barCorners }),
+  );
+
+  /** What the canvas is showing, so the effect below can tell that nothing has changed. */
+  let onCanvas: { drawnFrom: string; rows: MapSquare[][]; discovered: DiscoveredMap } | null = null;
+
   $effect(() => {
     const target = canvas;
     if (!target) return;
     const context = target.getContext('2d');
     if (!context) return;
+    if (onCanvas?.drawnFrom === drawnFrom && onCanvas.rows === rows && onCanvas.discovered === discovered) return;
+    onCanvas = { drawnFrom, rows, discovered };
 
     const frame = newFrame(WIDTH, HEIGHT);
     const scene: MwViewScene = {
