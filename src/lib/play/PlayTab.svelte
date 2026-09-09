@@ -22,7 +22,7 @@
   import { runPlayLoop } from './loop';
   import PlayRoster from './PlayRoster.svelte';
   import ScreenSwitch from './ScreenSwitch.svelte';
-  import { actionWords, milestoneNote, milestoneWords, runLogOf, RUN_GAMES } from './run';
+  import { actionWords, lastMilestones, milestoneNote, milestoneWords, runLogOf, RUN_GAMES } from './run';
   import {
     colourblindFilter,
     PLAY_MODES,
@@ -332,8 +332,15 @@
         {@render afterPlace?.(stage)}
         <div class="run">
           {#if view.run}
+            {@const line = lastMilestones(view.run.milestones)}
             <span class="actions">{actionWords(view.run.actions)}</span>
-            {#each view.run.milestones as milestone}
+            {#if line.earlier.length > 0}
+              <span
+                class="milestone earlier"
+                title={line.earlier.map((milestone) => milestoneWords(milestone, words.dungeonName)).join(', ')}
+                >+{line.earlier.length} more</span>
+            {/if}
+            {#each line.shown as milestone}
               <span class="milestone" title={milestoneNote(milestone, words.clockWords(milestone.time))}>
                 {milestoneWords(milestone, words.dungeonName)}
               </span>

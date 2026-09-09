@@ -146,6 +146,11 @@
   border: 1px solid var(--line);
   border-radius: 999px;
 }
+/* The count of the milestones the line has folded away, which names them all on hover. */
+.play .run .earlier {
+  border-style: dashed;
+  cursor: help;
+}
 .play .run button {
   margin-left: auto;
 }
