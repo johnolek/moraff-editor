@@ -6,8 +6,8 @@
     ailments,
     chaseDistance,
     engagedMonster,
+    floorMonsterKinds,
     magicItems,
-    monstersNearby,
     spellTimers,
     squareFacts,
     SQUARE_NOTE,
@@ -20,12 +20,12 @@
     /** What the tab is drawing. A fresh one arrives after every action, and reading it is what
      *  sends the panel back to the record for the numbers below. */
     view: PlayView;
+    /** The kind of monster picked out of the list, which both maps ring, or null while none is
+     *  picked. */
+    highlighted?: string | null;
   }
 
-  let { game, view }: Props = $props();
-
-  /** How many of the floor's monsters the panel names by distance. */
-  const NEAREST_SHOWN = 5;
+  let { game, view, highlighted = $bindable(null) }: Props = $props();
 
   const numbers = $derived.by(() => {
     const place = view.place;
@@ -37,7 +37,7 @@
       items: magicItems(pc).filter((group) => group.lines.length > 0),
       engaged: engagedMonster(game),
       square: squareFacts(game, view.rows[place.y][place.x]),
-      nearby: monstersNearby(game, view.monsters, NEAREST_SHOWN),
+      kinds: floorMonsterKinds(game, view.monsters),
       onTheFloor: view.monsters.length,
       chase: chaseDistance(place.floor),
       seconds: Math.round(view.seconds),
@@ -45,6 +45,9 @@
   });
 
   const percent = (chance: number) => `${(chance * 100).toFixed(1)}%`;
+
+  /** The one level every monster of a kind was stocked at, or the range they cover. */
+  const levels = (low: number, high: number) => (low === high ? `level ${low}` : `levels ${low}-${high}`);
 </script>
 
 <!-- The game's own colours: entry 7 of its palette for a number, entry 6 for one that is
@@ -96,16 +99,25 @@
   <section>
     <h3>This floor</h3>
     {@render rows([{ label: 'Monsters left alive', value: String(numbers.onTheFloor) }])}
-    {#if numbers.nearby.length > 0}
-      <ol class="nearby">
-        {#each numbers.nearby as monster}
+    {#if numbers.kinds.length > 0}
+      <h4>Every monster on this floor</h4>
+      <ol class="kinds">
+        {#each numbers.kinds as kind}
           <li>
-            <span class="near-name">{monster.name}</span>
-            <span class="near-level">level {monster.level}</span>
-            <span class="near-away">{monster.distance} away</span>
+            <button
+              type="button"
+              class:picked={highlighted === kind.monsterId}
+              onclick={() => (highlighted = highlighted === kind.monsterId ? null : kind.monsterId)}>
+              <span class="kind-name">{kind.name}</span>
+              <span class="kind-facts">
+                {kind.count} on the floor &middot; {levels(kind.lowestLevel, kind.highestLevel)} &middot;
+                nearest {kind.nearest} away
+              </span>
+            </button>
           </li>
         {/each}
       </ol>
+      <p class="note">Click a kind to ring every one of them on both maps.</p>
     {/if}
     <p class="note">
       A monster within {numbers.chase} squares walks towards you; further off it stays where it is.
@@ -227,7 +239,7 @@
     font-size: 12px;
     color: var(--muted);
   }
-  .nearby {
+  .kinds {
     margin: 2px 0 0;
     padding: 0;
     list-style: none;
@@ -235,14 +247,27 @@
     flex-direction: column;
     gap: 2px;
   }
-  .nearby li {
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    column-gap: 8px;
-    align-items: baseline;
-    font-size: 12px;
+  .kinds button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    padding: 1px 4px;
+    cursor: pointer;
+    color: inherit;
+    font: inherit;
   }
-  .near-name {
+  .kinds button:hover {
+    border-color: var(--line);
+  }
+  .kinds button.picked {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .kind-name {
+    display: block;
     font-family: var(--font-dos);
     font-size: 17px;
     line-height: 1.2;
@@ -251,14 +276,10 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .near-level {
+  .kind-facts {
+    display: block;
     color: var(--muted);
     font-size: 11px;
-  }
-  .near-away {
-    font-family: var(--font-dos);
-    font-size: 17px;
-    line-height: 1.2;
-    color: var(--number);
+    line-height: 1.3;
   }
 </style>

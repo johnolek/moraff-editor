@@ -93,6 +93,9 @@ export interface ZoomMapFloor {
   /** Where the pictures those marks are drawn with come from, or undefined to mark them with the
    *  plain red square instead. */
   thumbnail?: ZoomThumbnailFor;
+  /** The kind of monster picked out of debug mode's list, every one of which is ringed, or null
+   *  while nothing is picked. */
+  highlight?: string | null;
 }
 
 /** Which square of the floor a cell of the map shows. */

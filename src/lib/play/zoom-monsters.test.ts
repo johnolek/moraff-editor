@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { newFrame, pixelAt } from './view3d/frame';
-import { drawZoomMonsters, zoomMapCell, zoomMapMonsterAt, zoomThumbnailSize, ZOOM_MONSTER_COLOUR } from './zoom-monsters';
+import {
+  drawZoomMonsters,
+  zoomMapCell,
+  zoomMapMonsterAt,
+  zoomThumbnailSize,
+  ZOOM_HIGHLIGHT_COLOUR,
+  ZOOM_MONSTER_COLOUR,
+} from './zoom-monsters';
 import { buildZoomThumbnail, TRANSPARENT } from './zoom-thumbnails';
 import type { PicRowImage } from './view3d/texture';
 import type { ZoomMapWindow } from './zoom-map';
@@ -93,5 +100,42 @@ describe('the monster a click on the map lands on', () => {
   it('answers with nothing for a pixel off the map altogether', () => {
     expect(zoomMapMonsterAt(MAP, AT, monsters, { x: 0, y: 0 })).toBeNull();
     expect(zoomMapMonsterAt(MAP, AT, monsters, { x: 4000, y: 4000 })).toBeNull();
+  });
+});
+
+describe("the ring on the kind picked out of debug mode's list", () => {
+  const monsters = [
+    { x: 41, y: 50, monsterId: 'builtin-0' },
+    { x: 39, y: 50, monsterId: 'builtin-1' },
+  ];
+  const cellCorner = (column: number) => ({ left: MAP.left + column * MAP.cell, top: MAP.top + 13 * MAP.cell });
+
+  it('outlines every cell holding a monster of that kind', () => {
+    const frame = newFrame(200, 300);
+    drawZoomMonsters(frame, MAP, AT, monsters, undefined, 'builtin-0');
+    const { left, top } = cellCorner(8);
+    expect(pixelAt(frame, left, top)).toBe(ZOOM_HIGHLIGHT_COLOUR);
+    expect(pixelAt(frame, left + MAP.cell, top + MAP.cell)).toBe(ZOOM_HIGHLIGHT_COLOUR);
+    // The mark inside the ring is still the plain red square.
+    expect(pixelAt(frame, left + 3, top + 3)).toBe(ZOOM_MONSTER_COLOUR);
+  });
+
+  it('leaves every other kind unringed', () => {
+    const frame = newFrame(200, 300);
+    drawZoomMonsters(frame, MAP, AT, monsters, undefined, 'builtin-0');
+    const { left, top } = cellCorner(6);
+    expect(pixelAt(frame, left, top)).toBe(0);
+  });
+
+  it('rings nothing while no kind is picked', () => {
+    const frame = newFrame(200, 300);
+    drawZoomMonsters(frame, MAP, AT, monsters, undefined, null);
+    expect(frame.pixels.some((pixel) => pixel === ZOOM_HIGHLIGHT_COLOUR)).toBe(false);
+  });
+
+  it('rings nothing for monsters with no kind of their own', () => {
+    const frame = newFrame(200, 300);
+    drawZoomMonsters(frame, MAP, AT, [{ x: 41, y: 50 }], undefined, undefined);
+    expect(frame.pixels.some((pixel) => pixel === ZOOM_HIGHLIGHT_COLOUR)).toBe(false);
   });
 });

@@ -1,4 +1,4 @@
-import { fillRect, type Frame } from './view3d/frame';
+import { drawLine, fillRect, type Frame } from './view3d/frame';
 import type { ZoomMapWindow } from './zoom-map';
 import { drawZoomThumbnail, type ZoomThumbnail } from './zoom-thumbnails';
 
@@ -20,6 +20,15 @@ const INSET = 2;
  * squares are black, their walls white and the character yellow, so a red mark is none of them.
  */
 export const ZOOM_MONSTER_COLOUR = 6;
+
+/**
+ * The ring debug mode draws round every monster of the kind picked out of the panel's list.
+ *
+ * Bright green is the one entry of the sixteen nothing else on either map uses: the sides and the
+ * door ticks are white, the corner dots and the plain monster mark red, the ladder marks yellow,
+ * the chute's blue, and a town building takes one of entries 3 to 8.
+ */
+export const ZOOM_HIGHLIGHT_COLOUR = 10;
 
 /**
  * How wide a thumbnail is drawn on a map with cells this size.
@@ -99,6 +108,7 @@ export function drawZoomMonsters(
   at: { x: number; y: number },
   monsters: ZoomMapMonster[],
   thumbnailFor?: ZoomThumbnailFor,
+  highlight?: string | null,
 ): void {
   const size = zoomThumbnailSize(map.cell);
   for (const monster of monsters) {
@@ -111,8 +121,21 @@ export function drawZoomMonsters(
     if (thumbnail) {
       const margin = (map.cell - thumbnail.size) >> 1;
       drawZoomThumbnail(frame, thumbnail, x + margin, y + margin);
-      continue;
+    } else {
+      fillRect(frame, x + INSET, y + INSET, x + map.cell - INSET, y + map.cell - INSET, ZOOM_MONSTER_COLOUR);
     }
-    fillRect(frame, x + INSET, y + INSET, x + map.cell - INSET, y + map.cell - INSET, ZOOM_MONSTER_COLOUR);
+    // The ring goes over the picture rather than under it, since a thumbnail fills the cell to
+    // within a pixel of its edges.
+    if (highlight && monster.monsterId === highlight) drawCellRing(frame, x, y, map.cell);
   }
+}
+
+/** The ring itself: the cell's own outline, one pixel wide. */
+function drawCellRing(frame: Frame, x: number, y: number, cell: number): void {
+  const right = x + cell;
+  const bottom = y + cell;
+  drawLine(frame, x, y, right, y, ZOOM_HIGHLIGHT_COLOUR);
+  drawLine(frame, x, bottom, right, bottom, ZOOM_HIGHLIGHT_COLOUR);
+  drawLine(frame, x, y, x, bottom, ZOOM_HIGHLIGHT_COLOUR);
+  drawLine(frame, right, y, right, bottom, ZOOM_HIGHLIGHT_COLOUR);
 }

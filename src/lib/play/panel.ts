@@ -5,7 +5,8 @@ import { sectionOf } from '../game/dotu-files.js';
 import { monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
 import type { Game, PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
-import { monsterById, type StockedMonster } from '../map/stocking';
+import type { Mark } from '../map/marks';
+import type { StockedMonster } from '../map/stocking';
 
 /**
  * The numbers the game keeps and never prints: the moves left on every spell, the charges on
@@ -320,37 +321,63 @@ export function squareFacts(game: Game, square: MapSquare): PanelLine[] {
   return lines;
 }
 
-/** One of the monsters on the floor, as the panel lists it. */
-export interface NearbyMonster {
+/** One kind of monster stocked on the floor, as debug mode's list names it. */
+export interface FloorMonsterKind {
+  /** The id the Monsters tab keys this kind by, which is what a highlighted kind is named by. */
+  monsterId: string;
   name: string;
-  level: number;
-  /** Squares away, counted the way pass_moment counts them: the two axes added together. */
-  distance: number;
+  /** How many of this kind are standing on the floor. */
+  count: number;
+  /** The lowest and the highest level any of them was stocked at. */
+  lowestLevel: number;
+  highestLevel: number;
+  /** Squares to the nearest one, counted the way pass_moment counts them: the two axes added
+   *  together. */
+  nearest: number;
 }
 
 /**
- * The monsters standing closest to the character, nearest first, with the floor's Shadow boss
- * behind them whenever he is standing on it.
+ * Every kind of monster standing on the floor, the nearest kind first, with how many there are of
+ * each.
  *
- * The boss is put down in the middle of the floor and only one square of it holds him, so the
- * nearest few almost never reach him; listing him anyway is what tells a player looking for him
- * that he is there at all, and how far off.
- *
- * The distance is pass_moment's own (exe 2000:a53c): it adds the two axes together and starts
- * walking a monster towards the character once that comes under `floor / 10 + 10`.
+ * This is the port's own list rather than anything the game shows, and it leaves nothing out: the
+ * section's Shadow boss is a kind like any other here, and so is a kind whose only member is
+ * standing at the far corner of the floor. The S key's own screen is where the game's rule about
+ * showing the nearest five lives.
  */
-export function monstersNearby(game: Game, monsters: StockedMonster[], most: number): NearbyMonster[] {
+export function floorMonsterKinds(game: Game, monsters: StockedMonster[]): FloorMonsterKind[] {
   const pc = game.pc;
   const away = (monster: StockedMonster) => Math.abs(pc.x - monster.x) + Math.abs(pc.y - monster.y);
-  const byDistance = [...monsters].sort((left, right) => away(left) - away(right));
-  const listed = byDistance.slice(0, most);
-  const boss = byDistance.find((monster) => monsterById(monster.monsterId).isBoss);
-  if (boss && !listed.includes(boss)) listed.push(boss);
-  return listed.map((monster) => ({
-    name: game.monsterKinds[game.monsters[monster.slot].type]?.name ?? '',
-    level: monster.level,
-    distance: away(monster),
-  }));
+  const kinds = new Map<string, FloorMonsterKind>();
+  for (const monster of monsters) {
+    const distance = away(monster);
+    const found = kinds.get(monster.monsterId);
+    if (found) {
+      found.count++;
+      found.lowestLevel = Math.min(found.lowestLevel, monster.level);
+      found.highestLevel = Math.max(found.highestLevel, monster.level);
+      found.nearest = Math.min(found.nearest, distance);
+      continue;
+    }
+    kinds.set(monster.monsterId, {
+      monsterId: monster.monsterId,
+      name: game.monsterKinds[game.monsters[monster.slot].type]?.name ?? '',
+      count: 1,
+      lowestLevel: monster.level,
+      highestLevel: monster.level,
+      nearest: distance,
+    });
+  }
+  return [...kinds.values()].sort((left, right) => left.nearest - right.nearest || left.name.localeCompare(right.name));
+}
+
+/** The square of every monster of one kind, which is what the maps ring while that kind is the
+ *  one picked out of the list. Nothing is picked, nothing is ringed. */
+export function monsterKindSquares(monsters: StockedMonster[], monsterId: string | null): Mark[] {
+  if (monsterId === null) return [];
+  return monsters
+    .filter((monster) => monster.monsterId === monsterId)
+    .map((monster) => ({ x: monster.x, y: monster.y, label: null }));
 }
 
 /** How far off a monster has to be before pass_moment leaves it standing where it is. */

@@ -15,6 +15,7 @@
   import MessageBox from './MessageBox.svelte';
   import MonsterCard from './MonsterCard.svelte';
   import Panel from './Panel.svelte';
+  import { monsterKindSquares } from './panel';
   import Portrait from './Portrait.svelte';
   import Screen from './Screen.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
@@ -55,6 +56,9 @@
   let centredFloor = $state.raw<number | null>(null);
   let style = $state<MovementStyle>(readMovementStyle('unforgiven'));
   let mode = $state<PlayMode>(readPlayMode('unforgiven'));
+  /** The kind of monster picked out of the debug panel's list, which both maps ring until it is
+   *  clicked again. */
+  let highlightedMonsterId = $state.raw<string | null>(null);
   let display = $state<PlayDisplay>(readPlayDisplay('unforgiven'));
   let colourblind = $state(readPlayColourblind('unforgiven'));
   let redraw = $state(readPlayRedraw('unforgiven'));
@@ -114,6 +118,15 @@
    * floor.
    */
   const zoomMap = $derived(discoveredMap ?? { known: () => true, knownOnArrival: () => true });
+
+  /**
+   * The kind of monster the maps ring. Only debug mode has the list that picks one, so leaving
+   * debug mode takes the ring off without forgetting which kind was picked.
+   */
+  const highlightedKind = $derived(debugDrawn(mode) ? highlightedMonsterId : null);
+  const highlightedSquares = $derived(
+    view === null ? [] : monsterKindSquares(monstersDrawn(mode, view), highlightedKind),
+  );
 
   /** The mode belongs to the tab; the session carries it so that anything keeping a record of
    *  the run can say which mode it was played in. */
@@ -289,6 +302,7 @@
             screenCleared={view.screenCleared}
             discovered={zoomMap}
             mapMonsters={zoomMapMonsters(mode, view)}
+            highlightMonsterId={highlightedKind}
             debug={debugDrawn(mode)}
             onmonster={(monster) => (openMonsterId = monster.monsterId)}
             prompt={view.prompt}
@@ -310,6 +324,7 @@
             floor={view.place.floor}
             dungeon={view.place.module}
             monsters={monstersDrawn(mode, view)}
+            marks={highlightedSquares}
             discovered={discoveredMap}
             bounds={FULL_FLOOR}
             you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
@@ -402,7 +417,7 @@
           <WallTexture game={UNFORGIVEN_MAP.id} dungeon={view.place.module} floor={view.place.floor} />
         {/if}
         {#if panelVisible(mode)}
-          <Panel game={session.game} {view} />
+          <Panel game={session.game} {view} bind:highlighted={highlightedMonsterId} />
         {/if}
       </aside>
     </div>

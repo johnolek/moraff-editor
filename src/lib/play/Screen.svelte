@@ -66,6 +66,9 @@
     /** The monsters marked on the zoom map, which is every one on the floor in debug mode and
      *  none at all in the modes that show only what the game showed. */
     mapMonsters?: StockedMonster[];
+    /** The kind of monster picked out of debug mode's list, every one of which the zoom map
+     *  rings, or null while nothing is picked. */
+    highlightMonsterId?: string | null;
     /** Whether the numbers the game never prints are printed over the views, which is debug
      *  mode's own doing. */
     debug?: boolean;
@@ -109,6 +112,7 @@
     discovered,
     prompt,
     mapMonsters = [],
+    highlightMonsterId = null,
     debug = false,
     onmonster,
     killed = null,
@@ -286,6 +290,7 @@
       drawn,
       skull,
       mapMonsters,
+      highlightMonsterId,
       viewsDrawn,
       expandedMap,
       debug,
@@ -319,6 +324,7 @@
       map: discovered,
       monsters: mapMonsters,
       thumbnail: dotuMonsterThumbnail,
+      highlight: highlightMonsterId,
     };
     const paint = (): void => {
       // The plaque goes over everything else on the screen, whichever of them is up: FUN_2000_4054
