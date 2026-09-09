@@ -25,10 +25,12 @@ describe('nudgeLevel', () => {
     expect(nudgeLevel(40, () => 0.9)).toBe(40);
   });
 
-  it('clamps to 1..210', () => {
+  it('sends a level nudged outside 1..210 back to 1', () => {
     // Four steps down from level 3, then a roll that ends the loop.
     expect(nudgeLevel(3, scripted([0, 0, 0, 0, 0, 0, 0, 0, 0.9]))).toBe(1);
-    expect(nudgeLevel(209, scripted([0, 0.9, 0, 0.9, 0, 0.9, 0.9]))).toBe(210);
+    // 210 is the last level that stands: one step up from 209 keeps it, three steps do not.
+    expect(nudgeLevel(209, scripted([0, 0.9, 0.9]))).toBe(210);
+    expect(nudgeLevel(209, scripted([0, 0.9, 0, 0.9, 0, 0.9, 0.9]))).toBe(1);
   });
 
   it('stays within a step of the base for most rolls', () => {
