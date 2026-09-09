@@ -109,6 +109,21 @@ describe('the inns', () => {
     expect(game.said.join(' ')).toContain('throw up');
   });
 
+  it('never leaves a character over their maximum, as 1000:1E72 and 1FA8 do', async () => {
+    for (const inn of [0, 1]) {
+      const game = started(character({ hp: 30, maxHp: 30 }));
+      await revStayAtInn(game, inn, desk('Y'));
+      expect(game.pc.hp).toBe(30);
+    }
+  });
+
+  it('gives the Yuppydom Inn three health points and its suite for 200', async () => {
+    const game = started(character({ money: 400, hp: 10, maxHp: 30 }));
+    await revStayAtInn(game, 1, desk('Y'));
+    expect(game.pc.money).toBe(200);
+    expect(game.pc.hp).toBe(13);
+  });
+
   it('sleeps at all three of them, as 1000:1FBD does', async () => {
     for (const inn of [0, 1, 2]) {
       const game = started(character());

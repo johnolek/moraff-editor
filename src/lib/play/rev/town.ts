@@ -13,7 +13,7 @@ import {
   setRevValue,
   wearsRingsOfHealth,
 } from './record';
-import { revEndPreppedSpells } from './spells';
+import { revCapHitPoints, revEndPreppedSpells } from './spells';
 import { REV_ITEM_TABLE, revSpellsAt } from './tables';
 import type { RevGame } from './state';
 
@@ -111,6 +111,10 @@ export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDe
   } else {
     pc.hp += inn.heals;
     if (wearsRingsOfHealth(pc)) pc.hp = pc.maxHp;
+    // 1000:1E72 and 1FA8: both of the cheap inns put the hit points back down to the maximum
+    // before the night, so a character who was already full gains nothing from the point or the
+    // three.
+    revCapHitPoints(pc);
     revSleep(game);
     // 1000:1FAE: the Yuppydom leaves a twenty in the scratch cell that nothing reads.
     if (which === 1) game.scratch = 20;
