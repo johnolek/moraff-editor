@@ -393,9 +393,9 @@
     <div class="page">
       <h2><PixelText text="Play" scale={2} /></h2>
       <p class="lead">
-        Moraff's World, played in a browser: the game's own dungeon, its own monsters and its own keys, with the map
-        where the 3-D view used to be. The character on the roster is the one who walks, and the game saves them back
-        where it would have saved them, so they can go on playing in DOS.
+        Moraff's World, played in a browser: the game's own dungeon, its own monsters and its own keys, on the screen
+        the game draws them on. The character on the roster is the one who walks, and the game saves them back where it
+        would have saved them, so they can go on playing in DOS.
       </p>
       {#if !playable}
         <p class="hint">Load a Moraff's World save or roll a character, and this is where they play.</p>

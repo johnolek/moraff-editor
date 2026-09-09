@@ -8,8 +8,10 @@ import { MW_COLOURS } from './view3d/screen';
  * the brick speed, O the sound, X the whole floor at once, Z the 3-D view close up, and the
  * three that step one colour of the background on.
  *
- * Every one of them but X sets up a DOS display this port does not have, so the box says what the
- * game would have done. The wording of those boxes is this port's own.
+ * X is the only one this port does. The others ask for something the port's screen does not
+ * offer — a second brick speed, the PC speaker, the close-up view, a background colour of the
+ * player's own — so the box says what the game would have done instead. The wording of those
+ * boxes is this port's own.
  */
 
 /** movecontrol's 0x62 branch: B steps DS:4390 through 0, 1 and 2 and draws the view again. */
@@ -18,7 +20,7 @@ export function changeTheBrickSpeed(turn: MwTurn): void {
     'THE GAME WOULD STEP THROUGH THE',
     'THREE BRICK SPEEDS, WHICH SET',
     'HOW MUCH OF A WALL THE 3-D VIEW',
-    'DRAWS. THIS PORT DRAWS THE MAP.',
+    'DRAWS. THIS PORT DRAWS IT ALL.',
   );
 }
 
@@ -115,7 +117,7 @@ export function zoomTheView(turn: MwTurn): void {
     'THE GAME WOULD FILL THE SCREEN',
     'WITH THE VIEW ONE WAY AND NAME',
     'THE MONSTER STANDING IN IT.',
-    'THIS PORT IS PLAYED ON THE MAP.',
+    'THIS PORT DRAWS THE ONE SCREEN.',
   );
 }
 
@@ -128,7 +130,7 @@ export function stepTheBackgroundColour(turn: MwTurn, colour: string): void {
   turn.game.say(
     'THE GAME WOULD ADD SIXTEEN TO',
     `THE ${colour} IN ITS BACKGROUND`,
-    'COLOR. THIS PAGE PAINTS ITS',
-    'OWN BACKGROUND.',
+    'COLOR. THIS PORT LEAVES THE',
+    'BACKGROUND AS IT IS.',
   );
 }
