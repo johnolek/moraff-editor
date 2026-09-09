@@ -22,6 +22,13 @@ describe('the tabs a game has', () => {
     expect(tabFor('revenge', 'play')).toBe('play');
   });
 
+  it('gives the Fight tab to Dungeons of the Unforgiven alone', () => {
+    expect(tabsFor('unforgiven').map((tab) => tab.id)).toContain('fight');
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).not.toContain('fight');
+    expect(tabsFor('revenge').map((tab) => tab.id)).not.toContain('fight');
+    expect(tabFor('moraffsWorld', 'fight')).toBe('editor');
+  });
+
   it('calls the map tab DotU Map under that game and Map under the others', () => {
     expect(TABS.find((tab) => tab.id === 'map')?.label).toBe('DotU Map');
     expect(tabsFor('moraffsWorld').find((tab) => tab.id === 'map')?.label).toBe('Map');

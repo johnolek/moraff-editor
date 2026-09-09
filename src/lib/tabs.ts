@@ -9,6 +9,7 @@ export interface TabEntry {
 export const TABS: TabEntry[] = [
   { id: 'map', label: 'DotU Map' },
   { id: 'play', label: 'Play' },
+  { id: 'fight', label: 'Fight' },
   { id: 'editor', label: 'Save Editor' },
   { id: 'monsters', label: 'Monsters' },
   { id: 'spells', label: 'Spells' },
@@ -20,9 +21,9 @@ export const TABS: TabEntry[] = [
   { id: 'source', label: 'Source' },
 ];
 
-/** The tabs each game other than Dungeons of the Unforgiven has, which has them all: the
- *  calculators, the formulas and the snake are that game's alone. A game listing `tidbits` here
- *  needs a file of its own in `src/lib/tidbits/files.ts` to show on it. */
+/** The tabs each game other than Dungeons of the Unforgiven has, which has them all: the fight
+ *  simulator, the calculators, the formulas and the snake are that game's alone. A game listing
+ *  `tidbits` here needs a file of its own in `src/lib/tidbits/files.ts` to show on it. */
 const GAME_TABS: Partial<Record<GameId, Tab[]>> = {
   moraffsWorld: ['map', 'play', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source'],
   revenge: ['map', 'play', 'editor', 'monsters', 'tidbits', 'roller', 'source'],
