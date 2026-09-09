@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { sectionInfo } from '../game/sections';
 import { BOTTOM_LEVEL } from '../game/unfmap.js';
+import { newFrame, pixelAt } from '../play/view3d/frame';
+import { WALL_BASE, WALL_GRADIENT, WALL_TINT } from '../play/view3d/pictures';
+import { drawWallFace, type PicRowImage } from '../play/view3d/texture';
 import { renderWallTexture, wallTexture } from './wall-texture';
 
 /** The file each of the twenty sections draws its walls from, section 1 first. */
@@ -111,5 +114,33 @@ describe('renderWallTexture', () => {
 describe("Moraff's Revenge", () => {
   it('has no wall texture, since nothing has read its wall pictures', () => {
     expect(wallTexture('revenge', 1, 1)).toBeNull();
+  });
+});
+
+describe('the swatch and the wall faces of the 3-D view', () => {
+  /** A picture whose every pixel is the one value, so a face painted from it is that value. */
+  const solid = (colour: number): PicRowImage =>
+    Array.from({ length: 200 }, () => ({ startX: 0, runs: [{ colour, length: 255 }] }));
+
+  /**
+   * The colour the view gives a pixel of this value on a plain wall face, read from the face's
+   * leftmost column. Values 18 and 19 are drawn by the screen column rather than by the picture,
+   * and column zero is the one the swatch stands in.
+   */
+  function faceColour(value: number): number {
+    const frame = newFrame(40, 40);
+    drawWallFace(frame, 0, 20, 8, 8, 24, 24, solid(value), 0, 392, {
+      base: WALL_BASE,
+      tint: WALL_TINT,
+      gradient: WALL_GRADIENT,
+    });
+    return pixelAt(frame, 0, 16);
+  }
+
+  it('give a pixel of the same value the same colour', () => {
+    const texture = wallTexture('unforgiven', 0, 1)!;
+    for (const value of [16, 17, 18]) {
+      expect([value, texture.pixelIndex(value, 0)]).toEqual([value, faceColour(value)]);
+    }
   });
 });
