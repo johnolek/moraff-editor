@@ -1,6 +1,9 @@
 /* The look every game's monster card shares. Global on purpose: Svelte scoped styles do not
    reach the snippets the card is filled with, which are written in each game's own component.
 
+   Where one value has to serve all three cards it is the Dungeons of the Unforgiven card's,
+   that being the one the other two were drawn from.
+
    Only the shell's own elements and the ones the games write into it are styled here. The
    picker rows are left to each card, because the DotU card mounts LevelControl, whose own
    `.pickers` is a three-column grid rather than a wrapping row. */
