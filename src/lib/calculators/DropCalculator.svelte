@@ -4,6 +4,7 @@
   import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import { BOTTOM_LEVEL } from '../game/unfmap.js';
+  import { percent } from '../ui/format';
   import BarChart from '../ui/BarChart.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
@@ -61,7 +62,6 @@
     ownedWeapons = owned ? [...ownedWeapons, id] : ownedWeapons.filter((other) => other !== id);
   }
 
-  const percent = (chance: number) => `${(chance * 100).toFixed(1)}%`;
 </script>
 
 <div class="page">

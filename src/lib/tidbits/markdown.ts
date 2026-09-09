@@ -6,6 +6,8 @@
  * of text comes out as text, and the component that shows it puts it on the page as a text node.
  */
 
+import { slugify } from '../ui/format';
+
 /** Where a link goes. The custom schemes name somewhere inside this app rather than a URL. */
 export type LinkTarget =
   /** `https://…`, opened in a new tab. */
@@ -102,7 +104,7 @@ export function plainText(blocks: Block[]): string {
 
 /** `Bugs the game has` becomes `bugs-the-game-has`, with a number added where that is taken. */
 function slug(title: string, taken: Set<string>): string {
-  const base = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'entry';
+  const base = slugify(title) || 'entry';
   let id = base;
   for (let n = 2; taken.has(id); n++) id = `${base}-${n}`;
   taken.add(id);

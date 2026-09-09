@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { percent } from '../../ui/format';
   import type { MwGame } from '../../game/mw-port/state';
   import { MW_SCREEN_COLOURS } from '../../roller/screen';
   import type { MwPlayView } from './engine';
@@ -41,7 +42,6 @@
     };
   });
 
-  const percent = (chance: number) => `${(chance * 100).toFixed(1)}%`;
 </script>
 
 <!-- The game's own colours: entry 7 of its palette for a number, entry 6 for one that is

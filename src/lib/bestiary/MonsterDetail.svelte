@@ -13,6 +13,7 @@
   import { sectionInfo } from '../game/sections';
   import { MODULE_NUMERALS } from '../map/labels';
   import SourceLink from '../source/SourceLink.svelte';
+  import { percent } from '../ui/format';
   import BarChart from '../ui/BarChart.svelte';
   import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
@@ -74,7 +75,6 @@
     }),
   );
 
-  const percent = (chance: number) => `${(chance * 100).toFixed(1)}%`;
 
   const halfTheTime = $derived(totalNeededToBeatDefense(0.5, baseLevel, entry.type.defense, entry.type.speed));
   const nineSwingsInTen = $derived(totalNeededToBeatDefense(0.9, baseLevel, entry.type.defense, entry.type.speed));

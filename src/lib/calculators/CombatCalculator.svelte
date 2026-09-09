@@ -6,6 +6,7 @@
   import type { SaveRecord } from '../game/dotu-files.js';
   import data from '../game/dotu-data.json';
   import { monsterLevelBase } from '../game/dotu-mech.js';
+  import { percent } from '../ui/format';
   import BarChart from '../ui/BarChart.svelte';
   import SourceLink from '../source/SourceLink.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
@@ -128,7 +129,6 @@
   }
 
   const number = (value: number) => Math.round(value).toLocaleString();
-  const percent = (share: number) => `${(100 * share).toFixed(1)}%`;
   const damage = (value: number) => value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
   /** A fraction of a hit point still tells you something when a kill costs you almost none. */
   const hpLost = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: value < 10 ? 1 : 0 });

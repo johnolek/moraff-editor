@@ -1,4 +1,5 @@
 import { downloadJson } from '../download';
+import { slugify } from '../ui/format';
 import type { RunLog } from './run';
 
 /**
@@ -9,8 +10,7 @@ import type { RunLog } from './run';
 /** What a run downloads as: the character's name, and anything that is not a letter or a digit
  *  turned into a dash so that every browser will keep the name. */
 export function runFileName(log: RunLog): string {
-  const name = log.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-  return `${name || 'character'}-run.json`;
+  return `${slugify(log.name) || 'character'}-run.json`;
 }
 
 export function downloadRunLog(log: RunLog): void {

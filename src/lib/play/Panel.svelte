@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { percent } from '../ui/format';
   import type { Game } from '../game/port/state';
   import { routeWords, type Route } from '../map/path';
   import { SCREEN_COLOURS } from '../roller/screen';
@@ -59,7 +60,6 @@
     };
   });
 
-  const percent = (chance: number) => `${(chance * 100).toFixed(1)}%`;
 
   /** The one level every monster of a kind was stocked at, or the range they cover. */
   const levels = (low: number, high: number) => (low === high ? `level ${low}` : `levels ${low}-${high}`);

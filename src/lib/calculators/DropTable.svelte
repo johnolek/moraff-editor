@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { percent } from '../ui/format';
   import { expectedKills, type DropRow } from './drops';
 
   interface Props {
@@ -7,7 +8,6 @@
 
   let { rows }: Props = $props();
 
-  const percent = (chance: number) => `${(chance * 100).toFixed(1)}%`;
 
   function kills(chance: number): string {
     const count = expectedKills(chance);

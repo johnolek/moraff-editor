@@ -4,6 +4,7 @@
   import { app, currentEntry } from '../app-state.svelte';
   import { blockWheel } from '../editor/block-wheel';
   import { MORAFFS_WORLD } from '../editor/games';
+  import { percent } from '../ui/format';
   import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import MwMonsterPicture from './MwMonsterPicture.svelte';
@@ -86,7 +87,6 @@
   const halfTheTime = $derived(totalNeededFor(0.5, entry, floor));
 
   const number = (value: number) => Math.round(value).toLocaleString();
-  const percent = (value: number) => `${(value * 100).toFixed(1)}%`;
 
   const stats = $derived([
     ['Defense', String(entry.defence)],
