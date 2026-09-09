@@ -3,6 +3,7 @@
   import { app, currentEntry } from '../app-state.svelte';
   import { characterEdited, importCharacter, importRevExploredMap, replaceCharacterBytes, unloadCharacter } from '../character/current';
   import { characterFileName } from '../character/record';
+  import { downloadBytes } from '../download';
   import { isRevExploredFile } from '../map/explored';
   import { GAME_SCHEMAS, GAMES, pickGameForFile } from './games';
   import type { GameSchema, TextRecord } from './schema';
@@ -132,12 +133,7 @@
   function download() {
     if (!doc) return;
     doc.game.onSave?.(doc.bytes);
-    const url = URL.createObjectURL(new Blob([doc.bytes], { type: 'application/octet-stream' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = fileName;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadBytes(doc.bytes, fileName);
     showToast('Downloaded ' + fileName);
   }
 

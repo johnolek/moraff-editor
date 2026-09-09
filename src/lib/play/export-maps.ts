@@ -1,3 +1,4 @@
+import { downloadBytes } from '../download';
 import { FLOORS_PER_BLOCK } from '../map/explored';
 import { dotuDunName, mwDunName, writeDunFile } from '../map/write-explored';
 import { MW_SLOTS } from '../roller/mw-save-file';
@@ -74,16 +75,6 @@ function dunFiles(
     if (name !== null) files.push({ name, bytes: writeDunFile(bitmaps, block) });
   }
   return files.sort((first, second) => first.name.localeCompare(second.name));
-}
-
-/** Hand the browser a file to save. */
-export function downloadBytes(bytes: Uint8Array<ArrayBuffer>, name: string): void {
-  const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = name;
-  link.click();
-  URL.revokeObjectURL(url);
 }
 
 /** The one file a character's maps make, or a zip of them when there is more than one. */

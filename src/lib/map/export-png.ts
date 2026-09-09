@@ -1,3 +1,4 @@
+import { downloadBlob } from '../download';
 import { drawFloor } from './draw-floor';
 import { isExplored, type ExploredSquares } from './explored';
 import type { MapGame, MapSquare } from './game';
@@ -20,11 +21,5 @@ export function renderFloorPng(rows: MapSquare[][], floor: number, game: MapGame
 }
 
 export async function downloadFloorPng(rows: MapSquare[][], floor: number, dungeon: number, game: MapGame, explored: ExploredSquares | null = null): Promise<void> {
-  const blob = await renderFloorPng(rows, floor, game, explored);
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = game.pngName(dungeon, floor);
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(await renderFloorPng(rows, floor, game, explored), game.pngName(dungeon, floor));
 }

@@ -1,3 +1,4 @@
+import { downloadJson } from '../download';
 import type { RunLog } from './run';
 
 /**
@@ -13,10 +14,5 @@ export function runFileName(log: RunLog): string {
 }
 
 export function downloadRunLog(log: RunLog): void {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(log, null, 2)], { type: 'application/json' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = runFileName(log);
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadJson(log, runFileName(log));
 }

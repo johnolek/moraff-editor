@@ -1,6 +1,7 @@
 <script lang="ts">
   import { app, type GameId } from '../app-state.svelte';
   import { keepRolledCharacter } from '../character/current';
+  import { downloadBytes } from '../download';
   import { goToTab } from '../history';
   import { MW_CLASS_NAMES, MW_RACES, MINUTES_PER_YEAR } from '../game/mw-port/character';
   import type { MwCharacter } from '../game/mw-port/state';
@@ -243,12 +244,7 @@
   }
 
   function save(bytes: Uint8Array<ArrayBuffer>, name: string) {
-    const url = URL.createObjectURL(new Blob([bytes], { type: 'application/octet-stream' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = name;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadBytes(bytes, name);
     note = `Downloaded ${name}`;
   }
 
