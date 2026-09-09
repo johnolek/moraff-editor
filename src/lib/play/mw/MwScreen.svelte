@@ -88,7 +88,7 @@
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
-  const paintFrame = framePainter(WIDTH, HEIGHT);
+  const painter = framePainter(WIDTH, HEIGHT);
 
   const drawn = $derived.by((): MwViewMonster[] =>
     monsters.flatMap((monster) => {
@@ -143,7 +143,7 @@
     if (expandedMap) {
       drawMwExpandedMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters, thumbnail: mwMonsterThumbnail });
       drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
-      paintFrame(context, frame, floorPalette(place.floor));
+      painter.paint(context, frame, floorPalette(place.floor));
       return;
     }
 
@@ -159,7 +159,7 @@
     // screen, so the frame goes black before its lines are painted.
     if (cleared) fillRect(frame, 0, 0, WIDTH, HEIGHT, 0);
     drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
-    paintFrame(context, frame, floorPalette(place.floor));
+    painter.paint(context, frame, floorPalette(place.floor));
   });
 
   /**

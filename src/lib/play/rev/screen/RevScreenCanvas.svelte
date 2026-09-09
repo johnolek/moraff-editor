@@ -18,14 +18,14 @@
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
-  const paintFrame = framePainter(SCREEN_WIDTH, SCREEN_HEIGHT);
+  const painter = framePainter(SCREEN_WIDTH, SCREEN_HEIGHT);
 
   $effect(() => {
     const target = canvas;
     if (!target) return;
     const context = target.getContext('2d');
     if (!context) return;
-    paintFrame(context, screen, revRgb(palette, background));
+    painter.paint(context, screen, revRgb(palette, background));
   });
 </script>
 

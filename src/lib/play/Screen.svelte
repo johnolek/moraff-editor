@@ -124,7 +124,7 @@
    *  neither the arrow's timer nor the two animations below is worth running behind one. */
   const visible = onScreen(() => canvas);
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
-  const paintFrame = framePainter(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+  const painter = framePainter(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
   let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
   /** The screen as it was last painted, for the plaque's crawl and the fades to work from. */
   let painted = $state.raw<{ frame: Frame; palette: Rgb[] } | null>(null);
@@ -322,7 +322,7 @@
       // copies the two shop tables over the banks the building picture is drawn out of.
       // A fade's first step is drawn here so that nothing of the screen shows at full strength
       // before the animation below has its first frame.
-      paintFrame(context, frame, fade === null ? palette : fadedPalette(palette, fade, 0));
+      painter.paint(context, frame, fade === null ? palette : fadedPalette(palette, fade, 0));
       painted = plaque === 'showing' || fade !== null ? { frame, palette } : null;
     };
     // The stone tablet the snake's words are read on (exe 3000:9026), which is a screen of its own:
@@ -472,7 +472,7 @@
     let request = 0;
     const tick = (now: number): void => {
       const step = Math.min(last, Math.floor((now - started) / FADE_STEP_MS));
-      paintFrame(context, holding.frame, fadedPalette(holding.palette, running, step));
+      painter.paint(context, holding.frame, fadedPalette(holding.palette, running, step));
       request = requestAnimationFrame(tick);
     };
     request = requestAnimationFrame(tick);
@@ -496,7 +496,7 @@
     let request = 0;
     const tick = (): void => {
       steps += 1;
-      paintFrame(context, holding.frame, cycleGradientBank(holding.palette, steps));
+      painter.paint(context, holding.frame, cycleGradientBank(holding.palette, steps));
       request = requestAnimationFrame(tick);
     };
     request = requestAnimationFrame(tick);
