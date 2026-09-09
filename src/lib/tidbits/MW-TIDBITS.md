@@ -144,7 +144,8 @@ which is why consecutive seeds give answers that lie on a straight line.
 The to-hit roll is not pass or fail. A roll on 80 is added to twice your level, your strength,
 your luck, the weapon's own to-hit number and every plus you are carrying; twice the monster's
 depth and the three bytes of its row that count as defence come off; and then the weapon's damage
-die is rolled once for every full 40 points the total sits above 40.
+die is rolled once for every 40 points, or part of one, that the total sits above 40, so 41 rolls
+it once and 81 rolls it twice.
 
 That is why a character who has outgrown a floor kills in one blow: it is the same swing, cashed
 several times over. The monster's side works the same way on a threshold of 32 with 40 coming off
@@ -153,27 +154,35 @@ each time, so a monster's roll of 33 hits once and 73 hits twice.
 In the code: [strike](source:c/strike), [monster_turn](source:c/monster_turn) and
 [toHitTotal](source:ts/to-hit.ts/toHitTotal).
 
-### Constitution is the only thing that takes a deep floor back
+### Constitution only helps on a floor deeper than you are
 
 Once a monster's swing has landed, and only while your level is below the floor number, the game
 piles on extra rolls: one on the difference between the floor and your level, one on four times
-the floor below floor 26, another on five times the floor below floor 101, and one on the
+the floor from floor 26 down, another on five times the floor from floor 101 down, and one on the
 monster's own depth. That is what makes a floor deeper than you dangerous rather than merely
 harder.
 
-Then the whole total is multiplied by `(100 - constitution + 50) / 150`. At 0 constitution that is
+The whole total is then multiplied by `(100 - constitution + 50) / 150`. At 0 constitution that is
 the damage unchanged; at 100 constitution it is a third of it. The subtraction is floored at 1, so
-constitution above 100 buys nothing at all — the single most useful number in the game stops
-mattering at exactly 100.
+constitution above 100 buys nothing at all.
+
+The multiply is inside the same block as the extra rolls, so it is the same condition. A character
+whose level has caught up with the floor takes neither the extras nor the reduction: the most
+useful number in the game does nothing whatever until you go deeper than your level, and stops
+mattering again at exactly 100.
 
 In the code: [monster_turn](source:c/monster_turn).
 
 ### One monster attack in four is thrown away
 
-After all of that arithmetic there is a roll on four, and on a 1 the entire total is discarded and
+After the damage dice there is a roll on four, and on a 1 the entire total is discarded and
 replaced with a roll on `floor / 2 + 3`. That roll can come out zero, so a monster that landed a
 solid hit does nothing at all a quarter of the time on shallow floors, and the message says it
 missed you.
+
+It is not the last word on the damage. The replacement is made before the deep-floor extras and
+the constitution divide, so on a floor deeper than your level a nonzero replacement still has all
+of those piled on top of it.
 
 In the code: [monster_turn](source:c/monster_turn).
 
@@ -189,15 +198,16 @@ points — is paying for it on every swing anything takes at them.
 
 In the code: [monster_turn](source:c/monster_turn).
 
-### A level 0 character cannot be hit for more than five
+### A level 0 character cannot be hit for more than four
 
-The last line of a monster's attack, after the damage is final, reads: if your level is 0 and the
-damage is above 4, throw it away and take a roll on 4 plus 1 instead. You leave character creation
-at level 0 and stay there until you have earned 54 experience and paid for a room, so the whole of
-that first stretch is played under a hard cap of five points a hit.
+Near the end of a monster's attack, after the damage is final, comes a line: if your level is 0
+and the damage is above 4, throw it away and take a roll on 4 plus 1 instead, which is 1 to 4. You
+leave character creation at level 0 and stay there until you have earned 54 experience and paid
+for a room, so the whole of that first stretch is played under a cap of four points a hit.
 
 It is the only difficulty setting the game has, and nothing tells you it is there or that it is
-about to end.
+about to end. It is not quite the last line either: a monster with a breath weapon breathes it
+half the time, and the breath is worked out afterwards and never sees the cap.
 
 In the code: [monster_turn](source:c/monster_turn) and
 [experience_needed](source:c/experience_needed).
