@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { app, currentEntry } from '../app-state.svelte';
+  import { armSpeaker } from '../speaker';
   import { characterDied, replaceCharacterBytes } from '../character/current';
   import FloorCanvas from '../map/FloorCanvas.svelte';
   import { UNFORGIVEN_MAP } from '../map/game';
@@ -221,6 +222,9 @@
   function press(key: number) {
     const playing = session;
     if (!playing) return;
+    // A browser starts audio only from something the player did, so the speaker is opened on the
+    // key rather than when the game starts.
+    armSpeaker();
     const keys = style === UNFORGIVEN_MAP.id ? [key] : compassKeys(key, playing.game.pc.dir);
     for (const one of keys) playing.press(one);
   }
