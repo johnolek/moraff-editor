@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { SeededRng } from '../../game/port/rng';
 import { REV_FOUR_SECONDS } from './held';
-import { DEATH_DIRGE, INN_HYMN, revPlayInnHymn, revPlayTones, TEMPLE_MARCH } from './music';
+import {
+  DEATH_DIRGE,
+  INN_HYMN,
+  revPlayDeathDirge,
+  revPlayInnHymn,
+  revPlayTempleMarch,
+  revPlayTones,
+  TEMPLE_MARCH,
+} from './music';
 import type { RevPc } from './record';
 import { newRevGame } from './state';
 
@@ -96,7 +104,8 @@ describe("the inns' hymn (1000:05B8)", () => {
   });
 });
 
-/** A character standing in the town, since an inn is the only place the hymn is played. */
+/** A character standing in the town, where the hymn is played, and a count of the two things a
+ *  tune asks the session for: the wait it takes in the hymn's place and the keyboard it empties. */
 function sleeping(sound: number) {
   const pc: RevPc = {
     values: new Array<number>(340).fill(0),
@@ -125,7 +134,11 @@ function sleeping(sound: number) {
   game.sound = sound;
   const waits: number[] = [];
   game.delay = (ms) => waits.push(ms);
-  return { game, waits };
+  const playing = { game, waits, flushes: 0 };
+  game.flushKeys = () => {
+    playing.flushes += 1;
+  };
+  return playing;
 }
 
 describe('the hymn with the sound off', () => {
@@ -139,5 +152,25 @@ describe('the hymn with the sound off', () => {
     const { game, waits } = sleeping(0);
     revPlayInnHymn(game);
     expect(waits).toEqual([]);
+  });
+});
+
+describe('the keyboard a tune empties (1000:05EE)', () => {
+  const TUNES = [revPlayTempleMarch, revPlayDeathDirge, revPlayInnHymn];
+
+  it('throws away what was typed ahead of every one of the three', () => {
+    for (const tune of TUNES) {
+      const playing = sleeping(0);
+      tune(playing.game);
+      expect(playing.flushes).toBe(1);
+    }
+  });
+
+  it('throws away nothing with the sound off, since 1000:05D5 returns before the flush', () => {
+    for (const tune of TUNES) {
+      const playing = sleeping(1);
+      tune(playing.game);
+      expect(playing.flushes).toBe(0);
+    }
   });
 });

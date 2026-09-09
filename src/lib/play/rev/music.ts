@@ -151,10 +151,21 @@ const TEMPLE_MARCH_TONES = revPlayTones(TEMPLE_MARCH);
 const DEATH_DIRGE_TONES = revPlayTones(DEATH_DIRGE);
 const INN_HYMN_TONES = revPlayTones(INN_HYMN);
 
-/** 1000:05CB: the `PLAY` all three tunes share, which plays nothing while the sound is off. */
+/**
+ * 1000:05CB: the `PLAY` all three tunes share, which plays nothing while the sound is off.
+ *
+ * 1000:05EE is the last thing it does: the eighteen `INKEY$` reads at 1000:2FCB, which empty the
+ * keyboard of everything typed and not read yet. With the sound off 1000:05D5 returns before
+ * either, so nothing is thrown away.
+ *
+ * Nothing here waits for a tune, so "the keys typed while it played" can only mean the keys
+ * already waiting when it starts. Those are what the flush drops, which is what the original
+ * drops for a player who typed ahead of the tune rather than during it.
+ */
 function revPlay(game: RevGame, tones: readonly Tone[]): void {
   if (game.sound === 1) return;
   playTones(tones);
+  game.flushKeys();
 }
 
 /** 1000:05A0, played from 1000:2543 between the temple's welcome and its offer. */

@@ -249,12 +249,16 @@ Three things are this game's own:
   included, since both rolls are made after it). `music.ts` reads a BASIC `PLAY` string into notes — the frequencies from
   BRUN30's own top-octave table at file offset 0xF8EC, the durations from the tempo and the
   lengths — and hands them to the PC speaker of `src/lib/speaker.ts`. Every tune is prefixed
-  `MB`, so it is background music and nothing waits for it, here as there. The one thing behind
-  the music is the hymn: at 1000:05BF the sound being off jumps to the four-second wait at
-  1000:2F35 instead of playing, so a night at any inn takes as long either way, and that wait is
-  a held frame like every other (`held.ts`). The speaker is opened on the first key pressed in the
-  tab, since a browser will not start audio that nothing the player did asked for, and a replay
-  never opens one.
+  `MB`, so it is background music and nothing waits for it, here as there. A tune does empty the
+  keyboard, though: 1000:05EE follows the `PLAY` with the eighteen `INKEY$` reads at 1000:2FCB,
+  so whatever was typed ahead of the tune is thrown away, and with the sound off 1000:05D5
+  returns before either. Since nothing waits for a tune here, the keys it can drop are the ones
+  already queued when it starts, which is the only reading a port that does not block can make.
+  The one thing behind the music is the hymn: at 1000:05BF the sound being off jumps to the
+  four-second wait at 1000:2F35 instead of playing, so a night at any inn takes as long either
+  way, and that wait is a held frame like every other (`held.ts`) and empties no keyboard. The
+  speaker is opened on the first key pressed in the tab, since a browser will not start audio
+  that nothing the player did asked for, and a replay never opens one.
 * **The question the game opens with is the tab's checkbox.** 1000:0517 prints "Sound (Y or N)?"
   over the title screen and 1000:0523 will take nothing but an upper-case Y or N; N writes 1 into
   DGROUP B4BC and Y leaves the 0 it starts as. There is no title screen here, so the Revenge tab
