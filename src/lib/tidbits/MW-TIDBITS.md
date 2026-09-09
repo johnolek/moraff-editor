@@ -69,9 +69,13 @@ In the code: [strike](source:c/strike),
 
 ### A monk starts with every spell in the game
 
-The roller gives most classes one spell, and the wizardly and priestly classes two. A monk gets a
-triple loop over the whole spell book: four categories, fifteen levels, three slots, all 180 flags
-set. That is 120 real spells and sixty flags for levels that do not exist.
+The roller hands out three flags between them. Little Cure goes to every class but the fighter,
+Zap to the wizard, the sage and the mage, and Strength to the worshipper, the priest and the sage.
+So a fighter starts with nothing, four classes start with two, and the sage starts with three.
+
+A monk gets a triple loop over the whole spell book instead: four categories, fifteen levels,
+three slots, all 180 flags set. That is 120 real spells and sixty flags for levels that do not
+exist.
 
 `ROLL.TXT` calls this "HAS ABILITY TO CAST SPELLS WITHOUT SPELLBOOKS", which sounds like a
 convenience. It means the monk walks out of character creation holding every permanent spell,
@@ -110,9 +114,16 @@ In the code: [the temple](source:c/FUN_2000_3085) and [death](source:c/FUN_2000_
 
 ### The floor slosher never runs out
 
-Six magic items turn up on kills, and five of them are used up when you use them. The floor
-slosher — which drops you through the floor onto the one below, on the square you were standing
-on or the nearest one that is not rock — is not. Nothing anywhere in the game takes it off you.
+Six magic items turn up on kills. Four of them are used up when you use them: the holy hand
+grenade, the stone of teleportation, the stone of seeing and the potion of healing. The ring of
+regeneration is never used at all, since it works by sitting in your pack and handing back a
+health point as time passes. That leaves the floor slosher, which is used and never spent.
+Nothing anywhere in the game takes it off you.
+
+It drops you through the floor onto the one below. Not onto the square you were standing on,
+though it starts there: if that square is rock on the new floor, it rolls a fresh square anywhere
+on the floor and keeps rolling until one is not rock, so a slosher through a wall lands you
+somewhere else entirely.
 
 The find that hands one over refuses to give you a second, on the grounds that one is enough. It
 is: above floor 76 a slosher is an unlimited ladder down.
