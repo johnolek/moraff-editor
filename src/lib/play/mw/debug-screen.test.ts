@@ -43,6 +43,14 @@ describe('the chance debug mode adds over the monster', () => {
     expect(line.text).toBe(`HIT:${(chance * 100).toFixed(1)}%`);
   });
 
+  it("prints the chance the monster's own turn lands, to a tenth of a per cent", async () => {
+    const session = await fighting();
+    const chance = mwEngagedMonster(session.game)!.hitsYouChance;
+    expect(chance).toBeGreaterThan(0);
+    const lines = mwDebugMonsterLines(session.game, MW_MONSTER_VIEW_CORNERS.north);
+    expect(lines[1].text).toBe(`IT HITS:${(chance * 100).toFixed(1)}%`);
+  });
+
   it("prints what the monster does beyond an ordinary hit, in the bestiary's words", async () => {
     const session = await fighting();
     // A level drainer, so that the monster being fought is one with something to say about it.
@@ -53,7 +61,7 @@ describe('the chance debug mode adds over the monster', () => {
     const lines = mwDebugMonsterLines(session.game, MW_MONSTER_VIEW_CORNERS.north);
     // Every one of the bestiary's words is on the screen, broken across as many lines as the
     // view is wide enough for.
-    expect(lines.slice(1).map((line) => line.text).join(' ')).toBe(said.join(' '));
+    expect(lines.slice(2).map((line) => line.text).join(' ')).toBe(said.join(' '));
     expect(lines.length).toBeGreaterThan(said.length);
   });
 

@@ -3,10 +3,11 @@ import { experienceForKill } from '../../game/mw-port/combat';
 import { experienceNeeded } from '../../game/mw-port/levels';
 import { mwSpellTimers } from '../../game/mw-port/screens';
 import type { MwCharacter, MwGame } from '../../game/mw-port/state';
-import { MONSTERS, WEAPONS, hpRange } from '../../mw-bestiary/monsters';
+import { ARMOUR, MONSTERS, WEAPONS, hpRange } from '../../mw-bestiary/monsters';
 import { mwHitChance, toHitTotal } from '../../mw-bestiary/to-hit';
 import type { MapSquare } from '../../map/game';
 import type { StockedMonster } from '../../map/stocking';
+import { breathDamageChance, breathResisted, monsterHitsYouChance } from '../hits-you';
 import { stepCost } from './moment';
 
 /**
@@ -127,7 +128,19 @@ export interface MwEngagedMonster {
   experience: number;
   /** The share of swings that land, out of `src/lib/mw-bestiary/to-hit.ts`. */
   hitChance: number;
+  /** The share of the monster's own turns that take hit points off the character, 0 to 1. */
+  hitsYouChance: number;
 }
+
+/** The row of the monster table a puffball is, whose turn drains or raises a characteristic and
+ *  never does damage (monster_turn, WORLD.EXE 2000:615c). */
+const PUFFBALL_KIND = 6;
+
+/** The floor past which monster_turn adds half of however far below it the character stands. */
+const DEEP_FLOOR = 75;
+
+/** The class number of a wizard, whose Intelligence goes onto the monster's roll. */
+const WIZARD_CLASS = 2;
 
 export function mwEngagedMonster(game: MwGame): MwEngagedMonster | null {
   if (game.engaged === -1) return null;
@@ -150,7 +163,38 @@ export function mwEngagedMonster(game: MwGame): MwEngagedMonster | null {
     mostHp: hpRange(kind, monster.depth)[1],
     experience: experienceForKill(game, game.engaged),
     hitChance: mwHitChance(total, kind, monster.depth, WEAPONS[pc.weapon].damageDie),
+    hitsYouChance: monsterHitsYouChance({
+      attacks: kind.kind !== PUFFBALL_KIND && pc.sleepTimer < 1 && pc.holdMonsterTimer < 1,
+      total: monsterTurnTotal(game, monster.depth, kind.attack + kind.defenceAndAttack),
+      // monster_turn puts the wizard's Intelligence onto the roll, so it makes a wizard easier to
+      // hit; Dungeons of the Unforgiven takes the same number off instead.
+      wizardIq: pc.cls === WIZARD_CLASS ? pc.iq : 0,
+      damageDie: kind.damageDie,
+      floor: pc.floor,
+      breath: kind.breath === 0 ? null : breathDamageChance(monster.depth, breathResisted(kind.breath, pc)),
+    }),
   };
+}
+
+/**
+ * What monster_turn (WORLD.EXE 2000:615c) adds to its d80 before it looks for damage: twice the
+ * monster's depth and what its row brings, less everything the character wears, carries and is,
+ * and plus half of however far past floor 75 they are standing.
+ */
+function monsterTurnTotal(game: MwGame, depth: number, kindAttack: number): number {
+  const pc = game.pc;
+  let total = depth * 2 + kindAttack;
+  total -= pc.lev * 2;
+  total -= pc.dex + pc.luck;
+  total -= pc.unread7c7;
+  total -= ARMOUR[pc.armor].armourClass;
+  total -= pc.enchantArmorLevel;
+  total -= pc.unread0dd;
+  total -= pc.bodyArmorLevel;
+  total -= pc.ringOfProtection;
+  total -= pc.protectionLevel * pc.protectionLevel * 2;
+  if (pc.floor > DEEP_FLOOR) total += Math.trunc((pc.floor - DEEP_FLOOR) / 2);
+  return total;
 }
 
 /** One of the monsters standing on the floor, by how far off it is. */

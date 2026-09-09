@@ -61,8 +61,9 @@ export function wrapToWidth(sentences: string[], characters: number): string[] {
 
 /**
  * The lines over the monster: its level and hit points on the first, the chance the character's
- * next swing lands on the second, and what it does beyond an ordinary hit under those. Nothing is
- * printed when nothing is being faced.
+ * next swing lands on the second, the chance the monster's own next attack takes hit points off
+ * them on the third, and what it does beyond an ordinary hit under those. Nothing is printed when
+ * nothing is being faced.
  */
 export function debugMonsterLines(game: Game): ScreenLine[] {
   const engaged = engagedMonster(game);
@@ -70,6 +71,7 @@ export function debugMonsterLines(game: Game): ScreenLine[] {
   const texts = [
     `LEVEL:${engaged.level} HP:${engaged.hp}`,
     `HIT:${hitPercent(engaged.hitChance)}`,
+    `IT HITS:${hitPercent(engaged.hitsYouChance)}`,
     ...wrapToWidth(engaged.effects, LINE_CHARACTERS),
   ];
   return texts.map((text, at) => ({

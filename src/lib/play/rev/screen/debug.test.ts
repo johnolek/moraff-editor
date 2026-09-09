@@ -53,14 +53,20 @@ describe('what debug mode adds to a fight', () => {
     // beats.
     const game = fighting({ stats: [1, 10, 10, 15, 12, 14] });
     expect(revSwingTarget(game)).toBeGreaterThanOrEqual(revLowestSwing(game.pc));
-    expect(revDebugLines(game)).toEqual([`TO HIT:${revSwingTarget(game)}`]);
+    expect(revDebugLines(game)[0]).toContain(`TO HIT:${revSwingTarget(game)}  IT HITS:`);
   });
 
   it('says a swing cannot miss once the number is under the least one can roll', () => {
     // Twenty strength puts fourteen on every throw of the die, and the die itself is at least 1.
     const game = fighting();
     expect(revLowestSwing(game.pc)).toBe(15);
-    expect(revDebugLines(game)).toEqual([`TO HIT:${revSwingTarget(game)}${REV_CANNOT_MISS}`]);
+    expect(revDebugLines(game)[0]).toContain(`TO HIT:${revSwingTarget(game)}${REV_CANNOT_MISS}  IT HITS:`);
+  });
+
+  it("prints the chance the monster swings back, which is always a whole per cent", () => {
+    const game = fighting();
+    expect(revDebugLines(game)[0]).toMatch(/ {2}IT HITS:\d+%$/);
+    expect(revDebugLines(game)[0].length).toBeLessThanOrEqual(39);
   });
 
   it('prints it under the four rows the game says things on', () => {

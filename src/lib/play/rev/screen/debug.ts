@@ -1,6 +1,7 @@
 import type { Frame } from '../../view3d/frame';
 import { TEXT } from './colours';
 import { drawText } from './font';
+import { revAnswerChance } from '../../hits-you';
 import { revLowestSwing, revSwingTarget } from '../fight';
 import type { RevGame } from '../state';
 
@@ -27,12 +28,19 @@ export const REV_DEBUG_ROW = 5;
  *  number, so every one of them hits. */
 export const REV_CANNOT_MISS = ' (CANNOT MISS)';
 
+/** Which of the six characteristics is agility, which the monster's answer is rolled against. */
+const AGILITY = 4;
+
 /** The lines to print during a fight, and none at all when nothing is being fought. */
 export function revDebugLines(game: RevGame): string[] {
   const target = revSwingTarget(game);
-  if (target === null) return [];
+  if (target === null || !game.fight) return [];
   const sure = target < revLowestSwing(game.pc) ? REV_CANNOT_MISS : '';
-  return [`TO HIT:${target}${sure}`];
+  // A whole number is exact here where the other two games need a tenth: the answer is one roll
+  // of fifty, so every chance it can come to is a whole number of per cent. It has to be, too —
+  // this row is forty characters of a text screen and the line beside it is already long.
+  const answers = Math.round(revAnswerChance(game.fight.attackBonus, game.pc.stats[AGILITY]) * 100);
+  return [`TO HIT:${target}${sure}  IT HITS:${answers}%`];
 }
 
 /** Those lines, printed under the message rows. */

@@ -47,11 +47,12 @@ function lineCharacters(corner: MwMonsterViewCorner): number {
 }
 
 /**
- * The chance the next swing lands, printed under the bar the hit points are on and lined up with
- * the level, which is the corner itself: the hit points are printed further along the line, and
- * from there this longer line would run off the right of the east view. What the monster does
- * beyond an ordinary hit runs on down from there, a line at a time. Nothing is printed when
- * nothing is being fought.
+ * The chance the next swing lands and the chance the monster's own next turn takes hit points
+ * off the character, printed under the bar the hit points are on and lined up with the level,
+ * which is the corner itself: the hit points are printed further along the line, and from there
+ * these longer lines would run off the right of the east view. What the monster does beyond an
+ * ordinary hit runs on down from there, a line at a time. Nothing is printed when nothing is
+ * being fought.
  */
 export function mwDebugMonsterLines(game: MwGame, corner: MwMonsterViewCorner): ScreenLine[] {
   const engaged = mwEngagedMonster(game);
@@ -60,6 +61,7 @@ export function mwDebugMonsterLines(game: MwGame, corner: MwMonsterViewCorner): 
   const effects = kind ? describeEffects(kind) : [];
   const texts = [
     `HIT:${(engaged.hitChance * 100).toFixed(1)}%`,
+    `IT HITS:${(engaged.hitsYouChance * 100).toFixed(1)}%`,
     ...wrapToWidth(effects, lineCharacters(corner)),
   ];
   const step = strokeLineHeight(0);

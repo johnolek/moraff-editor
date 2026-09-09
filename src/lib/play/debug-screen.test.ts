@@ -31,19 +31,26 @@ describe("the monster's numbers over the forward view", () => {
     expect(debugMonsterLines(game)[1].text).toBe(`HIT:${(chance * 100).toFixed(1)}%`);
   });
 
+  it("prints the chance the monster's own attack lands, to a tenth of a per cent", () => {
+    const game = facing();
+    const chance = engagedMonster(game)!.hitsYouChance;
+    expect(chance).toBeGreaterThan(0);
+    expect(debugMonsterLines(game)[2].text).toBe(`IT HITS:${(chance * 100).toFixed(1)}%`);
+  });
+
   it('prints what the monster does beyond an ordinary hit, in the bestiary\u2019s words', () => {
     const game = facing();
     // A monster that drains a level and poisons: levelDrain 1 and special 1 in the record.
     Object.assign(game.monsterKinds[0], { levelDrain: 1, statDrain: 0, breath: 0, special: 1 });
     const said = describeEffects({ levelDrain: 1, statDrain: 0, breath: 0, special: 1, isBoss: false });
     expect(said).toEqual(['Drains 1 level when it hits you', 'Poisons you when it hits you']);
-    expect(debugMonsterLines(game).map((line) => line.text).slice(2)).toEqual(said);
+    expect(debugMonsterLines(game).map((line) => line.text).slice(3)).toEqual(said);
   });
 
-  it('prints only the two numbers for a monster that does nothing but hit', () => {
+  it('prints only the three numbers for a monster that does nothing but hit', () => {
     const game = facing();
     Object.assign(game.monsterKinds[0], { levelDrain: 0, statDrain: 0, breath: 0, special: 0 });
-    expect(debugMonsterLines(game)).toHaveLength(2);
+    expect(debugMonsterLines(game)).toHaveLength(3);
   });
 
   it('keeps every line inside the forward view', () => {

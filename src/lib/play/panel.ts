@@ -3,6 +3,7 @@ import { hitChance, toHitTotal, type ToHitFighter } from '../bestiary/to-hit';
 import { NAMED_SLOTS, SLOTS_PER_SUBCATEGORY, SPELL_NAMES, SPELL_SUBCATEGORIES } from '../editor/spell-names';
 import { sectionOf } from '../game/dotu-files.js';
 import { monsterHpRange, monsterLevelBase } from '../game/dotu-mech.js';
+import { breathDamageChance, breathResisted, monsterHitsYouChance } from './hits-you';
 import type { Game, PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { Mark } from '../map/marks';
@@ -195,6 +196,16 @@ function chargedSpells(counts: number[]): PanelLine[] {
  *  points than anything else on its floor. */
 const SHADOW_BOSS_SPECIAL = 100;
 
+/** Byte 24's other value that matters here: 6 marks a puffball, whose turn drains or raises a
+ *  characteristic and never does damage (defend, exe 2000:82b7). */
+const PUFFBALL_SPECIAL = 6;
+
+/** The floor past which defend adds half of however far below it the character is standing. */
+const DEEP_FLOOR = 75;
+
+/** The class number of a wizard, whose Intelligence comes off the monster's roll. */
+const WIZARD_CLASS = 2;
+
 /** Where the eight weapons end and the four Power Weapon rows of the weapon table begin. */
 const FIRST_POWER_WEAPON_ROW = 8;
 
@@ -208,6 +219,8 @@ export interface EngagedMonster {
   mostHp: number;
   /** The share of swings the game itself calls hits, 0 to 1. */
   hitChance: number;
+  /** The share of the monster's own attacks that take hit points off the character, 0 to 1. */
+  hitsYouChance: number;
   /** What it does beyond an ordinary hit, in the words the Monsters tab uses for the same
    *  monster: the drains, the breath, the poison and the disease. Empty for a monster that only
    *  hits. */
@@ -266,8 +279,42 @@ export function engagedMonster(game: Game): EngagedMonster | null {
     hp: monster.hp,
     mostHp,
     hitChance: hitChance(toHitTotal(fighter), monster.level, stats.defense, stats.speed, game.weaponDamage[damageRow]),
+    hitsYouChance: monsterHitsYouChance({
+      attacks: kind.special !== PUFFBALL_SPECIAL && pc.sleepTimer < 1 && pc.holdMonsterTimer < 1,
+      total: defendTotal(game, monster.level),
+      // defend takes the wizard's Intelligence off the roll, so it makes a wizard harder to hit.
+      wizardIq: pc.cls === WIZARD_CLASS ? -pc.iq : 0,
+      damageDie: stats.damageDie,
+      floor: pc.level,
+      breath: kind.breath === 0 ? null : breathDamageChance(monster.level, breathResisted(kind.breath, pc)),
+    }),
     effects: describeEffects({ ...kind, isBoss: boss }),
   };
+}
+
+/**
+ * What defend (exe 2000:82b7) adds to its d80 before it looks for damage: twenty and twice the
+ * monster's level, less everything the character wears, carries and is, and plus half of however
+ * far past floor 75 they are standing.
+ *
+ * The permanent plus on the armor being worn is not in the subtraction, which is the game's own
+ * omission and is why an enchanted suit defends no better than a plain one.
+ */
+function defendTotal(game: Game, monsterLevel: number): number {
+  const pc = game.pc;
+  let total = 20 + monsterLevel * 2;
+  total -= pc.lev * 2;
+  total -= pc.dex + pc.luck;
+  total -= Math.trunc(pc.dex / 2);
+  total -= pc.luckyCharms;
+  total -= game.armorHitChance[pc.armor];
+  total -= pc.tempArmorPlus;
+  total -= pc.shield;
+  total -= pc.bodyArmor;
+  total -= pc.protRing;
+  total -= pc.protection * pc.protection * 2;
+  if (pc.level > DEEP_FLOOR) total += Math.trunc((pc.level - DEEP_FLOOR) / 2);
+  return total;
 }
 
 /** How many floors apart the trap door keys are: one key per five floors (explain_trapdoor,
