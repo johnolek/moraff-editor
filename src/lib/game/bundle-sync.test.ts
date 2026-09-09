@@ -21,7 +21,6 @@ const copies: [string, string][] = [
   ['src/lib/game/uspells.hlp', 'dotu-tools/data/uspells.hlp'],
   ['src/lib/game/hints/h.bin', 'mw-tools/data/hints/h.bin'],
   ['src/lib/game/palettes.json', 'dotu-tools/data/palettes.json'],
-  ['src/lib/game/building-palette-banks.json', 'dotu-tools/data/building-palette-banks.json'],
 ];
 
 const pictureNames = [
