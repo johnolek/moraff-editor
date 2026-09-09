@@ -110,9 +110,11 @@ function playedFile(entry: RosterEntry): CharacterFile {
   };
 }
 
-/** Every game is a run: a seed of its own, and every key that follows written down beside it. */
+/** Every game is a run: a seed of its own, and every key that follows written down beside it.
+ *  The board the character is locked to goes in as play begins, since nothing in a game changes
+ *  it. */
 function recorder(game: PortedGameId, entry: RosterEntry, sound?: boolean): RunRecorder {
-  return new RunRecorder({ game, name: entry.name, record: entry.bytes, sound });
+  return new RunRecorder({ game, name: entry.name, record: entry.bytes, sound, leaderboard: entry.leaderboard });
 }
 
 function startUnforgiven(entry: RosterEntry): GameSession {

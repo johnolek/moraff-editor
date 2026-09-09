@@ -1,3 +1,5 @@
+import type { Leaderboard } from '../app-state.svelte';
+import { isLeaderboard } from '../character/leaderboard';
 import {
   actionWords,
   ENGINE_COMMIT,
@@ -61,6 +63,8 @@ export interface RunVerdict {
   game: RunGame;
   name: string;
   mode: string | null;
+  /** The board the character was rolled for, and null for a run played for its own sake. */
+  leaderboard: Leaderboard | null;
   /** The commit the log says it was played on, and the one this build was made from. */
   engine: { log: string; build: string };
   claimed: RunTotals;
@@ -86,6 +90,7 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
     game: log.game,
     name: log.name,
     mode: log.mode,
+    leaderboard: log.leaderboard ?? null,
     engine: { log: log.engine, build: ENGINE_COMMIT },
     claimed: { actions: log.actions, time: log.time, milestones: log.milestones },
     replayed: null,
@@ -225,6 +230,8 @@ function isRunLog(value: unknown): value is RunLog {
     typeof log.engine === 'string' &&
     typeof log.name === 'string' &&
     (log.mode === null || typeof log.mode === 'string') &&
+    // A log written before the site had leaderboards has no field, and reads as no board.
+    (log.leaderboard === null || log.leaderboard === undefined || isLeaderboard(log.leaderboard)) &&
     // A log written before the sound flag was recorded simply has no field, and reads as null.
     (log.sound === null || log.sound === undefined || typeof log.sound === 'boolean') &&
     typeof log.startedAt === 'string' &&

@@ -95,6 +95,13 @@ describe('the run log', () => {
     expect(new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record }).log().sound).toBeNull();
   });
 
+  it('keeps the board the character is locked to, and nothing for a free character', () => {
+    const record = new Uint8Array(8);
+    expect(new RunRecorder({ game: 'unforgiven', name: 'RACER', record, leaderboard: 'speedrun' }).log().leaderboard).toBe('speedrun');
+    expect(new RunRecorder({ game: 'unforgiven', name: 'RACER', record, leaderboard: 'faithful' }).log().leaderboard).toBe('faithful');
+    expect(new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record }).log().leaderboard).toBeNull();
+  });
+
   it("keeps the game's own clock where the run had got to", async () => {
     const { run, session } = recordedGame();
     await press(session, KEY.arrowUp);

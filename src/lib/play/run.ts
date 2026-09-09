@@ -1,4 +1,4 @@
-import type { PortedGameId } from '../app-state.svelte';
+import type { Leaderboard, PortedGameId } from '../app-state.svelte';
 import { base64FromBytes, bytesFromBase64 } from '../bytes';
 import { SeededRng, type Rng } from '../game/port/rng';
 import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
@@ -232,6 +232,15 @@ export interface RunLog {
    */
   mode: string | null;
   /**
+   * The board the character was rolled for, which is the mode it is locked to for life, and null
+   * for a character played for its own sake and for a log written before the site had boards.
+   *
+   * A board is a set of runs played the same way, and this is what says a run belongs to one: the
+   * mode beside it is only how this run happened to be set up, and a free character can be played
+   * a different way tomorrow.
+   */
+  leaderboard: Leaderboard | null;
+  /**
    * Whether the game's sound was on as play began, and null for a game with no such flag and for
    * a log written before this was recorded.
    *
@@ -284,6 +293,8 @@ export interface RunStart {
   seed?: number;
   startedAt?: string;
   mode?: string | null;
+  /** The board the character is locked to, which the roster entry carries. */
+  leaderboard?: Leaderboard | null;
   /** Whether the game starts with its sound on, for a game that has such a flag. */
   sound?: boolean | null;
   /**
@@ -303,6 +314,7 @@ export class RunRecorder {
   readonly seed: number;
   readonly startedAt: string;
   readonly mode: string | null;
+  readonly leaderboard: Leaderboard | null;
   readonly sound: boolean | null;
   /** The run is being replayed from a log rather than played by anybody. */
   readonly replaying: boolean;
@@ -335,6 +347,7 @@ export class RunRecorder {
     this.seed = start.seed ?? drawSeed();
     this.startedAt = start.startedAt ?? new Date().toISOString();
     this.mode = start.mode ?? null;
+    this.leaderboard = start.leaderboard ?? null;
     this.sound = start.sound ?? null;
     this.replaying = start.replaying ?? false;
     this.rng = new SeededRng(this.seed);
@@ -425,6 +438,7 @@ export class RunRecorder {
       engine: ENGINE_COMMIT,
       game: this.game,
       mode: this.mode,
+      leaderboard: this.leaderboard,
       sound: this.sound,
       name: this.name,
       startedAt: this.startedAt,
@@ -488,6 +502,7 @@ export async function replayRun(log: RunLog): Promise<RunReplay> {
     seed: log.seed,
     startedAt: log.startedAt,
     mode: log.mode,
+    leaderboard: log.leaderboard,
     sound: log.sound,
     replaying: true,
   });

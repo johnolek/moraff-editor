@@ -1,3 +1,4 @@
+import type { Leaderboard } from '../lib/app-state.svelte';
 import { GAME_CHOICES } from '../lib/game-choice';
 import { actionWords, RUN_GAMES, type RunGame } from '../lib/play/run';
 import { milestoneLine, readRunLog, verifyRun, type RunVerdict } from '../lib/play/verify';
@@ -24,7 +25,9 @@ export async function reportOnRun(text: string): Promise<RunReport> {
 
 function reportLines(verdict: RunVerdict): string[] {
   const { clockWords, dungeonName } = RUN_GAMES[verdict.game];
-  const lines = [heading(verdict), verdictWords(verdict), '', 'The log claims:'];
+  const lines = [heading(verdict), verdictWords(verdict)];
+  if (verdict.leaderboard !== null) lines.push(boardWords(verdict.leaderboard));
+  lines.push('', 'The log claims:');
   lines.push(field('Actions', actionWords(verdict.claimed.actions)));
   lines.push(field('Clock', clockWords(verdict.claimed.time)));
   const milestones = verdict.claimed.milestones.map((milestone) => milestoneLine(verdict.game, milestone));
@@ -46,6 +49,11 @@ function reportLines(verdict: RunVerdict): string[] {
 function heading(verdict: RunVerdict): string {
   const played = verdict.mode === null ? '' : `, ${verdict.mode}`;
   return `${verdict.name} — ${gameLabel(verdict.game)}${played}`;
+}
+
+/** What the report says about the board a run belongs to, which only a locked character has. */
+function boardWords(board: Leaderboard): string {
+  return `Leaderboard: the character was rolled for the ${board} board, and every run of it is played that way.`;
 }
 
 function verdictWords(verdict: RunVerdict): string {

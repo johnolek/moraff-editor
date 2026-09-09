@@ -258,6 +258,14 @@ describe('reading a run log out of a file', () => {
     expect(readRunLog(JSON.stringify({ ...log, milestones: [{ kind: 'boss' }] }))).toBeNull();
   });
 
+  it('reads a log written before the site had boards, which simply has no field', async () => {
+    const { leaderboard, ...older } = await unforgivenRun();
+    expect(leaderboard).toBeNull();
+    expect(readRunLog(JSON.stringify(older))?.leaderboard).toBeUndefined();
+    expect(readRunLog(JSON.stringify({ ...older, leaderboard: 'faithful' }))?.leaderboard).toBe('faithful');
+    expect(readRunLog(JSON.stringify({ ...older, leaderboard: 'debug' }))).toBeNull();
+  });
+
   it('reads a log written before the sound flag was recorded, which simply has no field', async () => {
     const { sound, ...older } = await moraffsRevengeRun();
     expect(sound).toBe(false);

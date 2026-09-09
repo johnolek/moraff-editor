@@ -48,6 +48,22 @@ describe('the verdict the verify-run command prints', () => {
     expect(report.lines[1]).toContain('Unverifiable:');
   });
 
+  it('names the board a locked character was rolled for', async () => {
+    const log = JSON.parse(fixture('unforgiven-run.json'));
+    const report = await reportOnRun(JSON.stringify({ ...log, leaderboard: 'speedrun' }));
+
+    expect(report.ok).toBe(true);
+    expect(report.lines[2]).toBe(
+      'Leaderboard: the character was rolled for the speedrun board, and every run of it is played that way.',
+    );
+  });
+
+  it('says nothing about a board for a run played for its own sake', async () => {
+    const report = await reportOnRun(fixture('unforgiven-run.json'));
+
+    expect(report.lines.some((line) => line.startsWith('Leaderboard:'))).toBe(false);
+  });
+
   it('says when the file is not a run log at all', async () => {
     const report = await reportOnRun('{ "hello": true }');
 
