@@ -178,13 +178,16 @@ export function passMoment(game: Game): void {
  * FUN_2000_bcb6 (exe 2000:bcb6, unf.c "FUN_2000_bcb6"): take the character off the square they
  * are standing on, which movecontrol does before it moves them. The original also makes a noise.
  *
- * A box flagged to go with the step (DS:2519) — a trap door's, EXP NEEDED's, a kill's — is wiped
- * here, which is why those boxes are gone the moment the character walks off.
+ * Every step wipes one of two things on the way off: the eight lines of the box when it was
+ * flagged to go with the step (DS:2519 — a trap door's, EXP NEEDED's, a kill's, a fight's), and
+ * otherwise the strip above the box, where a wall's refusal and a jammed door's line stand. That
+ * is why those boxes and lines are gone the moment the character walks off.
  */
 export function leaveSquare(game: Game): void {
   if (game.boxLeavesWithSquare) {
     game.boxLeavesWithSquare = false;
     clearMenuBlock(game);
+  } else {
     clearMessageLine(game);
   }
   setMonsterMap(game, game.pc.x, game.pc.y, MAP_EMPTY);
