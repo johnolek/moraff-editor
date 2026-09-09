@@ -645,3 +645,20 @@ describe('the HIT ANY KEY plaque', () => {
     session.finish();
   });
 });
+
+describe('what the screen is drawn from', () => {
+  it('is left alone by a key the game does nothing with', async () => {
+    const session = playing(characterFile());
+    await settle();
+    const before = JSON.stringify(session.view());
+    const map = session.memory.discovered();
+    // No handler is registered for a tilde, so movecontrol comes round to wait for another key
+    // having done nothing at all.
+    await press(session, '~'.charCodeAt(0));
+    expect(JSON.stringify(session.view())).toBe(before);
+    // The Play tab compares the map by identity, so the same map has to come back for it to know
+    // that nothing on the little map has changed.
+    expect(session.memory.discovered()).toBe(map);
+    session.finish();
+  });
+});
