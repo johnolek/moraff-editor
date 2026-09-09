@@ -6,6 +6,7 @@ import { fillRect, type Frame } from './view3d/frame';
 import {
   drawZoomMap,
   drawZoomMarker,
+  facingArrowRect,
   zoomMapSquare,
   type ZoomMapFloor,
   type ZoomMapStyle,
@@ -215,6 +216,28 @@ export const zoomMapWindow = (frameWidth: number): ZoomMapWindow => ({
   columns: ZOOM_COLUMNS,
   rows: ZOOM_ROWS,
 });
+
+/**
+ * The arrow on the character's square flashes.
+ *
+ * `movecontrol` redraws it every time round the loop it waits for a key in (exe 2000:c748) and
+ * turns its colour over each time `biostime() / 6` comes back a different number, which is once
+ * every six BIOS ticks — a third of a second. The two colours are white and black: black is
+ * `FUN_2000_9d17` plotting the same seven by seven bitmap in colour 0, so the arrow disappears
+ * into the cell rather than changing colour. Colour 15 is what every video mode but the first
+ * lights it in (exe 2000:c792), and the port draws mode 9 alone.
+ *
+ * Nothing else in the game draws the arrow, so it stands still in whatever colour it was left in
+ * while a message box waits behind its plaque: that wait is `FUN_2000_2a2e` (exe 2000:2a2e),
+ * which polls the keyboard without going round `movecontrol`'s loop.
+ */
+export const ARROW_FLASH_MS = 330;
+export const ARROW_LIT_COLOUR = 15;
+export const ARROW_DARK_COLOUR = 0;
+
+/** The seven by seven square the arrow stands in on the game's own screen, which is fixed: the
+ *  map's window is always centred on the character. */
+export const FACING_ARROW_RECT = facingArrowRect(zoomMapWindow(SCREEN_PIXELS.width));
 
 /**
  * Dungeons of the Unforgiven's row of the table `drawsquare` (exe 3000:87de) is drawn from.

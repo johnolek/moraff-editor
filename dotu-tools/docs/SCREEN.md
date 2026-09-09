@@ -196,6 +196,17 @@ On the maroon box, the discovered squares drawn as small white and black cells (
 a square, white for its walls), with a white arrow on the character's square pointing the
 way it faces. The map shows only the handful of squares walked so far.
 
+The arrow flashes. `movecontrol` redraws it every time round the loop it waits for a key in
+(exe 2000:c748) and turns its colour over whenever `biostime() / 6` comes back a different
+number, which is once every six BIOS ticks — a third of a second. The two colours are 15 and
+0 — 14 and 0 in video mode 1 (exe 2000:c792) — so the dark half is `FUN_2000_9d17` plotting
+the same seven by seven bitmap in black and the arrow disappears into the cell rather than
+changing colour. A screen narrower than four colours (DS:c6e9 at or below 2) gets
+`biostime() / 4` for the colour instead, cycling rather than flashing. Nothing else in the
+game draws the arrow: the poll a message box waits behind (`FUN_2000_2a2e`, exe 2000:2a2e)
+leaves it standing in whatever colour it was last given, and the key that ends a pass has it
+drawn in colour 0 first (exe 2000:cc1d).
+
 `drawsquare` (exe 3000:87de) draws one cell, in this order: the fill, the four sides
 through `draw_side` (exe 3000:8432), a red dot on each of the four corners, and then the
 mark for whatever the square holds.

@@ -1,6 +1,6 @@
 import type { DiscoveredMap } from '../map/draw-floor';
 import type { MapSquare } from '../map/game';
-import { arrowPixel, FACING_ARROW } from '../map/you';
+import { arrowPixel, FACING_ARROW, FACING_ARROW_SIZE } from '../map/you';
 import { drawLine, fillRect, plot, type Frame } from './view3d/frame';
 
 /**
@@ -30,8 +30,9 @@ export interface ZoomMapWindow {
 
 /** What stands on the character's own square. */
 export type ZoomMapMarker =
-  /** Dungeons of the Unforgiven's arrow, which points the way they face (exe 2000:c799 flashes
-   *  it white six times a second; the port draws it steady). */
+  /** Dungeons of the Unforgiven's arrow, which points the way they face. movecontrol flashes it
+   *  between white and black while it waits for a key (exe 2000:c748); this draws the lit half of
+   *  that, and `Screen.svelte` runs the flash over it. */
   | { kind: 'arrow' }
   /**
    * Moraff's World's cursor, which is the whole cell filled (WORLD.EXE 2000:7c8a). That game has
@@ -149,7 +150,10 @@ export function drawZoomMap(
 
 /**
  * The mark on the character's own square, which both games redraw in a new colour every time
- * round the loop they wait for a key in and the port draws steadily.
+ * round the loop they wait for a key in.
+ *
+ * This is one drawing of it, in the colour it is lit in. Dungeons of the Unforgiven's tab runs
+ * the flash over the top of it (`Screen.svelte`); Moraff's World's blink is not ported.
  *
  * @param dir the way the character faces, which only the arrow uses.
  */
@@ -172,6 +176,21 @@ export function drawZoomMarker(
       plot(frame, at.x, at.y, ZOOM_SIDE_COLOUR);
     }
   });
+}
+
+/**
+ * The seven by seven square the arrow's own pixels stand in, for anything drawing the arrow over
+ * the frame rather than into it.
+ *
+ * The rotations of `arrowPixel` put a pixel one before the corner they are given, so the square
+ * starts a pixel inside the cell rather than the two `drawsquare`'s fill starts at.
+ */
+export function facingArrowRect(window: ZoomMapWindow): { x: number; y: number; size: number } {
+  return {
+    x: window.left + (window.columns >> 1) * window.cell + 1,
+    y: window.top + (window.rows >> 1) * window.cell + 1,
+    size: FACING_ARROW_SIZE,
+  };
 }
 
 /**

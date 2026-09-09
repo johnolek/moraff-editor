@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newGame } from '../game/port/state';
 import type { MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
+import { facingArrowCells } from '../map/you';
 import { zoomMapMonsters } from './mode';
 import { newFrame, pixelAt, type Frame } from './view3d/frame';
 import { FOUR_VIEWS } from './view3d/views';
@@ -15,6 +16,7 @@ import {
   EXPANDED_COLUMNS,
   EXPANDED_GROUND,
   EXPANDED_ROWS,
+  FACING_ARROW_RECT,
   keyMenuLines,
   KEY_MENU_LINES,
   KEY_MENU_SPREAD_TO,
@@ -214,6 +216,36 @@ describe('the zoom map', () => {
   it('starts where the game puts it, whatever the screen is wide', () => {
     expect(zoomMapLeft(640)).toBe(521);
     expect(zoomMapLeft(1024)).toBe(834);
+  });
+});
+
+describe("the arrow on the character's square", () => {
+  const open = (): MapSquare => ({ n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1 });
+
+  /** Where the map's own drawing lit the arrow, as offsets from the rectangle the tab lays its
+   *  own canvas over. A pixel either side of that rectangle is looked at as well, so an arrow
+   *  that has slipped by one shows up as a pixel the rectangle does not hold. */
+  function litPixels(dir: number): string[] {
+    const rows: MapSquare[][] = Array.from({ length: 80 }, () => Array.from({ length: 80 }, open));
+    const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    drawZoomMapOnly(frame, {
+      rows,
+      at: { x: 40, y: 50, dir },
+      map: { known: () => true, knownOnArrival: () => true },
+    });
+    const lit: string[] = [];
+    for (let dy = -1; dy <= FACING_ARROW_RECT.size; dy++) {
+      for (let dx = -1; dx <= FACING_ARROW_RECT.size; dx++) {
+        const pixel = pixelAt(frame, FACING_ARROW_RECT.x + dx, FACING_ARROW_RECT.y + dy);
+        if (pixel === ZOOM_SIDE_COLOUR) lit.push(`${dx},${dy}`);
+      }
+    }
+    return lit.sort();
+  }
+
+  it.each([0, 1, 2, 3])('fills the rectangle the flashing canvas covers, facing %i', (dir) => {
+    const cells = facingArrowCells(dir).map((cell) => `${cell.x},${cell.y}`);
+    expect(litPixels(dir)).toEqual(cells.sort());
   });
 });
 

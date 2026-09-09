@@ -8,13 +8,18 @@
   import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
   import type { DiscoveredMap } from '../map/draw-floor';
   import { SeededRng } from '../game/port/rng';
+  import { facingArrowCells } from '../map/you';
   import { debugMonsterLines } from './debug-screen';
   import { inRect } from './screens';
   import type { KilledOnScreen } from './engine';
   import {
+    ARROW_DARK_COLOUR,
+    ARROW_FLASH_MS,
+    ARROW_LIT_COLOUR,
     clearScreenRect,
     drawExpandedMap,
     drawScreenFurniture,
+    FACING_ARROW_RECT,
     fillScreenBox,
     keyMenuLines,
     MESSAGE_BOX,
@@ -95,6 +100,7 @@
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
+  let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
   /** The screen as it was last painted, for the plaque's own animation to work from. */
   let painted = $state.raw<{ frame: Frame; palette: Rgb[] } | null>(null);
 
@@ -106,6 +112,25 @@
 
   /** The rectangle a screen that is up has been drawn on black, and null when none is up. */
   const cleared = $derived(screen.length === 0 ? null : (screenCleared ?? WHOLE_DISPLAY));
+
+  // Walking into a building raises DS:2505 and calls set_palette again (exe 2000:c9ac), which
+  // copies the two shop tables over the banks the building picture is drawn out of.
+  const palette = $derived(
+    buildingScreen
+      ? townPalette(place.module + 1, part, game.colourSetting)
+      : sectionPalette(place.module + 1, part, game.colourSetting),
+  );
+
+  /**
+   * Whether the little map is on the screen with `movecontrol` waiting for a key over it, which
+   * is the only time the game flashes the arrow on it.
+   *
+   * Every screen that takes the display over covers the map, and so does the wait a message box
+   * asks for: the plaque's own poll is `FUN_2000_2a2e` (exe 2000:2a2e) and the arrow is not in it.
+   */
+  const arrowFlashing = $derived(
+    !tablet && !sectionScreen && !expandedMap && !buildingScreen && cleared === null && !plaque,
+  );
 
   /**
    * Everything the tab paints afresh every pass. None of these is a line the game has printed —
@@ -183,9 +208,6 @@
       if (plaque === 'showing') drawPlaque(frame, SCREEN_PIXELS, viewPictures(section?.section ?? 1).wall);
       // Walking into a building raises DS:2505 and calls set_palette again (exe 2000:c9ac), which
       // copies the two shop tables over the banks the building picture is drawn out of.
-      const palette = buildingScreen
-        ? townPalette(place.module + 1, part, game.colourSetting)
-        : sectionPalette(place.module + 1, part, game.colourSetting);
       const rgba = toRgba(frame, palette);
       context.putImageData(new ImageData(rgba, SCREEN_PIXELS.width, SCREEN_PIXELS.height), 0, 0);
       painted = plaque === 'showing' ? { frame, palette } : null;
@@ -263,6 +285,55 @@
   });
 
   /**
+   * The arrow on the little map flashing (`display.ts` for the period and the two colours).
+   *
+   * It is a canvas of its own over the arrow's own seven by seven pixels rather than a second
+   * whole-frame animation beside the plaque's: nothing else on the screen changes with it, and
+   * repainting a 1024 by 768 frame three times a second to turn seven pixels over is not worth
+   * the work. Redrawing the arrow in colour 0 is what the game itself does, so a square with a
+   * town building on it keeps its own colour around the dark half.
+   */
+  $effect(() => {
+    const target = arrowCanvas;
+    if (!target) return;
+    const context = target.getContext('2d');
+    if (!context) return;
+    const size = FACING_ARROW_RECT.size;
+    const cells = facingArrowCells(place.dir);
+    const colours = [ARROW_LIT_COLOUR, ARROW_DARK_COLOUR].map((entry) => {
+      const [r, g, b] = palette[entry] ?? [0, 0, 0];
+      return `rgb(${r} ${g} ${b})`;
+    });
+    let lit = 0;
+    const draw = (): void => {
+      context.clearRect(0, 0, size, size);
+      context.fillStyle = colours[lit];
+      for (const cell of cells) context.fillRect(cell.x, cell.y, 1, 1);
+    };
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const stop = (): void => {
+      if (timer !== null) clearInterval(timer);
+      timer = null;
+    };
+    // A tab nobody is looking at is not worth a timer, and a browser throttles one anyway.
+    const follow = (): void => {
+      stop();
+      if (document.hidden) return;
+      timer = setInterval(() => {
+        lit = 1 - lit;
+        draw();
+      }, ARROW_FLASH_MS);
+    };
+    draw();
+    follow();
+    document.addEventListener('visibilitychange', follow);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', follow);
+    };
+  });
+
+  /**
    * The plaque's frame crawling: FUN_2000_2a2e (exe 2000:2a2e) turns the palette's gradient bank
    * once for every poll of the keyboard while it waits, and everything drawn in that bank crawls
    * with it, the distance shading on the walls as much as the plaque's frame. The port turns it
@@ -290,19 +361,44 @@
 
 <!-- The game's screen: the four views, the boxes around them and the game's own lines of text. -->
 <div class="screen" style:aspect-ratio="{SCREEN_PIXELS.width} / {SCREEN_PIXELS.height}">
-  <canvas bind:this={canvas} width={SCREEN_PIXELS.width} height={SCREEN_PIXELS.height}></canvas>
+  <canvas
+    class="screen-pixels"
+    bind:this={canvas}
+    width={SCREEN_PIXELS.width}
+    height={SCREEN_PIXELS.height}
+  ></canvas>
+  {#if arrowFlashing}
+    <canvas
+      class="arrow"
+      bind:this={arrowCanvas}
+      width={FACING_ARROW_RECT.size}
+      height={FACING_ARROW_RECT.size}
+      style:left="{(FACING_ARROW_RECT.x / SCREEN_PIXELS.width) * 100}%"
+      style:top="{(FACING_ARROW_RECT.y / SCREEN_PIXELS.height) * 100}%"
+      style:width="{(FACING_ARROW_RECT.size / SCREEN_PIXELS.width) * 100}%"
+      style:height="{(FACING_ARROW_RECT.size / SCREEN_PIXELS.height) * 100}%"
+    ></canvas>
+  {/if}
 </div>
 
 <style>
   .screen {
+    position: relative;
     width: 100%;
     background: #000;
   }
   canvas {
     display: block;
-    width: 100%;
-    height: 100%;
     /* The game's pixels stay pixels however far it is scaled up. */
     image-rendering: pixelated;
+  }
+  canvas.screen-pixels {
+    width: 100%;
+    height: 100%;
+  }
+  /* The arrow on the little map: its corner and its size are the seven pixels it stands in, as
+     fractions of the same box the screen's own canvas fills. */
+  canvas.arrow {
+    position: absolute;
   }
 </style>
