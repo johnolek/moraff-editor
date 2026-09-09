@@ -16,6 +16,7 @@ import type { StockedMonster } from '../map/stocking';
 import { boxesOf } from './boxes';
 import { castASpell, useAnItem } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
+import { debugMonsterLines } from './debug-screen';
 import { digHole } from './dig';
 import { keepSwinging, readKey, swingAtMonster } from './fight';
 import { drawnMonsters, FloorMonsters, loadLevelMap } from './floor';
@@ -156,6 +157,20 @@ export interface PlayView {
   seconds: number;
   /** The monster the character is facing, or null. */
   engaged: StockedMonster | null;
+  /**
+   * The hit points that monster was stocked with, which is the full mark of the bar beside its
+   * picture; 0 when nothing is being faced.
+   *
+   * On the view rather than asked of the session for the same reason the character's own hit
+   * points are: a swing writes the monster's record in place, and nothing on the page would
+   * redraw off it.
+   */
+  engagedFullHp: number;
+  /**
+   * The lines debug mode prints over that monster, which the map's close-up shows in debug mode
+   * and in no other; empty when nothing is being faced.
+   */
+  engagedDebugLines: string[];
   /** That monster is the one standing straight ahead (DS:c655) rather than one being fought
    *  from another side, which is when the game has its picture on the screen. */
   ahead: boolean;
@@ -662,6 +677,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     const pc = game.pc;
     const facing = game.engagedAhead === -1 ? game.engaged : game.engagedAhead;
     const drawn = drawnMonsters(game, pc.level);
+    const engaged = facing === -1 ? null : (drawn.find((monster) => monster.slot === facing) ?? null);
     const printed = this.timed.showing(game.screen);
     return {
       place: { x: pc.x, y: pc.y, floor: pc.level, module: pc.module, dir: pc.dir },
@@ -682,7 +698,9 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       screenCleared: game.blackedOut,
       prompt: ladderPrompt(ladderUnder(game), pc.level === 0 ? buildingUnder(game) : 0),
       seconds: game.secondsElapsed,
-      engaged: facing === -1 ? null : (drawn.find((monster) => monster.slot === facing) ?? null),
+      engaged,
+      engagedFullHp: engaged === null ? 0 : this.floors.fullHp(engaged.slot, engaged.hp),
+      engagedDebugLines: debugMonsterLines(game).map((line) => line.text),
       ahead: game.engagedAhead !== -1,
       killed: this.timed.holding ? this.killedWhileHeld : this.killed,
       viewsDrawn: this.viewsDrawn,
