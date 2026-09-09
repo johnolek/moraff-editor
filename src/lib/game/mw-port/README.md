@@ -119,6 +119,9 @@ those replace every character that is not a letter or a digit with an underscore
   it; the engagement check, `attack_timing` and the clock that decides how many turns an
   adjacent monster gets while the character acts; and `monster_killed`, with the experience,
   the trap door keys and the eight quest bosses' flags and rewards.
+* `sound.ts` — the four noises a fight makes, which are Dungeons of the Unforgiven's four cues
+  note for note and are taken from `../port/sound.ts`; what is this game's own is that all four
+  ask DS:119f and nothing else.
 * `drops.ts` — the ten routines `monster_killed` calls for loot: the weapon, the armor, the six
   piles of stones, the cup of health, the ball of thought, the spellbook, the scroll, the wand,
   the spell paper and the twelve special items.
