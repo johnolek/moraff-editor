@@ -107,6 +107,37 @@ describe('going back to a floor', () => {
   });
 });
 
+describe('the hit points a monster was stocked with', () => {
+  it('is the roll, whatever the monster has left', () => {
+    const game = gameOn(3);
+    const floors = new FloorMonsters();
+    loadLevelMap(game, floors, floorOf(0, 3), 3, game.rng);
+    const rolled = game.monsters[7].hp;
+    expect(rolled).toBeGreaterThan(1);
+    game.monsters[7].hp = 1;
+    expect(floors.fullHp(7, 1)).toBe(rolled);
+  });
+
+  it('is the hit points first seen for a monster the floor was not stocked with', () => {
+    const game = gameOn(0);
+    const floors = new FloorMonsters();
+    loadLevelMap(game, floors, floorOf(0, 0), 0, game.rng);
+    Object.assign(game.monsters[0], { x: 40, y: 50, hp: 30, type: 3, level: 2 });
+    expect(floors.fullHp(0, 30)).toBe(30);
+    expect(floors.fullHp(0, 12)).toBe(30);
+  });
+
+  it('is the fresh roll on a floor rolled again', () => {
+    const game = gameOn(3);
+    const floors = new FloorMonsters();
+    loadLevelMap(game, floors, floorOf(0, 3), 3, game.rng);
+    const first = floors.fullHp(7, game.monsters[7].hp);
+    for (const level of [4, 5, 6, 3]) loadLevelMap(game, floors, floorOf(0, level), level, game.rng);
+    expect(game.monsters[7].hp).not.toBe(first);
+    expect(floors.fullHp(7, 1)).toBe(game.monsters[7].hp);
+  });
+});
+
 describe('the monsters the map draws', () => {
   it('is every slot standing on its own square', () => {
     const game = gameOn(3);
