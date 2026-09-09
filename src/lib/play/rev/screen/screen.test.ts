@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BLACK } from './colours';
+import { RevKeptScreen } from './kept';
 import { MIDDLE_BOX } from './monsters';
 import { SCREEN_HEIGHT, SCREEN_WIDTH } from './paint';
 import { drawRevScreen } from './screen';
@@ -46,5 +47,23 @@ describe('the whole screen', () => {
     const help = { left: 216, top: 136, right: 263, bottom: 136 };
     expect(anythingIn(drawRevScreen({ place, words: { characterLevel: 1 } }), help)).toBe(true);
     expect(anythingIn(drawRevScreen({ place, words: { characterLevel: 2 } }), help)).toBe(false);
+  });
+});
+
+describe('what the game has left on the screen', () => {
+  it('is drawn where it was printed, on a row nothing else writes on', () => {
+    const kept = new RevKeptScreen();
+    kept.printAt(11, 1, 'BULLSEYE!');
+    const line = { left: 0, top: 80, right: 71, bottom: 87 };
+    expect(anythingIn(drawRevScreen({ place }), line)).toBe(false);
+    expect(anythingIn(drawRevScreen({ place, kept }), line)).toBe(true);
+  });
+
+  it('keeps a picture in the middle box with nobody standing there', () => {
+    const kept = new RevKeptScreen();
+    kept.picture = { name: 1, level: 3 };
+    const box = { left: MIDDLE_BOX.left, top: MIDDLE_BOX.top, right: MIDDLE_BOX.right, bottom: 119 };
+    expect(anythingIn(drawRevScreen({ place }), box)).toBe(false);
+    expect(anythingIn(drawRevScreen({ place, kept }), box)).toBe(true);
   });
 });

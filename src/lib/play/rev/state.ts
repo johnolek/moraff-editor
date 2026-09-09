@@ -1,6 +1,7 @@
 import type { Rng } from '../../game/port/rng';
 import { RevMapMemory } from './memory';
 import { RevMonsters, type RevWalker } from './monsters';
+import { RevKeptScreen } from './screen/kept';
 import { REV_VALUE, revValue, type RevPc } from './record';
 
 /**
@@ -105,6 +106,9 @@ export interface RevGame {
   /** What a fight is saying, which the original draws over the top of the screen rather than in
    *  the message box. */
   banner: string[];
+  /** What the game has printed on the screen and not painted over (`screen/kept.ts`). Nothing
+   *  here is read back by the game: it is only what the tab draws. */
+  kept: RevKeptScreen;
   /** Things worth writing into a run log. */
   events: RevEvent[];
   /** The loop has come back: the character has quit or died. */
@@ -208,6 +212,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     advice: [],
     prompt: null,
     banner: [],
+    kept: new RevKeptScreen(),
     events: [],
     over: false,
     keyOwed: false,

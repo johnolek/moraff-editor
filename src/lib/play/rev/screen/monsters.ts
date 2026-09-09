@@ -2,6 +2,7 @@ import { plot, type Frame } from '../../view3d/frame';
 import { closeUpOf, distantOf } from '../../../rev-bestiary/pictures';
 import { dungeonForLevel, nameIndexOf, type RevDrawing } from '../../../rev-bestiary/monsters';
 import { BLACK } from './colours';
+import type { RevKeptPicture } from './kept';
 import { boxFilled, type ViewBox } from './paint';
 import { squareAtDepth, type RevViewPlace } from './views';
 
@@ -147,14 +148,26 @@ export function drawMonstersInPanel(
  *
  * `1000:58F7` clears the box when the square is empty and `1000:6BAF` puts the biggest close-up
  * in it when it is not. The picture covers the `H=HELP` printed under it.
+ *
+ * `kept` is a picture the game drew and has not rubbed out, which is how a monster you have just
+ * killed is still there to read YOU KILLED IT!! across: the kill empties the square and
+ * 1000:6BAF, asked to draw what stands on it, finds nothing and returns at 1000:6BDE without
+ * touching the box.
  */
-export function drawMiddleBox(screen: Frame, place: RevViewPlace, occupancy: RevOccupancy): void {
+export function drawMiddleBox(
+  screen: Frame,
+  place: RevViewPlace,
+  occupancy: RevOccupancy,
+  kept: RevKeptPicture | null = null,
+): void {
   const slot = occupancy.slotOn(place.column, place.row);
-  if (slot === 0) {
+  const standing: RevKeptPicture | null =
+    slot === 0 ? null : { name: viewNameIndex(slot, place.level, occupancy.strengthOf(slot)), level: place.level };
+  const showing = standing ?? kept;
+  if (showing === null) {
     boxFilled(screen, MIDDLE_BOX.left, MIDDLE_BOX.top, MIDDLE_BOX.right, MIDDLE_BOX.bottom, BLACK);
     return;
   }
-  const name = viewNameIndex(slot, place.level, occupancy.strengthOf(slot));
-  const drawing = drawingFor(name, place.level, false, 0);
+  const drawing = drawingFor(showing.name, showing.level, false, 0);
   if (drawing) putPset(screen, drawing, MIDDLE_PICTURE.x, MIDDLE_PICTURE.y);
 }

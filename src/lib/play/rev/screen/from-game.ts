@@ -80,6 +80,7 @@ export function revScreenStateOf(game: RevGame, options: RevScreenModeOptions): 
     known: options.wholeFloor ? () => true : (column, row) => game.memory.isKnown(column, row, pc.dungeonLevel),
     occupancy: occupancyOf(game),
     mapMonsters: options.debug ? game.monsters.standing() : [],
+    kept: game.kept,
     debugLines: options.debug ? revDebugLines(game) : [],
     words: {
       messages: messagesOf(game),

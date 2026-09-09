@@ -2,6 +2,7 @@ import { newFrame, type Frame } from '../../view3d/frame';
 import { TEXT } from './colours';
 import { drawText } from './font';
 import { drawRevDebug } from './debug';
+import type { RevKeptScreen } from './kept';
 import { drawMap, drawMapMonsters } from './map';
 import { drawMiddleBox, drawMonstersInPanel, type RevOccupancy } from './monsters';
 import { blit, SCREEN_HEIGHT, SCREEN_WIDTH } from './paint';
@@ -55,10 +56,18 @@ export interface RevScreenState {
   debugLines?: string[];
   /** The words on the screen; with none of it given the screen comes out wordless. */
   words?: Partial<RevWords>;
+  /** What the game has printed and not painted over, drawn last and over everything else the
+   *  way the original's `PRINT` goes over whatever was on those cells (`kept.ts`). */
+  kept?: RevKeptScreen;
 }
 
 /** The five boxes: the four views and the character's own square between them. */
-export function drawViewCross(screen: Frame, place: RevViewPlace, occupancy: RevOccupancy): void {
+export function drawViewCross(
+  screen: Frame,
+  place: RevViewPlace,
+  occupancy: RevOccupancy,
+  kept: RevKeptScreen | null = null,
+): void {
   for (const direction of COMPASS) {
     const box = panelFor(place.facing, direction);
     const depths = scanDirection(place, direction);
@@ -67,7 +76,7 @@ export function drawViewCross(screen: Frame, place: RevViewPlace, occupancy: Rev
     drawMonstersInPanel(panel, place, direction, depths.reached, occupancy);
     blit(screen, panel, box.left, box.top);
   }
-  drawMiddleBox(screen, place, occupancy);
+  drawMiddleBox(screen, place, occupancy, kept?.picture ?? null);
   for (const label of PANEL_LABELS) drawText(screen, label.text, label.row, label.column, TEXT);
 }
 
@@ -81,7 +90,7 @@ export function drawRevScreen(state: RevScreenState): Frame {
     drawMap(screen, { ...state.place, known: state.known });
     drawMapMonsters(screen, state.place, state.mapMonsters ?? []);
   }
-  drawViewCross(screen, state.place, occupancy);
+  drawViewCross(screen, state.place, occupancy, state.kept ?? null);
 
   // The help is offered only where the box between the views is empty: the branch that finds a
   // monster on the square goes to the encounter instead of printing it (1000:49B4).
@@ -99,5 +108,6 @@ export function drawRevScreen(state: RevScreenState): Frame {
   drawRevDebug(screen, state.debugLines ?? []);
   if (words.fight) drawExperience(screen, words.fight.experience);
   if (words.prompt) drawPrompt(screen, words.prompt);
+  for (const run of state.kept?.runs() ?? []) drawText(screen, run.text, run.row, run.column, TEXT);
   return screen;
 }
