@@ -353,7 +353,39 @@ which both tabs offer as three radio buttons:
   this turn, plus the one being fought, which the game names itself.
 * **speedrun** — the whole floor and every monster on it, so that a run need not be planned
   against the maps elsewhere on this site, and still none of the hidden numbers.
-* **debug** — everything: the whole floor, every monster on it, and the panel of numbers below.
+* **debug** — everything: the whole floor, every monster on it, the panel of numbers below, and
+  the three things below that the other two modes never show.
+
+### What debug mode shows on the game's own screen
+
+None of this is a port of anything — no game ever drew any of it — so it belongs to debug mode
+alone, and it goes onto the game's own screen rather than into a box over it. Moraff's Revenge is
+left out of all three: its map draws seven-pixel cells in four colours, where a picture would be
+mush, and its monster records carry nothing beyond a name, a level and what it hits with.
+
+* **A monster's picture on the map in the corner.** `zoom-thumbnails.ts` shrinks the picture the
+  3-D view draws that monster with to a square of palette entries with a hole where the picture
+  has none, and `zoom-monsters.ts` draws it in the middle of the monster's cell. A pixel of the
+  cell is left showing at every edge, so the square's four walls, its door ticks and its four
+  corner dots are all still readable around the picture: on the ten-pixel cells of the map beside
+  the views that is eight pixels a side, and on the seven-pixel cells of the map the X key fills
+  the screen with it is five. A monster the bundle has no picture for keeps the plain red square.
+  Each game's store (`monster-thumbnails.ts`) shrinks one picture once per kind and size and keeps
+  it for the life of the tab, since the tab draws the whole frame again on every keypress.
+* **What the monster being fought does beyond an ordinary hit**, under the numbers already over
+  the view it stands in: the drains, the breath, the poison, the disease and the rest of what the
+  29-byte record carries. The words are `describeEffects`, which is what the Monsters tab says
+  about the same monster, so the two pages never describe one monster two ways. The tab's
+  sentences are wider than either game's view, so they are broken on the spaces between words at
+  the width the view leaves — about fifty characters in Dungeons of the Unforgiven's forward view
+  and about eighteen in each of Moraff's World's four.
+* **A monster's full details, from a click on its picture.** The click is scaled back to the
+  game's own pixels and read off whichever map is up (`zoomMapMonsterAt`), and what opens is the
+  Monsters tab's own card for that monster, in the panel the Spells tab reads a spell in
+  (`ui/Overlay.svelte`), with a button through to the tab itself. The whole cell answers rather
+  than the picture's own pixels, since a cell is ten pixels of a screen the tab scales down to
+  fit. Nothing here touches the game or the run log: the keyboard belongs to the card while it is
+  up, so no key reaches the loop, and Escape shuts it.
 
 A revealed floor stops at the rock. Dungeons of the Unforgiven's `solidcheck` and Moraff's
 World's `is_solid` (WORLD.EXE 3000:a854) both call a square rock when it has a wall on all four
