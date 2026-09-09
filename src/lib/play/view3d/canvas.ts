@@ -10,6 +10,9 @@ export interface FramePainter {
   reveal(context: CanvasRenderingContext2D, frame: Frame, palette: Rgb[], ms: number): void;
   /** End a wipe now, leaving the whole of the newest frame on the canvas. */
   finish(): void;
+  /** Whether a wipe is part-way down the canvas. The palette crawl asks: a whole-screen repaint
+   *  of the newest frame would put the rest of it up the moment the wipe started. */
+  readonly wiping: boolean;
 }
 
 /**
@@ -26,9 +29,11 @@ export interface FramePainter {
  * row by row. That buffer is only made for a tab that has actually asked for a wipe. The rows to
  * write are `./wipe.ts`; this is the copying and the animation frames.
  *
- * A whole-screen paint ends a wipe, which is what the fade and the plaque's crawl want: both of
- * them repaint the same frame in a turned palette many times a second, and the display they are
- * ports of changes colours rather than drawing anything again.
+ * A whole-screen paint ends a wipe, which is what a fade wants: it repaints the same frame in a
+ * stepped palette many times a second, and the display it is a port of changes colours rather than
+ * drawing anything again. The palette crawl repaints the same way but waits a wipe out instead,
+ * since it runs on almost every screen of the dungeon and would otherwise leave the Redraw speed
+ * slider with nothing to do.
  */
 export function framePainter(width: number, height: number): FramePainter {
   const shown = new ImageData(width, height);
@@ -60,6 +65,9 @@ export function framePainter(width: number, height: number): FramePainter {
   };
 
   return {
+    get wiping() {
+      return wipe.running;
+    },
     paint(context, frame, palette) {
       stop();
       toRgba(frame, palette, shown.data);
