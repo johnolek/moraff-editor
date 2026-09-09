@@ -227,14 +227,15 @@ const REDRAW_SUFFIX = '.redraw';
 /** A screen that appears all at once, which is what a game shows until the slider is moved. */
 export const INSTANT_REDRAW_MS = 0;
 
-/** The slowest a screen can be made to appear: two seconds from the top row to the bottom. */
+/** The slowest a screen can be made to appear: two seconds from its first paint to its last. */
 export const SLOWEST_REDRAW_MS = 2000;
 
 /** What one notch of the slider is worth. */
 export const REDRAW_STEP_MS = 100;
 
 /**
- * How long a new screen takes to appear, revealed row by row from the top down.
+ * How long a new screen takes to appear, a piece at a time: Dungeons of the Unforgiven's paint by
+ * paint in the order the game drew it, the other two games' row by row from the top down.
  *
  * A machine slow enough to watch drew a screen a row at a time as the processor reached it, and
  * this is the tab doing the same on purpose. Nothing of the game is behind it: the frame is

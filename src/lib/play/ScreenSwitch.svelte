@@ -18,7 +18,7 @@
     display: PlayDisplay;
     /** Whether the stage is drawn through the simulation this component defines. */
     colourblind: boolean;
-    /** How long the game's screen takes to appear, revealed from the top down. */
+    /** How long the game's screen takes to appear, a piece at a time. */
     redraw: number;
     /** Put the stage alone on the display; left out where the browser cannot. */
     onfullscreen?: () => void;

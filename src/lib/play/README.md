@@ -338,25 +338,37 @@ const chosen = await session.choice([0x31, 0x32, 0x33]);
 ### How fast a screen appears
 
 The Redraw speed slider on `ScreenSwitch.svelte` is the tab drawing a screen the way a machine
-slow enough to watch drew one: from the top row down, over the time the slider is set to, Instant
-at one end and two seconds at the other. The choice sits beside the mode and the display in
-`mode.ts`, one per game, and it is display only — the frame is worked out and finished before any
-row of it is shown, so the game, the monsters' clock and the run log come out the same whatever
-it is set to. `view3d/wipe.ts` is where the cursor has got to and `view3d/canvas.ts` the copying.
+slow enough to watch drew one, over the time the slider is set to, Instant at one end and two
+seconds at the other. The choice sits beside the mode and the display in `mode.ts`, one per game,
+and it is display only — the frame is worked out and finished before any of it is shown, so the
+game, the monsters' clock and the run log come out the same whatever it is set to.
+
+Dungeons of the Unforgiven's screen appears the way the game drew it. While the slider asks for
+a slow redraw the frame keeps a journal of every paint made on it, in order — a rectangle
+filled, a line, a row of a scaled picture, a column of a wall face, a glyph — and the canvas
+replays the journal, each paint copied once the pixels before it have had their share of the
+time (`view3d/journal.ts`, with the copying in `view3d/canvas.ts`). The order is movecontrol's:
+the map window and the boxes first, then the four views as `draw_3d_view` paints them — forward
+from the character's square, the wall ahead and then the sides, and back again far to near —
+then the lines printed. Moraff's World and Moraff's Revenge keep a plainer reveal, from the top
+row down, which `view3d/wipe.ts` is the arithmetic of.
 
 Three things about it are decisions rather than arithmetic:
 
-* **A frame that arrives mid-wipe takes the wipe over where the cursor stands** rather than
-  starting again at the top, so typing faster than the wipe never queues screens up. The cursor
-  then carries on to the bottom, round to the top and back down to where it took over, so that no
-  row is left showing a screen the game had already moved on from.
+* **A frame that arrives mid-reveal takes over** rather than waiting: a journal starts again
+  from its first paint, and a top-down wipe carries on from where its cursor stands, round the
+  bottom and back, so that no row is left showing a screen the game had already moved on from.
+  Typing faster than the reveal therefore never queues screens up.
+* **What no paint covers goes up at the end.** A frame starts black and a line the game has
+  taken off the screen is simply not drawn, so the journal names none of those pixels; the whole
+  frame is copied once its last paint is down.
 * **A frame the game holds is a frame** (`timed.ts`, and `rev/held.ts`), so a message left up for
-  two seconds appears the same way everything else does.
-* **Two things are still painted whole.** A fade repaints many times a second of its own accord
-  and would undo a wipe as it started; and a canvas that goes off the page finishes what it was
-  drawing at once, which is the rule the arrow's flash and the two animations already keep. The
-  crawl repaints as often and does the opposite, since it runs on nearly every screen of the
-  dungeon: it leaves a wipe alone until the wipe has reached the bottom.
+  two seconds appears the same way everything else does. Two things are still painted whole: a
+  fade repaints many times a second of its own accord and would undo a reveal as it started, and
+  a canvas that goes off the page finishes what it was drawing at once, which is the rule the
+  arrow's flash and the two animations already keep. The crawl repaints as often and does the
+  opposite, since it runs on nearly every screen of the dungeon: it leaves a reveal alone until
+  it is done.
 
 ## A fight
 
