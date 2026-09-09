@@ -28,9 +28,18 @@ export const DUN_ROWS = 110;
  *  files when the character crosses a boundary, so floor f is in block f / 32. */
 export const FLOORS_PER_BLOCK = 32;
 
-const HEADER_BYTES = 4;
-const ROW_BITMAP_BYTES = 16;
-const ROW_BYTES = DUN_COLUMNS / 8;
+/** The four bytes at the front of a `.DUN`, one bit per floor of the block. */
+export const DUN_HEADER_BYTES = 4;
+
+/** The sixteen bytes in front of a floor's bitmap, one bit per row. */
+export const DUN_ROW_KEY_BYTES = 16;
+
+/** Bytes of one row of a floor: 80 squares, one bit each. */
+export const DUN_ROW_BYTES = DUN_COLUMNS / 8;
+
+/** Bytes of one floor's bitmap: 110 rows of 10, which is the 0x44c both games' allocators cut a
+ *  block of memory into 32 of (Dungeons of the Unforgiven at exe 2000:3bc7). */
+export const DUN_FLOOR_BYTES = DUN_ROW_BYTES * DUN_ROWS;
 
 /** The squares of one floor a file marks as seen, each as y * EXPLORED_STRIDE + x. */
 export type ExploredSquares = ReadonlySet<number>;
@@ -86,7 +95,7 @@ export function dunFileName(name: string): { slot: number; block: number } | nul
 export function readDunFile(name: string, bytes: Uint8Array): DunFile {
   const named = dunFileName(name);
   if (!named) throw new Error(`${name} is not named <slot><block>.DUN, like 30.DUN.`);
-  const floors = bytes.length > HEADER_BYTES ? readDunFloors(bytes, named.block) : null;
+  const floors = bytes.length > DUN_HEADER_BYTES ? readDunFloors(bytes, named.block) : null;
   if (!floors) throw new Error(`${name} is ${bytes.length} bytes, which is not the size of the floors it lists.`);
   return { name, slot: named.slot, block: named.block, floors };
 }
@@ -99,24 +108,24 @@ export function readDunFile(name: string, bytes: Uint8Array): DunFile {
  */
 export function readDunFloors(bytes: Uint8Array, block: number): ExploredFloor[] | null {
   const floors: ExploredFloor[] = [];
-  let at = HEADER_BYTES;
+  let at = DUN_HEADER_BYTES;
   for (let index = 0; index < FLOORS_PER_BLOCK; index++) {
     // The four bytes saying which floors are here are written highest floors first, the one
     // place in the file where the bytes run backwards.
-    if (!bitSet(bytes[HEADER_BYTES - 1 - (index >> 3)], index)) continue;
-    if (at + ROW_BITMAP_BYTES > bytes.length) return null;
+    if (!bitSet(bytes[DUN_HEADER_BYTES - 1 - (index >> 3)], index)) continue;
+    if (at + DUN_ROW_KEY_BYTES > bytes.length) return null;
     const rowBitmap = at;
-    at += ROW_BITMAP_BYTES;
+    at += DUN_ROW_KEY_BYTES;
     const squares = new Set<number>();
     for (let y = 0; y < DUN_ROWS; y++) {
       // load_dun reads a row only when the bitmap says it is there. save_dun marks every row
       // present whether or not anything on it was seen, but a reader honours the bitmap.
       if (!bitSet(bytes[rowBitmap + (y >> 3)], y)) continue;
-      if (at + ROW_BYTES > bytes.length) return null;
+      if (at + DUN_ROW_BYTES > bytes.length) return null;
       for (let x = 0; x < DUN_COLUMNS; x++) {
         if (bitSet(bytes[at + (x >> 3)], x)) squares.add(y * EXPLORED_STRIDE + x);
       }
-      at += ROW_BYTES;
+      at += DUN_ROW_BYTES;
     }
     floors.push({ floor: block * FLOORS_PER_BLOCK + index, squares });
   }
@@ -173,7 +182,7 @@ export interface DotuDunFile extends ExploredFile {
 export function readDotuDunFile(name: string, bytes: Uint8Array): DotuDunFile {
   const named = dotuDunFileName(name);
   if (!named) throw new Error(`${name} is not named <character><quarter><module>.DUN, like E14.DUN.`);
-  const floors = bytes.length > HEADER_BYTES ? readDunFloors(bytes, named.quarter) : null;
+  const floors = bytes.length > DUN_HEADER_BYTES ? readDunFloors(bytes, named.quarter) : null;
   if (!floors) throw new Error(`${name} is ${bytes.length} bytes, which is not the size of the floors it lists.`);
   return { name, character: named.character, quarter: named.quarter, dungeon: named.module, floors };
 }

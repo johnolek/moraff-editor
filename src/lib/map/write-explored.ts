@@ -1,4 +1,4 @@
-import { DUN_COLUMNS, DUN_ROWS, FLOORS_PER_BLOCK } from './explored';
+import { DUN_FLOOR_BYTES, DUN_HEADER_BYTES, DUN_ROW_BYTES, DUN_ROW_KEY_BYTES, DUN_ROWS, FLOORS_PER_BLOCK } from './explored';
 
 /**
  * The `.DUN` files the two C games write beside a character, written from the site's own
@@ -8,13 +8,6 @@ import { DUN_COLUMNS, DUN_ROWS, FLOORS_PER_BLOCK } from './explored';
  * `save_dun` (exe 2000:5298) write the same bytes; `dotu-tools/docs/MAP-MEMORY.md` and
  * `mw-tools/docs/DUNGEON.md` have the layout, and `explored.ts` reads it back.
  */
-
-const HEADER_BYTES = 4;
-const ROW_BITMAP_BYTES = 16;
-const ROW_BYTES = DUN_COLUMNS / 8;
-
-/** Bytes of one floor's bitmap: 110 rows of 10, the 0x44c both allocators cut a block into. */
-const FLOOR_BYTES = ROW_BYTES * DUN_ROWS;
 
 /** A number written into a file name the way both games write one: as itself plus '0'. */
 function digit(value: number): string {
@@ -54,15 +47,15 @@ export function writeDunFile(floors: ReadonlyMap<number, Uint8Array>, block: num
   const present = [...floors.keys()]
     .filter((floor) => floor >= first && floor < first + FLOORS_PER_BLOCK)
     .sort((a, b) => a - b);
-  const bytes = new Uint8Array(HEADER_BYTES + present.length * (ROW_BITMAP_BYTES + FLOOR_BYTES));
-  let at = HEADER_BYTES;
+  const bytes = new Uint8Array(DUN_HEADER_BYTES + present.length * (DUN_ROW_KEY_BYTES + DUN_FLOOR_BYTES));
+  let at = DUN_HEADER_BYTES;
   for (const floor of present) {
     const index = floor - first;
-    bytes[HEADER_BYTES - 1 - (index >> 3)] |= 1 << index % 8;
+    bytes[DUN_HEADER_BYTES - 1 - (index >> 3)] |= 1 << index % 8;
     for (let row = 0; row < DUN_ROWS; row++) bytes[at + (row >> 3)] |= 1 << row % 8;
-    at += ROW_BITMAP_BYTES;
-    bytes.set(floors.get(floor)!.subarray(0, FLOOR_BYTES), at);
-    at += FLOOR_BYTES;
+    at += DUN_ROW_KEY_BYTES;
+    bytes.set(floors.get(floor)!.subarray(0, DUN_FLOOR_BYTES), at);
+    at += DUN_FLOOR_BYTES;
   }
   return bytes;
 }

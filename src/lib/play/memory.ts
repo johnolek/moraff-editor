@@ -1,6 +1,14 @@
 import { base64FromBytes } from '../bytes';
 import { fromBase64, readStored, writeStored } from '../character/storage';
-import { DUN_COLUMNS, DUN_ROWS, EXPLORED_STRIDE, FLOORS_PER_BLOCK, type ExploredSquares } from '../map/explored';
+import {
+  DUN_COLUMNS,
+  DUN_FLOOR_BYTES,
+  DUN_ROW_BYTES,
+  DUN_ROWS,
+  EXPLORED_STRIDE,
+  FLOORS_PER_BLOCK,
+  type ExploredSquares,
+} from '../map/explored';
 import type { DiscoveredMap } from '../map/draw-floor';
 import type { MapSquare } from '../map/game';
 
@@ -26,19 +34,14 @@ const SIDE_OPEN = 3;
  */
 export const VIEW_DEPTH = 35;
 
-/** Bytes of one floor's bitmap: 110 rows of 10 bytes, which is the 0x44c the allocator
- *  (exe 2000:3bc7) cuts one block of memory into 32 of. */
-const ROW_BYTES = DUN_COLUMNS / 8;
-const FLOOR_BYTES = ROW_BYTES * DUN_ROWS;
-
 function emptyFloor(): Uint8Array {
-  return new Uint8Array(FLOOR_BYTES);
+  return new Uint8Array(DUN_FLOOR_BYTES);
 }
 
 /** FUN_2000_7210 (exe 2000:7210): is (x, y) known? */
 function bitSet(bitmap: Uint8Array, x: number, y: number): boolean {
   if (x < 0 || x >= DUN_COLUMNS || y < 0 || y >= DUN_ROWS) return false;
-  return (bitmap[y * ROW_BYTES + (x >> 3)] & (1 << x % 8)) !== 0;
+  return (bitmap[y * DUN_ROW_BYTES + (x >> 3)] & (1 << x % 8)) !== 0;
 }
 
 /**
@@ -51,7 +54,7 @@ function bitSet(bitmap: Uint8Array, x: number, y: number): boolean {
  */
 function setBit(bitmap: Uint8Array, x: number, y: number): boolean {
   if (x < 0 || x >= DUN_COLUMNS || y < 0 || y >= DUN_ROWS) return false;
-  const at = y * ROW_BYTES + (x >> 3);
+  const at = y * DUN_ROW_BYTES + (x >> 3);
   const mask = 1 << x % 8;
   const already = (bitmap[at] & mask) !== 0;
   bitmap[at] |= mask;
@@ -272,7 +275,7 @@ export class MapMemory {
       const stored = maps[`${this.held.dungeon}:${floor}`];
       if (typeof stored !== 'string') continue;
       const bytes = fromBase64(stored);
-      if (!bytes || bytes.length !== FLOOR_BYTES) continue;
+      if (!bytes || bytes.length !== DUN_FLOOR_BYTES) continue;
       this.resident.set(floor, bytes);
     }
   }
@@ -307,7 +310,7 @@ export class MapMemory {
     for (const [key, stored] of Object.entries(this.store?.read() ?? {})) {
       const place = storedPlace(key);
       const bitmap = fromBase64(stored);
-      if (!place || !bitmap || bitmap.length !== FLOOR_BYTES) continue;
+      if (!place || !bitmap || bitmap.length !== DUN_FLOOR_BYTES) continue;
       floors.set(key, { ...place, bitmap });
     }
     const held = this.held;
