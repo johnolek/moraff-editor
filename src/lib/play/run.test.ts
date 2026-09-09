@@ -6,6 +6,9 @@ import { runMoveControl, startGame, type CharacterFile, type GameSession } from 
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
 import { mwCharacterFile } from './mw/engine.test';
+import { runRevDungeon, startRevGame, type RevCharacterFile, type RevGameSession } from './rev/engine';
+import { revCharacterFile, revRecord } from './rev/engine.test';
+import { REV_KEY } from './rev/keys';
 import { loadMwPlayer, saveMwPlayer } from './mw/record';
 import { MW_KEY, mwTurn } from './mw/keys';
 import { runFileName } from './export-run';
@@ -53,6 +56,15 @@ function recordedMwGame(seed = 7): { run: RunRecorder; session: MwGameSession; f
   const run = new RunRecorder({ game: 'moraffsWorld', name: 'GRIMWALD', record: file.bytes, seed });
   const session = startMwGame(file, run.rng, run);
   void runMwMoveControl(session);
+  return { run, session, file };
+}
+
+/** The same in Moraff's Revenge. */
+function recordedRevGame(seed = 9): { run: RunRecorder; session: RevGameSession; file: RevCharacterFile } {
+  const file = revCharacterFile();
+  const run = new RunRecorder({ game: 'revenge', name: 'FIGHTY', record: file.bytes, seed });
+  const session = startRevGame(file, run.rng, run);
+  void runRevDungeon(session);
   return { run, session, file };
 }
 
@@ -166,6 +178,20 @@ describe('a run the save editor wrote a record into', () => {
     session.finish();
 
     expect(session.game.pc.str).toBe(99);
+    expect(run.log().edits).toBe(1);
+  });
+
+  it("says the same in Moraff's Revenge", async () => {
+    const { run, session } = recordedRevGame();
+    await settle();
+    session.press(REV_KEY.arrowUp);
+    await settle();
+    // The strength a record stores is `3 * the characteristic + 237` (1000:B6BF).
+    session.recordEdited(revRecord({ 1: 3 * 18 + 237 }));
+    await settle();
+    session.finish();
+
+    expect(session.game.pc.stats[0]).toBe(18);
     expect(run.log().edits).toBe(1);
   });
 
