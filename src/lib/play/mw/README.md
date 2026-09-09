@@ -120,7 +120,10 @@ Moraff's World writes in two places, and this port keeps them apart the way the 
   `session.fighting(...)` sends what a fight says there instead of into the box, and leaving a
   square takes it down, which is the `fill_rect` FUN_2000_a57e starts with. The one thing a fight
   says that really is a box — the notice a level drain, a poisoning or a disease brings — is the
-  last thing said before `wait_key`, so it comes out of the banner and into the box.
+  last thing said before `wait_key`, so it comes out of the banner and into the box. The one line
+  it prints in a colour of its own is a puffball's, which `monster_turn` names 6 for; that one is
+  drawn on the strip the kill's own messages use rather than said into the banner, since the
+  banner has one colour for every line in it.
   A delay taken while a fight is being drawn keeps the banner with the frame (`../timed.ts`) and
   starts a fresh one afterwards, because the original wipes that whole corner before it writes
   there again. That is what lets a turn two monsters both get be read one message at a time:
