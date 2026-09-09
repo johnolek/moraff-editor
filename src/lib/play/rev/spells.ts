@@ -480,7 +480,11 @@ function actOfGod(game: RevGame, level: number): void {
 /** 1000:91C2: `Gas' puts a monster under the fourth level to sleep half the time, and the sleep
  *  is a blow of between 1,376 and 6,375 points. */
 function gas(game: RevGame, level: number): void {
-  if (game.rng.random(2) + 1 === 1 && monsterLevel(game) < 4) {
+  // 1000:91D7: the coin is tossed in the scratch cell and read back out of it, so the toss is
+  // what stands there when the monster answers the key (`attack.ts`).
+  const roll = game.rng.random(2) + 1;
+  game.scratch = roll;
+  if (roll === 1 && monsterLevel(game) < 4) {
     game.say('IT FALLS ASLEEP AND YOU KILL IT');
     actOfGod(game, level);
     return;
@@ -527,7 +531,9 @@ function battleStrength(game: RevGame, level: number): void {
 /** 1000:9309: `Go Away!' sends the monster off and leaves its treasure, when a roll on the
  *  caster's own level beats the monster's. It is the kill without the words. */
 function goAway(game: RevGame, level: number): void {
+  // 1000:9322: the roll is made in the scratch cell and compared there.
   const roll = game.rng.random(2 * game.pc.level) + 5;
+  game.scratch = roll;
   if (roll > monsterLevel(game)) {
     game.say("IT'S GONE");
     game.monsterLeft = true;
@@ -549,7 +555,9 @@ function rise(game: RevGame, desk: RevMagicDesk, level: number): void {
 
 /** 1000:93B8: `Auto Kill' is `Go Away!' with three times the roll and no treasure of its own. */
 function autoKill(game: RevGame, level: number): void {
+  // 1000:93D3: the roll is made in the scratch cell, the way `Go Away!' makes its own.
   const roll = game.rng.random(3 * game.pc.level) + 5;
+  game.scratch = roll;
   if (roll > monsterLevel(game)) {
     killOutright(game, level);
     return;
@@ -578,7 +586,9 @@ function battleHeal(game: RevGame, level: number): void {
  */
 function god(game: RevGame, desk: RevMagicDesk, level: number): void {
   const pc = game.pc;
+  // 1000:943C: the d5 is rolled in the scratch cell, which is what the ON GOTO jumps on.
   const roll = game.rng.random(5) + 1;
+  game.scratch = roll;
   if (roll === 1) {
     actOfGod(game, level);
     return;

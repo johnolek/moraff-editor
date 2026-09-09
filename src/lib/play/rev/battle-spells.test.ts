@@ -165,6 +165,43 @@ describe("the fight prompt's twelve spells", () => {
   });
 });
 
+describe('the scratch cell four of the twelve leave a number in', () => {
+  it('GAS leaves its coin toss, as 1000:91D7 does', () => {
+    const pc = revCharacter();
+    const { game, desk } = revTestGame(pc, revRolls([1]));
+    game.scratch = 99;
+    game.fight = fighting(9, 90);
+    REV_BATTLE_SPELLS[0].cast(game, desk, 1);
+    expect(game.scratch).toBe(2);
+  });
+
+  it('GO AWAY! leaves its roll, as 1000:9322 does', () => {
+    const pc = revCharacter({ level: 5 });
+    const { game, desk } = revTestGame(pc, revRolls([0]));
+    game.scratch = 99;
+    game.fight = fighting(9, 90);
+    REV_BATTLE_SPELLS[6].cast(game, desk, 4);
+    expect(game.scratch).toBe(5);
+  });
+
+  it('AUTO KILL leaves its own, as 1000:93D3 does', () => {
+    const pc = revCharacter({ level: 5 });
+    const { game, desk } = revTestGame(pc, revRolls([0]));
+    game.scratch = 99;
+    game.fight = fighting(9, 90);
+    REV_BATTLE_SPELLS[8].cast(game, desk, 5);
+    expect(game.scratch).toBe(5);
+  });
+
+  it('GOD? leaves the arm it jumped to, as 1000:943C does', () => {
+    const pc = revCharacter({ spellPoints: 30 });
+    const { game, desk } = revTestGame(pc, revRolls([3]));
+    game.scratch = 99;
+    REV_BATTLE_SPELLS[11].cast(game, desk, 6);
+    expect(game.scratch).toBe(4);
+  });
+});
+
 describe('the counter the fight spells run out on', () => {
   it('brings the step counter back to 1 after sixteen', () => {
     const pc = revCharacter();
