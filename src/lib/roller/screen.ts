@@ -1,3 +1,4 @@
+import mwPalettes from '../game/mw-palettes.json';
 import palettes from '../game/palettes.json';
 import type { ScreenLine } from '../game/port/state';
 
@@ -10,15 +11,27 @@ function cssColour(entry: number[]): string {
   return `#${entry.map(byte).join('')}`;
 }
 
+/** Entries 0 to 15 of one of a game's palettes, as CSS. */
+const fixedColours = (palette: number[][]): string[] => palette.slice(0, 16).map(cssColour);
+
 /**
- * The game's fixed UI colours, entries 0 to 15, as CSS.
+ * Dungeons of the Unforgiven's fixed UI colours, entries 0 to 15, as CSS.
  *
  * `dotu-tools/docs/PICTURES.md` calls entries 1 to 15 of the 256-colour palette the fixed UI
  * colours, and all forty palettes in `palettes.json` hold the same sixteen, so which one they are
  * read out of makes no difference. Entry 0 is the background the game rubs text out with, and no
- * line drawn in it reaches a screen.
+ * line drawn in it reaches a screen. Moraff's World has its own sixteen, which differ in two
+ * entries, so a Moraff's World screen wants {@link MW_SCREEN_COLOURS} instead.
  */
-export const SCREEN_COLOURS: string[] = palettes.m1_s1_dungeon.slice(0, 16).map(cssColour);
+export const SCREEN_COLOURS: string[] = fixedColours(palettes.m1_s1_dungeon);
+
+/**
+ * The same for Moraff's World, out of its own `set_palette` (WORLD.EXE 4000:10ee). All eleven of
+ * its floor palettes hold the same sixteen. Entry 5, the orange its message box is printed in, is
+ * (53, 20, 10) where Dungeons of the Unforgiven has (53, 20, 0), and entry 12 is (16, 0, 0) where
+ * the other game has (20, 0, 0).
+ */
+export const MW_SCREEN_COLOURS: string[] = fixedColours(mwPalettes.palettes[0]);
 
 /**
  * How far apart pfont (exe 4000:0bb3) sets the characters of each of its three fonts, in the 1600
@@ -71,11 +84,11 @@ export interface ScreenSpan {
  * a right-hand edge comes out spread apart or squeezed together. A line drawn with a value beside
  * it — a race's name, a characteristic's number — is two calls in the game and two spans here.
  */
-function spansOf(line: ScreenLine): ScreenSpan[] {
+function spansOf(line: ScreenLine, colours: string[]): ScreenSpan[] {
   const advance = FONT_ADVANCE[line.font];
   const step = line.spreadTo === undefined ? advance : (line.spreadTo - line.x) / Math.max(1, line.text.length);
   const size = advance / VT323_ADVANCE;
-  const shared = { y: line.y - size * VT323_CAP_TOP, size, colour: SCREEN_COLOURS[line.colour] };
+  const shared = { y: line.y - size * VT323_CAP_TOP, size, colour: colours[line.colour] };
   const spans = [{ ...shared, text: line.text, x: line.x, spacing: step - advance }];
   if (line.value !== undefined && line.valueX !== undefined) {
     spans.push({ ...shared, text: line.value, x: line.valueX, spacing: 0 });
@@ -83,7 +96,7 @@ function spansOf(line: ScreenLine): ScreenSpan[] {
   return spans;
 }
 
-/** Everything showing on a screen, ready to be positioned. */
-export function screenSpans(screen: ScreenLine[]): ScreenSpan[] {
-  return screen.flatMap(spansOf);
+/** Everything showing on a screen, ready to be positioned, in the palette of the game that drew it. */
+export function screenSpans(screen: ScreenLine[], colours: string[] = SCREEN_COLOURS): ScreenSpan[] {
+  return screen.flatMap((line) => spansOf(line, colours));
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FONT_ADVANCE, SCREEN_COLOURS, screenSpans } from './screen';
+import { FONT_ADVANCE, MW_SCREEN_COLOURS, SCREEN_COLOURS, screenSpans } from './screen';
 
 describe('the game s UI colours', () => {
   it('is the sixteen the roller draws with, black first', () => {
@@ -16,6 +16,18 @@ describe('the game s UI colours', () => {
     expect(SCREEN_COLOURS[7]).toBe('#ffb600');
     expect(SCREEN_COLOURS[8]).toBe('#00ff00');
     expect(SCREEN_COLOURS[15]).toBe('#ffffff');
+  });
+});
+
+describe("Moraff's World s UI colours", () => {
+  it('is its own orange, not the other game s', () => {
+    expect(MW_SCREEN_COLOURS[5]).toBe('#d75128');
+    expect(SCREEN_COLOURS[5]).toBe('#d75100');
+  });
+
+  it('draws a line of a Moraff s World screen in it', () => {
+    const box = [{ text: 'YOU FOUND A TRAP DOOR!', x: 0, y: 100, font: 0, colour: 5 }];
+    expect(screenSpans(box, MW_SCREEN_COLOURS)[0].colour).toBe('#d75128');
   });
 });
 

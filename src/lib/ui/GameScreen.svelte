@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ScreenLine } from '../game/port/state';
-  import { screenSpans } from '../roller/screen';
+  import { SCREEN_COLOURS, screenSpans } from '../roller/screen';
 
   /** A part of the game's screen, in the game's own units. */
   export interface ScreenWindow {
@@ -18,12 +18,15 @@
     lines: ScreenLine[];
     /** The part of the screen to show, for a panel that holds one corner of it. */
     window?: ScreenWindow;
+    /** The palette the lines' colour numbers are entries of, for a game other than Dungeons of
+     *  the Unforgiven. */
+    colours?: string[];
   }
 
-  let { lines, window: shown = WHOLE_SCREEN }: Props = $props();
+  let { lines, window: shown = WHOLE_SCREEN, colours = SCREEN_COLOURS }: Props = $props();
 
   let width = $state(0);
-  const spans = $derived(screenSpans(lines));
+  const spans = $derived(screenSpans(lines, colours));
 </script>
 
 <!-- The game's own screen: every line at the coordinates the game drew it at. -->
