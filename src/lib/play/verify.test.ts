@@ -213,8 +213,9 @@ async function moraffsRevengeRun(): Promise<RunLog> {
     seed: 4242,
     startedAt: '2026-09-07T00:00:00.000Z',
     mode: 'faithful',
+    sound: false,
   });
-  const session = startRevGame(file, run.rng, run);
+  const session = startRevGame(file, run.rng, run, false);
   void runRevDungeon(session);
   await settle();
   session.press(REV_KEY.down);
@@ -247,6 +248,13 @@ describe('reading a run log out of a file', () => {
     expect(readRunLog(JSON.stringify({ ...log, game: 'snake' }))).toBeNull();
     expect(readRunLog(JSON.stringify({ ...log, inputs: ['up'] }))).toBeNull();
     expect(readRunLog(JSON.stringify({ ...log, milestones: [{ kind: 'boss' }] }))).toBeNull();
+  });
+
+  it('reads a log written before the sound flag was recorded, which simply has no field', async () => {
+    const { sound, ...older } = await moraffsRevengeRun();
+    expect(sound).toBe(false);
+    expect(readRunLog(JSON.stringify(older))).not.toBeNull();
+    expect(readRunLog(JSON.stringify({ ...older, sound: 'yes' }))).toBeNull();
   });
 });
 

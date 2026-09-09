@@ -158,6 +158,7 @@ export class RevGameSession {
     readonly file: RevCharacterFile,
     rng: Rng,
     readonly run: RunRecorder | null = null,
+    sound = true,
   ) {
     // A character is 340 numbers of text (1000:B6BF). Bytes that are not them are not a
     // character at all, and a game of a character made of zeroes would be checked against itself
@@ -166,6 +167,9 @@ export class RevGameSession {
     if (!pc) throw new Error('These bytes are not a Moraff\'s Revenge character record.');
     this.known = file.bytes.slice();
     this.game = newRevGame(pc, rng, new RevMapMemory(file.map ?? null), file.name ?? '');
+    // 1000:0523: the answer to "Sound (Y or N)?" is the only thing that writes DGROUP B4BC
+    // before the loop starts, and N is what puts a 1 there.
+    this.game.sound = sound ? 0 : 1;
     this.game.flushKeys = () => this.flushKeys();
     this.game.delay = (ms) => this.hold(ms);
     // 1000:B98F: a character who has never been played has no fountain of youth yet, and the
@@ -482,8 +486,13 @@ function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
 }
 
 /** Start playing a character. */
-export function startRevGame(file: RevCharacterFile, rng: Rng, run: RunRecorder | null = null): RevGameSession {
-  return new RevGameSession(file, rng, run);
+export function startRevGame(
+  file: RevCharacterFile,
+  rng: Rng,
+  run: RunRecorder | null = null,
+  sound = true,
+): RevGameSession {
+  return new RevGameSession(file, rng, run, sound);
 }
 
 /** What the loop knows about the square before it reads a key. */

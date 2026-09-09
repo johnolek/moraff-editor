@@ -220,6 +220,8 @@ function isRunLog(value: unknown): value is RunLog {
     typeof log.engine === 'string' &&
     typeof log.name === 'string' &&
     (log.mode === null || typeof log.mode === 'string') &&
+    // A log written before the sound flag was recorded simply has no field, and reads as null.
+    (log.sound === null || log.sound === undefined || typeof log.sound === 'boolean') &&
     typeof log.startedAt === 'string' &&
     typeof log.seed === 'number' &&
     typeof log.record === 'string' &&

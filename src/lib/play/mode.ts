@@ -112,6 +112,25 @@ export function writePlayColourblind(game: PortedGameId, on: boolean): void {
   writeStored(PREFIX + game + COLOURBLIND_SUFFIX, on ? 'on' : 'off');
 }
 
+/** Where the choice is kept, one key per game, beside the mode and the display. */
+const SOUND_SUFFIX = '.sound';
+
+/**
+ * Whether a game starts with its sound on.
+ *
+ * Moraff's Revenge asks on the way in: "Sound (Y or N)?" at DUNSMALL.EXE 1000:0517, over the
+ * title screen, and it takes nothing but an upper-case Y or N (1000:0523). N writes 1 into
+ * DGROUP B4BC, the flag the `O` key flips in play, and Y leaves it at the 0 it starts as. This
+ * port draws no title screen, so the tab asks instead.
+ */
+export function readPlaySound(game: PortedGameId): boolean {
+  return readStored(PREFIX + game + SOUND_SUFFIX) !== 'off';
+}
+
+export function writePlaySound(game: PortedGameId, on: boolean): void {
+  writeStored(PREFIX + game + SOUND_SUFFIX, on ? 'on' : 'off');
+}
+
 /** The inline SVG filter the switch defines and a stage points at. */
 export const COLOURBLIND_FILTER_ID = 'red-green-simulation';
 

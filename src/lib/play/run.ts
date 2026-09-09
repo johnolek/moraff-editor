@@ -230,6 +230,17 @@ export interface RunLog {
    * same way. Null until the Play tab has a mode to name.
    */
   mode: string | null;
+  /**
+   * Whether the game's sound was on as play began, and null for a game with no such flag and for
+   * a log written before this was recorded.
+   *
+   * Only Moraff's Revenge has one: DUNSMALL.EXE asks "Sound (Y or N)?" on the way in
+   * (1000:0517), and the answer is the starting value of the flag the `O` key flips. Nothing a
+   * replay arrives at turns on it — what the flag decides is whether a tune plays or the screen
+   * is held for four seconds instead, and the clock's ticks are inputs of the log either way —
+   * so it is here for the same reason the mode is: to say how the run was set up.
+   */
+  sound: boolean | null;
   /** The character's name, as the record held it when play began. */
   name: string;
   /** When the run started, as an ISO 8601 instant. */
@@ -286,6 +297,8 @@ export interface RunStart {
   seed?: number;
   startedAt?: string;
   mode?: string | null;
+  /** Whether the game starts with its sound on, for a game that has such a flag. */
+  sound?: boolean | null;
   /**
    * The inputs are coming from a log rather than from a player, so anything the engine would
    * otherwise make up for itself — Ctrl-F's own swings — is taken from the log instead.
@@ -303,6 +316,7 @@ export class RunRecorder {
   readonly seed: number;
   readonly startedAt: string;
   readonly mode: string | null;
+  readonly sound: boolean | null;
   /** The run is being replayed from a log rather than played by anybody. */
   readonly replaying: boolean;
   /** The character's record as play began. */
@@ -334,6 +348,7 @@ export class RunRecorder {
     this.seed = start.seed ?? drawSeed();
     this.startedAt = start.startedAt ?? new Date().toISOString();
     this.mode = start.mode ?? null;
+    this.sound = start.sound ?? null;
     this.replaying = start.replaying ?? false;
     this.rng = new SeededRng(this.seed);
   }
@@ -423,6 +438,7 @@ export class RunRecorder {
       engine: ENGINE_COMMIT,
       game: this.game,
       mode: this.mode,
+      sound: this.sound,
       name: this.name,
       startedAt: this.startedAt,
       seed: this.seed,
@@ -485,6 +501,7 @@ export async function replayRun(log: RunLog): Promise<RunReplay> {
     seed: log.seed,
     startedAt: log.startedAt,
     mode: log.mode,
+    sound: log.sound,
     replaying: true,
   });
   return RUN_GAMES[log.game].replay(log, run);
@@ -589,7 +606,7 @@ async function replayMoraffsRevenge(log: RunLog, run: RunRecorder): Promise<RunR
     died() {},
     name: log.name,
   };
-  const session = startRevGame(file, run.rng, run);
+  const session = startRevGame(file, run.rng, run, run.sound ?? true);
   void runPlayLoop(session, runRevDungeon(session));
   await loopRuns();
   for (const input of log.inputs) {

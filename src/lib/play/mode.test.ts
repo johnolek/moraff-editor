@@ -12,6 +12,7 @@ import {
   PLAY_MODES,
   INSTANT_REDRAW_MS,
   readPlayColourblind,
+  readPlaySound,
   readPlayDisplay,
   readPlayMode,
   readPlayRedraw,
@@ -19,6 +20,7 @@ import {
   SLOWEST_REDRAW_MS,
   sidePicturesVisible,
   writePlayColourblind,
+  writePlaySound,
   writePlayDisplay,
   writePlayMode,
   writePlayRedraw,
@@ -184,6 +186,26 @@ describe('the switch between the screen and the map', () => {
     useStorage(undefined);
     writePlayDisplay('moraffsWorld', 'map');
     expect(readPlayDisplay('moraffsWorld')).toBe('screen');
+  });
+});
+
+describe('the sound a game starts with', () => {
+  it('is on until it has been turned off', () => {
+    useStorage(fakeStorage());
+    expect(readPlaySound('revenge')).toBe(true);
+  });
+
+  it('remembers the choice for one game without touching the other', () => {
+    useStorage(fakeStorage());
+    writePlaySound('revenge', false);
+    expect(readPlaySound('revenge')).toBe(false);
+    expect(readPlaySound('unforgiven')).toBe(true);
+  });
+
+  it('is on where there is nowhere to remember anything', () => {
+    useStorage(undefined);
+    writePlaySound('revenge', false);
+    expect(readPlaySound('revenge')).toBe(true);
   });
 });
 

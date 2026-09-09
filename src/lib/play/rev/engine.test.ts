@@ -5,7 +5,7 @@ import { formatRevRecord, REV_VALUE_COUNT } from '../../game/rev-port/record';
 import { REV_KEY } from './keys';
 import { NEEDS_A_CURE } from './pass';
 import { REV_GRAB_A_SANDWICH } from './screens';
-import { SOUND_OFF } from './settings';
+import { SOUND_OFF, SOUND_ON } from './settings';
 import { REV_VALUE, revValue } from './record';
 import { REV_CLOCK_TICK, RevGameSession, runRevDungeon, startRevGame, type RevCharacterFile } from './engine';
 
@@ -93,6 +93,26 @@ describe('the loop', () => {
     await pressStats(session);
     expect(session.view().box).not.toContain(SOUND_OFF);
     session.finish();
+  });
+
+  it('starts with the sound the answer on the way in asked for, which O still flips', async () => {
+    const off = startRevGame(revCharacterFile(), new SeededRng(5), null, false);
+    void runRevDungeon(off);
+    await settled();
+    // 1000:0523: N is what writes a 1 into DGROUP B4BC; Y leaves the 0 it starts as.
+    expect(off.game.sound).toBe(1);
+    off.onChange = () => {};
+    off.press(REV_KEY.sound);
+    await settled();
+    expect(off.game.sound).toBe(0);
+    expect(off.view().box).toEqual([SOUND_ON]);
+    off.finish();
+
+    const on = startRevGame(revCharacterFile(), new SeededRng(5), null, true);
+    void runRevDungeon(on);
+    await settled();
+    expect(on.game.sound).toBe(0);
+    on.finish();
   });
 
   it('holds nothing at all for a session nobody is drawing', async () => {

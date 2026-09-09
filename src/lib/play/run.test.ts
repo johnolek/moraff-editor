@@ -88,6 +88,13 @@ describe('the run log', () => {
     expect(decodeRecord(log.record)).toEqual(record);
   });
 
+  it('keeps the sound the game was set up with, and nothing for a game with no such flag', () => {
+    const record = new Uint8Array(8);
+    expect(new RunRecorder({ game: 'revenge', name: 'FIGHTY', record, sound: false }).log().sound).toBe(false);
+    expect(new RunRecorder({ game: 'revenge', name: 'FIGHTY', record, sound: true }).log().sound).toBe(true);
+    expect(new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record }).log().sound).toBeNull();
+  });
+
   it("keeps the game's own clock where the run had got to", async () => {
     const { run, session } = recordedGame();
     await press(session, KEY.arrowUp);

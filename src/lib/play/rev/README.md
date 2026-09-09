@@ -247,6 +247,13 @@ Three things are this game's own:
   held frame like every other (`held.ts`). The speaker is opened on the first key pressed in the
   tab, since a browser will not start audio that nothing the player did asked for, and a replay
   never opens one.
+* **The question the game opens with is the tab's checkbox.** 1000:0517 prints "Sound (Y or N)?"
+  over the title screen and 1000:0523 will take nothing but an upper-case Y or N; N writes 1 into
+  DGROUP B4BC and Y leaves the 0 it starts as. There is no title screen here, so the Revenge tab
+  asks instead and remembers the answer, and a game starts on the flag it names. It goes into the
+  run log beside the mode, which is what says how a run was set up: nothing a replay arrives at
+  turns on the flag, since what it decides is whether a tune plays or the screen is held for four
+  seconds, and the clock's ticks are inputs of the log either way.
 * **The start-up loading tune is left out.** It is six fragments played one between each `BLOAD`
   (1000:BBBC, BC18, BCDC, BE47, BF21 and BF30), and this port has nothing to load and no loading
   screen to play them over.

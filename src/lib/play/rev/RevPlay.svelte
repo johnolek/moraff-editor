@@ -19,10 +19,12 @@
     PLAY_MODES,
     colourblindFilter,
     readPlayColourblind,
+    readPlaySound,
     readPlayRedraw,
     readPlayDisplay,
     readPlayMode,
     writePlayMode,
+    writePlaySound,
     type PlayDisplay,
     type PlayMode,
   } from '../mode';
@@ -48,6 +50,10 @@
    *  game's own 1 north, 2 east, 3 south, 4 west (1000:30C7). */
   const CANVAS_FACING = [0, 0, 3, 1, 2];
 
+  /** What the sound checkbox says, which is what the game's own question at DUNSMALL.EXE
+   *  1000:0517 asks and what the `O` key does with the answer afterwards. */
+  const SOUND_NOTE = 'The game asks on the way in. O turns it off and on again while you play.';
+
   /** What each mode says about the two ways the arrows move, for the line under the map. */
   const ARROW_NOTE = {
     compass: 'Each arrow faces the way it points and steps that way.',
@@ -62,6 +68,7 @@
   let mode = $state<PlayMode>(readPlayMode('revenge'));
   let display = $state<PlayDisplay>(readPlayDisplay('revenge'));
   let colourblind = $state(readPlayColourblind('revenge'));
+  let sound = $state(readPlaySound('revenge'));
   let redraw = $state(readPlayRedraw('revenge'));
   /** How many arrows have arrived in a row, which is what shortens the redraw (`pace.ts`). It is
    *  the tab's own count: nothing the game does reads it and it reaches no run log. */
@@ -157,8 +164,8 @@
       // F5.COM holds the names in the game's own folder; here the roster entry does.
       name: entry.name,
     };
-    const run = new RunRecorder({ game: 'revenge', name: entry.name, record: entry.bytes });
-    const started = startRevGame(file, run.rng, run);
+    const run = new RunRecorder({ game: 'revenge', name: entry.name, record: entry.bytes, sound });
+    const started = startRevGame(file, run.rng, run, sound);
     started.onChange = () => (view = started.view());
     centredLevel = null;
     session = started;
@@ -237,6 +244,13 @@
   /** A new mode shows what that mode shows, until the switch says otherwise. */
   function chooseMode(input: HTMLInputElement) {
     writePlayMode('revenge', mode);
+    input.blur();
+  }
+
+  /** The answer the game asks for on the way in, which is read when a game starts: a game
+   *  already running keeps the flag the `O` key leaves it on. */
+  function chooseSound(input: HTMLInputElement) {
+    writePlaySound('revenge', sound);
     input.blur();
   }
 
@@ -381,6 +395,13 @@
                 <span class="how">{choice.how}</span>
               </label>
             {/each}
+          </div>
+          <div class="styles">
+            <label>
+              <input type="checkbox" bind:checked={sound} onchange={(event) => chooseSound(event.currentTarget)} />
+              <span>Sound</span>
+              <span class="how">{SOUND_NOTE}</span>
+            </label>
           </div>
           <div class="key-note">Arrow keys, which Escape switches between:</div>
           <div class="how">{ARROW_NOTE[view.arrows]}</div>
