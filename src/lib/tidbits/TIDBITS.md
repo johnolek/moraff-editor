@@ -457,9 +457,12 @@ column, the row, the floor and the module through one piece of arithmetic and ta
 remainder. The same question always gets the same answer, so floor 12 of Module I is laid out
 identically in your game, in a stranger's game and in the 1993 screenshots.
 
-Walls come from 25 stamped patterns, sixteen squares by sixteen, which is why corridors feel
-repetitive: a whole floor is those 25 patterns rearranged. A square is rock exactly when all
-four of its sides came out as walls, and about a third of a floor ends up open.
+Walls come from 25 stamped patterns, and a pattern is 32 squares by 32. A sixteen-by-sixteen
+block of the floor takes whichever quarter of one the parity of its column and row picks out, so
+a whole floor is 25 patterns rearranged four ways each, which is why corridors feel repetitive
+without ever quite repeating. A square is rock exactly when all four of its sides came out as
+walls, which leaves about two fifths of a floor open: 40 per cent on average, and between 29 and
+47 depending on the floor.
 
 In the code: [myrand](source:ts/unfmap.js/myrand), [myrand](source:c/myrand),
 [why every dungeon is the same](formula:map-hash) and
@@ -469,8 +472,9 @@ In the code: [myrand](source:ts/unfmap.js/myrand), [myrand](source:c/myrand),
 
 The landing square is not rolled fresh. The game seeds the generator with 10, asks for
 `random(60) + 10` and `random(90) + 10`, and if that square is solid it tries seed 11, then 12,
-and so on. Since the seeds are fixed, so is the answer: on most floors it is column 18, row 93,
-every single time.
+and so on. Since the seeds are fixed, so is the answer, and the same handful of squares comes up
+again and again: column 17, row 93 on 109 of the game's 325 floors, column 18, row 93 on 87 more,
+and column 18, row 92 and column 16, row 94 between them on most of what is left.
 
 In the code: [where a trap door lands you](formula:trap-door-landing) and
 [trap doors and the floors they reach](formula:trap-doors).
@@ -502,7 +506,10 @@ a multiple of 60, so the shops land elsewhere.
 
 Modules III and V are paired the other way about. Their numbers are 180 apart, which 60 divides
 and 25 does not, so those two towns have every store, temple, bank and inn on the same square and
-not one wall in common. No other pair of towns shares either.
+not one block that draws the same wall pattern. That is not the same as having no wall in common:
+25 patterns is a small deck, and two thirds of the wall sides still come out the same in both,
+with three fifths of the squares agreeing on whether they are rock. What is gone is the
+block-for-block match. No other pair of towns shares either.
 
 In the code: [myrand](source:ts/unfmap.js/myrand),
 [why every dungeon is the same](formula:map-hash) and
@@ -514,7 +521,8 @@ The wall pattern of every sixteen-by-sixteen block is a remainder of 25 taken fr
 the module enters the hash through two terms that do not depend on the block. On a floor where
 those terms come out, for two modules, to numbers a multiple of 25 apart, every block draws the
 same pattern in both, and the two floors are identical wall for wall over the whole area the game
-shows. It happens on seventeen floor numbers, three of them in three modules at once:
+shows. It happens seventeen times over fifteen floor numbers, since floors 8 and 22 are each dealt
+twice to different pairs, and twice in three modules at once:
 
 - Modules I and II: the towns. Modules I, II and V: floor 3. Modules I and III: floors 10 and 22.
 - Modules II and V: floor 8. Modules II, IV and V: floor 13. Modules II and III: floors 15 and 43.

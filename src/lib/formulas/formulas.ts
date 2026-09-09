@@ -160,7 +160,7 @@ const WAYS_DOWN: Topic = {
       id: 'trap-door-landing',
       title: 'Where a trap door lands you',
       explanation:
-        'Every trap door pointing at the same floor drops you on the same square. The game seeds its random number generator with the number ten, draws a column and a row out of it, and if that square is rock it starts again with eleven, then twelve, until it lands on open ground. Nothing about your character or the door you fell through comes into it, and because the seeds never change the answer is fixed for the life of the game: for most floors it is column 18, row 93.',
+        'Every trap door pointing at the same floor drops you on the same square. The game seeds its random number generator with the number ten, draws a column and a row out of it, and if that square is rock it starts again with eleven, then twelve, until it lands on open ground. Nothing about your character or the door you fell through comes into it, and because the seeds never change the answer is fixed for the life of the game. Column 17, row 93 comes up on 109 of the game's 325 floors and column 18, row 93 on 87 more.',
       inputs: 'The destination floor and the module, through which squares of that floor are rock.',
       origin:
         'exe trapdoor_dest 2000:bda6, trapdoor_dest in dotu-tools/decomp/unf.c. TIDBITS, "Numbers with a story".',
