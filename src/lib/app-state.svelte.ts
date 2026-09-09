@@ -126,7 +126,13 @@ export const app = $state<AppState>({
   rosterKept: true,
 });
 
+/** The character on the roster with that id, or null when the roster has none: an id of null
+ *  never finds one. */
+export function entryById(id: string | null): RosterEntry | null {
+  return app.roster.find((entry) => entry.id === id) ?? null;
+}
+
 /** The character being worked on, or null when there is none. */
 export function currentEntry(): RosterEntry | null {
-  return app.roster.find((entry) => entry.id === app.characterId) ?? null;
+  return entryById(app.characterId);
 }

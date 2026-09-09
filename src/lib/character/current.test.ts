@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { app, currentEntry } from '../app-state.svelte';
+import { app, currentEntry, entryById } from '../app-state.svelte';
 import {
   characterEdited,
   chooseCharacter,
@@ -191,6 +191,13 @@ describe('the roster', () => {
   it('goes back to the other character when it is picked', () => {
     chooseCharacter(app.roster[0].id);
     expect(currentEntry()?.name).toBe('SAGEY');
+  });
+
+  it('finds a character by id, whichever one is being worked on', () => {
+    chooseCharacter(app.roster[0].id);
+    expect(entryById(app.roster[1].id)?.name).toBe('NEWBIE');
+    expect(entryById('nobody')).toBeNull();
+    expect(entryById(null)).toBeNull();
   });
 
   it('renames an entry without touching the record', () => {
