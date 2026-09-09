@@ -159,6 +159,11 @@ Three things are this game's own:
 * **The character file is the roster entry.** The save writes the real 340-number text record, so
   a character can be downloaded and played on in DOS. A death writes nothing; the roster marks the
   entry and keeps the bytes.
+* **A climb out of the town cannot reach a floor below 0.** Seven of the town's ten ladders down
+  are answered from level 1 by a ladder up two, and `1000:0E38` adds that negative code to the
+  level with no clamp on it at all, so in DOS the climb leaves the character on floor -1.
+  `enterLevel` clamps to 0 and 70, so here the same climb comes back to the town. What the
+  original makes of a floor of -1 has not been watched.
 * **The town's pictures are not drawn.** The monsters' are.
 * **Two of the four keys about the screen change it; the other two only keep their numbers.**
   `@` flips the screen between the two `SCREEN 1` palettes and `#` steps the colour standing
