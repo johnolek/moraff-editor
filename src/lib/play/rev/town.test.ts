@@ -58,6 +58,16 @@ function desk(...keys: string[]): RevTownDesk {
   };
 }
 
+/**
+ * What was on the screen while the game held it, which is where a message a building shows for
+ * four seconds has to be looked for: the screen is cleared the moment the wait is over.
+ */
+function heldScreens(game: RevGame): string[][] {
+  const held: string[][] = [];
+  game.delay = () => held.push([...game.said]);
+  return held;
+}
+
 /** A generator that never rolls the one the inn's two misfortunes want. */
 const kind: Rng = { random: (n) => Math.min(2, n - 1) };
 
@@ -188,8 +198,15 @@ describe('the temple', () => {
 
   it('throws out a character who cannot pay', async () => {
     const game = started(character({ money: 1 }));
+    const held = heldScreens(game);
     await revVisitTemple(game, desk('1'));
-    expect(game.said.join(' ')).toContain('throws you out');
+    // 1000:27CD prints the two lines under the menu that was already there, holds the screen
+    // for four seconds and only then clears it.
+    expect(held.flat().slice(-2)).toEqual([
+      'You do not have enough money. The good',
+      '   cleric throws you out.',
+    ]);
+    expect(game.said).toEqual([]);
   });
 });
 
@@ -289,25 +306,29 @@ describe('the store', () => {
     const pc = character({ money: 100000 });
     setRevValue(pc, REV_ARMOUR_VALUE, 3);
     const game = started(pc);
+    const held = heldScreens(game);
     await revVisitStore(game, desk('6', 'L'));
-    expect(game.said.join(' ')).toContain("You don't need that anymore.");
+    expect(held.flat()).toContain("You don't need that anymore.");
     expect(revValue(game.pc, REV_ARMOUR_VALUE)).toBe(3);
     expect(game.pc.money).toBe(100000);
   });
 
   it('refuses a wizard anything but the knife', async () => {
     const game = started(character({ cls: 2 }));
+    const held = heldScreens(game);
     await revVisitStore(game, desk('3', 'L'));
-    expect(game.said.join(' ')).toContain('magic user');
+    expect(held.flat().join(' ')).toContain('magic user');
     expect(revValue(game.pc, REV_VALUE.sword)).toBe(0);
     await revVisitStore(game, desk('1', 'L'));
     expect(revValue(game.pc, REV_VALUE.knife)).toBe(1);
   });
 
-  it('never sells the town', async () => {
+  it('sells the town for a million to a character carrying one', async () => {
     const game = started(character({ money: 100000000 }));
     await revVisitStore(game, desk('8', 'L'));
     expect(game.said.join(' ')).toContain('Brooklyn bridge');
+    expect(game.pc.money).toBe(100000000 - 1000000);
+    expect(revValue(game.pc, REV_VALUE.town)).toBe(1);
   });
 });
 
