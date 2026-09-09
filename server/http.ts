@@ -1,6 +1,7 @@
 import { createServer, type Server, type ServerResponse } from 'node:http';
 import type { ServerConfig } from './config';
 import { writeCorsHeaders } from './cors';
+import { openEngineStore, shortCommit } from './engines';
 
 /**
  * The commit the server was built from, put here at build time the way the site's build and the
@@ -10,6 +11,8 @@ import { writeCorsHeaders } from './cors';
 const ENGINE_COMMIT: string = typeof __ENGINE_COMMIT__ === 'string' ? __ENGINE_COMMIT__ : 'unknown';
 
 export function createRunServer(config: ServerConfig): Server {
+  const engines = openEngineStore(config.enginesPath);
+
   return createServer((request, response) => {
     writeCorsHeaders(response, request.headers.origin, config.allowedOrigin);
 
@@ -23,7 +26,13 @@ export function createRunServer(config: ServerConfig): Server {
     const path = new URL(request.url ?? '/', 'http://run-server').pathname;
 
     if (request.method === 'GET' && path === '/health') {
-      sendJson(response, 200, { ok: true, engineCommit: ENGINE_COMMIT });
+      // The engines kept are what a run older than this build is replayed with, so a deploy is
+      // read here: its own commit, and every commit it left a build behind for.
+      sendJson(response, 200, {
+        ok: true,
+        engineCommit: ENGINE_COMMIT,
+        engines: engines.keptCommits().map(shortCommit),
+      });
       return;
     }
 
