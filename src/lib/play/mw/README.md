@@ -40,7 +40,8 @@ tab, the map canvas, the screen renderer and the roster.
   points an arrow. The expanded map is the same drawing at seven pixels a square over the floor's
   own eighty by a hundred and ten, which both games' X keys share.
 * **`panel.ts`, `MwPanel.svelte`** — the numbers the game keeps and never prints, in the column
-  beside the map, which `../mode.ts` shows in debug alone. **`MwPortrait.svelte`** — the picture of the monster in front of the character.
+  beside the map, which `../mode.ts` shows in debug alone. **`MwPortrait.svelte`** — the picture
+  of the monster in front of the character, in `../PortraitFrame.svelte`'s box.
 * **`view3d/`** — the 3-D views and the screen they sit on; see below. **`MwScreen.svelte`**
   paints them and lays the game's own lines of text over them.
 * **`MwPlay.svelte`** — the tab: the game's screen or the top-down map, whichever the switch is

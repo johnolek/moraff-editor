@@ -55,6 +55,8 @@ something the original does, a comment says so.
   them, with a row of a table apiece for the few numbers they differ over.
 * **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
   prints, beside the map, and the picture of the monster in front of the character over them.
+  **`PortraitFrame.svelte`** is the box that picture sits in, which Moraff's World shares; each
+  game hands its own picture in as a snippet.
 
 ## The run
 
@@ -87,7 +89,8 @@ so it runs under Node as well as in a tab.
   replays it, the game's own words for its clock and its own name for a dungeon. A game with a
   line here can be recorded, replayed and checked, and nothing that does any of the three knows
   which games there are.
-* **`export-run.ts`** is the download, which is the one part of this that touches the page.
+* **`export-run.ts`** is the download, which is the one part of this that touches the page; the
+  clicking of a link is `src/lib/download.ts`, where every download on the site goes.
 
 The engine commit comes from `__ENGINE_COMMIT__`, which `vite.config.ts` defines from `git
 rev-parse HEAD`; vitest reads the same config, so a test sees it too.
