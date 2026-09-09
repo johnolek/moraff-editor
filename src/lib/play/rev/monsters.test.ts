@@ -13,6 +13,21 @@ function scripted(...numbers: number[]): Rng {
 /** A generator that always draws the top of the range, so nothing is ever noticed. */
 const highest: Rng = { random: (n) => n - 1 };
 
+/** A generator that hands back the same short sequence over and over, for a monster taking the
+ *  same turn several times running. */
+function cycling(...numbers: number[]): Rng {
+  let at = 0;
+  return { random: (n) => Math.min(numbers[at++ % numbers.length], n - 1) };
+}
+
+/** One monster on an otherwise empty level, put where the test wants it. */
+function alone(slot: number, column: number, row: number): RevMonsters {
+  const monsters = new RevMonsters();
+  monsters.positions[slot] = 32 * row + column;
+  monsters.grid[GRID_STRIDE * row + column] = slot;
+  return monsters;
+}
+
 function walker(fields: Partial<RevWalker> = {}): RevWalker {
   return {
     column: 10, row: 10, facing: 1, level: 1, generation: 1, weight: 150, invisible: 0, fighting: 0,
@@ -154,6 +169,83 @@ describe('a monster acting', () => {
     monsters.awake1 = 3;
     monsters.act(3, walker({ column: found!.column, row: 1, level: 1 }), scripted(0, 0, 0, 0));
     expect(monsters.squareOf(3)).toEqual({ slot: 3, column: found!.column, row: found!.row });
+  });
+
+  it('walks an awake monster down open floor until it stands on the character', () => {
+    // A stretch of level 1 with three open sides in a row, which the monster walks west along.
+    let corridor: { column: number; row: number } | null = null;
+    for (let row = 2; row <= 18 && corridor === null; row++) {
+      for (let column = 2; column <= 16; column++) {
+        if (![1, 2, 3].some((step) => blocked(2, column + step, row, 1, 1))) {
+          corridor = { column, row };
+          break;
+        }
+      }
+    }
+    expect(corridor).not.toBeNull();
+    const monsters = alone(3, corridor!.column + 3, corridor!.row);
+    monsters.awake1 = 3;
+    // The weight roll passes and the wander roll comes out over 15, so it chases every turn.
+    const chasing = cycling(0, 20);
+    const chased = walker({ column: corridor!.column, row: corridor!.row });
+    for (let turn = 0; turn < 3; turn++) monsters.act(3, chased, chasing);
+
+    expect(monsters.squareOf(3)).toEqual({ slot: 3, column: corridor!.column, row: corridor!.row });
+    expect(monsters.slotOn(corridor!.column, corridor!.row)).toBe(3);
+  });
+
+  it('hears the character from any distance up their own column', () => {
+    const monsters = alone(3, 10, 2);
+    // The weight roll passes, the notice roll comes out under the weight, and the wander roll
+    // over 15.
+    monsters.act(3, walker({ column: 10, row: 10 }), cycling(0, 0, 20));
+
+    expect(monsters.awake).toBe(1);
+    expect(monsters.awake1).toBe(3);
+  });
+
+  it('does not hear one more than five columns along their row, and forgets it was awake', () => {
+    const monsters = alone(3, 18, 10);
+    monsters.awake = 1;
+    monsters.act(3, walker({ column: 10, row: 10 }), cycling(0, 0, 20));
+
+    expect(monsters.awake).toBe(0);
+  });
+
+  it('lets a monster on neither the row nor the column keep whether the last one was awake', () => {
+    const chasing = alone(3, 13, 7);
+    chasing.awake = 1;
+    chasing.act(3, walker({ column: 10, row: 10, facing: 1 }), cycling(0, 20, 0));
+    // Awake and not lined up: it moves across the way the character is facing.
+    expect(chasing.heading).toBe(4);
+
+    const wandering = alone(3, 13, 7);
+    wandering.awake = 0;
+    wandering.act(3, walker({ column: 10, row: 10, facing: 1 }), cycling(0, 20, 0));
+    expect(wandering.heading).toBe(1);
+  });
+
+  it('stands where it is while the way it is chasing is a wall, and wanders off it next turn', () => {
+    // A square walled on its west side, which the monster is chasing towards, and open to the
+    // north, which is where the wander sends it instead.
+    let corner: { column: number; row: number } | null = null;
+    for (let row = 3; row <= 17 && corner === null; row++) {
+      for (let column = 3; column <= 18; column++) {
+        if (blocked(2, column, row, 1, 1) && !blocked(1, column, row, 1, 1)) {
+          corner = { column, row };
+          break;
+        }
+      }
+    }
+    expect(corner).not.toBeNull();
+    const monsters = alone(3, corner!.column, corner!.row);
+    monsters.awake1 = 3;
+    const beside = walker({ column: corner!.column - 1, row: corner!.row });
+    monsters.act(3, beside, cycling(0, 20));
+    expect(monsters.squareOf(3)).toEqual({ slot: 3, ...corner! });
+
+    monsters.act(3, beside, cycling(0, 5, 0));
+    expect(monsters.squareOf(3)).toEqual({ slot: 3, column: corner!.column, row: corner!.row - 1 });
   });
 
   it('swaps the two grid cells and writes the new square back', () => {

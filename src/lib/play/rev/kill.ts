@@ -35,8 +35,10 @@ export function revKillMonster(game: RevGame): void {
   // printed across it. Nothing blanks that box but 1000:58F7, which the kill never reaches.
   game.kept.picture = { name: fight.name, level: pc.dungeonLevel };
   game.monsters.grid[GRID_STRIDE * pc.row + pc.column] = 0;
-  // 1000:A3C8: what the clock reads as "the monster's level" becomes the dungeon level.
+  // 1000:A3C8: what the clock reads as "the monster's level" becomes the dungeon level, and
+  // 1000:A36F puts the awake flag the monsters' turn shares between them back to nothing.
   game.lastMonsterLevel = pc.dungeonLevel;
+  game.monsters.awake = 0;
   const level = pc.dungeonLevel;
   game.monsters.strengths[slot] = Math.round(game.rng.random(8 * level) + 2 * level + 1);
   for (;;) {

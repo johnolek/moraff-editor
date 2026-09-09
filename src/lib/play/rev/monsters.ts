@@ -77,6 +77,21 @@ export class RevMonsters {
   awake2 = 0;
   /** DGROUP B530: the slot whose turn it is. */
   moving = 0;
+  /**
+   * DGROUP B6A4: the monster taking a turn has noticed the character.
+   *
+   * It is a variable of the program rather than an answer worked out afresh, and that shows: two
+   * of the ways out of the noticing code leave it alone — a monster that is not lined up with
+   * the character at all (1000:72B8) and one that invisibility hid the character from
+   * (1000:7371) — so those inherit whether the monster that moved before them was awake. Meeting
+   * a monster (1000:803D) and killing one (1000:A36F) put it back to 0.
+   */
+  awake = 0;
+  /** DGROUP B6A8: the monster taking a turn shares a row or a column with the character. Every
+   *  path through the noticing code writes it before anything reads it. */
+  lined = 0;
+  /** DGROUP B6B0: the direction the monster taking a turn is stepping in, 1 north to 4 west. */
+  heading = 0;
   /** How many steps the monsters have taken between them. Nothing in the game counts this; the
    *  Play tab reads it to tell a clock tick that moved somebody from one that moved nobody. */
   moves = 0;
@@ -151,23 +166,28 @@ export class RevMonsters {
    *
    * The monster the character is fighting always acts; any other one has to be noticed first,
    * and a heavier character is noticed more often — the roll at 1000:70C1 gives up when
-   * `INT(RND * 700) - 400` comes out above the weight.
+   * `INT(RND * 700) - 400` comes out above the weight. That roll is one term of an expression
+   * rather than the far side of a branch, so it comes off the generator on every turn, the
+   * fought monster's included.
    */
   act(slot: number, walker: RevWalker, rng: Rng): void {
     const engaged = walker.fighting !== 0 && slot === walker.fighting;
-    if (!engaged && rng.random(700) - 400 > walker.weight) return;
+    const unnoticed = rng.random(700) - 400 > walker.weight;
+    if (!engaged && unnoticed) return;
     const at = this.squareOf(slot);
     if (at.column === walker.column && at.row === walker.row) return;
     if (engaged) {
-      // 1000:7166: the monster being fought steps straight onto the character's square, awake
-      // and lined up whatever it was before.
-      this.awake1 = this.awake1 === 0 ? slot : this.awake1;
+      // 1000:7166: the monster being fought is marked awake and lined up whatever it was before,
+      // and steps straight onto the character's square.
+      this.awake = 1;
+      this.lined = 1;
+      this.heading = 0;
       this.commit(slot, at, walker.column, walker.row);
       return;
     }
-    const state = this.noticing(slot, at, walker, rng);
-    const direction = this.chooseDirection(at, walker, state, rng);
-    this.step(slot, at, direction, walker);
+    this.notice(slot, at, walker, rng);
+    this.chooseDirection(at, walker, rng);
+    this.step(slot, at, walker);
   }
 
   /**
@@ -175,27 +195,47 @@ export class RevMonsters {
    * character on one axis, which between them decide how it moves.
    *
    * A monster four squares away that is already the first awake one stays awake, and five away
-   * for the second; otherwise it is forgotten. One that is lined up and within five squares
-   * rolls to notice the character, and an invisibility counter standing at exactly 1 is a second
-   * chance to be missed.
+   * for the second; otherwise it is forgotten. One that is lined up and close enough rolls to
+   * notice the character, and an invisibility counter standing at exactly 1 is a second chance
+   * to be missed.
    */
-  private noticing(slot: number, at: RevStanding, walker: RevWalker, rng: Rng): { awake: boolean; lined: boolean } {
+  private notice(slot: number, at: RevStanding, walker: RevWalker, rng: Rng): void {
+    this.lined = at.column === walker.column || at.row === walker.row ? 1 : 0;
     const away = Math.abs(walker.column - at.column) + Math.abs(walker.row - at.row);
-    let lined = at.column === walker.column || at.row === walker.row;
-    if (away < 4 && slot === this.awake1) return { awake: true, lined };
-    if (away < 5 && slot === this.awake2) return { awake: true, lined };
+    if (away < 4 && slot === this.awake1) {
+      this.awake = 1;
+      return;
+    }
+    if (away < 5 && slot === this.awake2) {
+      this.awake = 1;
+      return;
+    }
     if (slot === this.awake1) this.awake1 = 0;
     if (slot === this.awake2) this.awake2 = 0;
-    if (!lined) return { awake: false, lined };
-    if (Math.abs(walker.column - at.column) >= 6 || Math.abs(walker.row - at.row) >= 6) {
-      lined = false;
-      return { awake: false, lined };
+    // 1000:72B8: a monster on neither the character's row nor their column stops here without
+    // touching the awake flag, so it keeps whatever the monster that moved before it left there.
+    if (this.lined === 0) return;
+    // 1000:72C3: "close enough" is written as two tests and only the first of them says
+    // anything. The second loads DGROUP B60A, the row the redraw last put the *character* on,
+    // where it means the monster's (1000:72E1), and takes it off the character's row, so it is
+    // always 0 and always under 6. What is left is the columns, whichever axis the two share —
+    // which is why a monster standing on the character's own column notices them from any
+    // distance up it, and one on their row has to be within five columns.
+    if (Math.abs(walker.column - at.column) >= 6) {
+      this.lined = 0;
+      this.awake = 0;
+      return;
     }
-    // 1000:7325: a heavier character is heard, and invisibility is a second chance to be missed.
-    const unheard = rng.random(600) >= walker.weight;
-    if (unheard && walker.invisible === 1 && rng.random(10) < 5) return { awake: false, lined };
+    this.lined = 1;
+    // 1000:7325: a heavier character is heard.
+    if (rng.random(600) >= walker.weight) {
+      // 1000:734E: the second chance to be missed is rolled whether or not the character is
+      // invisible, and only then is it ANDed with the counter standing at exactly 1.
+      const missed = rng.random(10) < 5;
+      if (walker.invisible === 1 && missed) return;
+    }
+    this.awake = 1;
     if (this.awake1 === 0) this.awake1 = slot;
-    return { awake: true, lined };
   }
 
   /**
@@ -206,20 +246,30 @@ export class RevMonsters {
    * straight into the roll. It is not the level of the monster taking the turn, and it is zero
    * until the character has met anybody, so until then every awake monster chases the same
    * fraction of the time whatever its own level is. The clock's own odds read the same variable,
-   * and the slip is the original's both times.
+   * and the slip is the original's both times. The two are ORed into one expression, so the
+   * wander roll is made even for a monster that is asleep and was going to wander anyway.
    *
    * An awake one that is lined up with the character closes along the axis they share; one that
    * is not moves across the way the character is facing.
    */
-  private chooseDirection(at: RevStanding, walker: RevWalker, state: { awake: boolean; lined: boolean }, rng: Rng): number {
-    if (!state.awake || rng.random(walker.lastMonsterLevel + 35) < 15) return rng.random(4) + 1;
-    if (!state.lined) {
-      if (walker.facing === NORTH || walker.facing === SOUTH) return at.column > walker.column ? WEST : EAST;
-      return at.row > walker.row ? NORTH : SOUTH;
+  private chooseDirection(at: RevStanding, walker: RevWalker, rng: Rng): void {
+    const wanders = rng.random(walker.lastMonsterLevel + 35) < 15;
+    if (this.awake === 0 || wanders) {
+      this.heading = rng.random(4) + 1;
+      return;
     }
-    if (at.column === walker.column) return at.row > walker.row ? NORTH : SOUTH;
-    if (at.row === walker.row) return at.column > walker.column ? WEST : EAST;
-    return rng.random(4) + 1;
+    if (this.lined !== 1) {
+      if (walker.facing === NORTH || walker.facing === SOUTH) {
+        this.heading = at.column > walker.column ? WEST : EAST;
+        return;
+      }
+      this.heading = at.row > walker.row ? NORTH : SOUTH;
+      return;
+    }
+    // 1000:74A6: neither test is an else, and neither writes the heading when the monster shares
+    // neither coordinate — which cannot happen, since sharing neither is not being lined up.
+    if (at.column === walker.column) this.heading = at.row > walker.row ? NORTH : SOUTH;
+    if (at.row === walker.row) this.heading = at.column > walker.column ? WEST : EAST;
   }
 
   /**
@@ -229,7 +279,8 @@ export class RevMonsters {
    * south are the wall across the top of the square being entered, east and west the wall down
    * its left-hand side, and anything over 7 refuses the step.
    */
-  private step(slot: number, at: RevStanding, direction: number, walker: RevWalker): void {
+  private step(slot: number, at: RevStanding, walker: RevWalker): void {
+    const direction = this.heading;
     let column = at.column;
     let row = at.row;
     let kind = 1;
