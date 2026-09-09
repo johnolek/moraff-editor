@@ -321,7 +321,7 @@ the same square on two different levels — everywhere below the town, at any ra
 In the code: [fold](source:ts/revmap.js/fold) and [feature](source:ts/revmap.js/feature), from
 the folding at `1000:5649` and the search at `1000:552B`.
 
-### A chute drops one, two or three levels, and the false floor is the same chute again
+### A chute drops one, two or three levels, and the false floor under it drops one more
 
 Falling down a chute prints its line and leaves your column and row alone — you land on the same
 square, further down — and the game remembers the three coordinates it left you on. How much
@@ -333,9 +333,14 @@ it asks for a level that is its own half.
 
 That memory is the whole of the false floor. Every step asks what is on the square just stepped
 onto, and where the answer is nothing at all **and** the square is the one a chute dropped you on,
-the game prints "False floor." and offers you the go-down prompt. So a false floor is not a
-feature of the dungeon: it is the square under a chute, and stepping through it is the same fall
-carrying on.
+the game sets the square's code to 1, prints "False floor." and offers you the go-down prompt. So
+a false floor is not a feature of the dungeon: it is the square under a chute.
+
+The code it writes is what `D` adds to your level, so that second fall is exactly one level
+however far the chute itself went. And the level it remembers is matched twice, against the level
+you are on and against the level above it, so the same column and row let you fall through twice
+in a row: the chute, a false floor, another false floor, and then the arithmetic stops matching
+and you are standing on ordinary ground.
 
 In the code: [chuteLanding](source:ts/revmap.js/chuteLanding) and
 [falseFloor](source:ts/revmap.js/falseFloor), from the chute at `1000:3428`, the levels it adds at
