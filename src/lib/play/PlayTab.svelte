@@ -258,6 +258,8 @@
   /** The character's whole run — every session it has been played in — as a file. */
   function exportRun() {
     const playing = session;
+    // The character being played, which is not always the one being worked on: the save editor
+    // can be pointed at another character while a game is in progress.
     const entry = app.roster.find((candidate) => candidate.id === playingId);
     if (!playing?.run || !entry) return;
     // The run goes into the roster entry after every key, and the game may not have read one
