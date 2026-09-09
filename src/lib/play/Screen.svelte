@@ -64,6 +64,9 @@
     rows: MapSquare[][];
     /** Where the character stands, and which way. */
     place: { x: number; y: number; floor: number; module: number; dir: number };
+    /** Where the four views were last drawn from, which is `place` unless keys typed ahead have
+     *  kept the game from drawing them again (`engine.ts` drawViews). */
+    viewsFrom?: { x: number; y: number; floor: number; module: number; dir: number };
     /** The monsters stocked on the floor; the views draw the ones they can see. */
     monsters: StockedMonster[];
     /** The message box: its eight lines and whatever the game drew on the bar above them. */
@@ -134,6 +137,7 @@
     onmonster,
     killed = null,
     viewsDrawn = 0,
+    viewsFrom = undefined,
     expandedMap = false,
     tablet = null,
     sectionScreen = null,
@@ -315,9 +319,13 @@
    * first. The floor and the discovered map are not in here because both keep their identity
    * while they are unchanged, so they are compared as they are.
    */
+  /** The place the four views are drawn from: the last drawing's, while the keyboard is ahead. */
+  const views = $derived(viewsFrom ?? place);
+
   const drawnFrom = $derived(
     JSON.stringify({
       place,
+      views,
       text,
       box,
       drawn,
@@ -447,22 +455,22 @@
       frame,
       {
         rows,
-        at: { x: place.x, y: place.y },
-        floor: place.floor,
-        module: place.module,
-        moduleCarried: place.module,
+        at: { x: views.x, y: views.y },
+        floor: views.floor,
+        module: views.module,
+        moduleCarried: views.module,
         pictures: viewPictures(section?.section ?? 1),
         detail: 0,
         screen: SCREEN_PIXELS,
         videoClass: 2,
         horizonWeight: height,
-        dir: place.dir,
+        dir: views.dir,
         monsters: drawn,
         water: [4, 8, 20].includes(section?.section ?? 0),
         killed: skull,
         random: () => flips.rand() / 0x8000,
       },
-      place.dir,
+      views.dir,
     );
     // The lines are printed by pfont as the game goes rather than drawn again with the screen, so
     // they are not replayed: they go up with the whole frame once the last paint is down.

@@ -138,6 +138,11 @@ export abstract class KeyedSession<Record> implements PlayLoopSession {
     this.queued = [];
   }
 
+  /** kbhit (exe 1000:3385): whether a key is waiting to be read. */
+  keyWaiting(): boolean {
+    return this.queued.length > 0;
+  }
+
   /** getch (exe 4000:417b, WORLD.EXE 1000:28b4, DUNSMALL.EXE 1000:2F71): the next key, once
    *  there is one. */
   key(): Promise<number> {

@@ -140,6 +140,7 @@
       game={stage.session.game}
       rows={view.rows}
       place={view.place}
+      viewsFrom={view.viewsFrom}
       {monsters}
       box={view.box}
       screen={view.screen}

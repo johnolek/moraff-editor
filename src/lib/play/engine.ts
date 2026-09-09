@@ -148,6 +148,12 @@ export interface PlayView {
   killed: KilledOnScreen | null;
   /** Which drawing of the four views this is, which mirrors the monster ahead. */
   viewsDrawn: number;
+  /**
+   * The square and the facing the four views were last drawn from, which is where they are
+   * still drawn from while keys typed ahead keep movecontrol from drawing them again. The map
+   * follows every step; the views catch up when the keyboard is idle.
+   */
+  viewsFrom: { x: number; y: number; floor: number; module: number; dir: number };
   /** The X key's map is filling the screen, which covers the views and everything around them. */
   expandedMap: boolean;
   /** The four lines of the stone tablet the snake's words are read on, or null when none is up. */
@@ -275,7 +281,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
   viewsDrawn = 0;
   /** Where the character was standing when the views were last drawn, which is what movecontrol
    *  compares against to decide whether to draw them again. */
-  private drawnFrom: { x: number; y: number; level: number } | null = null;
+  private drawnFrom: { x: number; y: number; level: number; module: number; dir: number } | null = null;
   /**
    * The delays the game holds a drawn message for (exe 1000:2789), which the tab keeps to. The
    * loop runs straight past them; this is what decides which of the screens it drew is showing.
@@ -605,17 +611,23 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
    * leaves the views exactly as they are, which is why the monster being fought does not turn
    * round between one blow and the next.
    *
+   * The loop draws them only where no key is waiting (exe 2000:d0f2 tests kbhit before the
+   * drawing), so keys typed ahead leave the views as they were: the map follows every step and
+   * the views catch up once the keyboard is idle, which is what a slow machine showed.
+   *
    * The port draws the screen from the game rather than leaving the last drawing on it, so what
    * this counts is the drawings the original would have made: {@link viewsDrawn} is the whole of
-   * it, and the coin flip that mirrors the monster ahead is worked out from that number.
+   * it, and the coin flip that mirrors the monster ahead is worked out from that number. The
+   * place they were drawn from is what the screen draws them from in the meantime.
    */
   drawViews(): void {
     const pc = this.game.pc;
     const from = this.drawnFrom;
     const moved = from === null || from.x !== pc.x || from.y !== pc.y || from.level !== pc.level;
     if (!moved && !this.game.redrawView) return;
+    if (this.keyWaiting()) return;
     this.game.redrawView = false;
-    this.drawnFrom = { x: pc.x, y: pc.y, level: pc.level };
+    this.drawnFrom = { x: pc.x, y: pc.y, level: pc.level, module: pc.module, dir: pc.dir };
     this.viewsDrawn += 1;
     // movecontrol at 2000:cbed: the banner goes up again straight after the views, and nowhere
     // else on an ordinary pass. That is why it stands untouched while the character swings,
@@ -650,6 +662,9 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
       ahead: game.engagedAhead !== -1,
       killed: this.timed.holding ? this.killedWhileHeld : this.killed,
       viewsDrawn: this.viewsDrawn,
+      viewsFrom: this.drawnFrom
+        ? { x: this.drawnFrom.x, y: this.drawnFrom.y, floor: this.drawnFrom.level, module: this.drawnFrom.module, dir: this.drawnFrom.dir }
+        : { x: pc.x, y: pc.y, floor: pc.level, module: pc.module, dir: pc.dir },
       expandedMap: this.expandedMap,
       tablet: this.timed.showingTablet(this.tablet),
       sectionScreen: this.sectionScreen,

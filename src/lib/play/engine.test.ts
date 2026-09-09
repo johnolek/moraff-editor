@@ -613,6 +613,20 @@ describe('the coin flip that mirrors the monster you are fighting', () => {
     expect(session.view().viewsDrawn).toBe(4);
   });
 
+  it('is not made while a key is waiting, so typing ahead leaves the views as they were', async () => {
+    const start = townWalk();
+    const session = playing(characterFile({ level: 0, dir: 0, ...start }));
+    await settle();
+    const drawn = session.view().viewsDrawn;
+    // Two turns typed together: the second is waiting when the first has been taken, so the
+    // views are drawn once, after both, and from the facing the character ends up with.
+    session.press(KEY.arrowLeft);
+    session.press(KEY.arrowRight);
+    for (let pass = 0; pass < 4; pass++) await settle();
+    expect(session.view().viewsDrawn).toBe(drawn + 1);
+    expect(session.view().viewsFrom.dir).toBe(session.view().place.dir);
+  });
+
   it('is left alone by a swing, so the monster keeps the way it is facing', async () => {
     const session = await facingAMonster(new BorlandRng(5), { lev: 10, str: 60 });
     const drawn = session.view().viewsDrawn;
