@@ -97,6 +97,15 @@ describe('the run log', () => {
     expect(bytesFromBase64(log.record)).toEqual(record);
   });
 
+  it('keeps the mode the game was being shown in, which the tab moves as it is played', async () => {
+    const { run, session } = recordedGame();
+    session.mode = 'speedrun';
+    await press(session, KEY.arrowUp);
+    session.finish();
+
+    expect(run.log().mode).toBe('speedrun');
+  });
+
   it('keeps the sound the game was set up with, and nothing for a game with no such flag', () => {
     const record = new Uint8Array(8);
     expect(new RunRecorder({ game: 'revenge', name: 'FIGHTY', record, sound: false }).log().sound).toBe(false);

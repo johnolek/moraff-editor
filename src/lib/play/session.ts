@@ -78,9 +78,19 @@ export abstract class KeyedSession<Record> implements PlayLoopSession {
   dead = false;
   /**
    * How much of the game the tab is showing (`mode.ts`). Nothing the game does reads it; it is
-   * here so that anything keeping a record of the run can say which mode it was played in.
+   * here so that the run being written down can say which mode it was played in, which is why
+   * setting it reaches the run as well.
    */
-  mode: PlayMode = DEFAULT_PLAY_MODE;
+  get mode(): PlayMode {
+    return this.playMode;
+  }
+
+  set mode(mode: PlayMode) {
+    this.playMode = mode;
+    if (this.run) this.run.mode = mode;
+  }
+
+  private playMode: PlayMode = DEFAULT_PLAY_MODE;
   /** Called whenever the game is about to wait for a key, so the tab can draw what it is
    *  waiting with. */
   onChange: (() => void) | null = null;

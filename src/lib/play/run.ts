@@ -377,7 +377,8 @@ export class RunRecorder {
   readonly name: string;
   readonly seed: number;
   readonly startedAt: string;
-  readonly mode: string | null;
+  /** How the game is being shown, which the Play tab moves while the game is being played. */
+  mode: string | null;
   readonly leaderboard: Leaderboard | null;
   readonly sound: boolean | null;
   /** The run is being replayed from a log rather than played by anybody. */

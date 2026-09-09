@@ -255,10 +255,15 @@
     if (playing && entry) downloadMapFiles(game.mapFiles(playing, entry), entry.name);
   }
 
-  /** The run as it stands, as a file. */
+  /** The character's whole run — every session it has been played in — as a file. */
   function exportRun() {
-    const run = session?.run;
-    if (run) downloadRunLog(runLogOf([{ ...run.log(), mode: session?.mode ?? null }]));
+    const playing = session;
+    const entry = app.roster.find((candidate) => candidate.id === playingId);
+    if (!playing?.run || !entry) return;
+    // The run goes into the roster entry after every key, and the game may not have read one
+    // since this session began, so it is written down again before it is handed over.
+    playing.keepRun();
+    downloadRunLog(runLogOf(entry.run));
   }
 
   /** The game's own words for its clock and for one of its dungeons. */
