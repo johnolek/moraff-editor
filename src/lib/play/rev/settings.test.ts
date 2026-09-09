@@ -107,7 +107,9 @@ describe('the enter delay', () => {
   it("asks in the game's own words at the top of the screen and keeps what was typed", async () => {
     const game = playing();
     await revSetEnterDelay(game, typing('3', '0', '0'));
-    expect(game.said).toEqual(ENTER_DELAY_PROMPT);
+    // The two lines are on the screen and not in the message rows, which would have put the
+    // question on a row of its own under the digits as well.
+    expect(game.said).toEqual([]);
     expect(game.kept.runs().map((run) => run.text)).toEqual([
       ENTER_DELAY_PROMPT[0],
       `${ENTER_DELAY_PROMPT[1]}300 `,

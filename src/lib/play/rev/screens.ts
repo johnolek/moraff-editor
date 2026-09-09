@@ -73,19 +73,6 @@ export function revDrawTheDungeonAgain(game: RevGame, after: RevRedraw): void {
 }
 
 /**
- * `PRINT line`, on the screen rather than in the message rows.
- *
- * `say` puts a line on the screen only once something has cleared it, because on the game's own
- * screen the message rows are where a line the loop prints belongs. The enter delay is the one
- * routine that prints over the dungeon without clearing anything first (1000:0F17), so this is
- * how it reaches the screen.
- */
-export function revSayOnTheScreen(game: RevGame, line: string): void {
-  game.said.push(line);
-  game.kept.print(line);
-}
-
-/**
  * `PRINT line;`, which leaves the cursor at the end of the line instead of starting a new row.
  *
  * Every prompt a number is typed at ends with the semicolon (1000:23FB, 2427 and 0F32), which is

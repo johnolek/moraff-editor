@@ -1,7 +1,6 @@
 import { PALETTE_COUNT } from '../../rev-bestiary/pictures';
 import { REV_TWO_SECONDS } from './held';
 import { REV_ENTER_DELAY_DIGITS, revTypeANumber } from './number';
-import { revSayKeepingTheCursor, revSayOnTheScreen } from './screens';
 import type { RevGame } from './state';
 import type { RevTownDesk } from './town';
 
@@ -79,11 +78,16 @@ export function revToggleSound(game: RevGame): void {
  * (1000:0F17), which is the only place this key writes; the second ends with a semicolon, so the
  * digits are typed beside it. Four of them are allowed (1000:0F38), which is what lets a player
  * ask for more than the 3000 the game will take.
+ *
+ * They carry their own `LOCATE`, so they go straight onto the screen rather than into the list
+ * the message rows are drawn from — the same way a fight's lines do. The tab's box, which is
+ * what stands in for the message rows while it is showing the map instead of the screen, is
+ * therefore empty while the delay is being typed.
  */
 export async function revSetEnterDelay(game: RevGame, desk: RevTownDesk): Promise<void> {
   game.kept.locate(ENTER_DELAY_ROW, ENTER_DELAY_COLUMN);
-  revSayOnTheScreen(game, ENTER_DELAY_PROMPT[0]);
-  revSayKeepingTheCursor(game, ENTER_DELAY_PROMPT[1]);
+  game.kept.print(ENTER_DELAY_PROMPT[0]);
+  game.kept.printKeepingTheCursor(ENTER_DELAY_PROMPT[1]);
   const typed = await revTypeANumber(game, desk, REV_ENTER_DELAY_DIGITS);
   game.enterDelay = typed > LONGEST_ENTER_DELAY ? LONGEST_ENTER_DELAY : typed;
 }
