@@ -32,6 +32,10 @@ describe('revGameKey', () => {
     expect(revGameKey(press('Escape'))).toBe(REV_KEY.escape);
   });
 
+  it('reads Backspace, which is what rubs a digit out of a number being typed', () => {
+    expect(revGameKey(press('Backspace'))).toBe(REV_KEY.backspace);
+  });
+
   it('reads the space bar, so any key answers a screen waiting for one', () => {
     expect(revGameKey(press(' '))).toBe(0x20);
   });
