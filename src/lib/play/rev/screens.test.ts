@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { revLeaveTheFight } from './fight';
 import { revDrawTheDungeonAgain } from './screens';
 import { revCharacter, revTestGame } from './spells.test-support';
 import type { RevGame } from './state';
@@ -73,5 +74,24 @@ describe('the place the redraw remembers drawing the views from', () => {
     game.pc.facing = 2;
     revDrawTheDungeonAgain(game, 'afterAPass');
     expect(game.lastDrawn).toEqual({ level: 10, column: 7, row: 3, facing: 1 });
+  });
+
+  it('forgets the level when a fight is left, so the next redraw scans again (1000:8FD2)', () => {
+    const game = drawnAlready();
+    game.fight = {
+      slot: 0,
+      name: 1,
+      monsterLevel: 3,
+      hitPoints: 0,
+      kind: 1,
+      kindAdjust: 0,
+      attackBonus: 0,
+      experience: 10,
+    };
+    revLeaveTheFight(game);
+    game.scratch = 99;
+    revDrawTheDungeonAgain(game, 'afterAPass');
+    expect(game.scratch).toBe(99);
+    expect(game.lastDrawn.level).toBe(10);
   });
 });

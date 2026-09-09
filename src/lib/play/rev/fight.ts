@@ -269,4 +269,7 @@ export function revLeaveTheFight(game: RevGame): void {
   if (!fight) return;
   if (fight.hitPoints > 0) game.monsters.strengths[fight.slot] = Math.round(fight.hitPoints);
   game.fight = null;
+  // 1000:8FD2: the level the views were drawn from goes back to zero, so the next redraw scans
+  // and draws all four again over whatever the fight printed on them.
+  game.lastDrawn.level = 0;
 }
