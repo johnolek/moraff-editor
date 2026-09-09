@@ -268,7 +268,11 @@ export class MwGameSession extends KeyedSession<MwCharacter> {
    * character turns, and go when there is nothing left to fight.
    */
   faceTheMonster(): number {
-    return this.fighting(() => attackTiming(this.game));
+    const facing = this.fighting(() => attackTiming(this.game));
+    // DS:45c7: with a monster engaged, the box on the screen is one that goes with the
+    // character's next step (movecontrol after every attack_timing).
+    if (this.game.engaged !== -1) this.game.boxLeavesWithSquare = true;
+    return facing;
   }
 
   /**

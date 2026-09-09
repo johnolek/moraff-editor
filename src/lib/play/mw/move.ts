@@ -12,10 +12,16 @@ const JAMMED_MS = 0x15e;
 
 /**
  * FUN_2000_a57e (WORLD.EXE 2000:a57e) wipes the top left of the screen before it takes the
- * character off the grid, which is what takes the last fight's lines down.
+ * character off the grid, which is what takes the last fight's lines down — and the whole
+ * message box with them when it was flagged to go with the step (DS:45c7: a trap door's, EXP
+ * NEEDED's, a kill's, a fight's).
  */
 function leaveTheSquare(turn: MwTurn): void {
   turn.session.banner = [];
+  if (turn.game.boxLeavesWithSquare) {
+    turn.game.boxLeavesWithSquare = false;
+    turn.session.box = [];
+  }
   leaveSquare(turn.game);
 }
 

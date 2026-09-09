@@ -401,6 +401,12 @@ export interface MwGame {
   /** DS:cd18: the view has to be redrawn. */
   redrawView: boolean;
   /**
+   * DS:45c7: the message box goes with the character's next step. FUN_2000_a57e, which takes the
+   * character off a square, wipes the whole box when this is up and only the top strip otherwise;
+   * the trap door's box, EXP NEEDED, a kill and a pass with a monster engaged raise it.
+   */
+  boxLeavesWithSquare: boolean;
+  /**
    * is_solid (WORLD.EXE 3000:a854, mw.c "is_solid"): whether the square is rock, meaning all
    * four of its sides are walls. `Dungeon.solid` in `src/lib/game/mw-dungeon.js` is the same
    * test over the same map hash.
@@ -723,6 +729,7 @@ export function newMwGame(overrides: MwGameOverrides = {}): MwGame {
     justArrived: false,
     recenterMap: false,
     redrawView: false,
+    boxLeavesWithSquare: false,
     isSolid: () => false,
     chooseWeaponSlot: () => -1,
     chooseArmorSlot: () => -1,

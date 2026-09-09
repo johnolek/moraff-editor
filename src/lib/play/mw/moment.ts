@@ -24,8 +24,9 @@ export function stepCost(game: MwGame): number {
  * FUN_2000_a57e (WORLD.EXE 2000:a57e, mw.c "FUN_2000_a57e"): leaving a square takes the character
  * off the occupancy grid.
  *
- * The original also wipes the message box off the top of the screen first, and wipes a taller
- * rectangle when the battle banner is showing. The port clears the box on the next key instead.
+ * The original wipes the top left of the screen first — the top strip, or the whole message box
+ * when it was flagged to go with the step (DS:45c7) — which `../move.ts` does on the way here,
+ * since the box and the banner live on the session.
  */
 export function leaveSquare(game: MwGame): void {
   mwSetOccupant(game, game.pc.x, game.pc.y, MW_SQUARE_EMPTY);

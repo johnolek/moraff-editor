@@ -91,6 +91,20 @@ const townWalk = () =>
   );
 
 describe('walking', () => {
+  it('takes the trap door’s box down with the first step off the square', async () => {
+    const door = findMwSquare(
+      3,
+      (square, x, y) => bundledMwDungeon.trapdoor(x, y, 3, 0) !== -1 && square.n === 3 && square.ladder === 0,
+    );
+    const session = playingMw(mwCharacterFile({ floor: 3, dir: 0, ...door }));
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(session.box[0]).toContain('TRAP DOOR');
+    // FUN_2000_a57e wipes a box flagged at DS:45c7 as it takes the character off the square.
+    await pressMw(session, MW_KEY.arrowUp);
+    expect(session.view().place).toMatchObject({ x: door.x, y: door.y - 1 });
+    expect(session.box).toEqual([]);
+  });
+
   it('faces the way the arrow points and steps that way', async () => {
     const start = townWalk();
     const session = playingMw(mwCharacterFile({ floor: 0, dir: 1, ...start }));

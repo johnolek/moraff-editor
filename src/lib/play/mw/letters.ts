@@ -80,6 +80,8 @@ export async function showHelpMenu(turn: MwTurn): Promise<void> {
  */
 export function showExperienceNeeded(turn: MwTurn): void {
   const lev = turn.game.pc.lev;
+  // DS:45c7: the box goes with the character's next step off the square (FUN_2000_a57e).
+  turn.game.boxLeavesWithSquare = true;
   // DS:26ad, then DS:1ba6 between the level and the number
   turn.game.say(
     'EXPERIENCE NEEDED FOR LEVEL:',

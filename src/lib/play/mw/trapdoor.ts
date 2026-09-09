@@ -27,6 +27,8 @@ export function trapdoorUnder(game: MwGame): number {
  * used.
  */
 export function explainTrapdoor(game: MwGame, destination: number): boolean {
+  // DS:45c7: the box goes with the character's next step off the square (FUN_2000_a57e).
+  game.boxLeavesWithSquare = true;
   const held = game.pc.trapdoorKeys[Math.trunc(destination / KEY_STEP) - 1] !== 0;
   if (!held) {
     // DS:3142, DS:315f with the number and DS:1c1f, DS:3177 318f 31a9 31c0 31d9 31f0

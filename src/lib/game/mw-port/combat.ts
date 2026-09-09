@@ -1173,6 +1173,8 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
     if (type === LAST_BOSS) game.events.push({ kind: 'gameWon' });
     bossReward(game, type, () => choices.enhanceWeapon());
   }
+  // DS:45c7: whatever the kill left in the box goes with the character's next step.
+  game.boxLeavesWithSquare = true;
   game.engaged = -1;
   game.delay(KILL_SETTLE_MS);
   if (pc.lev !== 0) return;
