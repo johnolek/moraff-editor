@@ -8,6 +8,7 @@
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { HUD_ORB_PX } from './hud';
   import HudExpBar from './HudExpBar.svelte';
   import HudOrb from './HudOrb.svelte';
 
@@ -33,7 +34,7 @@
   let { closeUp, hp, maxHp, sp, maxSp, level, exp, needed }: Props = $props();
 </script>
 
-<div class="hud">
+<div class="hud" style:--orb-size="{HUD_ORB_PX}px">
   {#if closeUp}
     <div class="close-up">{@render closeUp()}</div>
   {/if}
@@ -49,7 +50,6 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    --orb-size: 96px;
   }
   /* The picture is drawn at the width `PortraitFrame` caps itself at, so the frame fills the
      box the border is on however wide the map is. */

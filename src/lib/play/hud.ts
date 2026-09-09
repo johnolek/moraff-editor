@@ -9,6 +9,9 @@
 /** How long an orb or the bar takes to move from where it stood to where it now stands. */
 export const HUD_TWEEN_MS = 300;
 
+/** How wide across an orb is drawn, which is how much room the foot of the display takes. */
+export const HUD_ORB_PX = 96;
+
 /**
  * How full an orb is drawn, from 0 empty to 1 full.
  *

@@ -12,12 +12,15 @@
   import { MW_SCREEN_COLOURS } from '../../roller/screen';
   import MwMonsterDetail from '../../mw-bestiary/MwMonsterDetail.svelte';
   import { MONSTERS, monsterGroups } from '../../mw-bestiary/monsters';
+  import MapHud from '../MapHud.svelte';
   import MonsterCard from '../MonsterCard.svelte';
   import MwPanel from './MwPanel.svelte';
   import MwPortrait from './MwPortrait.svelte';
   import MwScreen from './MwScreen.svelte';
   import PlayTab from '../PlayTab.svelte';
   import { bundledMwDungeon } from '../../game/mw-dungeon';
+  import { experienceNeeded } from '../../game/mw-port/levels';
+  import { HUD_ORB_PX } from '../hud';
   import { MW_DIG_PROMPT } from './view3d/screen';
   import type { ScreenLine } from '../../game/port/state';
   import type { MwGameSession, MwPlayView } from './engine';
@@ -261,7 +264,9 @@
         <div class="status" style:color={MW_SCREEN_COLOURS[5]}>{view.prompt}</div>
       {/if}
     </div>
-    <div class="bottom-blocks">
+    <!-- The heads-up display takes the bottom corners of the map, so the game's own two blocks
+         stand above it rather than under it. -->
+    <div class="bottom-blocks" style:bottom="calc(var(--inset) * 2 + {HUD_ORB_PX}px)">
       <div class="block" style:flex={MW_STATUS_BLOCK.right}>
         <GameScreen lines={mwStatusLines(stage.session.game)} window={STATUS_WINDOW} colours={MW_SCREEN_COLOURS} />
       </div>
@@ -272,6 +277,17 @@
           colours={MW_SCREEN_COLOURS} />
       </div>
     </div>
+    {@const pc = stage.session.game.pc}
+    <!-- No picture of the monster being fought: this game's map already draws it, in the corner
+         of the game's own screen it belongs to. -->
+    <MapHud
+      hp={pc.hp}
+      maxHp={pc.maxHp}
+      sp={pc.sp}
+      maxSp={pc.maxSp}
+      level={pc.lev}
+      exp={pc.exp}
+      needed={experienceNeeded} />
     <!-- With the map in the views' place there is nowhere on it to draw a screen the game
          has taken the display over with, so it covers the map instead. -->
     {#if screenTakesOver(view)}
@@ -365,7 +381,6 @@
     position: absolute;
     left: var(--inset);
     right: var(--inset);
-    bottom: var(--inset);
     display: flex;
     gap: 6px;
     pointer-events: none;
