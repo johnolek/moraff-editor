@@ -204,10 +204,11 @@ into rather than drawing the overworld.
 
 X is a screen of its own: it clears the display, fills it with the whole floor at seven pixels a
 square and prints the way to the floor's quest boss beside it, which is the branch a screen wider
-than 320 pixels takes (`display.ts` and `map.ts`). The other keys that are about the screen rather
-than the game — B the brick speed, O the sound, Z the 3-D view close up, and the three that step
-one colour of the background on — are answered in `display.ts` with a box each saying what the
-game would have done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
+than 320 pixels takes (`display.ts` and `map.ts`). O is the sound switch and really flips it. The
+other keys that are about the screen rather than the game — B the brick speed, Z the 3-D view
+close up, and the three that step one colour of the background on — are answered in `display.ts`
+with a box each saying what the game would have done, the way `../misc.ts` answers the same keys
+for Dungeons of the Unforgiven.
 
 ## Where this leaves the original
 
@@ -220,6 +221,14 @@ game would have done, the way `../misc.ts` answers the same keys for Dungeons of
   screen alone, so a kill's own messages are held for theirs by the Play tab's display timer
   (`../timed.ts`); the flashes while a hole is dug are kept as
   well, on the strip the original draws them on.
+* **The four noises the game makes are made.** `src/lib/game/mw-port/sound.ts` is the game's four
+  wrappers around the PC speaker of `src/lib/speaker.ts`, called where the original calls them:
+  the sweep up when the blow lands, the sweep down when the monster's does, and the chime and the
+  dirge that each go before the words they belong to. They are Dungeons of the Unforgiven's four
+  cues note for note, so the sequences come from that port. All four ask DS:119f, which the O key
+  flips and the key menu's sound line offers the opposite of. The speaker is opened on the first
+  key pressed in the tab, since a browser will not start audio that nothing the player did asked
+  for, and a replay never opens one.
 * **The X key's map does not blink.** FUN_2000_7d00 (exe 2000:7d00) redraws the character's own
   square in a new colour every time round the wait, and it takes the counter raw where the corner
   map's FUN_2000_7c8a takes it modulo 16, so that square runs through the whole palette. The port
