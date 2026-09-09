@@ -5,10 +5,10 @@ Moraff's Revenge, read against the annotated BASIC of `DUNSMALL.EXE` in Septembe
 below. `dotu-tools/docs/FAITHFUL-GAPS.md` says what this list is and is not; the departures the
 port makes on purpose are the last section of `src/lib/play/rev/README.md`.
 
-Everything left here is a matter of the screen but the last row. The two entries that were rules
-of the game — a disease costing a characteristic as you walk, and rings of health healing you as
-you walk — are ported (MORF-232 and MORF-233); a third turned up while the banners the timed
-potions put on the screen were being ported, and is the row at the bottom.
+Everything left here is a matter of the screen. The three entries that were rules of the game — a
+disease costing a characteristic as you walk, rings of health healing you as you walk, and the
+three timed potions wearing off — are ported (MORF-232, MORF-233 and MORF-300); the third of them
+turned up while the banners those potions put on the screen were being ported.
 
 ## The list
 
@@ -22,7 +22,7 @@ potions put on the screen were being ported, and is the row at the bottom.
 | **The screen goes black and is taken over** by the treasure after a kill, by death, by quitting and by the pause key, and three of those lines are missing outright — the reincarnation line and the two the game jokes with while it saves. The coin list also loses four of its seven lines on the drawn screen. | Treasure CLS 1000:A890, magic table 1000:AC87 and AC90; death CLS 1000:A016 with the reincarnation at 1000:A160; quit CLS 1000:0D8E with the two lines at 1000:B5C8–B5F7; pause 1000:7FFE. | filed MORF-239 |
 | **The game has music**: a march at the temple, a dirge on death, a hymn at the Kings Inn, and a loading tune. All of it background, so nothing stops for it. With the sound off the Kings Inn still waits four seconds where the hymn would have been. | One PLAY statement, 1000:05E2, through 1000:05CB; the tunes at 1000:05A0, 05AC, 05B8, played from 1000:2543, 1000:A013, 1000:1FC9; the silent stand-in at 1000:05BF. | filed MORF-240 |
 | **Holding an arrow speeds the game up** and a different key puts it back. | The bound at 1000:4127–4169, the repeat count at 1000:4208–4260 (DGROUP B5FA). | filed MORF-241 |
-| **The three potions timed against `TIMER` never wear off.** The thirteen points of agility a potion of speed hands over and the shield of fifteen a potion of shielding puts up last the rest of the run, where the game takes them back as each hundred seconds runs out. | The fight's own poll, 1000:85BA to 1000:86DF. 1000:85F9 zeroes the fire, 1000:8655 the shielding with the shield at DGROUP B706, and 1000:86B4 the speed with the thirteen points of agility at 1000:86BC. | filed MORF-300 |
+| **The three potions timed against `TIMER` never wear off.** The thirteen points of agility a potion of speed hands over and the shield of fifteen a potion of shielding puts up last the rest of the run, where the game takes them back as each hundred seconds runs out. | The fight's own poll, 1000:85BA to 1000:86DF. 1000:85F9 zeroes the fire, 1000:8655 the shielding with the shield at DGROUP B706, and 1000:86B4 the speed with the thirteen points of agility at 1000:86BC. | fixed under MORF-300 |
 | Standing on the fountain flushes the keyboard on every pass of the loop. | 1000:087C into 1000:3D83, which calls the eighteen-`INKEY$` flush at 1000:2FCB first. | not worth it — nothing a player can see, and the port has no keyboard buffer to drain |
 
 ## Three things worth knowing
