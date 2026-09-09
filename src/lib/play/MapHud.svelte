@@ -1,7 +1,7 @@
 <!--
-  The heads-up display over the top-down map: the monster being fought at the top, and along the
-  bottom a bar of dark stone with the health and spell orbs standing in its ends and the
-  experience bar between them.
+  The heads-up display over the top-down map: the monster being fought at the top with a bar of
+  its hit points beside it, and along the bottom a bar of dark stone with the health and spell
+  orbs standing in its ends and the experience bar between them.
 
   The map is the site's own view of a game rather than anything the game ever drew, so this is the
   site's own look (John, 2026-09-09). It takes no clicks and changes nothing: the game, the run
@@ -11,6 +11,7 @@
   import type { Snippet } from 'svelte';
   import { HUD_ORB_PX } from './hud';
   import HudExpBar from './HudExpBar.svelte';
+  import HudMonsterBar from './HudMonsterBar.svelte';
   import HudOrb from './HudOrb.svelte';
 
   interface Props {
@@ -19,6 +20,11 @@
      * is on, and leaves it out altogether for a game whose map draws that picture already.
      */
     closeUp?: Snippet;
+    /**
+     * The hit points the monster in that close-up has left and the hit points it was stocked
+     * with, which the bar beside its picture is drawn from. Left out when no monster is faced.
+     */
+    closeUpHp?: { now: number; full: number };
     /** The character's hit points and what they can hold. */
     hp: number;
     maxHp: number;
@@ -32,12 +38,17 @@
     needed: (level: number) => number;
   }
 
-  let { closeUp, hp, maxHp, sp, maxSp, level, exp, needed }: Props = $props();
+  let { closeUp, closeUpHp, hp, maxHp, sp, maxSp, level, exp, needed }: Props = $props();
 </script>
 
 <div class="hud" style:--orb-cap="{HUD_ORB_PX}px">
   {#if closeUp}
-    <div class="close-up">{@render closeUp()}</div>
+    <div class="close-up">
+      {#if closeUpHp}
+        <HudMonsterBar value={closeUpHp.now} max={closeUpHp.full} />
+      {/if}
+      <div class="frame">{@render closeUp()}</div>
+    </div>
   {/if}
   <div class="foot">
     <div class="stone"></div>
@@ -62,14 +73,24 @@
     --orb-size: min(var(--orb-cap), 26cqh);
     --bar-height: calc(var(--orb-size) * 0.5);
   }
-  /* The picture is drawn at the width `PortraitFrame` caps itself at, so the frame fills the
-     box the border is on however wide the map is. */
+  /* The bar of hit points and the picture side by side, the bar stretched to the height the
+     picture's own aspect ratio gives it. */
   .close-up {
     position: absolute;
     left: 50%;
     top: var(--inset);
     transform: translateX(-50%);
     width: min(40%, 340px);
+    display: flex;
+    align-items: stretch;
+    gap: calc(var(--orb-size) * 0.08);
+  }
+  /* The picture is drawn at the width `PortraitFrame` caps itself at, so the frame fills the
+     box the border is on however wide the map is. */
+  .frame {
+    position: relative;
+    flex: 1;
+    min-width: 0;
     border: 1px solid var(--line);
     border-radius: 8px;
     overflow: hidden;
