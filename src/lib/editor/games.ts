@@ -669,9 +669,5 @@ export function pickGameByFileSize(size: number): GameSchema | null {
  * writes text whose length depends on the numbers in it, so its own reader is asked instead.
  */
 export function pickGameForFile(bytes: Uint8Array): GameSchema | null {
-  return (
-    GAMES.find((game) => game.fileSize === bytes.length) ??
-    GAMES.find((game) => game.readRecord?.(bytes) != null) ??
-    null
-  );
+  return pickGameByFileSize(bytes.length) ?? GAMES.find((game) => game.readRecord?.(bytes) != null) ?? null;
 }
