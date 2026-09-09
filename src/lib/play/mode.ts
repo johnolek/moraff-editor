@@ -121,12 +121,11 @@ export function debugDrawn(mode: PlayMode): boolean {
  * Whether the two pictures beside the stage are shown: the monster standing in front of the
  * character, and the wall texture the floor is built from.
  *
- * The game's own screen draws both of them already — the monster zoomed into the view ahead, the
- * texture on every wall of all four views — so faithful mode leaves them out while the screen is
- * on the stage. The map view has neither, and debug mode shows everything.
+ * The game's own screen draws both of them already, the monster zoomed into the view ahead and the
+ * texture on every wall of all four views, so they stand beside the map only, whatever the mode.
  */
-export function sidePicturesVisible(mode: PlayMode, display: PlayDisplay): boolean {
-  return mode !== 'faithful' || display === 'map';
+export function sidePicturesVisible(display: PlayDisplay): boolean {
+  return display === 'map';
 }
 
 /** What a tab knows about the monsters on the floor: every one standing on it, the ones the

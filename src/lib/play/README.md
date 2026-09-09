@@ -344,11 +344,11 @@ so its revealed level draws every one of them.
 
 Four functions are all a tab asks of it: `panelVisible(mode)`, `monstersDrawn(mode, view)`,
 `mapDrawn(mode, memory)`, which hands `FloorCanvas` the discovered map or nothing, and
-`sidePicturesVisible(mode, display)`.
+`sidePicturesVisible(display)`.
 
 The picture of the monster in front of the character and the swatch of the floor's wall texture
 stand beside the map, where nothing else draws them. With the game's own screen on the stage the
-views draw both already, so faithful mode leaves them off and the other two keep them. Moraff's
+views draw both already, so every mode leaves them off until the map is chosen. Moraff's
 World's picture is the game's own, with the values it prints over it; this game's is an addition,
 and is kept because it was asked for.
 

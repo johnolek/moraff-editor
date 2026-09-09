@@ -32,7 +32,7 @@
     type RevPlayView,
   } from './engine';
   import { runPlayLoop } from '../loop';
-  import { REV_FIGHT_KEY_BUTTONS, REV_KEY_BUTTONS, revGameKey } from './keys';
+  import { revGameKey } from './keys';
   import { revCharacterMap } from './memory';
   import RevScreenCanvas from './screen/RevScreenCanvas.svelte';
   import { revScreenStateOf } from './screen/from-game';
@@ -347,18 +347,6 @@
           </div>
           <div class="key-note">Arrow keys, which Escape switches between:</div>
           <div class="how">{ARROW_NOTE[view.arrows]}</div>
-          <div class="key-note">Every key the dungeon reads:</div>
-          <div class="key-row">
-            {#each REV_KEY_BUTTONS as button}
-              <button type="button" title={button.label} onclick={() => session?.press(button.key)}>{button.cap}</button>
-            {/each}
-          </div>
-          <div class="key-note">And the ones a fight takes:</div>
-          <div class="key-row">
-            {#each REV_FIGHT_KEY_BUTTONS as button}
-              <button type="button" title={button.label} onclick={() => session?.press(button.key)}>{button.cap}</button>
-            {/each}
-          </div>
         </div>
         {#if panelVisible(mode)}
           <RevPanel game={session.game} {view} />
@@ -527,12 +515,6 @@
     gap: 6px;
     align-items: baseline;
   }
-  .key-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-  }
-  .key-row button,
   .run button {
     padding: 3px 7px;
     border-radius: 6px;

@@ -20,8 +20,8 @@
   import { downloadMapFiles, mwMapFiles } from '../export-maps';
   import { downloadRunLog } from '../export-run';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from '../run';
-  import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn, MW_KEY_BUTTONS } from './keys';
-  import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
+  import { mwFacingArrow, mwGameKey, mwStepKey, mwTurn } from './keys';
+  import { MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from '../movement';
   import { characterMaps } from '../memory';
   import ScreenSwitch from '../ScreenSwitch.svelte';
   import {
@@ -497,14 +497,8 @@
               </label>
             {/each}
           </div>
-          <div class="key-note">Every key the game reads:</div>
-          <div class="key-row">
-            {#each MW_KEY_BUTTONS as button}
-              <button type="button" title={arrowLabel(style, button.key) ?? button.label} onclick={() => press(button.key)}>{button.cap}</button>
-            {/each}
-          </div>
         </div>
-        {#if sidePicturesVisible(mode, display)}
+        {#if sidePicturesVisible(display)}
           <WallTexture game={MORAFFS_WORLD_MAP.id} dungeon={view.place.dungeon} floor={view.place.floor} />
         {/if}
         {#if panelVisible(mode)}
@@ -697,8 +691,7 @@
     margin-left: 0;
   }
   .over-box button,
-  .run button,
-  .keys button {
+  .run button {
     padding: 6px 12px;
     border: 1px solid var(--line);
     border-radius: 6px;
@@ -707,14 +700,6 @@
     font: inherit;
     font-size: 13px;
     cursor: pointer;
-  }
-  .keys button {
-    min-width: 30px;
-    font-family: var(--font-dos);
-    font-size: 16px;
-  }
-  .keys button:hover {
-    color: var(--accent);
   }
   /* The game's screen keeps its own 4:3 shape and sits in the middle of the space the map had. */
   .game-screen {
@@ -769,12 +754,6 @@
     margin-bottom: 4px;
     color: var(--muted);
     font-size: 12px;
-  }
-  .key-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: 10px;
   }
   .styles {
     display: flex;

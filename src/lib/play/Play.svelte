@@ -16,9 +16,9 @@
   import { runPlayLoop } from './loop';
   import { dotuMapFiles, downloadMapFiles } from './export-maps';
   import { downloadRunLog } from './export-run';
-  import { compassKeys, gameKey, KEY_BUTTONS } from './keys';
+  import { compassKeys, gameKey } from './keys';
   import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from './run';
-  import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
+  import { MOVEMENT_STYLES, readMovementStyle, writeMovementStyle, type MovementStyle } from './movement';
   import { characterMaps } from './memory';
   import ScreenSwitch from './ScreenSwitch.svelte';
   import {
@@ -339,14 +339,8 @@
               </label>
             {/each}
           </div>
-          <div class="key-note">Every key the game reads:</div>
-          <div class="key-row">
-            {#each KEY_BUTTONS as button}
-              <button type="button" title={arrowLabel(style, button.key) ?? button.label} onclick={() => press(button.key)}>{button.cap}</button>
-            {/each}
-          </div>
         </div>
-        {#if sidePicturesVisible(mode, display)}
+        {#if sidePicturesVisible(display)}
           <Portrait
             monster={view.ahead ? view.engaged : null}
             module={view.place.module}
@@ -488,8 +482,7 @@
     margin-left: 0;
   }
   .over-box button,
-  .run button,
-  .keys button {
+  .run button {
     padding: 6px 12px;
     border: 1px solid var(--line);
     border-radius: 6px;
@@ -498,14 +491,6 @@
     font: inherit;
     font-size: 13px;
     cursor: pointer;
-  }
-  .keys button {
-    min-width: 30px;
-    font-family: var(--font-dos);
-    font-size: 16px;
-  }
-  .keys button:hover {
-    color: var(--accent);
   }
   .side {
     display: flex;
@@ -555,12 +540,6 @@
     margin-bottom: 4px;
     color: var(--muted);
     font-size: 12px;
-  }
-  .key-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: 10px;
   }
   .styles {
     display: flex;
