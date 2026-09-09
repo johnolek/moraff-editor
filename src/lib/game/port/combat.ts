@@ -9,6 +9,7 @@ import {
   MENU_X,
   messageLine,
 } from './screens';
+import { playBlowLanded, playBlowTaken } from './sound';
 import type { Game, ScreenLine } from './state';
 import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
 
@@ -169,6 +170,7 @@ export function strike(game: Game): number {
     game.draw(battleLine('YOU HIT THE MONSTER!!!', BLOW_Y[0]));
     // DS:131a 1324, with the damage written between them
     below = `IT TAKES ${damage} POINTS OF DAMAGE!`;
+    playBlowLanded(game);
   }
   game.draw(battleLine(below, BLOW_Y[1]));
   // The original writes through the pointer at DS:c64b, which attack_timing aims at the engaged
@@ -484,6 +486,7 @@ export function defend(game: Game, slot: number): number {
     } else {
       line += ' MISSES!';
     }
+    if (damage > 0) playBlowTaken(game);
     game.draw(defendLine(line));
     if (damage > 0) drainsAndAilments(game, slot);
     // The town is the floor the character cannot be attacked on, so the beat is never taken
