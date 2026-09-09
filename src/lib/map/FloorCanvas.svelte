@@ -61,10 +61,14 @@
     /** Whether the rock behind the floor is laid with the wall texture the 3-D view would draw
      *  this floor with. */
     wallBackground?: boolean;
+    /** How many pixels of the foot of the canvas the caller draws something else over, such as
+     *  the bar the play display's orbs stand in. Squares under it are treated as off the canvas,
+     *  so centring and revealing keep clear of them. */
+    coveredBottom?: number;
     onselect?: (square: Point) => void;
   }
 
-  let { game, rows, floor, dungeon, monsters = [], bounds, explored = null, discovered = null, cursor = $bindable(null), highlight = null, you = null, focus = null, marks = [], selected = null, route = null, tooltip = null, wallBackground = true, onselect }: Props = $props();
+  let { game, rows, floor, dungeon, monsters = [], bounds, explored = null, discovered = null, cursor = $bindable(null), highlight = null, you = null, focus = null, marks = [], selected = null, route = null, tooltip = null, wallBackground = true, coveredBottom = 0, onselect }: Props = $props();
 
   let container: HTMLDivElement;
   let canvas: HTMLCanvasElement;
@@ -93,7 +97,7 @@
       size = { width: entry.contentRect.width, height: entry.contentRect.height };
       if (!fitted && size.width > 0) {
         view = focus
-          ? centerOn({ cell: focus.cell, originX: 0, originY: 0 }, focus, size.width, size.height)
+          ? centerOn({ cell: focus.cell, originX: 0, originY: 0 }, focus, size.width, size.height, coveredBottom)
           : fitFloor(size.width, size.height, bounds);
         fitted = true;
       }
@@ -116,7 +120,7 @@
     if (!highlight || !size.width) return;
     const target = highlight;
     const { width, height } = size;
-    view = ensureVisible(untrack(() => view), target, width, height);
+    view = ensureVisible(untrack(() => view), target, width, height, coveredBottom);
   });
 
   const teleporters = $derived(discovered ? [] : teleporterSegments(rows, game.area));
@@ -335,7 +339,7 @@
   }
 
   export function reveal(square: Point) {
-    view = ensureVisible(view, square, size.width, size.height);
+    view = ensureVisible(view, square, size.width, size.height, coveredBottom);
   }
 
   /**
@@ -345,7 +349,7 @@
   export function centre(square: Point, cell?: number): boolean {
     if (!size.width) return false;
     fitted = true;
-    view = centerOn(cell === undefined ? view : { ...view, cell }, square, size.width, size.height);
+    view = centerOn(cell === undefined ? view : { ...view, cell }, square, size.width, size.height, coveredBottom);
     return true;
   }
 </script>
