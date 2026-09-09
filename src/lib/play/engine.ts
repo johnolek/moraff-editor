@@ -8,7 +8,7 @@ import { arriveSquare, leaveSquare } from '../game/port/moment';
 import { loadPlayer, savePlayer } from '../game/port/record';
 import { clearMenuBlock, clearMessageLine } from '../game/port/screens';
 import type { Rng } from '../game/port/rng';
-import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
+import type { Game, PlayerCharacter, ScreenLine, ScreenRect } from '../game/port/state';
 import { MAP_PLAYER, newGame, sectionMonsterKinds, setMonsterMap } from '../game/port/state';
 import { UNFORGIVEN_AREA } from '../map/area';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
@@ -28,7 +28,14 @@ import { goDown, goUp, ladderPrompt, ladderUnder } from './ladders';
 import { readTheMonsterManual } from './manual';
 import { countTheMoney, expandTheMap, openGraphics, openOptions, zoomTheView } from './misc';
 import { MapMemory, type MapStore } from './memory';
-import { DEFAULT_PLAY_MODE, type PlayMode } from './mode';
+import type { PlayMode } from './mode';
+import {
+  KeyedSession,
+  RECORD_EDITED,
+  type CharacterFile as PlayedCharacterFile,
+  type HeldFrames,
+  type KeyHandler as KeyedHandler,
+} from './session';
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
@@ -67,23 +74,9 @@ import { buildingUnder, explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from
 const MAP_VIEW_COLUMNS = 0x13;
 const MAP_VIEW_ROWS = 0x21;
 
-/** How many keys are kept for a loop that is not waiting for one yet. */
-const KEY_QUEUE = 4;
-
-/**
- * Not a key: what the loop's wait hands back when the save editor has written the record while
- * the game was waiting for one, so the pass starts again with the character it now describes.
- */
-export const RECORD_EDITED = -1;
-
-/** Where the character record lives while it is being played. */
-export interface CharacterFile {
-  /** The record as the roster holds it. */
-  bytes: Uint8Array;
-  /** save_player (exe 2000:79ad): keep these bytes as the character from now on. */
-  write(bytes: Uint8Array<ArrayBuffer>): void;
-  /** The character has died, which the roster marks and never undoes. */
-  died(): void;
+/** Where the character record lives while it is being played. `write` is save_player (exe
+ *  2000:79ad). */
+export interface CharacterFile extends PlayedCharacterFile {
   /** save_maps and load_maps (exe 2000:7313 and 2000:74ae): the explored maps kept beside the
    *  record, the way the game keeps its `.DUN` file beside it. A caller with none — a replay, a
    *  test — plays with a map that lasts as long as the session. */
@@ -114,11 +107,7 @@ export interface Turn {
 export type PlaqueState = 'blanked' | 'showing';
 
 /** One key movecontrol dispatches on. */
-export interface KeyHandler {
-  /** The function of the game the key runs, for anyone reading the table. */
-  c: string;
-  run(turn: Turn): void | Promise<void>;
-}
+export type KeyHandler = KeyedHandler<Turn>;
 
 /** What the Play tab draws. */
 /**
@@ -188,7 +177,7 @@ export interface PlayView {
  * One character being played: the game, the floor they stand on, the monsters that floor is
  * stocked with, and the keyboard the loop waits on.
  */
-export class GameSession {
+export class GameSession extends KeyedSession<PlayerCharacter> {
   readonly game: Game;
   readonly floors = new FloorMonsters();
   /** The map this character has discovered, which is what the Play tab draws in faithful mode
@@ -211,11 +200,6 @@ export class GameSession {
   /** DS:041b: whether the spell menu is drawn in the miniature layout. The original keeps it in
    *  the character record at offset 0x975; the port keeps it for as long as the game is played. */
   miniSpellMenu = false;
-  /** movecontrol has come back: the character has quit or died. */
-  over = false;
-  /** Why the play loop stopped, when it stopped because it threw (`loop.ts`), or null. */
-  stopped: string | null = null;
-  dead = false;
   /**
    * The X key's map is up (`misc.ts`), which the original draws by filling the whole screen and
    * putting the floor over it, so nothing else on the display shows while it stands.
@@ -245,11 +229,6 @@ export class GameSession {
    * once the plaque itself has been drawn on it.
    */
   plaque: PlaqueState | null = null;
-  /**
-   * How much of the game the tab is showing (`mode.ts`). Nothing the game does reads it; it is
-   * here so that anything keeping a record of the run can say which mode it was played in.
-   */
-  mode: PlayMode = DEFAULT_PLAY_MODE;
   /**
    * DS:0437, which Ctrl-F puts up (exe 2000:d285): the loop takes F rather than reading a key,
    * so the character keeps swinging. `fight.ts` is what reads it here, and `defend` reads it in
@@ -289,37 +268,24 @@ export class GameSession {
   /** Where the character was standing when the views were last drawn, which is what movecontrol
    *  compares against to decide whether to draw them again. */
   private drawnFrom: { x: number; y: number; level: number } | null = null;
-  /** Called whenever the game is about to wait for a key, so the tab can draw what it is
-   *  waiting with. */
-  onChange: (() => void) | null = null;
   /**
    * The delays the game holds a drawn message for (exe 1000:2789), which the tab keeps to. The
    * loop runs straight past them; this is what decides which of the screens it drew is showing.
    */
   private readonly timed = new TimedScreens(() => this.changed());
 
-  /** A key pressed while nothing was waiting for one, which is where DOS kept it too. */
-  private queued: number[] = [];
-  private waiting: ((key: number) => void) | null = null;
   /** A ported function has called mgetch_message and is owed a key once it has finished. */
   private waitOwed = false;
-  /** The record as the game last read it or wrote it back, which is how a record the save editor
-   *  has written is told from the game's own save. */
-  private known: Uint8Array;
-  /** A record the save editor has written, waiting for the loop to be between actions. */
-  private edited: Uint8Array | null = null;
-  /** The loop is waiting for the player's key with nothing of the game's own part-way through. */
-  private betweenActions = false;
 
   constructor(
-    readonly file: CharacterFile,
+    file: CharacterFile,
     rng: Rng,
     /** The run log this game is being written down in, or null for a game nobody is recording. */
-    readonly run: RunRecorder | null = null,
+    run: RunRecorder | null = null,
   ) {
+    super(file, run);
     this.memory = new MapMemory(file.maps ?? null);
     const pc = loadPlayer(file.bytes);
-    this.known = file.bytes.slice();
     this.game = newGame({
       pc,
       rng,
@@ -373,59 +339,28 @@ export class GameSession {
     }));
   }
 
-  /** A key from the Play tab. */
-  press(key: number): void {
-    // Whatever is left of a message's delay is given up: the original is not reading the keyboard
-    // while it waits, so by the time a key of the player's is looked at the wait is behind it.
-    this.timed.release();
-    const waiting = this.waiting;
-    if (waiting) {
-      this.waiting = null;
-      waiting(key);
-      return;
-    }
-    if (this.queued.length < KEY_QUEUE) this.queued.push(key);
+  protected override get frames(): HeldFrames {
+    return this.timed;
   }
 
   /**
    * The `while (kbhit()) getch();` strike (exe 2000:7f2b) ends with: whatever the player typed
    * while the swing was on the screen is thrown away rather than answering the next turn.
    */
-  flushKeys(): void {
-    if (this.queued.length === 0) return;
-    this.queued = [];
+  override flushKeys(): void {
+    if (this.keysWaiting === 0) return;
+    super.flushKeys();
     this.repeatFight = false;
   }
 
   /** getch (exe 4000:417b): the next key, once there is one. */
-  key(): Promise<number> {
+  override key(): Promise<number> {
     // getch raises DS:4ec3, which movecontrol reads at 2000:c80a to put the repeat-fight flag
-    // down: anything that reads the keyboard stops the character swinging on its own.
+    // down: anything that reads the keyboard stops the character swinging on its own. It goes
+    // down before the queue is looked at, so a key already typed puts it down as surely as one
+    // the loop waits for.
     this.repeatFight = false;
-    const queued = this.queued.shift();
-    if (queued !== undefined) {
-      this.took(queued);
-      return Promise.resolve(queued);
-    }
-    this.changed();
-    return new Promise((resolve) => {
-      this.waiting = (key) => {
-        this.took(key);
-        resolve(key);
-      };
-    });
-  }
-
-  /**
-   * A key the game has just read, which is where it reaches the run log.
-   *
-   * The log is what the game read rather than what the player pressed, because the two differ:
-   * a key typed while the character was swinging is thrown away by {@link flushKeys} and the game
-   * never sees it, so a replay that pressed it would act on a key this run did not.
-   * {@link RECORD_EDITED} is not a key at all.
-   */
-  private took(key: number): void {
-    if (key !== RECORD_EDITED) this.run?.input(key);
+    return super.key();
   }
 
   /** get_choice (exe 2000:2d93): keys until one of the menu's own, or Escape. */
@@ -437,27 +372,19 @@ export class GameSession {
   }
 
   /**
-   * The key movecontrol waits for at the top of a pass (exe 2000:c82d), or {@link RECORD_EDITED}
-   * when the save editor writes the record while it waits.
-   *
-   * Nothing of the game's own is running while the loop waits here, which is what makes it the
-   * one place a record written outside the game is safe to take.
+   * The wait at the top of a pass (exe 2000:c82d), which is Ctrl-F's as well as the keyboard's:
+   * with the repeat-fight flag up the loop takes an F without reading anything (`fight.ts`).
    */
-  async keyOrEdit(): Promise<number> {
+  protected override async waitForTheKey(): Promise<number> {
     // A replay takes Ctrl-F's swings from the log rather than making them again, and the flag is
     // what would have the loop take an F of its own here.
     if (this.run?.replaying) this.repeatFight = false;
     const repeating = this.repeatFight;
-    this.betweenActions = true;
-    try {
-      const key = await readKey(this);
-      // With the flag up the loop takes F without reading the keyboard, so that swing reaches the
-      // run log here rather than through press.
-      if (repeating) this.run?.input(key);
-      return key;
-    } finally {
-      this.betweenActions = false;
-    }
+    const key = await readKey(this);
+    // With the flag up the loop takes F without reading the keyboard, so that swing reaches the
+    // run log here rather than through press.
+    if (repeating) this.run?.input(key);
+    return key;
   }
 
   /**
@@ -578,67 +505,35 @@ export class GameSession {
     game.recenterMap = true;
   }
 
-  /**
-   * The save editor has written the character's record while the game is being played, and the
-   * game follows it. The record is read again at the next point the loop is between actions; a
-   * loop already waiting for a key is woken so that it takes the edit at once.
-   *
-   * The bytes the game itself last read or saved are the ones it already has, so its own save
-   * writing the record back is not an edit.
-   */
-  recordEdited(bytes: Uint8Array): void {
-    if (sameBytes(bytes, this.known)) return;
-    this.edited = bytes;
-    if (!this.betweenActions) return;
-    const waiting = this.waiting;
-    if (!waiting) return;
-    this.waiting = null;
-    waiting(RECORD_EDITED);
+  /** load_player (exe 2000:7867): a record's bytes as the character. */
+  protected override readRecord(bytes: Uint8Array): PlayerCharacter {
+    return loadPlayer(bytes);
+  }
+
+  /** save_player (exe 2000:79ad): the character back into the record it came from. */
+  protected override writeRecord(): Uint8Array<ArrayBuffer> {
+    return savePlayer(this.game.pc, this.file.bytes);
   }
 
   /**
-   * Read the record again, if the save editor has written one. The loop calls this at the top of
-   * a pass, where no ported function is part-way through.
+   * Where a record the save editor wrote leaves the character standing.
    *
-   * Everything the record holds becomes the character; everything it does not — the monsters
-   * standing on the floor, the monster being fought, the timers a moment counts down — is left
-   * exactly as it was. A record that puts the character on another floor arrives there the way
-   * the loop would, and one that moves them about the floor they are on moves them on the
-   * occupancy grid with them.
+   * A record that puts them on another floor arrives there the way the loop would, and one that
+   * moves them about the floor they are on moves them on the occupancy grid with them.
    */
-  takeEdits(): void {
-    const bytes = this.edited;
-    if (bytes === null) return;
-    this.edited = null;
-    this.run?.edited();
-    this.known = bytes.slice();
-    this.file.bytes = bytes;
+  protected override placeEdited(record: PlayerCharacter): void {
     const game = this.game;
     const pc = game.pc;
     const floor = pc.level;
     const module = pc.module;
     leaveSquare(game);
-    Object.assign(pc, loadPlayer(bytes));
+    Object.assign(pc, record);
     if (pc.level !== floor || pc.module !== module) {
       this.enterFloor(pc.level);
       return;
     }
     setMonsterMap(game, pc.x, pc.y, MAP_PLAYER);
     game.recenterMap = true;
-  }
-
-  /** save_player (exe 2000:79ad): the record back into the character it came from. */
-  save(): void {
-    const bytes = savePlayer(this.game.pc, this.file.bytes);
-    this.known = bytes.slice();
-    this.file.write(bytes);
-  }
-
-  /** The character is dead: the roster is told, and nothing more is written. */
-  die(): void {
-    this.dead = true;
-    this.run?.died();
-    this.file.died();
   }
 
   /**
@@ -669,14 +564,7 @@ export class GameSession {
     if (this.game.engagedAhead !== -1) engagementTiming(this.game);
   }
 
-  /** Tell the Play tab to draw. */
-  changed(): void {
-    this.onChange?.();
-  }
-
-  /** Nothing is going to draw this session again, so the message timer is dropped rather than
-   *  left holding the page — or a replay under Node — open. */
-  finish(): void {
+  override finish(): void {
     this.timed.stop();
   }
 
@@ -716,15 +604,6 @@ export class GameSession {
       run: this.run?.summary() ?? null,
     };
   }
-}
-
-/** Whether two records hold the same bytes. */
-function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
-  if (left.length !== right.length) return false;
-  for (let at = 0; at < left.length; at++) {
-    if (left[at] !== right[at]) return false;
-  }
-  return true;
 }
 
 /** Start playing a character. */
