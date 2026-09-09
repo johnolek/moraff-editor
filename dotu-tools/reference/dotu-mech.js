@@ -47,9 +47,10 @@ export function monsterLevelDistribution(depth, module, maxSteps = 12) {
     for (const [l, p] of dist) for (const d of [-1, 0, 1]) next.set(l + d, (next.get(l + d) || 0) + p * pGo / 3);
     dist = next;
   }
-  const clamped = new Map();
-  for (const [l, p] of out) { const c = Math.max(1, Math.min(210, l)); clamped.set(c, (clamped.get(c) || 0) + p); }
-  return [...clamped.entries()].sort((a, b) => a[0] - b[0]);
+  const kept = new Map();
+  // stock_level puts a nudged level outside 1..210 back to 1 rather than holding it at the edge.
+  for (const [l, p] of out) { const c = l >= 1 && l <= 210 ? l : 1; kept.set(c, (kept.get(c) || 0) + p); }
+  return [...kept.entries()].sort((a, b) => a[0] - b[0]);
 }
 /** Expected monster HP: (rand(hp*L+1) + rand(hp*L+1) + 2)/2, boss +20L, sections 18-20 doubled, max 32000. */
 export function monsterHpRange(hpPerLevel, ml, isBoss = false, section = 1) {
