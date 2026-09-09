@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { bundledMwDungeon } from '../../game/mw-dungeon';
-import { blankMwCharacter, MW_SQUARE_PLAYER, mwMessageLine, mwOccupantAt, type MwCharacter } from '../../game/mw-port/state';
+import { blankMwCharacter, MW_SQUARE_PLAYER, mwMessageLine, mwOccupantAt, mwSetOccupant, type MwCharacter } from '../../game/mw-port/state';
 import { BorlandRng, type Rng } from '../../game/port/rng';
 import { EXPLORED_STRIDE } from '../../map/explored';
 import { MORAFFS_WORLD_MAP, type MapSquare } from '../../map/game';
@@ -104,6 +104,31 @@ describe('walking', () => {
     await pressMw(session, MW_KEY.arrowUp);
     // The line goes where the game draws it, over the top left of the map rather than in the box.
     expect(session.banner).toEqual(['THE WALL REFUSES TO MOVE']);
+    expect(session.view().place).toMatchObject({ x: start.x, y: start.y });
+  });
+
+  it('says a door is jammed when something stands behind it, and holds the line', async () => {
+    const start = findMwSquare(
+      0,
+      (square, x, y) => square.n === 1 && square.ladder === 0 && square.surface === 0
+        && bundledMwDungeon.trapdoor(x, y, 0, 0) === -1,
+    );
+    const delays: number[] = [];
+    const session = playingMw(
+      mwCharacterFile({ floor: 0, dir: 1, ...start }),
+      new BorlandRng(3),
+      (ready) => {
+        const hold = ready.game.delay;
+        ready.game.delay = (ms) => {
+          delays.push(ms);
+          hold(ms);
+        };
+        mwSetOccupant(ready.game, start.x, start.y - 1, 0);
+      },
+    );
+    await pressMw(session, MW_KEY.arrowUp);
+    expect(session.banner).toEqual(['THE DOOR IS JAMMED']);
+    expect(delays).toEqual([350]);
     expect(session.view().place).toMatchObject({ x: start.x, y: start.y });
   });
 

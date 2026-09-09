@@ -653,6 +653,12 @@ function wipeTheTopOfTheScreen(turn: MwTurn): void {
 }
 
 /**
+ * How long movecontrol holds the screen at the top of a pass before it runs the death routine
+ * (WORLD.EXE 2000:ab87), which is what gives the player time to read what killed them.
+ */
+const MW_DEATH_HOLD_MS = 0x514;
+
+/**
  * movecontrol (WORLD.EXE 2000:aad5, mw.c "movecontrol"): the loop. It comes back when the
  * character quits or dies, which is where the original goes back to the character select screen.
  */
@@ -665,6 +671,10 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     // pass works out about the character and the square is worked out afterwards.
     session.takeEdits();
     if (pc.hp < 0) {
+      // The killing blow was struck in the step at the end of the pass before this one, so the
+      // message saying so is still on the strip; the game holds it there for a moment before it
+      // draws the death page over it (WORLD.EXE 2000:ab87).
+      game.delay(MW_DEATH_HOLD_MS);
       session.flushKeys();
       await mwDie(session);
       if (session.over) return;

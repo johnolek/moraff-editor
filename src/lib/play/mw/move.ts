@@ -4,6 +4,13 @@ import type { MwTurn } from './engine';
 import { arriveSquare, leaveSquare } from './moment';
 
 /**
+ * How long movecontrol leaves either jammed-door message up before the pass ends (WORLD.EXE
+ * 2000:c05f and 2000:c08a), which is what stops it being wiped by the next pass before it has
+ * been read.
+ */
+const JAMMED_MS = 0x15e;
+
+/**
  * FUN_2000_a57e (WORLD.EXE 2000:a57e) wipes the top left of the screen before it takes the
  * character off the grid, which is what takes the last fight's lines down.
  */
@@ -71,8 +78,14 @@ export function resolveStep(turn: MwTurn): void {
   if (mwOccupantAt(game, pc.x + step.dx, pc.y + step.dy) !== -1) {
     step.dx = 0;
     step.dy = 0;
-    if (side === 1) game.say('THE DOOR IS JAMMED'); // DS:3522
-    if (side === 2) game.say('THE SECRET DOOR IS JAMMED'); // DS:3535
+    if (side === 1) {
+      game.say('THE DOOR IS JAMMED'); // DS:3522
+      game.delay(JAMMED_MS);
+    }
+    if (side === 2) {
+      game.say('THE SECRET DOOR IS JAMMED'); // DS:3535
+      game.delay(JAMMED_MS);
+    }
     return;
   }
   startEngagementTimer(game);

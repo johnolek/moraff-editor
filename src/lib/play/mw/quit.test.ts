@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { readScalar } from '../../editor/fields';
 import { MORAFFS_WORLD } from '../../editor/games';
 import type { ScalarField } from '../../editor/schema';
-import { findMwSquare, mwCharacterFile, playingMw, pressMw } from './engine.test';
+import { BorlandRng } from '../../game/port/rng';
+import { findMwSquare, mwCharacterFile, playingMw, pressMw, settleMw } from './engine.test';
 import { MW_KEY } from './keys';
 import { loadMwPlayer } from './record';
 
@@ -62,6 +63,24 @@ describe('death', () => {
     await pressMw(session, MW_KEY.escape);
     expect(file.dead).toBe(true);
     expect(session.view()).toMatchObject({ over: true, dead: true });
+  });
+
+  it('holds the blow that killed the character on the strip', async () => {
+    const file = mwCharacterFile({ floor: 0, hp: -1, returnX: -1, ...townWalk() });
+    const delays: number[] = [];
+    const session = playingMw(file, new BorlandRng(3), (ready) => {
+      // The blow the monster landed in the step at the end of the pass before this one.
+      ready.banner = ['NORTH DOES 40 POINTS'];
+      const hold = ready.game.delay;
+      ready.game.delay = (ms) => {
+        delays.push(ms);
+        hold(ms);
+      };
+    });
+    await settleMw();
+    expect(delays).toEqual([1300]);
+    expect(session.view().banner).toEqual(['NORTH DOES 40 POINTS']);
+    await pressMw(session, MW_KEY.escape);
   });
 
   it('puts a character with a raise-dead contract back where the temple wrote them', async () => {
