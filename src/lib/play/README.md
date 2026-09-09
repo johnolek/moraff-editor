@@ -129,12 +129,14 @@ played, so that a claimed ending can be checked by playing it again rather than 
   rather than starting it over, and a milestone is stamped with what the whole run had spent when
   it was reached. `RunRecorder` is handed what the run had come to `before` this session, and
   `runTotals` adds a chain up.
-* **Where it is kept** — on the roster entry (`RosterEntry.run`), beside the record and in the
-  browser with it. The session being played is the last of the chain, written again wherever the
-  record is written, which is after every key, so a tab closed in the middle of a game loses
-  nothing and the next session starts from a record the run can be followed to. The loop writes
-  it down once more where it comes back, since a death is the last thing a run has to say and the
-  game saves no record over it.
+* **Where it is kept** — on the roster entry (`RosterEntry.run`) in the page, and in the
+  browser's database beside the record (`src/lib/character/roster-db.ts`). The session being
+  played is the last of the chain, written again wherever the record is written, which is after
+  every key: the record and that one session go into the store together and nothing else on the
+  roster is touched, so a tab closed in the middle of a game loses nothing and the next session
+  starts from a record the run can be followed to. The loop writes it down once more where it
+  comes back, since a death is the last thing a run has to say and the game saves no record over
+  it.
 * **The inputs** are what the game *read*, not what the player pressed, which is why they are
   taken in `GameSession.key` rather than in `press`: a key typed while the character is swinging
   is thrown away by the flush at the end of the swing and the game never sees it. Ctrl-F's own
