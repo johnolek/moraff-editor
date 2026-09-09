@@ -68,19 +68,22 @@ took.
 In the code: `rev-tools/docs/MONSTERS.md` part 1, on the calibration at `1000:BF60` and the odds
 at `1000:7EEC`.
 
-### Nothing waits for you until a monster is beside you
+### The dungeon never waits for you, and neither does a fight
 
 The dungeon's main loop does not block on a key. It reads `INKEY$`, which comes back at once with
 an empty string when nothing has been typed, rolls a chance to move one monster, and goes round
 again. So a monster crosses the room while you sit reading the screen, and the game is running
 whether you are playing it or not.
 
-The moment one is on your square that changes. The shared prompt wait switches to a loop at
-`1000:2F71` that really does block, and unlike the polling one it never gives a monster its turn,
-so while a wand menu or a "which item" list is up nothing in the dungeon moves at all.
+The fight prompt is a second loop of the same shape and it rolls the same chance before its own
+`INKEY$`, so standing over a monster deciding whether to swing costs you turns as well.
 
-In the code: `rev-tools/docs/MONSTERS.md` part 1, on the loop at `1000:087F` and the blocking
-wait at `1000:2F71`.
+What does stop the dungeon is the shared prompt wait at `1000:2F71`. It spins on `INKEY$` and
+never gives a monster a turn, and twenty-two places in the program call it, so while a wand menu
+or a "which item" list or a shop counter is up, nothing in the dungeon moves at all.
+
+In the code: `rev-tools/docs/MONSTERS.md` part 1, on the loop at `1000:087F`, the fight prompt's
+own poll at `1000:86E2` and the blocking wait at `1000:2F71`.
 
 ### All seventy levels are on the disk, and seventeen of them are yours
 
@@ -529,8 +532,10 @@ every wound you have.
 
 Except that the two cheap ones also heal you completely if you are carrying rings of health, in
 which case the Kings Inn is six thousand jewel pieces for something the Flea Bag does for ten.
-What the cheap ones charge instead is risk: both roll afterwards, and one time in ten you wake up
-with your money set to zero and are told you were robbed. The Flea Bag rolls once more on top of
+What the cheap ones charge instead is risk: both roll afterwards, and one time in ten you are
+told you were robbed. It is not only the money. The same six lines zero the purse, the knife, the
+sword, the mace and the pluses on the sword and the mace, so a cheap night can cost you every
+weapon you own. The Flea Bag rolls once more on top of
 that, against being sick. Say yes without the money and a guard throws you out.
 
 In the code: `rev-tools/docs/DUNGEON.md` section 9, on the three routines at `1000:1E0A`,
