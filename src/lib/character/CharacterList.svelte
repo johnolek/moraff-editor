@@ -1,6 +1,7 @@
 <script lang="ts">
   import { app, type RosterEntry } from '../app-state.svelte';
   import { chooseCharacter, forgetCharacter, renameCharacter, restoreCharacterImport } from './current';
+  import { leaderboardLabel } from './leaderboard';
   import { characterStatus } from './record';
 
   interface Props {
@@ -58,7 +59,7 @@
 
 <table class="chooser">
   <thead>
-    <tr><th>Character</th><th>Level</th><th>Number</th><th>From</th><th>Edited</th><th></th></tr>
+    <tr><th>Character</th><th>Level</th><th>Number</th><th>From</th><th>Board</th><th>Edited</th><th></th></tr>
   </thead>
   <tbody>
     {#each entries as entry (entry.id)}
@@ -73,6 +74,7 @@
         <td>{levelOf(entry)}{entry.dead ? ' · dead' : ''}</td>
         <td>{entry.slot ?? '—'}</td>
         <td>{entry.importedBytes ? 'imported' : 'rolled'}</td>
+        <td>{entry.leaderboard ? leaderboardLabel(entry.leaderboard) : '—'}</td>
         <td>{editedOn(entry.editedAt)}</td>
         <td class="actions">
           <button type="button" class="link" onclick={() => startRename(entry)}>Rename</button>
