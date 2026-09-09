@@ -2,6 +2,7 @@ import { LEVELS } from '../../game/revmap.js';
 import type { Rng } from '../../game/port/rng';
 import { REV_POLLS_PER_TICK, REV_TICK_MS, revPoll } from './clock';
 import { revFallDownAChute } from './chute';
+import { RevHeldScreens } from './held';
 import type { RevMagicDesk } from './desk';
 import { revAtTheFountain, revDrinkFromTheFountain, revNeedsAFountain, revRollTheFountain } from './fountain';
 import {
@@ -59,6 +60,10 @@ import {
   type RevTownDesk,
 } from './town';
 import { newRevGame, revWalker, type RevGame } from './state';
+import { revScreenStateOf } from './screen/from-game';
+import { drawRevScreen, type RevScreenState } from './screen/screen';
+import type { Frame } from '../view3d/frame';
+import { debugDrawn } from '../mode';
 import type { RevStanding } from './monsters';
 import { REV_NOT_BUILT } from './screens';
 
@@ -138,6 +143,12 @@ export class RevGameSession {
    *  tick of the monsters' clock belongs and where an edited record is safe to take. */
   private polling = false;
   private timer: ReturnType<typeof setInterval> | null = null;
+  /**
+   * The screens the game asked to be left up for a moment (1000:2F1A), which the tab draws in
+   * place of the live screen for as long as each was asked for. The loop runs straight past
+   * them; this is only what the tab shows.
+   */
+  private readonly held = new RevHeldScreens(() => this.changed());
 
   constructor(
     readonly file: RevCharacterFile,
@@ -152,6 +163,7 @@ export class RevGameSession {
     this.known = file.bytes.slice();
     this.game = newRevGame(pc, rng, new RevMapMemory(file.map ?? null));
     this.game.flushKeys = () => this.flushKeys();
+    this.game.delay = (ms) => this.hold(ms);
     // 1000:B98F: a character who has never been played has no fountain of youth yet, and the
     // load rolls one for them.
     if (revNeedsAFountain(pc)) revRollTheFountain(this.game);
@@ -168,6 +180,9 @@ export class RevGameSession {
 
   /** A key from the Play tab. */
   press(key: number): void {
+    // Whatever is left of a held screen is given up: the original is not reading the keyboard
+    // while it holds one, so by the time a key of the player's is looked at the wait is over.
+    this.held.release();
     const waiting = this.waiting;
     if (waiting) {
       this.waiting = null;
@@ -337,6 +352,36 @@ export class RevGameSession {
   /** Nothing is going to draw this session again. */
   finish(): void {
     this.stopClock();
+    this.held.stop();
+  }
+
+  /** Everything the game's own screen is drawn from, at the mode the tab is showing. */
+  screenState(): RevScreenState {
+    return revScreenStateOf(this.game, {
+      wholeFloor: this.mode !== 'faithful',
+      debug: debugDrawn(this.mode),
+    });
+  }
+
+  /**
+   * The screen the tab draws: a frame the game asked to be held, or the screen as the game has
+   * it now.
+   */
+  screen(): Frame {
+    return this.held.showing() ?? drawRevScreen(this.screenState());
+  }
+
+  /**
+   * 1000:2F1A: the game has drawn something and wants it read before it goes on.
+   *
+   * The frame is drawn here rather than when it comes to be shown, because the loop has run on
+   * by then and the port works the whole screen out from the game as it stands. A session
+   * nobody is drawing — a replay, or a test — holds nothing at all, since there is no screen
+   * for a frame to be held on.
+   */
+  private hold(ms: number): void {
+    if (this.onChange === null) return;
+    this.held.hold(drawRevScreen(this.screenState()), ms, this.game.said, this.game.banner);
   }
 
   /**
@@ -387,10 +432,10 @@ export class RevGameSession {
       place: { column: pc.column, row: pc.row, level: pc.dungeonLevel, facing: pc.facing },
       monsters,
       visible: monsters.filter((monster) => monster.slot === here),
-      box: game.said,
+      box: this.held.showingBox(game.said),
       advice: game.advice,
       prompt: game.prompt,
-      banner: game.banner,
+      banner: this.held.showingBanner(game.banner),
       fight: game.fight
         ? {
             slot: game.fight.slot,

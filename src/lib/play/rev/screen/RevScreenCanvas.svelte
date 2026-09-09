@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { toRgba } from '../../view3d/frame';
+  import { toRgba, type Frame } from '../../view3d/frame';
   import { revRgb } from './colours';
   import { SCREEN_HEIGHT, SCREEN_WIDTH } from './paint';
-  import { drawRevScreen, type RevScreenState } from './screen';
 
   interface Props {
-    /** Everything the drawing cannot work out for itself. */
-    screen: RevScreenState;
+    /** The 320 by 200 buffer of colour indexes to paint, which is either the screen as the game
+     *  has it now or one the game asked to be held (`../held.ts`). */
+    screen: Frame;
     /** Which of `SCREEN 1`'s two colour sets the screen is in, the way the `@` key sets it. */
     palette?: number;
     /** Which of CGA's sixteen colours stands behind everything, the way the `#` key sets it. */
@@ -22,8 +22,7 @@
     if (!target) return;
     const context = target.getContext('2d');
     if (!context) return;
-    const frame = drawRevScreen(screen);
-    context.putImageData(new ImageData(toRgba(frame, revRgb(palette, background)), SCREEN_WIDTH, SCREEN_HEIGHT), 0, 0);
+    context.putImageData(new ImageData(toRgba(screen, revRgb(palette, background)), SCREEN_WIDTH, SCREEN_HEIGHT), 0, 0);
   });
 </script>
 

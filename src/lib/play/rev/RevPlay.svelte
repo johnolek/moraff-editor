@@ -12,7 +12,6 @@
   import { actionWords, milestoneNote, milestoneWords, RunRecorder } from '../run';
   import ScreenSwitch from '../ScreenSwitch.svelte';
   import {
-    debugDrawn,
     mapDrawn,
     monstersDrawn,
     panelVisible,
@@ -35,7 +34,6 @@
   import { revGameKey } from './keys';
   import { revCharacterMap } from './memory';
   import RevScreenCanvas from './screen/RevScreenCanvas.svelte';
-  import { revScreenStateOf } from './screen/from-game';
   import { revCgaPalette } from './settings';
 
   /** How many pixels a square is drawn at when the map is centred on the character. */
@@ -91,12 +89,17 @@
     }));
   }
 
-  /** The game's own screen, redrawn whenever anything the loop or the clock touches changes. */
+  /**
+   * The game's own screen, redrawn whenever anything the loop or the clock touches changes.
+   *
+   * A screen the game asked to be left up for a moment is what comes back while it is up
+   * (`held.ts`), so a message the game holds for two seconds is on the tab for two seconds.
+   */
   const gameScreen = $derived.by(() => {
     void view;
     const playing = session;
     if (!playing) return null;
-    return revScreenStateOf(playing.game, { wholeFloor: mode !== 'faithful', debug: debugDrawn(mode) });
+    return playing.screen();
   });
 
   /**

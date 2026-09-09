@@ -3,6 +3,7 @@ import { SeededRng } from '../../game/port/rng';
 import { formatRevRecord, REV_VALUE_COUNT } from '../../game/rev-port/record';
 import { REV_KEY } from './keys';
 import { NEEDS_A_CURE } from './pass';
+import { NO_SOUND_HERE, SOUND_OFF } from './settings';
 import { REV_VALUE, revValue } from './record';
 import { REV_CLOCK_TICK, RevGameSession, runRevDungeon, startRevGame, type RevCharacterFile } from './engine';
 
@@ -61,6 +62,30 @@ describe('the loop', () => {
   it('starts the character where the record left them', async () => {
     const { session } = await playing();
     expect(session.view().place).toMatchObject({ column: 10, row: 10, level: 0 });
+    session.finish();
+  });
+
+  it('holds a screen the game asked to be left up, and a key gives up the rest', async () => {
+    const { session } = await playing();
+    // A session nobody is drawing holds nothing, since there is no screen to hold one on.
+    session.onChange = () => {};
+    session.press(REV_KEY.sound);
+    await settled();
+    // 1000:10A5: the loop has run straight past the two seconds and rubbed its own line out...
+    expect(session.game.said).toEqual([]);
+    // ...and the tab is still showing the screen it was asked to hold.
+    expect(session.view().box).toEqual([SOUND_OFF, NO_SOUND_HERE]);
+    session.press(REV_KEY.stats);
+    await settled();
+    expect(session.view().box).not.toContain(SOUND_OFF);
+    session.finish();
+  });
+
+  it('holds nothing at all for a session nobody is drawing', async () => {
+    const { session } = await playing();
+    session.press(REV_KEY.sound);
+    await settled();
+    expect(session.view().box).toEqual([]);
     session.finish();
   });
 
