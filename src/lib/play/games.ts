@@ -24,7 +24,7 @@ import {
   type RevPlayView,
 } from './rev/engine';
 import { revGameKey } from './rev/keys';
-import { RunRecorder, type RunSummary } from './run';
+import { RunRecorder, type RunTotals } from './run';
 
 /**
  * What the Play tab needs of the game it is playing.
@@ -57,7 +57,7 @@ export interface PlayViewBase {
   dead: boolean;
   /** The message the play loop threw and stopped on, or null. */
   stopped: string | null;
-  run: RunSummary | null;
+  run: RunTotals | null;
 }
 
 /** Where on the floor the character is standing, which is what the map is kept centred on. */

@@ -50,7 +50,7 @@ import { KeyedSession, RECORD_EDITED, type CharacterFile, type HeldFrames, type 
 import { revStep, type RevStep } from './move';
 import { revPass } from './pass';
 import { loadRevPlayer, saveRevPlayer, type RevPc } from './record';
-import type { RunRecorder, RunSummary } from '../run';
+import type { RunRecorder, RunTotals } from '../run';
 import { revAdvice } from './advice';
 import {
   revBuildingUnder,
@@ -124,7 +124,7 @@ export interface RevPlayView {
   dead: boolean;
   /** The message the play loop threw and stopped on, or null. */
   stopped: string | null;
-  run: RunSummary | null;
+  run: RunTotals | null;
 }
 
 /** One character being played. */

@@ -12,6 +12,7 @@ import {
   type MilestoneKind,
   type RunGame,
   type RunSession,
+  type RunTotals,
 } from './run';
 
 /**
@@ -32,13 +33,6 @@ import {
 
 /** How a run came out of being checked. */
 export type RunStatus = 'verified' | 'failed' | 'unverifiable';
-
-/** What a run came to: the log's claim, or what the replay made of it. */
-export interface RunTotals {
-  actions: number;
-  time: number;
-  milestones: Milestone[];
-}
 
 /** Where the replay ended, which is what a run amounts to. */
 export interface RunEnding {

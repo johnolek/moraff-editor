@@ -25,13 +25,19 @@ import {
   RunRecorder,
   RUN_GAMES,
   RUN_LOG_VERSION,
+  runTotals,
   TURN_INPUTS,
+  type Milestone,
+  type RunSession,
+  type RunTotals,
 } from './run';
 
-/** A game of Dungeons of the Unforgiven being recorded, with a seed of the test's own. */
+/** A game of Dungeons of the Unforgiven being recorded, with a seed of the test's own. `before`
+ *  is what the character's run had come to in the sessions before this one. */
 function recordedGame(
   overrides: Parameters<typeof characterFile>[0] = {},
   seed = 12345,
+  before?: RunTotals,
 ): { run: RunRecorder; session: GameSession; record: Uint8Array; file: CharacterFile } {
   const file = characterFile(overrides);
   const record = file.bytes.slice();
@@ -41,6 +47,7 @@ function recordedGame(
     record: file.bytes,
     seed,
     startedAt: '2026-09-07T00:00:00.000Z',
+    before,
   });
   const session = startGame(file, run.rng, run);
   void runMoveControl(session);
@@ -350,6 +357,78 @@ describe('the milestones a run records', () => {
     const modules = run.log().milestones.filter((milestone) => milestone.kind === 'dungeon');
     expect(modules.length).toBe(1);
     expect(modules[0].which).toBe(1);
+  });
+});
+
+/** What a character's run had come to in the sessions before the one being played. */
+function runSoFar(actions: number, time: number, milestones: Milestone[] = []): RunTotals {
+  return { actions, time, milestones };
+}
+
+/** A session's log with nothing in it but the numbers a chain is added up from. */
+function sessionLog(totals: RunTotals): RunSession {
+  const empty = new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record: new Uint8Array(8) }).log();
+  return { ...empty, ...totals };
+}
+
+describe('a session of a run the character has played before', () => {
+  it('counts its actions on from where the run stood', async () => {
+    const { run, session } = recordedGame({}, 12345, runSoFar(7, 30));
+    await press(session, KEY.arrowUp);
+    session.finish();
+
+    expect(run.log().actions).toBe(8);
+  });
+
+  it("adds the game's own clock to the one the run had already spent", async () => {
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...townSquare() }, 12345, runSoFar(7, 30));
+    await press(session, KEY.arrowUp);
+    await press(session, KEY.enter);
+    session.finish();
+
+    expect(session.game.secondsElapsed).toBeGreaterThan(0);
+    expect(run.log().time).toBe(30 + session.game.secondsElapsed);
+  });
+
+  it('stamps a milestone with what the whole run has spent', async () => {
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...teleporterSquare() }, 12345, runSoFar(7, 30));
+    await press(session, KEY.arrowUp);
+    await press(session, KEY.enter);
+    await press(session, KEY.viewStats);
+    session.finish();
+
+    const modules = run.log().milestones.filter((milestone) => milestone.kind === 'dungeon');
+    expect(modules.length).toBe(1);
+    expect(modules[0].actions).toBe(8);
+    expect(modules[0].time).toBe(30);
+  });
+
+  it('draws the whole run in the line the Play tab shows and writes this session alone down', async () => {
+    const earlier: Milestone = { kind: 'level', which: 2, actions: 3, time: 12, floor: 0 };
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...teleporterSquare() }, 12345, runSoFar(7, 30, [earlier]));
+    await press(session, KEY.arrowUp);
+    await press(session, KEY.enter);
+    session.finish();
+
+    expect(run.summary().milestones).toEqual([earlier, { kind: 'dungeon', which: 1, actions: 8, time: 30, floor: 0 }]);
+    expect(run.log().milestones).toEqual([{ kind: 'dungeon', which: 1, actions: 8, time: 30, floor: 0 }]);
+    expect(run.summary().actions).toBe(run.log().actions);
+    expect(run.summary().time).toBe(run.log().time);
+  });
+});
+
+describe('what a run comes to over the sessions it was played in', () => {
+  it('comes to nothing for a character that has never been played', () => {
+    expect(runTotals([])).toEqual({ actions: 0, time: 0, milestones: [] });
+  });
+
+  it('takes the count from the last session and the milestones from all of them', () => {
+    const won: Milestone = { kind: 'win', which: 0, actions: 9, time: 30, floor: 2 };
+    const gained: Milestone = { kind: 'level', which: 2, actions: 3, time: 12, floor: 0 };
+    const first = sessionLog(runSoFar(4, 12, [gained]));
+    const second = sessionLog(runSoFar(9, 30, [won]));
+
+    expect(runTotals([first, second])).toEqual({ actions: 9, time: 30, milestones: [gained, won] });
   });
 });
 

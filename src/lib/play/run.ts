@@ -190,9 +190,19 @@ function runEvent(event: { kind: string }): RunEvent | null {
   return event as RunEvent;
 }
 
-/** How a run stands, for the line the Play tab shows. */
-export interface RunSummary {
+/**
+ * What a run comes to: the numbers it is judged by, for one session of it or for the whole
+ * chain.
+ *
+ * It is what the Play tab draws its run line from and what a verdict on a run holds twice over,
+ * once for what the log claims and once for what the replay reached.
+ */
+export interface RunTotals {
   actions: number;
+  /** The game's own clock: the seconds call_check_eng counts in Dungeons of the Unforgiven, the
+   *  moves spend_time counts in Moraff's World, the ticks the monsters move on in Moraff's
+   *  Revenge. */
+  time: number;
   milestones: Milestone[];
 }
 
@@ -251,27 +261,34 @@ export interface RunSession {
    * so it is here for the same reason the mode is: to say how the run was set up.
    */
   sound: boolean | null;
-  /** The character's name, as the record held it when play began. */
+  /** The character's name, as the record held it when this session began. */
   name: string;
-  /** When the run started, as an ISO 8601 instant. */
+  /** When this session started, as an ISO 8601 instant. */
   startedAt: string;
-  /** The seed the run's generator was started from. */
+  /** The seed this session's generator was started from. */
   seed: number;
-  /** The character's record as play began, base64. */
+  /** The character's record as this session began, base64. */
   record: string;
-  /** Every input the game was given, in order. */
+  /** Every input the game was given in this session, in order. */
   inputs: number[];
-  /** How many of those keys were actions, which is what a run is judged by. */
+  /**
+   * How many actions the whole run had spent by the end of this session, which is what a run is
+   * judged by.
+   *
+   * It counts from the start of the chain rather than from this session, so that leaving the
+   * game and playing the character again goes on from where the count stood.
+   */
   actions: number;
-  /** The game's own clock where the run had got to: the seconds call_check_eng counts in
-   *  Dungeons of the Unforgiven, the moves spend_time counts in Moraff's World. */
+  /** The game's own clock where the whole run had got to by the end of this session, counted
+   *  from the start of the chain the same way the actions are. */
   time: number;
-  /** What the run reached, oldest first. */
+  /** What this session reached, oldest first, each stamped with the actions and the clock of the
+   *  whole run. */
   milestones: Milestone[];
   /**
    * How many times a record written outside the game — the Save Editor's — reached the character
-   * while the run was being played. A run with any cannot be checked: those records are not in
-   * the log, so a replay has no way of putting the character back into them.
+   * while this session was being played. A run with any cannot be checked: those records are not
+   * in the log, so a replay has no way of putting the character back into them.
    */
   edits: number;
 }
@@ -298,15 +315,41 @@ export interface RunStart {
   /** Whether the game starts with its sound on, for a game that has such a flag. */
   sound?: boolean | null;
   /**
+   * What the character's run had come to before this session, which everything this session
+   * counts goes on from. A character being played for the first time has none.
+   */
+  before?: RunTotals;
+  /**
    * The inputs are coming from a log rather than from a player, so anything the engine would
    * otherwise make up for itself — Ctrl-F's own swings — is taken from the log instead.
    */
   replaying?: boolean;
 }
 
+/** What a run had come to before it had been played at all. */
+function nothingYet(): RunTotals {
+  return { actions: 0, time: 0, milestones: [] };
+}
+
 /**
- * One run being written down. The session holds one and hands it every input it is given, and
- * `log()` is the run as it stands.
+ * What a character's run comes to over the sessions it has been played in.
+ *
+ * Every session counts its actions and its clock from the start of the chain, so the last of them
+ * holds both totals; the milestones are each session's own, and the run's are all of them in the
+ * order they were reached.
+ */
+export function runTotals(sessions: readonly RunSession[]): RunTotals {
+  const last = sessions[sessions.length - 1];
+  return {
+    actions: last?.actions ?? 0,
+    time: last?.time ?? 0,
+    milestones: sessions.flatMap((session) => session.milestones),
+  };
+}
+
+/**
+ * One session being written down. The game session holds one and hands it every input it is
+ * given, and `log()` is that session as it stands.
  */
 export class RunRecorder {
   readonly game: RunGame;
@@ -318,16 +361,18 @@ export class RunRecorder {
   readonly sound: boolean | null;
   /** The run is being replayed from a log rather than played by anybody. */
   readonly replaying: boolean;
-  /** The character's record as play began. */
+  /** The character's record as this session began. */
   readonly record: Uint8Array;
+  /** What the run had come to before this session, which is what it goes on counting from. */
+  readonly before: RunTotals;
   /** The generator the game is played through, which is the seed and nothing else. */
   readonly rng: Rng;
   readonly inputs: number[] = [];
-  /** How many actions the run has spent. */
-  actions = 0;
-  /** How many records written outside the game have reached the character. */
+  /** How many actions the run has spent, counting from the start of the chain. */
+  actions: number;
+  /** How many records written outside the game have reached the character in this session. */
   edits = 0;
-  /** What the run has reached, oldest first. */
+  /** What this session has reached, oldest first. */
   readonly milestones: Milestone[] = [];
 
   /** Where the game has got to, which stamps a milestone. Null until the session hands it over. */
@@ -349,6 +394,8 @@ export class RunRecorder {
     this.mode = start.mode ?? null;
     this.leaderboard = start.leaderboard ?? null;
     this.sound = start.sound ?? null;
+    this.before = start.before ?? nothingYet();
+    this.actions = this.before.actions;
     this.replaying = start.replaying ?? false;
     this.rng = new SeededRng(this.seed);
   }
@@ -392,7 +439,7 @@ export class RunRecorder {
   died(): void {
     this.note();
     const now = this.clock?.();
-    if (now) this.milestones.push({ kind: 'death', which: 0, actions: this.actions, time: now.time, floor: now.floor });
+    if (now) this.milestones.push({ kind: 'death', which: 0, actions: this.actions, time: this.time(), floor: now.floor });
   }
 
   /**
@@ -404,7 +451,7 @@ export class RunRecorder {
     if (clock === null) return;
     const now = clock();
     const reach = (kind: MilestoneKind, which: number) =>
-      this.milestones.push({ kind, which, actions: this.actions, time: now.time, floor: now.floor });
+      this.milestones.push({ kind, which, actions: this.actions, time: this.time(), floor: now.floor });
     if (now.dungeon !== this.dungeon) {
       this.dungeon = now.dungeon;
       reach('dungeon', now.dungeon);
@@ -425,14 +472,29 @@ export class RunRecorder {
     }
   }
 
-  /** How the run stands, which is what the Play tab draws. */
-  summary(): RunSummary {
-    this.note();
-    return { actions: this.actions, milestones: this.milestones.map((milestone) => ({ ...milestone })) };
+  /** The game's own clock, counting from the start of the chain the way the actions do. */
+  private time(): number {
+    return this.before.time + (this.clock?.().time ?? 0);
   }
 
+  /**
+   * How the whole run stands, which is what the Play tab draws: this session and every session
+   * before it, since what a player wants to see is the character's count rather than this
+   * sitting's.
+   */
+  summary(): RunTotals {
+    this.note();
+    return {
+      actions: this.actions,
+      time: this.time(),
+      milestones: [...this.before.milestones, ...this.milestones].map((milestone) => ({ ...milestone })),
+    };
+  }
+
+  /** This session alone, which is what a replay of it reproduces. Its actions and its clock are
+   *  the whole run's, and its milestones are the ones reached in this sitting. */
   log(): RunSession {
-    const summary = this.summary();
+    this.note();
     return {
       version: RUN_LOG_VERSION,
       engine: ENGINE_COMMIT,
@@ -445,22 +507,24 @@ export class RunRecorder {
       seed: this.seed,
       record: base64FromBytes(this.record),
       inputs: [...this.inputs],
-      actions: summary.actions,
-      time: this.clock?.().time ?? 0,
-      milestones: summary.milestones,
+      actions: this.actions,
+      time: this.time(),
+      milestones: this.milestones.map((milestone) => ({ ...milestone })),
       edits: this.edits,
     };
   }
 }
 
-/** Where a run ended: what a claim about it is checked against. */
+/** Where a session ended: what a claim about it is checked against. */
 export interface RunReplay {
   /** The character's record as the game would save it, which is the whole of what they are. */
   record: Uint8Array;
   place: { x: number; y: number; floor: number; dungeon: number; dir: number };
-  /** The game's own clock: seconds in Dungeons of the Unforgiven, moves in Moraff's World. */
+  /** The game's own clock, counting from the start of the chain. */
   time: number;
+  /** How many actions the whole run had spent by the end of this session. */
   actions: number;
+  /** What this session reached. */
   milestones: Milestone[];
   /** The loop came back: the character quit or died. */
   over: boolean;
@@ -546,13 +610,14 @@ async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise
   // save_player is what turns the character back into a record, and the record is what a claim
   // about a run is made of. It writes nothing outside this replay.
   session.save();
+  const ended = run.log();
   const pc = session.game.pc;
   return {
     record: file.bytes,
     place: { x: pc.x, y: pc.y, floor: pc.level, dungeon: pc.module, dir: pc.dir },
-    time: session.game.secondsElapsed,
-    actions: run.actions,
-    milestones: run.log().milestones,
+    time: ended.time,
+    actions: ended.actions,
+    milestones: ended.milestones,
     over: session.over,
     dead: session.dead,
   };
@@ -579,13 +644,14 @@ async function replayMoraffsWorld(recorded: RunSession, run: RunRecorder): Promi
   session.finish();
   stoppedReplay(session);
   session.save();
+  const ended = run.log();
   const pc = session.game.pc;
   return {
     record: file.bytes,
     place: { x: pc.x, y: pc.y, floor: pc.floor, dungeon: pc.dungeon, dir: pc.dir },
-    time: session.game.movesTaken,
-    actions: run.actions,
-    milestones: run.log().milestones,
+    time: ended.time,
+    actions: ended.actions,
+    milestones: ended.milestones,
     over: session.over,
     dead: session.dead,
   };
@@ -620,13 +686,14 @@ async function replayMoraffsRevenge(recorded: RunSession, run: RunRecorder): Pro
   session.finish();
   stoppedReplay(session);
   session.save();
+  const ended = run.log();
   const pc = session.game.pc;
   return {
     record: file.bytes,
     place: { x: pc.column, y: pc.row, floor: pc.dungeonLevel, dungeon: 0, dir: pc.facing },
-    time: session.ticks,
-    actions: run.actions,
-    milestones: run.log().milestones,
+    time: ended.time,
+    actions: ended.actions,
+    milestones: ended.milestones,
     over: session.over,
     dead: session.dead,
   };

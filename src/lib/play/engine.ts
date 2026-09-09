@@ -39,7 +39,7 @@ import {
 import { resolveStep, stepForward, turnAround, turnLeft, turnRight } from './move';
 import { quitGame } from './quit';
 import { lookInPockets } from './pockets';
-import type { RunRecorder, RunSummary } from './run';
+import type { RunRecorder, RunTotals } from './run';
 import {
   MESSAGE_BOX_LINES,
   MESSAGE_BOX_LINES_TOP,
@@ -194,7 +194,7 @@ export interface PlayView {
   /** The message the play loop threw and stopped on, or null. */
   stopped: string | null;
   /** How the run stands, or null for a game nobody is recording. */
-  run: RunSummary | null;
+  run: RunTotals | null;
 }
 
 /**
