@@ -91,7 +91,7 @@ export async function goDown(turn: Turn): Promise<void> {
     return;
   }
   if (BOTTOM_LEVEL[game.pc.module] < game.pc.level + turn.ladder) {
-    if (await changeModule(turn)) game.events.push({ kind: 'ladderTaken' });
+    await changeModule(turn, 'ladderTaken');
     return;
   }
   session.enterFloor(game.pc.level + turn.ladder);

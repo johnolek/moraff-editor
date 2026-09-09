@@ -73,7 +73,7 @@ export async function resolveStep(turn: Turn): Promise<void> {
   if (step.dx !== 0 || step.dy !== 0) await randomEventsTick(turn);
   const side = sideStepped(turn);
   if (side === MODULE_TELEPORTER) {
-    if (await changeModule(turn)) game.events.push({ kind: 'stepped' });
+    await changeModule(turn, 'stepped');
     return;
   }
   if (side === 0) {

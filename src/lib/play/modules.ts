@@ -1,3 +1,4 @@
+import type { ActionKind } from '../game/action';
 import { showHint } from '../game/port/drops';
 import { relocate } from '../game/port/moment';
 import type { Turn } from './engine';
@@ -33,8 +34,12 @@ const LAST_MODULE = 4;
 /**
  * Take the teleporter. Returns whether the character went anywhere, which is what tells
  * movecontrol to load the new module's town.
+ *
+ * `took` is the action the run counts for the crossing, which is whichever of the two ways of
+ * reaching the teleporter was used. It is pushed as the crossing begins rather than when it is
+ * over, so the count already has it while the crossing screen is up.
  */
-export async function changeModule(turn: Turn): Promise<boolean> {
+export async function changeModule(turn: Turn, took: ActionKind): Promise<boolean> {
   const { game, session } = turn;
   const pc = game.pc;
   let direction = 0;
@@ -52,6 +57,7 @@ export async function changeModule(turn: Turn): Promise<boolean> {
     game.pressAnyKey();
     return false;
   }
+  game.events.push({ kind: took });
   // FUN_4000_771b is called with the module being arrived in, before the module index changes.
   await session.crossToModule(pc.module + direction);
   pc.level = 0;
