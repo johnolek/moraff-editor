@@ -332,7 +332,7 @@ export function drawZoomMapOnly(frame: Frame, floor: UnforgivenZoomMapFloor): vo
   const window = UNFORGIVEN_ZOOM_MAP.window(frame);
   drawZoomMap(frame, floor, window, floor.at, UNFORGIVEN_ZOOM_MAP);
   drawZoomMarker(frame, window, UNFORGIVEN_ZOOM_MAP, floor.at.dir);
-  drawZoomMonsters(frame, window, floor.at, floor.monsters ?? []);
+  drawZoomMonsters(frame, window, floor.at, floor.monsters ?? [], floor.thumbnail);
 }
 
 /**
@@ -351,7 +351,7 @@ export function drawExpandedMap(frame: Frame, floor: UnforgivenZoomMapFloor): vo
     ground: EXPANDED_GROUND,
     cursor: EXPANDED_MARKER,
   });
-  drawZoomMonsters(frame, window, EXPANDED_CENTRE, floor.monsters ?? []);
+  drawZoomMonsters(frame, window, EXPANDED_CENTRE, floor.monsters ?? [], floor.thumbnail);
 }
 
 /** The colour the character's own square is left in, which is what movecontrol's marker flashes

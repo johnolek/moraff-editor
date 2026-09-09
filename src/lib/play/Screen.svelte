@@ -10,6 +10,7 @@
   import { SeededRng } from '../game/port/rng';
   import { facingArrowCells } from '../map/you';
   import { debugMonsterLines } from './debug-screen';
+  import { dotuMonsterThumbnail } from './monster-thumbnails';
   import { inRect } from './screens';
   import type { KilledOnScreen } from './engine';
   import {
@@ -229,6 +230,7 @@
       at: { x: place.x, y: place.y, dir: place.dir },
       map: discovered,
       monsters: mapMonsters,
+      thumbnail: dotuMonsterThumbnail,
     };
     const paint = (): void => {
       // The plaque goes over everything else on the screen, whichever of them is up: FUN_2000_4054

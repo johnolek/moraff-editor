@@ -31,14 +31,23 @@ export const ZOOM_MONSTER_COLOUR = 6;
  */
 export const zoomThumbnailSize = (cell: number): number => cell - 2;
 
-/** A monster to mark, and the picture to mark it with when there is one. */
+/** A monster to mark, and which monster it is, for the picture to mark it with. */
 export interface ZoomMapMonster {
   x: number;
   y: number;
-  /** The monster's picture shrunk to the map's own cells, or null when the bundle has none for
-   *  it, which leaves the red square in its place. */
-  thumbnail?: ZoomThumbnail | null;
+  monsterId?: string;
 }
+
+/**
+ * Where the mark's pictures come from: the monster's own, shrunk to the size the map's cells
+ * take, or null for a monster the bundle has no picture for.
+ *
+ * It is passed in rather than reached for so that the drawing knows nothing about either game's
+ * picture files, the way the 3-D view is handed its own pictures. The size is asked for here
+ * rather than fixed because the map beside the views and the map the X key fills the screen with
+ * draw different-sized cells.
+ */
+export type ZoomThumbnailFor = (monsterId: string, size: number) => ZoomThumbnail | null;
 
 /** Which cell of the map a square of the floor falls in. The character stands in the middle one,
  *  which is how both games place the window. */
@@ -89,19 +98,21 @@ export function drawZoomMonsters(
   map: ZoomMapWindow,
   at: { x: number; y: number },
   monsters: ZoomMapMonster[],
-  colour = ZOOM_MONSTER_COLOUR,
+  thumbnailFor?: ZoomThumbnailFor,
 ): void {
+  const size = zoomThumbnailSize(map.cell);
   for (const monster of monsters) {
     const cell = zoomMapCell(map, at, monster);
     if (!onTheMap(map, cell)) continue;
     const x = map.left + cell.column * map.cell;
     const y = map.top + cell.row * map.cell;
-    const thumbnail = monster.thumbnail;
+    const thumbnail =
+      thumbnailFor && monster.monsterId !== undefined ? thumbnailFor(monster.monsterId, size) : null;
     if (thumbnail) {
       const margin = (map.cell - thumbnail.size) >> 1;
       drawZoomThumbnail(frame, thumbnail, x + margin, y + margin);
       continue;
     }
-    fillRect(frame, x + INSET, y + INSET, x + map.cell - INSET, y + map.cell - INSET, colour);
+    fillRect(frame, x + INSET, y + INSET, x + map.cell - INSET, y + map.cell - INSET, ZOOM_MONSTER_COLOUR);
   }
 }

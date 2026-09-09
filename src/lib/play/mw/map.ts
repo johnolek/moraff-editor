@@ -80,7 +80,7 @@ export function drawMwZoomMap(frame: Frame, floor: ZoomMapFloor): void {
   );
   drawZoomMap(frame, floor, window, floor.at, MORAFFS_WORLD_ZOOM_MAP);
   drawZoomMarker(frame, window, MORAFFS_WORLD_ZOOM_MAP);
-  drawZoomMonsters(frame, window, floor.at, floor.monsters ?? []);
+  drawZoomMonsters(frame, window, floor.at, floor.monsters ?? [], floor.thumbnail);
 }
 
 /** Where the X key's map goes: from the same corner the corner map starts at, over the whole
@@ -118,5 +118,5 @@ export function drawMwExpandedMap(frame: Frame, floor: ZoomMapFloor): void {
     ground: MORAFFS_WORLD_ZOOM_MAP.box,
     cursor: MW_EXPANDED_CURSOR,
   });
-  drawZoomMonsters(frame, window, MW_EXPANDED_CENTRE, floor.monsters ?? []);
+  drawZoomMonsters(frame, window, MW_EXPANDED_CENTRE, floor.monsters ?? [], floor.thumbnail);
 }

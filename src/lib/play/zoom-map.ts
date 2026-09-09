@@ -2,6 +2,7 @@ import type { DiscoveredMap } from '../map/draw-floor';
 import type { MapSquare } from '../map/game';
 import { arrowPixel, FACING_ARROW, FACING_ARROW_SIZE } from '../map/you';
 import { drawLine, fillRect, plot, type Frame } from './view3d/frame';
+import type { ZoomMapMonster, ZoomThumbnailFor } from './zoom-monsters';
 
 /**
  * The little map in the corner of the screen, which both C games draw with the same routine.
@@ -88,7 +89,10 @@ export interface ZoomMapFloor {
    *  chute is marked only on a square that was already known when they arrived. */
   map: DiscoveredMap;
   /** The monsters to mark on the map, which neither game ever marks and debug mode always does. */
-  monsters?: { x: number; y: number }[];
+  monsters?: ZoomMapMonster[];
+  /** Where the pictures those marks are drawn with come from, or undefined to mark them with the
+   *  plain red square instead. */
+  thumbnail?: ZoomThumbnailFor;
 }
 
 /** Which square of the floor a cell of the map shows. */

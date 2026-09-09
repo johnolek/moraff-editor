@@ -13,6 +13,7 @@
   import { drawMwScreenText } from './view3d/text';
   import { drawMwMonsterBars } from './view3d/monster-bar';
   import { drawMwExpandedMap, drawMwZoomMap } from './map';
+  import { mwMonsterThumbnail } from './monster-thumbnails';
   import {
     MW_KEY_MENU_RECT,
     MW_MESSAGE_BOX_RECT,
@@ -113,7 +114,7 @@
     // The X key's map is a fill over the whole screen with the floor drawn on it (exe 2000:aad5),
     // so the views and the boxes around them are not drawn at all while it is up.
     if (expandedMap) {
-      drawMwExpandedMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters });
+      drawMwExpandedMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters, thumbnail: mwMonsterThumbnail });
       drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
       context.putImageData(
         new ImageData(toRgba(frame, floorPalette(place.floor)), WIDTH, HEIGHT),
@@ -126,7 +127,7 @@
     if (zoomed === null) {
       for (const [view, rect] of MW_VIEWS.entries()) renderMwView(frame, scene, rect, view);
       drawBoxes(frame);
-      drawMwZoomMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters });
+      drawMwZoomMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters, thumbnail: mwMonsterThumbnail });
     } else {
       renderMwView(frame, scene, MW_WHOLE_SCREEN_VIEW, zoomed);
     }

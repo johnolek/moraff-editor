@@ -55,7 +55,7 @@ describe("the picture drawn in the red square's place", () => {
 
   it('is drawn in the middle of the cell', () => {
     const frame = newFrame(200, 300);
-    drawZoomMonsters(frame, MAP, AT, [{ x: 41, y: 50, thumbnail }]);
+    drawZoomMonsters(frame, MAP, AT, [{ x: 41, y: 50, monsterId: 'goblin' }], () => thumbnail);
     const left = MAP.left + 8 * MAP.cell;
     const top = MAP.top + 13 * MAP.cell;
     expect(pixelAt(frame, left + 1, top + 1)).toBe(9);
@@ -67,7 +67,7 @@ describe("the picture drawn in the red square's place", () => {
 
   it('falls back to the red square for a monster with no picture', () => {
     const frame = newFrame(200, 300);
-    drawZoomMonsters(frame, MAP, AT, [{ x: 41, y: 50, thumbnail: null }]);
+    drawZoomMonsters(frame, MAP, AT, [{ x: 41, y: 50, monsterId: 'goblin' }], () => null);
     const left = MAP.left + 8 * MAP.cell;
     const top = MAP.top + 13 * MAP.cell;
     expect(pixelAt(frame, left + 3, top + 3)).toBe(ZOOM_MONSTER_COLOUR);
