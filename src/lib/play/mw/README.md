@@ -129,6 +129,10 @@ Moraff's World writes in two places, and this port keeps them apart the way the 
   there again. That is what lets a turn two monsters both get be read one message at a time:
   `monster_turn` ends on a hold of its own, so the first stands alone before the second replaces
   it.
+* **The box's own rows, drawn rather than said** — the little mouse (`advice.ts`). FUN_3000_9383
+  and FUN_3000_8b27 wipe the whole box and print four lines on its fifth to eighth rows, each
+  piece of advice in a colour of its own, so they go through `game.draw` at those rows: a said
+  line is always the box's colour 5 and always starts at the top.
 * **A screen** — `game.draw(line)` and `game.eraseScreen()`, which are `print_text` and
   `clear_screen`. Anything on `game.screen` is drawn over the map at the game's own coordinates.
   `session.showScreens(...)` is for a ported function that draws a page, waits for a key and then
@@ -151,11 +155,17 @@ monster is standing in rather than over the one being faced, which is what FUN_2
 after it has drawn the four views; `view3d/monster-bar.ts` is the bar FUN_2000_8728 puts the hit
 points on.
 
-Two things are not where the original puts them. The strip is drawn over the top of the message
-box in the game — the first line of each is at y 0x28 — which it gets away with because a menu is
-never up while a monster is being swung at; `mwCorner` moves the box down by as much of the strip
-as is in use instead. And a screen with every line inside that corner is drawn there rather than
-taking the whole display over, which is what puts a menu's heading above its own box.
+A screen with every line inside that corner — the rectangle every box wipes before it prints,
+x 0 to 0x2d0 and down to y 0x1ae — is drawn there rather than taking the whole display over
+(`mwInMessageBox`), which is what puts a menu's heading above its own box, and what keeps the
+mouse's advice, the chute's three lines and the list of spells in force in the corner the game
+prints them in.
+
+One thing is not where the original puts it. The strip is drawn over the top of the message box in
+the game — the first line of each is at y 0x28 — which it gets away with because a menu is never
+up while a monster is being swung at; `mwCorner` moves the box down by as much of the strip as is
+in use instead. A line drawn further down that corner than the strip reaches is left on the row
+the game drew it on, since it is already in the box's own grid.
 
 A screen that does take the display over is drawn on the game's screen at the coordinates the
 game drew it at, over everything else the screen has. Only the tab showing the top-down map has
