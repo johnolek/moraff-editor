@@ -237,3 +237,16 @@
   font-size: 11px;
   line-height: 1.4;
 }
+/* What stands where the radios would be for a character locked to a board. */
+.play .locked {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.play .locked .how {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}

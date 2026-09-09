@@ -44,3 +44,13 @@ export const LEADERBOARD_CHOICES: { id: Leaderboard | null; label: string; how: 
     how: 'Locked to speedrun for good: the whole floor, so a route can be planned. Every run of this character goes on the speedrun board.',
   },
 ];
+
+/**
+ * What the Play tab says where the mode radios would be for a character rolled for a board.
+ *
+ * There are no radios for such a character: the mode is the board's, and showing a control that
+ * cannot be moved would be showing a choice that is not there.
+ */
+export function lockedPlayNote(board: Leaderboard): string {
+  return `Locked: this character was rolled for the ${board} leaderboard, so every run of it is played this way.`;
+}

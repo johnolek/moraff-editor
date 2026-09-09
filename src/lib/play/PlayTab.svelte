@@ -10,7 +10,8 @@
 <script lang="ts" generics="View extends PlayViewBase, Session extends PlaySession<View>">
   import type { Snippet } from 'svelte';
   import { untrack } from 'svelte';
-  import { app, currentEntry } from '../app-state.svelte';
+  import { app, currentEntry, type Leaderboard } from '../app-state.svelte';
+  import { leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
   import type FloorCanvas from '../map/FloorCanvas.svelte';
   import { armSpeaker } from '../speaker';
   import { isTyping } from '../ui/keys';
@@ -89,7 +90,16 @@
   let centredFloor = $state.raw<number | null>(null);
   /* A tab is mounted for one game and never handed another, so what the browser remembered for
      that game is read once rather than followed. */
-  let mode = $state<PlayMode>(untrack(() => readPlayMode(game.id)));
+  let chosenMode = $state<PlayMode>(untrack(() => readPlayMode(game.id)));
+  /**
+   * The board the character being played was rolled for, taken as play begins and put down when
+   * the game is left. It is taken once rather than read from the roster as the game runs, so that
+   * picking another character elsewhere on the site cannot change the mode of a game in progress.
+   */
+  let lock = $state.raw<Leaderboard | null>(null);
+  /** The mode this game is being played in: the board's for a locked character, and the one the
+   *  radios were left on for any other. */
+  const mode = $derived<PlayMode>(lock ?? chosenMode);
   let display = $state<PlayDisplay>(untrack(() => readPlayDisplay(game.id)));
   let colourblind = $state(untrack(() => readPlayColourblind(game.id)));
   let redraw = $state(untrack(() => readPlayRedraw(game.id)));
@@ -108,6 +118,7 @@
     centredFloor = null;
     session = started;
     playingId = entry.id;
+    lock = entry.leaderboard;
     view = started.view();
     void runPlayLoop(started, game.loop(started));
   }
@@ -149,6 +160,7 @@
     session?.finish();
     session = null;
     playingId = null;
+    lock = null;
     view = null;
   }
 
@@ -222,7 +234,7 @@
    *  radio button, so the control hands the keyboard back as soon as it has been answered. A new
    *  mode shows what that mode shows, until the switch says otherwise. */
   function chooseMode(input: HTMLInputElement) {
-    writePlayMode(game.id, mode);
+    writePlayMode(game.id, chosenMode);
     input.blur();
   }
 
@@ -316,15 +328,26 @@
         {@render afterRun?.(stage)}
         <div class="keys">
           <div class="key-note">Play mode:</div>
-          <div class="styles">
-            {#each PLAY_MODES as choice}
-              <label>
-                <input type="radio" value={choice.id} bind:group={mode} onchange={(event) => chooseMode(event.currentTarget)} />
-                <span>{choice.label}</span>
-                <span class="how">{choice.how}</span>
-              </label>
-            {/each}
-          </div>
+          {#if lock}
+            <div class="locked">
+              <span>{leaderboardLabel(lock)}</span>
+              <span class="how">{lockedPlayNote(lock)}</span>
+            </div>
+          {:else}
+            <div class="styles">
+              {#each PLAY_MODES as choice}
+                <label>
+                  <input
+                    type="radio"
+                    value={choice.id}
+                    bind:group={chosenMode}
+                    onchange={(event) => chooseMode(event.currentTarget)} />
+                  <span>{choice.label}</span>
+                  <span class="how">{choice.how}</span>
+                </label>
+              {/each}
+            </div>
+          {/if}
           {@render afterModes(stage)}
         </div>
         {@render sideFoot?.(stage)}
