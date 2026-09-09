@@ -60,18 +60,18 @@ function recordedGame(
 }
 
 /** The same in Moraff's World. */
-function recordedMwGame(seed = 7): { run: RunRecorder; session: MwGameSession; file: MwCharacterFile } {
+function recordedMwGame(seed = 7, before?: RunTotals): { run: RunRecorder; session: MwGameSession; file: MwCharacterFile } {
   const file = mwCharacterFile();
-  const run = new RunRecorder({ game: 'moraffsWorld', name: 'GRIMWALD', record: file.bytes, seed });
+  const run = new RunRecorder({ game: 'moraffsWorld', name: 'GRIMWALD', record: file.bytes, seed, before });
   const session = startMwGame(file, run.rng, run);
   void runMwMoveControl(session);
   return { run, session, file };
 }
 
 /** The same in Moraff's Revenge. */
-function recordedRevGame(seed = 9): { run: RunRecorder; session: RevGameSession; file: RevCharacterFile } {
+function recordedRevGame(seed = 9, before?: RunTotals): { run: RunRecorder; session: RevGameSession; file: RevCharacterFile } {
   const file = revCharacterFile();
-  const run = new RunRecorder({ game: 'revenge', name: 'FIGHTY', record: file.bytes, seed });
+  const run = new RunRecorder({ game: 'revenge', name: 'FIGHTY', record: file.bytes, seed, before });
   const session = startRevGame(file, run.rng, run);
   void runRevDungeon(session);
   return { run, session, file };
@@ -204,6 +204,32 @@ describe('the run kept beside the record', () => {
     expect(kept.length).toBeGreaterThanOrEqual(2);
     expect(kept[kept.length - 1].inputs).toEqual(run.log().inputs);
     expect(kept[kept.length - 1].actions).toBe(run.log().actions);
+  });
+
+  it("is written the same way in Moraff's World", async () => {
+    const kept: RunSession[] = [];
+    const file: MwCharacterFile = { ...mwCharacterFile(), keepRun: (session) => void kept.push(session) };
+    const run = new RunRecorder({ game: 'moraffsWorld', name: 'GRIMWALD', record: file.bytes, seed: 7 });
+    const session = startMwGame(file, run.rng, run);
+    void runPlayLoop(session, runMwMoveControl(session));
+    await settle();
+    session.press(MW_KEY.arrowUp);
+    await settle();
+
+    expect(kept[kept.length - 1].inputs).toEqual([MW_KEY.arrowUp]);
+  });
+
+  it("is written the same way in Moraff's Revenge", async () => {
+    const kept: RunSession[] = [];
+    const file: RevCharacterFile = { ...revCharacterFile(), keepRun: (session) => void kept.push(session) };
+    const run = new RunRecorder({ game: 'revenge', name: 'FIGHTY', record: file.bytes, seed: 9 });
+    const session = startRevGame(file, run.rng, run);
+    void runPlayLoop(session, runRevDungeon(session));
+    await settle();
+    session.press(REV_KEY.arrowUp);
+    await settle();
+
+    expect(kept[kept.length - 1].inputs).toContain(REV_KEY.arrowUp);
   });
 
   it('is written once more where the loop comes back, so a death is in it', async () => {
@@ -452,6 +478,27 @@ describe('a session of a run the character has played before', () => {
     expect(modules.length).toBe(1);
     expect(modules[0].actions).toBe(8);
     expect(modules[0].time).toBe(30);
+  });
+
+  it("counts on the same way in Moraff's World", async () => {
+    const { run, session } = recordedMwGame(7, runSoFar(7, 30));
+    session.press(MW_KEY.arrowUp);
+    await settle();
+    session.finish();
+
+    expect(run.log().actions).toBe(8);
+    expect(run.log().time).toBe(30 + session.game.movesTaken);
+  });
+
+  it("counts on the same way in Moraff's Revenge", async () => {
+    const { run, session } = recordedRevGame(9, runSoFar(7, 30));
+    await settle();
+    session.press(REV_KEY.arrowUp);
+    await settle();
+    session.finish();
+
+    expect(run.log().actions).toBe(8);
+    expect(run.log().time).toBe(30 + session.ticks);
   });
 
   it('draws the whole run in the line the Play tab shows and writes this session alone down', async () => {
