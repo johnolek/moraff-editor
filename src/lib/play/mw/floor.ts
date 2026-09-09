@@ -24,10 +24,21 @@ interface MwFloorTable {
   /** The floor this table holds the monsters of, or null for a table nothing has been put in. */
   level: number | null;
   monsters: MwStockedMonster[];
+  /**
+   * The hit points each slot was stocked with, or 0 for a slot nothing is known about.
+   *
+   * The game keeps no such thing: a monster's record holds the hit points it has left and
+   * nothing else, so a bar drawn for one has nothing to fill towards without this.
+   */
+  fullHp: number[];
 }
 
 function emptyTable(): MwFloorTable {
-  return { level: null, monsters: Array.from({ length: MONSTER_SLOTS }, emptySlot) };
+  return {
+    level: null,
+    monsters: Array.from({ length: MONSTER_SLOTS }, emptySlot),
+    fullHp: new Array<number>(MONSTER_SLOTS).fill(0),
+  };
 }
 
 /**
@@ -79,14 +90,30 @@ export class MwFloorMonsters {
       return;
     }
     for (const slot of table.monsters) Object.assign(slot, emptySlot());
+    table.fullHp.fill(0);
     if (level === 0) return;
     // The character is on the grid before the roll, so nothing is stocked on top of them.
     mwSetOccupant(game, game.pc.x, game.pc.y, MW_SQUARE_PLAYER);
     const stocked = stockFloor(rng, game.pc.dungeon, level, rows, game.pc.killedBosses);
     for (let slot = 0; slot < stocked.length; slot++) {
       Object.assign(table.monsters[slot], stocked[slot]);
+      table.fullHp[slot] = stocked[slot].hp;
       mwSetOccupant(game, stocked[slot].x, stocked[slot].y, slot);
     }
+  }
+
+  /**
+   * The hit points the monster in this slot had before anything hit it.
+   *
+   * A floor rolled here has them from the roll. A monster that arrived on the floor from
+   * anywhere else has none, so the first hit points seen for its slot are taken as the mark and
+   * kept: a monster already hurt reads as untouched, which is the best a floor nobody rolled
+   * can do.
+   */
+  fullHp(slot: number, hp: number): number {
+    const table = this.tables[0];
+    if (!(table.fullHp[slot] > 0)) table.fullHp[slot] = hp;
+    return table.fullHp[slot];
   }
 }
 
