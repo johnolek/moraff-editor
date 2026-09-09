@@ -11,6 +11,7 @@
   import SaveEditor from './lib/editor/SaveEditor.svelte';
   import Formulas from './lib/formulas/Formulas.svelte';
   import MapExplorer from './lib/map/MapExplorer.svelte';
+  import FightTab from './lib/play/FightTab.svelte';
   import Play from './lib/play/Play.svelte';
   import MwPlay from './lib/play/mw/MwPlay.svelte';
   import RevPlay from './lib/play/rev/RevPlay.svelte';
@@ -94,6 +95,10 @@
   <main class:hidden={app.tab !== 'play'}>
     <!-- The three games are three executables with three loops, so each brings its own. -->
     {#if app.game === 'moraffsWorld'}<MwPlay />{:else if app.game === 'revenge'}<RevPlay />{:else}<Play />{/if}
+  </main>
+  <!-- Dungeons of the Unforgiven's alone, so nothing here asks which game is showing. -->
+  <main class:hidden={app.tab !== 'fight'}>
+    <FightTab />
   </main>
   <main class:hidden={app.tab !== 'editor'}>
     <SaveEditor />
