@@ -12,6 +12,11 @@ something the original does, a comment says so.
   the keyboard the loop waits on.
 * **`keys.ts`** — the byte `movecontrol` dispatches on for every key, and the browser key events
   they come from.
+* **`loop.ts`** — how all three games' loops are started, and the one thing they share besides the
+  tab. A loop is an async function nobody awaits, so an error thrown inside one would otherwise be
+  a rejected promise with nothing attached to it: the tab would freeze on its last drawing and a
+  replay would quietly stop taking keys. `runPlayLoop` catches it, ends the session with the
+  message on it, and the tab says the game stopped and why.
 * **One file per thing a key does** — `move.ts`, `ladders.ts`, `trapdoor.ts`, `chute.ts`,
   `dig.ts`, `modules.ts`, `quit.ts`, `help.ts`, `town.ts`, `fight.ts`, `kill.ts`, `items.ts`,
   `gear.ts`, `potions.ts`, `manual.ts`, `misc.ts` — so that two people can add two keys without
