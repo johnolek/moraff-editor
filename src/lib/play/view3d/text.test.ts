@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { ScreenLine } from '../../game/port/state';
 import { SCREEN_PIXELS } from '../display';
 import { newFrame, type Frame } from './frame';
+import { pixelDifference } from './frame.test-support';
 import { drawMenuLine } from './menu-font';
 import { drawStrokeScreenLine } from './stroke-font';
 import { drawDotuScreenText } from './text';
@@ -26,16 +27,16 @@ const lit = (frame: Frame): number => frame.pixels.reduce((count, pixel) => coun
 describe('the game screen text', () => {
   it('draws a plain line in the vector font of the 1024 by 768 mode', () => {
     const line: ScreenLine = { text: 'HEALTH POINTS:20 OF 20', x: 0x0a, y: 0x483, font: 0, colour: 8 };
-    expect(drawn([line]).pixels).toEqual(
-      only((frame) => drawStrokeScreenLine(frame, screen, 'dotu', line)).pixels,
-    );
+    expect(
+      pixelDifference(drawn([line]).pixels, only((frame) => drawStrokeScreenLine(frame, screen, 'dotu', line)).pixels),
+    ).toBeNull();
   });
 
   it('draws a key menu line in the .FNT face the menu asks for', () => {
     const spreadTo = 0x126;
     const line: ScreenLine = { text: ' AST SPELL    ', x: 9, y: 0x07d, font: 0, colour: 8, spreadTo, bitmapFace: true };
     const menu = only((frame) => drawMenuLine(frame, screen, { ...line, spreadTo }));
-    expect(drawn([line]).pixels).toEqual(menu.pixels);
+    expect(pixelDifference(drawn([line]).pixels, menu.pixels)).toBeNull();
     // The two faces are nothing alike: the strokes of the same string cover far more of the screen.
     expect(lit(only((frame) => drawStrokeScreenLine(frame, screen, 'dotu', line)))).toBeGreaterThan(lit(menu));
   });
@@ -45,17 +46,18 @@ describe('the game screen text', () => {
     const both = drawn([label]);
     const alone = drawn([{ text: label.text, x: label.x, y: label.y, font: label.font, colour: label.colour }]);
     expect(lit(both)).toBeGreaterThan(lit(alone));
-    expect(both.pixels).toEqual(
-      only((frame) => {
-        drawStrokeScreenLine(frame, screen, 'dotu', label);
-        drawStrokeScreenLine(frame, screen, 'dotu', { ...label, text: '25', x: 0x212 });
-      }).pixels,
-    );
+    const expected = only((frame) => {
+      drawStrokeScreenLine(frame, screen, 'dotu', label);
+      drawStrokeScreenLine(frame, screen, 'dotu', { ...label, text: '25', x: 0x212 });
+    });
+    expect(pixelDifference(both.pixels, expected.pixels)).toBeNull();
   });
 
   it('draws the lines in the order the game drew them', () => {
     const at = (text: string, colour: number): ScreenLine => ({ text, x: 0x0a, y: 0x410, font: 0, colour });
     const over = drawn([at('OOOO', 4), at('OOOO', 8)]);
-    expect(over.pixels).toEqual(only((frame) => drawStrokeScreenLine(frame, screen, 'dotu', at('OOOO', 8))).pixels);
+    expect(
+      pixelDifference(over.pixels, only((frame) => drawStrokeScreenLine(frame, screen, 'dotu', at('OOOO', 8))).pixels),
+    ).toBeNull();
   });
 });
