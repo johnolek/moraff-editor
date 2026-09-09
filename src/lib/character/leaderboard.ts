@@ -9,7 +9,7 @@ import type { Leaderboard } from '../app-state.svelte';
  */
 
 /** The two boards, in the order they are offered. */
-export const LEADERBOARDS: Leaderboard[] = ['faithful', 'speedrun'];
+const LEADERBOARDS: Leaderboard[] = ['faithful', 'speedrun'];
 
 export function isLeaderboard(value: unknown): value is Leaderboard {
   return LEADERBOARDS.includes(value as Leaderboard);
