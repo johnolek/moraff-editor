@@ -217,13 +217,15 @@ export function monsterTurnOdds(monsterLevel: number, playerLevel: number, speed
 }
 
 /**
- * Whether a monster in a slot chases you rather than wandering (1000:73B6).
+ * How much of the time an awake monster chases you rather than wandering (1000:73B6).
  *
- * Its turn rolls `INT(RND * (its level + 35))` and wanders when that is under 15, so the deeper
- * it is the more of the time it comes straight at you.
+ * Its turn rolls `INT(RND * (L + 35))` and wanders when that is under 15. `L` is DGROUP B6B4,
+ * the level of the last monster the character met, which 1000:73BC loads straight into the roll:
+ * it is not the level of the monster taking the turn, so every monster on the level chases just
+ * as often, and it is zero until anybody has been met.
  */
-export function chaseChance(monsterLevel: number): number {
-  return Math.max(0, Math.min(1, 1 - 15 / (monsterLevel + 35)));
+export function chaseChance(lastMonsterLevel: number): number {
+  return Math.max(0, Math.min(1, 1 - 15 / (lastMonsterLevel + 35)));
 }
 
 /**

@@ -181,7 +181,8 @@ describe('how time runs', () => {
     expect(monsterTurnOdds(10, 5, 4)).toBe(32);
   });
 
-  it('has a deeper monster chase more of the time', () => {
+  it('chases more of the time the deeper the last monster met was', () => {
+    expect(chaseChance(0)).toBeCloseTo(1 - 15 / 35);
     expect(chaseChance(5)).toBeCloseTo(1 - 15 / 40);
     expect(chaseChance(65)).toBeCloseTo(1 - 15 / 100);
     expect(chaseChance(5)).toBeLessThan(chaseChance(65));

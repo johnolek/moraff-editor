@@ -199,15 +199,17 @@
       <p>
         Monsters walk while you stand still: the dungeon polls the keyboard instead of waiting on it, and every pass
         rolls a one in <code>INT((165 - {deepest} + your level) * speed / 20)</code> chance of moving one, never better
-        than one in {FLOOR_ODDS}. On its turn it comes straight at you {percent(chaseChance(deepest))} of the time and
-        wanders the rest. Once it is beside you the game stops polling and waits for your key, so the fight is turn by
-        turn.
+        than one in {FLOOR_ODDS}. On its turn it either comes straight at you or wanders off, on a roll that goes by the
+        level of the last monster you met and by nothing about this one. Once it is beside you the game stops polling
+        and waits for your key, so the fight is turn by turn.
       </p>
       <p class="note">
         The {deepest} is the level of the deepest of these on level {level}. Speed is how many times faster your machine
         is than the one the game measures itself against at startup, so a faster machine polls proportionally more often
         and the monsters keep the same pace whatever it is running on. On that reference machine the floor is what
-        decides it.
+        decides it. The chase roll reads the last monster met as well: under 15 out of
+        <code>INT(RND * (its level + 35))</code> wanders instead, and that level is zero until you have met anybody,
+        which leaves {percent(chaseChance(0))} of the turns straight at you.
       </p>
     </section>
   {/if}
