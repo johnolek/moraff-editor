@@ -60,7 +60,9 @@ BASIC.
   between the views, and not the four views. `held.ts` — the two-second and four-second waits
   the game leaves a message up for, as a display timer.
 * **`death.ts`** — 1000:A013, where two coin flips decide between the end of the character, a
-  reincarnation and a raise.
+  reincarnation and a raise. **`stats.ts`** — 1000:19F7, the V key's character sheet, which is
+  the one screen the six characteristics are ever shown on; the formats they are printed with
+  are `F1.COM`'s, one per spell level, which `tables.ts` already reads.
 * **The magic** — `spells.ts` (the twenty-four spells), `items.ts` (the twelve magic items, the
   six pills and the nine wands), `treasure.ts` (what a kill drops), `fountain.ts`. `magic.ts`
   names the record numbers all four read, `tables.ts` is `F1.COM` and `F2.COM`, and `desk.ts` is
