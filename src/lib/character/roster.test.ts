@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import type { RosterEntry } from '../app-state.svelte';
+import type { Leaderboard, RosterEntry } from '../app-state.svelte';
 import { loadRoster, markDead, markEdited, newEntry, restoreImport, saveRoster, withEntry, withoutEntry } from './roster';
 
 /** Enough of the browser's Storage to stand in for it. */
@@ -23,6 +23,22 @@ function useStorage(storage: Storage | undefined): void {
 
 afterEach(() => useStorage(undefined));
 
+/** One entry in the shape `saveRoster` writes, which is what an older stored roster is edited
+ *  down from. */
+function storedEntry(entry: RosterEntry): Record<string, unknown> {
+  const storage = fakeStorage();
+  useStorage(storage);
+  saveRoster([entry], entry.id);
+  return JSON.parse(storage.getItem('moraff-tools.roster')!).entries[0];
+}
+
+/** Put a roster of raw stored entries in a fresh storage, ready for `loadRoster` to read. */
+function storeEntries(entries: unknown[]): void {
+  const storage = fakeStorage();
+  useStorage(storage);
+  storage.setItem('moraff-tools.roster', JSON.stringify({ currentId: 'c', entries }));
+}
+
 const ROLLED_AT = new Date('2026-09-06T12:00:00Z');
 const EDITED_AT = new Date('2026-09-07T09:30:00Z');
 
@@ -36,6 +52,11 @@ function rolled(id = 'b'): RosterEntry {
   return newEntry({ game: 'unforgiven', name: 'NEWBIE', slot: 22, bytes, imported: false }, ROLLED_AT, id);
 }
 
+function rolledForTheBoard(board: Leaderboard, id = 'c'): RosterEntry {
+  const bytes = Uint8Array.from([7]);
+  return newEntry({ game: 'unforgiven', name: 'RACER', slot: 23, bytes, imported: false, leaderboard: board }, ROLLED_AT, id);
+}
+
 describe('a character put on the roster', () => {
   it('remembers the file it was imported from, apart from the one being edited', () => {
     const entry = imported();
@@ -46,6 +67,41 @@ describe('a character put on the roster', () => {
 
   it('has no import to go back to when it was rolled here', () => {
     expect(rolled().importedBytes).toBeNull();
+  });
+});
+
+describe('the board a character is rolled for', () => {
+  it('is kept on the character that was rolled for it', () => {
+    expect(rolledForTheBoard('speedrun').leaderboard).toBe('speedrun');
+  });
+
+  it('is nothing at all for a character rolled to be played for its own sake', () => {
+    expect(rolled().leaderboard).toBeNull();
+  });
+
+  it('is never given to an imported file, whatever the caller asks for', () => {
+    const bytes = Uint8Array.from([1, 2, 3]);
+    const entry = newEntry({ game: 'unforgiven', name: 'SAGEY', slot: 21, bytes, imported: true, leaderboard: 'faithful' });
+    expect(entry.leaderboard).toBeNull();
+  });
+
+  it('comes back after the roster has been stored and read again', () => {
+    useStorage(fakeStorage());
+    const entries = [rolledForTheBoard('faithful'), rolled()];
+    saveRoster(entries, 'c');
+    expect(loadRoster().entries.map((entry) => entry.leaderboard)).toEqual(['faithful', null]);
+  });
+
+  it('reads as free play in a roster stored before the site had leaderboards', () => {
+    const { leaderboard, ...older } = storedEntry(rolledForTheBoard('faithful'));
+    expect(leaderboard).toBe('faithful');
+    storeEntries([older]);
+    expect(loadRoster().entries[0].leaderboard).toBeNull();
+  });
+
+  it('reads as free play when the stored board is not one this build knows', () => {
+    storeEntries([{ ...storedEntry(rolledForTheBoard('faithful')), leaderboard: 'cheating' }]);
+    expect(loadRoster().entries[0].leaderboard).toBeNull();
   });
 });
 

@@ -28,6 +28,16 @@ export interface CurrentCharacter {
   bytes: Uint8Array<ArrayBuffer>;
 }
 
+/**
+ * Which of the two leaderboards a character was rolled for, and is locked to for the rest of its
+ * life, so that every run it plays can be compared with the others on that board.
+ *
+ * Both are named after the play mode they are played in: faithful shows only what the game shows,
+ * speedrun adds the whole floor. Debug is not here — a run played with the port's own numbers on
+ * screen is not a run anybody competes with.
+ */
+export type Leaderboard = 'faithful' | 'speedrun';
+
 /** One of the characters the browser keeps. */
 export interface RosterEntry extends CurrentCharacter {
   id: string;
@@ -42,6 +52,12 @@ export interface RosterEntry extends CurrentCharacter {
    * and the bytes stay as they are so the character can still be edited or downloaded.
    */
   dead: boolean;
+  /**
+   * The board this character was rolled for, or null for one played for its own sake. It is
+   * chosen once, in the roller, and the only thing that ever changes it is a record written from
+   * outside the game, which ends it for good.
+   */
+  leaderboard: Leaderboard | null;
 }
 
 /** A square of the dungeon to send the map to, taken from where a character stands. */

@@ -1,5 +1,6 @@
-import type { RosterEntry } from '../app-state.svelte';
+import type { Leaderboard, RosterEntry } from '../app-state.svelte';
 import { base64FromBytes } from '../bytes';
+import { isLeaderboard } from './leaderboard';
 import { fromBase64, readStored, writeStored } from './storage';
 
 /** Where the characters kept in the browser live. */
@@ -21,6 +22,7 @@ interface StoredEntry {
   createdAt: string;
   editedAt: string;
   dead?: boolean;
+  leaderboard?: Leaderboard | null;
 }
 
 /** What is needed to put a character on the roster. */
@@ -31,6 +33,13 @@ export interface NewCharacter {
   bytes: Uint8Array<ArrayBuffer>;
   /** Whether the bytes are a file that was imported, rather than a character rolled here. */
   imported: boolean;
+  /**
+   * The leaderboard this character is rolled for, or null for one played for its own sake.
+   *
+   * Only a roll can carry one. An imported file has already been somewhere this site cannot see,
+   * so there is no chain of runs from a roll to compare it by.
+   */
+  leaderboard?: Leaderboard | null;
 }
 
 export function newId(): string {
@@ -49,6 +58,7 @@ export function newEntry(character: NewCharacter, now = new Date(), id = newId()
     createdAt: stamp,
     editedAt: stamp,
     dead: false,
+    leaderboard: character.imported ? null : (character.leaderboard ?? null),
   };
 }
 
@@ -97,6 +107,7 @@ export function saveRoster(entries: RosterEntry[], currentId: string | null): bo
       createdAt: entry.createdAt,
       editedAt: entry.editedAt,
       dead: entry.dead,
+      leaderboard: entry.leaderboard,
     })),
   };
   return writeStored(ROSTER_KEY, JSON.stringify(stored));
@@ -123,7 +134,7 @@ export function loadRoster(): { entries: RosterEntry[]; currentId: string | null
 
 function entryFrom(value: unknown): RosterEntry | null {
   if (typeof value !== 'object' || value === null) return null;
-  const { id, game, name, slot, importedBytes, bytes, createdAt, editedAt, dead } = value as Partial<StoredEntry>;
+  const { id, game, name, slot, importedBytes, bytes, createdAt, editedAt, dead, leaderboard } = value as Partial<StoredEntry>;
   if (typeof id !== 'string' || typeof game !== 'string' || typeof name !== 'string') return null;
   if (typeof createdAt !== 'string' || typeof editedAt !== 'string' || typeof bytes !== 'string') return null;
   if (slot !== null && !Number.isInteger(slot)) return null;
@@ -139,5 +150,7 @@ function entryFrom(value: unknown): RosterEntry | null {
     createdAt,
     editedAt,
     dead: dead === true,
+    // A roster stored before the site had leaderboards names no board, and reads as free play.
+    leaderboard: isLeaderboard(leaderboard) ? leaderboard : null,
   };
 }
