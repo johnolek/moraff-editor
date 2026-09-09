@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { setRevValue } from './record';
+import { revValue, setRevValue, type RevPc } from './record';
+import { SPELL_VALUES } from './screen/text';
 import { REV_MAGIC } from './magic';
 import {
   REV_NOT_ENOUGH_SPELL_POINTS,
@@ -8,7 +9,6 @@ import {
   revCastInTheDungeon,
   revEndPreppedSpells,
   revSpellMenu,
-  revSpellsCast,
 } from './spells';
 import { revCharacter, revRolls, revTestGame } from './spells.test-support';
 
@@ -180,11 +180,14 @@ describe("the dungeon's twelve spells", () => {
   });
 });
 
+/** The "CAST" strip beside the map, as the screen builds it (`screen/from-game.ts`). */
+const inEffect = (pc: RevPc): boolean[] => SPELL_VALUES.map((value) => revValue(pc, value) > 0);
+
 describe('the spells that last until the town', () => {
-  it('names the ones in effect on the strip beside the map', () => {
+  it('are the five record values the strip beside the map reads', () => {
     const pc = revCharacter();
     setRevValue(pc, REV_MAGIC.preppedStrength, 1);
-    expect(revSpellsCast(pc)).toEqual(['', '', 'STR P', '', '']);
+    expect(inEffect(pc)).toEqual([false, false, true, false, false]);
   });
 
   it('gives back what Strength and Speed added and turns invisibility off', () => {
@@ -196,7 +199,7 @@ describe('the spells that last until the town', () => {
     revEndPreppedSpells(game);
     expect(pc.stats[0]).toBe(15);
     expect(pc.stats[4]).toBe(15);
-    expect(revSpellsCast(pc)).toEqual(['', '', '', '', '']);
+    expect(inEffect(pc)).toEqual([false, false, false, false, false]);
   });
 
   it('works the three bonuses out again when the character reaches the town', () => {

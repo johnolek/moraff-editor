@@ -45,26 +45,6 @@ function knownMask(pc: RevPc, level: number, set: RevSpellSet): number {
   return Math.round(revValue(pc, (set === 'prep' ? 116 : 115) + 2 * level));
 }
 
-/** 1000:5CA9: the five spells that last, as the strip beside the map names them. */
-export const REV_SPELLS_CAST_NAMES = ['SPD A', 'STR A', 'STR P', 'SPD P', 'INVIS'];
-
-/** DGROUP 6024 to 6034: which record value each of those five is. */
-const LASTING_VALUES = [
-  REV_MAGIC.battleSpeed,
-  REV_MAGIC.battleStrength,
-  REV_MAGIC.preppedStrength,
-  REV_MAGIC.preppedSpeed,
-  REV_VALUE.invisibility,
-];
-
-/**
- * 1000:4ABD: the "CAST" strip, which is the five lasting spells with the ones in effect named
- * and the rest blank.
- */
-export function revSpellsCast(pc: RevPc): string[] {
-  return LASTING_VALUES.map((value, index) => (revValue(pc, value) > 0 ? REV_SPELLS_CAST_NAMES[index] : ''));
-}
-
 /** 1000:3B02: hit points never sit above the maximum — except where a spell writes them
  *  straight past it without calling this. */
 export function revCapHitPoints(pc: RevPc): void {
