@@ -318,8 +318,9 @@ In the code: [monsters_move](source:c/monsters_move) and
 ### Fast Move and Invisibility stack
 
 Each of them skips the whole monster movement pass one move in four, and they are two separate
-rolls made a few lines apart rather than one roll used twice. Running both gives you nine moves in
-sixteen where nothing on the floor follows you and nothing swings.
+rolls made a few lines apart rather than one roll used twice. Either on its own buys you four
+moves in sixteen where nothing on the floor follows you and nothing swings. Running both buys
+seven, because the pass survives only when both rolls miss.
 
 Dungeons of the Unforgiven's pair are the same roll and do not stack. This one is the better deal
 and nothing says so.
@@ -465,10 +466,11 @@ In the code: [spell_proof](source:c/spell_proof), [use_magic_item](source:c/use_
 
 ### Everything more than a few steps away is standing still
 
-A monster only moves if it is within `floor / 10 + 10` squares of you, measured by walking
-distance rather than a straight line, and even then only four times in five. That is ten squares on
-floor 1 and thirty on floor 200. Anything further away stands exactly where it was placed, for as
-long as the floor stays in memory.
+A monster only moves if the two axes' distances add to less than `floor / 10 + 10`, and even
+then only four times in five. That is nine squares on floor 1 and twenty-nine on floor 200, and it
+is measured straight across the grid, through any wall in the way, so a monster on the far side of
+a partition counts as close. Anything further off stands exactly where it was placed, for as long
+as the floor stays in memory.
 
 When it does move it takes one step: west if you are west of it, else east if you are east, else
 north, else south, and if the first of those it wants is blocked it tries the next. It never steps
