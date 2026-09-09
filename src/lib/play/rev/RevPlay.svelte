@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { app, currentEntry } from '../../app-state.svelte';
+  import { armSpeaker } from '../../speaker';
   import { characterDied, replaceCharacterBytes } from '../../character/current';
   import FloorCanvas from '../../map/FloorCanvas.svelte';
   import { MORAFFS_REVENGE_MAP } from '../../map/game';
@@ -220,6 +221,9 @@
     const key = revGameKey(event);
     if (key === null) return;
     event.preventDefault();
+    // A browser starts audio only from something the player did, so the speaker is opened on the
+    // key rather than when the game starts.
+    armSpeaker();
     arrowRun = revArrowRun(arrowRun, key);
     session.press(key);
   }
