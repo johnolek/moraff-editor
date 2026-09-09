@@ -7,6 +7,7 @@ import {
   WALL_GRADIENT,
   WALL_MATERIALS,
   WALL_TELEPORTER_SIGN,
+  WALL_TINT,
   type ViewPictures,
 } from './pictures';
 import { drawWallFace, type PicRowImage } from './texture';
@@ -222,11 +223,11 @@ export function drawWall(frame: Frame, scene: WallScene, face: WallFace): boolea
       return false;
     }
     if (code === SIDE_DOOR) {
-      paint(picture(WALL_DOOR + (((pichash % 2) + 2) % 2)), low * 2, high * 2, 12);
+      paint(picture(WALL_DOOR + (((pichash % 2) + 2) % 2)), low * 2, high * 2, WALL_TINT);
       return false;
     }
     // A secret door is drawn as an ordinary wall, which is the whole point of it.
-    paint(picture(WALL_MATERIALS[((pichash % 3) + 3) % 3]), low * 4, high * 4, 12);
+    paint(picture(WALL_MATERIALS[((pichash % 3) + 3) % 3]), low * 4, high * 4, WALL_TINT);
     return false;
   }
 

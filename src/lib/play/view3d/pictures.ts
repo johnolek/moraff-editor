@@ -33,6 +33,13 @@ export const WALL_BASE = 16;
 export const WALL_GRADIENT = 0x80;
 
 /**
+ * What value 17 comes out as on a plain wall or a door. `FUN_3000_342d` writes 12 into DS:4fbd
+ * before it paints either (exe 3000:342d); the teleporter sign is the one face given a tint of
+ * its own, picked by the video mode.
+ */
+export const WALL_TINT = 12;
+
+/**
  * Which of the two pairs a square is laid with: 0 for images 6 and 7, 2 for 8 and 9. The pair
  * turns over with every step, and the way the character faces is added in so that the floor does
  * not change when they only turn on the spot (exe 3000:1698).

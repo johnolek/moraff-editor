@@ -5,7 +5,7 @@ import mwPalettes from '../game/mw-palettes.json';
 import { sectionInfo } from '../game/sections';
 import { wallImages as moraffsWorldWallImages } from '../mw-bestiary/pictures';
 import { wallPictureFile } from '../game/port/pictures';
-import { WALL_BASE, WALL_GRADIENT } from '../play/view3d/pictures';
+import { WALL_BASE, WALL_GRADIENT, WALL_TINT } from '../play/view3d/pictures';
 import { wallPixelIndex } from '../play/view3d/texture';
 
 /**
@@ -40,9 +40,6 @@ export interface WallTexture {
  * one does.
  */
 const UNFORGIVEN_WALL_IMAGE = 3;
-
-/** The tint FUN_3000_342d (exe 3000:342d) sets before it draws a wall face. */
-const UNFORGIVEN_WALL_TINT = 12;
 
 /**
  * The drawer reads the screen column for picture values 18 and 19, and the swatch is not on a
@@ -80,7 +77,7 @@ function unforgivenWallTexture(module: number, floor: number): WallTexture | nul
     pixelIndex: (value) =>
       wallPixelIndex(value, NO_COLUMN, PIC_W, {
         base: WALL_BASE,
-        tint: UNFORGIVEN_WALL_TINT,
+        tint: WALL_TINT,
         gradient: WALL_GRADIENT,
       }),
     images: () => bundledPictureImages(file),
