@@ -22,7 +22,7 @@
     ARROW_LIT_COLOUR,
     clearScreenRect,
     drawExpandedMap,
-    drawScreenFurniture,
+    drawZoomMapOnly,
     expandedMapWindow,
     expandedMarkerRect,
     EXPANDED_CENTRE,
@@ -30,6 +30,7 @@
     fillScreenBox,
     keyMenuLines,
     MESSAGE_BOX,
+    SCREEN_BOXES,
     SCREEN_PIXELS,
     SCREEN_WINDOW,
     statusLines,
@@ -352,9 +353,6 @@
     onCanvas = { drawnFrom, rows, discovered };
 
     const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
-    // A slow redraw replays the frame's paints in the order they were made (`view3d/journal.ts`),
-    // so the frame keeps a journal of them while the slider asks for one.
-    if (revealed > 0) frame.journal = [];
     const floor = {
       rows,
       at: { x: place.x, y: place.y, dir: place.dir },
@@ -438,10 +436,13 @@
       paint();
       return;
     }
-    // movecontrol draws the map window before the four views (FUN_3000_8e75 at the top of the pass,
-    // FUN_2000_ac9e after the key is handled), so the map and the boxes go on the frame first and a
-    // slow redraw shows them first.
-    drawScreenFurniture(frame, floor);
+    // The boxes are the port's own layout, painted once by the game and never again, so they go
+    // on before the journal is opened. movecontrol draws the map window before the four views
+    // (FUN_3000_8e75 at the top of the pass, FUN_2000_ac9e after the key is handled), so those are
+    // the paints a slow redraw replays, in that order (`view3d/journal.ts`).
+    for (const box of SCREEN_BOXES) fillScreenBox(frame, box);
+    if (revealed > 0) frame.journal = [];
+    drawZoomMapOnly(frame, floor);
     renderFourViews(
       frame,
       {
@@ -463,6 +464,9 @@
       },
       place.dir,
     );
+    // The lines are printed by pfont as the game goes rather than drawn again with the screen, so
+    // they are not replayed: they go up with the whole frame once the last paint is down.
+    frame.journal = undefined;
     // The boss's taunt stands on the play screen: boss_office_message (exe 3000:6c9d) wipes
     // nothing before it lays the panel down, so the views are still underneath it.
     if (bossOffice) drawBossOffice(frame, SCREEN_PIXELS, bossOffice, viewPictures(bossOffice.section));
