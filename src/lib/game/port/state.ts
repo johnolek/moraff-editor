@@ -679,9 +679,8 @@ export interface Game {
    * noises the game makes ask it first; see `sound.ts`.
    *
    * It starts on. The flag is only ever flipped, never written from the code, so its first value
-   * is whatever the data segment of the executable holds, which the PKLITE-packed file on disk
-   * does not show; a game that is silent until its menu is opened would not be one anybody
-   * reported the fight noises of.
+   * is whatever the data segment of the executable holds: the unpacked image has a 0 at DS:022b,
+   * and every gate plays when the flag is 0, so the port's `true` stands for that 0.
    */
   sound: boolean;
   /**

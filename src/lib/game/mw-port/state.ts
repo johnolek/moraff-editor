@@ -500,7 +500,8 @@ export interface MwGame {
    * doing; see `sound.ts` and `mwKeyMenuLines`.
    *
    * It starts on. The flag is only ever flipped, never written from the code, so its first value
-   * is whatever the executable's data segment holds, which the packed file on disk does not show.
+   * is whatever the executable's data segment holds: DGROUP has a 0 at 0x119f, and every gate
+   * plays when the flag is 0, so the port's `true` stands for that 0.
    */
   sound: boolean;
   /**
