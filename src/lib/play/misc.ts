@@ -14,8 +14,9 @@ import { KEY, menuEntry, menuKeys } from './keys';
  * the dungeon is on the screen.
  *
  * The menus themselves are UH.BIN's own messages. Every setting behind them but one is the DOS
- * game's screen, its mouse or its 3-D views, none of which this port has, so the box says so
- * instead and the wording of those boxes is the port's own.
+ * game's mouse, or a choice about the screen and the 3-D views that this port makes for itself
+ * and offers no switch for, so the box says so instead and the wording of those boxes is the
+ * port's own.
  */
 
 /**
