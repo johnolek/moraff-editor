@@ -178,8 +178,8 @@ export function strike(game: MwGame): number {
     if (pc.floor < 5) game.say('YOU HIT! THE MONSTER IN THE');
     let line = bearing(game, game.engaged);
     if (pc.floor < 5) line += 'TAKES '; // DS:2708
-    // The damage, then DS:270f
     playMwBlowLanded(game);
+    // The damage, then DS:270f
     game.say(`${line}${damage} POINTS DAMAGE`);
   }
   // The original writes through the pointer at DS:cd28, which attack_timing aims at the engaged
