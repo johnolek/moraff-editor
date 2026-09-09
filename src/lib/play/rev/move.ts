@@ -32,6 +32,11 @@ function sideAsked(direction: number, column: number, row: number): { kind: numb
 /** The message the move prints when something is standing in the way (the literal at 1000:33F9). */
 export const MONSTER_BLOCKS_WAY = 'MONSTER BLOCKS WAY';
 
+/** Where it goes: `LOCATE 6, 22` at 1000:33EA, over the top of the FRONT box, and the same spot
+ *  is blanked with eighteen spaces at 1000:340C. */
+const BLOCKS_ROW = 6;
+const BLOCKS_COLUMN = 22;
+
 /** What a step did: whether the character moved, and why not. */
 export type RevStep = 'moved' | 'wall' | 'edge' | 'monster';
 
@@ -48,9 +53,13 @@ export function revStep(game: RevGame, direction: number): RevStep {
   const column = pc.column + step.dColumn;
   const row = pc.row + step.dRow;
   if (game.monsters.slotOn(column, row) > 0) {
+    game.kept.printAt(BLOCKS_ROW, BLOCKS_COLUMN, MONSTER_BLOCKS_WAY);
     game.say(MONSTER_BLOCKS_WAY);
     return 'monster';
   }
+  // 1000:3121: a step nothing is standing in the way of rubs the line out before it goes on to
+  // ask about the wall, with as many spaces as the line has characters.
+  game.kept.blank(BLOCKS_ROW, BLOCKS_COLUMN, MONSTER_BLOCKS_WAY.length);
   const side = sideAsked(direction, pc.column, pc.row);
   if (blocked(side.kind, side.column, side.row, pc.dungeonLevel, pc.generation)) return 'wall';
   // The edge is the last test the original makes, after the wall and after the monster

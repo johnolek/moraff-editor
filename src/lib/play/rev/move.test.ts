@@ -76,6 +76,17 @@ describe('a step', () => {
     expect(revStep(game, REV_NORTH)).toBe('monster');
     expect(game.said).toContain(MONSTER_BLOCKS_WAY);
   });
+
+  it('says it over the top of the FRONT box and rubs it out on the next step', () => {
+    const open = findSide(1, false);
+    const game = newRevGame(character({ column: open.column, row: open.row }), new SeededRng(1));
+    game.monsters.grid[22 * (open.row - 1) + open.column] = 5;
+    revStep(game, REV_NORTH);
+    expect(game.kept.runs()).toEqual([{ row: 6, column: 22, text: MONSTER_BLOCKS_WAY }]);
+    game.monsters.grid[22 * (open.row - 1) + open.column] = 0;
+    revStep(game, REV_NORTH);
+    expect(game.kept.runs()).toEqual([{ row: 6, column: 22, text: ' '.repeat(18) }]);
+  });
 });
 
 describe('what is underfoot', () => {
