@@ -280,6 +280,38 @@ describe('monsterTurn', () => {
     expect(game.pc.poisonTimer).toBe(3);
   });
 
+  it("opens on a blank strip and holds a beat between each thing it says", () => {
+    /** The attack an ordinary werewolf makes, and every delay it asked for. */
+    const beats = (type: number, roll: number): number[] => {
+      const game = fightGame([{ x: 5, y: 4, hp: 30, type, depth: 40 }], {
+        rng: always(roll),
+        pc: { lev: 5, con: 10, exp: 5000, hp: 2000, maxHp: 2000, floor: 40, x: 5, y: 5 },
+      });
+      const delays: number[] = [];
+      game.delay = (ms) => void delays.push(ms);
+      monsterTurn(game, 0);
+      return delays;
+    };
+    // A werewolf's kind byte is 99, which takes the beat before the box about a poisoning even
+    // though it never prints one.
+    expect(beats(1, 1)).toEqual([110, 250, 350]);
+    // A vampire drains a level and a characteristic on top of the blow.
+    expect(beats(33, 1)).toEqual([110, 250, 500, 250, 350]);
+  });
+
+  it("settles a shorter beat on a miss, which brings nothing with it", () => {
+    // Every roll is zero but the one that hands out a bonus point on a deep floor, which is
+    // rolled high enough to miss.
+    const game = fightGame([{ x: 5, y: 4, hp: 30, type: 1, depth: 1 }], {
+      rng: { random: (n) => (n === 500 ? 499 : 0) },
+      pc: { lev: 60, dex: 90, luck: 90, hp: 200, floor: 1, x: 5, y: 5 },
+    });
+    const delays: number[] = [];
+    game.delay = (ms) => void delays.push(ms);
+    expect(monsterTurn(game, 0)).toBe(0);
+    expect(delays).toEqual([110, 100]);
+  });
+
   it("takes the damage off the character", () => {
     const game = fightGame([{ x: 5, y: 4, hp: 30, type: 1, depth: 40 }], {
       rng: always(1),

@@ -197,6 +197,24 @@ const MONSTER_HIT_MS = 0x15e;
 const PUFFBALL_MS = 0x4ec;
 
 /**
+ * The blank monster_turn opens every attack with (WORLD.EXE 2000:6a7c): the strip is wiped and
+ * held empty for 110 ms before the blow is written on it. FUN_2000_7fb1 (WORLD.EXE 2000:7fb1)
+ * runs the whole function once per attack, so a monster with several of them reads them out one
+ * after another rather than replacing its own line where it stands.
+ */
+const MONSTER_BLANK_MS = 0x6e;
+
+/**
+ * The beats between the things a landed blow brings with it: 250 ms before the level drain's box
+ * (WORLD.EXE 2000:6c19), 500 ms before a characteristic is drained or raised (2000:6d89), and
+ * 250 ms before the box about a poisoning or a disease (2000:6f3d). The last is taken for every
+ * kind byte a monster carries, the ones with no box behind them included.
+ */
+const LEVEL_DRAIN_MS = 0xfa;
+const STAT_DRAIN_MS = 500;
+const AILMENT_MS = 0xfa;
+
+/**
  * The puffball half of monster_turn (WORLD.EXE 2000:615c, mw.c "monster_turn"): a monster whose
  * special byte is 6 does not attack at all. It moves one of the six characteristics by a point
  * and disappears.
@@ -295,6 +313,7 @@ function drainsAndAilments(game: MwGame, slot: number): string {
   const kind = MONSTERS[game.monsters[slot].type];
   let buffer = '';
   if (kind.levelDrain !== 0 && pc.lev > 0 && pc.resistDrainTimer < 1) {
+    game.delay(LEVEL_DRAIN_MS);
     pc.lev -= kind.levelDrain;
     pc.exp = experienceNeeded(pc.lev - 1);
     for (let lost = 0; lost < kind.levelDrain; lost++) goDownLevel(game);
@@ -305,6 +324,7 @@ function drainsAndAilments(game: MwGame, slot: number): string {
     game.say('OH NO! HIT BY LEVEL DRAINER!', lost, '', 'HIT ANY KEY');
   }
   if (kind.statDrain !== 0) {
+    game.delay(STAT_DRAIN_MS);
     const stat = puffballStat(game, kind.statDrain);
     // DS:290b / DS:291e, after the characteristic's own name
     buffer = stat + (kind.statDrain < 0 ? ' HAS BEEN DRAINED!' : ' HAS BEEN RAISED!');
@@ -313,6 +333,7 @@ function drainsAndAilments(game: MwGame, slot: number): string {
   }
   if (kind.kind !== 0) {
     if (kind.kind !== ORDINARY) game.events.push({ kind: 'playerSaved' });
+    game.delay(AILMENT_MS);
     if (kind.kind === POISONS && pc.resistPoisonTimer < 1) {
       // DS:2930 2945 2951 296b 2988 29a4, an empty line, DS:28ff
       game.say(
@@ -420,6 +441,7 @@ export function monsterTurn(game: MwGame, slot: number): number {
     damage = breathe(game, slot);
   } else {
     game.eraseScreen();
+    game.delay(MONSTER_BLANK_MS);
     // The bearing, then DS:28a9 for a level 0 character, then DS:28b9 or DS:27e3 with the
     // damage and DS:28b2 or DS:2375
     let line = bearing(game, slot);

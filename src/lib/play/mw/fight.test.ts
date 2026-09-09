@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MONSTERS } from '../../mw-bestiary/monsters';
 import type { MwStockedMonster } from '../../game/mw-port/stocking';
 import { mwSetOccupant } from '../../game/mw-port/state';
@@ -86,13 +86,29 @@ describe('two monsters that both get a turn', () => {
     return session;
   };
 
-  it('holds the first message on its own before the second replaces it', () => {
-    const session = bothAttack();
-    const showing = session.view().banner.join('\n');
-    const live = session.banner.join('\n');
-    session.finish();
-    expect(showing).toContain('NORTH');
-    expect(live).toContain('SOUTH');
-    expect(showing).not.toContain('SOUTH');
+  it('opens each attack on a blank strip and holds its message on its own', () => {
+    vi.useFakeTimers();
+    try {
+      const session = bothAttack();
+      // Every strip the tab draws in turn, one entry per change, which is the order a player
+      // reads them in.
+      const shown = [session.view().banner.join('\n')];
+      for (let ms = 0; ms < 2000; ms += 10) {
+        vi.advanceTimersByTime(10);
+        const now = session.view().banner.join('\n');
+        if (now !== shown[shown.length - 1]) shown.push(now);
+      }
+      const live = session.banner.join('\n');
+      session.finish();
+      expect(shown).toEqual([
+        '',
+        expect.stringContaining('NORTH'),
+        '',
+        expect.stringContaining('SOUTH'),
+      ]);
+      expect(live).toContain('SOUTH');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
