@@ -63,6 +63,9 @@ function field(label: string, value: string): string {
   return `  ${label.padEnd(12)}${value}`;
 }
 
+/** A commit as a reader wants it: the first seven characters, and whatever `vite.config.ts` put
+ *  after them — which is `-dirty` for a build made from a tree with changes in it. */
 function shortCommit(commit: string): string {
-  return commit.slice(0, 7);
+  const [sha, ...rest] = commit.split('-');
+  return [sha.slice(0, 7), ...rest].join('-');
 }
