@@ -38,9 +38,15 @@ function occupancyOf(game: RevGame): RevOccupancy {
   };
 }
 
-/** The lines the loop has printed, laid out on the four rows the game's message area has. */
+/**
+ * The lines the loop has printed, laid out on the four rows the game's message area has.
+ *
+ * What a fight says is not among them: every one of its lines carries its own `LOCATE`, and the
+ * port prints them where the game prints them through `kept.ts`. `game.banner` is what the tab
+ * shows when it is drawing its own map in place of the game's screen.
+ */
 function messagesOf(game: RevGame): string[] {
-  const said = [...game.banner, ...game.said];
+  const said = game.said;
   const lines = new Array<string>(MESSAGE_ROWS).fill('');
   lines[0] = said[0] ?? '';
   lines[1] = game.advice[0] ?? '';

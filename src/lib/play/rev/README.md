@@ -147,8 +147,11 @@ Three things are this game's own:
   character as typed and behaves the same way.
 * **The words go where the game `LOCATE`s them** — the message rows top left, the spells top
   right, `EXP. VALUE:` at the bottom — and every line in them is the literal the executable holds.
-  What the port keeps in three lists rather than at rows is put back on rows in
-  `screen/from-game.ts`.
+  The lines the port keeps in a list rather than at a row are put back on rows in
+  `screen/from-game.ts`; a fight's own lines never went through that list at all, since every one
+  of them carries a `LOCATE` of its own and they are printed straight onto `screen/kept.ts` —
+  the swing on rows 10 and 11 over the map, the monster's answer from row 7, its drains down from
+  row 20 and MONSTER BLOCKS WAY over the FRONT box.
 * **`1.NUM` and `2.NUM` last as long as the tab.** The original saves them on the way out
   (`1000:B5C8`), so the monsters are the state of the disk and are shared by every character on it.
   A browser has no disk to share, so each session starts from the shipped tables.
