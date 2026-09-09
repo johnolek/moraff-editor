@@ -240,8 +240,21 @@ export function isPuffball(entry: Monster): boolean {
   return entry.special === PUFFBALL_SPECIAL;
 }
 
+/**
+ * The fields of a monster the effects are read out of, which the game's own 29-byte record
+ * carries as well as the catalogue entry does. The Play tab's debug mode shows the same lines
+ * over the monster it is fighting, and reads them off the record the port loaded.
+ */
+export interface MonsterEffects {
+  levelDrain: number;
+  statDrain: number;
+  breath: number;
+  special: number;
+  isBoss: boolean;
+}
+
 /** What the monster does to you beyond its ordinary attack. */
-export function describeEffects(entry: Monster): string[] {
+export function describeEffects(entry: MonsterEffects): string[] {
   const lines: string[] = [];
   if (entry.levelDrain > 0) {
     lines.push(`Drains ${entry.levelDrain} level${entry.levelDrain === 1 ? '' : 's'} when it hits you`);

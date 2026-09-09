@@ -1,3 +1,4 @@
+import { describeEffects } from '../bestiary/monsters';
 import { hitChance, toHitTotal, type ToHitFighter } from '../bestiary/to-hit';
 import { NAMED_SLOTS, SLOTS_PER_SUBCATEGORY, SPELL_NAMES, SPELL_SUBCATEGORIES } from '../editor/spell-names';
 import { sectionOf } from '../game/dotu-files.js';
@@ -206,6 +207,10 @@ export interface EngagedMonster {
   mostHp: number;
   /** The share of swings the game itself calls hits, 0 to 1. */
   hitChance: number;
+  /** What it does beyond an ordinary hit, in the words the Monsters tab uses for the same
+   *  monster: the drains, the breath, the poison and the disease. Empty for a monster that only
+   *  hits. */
+  effects: string[];
 }
 
 /**
@@ -260,6 +265,7 @@ export function engagedMonster(game: Game): EngagedMonster | null {
     hp: monster.hp,
     mostHp,
     hitChance: hitChance(toHitTotal(fighter), monster.level, stats.defense, stats.speed, game.weaponDamage[damageRow]),
+    effects: describeEffects({ ...kind, isBoss: boss }),
   };
 }
 

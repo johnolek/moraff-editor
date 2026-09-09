@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newGame, type Game } from '../game/port/state';
-import { debugMonsterLines } from './debug-screen';
+import { describeEffects } from '../bestiary/monsters';
+import { debugMonsterLines, wrapToWidth } from './debug-screen';
 import { engagedMonster } from './panel';
 import { AHEAD_VIEW } from './view3d/geometry';
 
@@ -30,7 +31,22 @@ describe("the monster's numbers over the forward view", () => {
     expect(debugMonsterLines(game)[1].text).toBe(`HIT:${(chance * 100).toFixed(1)}%`);
   });
 
-  it('keeps both lines inside the forward view', () => {
+  it('prints what the monster does beyond an ordinary hit, in the bestiary\u2019s words', () => {
+    const game = facing();
+    // A monster that drains a level and poisons: levelDrain 1 and special 1 in the record.
+    Object.assign(game.monsterKinds[0], { levelDrain: 1, statDrain: 0, breath: 0, special: 1 });
+    const said = describeEffects({ levelDrain: 1, statDrain: 0, breath: 0, special: 1, isBoss: false });
+    expect(said).toEqual(['Drains 1 level when it hits you', 'Poisons you when it hits you']);
+    expect(debugMonsterLines(game).map((line) => line.text).slice(2)).toEqual(said);
+  });
+
+  it('prints only the two numbers for a monster that does nothing but hit', () => {
+    const game = facing();
+    Object.assign(game.monsterKinds[0], { levelDrain: 0, statDrain: 0, breath: 0, special: 0 });
+    expect(debugMonsterLines(game)).toHaveLength(2);
+  });
+
+  it('keeps every line inside the forward view', () => {
     for (const line of debugMonsterLines(facing())) {
       expect(line.x).toBeGreaterThan(AHEAD_VIEW.left);
       expect(line.y).toBeGreaterThan(AHEAD_VIEW.top);
@@ -38,5 +54,23 @@ describe("the monster's numbers over the forward view", () => {
       // Twenty-five units a character in the game's smallest font, which is what font 0 is.
       expect(line.x + line.text.length * 25).toBeLessThan(AHEAD_VIEW.right);
     }
+  });
+});
+
+describe('a sentence too long for the line it is printed on', () => {
+  it('is broken on the spaces between its words', () => {
+    expect(wrapToWidth(['one two three four'], 9)).toEqual(['one two', 'three', 'four']);
+  });
+
+  it('is left whole when it fits', () => {
+    expect(wrapToWidth(['one two'], 20)).toEqual(['one two']);
+  });
+
+  it('lets a single word longer than the line run over rather than cutting it in half', () => {
+    expect(wrapToWidth(['a lengthening'], 4)).toEqual(['a', 'lengthening']);
+  });
+
+  it('breaks each sentence on its own, so two never share a line', () => {
+    expect(wrapToWidth(['one', 'two'], 20)).toEqual(['one', 'two']);
   });
 });

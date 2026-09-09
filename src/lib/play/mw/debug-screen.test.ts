@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MW_MONSTER_VIEW_CORNERS } from '../../game/mw-port/screens';
 import { MW_VIEWS, MW_VIEW_EAST, MW_VIEW_NORTH, MW_VIEW_SOUTH, MW_VIEW_WEST } from './view3d/screen';
+import { describeEffects, MONSTERS } from '../../mw-bestiary/monsters';
 import { mwDebugMonsterLines } from './debug-screen';
 import { mwEngagedMonster } from './panel';
 import { BorlandRng } from '../../game/port/rng';
@@ -42,8 +43,23 @@ describe('the chance debug mode adds over the monster', () => {
     expect(line.text).toBe(`HIT:${(chance * 100).toFixed(1)}%`);
   });
 
+  it("prints what the monster does beyond an ordinary hit, in the bestiary's words", async () => {
+    const session = await fighting();
+    // A level drainer, so that the monster being fought is one with something to say about it.
+    const drainer = MONSTERS.findIndex((monster) => monster.levelDrain > 0);
+    session.game.monsters[session.game.engaged].type = drainer;
+    const said = describeEffects(MONSTERS[drainer]);
+    expect(said[0]).toMatch(/^Drains \d+ level/);
+    const lines = mwDebugMonsterLines(session.game, MW_MONSTER_VIEW_CORNERS.north);
+    // Every one of the bestiary's words is on the screen, broken across as many lines as the
+    // view is wide enough for.
+    expect(lines.slice(1).map((line) => line.text).join(' ')).toBe(said.join(' '));
+    expect(lines.length).toBeGreaterThan(said.length);
+  });
+
   it('puts it under the hit points, and fits it inside every one of the four views', async () => {
     const session = await fighting();
+    session.game.monsters[session.game.engaged].type = MONSTERS.findIndex((monster) => monster.levelDrain > 0);
     const corners = [
       { corner: MW_MONSTER_VIEW_CORNERS.north, view: MW_VIEWS[MW_VIEW_NORTH] },
       { corner: MW_MONSTER_VIEW_CORNERS.south, view: MW_VIEWS[MW_VIEW_SOUTH] },
@@ -51,12 +67,13 @@ describe('the chance debug mode adds over the monster', () => {
       { corner: MW_MONSTER_VIEW_CORNERS.east, view: MW_VIEWS[MW_VIEW_EAST] },
     ];
     for (const { corner, view } of corners) {
-      const [line] = mwDebugMonsterLines(session.game, corner);
-      expect(line.y).toBeGreaterThan(corner.hpY);
-      expect(line.y).toBeLessThan(view.bottom);
-      expect(line.x).toBeGreaterThanOrEqual(view.left);
-      // Twenty-five units a character in the game's smallest font, which is what font 0 is.
-      expect(line.x + line.text.length * 25).toBeLessThan(view.right);
+      for (const line of mwDebugMonsterLines(session.game, corner)) {
+        expect(line.y).toBeGreaterThan(corner.hpY);
+        expect(line.y).toBeLessThan(view.bottom);
+        expect(line.x).toBeGreaterThanOrEqual(view.left);
+        // Twenty-five units a character in the game's smallest font, which is what font 0 is.
+        expect(line.x + line.text.length * 25).toBeLessThan(view.right);
+      }
     }
   });
 });
