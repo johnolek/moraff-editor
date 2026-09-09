@@ -64,7 +64,10 @@ export function dropArmor(game: MwGame, slot: number): void {
     return;
   }
   const at = slot - 1;
-  if (pc.armorOwned[at] > 0) pc.armorOwned[at] -= 1;
+  if (pc.armorOwned[at] > 0) {
+    pc.armorOwned[at] -= 1;
+    game.events.push({ kind: 'dropped' });
+  }
   if (pc.armor === at && pc.armorOwned[at] === 0) pc.armor = 0;
 }
 
@@ -76,7 +79,10 @@ export function dropWeapon(game: MwGame, slot: number): void {
     return;
   }
   const at = slot - 1;
-  if (pc.weaponsOwned[at] > 0) pc.weaponsOwned[at] -= 1;
+  if (pc.weaponsOwned[at] > 0) {
+    pc.weaponsOwned[at] -= 1;
+    game.events.push({ kind: 'dropped' });
+  }
   if (pc.weapon === at && pc.weaponsOwned[at] === 0) pc.weapon = 0;
 }
 
@@ -95,6 +101,7 @@ export function drawDropCoinsMenu(game: MwGame): void {
  */
 export function dropCoins(game: MwGame, choice: number): void {
   if (choice < 1 || choice > 5) return;
+  if (game.pc.stones[choice - 1] !== 0) game.events.push({ kind: 'dropped' });
   game.pc.stones[choice - 1] = 0;
 }
 
@@ -252,6 +259,7 @@ export function takeAPill(game: MwGame, choice: number): void {
     return;
   }
   pc.pills[pill.held] -= 1;
+  game.events.push({ kind: 'itemUsed' });
   pc[pill.raised] += PILL_RAISES;
   pc[pill.dropped] -= PILL_DROPS;
   game.say(...pill.said);
@@ -320,6 +328,7 @@ export function useFloorSlosher(game: MwGame): boolean {
     pc.y = game.rng.random(game.rows - SLOSH_MARGIN.inset) + SLOSH_MARGIN.from;
   }
   game.recenterMap = true;
+  game.events.push({ kind: 'itemUsed' });
   return true;
 }
 
@@ -341,6 +350,7 @@ export function drinkHealingPotion(game: MwGame): void {
   game.pressAnyKey();
   pc.hp = pc.maxHp;
   pc.healingPotions -= 1;
+  game.events.push({ kind: 'itemUsed' });
 }
 
 /** H.BIN 0x14, the four wishes the third line offers and the fifth line that leaves them. */
@@ -377,6 +387,7 @@ export function useSeeingStone(game: MwGame): void {
     return;
   }
   pc.seeingStones -= 1;
+  game.events.push({ kind: 'itemUsed' });
   for (let x = 0; x < MW_LAST_COLUMN; x++) {
     for (let y = 0; y < MW_FLOOR_ROWS; y++) {
       if (!game.isSolid(x, y, pc.floor, pc.dungeon)) game.markExplored(x, y);
@@ -410,6 +421,7 @@ export function useTeleportStone(game: MwGame): boolean {
     return false;
   }
   pc.teleportStones -= 1;
+  game.events.push({ kind: 'itemUsed' });
   pc.floor = 0;
   for (let x = TELEPORT_MARGIN; x < game.columns - TELEPORT_MARGIN; x++) {
     for (let y = TELEPORT_MARGIN; y < game.rows - TELEPORT_MARGIN; y++) {
@@ -460,6 +472,7 @@ export function throwGrenade(game: MwGame): void {
       return;
     }
     pc.grenades -= 1;
+    game.events.push({ kind: 'itemUsed' });
     game.monsters[game.engaged].hp = GRENADE_HP;
     // DS:7253 726d, DS:45cd, DS:4a75
     game.say('A MASSIVE EXPLOSION KILLS', '  THE MONSTER INSTANTLY.', '', 'HIT ANY KEY...');

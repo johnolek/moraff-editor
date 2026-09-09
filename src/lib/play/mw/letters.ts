@@ -122,6 +122,7 @@ export async function chooseWeapon(turn: MwTurn): Promise<void> {
     (slot !== 7 || pc.cls === 0);
   if (allowed) {
     pc.weapon = slot;
+    game.events.push({ kind: 'gearSwitched' });
   } else {
     // DS:339b 33b4 33cf 33e7 3401, DS:1476, DS:20bd, DS:1476
     game.say(
@@ -155,6 +156,7 @@ export async function chooseArmor(turn: MwTurn): Promise<void> {
     (slot < 1 || (pc.cls !== 1 && pc.cls !== 3)) && (slot < 2 || (pc.cls !== 2 && pc.cls !== 5));
   if (allowed) {
     pc.armor = slot;
+    game.events.push({ kind: 'gearSwitched' });
     return;
   }
   // DS:3317 3335 3357 3377, DS:1476, DS:20bd, DS:1476, DS:1476

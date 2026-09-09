@@ -41,9 +41,15 @@ export async function goUp(turn: MwTurn): Promise<void> {
     session.enterFloor(game.pc.floor + turn.ladder);
     arrivalHint(game, game.pc.floor);
     game.recenterMap = true;
+    game.events.push({ kind: 'ladderTaken' });
     return;
   }
-  if (turn.building !== 0) await enterBuilding(turn);
+  if (turn.building !== 0) {
+    // The building is counted on the way in rather than on the way out, so that what a player is
+    // shown while they are inside one already has it.
+    game.events.push({ kind: 'buildingEntered' });
+    await enterBuilding(turn);
+  }
   session.flushKeys();
 }
 
@@ -55,11 +61,15 @@ export async function goUp(turn: MwTurn): Promise<void> {
 export async function goDown(turn: MwTurn): Promise<void> {
   const { game, session } = turn;
   if (turn.ladder < 1) {
-    if (await digAHole(turn)) turn.building = 0;
+    if (await digAHole(turn)) {
+      turn.building = 0;
+      game.events.push({ kind: 'dug' });
+    }
     return;
   }
   game.engaged = -1;
   session.enterFloor(game.pc.floor + turn.ladder);
   arrivalHint(game, game.pc.floor);
   game.recenterMap = true;
+  game.events.push({ kind: 'ladderTaken' });
 }

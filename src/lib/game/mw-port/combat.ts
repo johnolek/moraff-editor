@@ -797,6 +797,7 @@ export function swing(game: MwGame): void {
   game.lastStrikeDamage = strike(game);
   spendTime(game, WEAPONS[pc.weapon].swingTime);
   if (85 - pc.dex > 1) spendTime(game, Math.trunc((85 - pc.dex) / 5));
+  game.events.push({ kind: 'swung' });
 }
 
 /**

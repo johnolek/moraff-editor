@@ -1521,6 +1521,7 @@ export function castSpell(
     return 0;
   }
   if (!spellEffect(game, category, levelIndex, slot)) return 0;
+  game.events.push({ kind: 'cast' });
   if (source === MW_FROM_SPELLBOOK) pc.sp -= cost;
   else heldIn(game, source)[category * MW_BOOK_SLOTS_PER_CATEGORY + levelIndex * 3 + slot] -= 1;
   // A spell that moved the character to another floor stops here, so a permanent spell cast in

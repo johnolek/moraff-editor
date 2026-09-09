@@ -62,6 +62,7 @@ export function waitAMoment(turn: MwTurn): void {
     turn.game.redrawView = true;
     arriveSquare(turn.game);
   });
+  turn.game.events.push({ kind: 'waited' });
 }
 
 /**
@@ -95,6 +96,10 @@ export function resolveStep(turn: MwTurn): void {
     return;
   }
   startEngagementTimer(game);
+  // Each of the four branches below refuses a step off the edge of the floor, so what says the
+  // step happened -- and with it the moment arriveSquare spends -- is the character being
+  // somewhere else afterwards.
+  const from = { x: pc.x, y: pc.y };
   if (step.dy < 0 && pc.y > 0) {
     leaveTheSquare(turn);
     pc.y -= 1;
@@ -123,6 +128,7 @@ export function resolveStep(turn: MwTurn): void {
     arriveSquare(game);
     if (pc.mapCursorX < 1) game.recenterMap = true;
   }
+  if (pc.x !== from.x || pc.y !== from.y) game.events.push({ kind: 'stepped' });
   if (pc.maxHp < pc.hp) pc.hp = pc.maxHp;
 }
 

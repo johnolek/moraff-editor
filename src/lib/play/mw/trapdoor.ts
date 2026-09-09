@@ -75,4 +75,5 @@ export function goThroughTrapDoor(turn: MwTurn): void {
   session.enterFloor(turn.trapdoor);
   arrivalHint(game, game.pc.floor);
   game.recenterMap = true;
+  game.events.push({ kind: 'trapdoorTaken' });
 }
