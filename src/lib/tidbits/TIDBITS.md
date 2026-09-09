@@ -181,20 +181,35 @@ In the code: [defend](source:ts/combat.ts/defend) and [breath](formula:breath).
 
 ## Magic
 
-### Fast Move and Invisibility are the same trick
+### Fast Move and Invisibility are two rolls, not one
 
-Neither spell does anything to you. Both give every monster on the floor a one-in-four chance of
-losing its whole moment: the game rolls, and on a 1 nothing moves and nothing attacks. Running
-both at once does not stack, because they are the same roll.
+Neither spell does anything to you. Each gives the moment a one-in-four chance of ending before
+the monsters have moved: the game rolls, and on a 1 nothing steps and nothing attacks. They are
+two separate rolls with two separate returns, so running both is better than running either. A
+moment survives both only nine times in sixteen.
 
-That also explains why they feel stronger than they read. A quarter of the monster's attacks
-simply never happen.
+The two sit either side of the poison and disease countdown. Fast Move's roll comes first, so a
+quarter of the moments it eats are moments the ailment clock does not tick either. Invisibility's
+comes after, and pauses nothing.
+
+Invisibility has a second job that no description mentions. When a monster first engages you the
+game rolls for who acts first, and one time in three the monster simply does. With Invisibility up
+that is not the end of it: a roll on one and a half times the floor number, and if it beats your
+character level the monster is put back to waiting on your agility instead. Deep in the dungeon it
+nearly always beats it.
+
+In the code: [passMoment](source:ts/moment.ts/passMoment) and
+[attackTiming](source:ts/combat.ts/attackTiming).
 
 ### Youth costs you a tenth of everything
 
 Youth sets your age back to 20, which matters because the game ages you and old characters lose
-statistics. The price is not printed anywhere: it multiplies your experience by 0.9. Cast at a
-deep level, that is a fortune, and the level you drop back to has to be earned again.
+statistics. The price is not printed anywhere: it multiplies your experience by 0.9, and that is
+the whole of the spell. Cast on a deep floor it is a fortune.
+
+Your level does not move. Nothing in the game ever takes a level off you for having too little
+experience; the only thing that reads the number is the check at the inn for whether you have
+earned the next one. So the cost is not a level lost, it is a level put further away.
 
 In the code: [youth](source:ts/magic.ts/youth) and
 [what the next level costs](formula:exp-needed).
