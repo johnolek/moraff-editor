@@ -494,16 +494,42 @@ const YOU_HAVE = 'YOU HAVE ';
 const ITEMS_LISTED = 13;
 
 /**
- * The three potions that wear off, as the banner each puts up while it lasts.
+ * The three potions that wear off: the banner each puts up while it lasts, and what running out
+ * takes back off the character.
  *
  * `column` is 20 for all three and the rows are 5, 6 and 7 (1000:7F7D, 7F96 and 7FAF); the lines
  * are the executable's own, trailing spaces and all. `blank` is how many spaces the fight's poll
  * rubs each out with (1000:8610, 8672 and 86D9) — twenty for the first two, which leaves the
  * twenty-first character of a twenty-one character line, though that character is a space.
+ * `wearOff` is what the same three arms do beside the blanking: the potion of fire leaves nothing
+ * to take back (1000:85F9), shielding puts the shield down (1000:865D) and speed takes off the
+ * thirteen points of agility it handed over (1000:86BC).
  */
-const REV_POTION_BANNERS = [
-  { until: REV_MAGIC.speedUntil, row: 5, line: 'YOU FEEL VERY AGILE. ', blank: 20 },
-  { until: REV_MAGIC.shieldingUntil, row: 6, line: 'YOUR BODY GLOWS.     ', blank: 20 },
+const REV_POTION_BANNERS: {
+  until: number;
+  row: number;
+  line: string;
+  blank: number;
+  wearOff?: (game: RevGame) => void;
+}[] = [
+  {
+    until: REV_MAGIC.speedUntil,
+    row: 5,
+    line: 'YOU FEEL VERY AGILE. ',
+    blank: 20,
+    wearOff: (game) => {
+      game.pc.stats[4] -= 13;
+    },
+  },
+  {
+    until: REV_MAGIC.shieldingUntil,
+    row: 6,
+    line: 'YOUR BODY GLOWS.     ',
+    blank: 20,
+    wearOff: (game) => {
+      game.shield = 0;
+    },
+  },
   { until: REV_MAGIC.fireUntil, row: 7, line: 'B-BREATH FIRE ', blank: 14 },
 ];
 
@@ -527,21 +553,23 @@ export function revPotionBanners(game: RevGame): void {
 }
 
 /**
- * 1000:85BA: the same three banners rubbed out as their potions run down, which the fight does
- * on every pass of its own `INKEY$` poll (1000:8601, 8663 and 86CA).
+ * 1000:85BA: the three potions running down — the effect taken back off the character and the
+ * banner rubbed out — which the fight does on every pass of its own `INKEY$` poll (1000:85F9,
+ * 8655 and 86B4).
  *
  * The three tests are each `<the second to reach> > 0 AND (<it> < TIMER OR <it> - TIMER > 400)`.
  * The second half of that is a guard against `TIMER` having gone back round midnight underneath
  * a potion, and the clock this port hands the game only ever counts up, so it never fires.
  *
- * What the original does at the same three places and this does not is take the potion itself
- * off — the thirteen points of agility, the shield, and the second to reach set back to zero.
- * Those are the character's own numbers rather than the screen, and this is only the screen.
+ * Setting the second to reach back to zero is what makes each of these happen once: the first
+ * half of the test cannot pass again afterwards.
  */
-export function revExpiredPotionBanners(game: RevGame): void {
+export function revWearOffPotions(game: RevGame): void {
   for (const banner of REV_POTION_BANNERS) {
     const until = revValue(game.pc, banner.until);
     if (until > 0 && until < game.seconds) {
+      setRevValue(game.pc, banner.until, 0);
+      banner.wearOff?.(game);
       game.kept.blank(banner.row, POTION_BANNER_COLUMN, banner.blank);
     }
   }

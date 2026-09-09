@@ -7,7 +7,6 @@ import {
   REV_PREP_ITEMS,
   REV_SLIPPING_THROUGH,
   REV_TOO_DEEP,
-  revExpiredPotionBanners,
   revItemMenu,
   revMagicItemsOwned,
   revPotionBanners,
@@ -16,6 +15,7 @@ import {
   revUseAWandInAFight,
   revUseAWandInTheDungeon,
   revUseAnItem,
+  revWearOffPotions,
 } from './items';
 import { revCharacter, revRolls, revTestGame } from './spells.test-support';
 
@@ -333,17 +333,51 @@ describe('the banners the three potions that wear off put up', () => {
     game.seconds = 40;
     revPotionBanners(game);
     game.seconds = 200;
-    revExpiredPotionBanners(game);
+    revWearOffPotions(game);
     // Twenty spaces over a twenty-one character line, and the twenty-first was a space anyway.
     expect(game.kept.runs()).toEqual([
       { row: 5, column: 20, text: ' '.repeat(21) },
       { row: 7, column: 20, text: 'B-BREATH FIRE ' },
     ]);
     game.seconds = 400;
-    revExpiredPotionBanners(game);
+    revWearOffPotions(game);
     expect(game.kept.runs()).toEqual([
       { row: 5, column: 20, text: ' '.repeat(21) },
       { row: 7, column: 20, text: ' '.repeat(14) },
     ]);
+  });
+
+  it('takes the thirteen points of agility back when the speed runs out', () => {
+    const pc = revCharacter();
+    const { game, desk } = revTestGame(pc);
+    const agility = pc.stats[4];
+    REV_BATTLE_ITEMS[0].use(game, desk);
+    expect(pc.stats[4]).toBe(agility + 13);
+    game.seconds = revValue(pc, REV_MAGIC.speedUntil) + 1;
+    revWearOffPotions(game);
+    expect(pc.stats[4]).toBe(agility);
+    expect(revValue(pc, REV_MAGIC.speedUntil)).toBe(0);
+  });
+
+  it('puts the shield down when the shielding runs out', () => {
+    const pc = revCharacter();
+    const { game, desk } = revTestGame(pc);
+    REV_BATTLE_ITEMS[2].use(game, desk);
+    expect(game.shield).toBe(15);
+    game.seconds = revValue(pc, REV_MAGIC.shieldingUntil) + 1;
+    revWearOffPotions(game);
+    expect(game.shield).toBe(0);
+    expect(revValue(pc, REV_MAGIC.shieldingUntil)).toBe(0);
+  });
+
+  it('wears a potion off once, so the agility is not taken twice', () => {
+    const pc = revCharacter();
+    const { game, desk } = revTestGame(pc);
+    const agility = pc.stats[4];
+    REV_BATTLE_ITEMS[0].use(game, desk);
+    game.seconds = revValue(pc, REV_MAGIC.speedUntil) + 1;
+    revWearOffPotions(game);
+    revWearOffPotions(game);
+    expect(pc.stats[4]).toBe(agility);
   });
 });
