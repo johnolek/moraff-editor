@@ -157,6 +157,15 @@
     if (key !== null) press(session, key);
   }
 
+  /** The roller's Play now: the character it kept is current, and the game starts as the tab
+   *  opens. */
+  $effect(() => {
+    const wanted = app.startPlaying;
+    if (wanted === null || session || !character || character.id !== wanted) return;
+    app.startPlaying = null;
+    start();
+  });
+
   function leave() {
     session?.finish();
     session = null;

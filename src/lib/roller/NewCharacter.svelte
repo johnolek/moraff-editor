@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { app, type GameId, type Leaderboard } from '../app-state.svelte';
+  import { app, currentEntry, type GameId, type Leaderboard } from '../app-state.svelte';
   import { keepRolledCharacter } from '../character/current';
   import { LEADERBOARD_CHOICES } from '../character/leaderboard';
   import { downloadBytes } from '../download';
@@ -28,10 +28,6 @@
   /** A character one of the three games has rolled. */
   type RolledCharacter = PlayerCharacter | MwCharacter | RevCharacter;
 
-  /** One line of the sheet the tab prints under the game's own screen: its label and what it
-   *  says. */
-  type SheetRow = [string, string];
-
   /**
    * Everything about the tab that is one game's rather than the other's.
    *
@@ -54,8 +50,6 @@
     writeRecord(pc: RolledCharacter): Uint8Array<ArrayBuffer>;
     /** The second file Moraff's Revenge writes beside the record, which is the explored map. */
     explored?: { fileName(slot: number): string; write(pc: RolledCharacter): Uint8Array<ArrayBuffer> };
-    /** The finished character read out under the game's own screen. */
-    sheet(pc: RolledCharacter): SheetRow[];
     /** What the first line of a menu is answered with: Moraff's Revenge reads its menus with
      *  VAL, so the answer is the number printed beside the line; the other two number their
      *  lines from zero. */
@@ -82,7 +76,6 @@
       fileName: slotFileName,
       newSession: (slot) => new RollerSession(ROLLER_PORT, slot),
       writeRecord: newCharacterFile,
-      sheet: dotuSheet,
       answerBase: 0,
       classSeparator: ') ',
       display: { kind: 'vectors', colours: SCREEN_COLOURS },
@@ -99,7 +92,6 @@
       fileName: mwSlotFileName,
       newSession: (slot) => new RollerSession(MW_ROLLER_PORT, slot),
       writeRecord: newMwCharacterFile,
-      sheet: mwSheet,
       answerBase: 0,
       classSeparator: ') ',
       display: { kind: 'vectors', colours: MW_SCREEN_COLOURS },
@@ -117,7 +109,6 @@
       newSession: (slot) => new RollerSession(REV_ROLLER_PORT, slot),
       writeRecord: newRevCharacterFile,
       explored: { fileName: revExploredFileName, write: newRevExploredFile },
-      sheet: revSheet,
       answerBase: 1,
       classSeparator: '=',
       display: { kind: 'text' },
@@ -146,7 +137,6 @@
   const screen = $derived<RollerScreen | null>(session && view ? view.question : 'number');
   const menus = $derived({ races: chosen.races.length, classes: chosen.classes.length, numbers: chosen.slots.length });
   const fileName = $derived(chosen.fileName(slot));
-  const sheet = $derived(view === null ? [] : chosen.sheet(view.pc));
   const showing = $derived(
     view === null ? [] : view.question === 'name' ? [...(view.screen as ScreenLine[]), nameBeingTyped()] : (view.screen as ScreenLine[]),
   );
@@ -167,62 +157,6 @@
   function nameBeingTyped(): ScreenLine {
     const name = typedName(typed);
     return { text: name, x: 0, y: 1000, spreadTo: Math.round((0x44c / 18) * name.length), font: 2, colour: 4 };
-  }
-
-  /** The six characteristics, which Dungeons of the Unforgiven and Moraff's World keep in the
-   *  same fields and print in the same order. */
-  function characteristicRows(pc: PlayerCharacter | MwCharacter): SheetRow[] {
-    const stats = [pc.str, pc.iq, pc.wis, pc.con, pc.dex, pc.luck];
-    return STATS.map((stat, index): SheetRow => [stat, String(stats[index])]);
-  }
-
-  /** The finished Dungeons of the Unforgiven character, with the money its screen never shows. */
-  function dotuSheet(pc: PlayerCharacter): SheetRow[] {
-    return [
-      ['RACE', RACES[pc.race].name],
-      ['SEX', pc.sex === 0 ? 'MALE' : 'FEMALE'],
-      ...characteristicRows(pc),
-      ['HEIGHT', `${pc.height * 4} INCHES`],
-      ['WEIGHT', `${pc.weight} POUNDS`],
-      ['AGE', `${pc.age} YEARS`],
-      ['CLASS', CLASS_NAMES[pc.cls]],
-      ['HEALTH POINTS', String(pc.maxHp)],
-      ['SPELL POINTS', String(pc.maxSp)],
-      ['RUBLES', String(pc.money)],
-      ['MAGIC CRYSTALS', String(pc.crystals)],
-    ];
-  }
-
-  /** The finished Moraff's World character, whose age is kept in minutes and whose money is
-   *  jewels. */
-  function mwSheet(pc: MwCharacter): SheetRow[] {
-    return [
-      ['RACE', MW_RACES[pc.race].name],
-      ['SEX', pc.sex === 0 ? 'MALE' : 'FEMALE'],
-      ...characteristicRows(pc),
-      ['HEIGHT', `${pc.height} INCHES`],
-      ['WEIGHT', `${pc.weight} POUNDS`],
-      ['AGE', `${Math.trunc(pc.ageMinutes / MINUTES_PER_YEAR)} YEARS`],
-      ['CLASS', MW_CLASS_NAMES[pc.cls]],
-      ['HEALTH POINTS', String(pc.maxHp)],
-      ['SPELL POINTS', String(pc.maxSp)],
-      ['JEWELS', String(pc.money)],
-    ];
-  }
-
-  /** The finished Moraff's Revenge character, which keeps its six characteristics in one array
-   *  and numbers its races and classes from one. */
-  function revSheet(pc: RevCharacter): SheetRow[] {
-    return [
-      ['RACE', REV_RACE_NAMES[pc.race - 1].toUpperCase()],
-      ['CLASS', REV_CLASS_NAMES[pc.cls - 1].toUpperCase()],
-      ...REV_STAT_NAMES.map((stat, index): SheetRow => [stat.toUpperCase(), String(pc.stats[index])]),
-      ['TOTAL', String(pc.stats.reduce((total, stat) => total + stat, 0))],
-      ['HEALTH POINTS', String(pc.maxHp)],
-      ['SPELL POINTS', String(pc.spellPoints)],
-      ['WEIGHT', `${pc.weight} POUNDS`],
-      ['POCKET MONEY', String(pc.money)],
-    ];
   }
 
   // A roll is one game's questions and one game's dice, so the switch in the header starts over.
@@ -295,6 +229,14 @@
     if (!view) return;
     keepWhenDone();
     goToTab(app, 'editor');
+  }
+
+  /** Straight into the game: the character is kept and current, and the Play tab starts it. */
+  function playNow() {
+    if (!view) return;
+    keepWhenDone();
+    app.startPlaying = currentEntry()?.id ?? null;
+    goToTab(app, 'play');
   }
 
   /** The game is answered from the keyboard while the tab is showing, the same keys its own
@@ -455,15 +397,11 @@
       {#if view.question === null}
         <section class="sheet">
           <h3><PixelText text={view.pc.name || 'The Character'} /></h3>
-          <dl>
-            {#each sheet as [label, value]}
-              <div><dt>{label}</dt><dd>{value}</dd></div>
-            {/each}
-          </dl>
         </section>
 
         <div class="choices">
-          <button type="button" class="go" onclick={openInEditor}>Open in the Save Editor</button>
+          <button type="button" class="go" onclick={playNow}>Play now</button>
+          <button type="button" onclick={openInEditor}>Open in the Save Editor</button>
           <button type="button" onclick={download}>Download file {fileName}</button>
           {#if chosen.explored}
             <button type="button" onclick={downloadExplored}>Download file {chosen.explored.fileName(slot)}</button>
@@ -621,34 +559,5 @@
   }
   .sheet h3 {
     margin-bottom: 14px;
-  }
-  .sheet dl {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 4px 20px;
-    margin: 0;
-    background: var(--panel);
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 16px 20px;
-  }
-  .sheet dl div {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    border-bottom: 1px solid var(--line);
-    padding: 4px 0;
-  }
-  .sheet dt {
-    color: var(--muted);
-    font-size: 12px;
-    letter-spacing: 0.4px;
-  }
-  .sheet dd {
-    margin: 0;
-    color: var(--ink);
-    font-family: var(--font-dos);
-    font-size: 19px;
-    line-height: 1;
   }
 </style>

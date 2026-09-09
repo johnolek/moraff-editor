@@ -93,6 +93,9 @@ export interface AppState {
   /** Bumped whenever the current character changes: a different one is chosen, or a field of
    *  the one in hand is edited. Everything that reads the record watches this. */
   characterVersion: number;
+  /** The roster entry the Play tab is to start as soon as it opens, which the roller's Play now
+   *  sets, or null. */
+  startPlaying: string | null;
   /** Whether the last attempt to keep the roster in the browser worked. False raises the notice
    *  saying the characters are not being saved, so a full or blocked store is not silent. */
   rosterKept: boolean;
@@ -109,6 +112,7 @@ export const app = $state<AppState>({
   roster: [],
   characterId: null,
   characterVersion: 0,
+  startPlaying: null,
   rosterKept: true,
 });
 
