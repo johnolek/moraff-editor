@@ -39,6 +39,9 @@
   const game = PLAY_GAMES.unforgiven;
 
   let canvas = $state.raw<FloorCanvas | null>(null);
+  /** How much of the foot of the map the heads-up display's bar of stone hides, which the map
+   *  keeps the character clear of. */
+  let hudBarHeight = $state(0);
   let style = $state<MovementStyle>(readMovementStyle('unforgiven'));
   /** The kind of monster picked out of the debug panel's list, which both maps ring until it is
    *  clicked again. */
@@ -207,6 +210,7 @@
       bounds={FULL_FLOOR}
       you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
       focus={{ x: view.place.x, y: view.place.y, cell: game.cell }}
+      coveredBottom={hudBarHeight}
     />
     <!-- The same monster the picture beside the map shows: the one standing straight ahead,
          which is the one the game has a picture of on its own screen. -->
@@ -215,6 +219,7 @@
       <Portrait monster={facing} module={view.place.module} floor={view.place.floor} />
     {/snippet}
     <MapHud
+      bind:barHeight={hudBarHeight}
       closeUp={facing ? closeUp : undefined}
       closeUpHp={facing ? { now: facing.hp, full: view.engagedFullHp } : undefined}
       closeUpLines={debugDrawn(stage.mode) ? view.engagedDebugLines : []}

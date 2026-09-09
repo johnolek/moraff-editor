@@ -68,6 +68,9 @@
   /** The character's own numbers and the six characteristics, side by side along the bottom. */
 
   let canvas = $state.raw<FloorCanvas | null>(null);
+  /** How much of the foot of the map the heads-up display's bar of stone hides, which the map
+   *  keeps the character clear of. */
+  let hudBarHeight = $state(0);
   let style = $state<MovementStyle>(readMovementStyle('moraffsWorld'));
   /**
    * The monster whose details debug mode has open, by the id the Monsters tab keys it by, which
@@ -220,6 +223,7 @@
       bounds={FULL_FLOOR}
       you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
       focus={{ x: view.place.x, y: view.place.y, cell: game.cell }}
+      coveredBottom={hudBarHeight}
     />
     {#if cornerLines.lines.length > 0}
       <div class="corner top-left" style:--share={MW_CORNER_WIDTH / MW_SCREEN.width}>
@@ -241,6 +245,7 @@
       <MwPortrait monster={view.engaged} floor={view.place.floor} />
     {/snippet}
     <MapHud
+      bind:barHeight={hudBarHeight}
       closeUp={view.engaged ? closeUp : undefined}
       closeUpHp={view.engaged ? { now: view.engaged.hp, full: view.engagedFullHp } : undefined}
       closeUpLines={[...view.engagedViewLines, ...(debugDrawn(stage.mode) ? view.engagedDebugLines : [])]}
