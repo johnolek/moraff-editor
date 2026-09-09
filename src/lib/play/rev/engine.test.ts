@@ -4,7 +4,7 @@ import { formatRevRecord, REV_VALUE_COUNT } from '../../game/rev-port/record';
 import { REV_KEY } from './keys';
 import { NEEDS_A_CURE } from './pass';
 import { REV_GRAB_A_SANDWICH } from './screens';
-import { NO_SOUND_HERE, SOUND_OFF } from './settings';
+import { SOUND_OFF } from './settings';
 import { REV_VALUE, revValue } from './record';
 import { REV_CLOCK_TICK, RevGameSession, runRevDungeon, startRevGame, type RevCharacterFile } from './engine';
 
@@ -88,7 +88,7 @@ describe('the loop', () => {
     // 1000:10A5: the loop has run straight past the two seconds and rubbed its own line out...
     expect(session.game.said).toEqual([]);
     // ...and the tab is still showing the screen it was asked to hold.
-    expect(session.view().box).toEqual([SOUND_OFF, NO_SOUND_HERE]);
+    expect(session.view().box).toEqual([SOUND_OFF]);
     await pressStats(session);
     expect(session.view().box).not.toContain(SOUND_OFF);
     session.finish();

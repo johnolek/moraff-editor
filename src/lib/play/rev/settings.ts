@@ -23,8 +23,6 @@ export const ENTER_DELAY_PROMPT = ['Try delays between 0 (Default) and 3000.', '
 /** 1000:108D and 109C: what the sound key says it has done. */
 export const SOUND_ON = 'SOUND ON';
 export const SOUND_OFF = 'SOUND OFF';
-/** There is nothing to play here, so the box says as much under the game's own line. */
-export const NO_SOUND_HERE = '   This site has no sound to play.';
 
 /** 1000:0FF5: `#` steps the background colour on, and past the sixteenth back to none. */
 export function revStepBackground(game: RevGame): void {
@@ -53,13 +51,12 @@ export function revCgaPalette(game: RevGame): number {
  * 1000:1055: `O` turns the sound off and on again, where 0 is on.
  *
  * The line goes on row 1 (1000:1077), is left there for two seconds and is then rubbed out with
- * nine spaces (1000:10A5 and 10B4), so it is gone before the player's next key. The port's own
- * note that there is no sound to play stood under it and goes with it.
+ * nine spaces (1000:10A5 and 10B4), so it is gone before the player's next key.
  */
 export function revToggleSound(game: RevGame): void {
   game.sound += 1;
   if (game.sound === 2) game.sound = 0;
-  game.say(game.sound === 0 ? SOUND_ON : SOUND_OFF, NO_SOUND_HERE);
+  game.say(game.sound === 0 ? SOUND_ON : SOUND_OFF);
   game.delay(REV_TWO_SECONDS);
   game.said = [];
 }

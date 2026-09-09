@@ -4,7 +4,6 @@ import { REV_TWO_SECONDS } from './held';
 import type { RevPc } from './record';
 import {
   ENTER_DELAY_PROMPT,
-  NO_SOUND_HERE,
   SOUND_OFF,
   SOUND_ON,
   revCgaPalette,
@@ -90,7 +89,7 @@ describe('the palette', () => {
 });
 
 describe('the sound', () => {
-  it('turns off and on again, and says there is none to play either way', () => {
+  it('turns off and on again, and says which it has done', () => {
     const game = playing();
     const held: string[][] = [];
     const delays: number[] = [];
@@ -102,10 +101,7 @@ describe('the sound', () => {
     expect(game.sound).toBe(1);
     revToggleSound(game);
     expect(game.sound).toBe(0);
-    expect(held).toEqual([
-      [SOUND_OFF, NO_SOUND_HERE],
-      [SOUND_ON, NO_SOUND_HERE],
-    ]);
+    expect(held).toEqual([[SOUND_OFF], [SOUND_ON]]);
     // 1000:10A5 holds each line for two seconds, and 1000:10B4 then rubs it out with nine
     // spaces, so neither is still there when the player's next key arrives.
     expect(delays).toEqual([REV_TWO_SECONDS, REV_TWO_SECONDS]);
