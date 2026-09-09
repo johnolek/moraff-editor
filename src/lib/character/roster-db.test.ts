@@ -77,6 +77,19 @@ describe('the roster in the database', () => {
   });
 });
 
+describe('the schema', () => {
+  it('has the journal in it already, so writing one later is not a version bump', async () => {
+    await store.keepPlayed([character('a', 'SAGEY')], []);
+
+    const opened = indexedDB.open('moraff-tools');
+    const db = await new Promise<IDBDatabase>((resolve) => {
+      opened.onsuccess = () => resolve(opened.result);
+    });
+    expect([...db.objectStoreNames]).toEqual(['characters', 'journal', 'sessions']);
+    db.close();
+  });
+});
+
 describe('keeping the session that has just been played', () => {
   it('leaves the other characters exactly where they were', async () => {
     const played1 = character('a', 'SAGEY');
