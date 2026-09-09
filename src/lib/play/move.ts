@@ -1,4 +1,5 @@
 import { arriveSquare, leaveSquare } from '../game/port/moment';
+import { BATTLE_TEXT_COLOUR, clearMessageLine, messageLine } from '../game/port/screens';
 import { monsterAt } from '../game/port/state';
 import type { Turn } from './engine';
 import { changeModule } from './modules';
@@ -21,6 +22,10 @@ export const RIGHT = [3, 2, 0, 1];
 
 /** What a square's side reads when a module teleporter stands in it (exe 2000:c22d). */
 const MODULE_TELEPORTER = 4;
+
+/** How long a jammed door's line is left on the screen: the delay at exe 2000:dcef and 2000:dd1c,
+ *  0x15e. Nothing in the game shortens it. */
+const JAMMED_MS = 350;
 
 /** movecontrol, case 0 of its arrow switch: the down arrow turns the character round. */
 export function turnAround(turn: Turn): void {
@@ -76,8 +81,17 @@ export async function resolveStep(turn: Turn): Promise<void> {
     return;
   }
   if (monsterAt(game, pc.x + step.dx, pc.y + step.dy) !== -1) {
-    if (side === 1) game.say('THE DOOR IS JAMMED'); // DS:1f38
-    if (side === 2) game.say('THE SECRET DOOR IS JAMMED'); // DS:1f4b
+    // exe 2000:dcbe: a door or a secret door with a monster behind it says so on the strip above
+    // the message box, in the colour every line of a fight is drawn in, and the line is left
+    // standing there once the delay is up. The next thing drawn on that strip is what takes it
+    // off; movecontrol itself wipes nothing where it reads the player's key.
+    if (side === 1 || side === 2) {
+      clearMessageLine(game);
+      // DS:1f38 and DS:1f4b
+      const jammed = side === 1 ? 'THE DOOR IS JAMMED' : 'THE SECRET DOOR IS JAMMED';
+      game.draw(messageLine(jammed, BATTLE_TEXT_COLOUR));
+      game.delay(JAMMED_MS);
+    }
     return;
   }
   // Taking a step in front of the monster being fought usually gives it a fresh interval to

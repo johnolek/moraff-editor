@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseSave } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
 import { loadPlayer, savePlayer } from '../game/port/record';
-import { messageLine } from '../game/port/screens';
+import { BATTLE_TEXT_COLOUR, messageLine } from '../game/port/screens';
 import { BorlandRng, type Rng } from '../game/port/rng';
 import { MAP_PLAYER, monsterAt, newGame, type PlayerCharacter } from '../game/port/state';
 import { EXPLORED_STRIDE } from '../map/explored';
@@ -96,6 +96,23 @@ describe('walking', () => {
     await press(session, KEY.arrowUp);
     expect(session.box).toContain('THE WALL REFUSES TO MOVE');
     expect(session.view().place).toMatchObject(start);
+  });
+
+  it('holds a jammed door on the strip above the box rather than filling the box', async () => {
+    const start = findSquare(3, (square) => square.n === 1);
+    const session = playing(characterFile({ level: 3, dir: 0, ...start }));
+    const monster = session.game.monsters[0];
+    session.game.monsterMap[monster.y * 80 + monster.x] = 0xff;
+    monster.x = start.x;
+    monster.y = start.y - 1;
+    monster.hp = 20;
+    session.game.monsterMap[monster.y * 80 + monster.x] = 0;
+    await press(session, KEY.arrowUp);
+    expect(session.view().place).toMatchObject(start);
+    expect(session.box).not.toContain('THE DOOR IS JAMMED');
+    expect(session.view().box).toContainEqual(
+      messageLine('THE DOOR IS JAMMED', BATTLE_TEXT_COLOUR),
+    );
   });
 });
 
