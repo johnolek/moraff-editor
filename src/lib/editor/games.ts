@@ -6,7 +6,9 @@ import type { GameSchema } from './schema';
 
 const WEAPONS = ['Fists', 'Stick', 'Club', 'Mace', 'Knife', 'Short Sword', 'Long Sword', 'Great Sword'];
 const ARMOR = ['Skin', 'Leather', 'Chain', 'Scale', 'Breast Plate', 'Field Plate', 'Titanium', 'Slot 8 (glitch)'];
-const CLASSES = ['Fighter', 'Worshipper', 'Monk', 'Wizard', 'Priest', 'Sage', 'Mage'];
+/** The class byte at 0x2a, which Dungeons of the Unforgiven and Moraff's World number the
+ *  same way. */
+export const CLASS_NAMES = ['Fighter', 'Worshipper', 'Monk', 'Wizard', 'Priest', 'Sage', 'Mage'];
 const FACINGS = ['North', 'South', 'West', 'East'];
 const PERMANENCE = [
   { value: 0, label: 'None' },
@@ -34,7 +36,7 @@ export const MORAFFS_WORLD: GameSchema = {
         { kind: 'string', offset: 0x0000, length: 32, label: 'Character Name' },
         { kind: 'enum_uint8', offset: 0x0028, label: 'Race', choices: MORAFFS_WORLD_RACES },
         { kind: 'enum_uint8', offset: 0x0029, label: 'Gender', choices: ['Male', 'Female'] },
-        { kind: 'enum_uint8', offset: 0x002a, label: 'Class', choices: CLASSES },
+        { kind: 'enum_uint8', offset: 0x002a, label: 'Class', choices: CLASS_NAMES },
       ],
     },
     {
@@ -319,7 +321,7 @@ export const UNFORGIVEN: GameSchema = {
         { kind: 'string', offset: 0x0000, length: 18, label: 'Character Name' },
         { kind: 'enum_uint8', offset: 0x0028, label: 'Race', choices: UNFORGIVEN_RACES },
         { kind: 'enum_uint8', offset: 0x0029, label: 'Gender', choices: ['Male', 'Female'] },
-        { kind: 'enum_uint8', offset: 0x002a, label: 'Class', choices: CLASSES },
+        { kind: 'enum_uint8', offset: 0x002a, label: 'Class', choices: CLASS_NAMES },
       ],
     },
     {
