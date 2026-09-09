@@ -20,9 +20,11 @@
     colourblind: boolean;
     /** How long the game's screen takes to appear, revealed from the top down. */
     redraw: number;
+    /** Put the stage alone on the display; left out where the browser cannot. */
+    onfullscreen?: () => void;
   }
 
-  let { game, display = $bindable(), colourblind = $bindable(), redraw = $bindable() }: Props = $props();
+  let { game, display = $bindable(), colourblind = $bindable(), redraw = $bindable(), onfullscreen }: Props = $props();
 
   function choose(which: PlayDisplay) {
     display = which;
@@ -43,6 +45,9 @@
   {#each PLAY_DISPLAYS as choice}
     <button type="button" class:chosen={display === choice.id} onclick={() => choose(choice.id)}>{choice.label}</button>
   {/each}
+  {#if onfullscreen}
+    <button type="button" class="fullscreen" onclick={onfullscreen}>Full screen</button>
+  {/if}
 </div>
 <label class="simulate">
   <input type="checkbox" bind:checked={colourblind} onchange={(event) => toggleSimulation(event.currentTarget)} />
@@ -103,6 +108,9 @@
   button.chosen {
     border-color: var(--accent);
     color: var(--accent);
+  }
+  button.fullscreen {
+    margin-left: auto;
   }
   .simulate {
     display: flex;

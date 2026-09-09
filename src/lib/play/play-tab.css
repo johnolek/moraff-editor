@@ -52,16 +52,32 @@
   flex: 1;
   min-width: 0;
   min-height: 0;
+  /* The map's cap below is worked out from this box's own height, so the stage is a size
+     container: its height is the room the page gives it, never its content's. */
+  container-type: size;
 }
 .play .map {
   position: relative;
   flex: 1;
   min-width: 0;
-  /* The screen is 4:3 and as wide as this column, so on a wide window the column stops
-     growing where the screen would run under the character panel at the foot of the page. */
-  max-width: min(100%, calc((100dvh - 22rem) * 4 / 3));
+  /* The screen is 4:3 and as wide as this column, so the column stops growing where the
+     screen would be taller than the stage: the largest 4:3 box the room allows, beside the
+     side column and above the character panel at the foot of the page. */
+  max-width: min(100%, calc(100cqh * 4 / 3));
   /* How far in from the edge of the map Moraff's World lays the corners of the game's screen. */
   --inset: 10px;
+}
+/* Full screen: the map alone on the display, the game's screen letterboxed at 4:3 in the
+   middle of it. The first child is whichever screen the game's snippet draws. */
+.play .map:fullscreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  background: #000;
+}
+.play .map:fullscreen > :first-child {
+  width: min(100vw, calc(100vh * 4 / 3));
 }
 .play .over {
   position: absolute;

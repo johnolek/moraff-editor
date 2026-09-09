@@ -83,6 +83,8 @@
   /** Which character on the roster the session is playing, so an edit to another one is left to
    *  the editor. */
   let playingId = $state.raw<string | null>(null);
+  /** The map column, which the Full screen button puts alone on the display. */
+  let mapElement = $state.raw<HTMLDivElement | null>(null);
   let view = $state.raw<View | null>(null);
   let centredFloor = $state.raw<number | null>(null);
   /* A tab is mounted for one game and never handed another, so what the browser remembered for
@@ -109,6 +111,9 @@
     view = started.view();
     void runPlayLoop(started, game.loop(started));
   }
+
+  /** Whether the browser will put an element alone on the display at all. */
+  const fullscreenAllowed = typeof document !== 'undefined' && document.fullscreenEnabled;
 
   function leave() {
     session?.finish();
@@ -230,7 +235,7 @@
   {:else}
     {@const stage = { session, view, mode, display, redraw }}
     <div class="stage">
-      <div class="map" style:filter={colourblindFilter(colourblind)}>
+      <div class="map" bind:this={mapElement} style:filter={colourblindFilter(colourblind)}>
         {@render screen(stage)}
         {#if view.over}
           <div class="over">
@@ -248,7 +253,14 @@
         {/if}
       </div>
       <aside class="side">
-        <div class="switch"><ScreenSwitch game={game.id} bind:display bind:colourblind bind:redraw /></div>
+        <div class="switch">
+          <ScreenSwitch
+            game={game.id}
+            bind:display
+            bind:colourblind
+            bind:redraw
+            onfullscreen={fullscreenAllowed ? () => void mapElement?.requestFullscreen() : undefined} />
+        </div>
         <div class="place">{@render place(stage)}</div>
         {@render afterPlace?.(stage)}
         <div class="run">
