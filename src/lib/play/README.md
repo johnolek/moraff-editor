@@ -133,8 +133,8 @@ const key = await game.key();              // getch (exe 4000:417b)
 const chosen = await game.choice([0x31]);  // get_choice (exe 2000:2d93): '1', or Escape
 ```
 
-`GameSession.press(key)` is what settles them; the Play tab calls it from its keydown handler and
-from the buttons under the map. A key pressed while nothing is waiting is queued, four deep.
+`GameSession.press(key)` is what settles them; the Play tab calls it from its keydown handler.
+A key pressed while nothing is waiting is queued, four deep.
 
 A ported function that is **not** async — a spell, a fight — cannot wait, so `game.pressAnyKey()`
 (`mgetch_message`, exe 4000:418d) only remembers that a key is owed. `await session.settle()` in

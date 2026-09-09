@@ -1,7 +1,6 @@
 import type { PortedGameId } from '../app-state.svelte';
 import { readStored, writeStored } from '../character/storage';
 import { GAME_CHOICES } from '../game-choice';
-import { KEY } from './keys';
 
 /**
  * Whose arrow keys a game is played with, which is a choice the Play tab offers and the browser
@@ -28,29 +27,6 @@ const HOW: Record<MovementStyle, string> = {
 export const MOVEMENT_STYLES: { id: MovementStyle; label: string; how: string }[] = GAME_CHOICES.filter(
   (choice): choice is { id: MovementStyle; label: string } => choice.id in HOW,
 ).map((choice) => ({ id: choice.id, label: choice.label, how: HOW[choice.id] }));
-
-/** What each arrow does under each style, for the buttons under the map. The words are each
- *  game's own for its own arrows, from the button bar (exe 4000:667b) and the help menu
- *  (WORLD.EXE 4000:3563); the two games read the same byte for an arrow. */
-const ARROW_LABELS: Record<MovementStyle, Record<number, string>> = {
-  unforgiven: {
-    [KEY.arrowUp]: 'MOVE FORWARD',
-    [KEY.arrowLeft]: 'TURN LEFT',
-    [KEY.arrowDown]: 'TURN AROUND',
-    [KEY.arrowRight]: 'TURN RIGHT',
-  },
-  moraffsWorld: {
-    [KEY.arrowUp]: 'FACE AND MOVE NORTH',
-    [KEY.arrowLeft]: 'FACE AND MOVE WEST',
-    [KEY.arrowDown]: 'FACE AND MOVE SOUTH',
-    [KEY.arrowRight]: 'FACE AND MOVE EAST',
-  },
-};
-
-/** What a key does under a style, or null for a key that is not one of the four arrows. */
-export function arrowLabel(style: MovementStyle, key: number): string | null {
-  return ARROW_LABELS[style][key] ?? null;
-}
 
 function isMovementStyle(value: unknown): value is MovementStyle {
   return MOVEMENT_STYLES.some((style) => style.id === value);

@@ -141,7 +141,7 @@ Three things are this game's own:
   (`../mode.ts`), and the site's own top-down map is still a switch away on the tab.
 * **The letters are read in capitals.** There is no `UCASE$` anywhere in the module, so a
   lower-case `d` matches none of the branches and does nothing at all. This port reads the
-  character as typed and behaves the same way; the buttons under the map send capitals.
+  character as typed and behaves the same way.
 * **The words go where the game `LOCATE`s them** — the message rows top left, the spells top
   right, `EXP. VALUE:` at the bottom — and every line in them is the literal the executable holds.
   What the port keeps in three lists rather than at rows is put back on rows in

@@ -88,8 +88,8 @@ const chosen = await session.menuKey(2, 3);    // FUN_2000_1fbd: a digit off lin
 const slot = await session.lineMenuKey(1, 8);  // FUN_2000_1d0b: 1 to 8, or -1 for Escape
 ```
 
-`MwGameSession.press(key)` is what settles them; the Play tab calls it from its keydown handler
-and from the buttons under the map. A key pressed while nothing is waiting is queued, four deep.
+`MwGameSession.press(key)` is what settles them; the Play tab calls it from its keydown handler.
+A key pressed while nothing is waiting is queued, four deep.
 
 A ported function that is **not** async — a fight, a drop, a town menu — cannot wait, so
 `game.pressAnyKey()` (`wait_key`, WORLD.EXE 4000:3452) only remembers that a key is owed.

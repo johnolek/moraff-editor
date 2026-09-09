@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { KEY } from './keys';
-import { arrowLabel, MOVEMENT_STYLES, readMovementStyle, writeMovementStyle } from './movement';
+import { MOVEMENT_STYLES, readMovementStyle, writeMovementStyle } from './movement';
 
 /** Enough of the browser's Storage to stand in for it. */
 function fakeStorage(): Storage {
@@ -56,16 +55,5 @@ describe('the control on the Play tab', () => {
     expect(MOVEMENT_STYLES.map((style) => style.id)).toEqual(['unforgiven', 'moraffsWorld']);
     expect(MOVEMENT_STYLES.map((style) => style.label)).toEqual(['Dungeons of the Unforgiven', "Moraff's World"]);
     expect(MOVEMENT_STYLES.every((style) => style.how.length > 0)).toBe(true);
-  });
-
-  it('says what an arrow does under the style being played', () => {
-    expect(arrowLabel('unforgiven', KEY.arrowUp)).toBe('MOVE FORWARD');
-    expect(arrowLabel('moraffsWorld', KEY.arrowUp)).toBe('FACE AND MOVE NORTH');
-    expect(arrowLabel('moraffsWorld', KEY.arrowLeft)).toBe('FACE AND MOVE WEST');
-  });
-
-  it('says nothing about a key that is not one of the four arrows', () => {
-    expect(arrowLabel('unforgiven', KEY.fight)).toBeNull();
-    expect(arrowLabel('moraffsWorld', KEY.homeTurnLeft)).toBeNull();
   });
 });
