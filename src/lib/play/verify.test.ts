@@ -169,6 +169,12 @@ describe('verifying a run', () => {
     expect(whatToSayAboutTheEngine('46f877a', '46f877a')).toBeNull();
   });
 
+  it('cannot vouch for two builds that had no commit to read', () => {
+    expect(whatToSayAboutTheEngine('unknown', 'unknown')).toBe(
+      'The run was played on an engine built where no commit could be read, so this build cannot be shown to be that same engine.',
+    );
+  });
+
   it('takes an engine that is not this build for a note rather than a failure', async () => {
     const log = await unforgivenRun();
     const verdict = await verifyRun({ ...log, engine: 'aaaaaaa' });

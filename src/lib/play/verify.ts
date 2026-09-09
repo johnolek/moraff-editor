@@ -134,6 +134,11 @@ export function whatToSayAboutTheEngine(logEngine: string, buildEngine: string):
   if (logEngine.endsWith('-dirty')) {
     return 'The run was played on an engine built from a working tree with changes in it, which the commit does not name, so this build cannot be shown to be that same engine.';
   }
+  // vite.config.ts writes `unknown` when there is no git to ask, so two such builds have no
+  // commit in common to be the same engine by.
+  if (logEngine === 'unknown') {
+    return 'The run was played on an engine built where no commit could be read, so this build cannot be shown to be that same engine.';
+  }
   return null;
 }
 
