@@ -30,6 +30,8 @@
     monstersDrawn,
     panelVisible,
     PLAY_MODES,
+    colourblindFilter,
+    readPlayColourblind,
     readPlayDisplay,
     readPlayMode,
     sidePicturesVisible,
@@ -51,6 +53,7 @@
   let style = $state<MovementStyle>(readMovementStyle('unforgiven'));
   let mode = $state<PlayMode>(readPlayMode('unforgiven'));
   let display = $state<PlayDisplay>(readPlayDisplay('unforgiven'));
+  let colourblind = $state(readPlayColourblind('unforgiven'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -266,7 +269,7 @@
     </div>
   {:else}
     <div class="stage">
-      <div class="map">
+      <div class="map" style:filter={colourblindFilter(colourblind)}>
         {#if display === 'screen'}
           <Screen
             game={session.game}
@@ -337,7 +340,7 @@
         {/if}
       </div>
       <aside class="side">
-        <div class="switch"><ScreenSwitch game="unforgiven" bind:display /></div>
+        <div class="switch"><ScreenSwitch game="unforgiven" bind:display bind:colourblind /></div>
         <div class="place">
           <span>{view.place.floor === 0 ? 'Town' : `Floor ${view.place.floor}`}</span>
           <span>Module {view.place.module + 1}</span>

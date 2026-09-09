@@ -16,6 +16,8 @@
     monstersDrawn,
     panelVisible,
     PLAY_MODES,
+    colourblindFilter,
+    readPlayColourblind,
     readPlayDisplay,
     readPlayMode,
     writePlayMode,
@@ -56,6 +58,7 @@
   let centredLevel = $state.raw<number | null>(null);
   let mode = $state<PlayMode>(readPlayMode('revenge'));
   let display = $state<PlayDisplay>(readPlayDisplay('revenge'));
+  let colourblind = $state(readPlayColourblind('revenge'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -257,7 +260,7 @@
     </div>
   {:else}
     <div class="stage">
-      <div class="map">
+      <div class="map" style:filter={colourblindFilter(colourblind)}>
         {#if display === 'screen' && gameScreen}
           <RevScreenCanvas screen={gameScreen} palette={screenColours.palette} background={screenColours.background} />
         {:else}
@@ -308,7 +311,7 @@
         {/if}
       </div>
       <aside class="side">
-        <div class="switch"><ScreenSwitch game="revenge" bind:display /></div>
+        <div class="switch"><ScreenSwitch game="revenge" bind:display bind:colourblind /></div>
         <div class="place">
           <span>{view.place.level === 0 ? 'The town' : `Level ${view.place.level}`}</span>
           <span>{view.place.column}, {view.place.row}</span>

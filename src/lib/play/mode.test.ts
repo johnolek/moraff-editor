@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import type { StockedMonster } from '../map/stocking';
 import {
+  colourblindFilter,
+  COLOURBLIND_FILTER_ID,
   DEFAULT_PLAY_MODE,
   debugDrawn,
   DEFAULT_PLAY_DISPLAY,
@@ -204,5 +206,10 @@ describe('the colourblindness simulation', () => {
     useStorage(undefined);
     writePlayColourblind('moraffsWorld', true);
     expect(readPlayColourblind('moraffsWorld')).toBe(false);
+  });
+
+  it('points the stage at the filter only while it is on', () => {
+    expect(colourblindFilter(true)).toBe(`url(#${COLOURBLIND_FILTER_ID})`);
+    expect(colourblindFilter(false)).toBe(null);
   });
 });

@@ -112,6 +112,14 @@ export function writePlayColourblind(game: PortedGameId, on: boolean): void {
   writeStored(PREFIX + game + COLOURBLIND_SUFFIX, on ? 'on' : 'off');
 }
 
+/** The inline SVG filter the switch defines and a stage points at. */
+export const COLOURBLIND_FILTER_ID = 'red-green-simulation';
+
+/** What a stage's CSS `filter` is set to, or null to leave it alone. */
+export function colourblindFilter(on: boolean): string | null {
+  return on ? `url(#${COLOURBLIND_FILTER_ID})` : null;
+}
+
 /**
  * Whether the column of numbers the game keeps and never prints is shown — the engaged monster's
  * hit points and the chance a swing lands, the charges on every wand and scroll, the turns left

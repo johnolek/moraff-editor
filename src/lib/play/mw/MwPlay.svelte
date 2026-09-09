@@ -33,6 +33,8 @@
     monstersDrawn,
     panelVisible,
     PLAY_MODES,
+    colourblindFilter,
+    readPlayColourblind,
     readPlayDisplay,
     readPlayMode,
     sidePicturesVisible,
@@ -71,6 +73,7 @@
   let style = $state<MovementStyle>(readMovementStyle('moraffsWorld'));
   let mode = $state<PlayMode>(readPlayMode('moraffsWorld'));
   let display = $state<PlayDisplay>(readPlayDisplay('moraffsWorld'));
+  let colourblind = $state(readPlayColourblind('moraffsWorld'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -408,7 +411,7 @@
   {:else}
     <div class="stage">
       <!-- The overlays are drawn in the game's own palette entries, the way it draws them. -->
-      <div class="map" style:--status-colour={SCREEN_COLOURS[5]}>
+      <div class="map" style:--status-colour={SCREEN_COLOURS[5]} style:filter={colourblindFilter(colourblind)}>
         {#if display === 'screen'}
           <div class="game-screen">
             <MwScreen
@@ -495,7 +498,7 @@
         {/if}
       </div>
       <aside class="side">
-        <div class="switch"><ScreenSwitch game="moraffsWorld" bind:display /></div>
+        <div class="switch"><ScreenSwitch game="moraffsWorld" bind:display bind:colourblind /></div>
         <div class="place">
           <span>{view.place.floor === 0 ? 'The surface' : `Floor ${view.place.floor}`}</span>
           <span>Dungeon {view.place.dungeon}</span>
