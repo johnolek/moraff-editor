@@ -41,10 +41,28 @@
     exp: number;
     /** The game's own curve: the experience it takes to reach level `level + 1`. */
     needed: (level: number) => number;
+    /**
+     * How tall the stone bar came out, in pixels, which the caller binds to so that the map
+     * under it can keep the character out of the strip the bar hides. It is measured rather than
+     * worked out, since the height of the bar is a fraction of the room the stage has.
+     */
+    barHeight?: number;
   }
 
-  let { closeUp, closeUpHp, closeUpLines, hp, maxHp, sp, maxSp, level, exp, needed }: Props =
+  let { closeUp, closeUpHp, closeUpLines, hp, maxHp, sp, maxSp, level, exp, needed, barHeight = $bindable(0) }: Props =
     $props();
+
+  let stone = $state.raw<HTMLDivElement | null>(null);
+
+  $effect(() => {
+    const bar = stone;
+    if (!bar) return;
+    // The border box rather than the content box: the lit line along the top edge of the bar is
+    // drawn as its border, and it hides the map like the rest of the stone does.
+    const observer = new ResizeObserver(([entry]) => (barHeight = entry.borderBoxSize[0].blockSize));
+    observer.observe(bar);
+    return () => observer.disconnect();
+  });
 </script>
 
 <div class="hud" style:--orb-cap="{HUD_ORB_PX}px">
@@ -62,7 +80,7 @@
     </div>
   {/if}
   <div class="foot">
-    <div class="stone"></div>
+    <div class="stone" bind:this={stone}></div>
     <div class="row">
       <HudOrb kind="health" value={hp} max={maxHp} />
       <div class="middle"><HudExpBar {level} {exp} {needed} /></div>
