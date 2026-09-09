@@ -178,11 +178,15 @@ the disk holds 1 there. The fountain of youth adds two to it.
 
 That is the whole of what "regenerate your character, allowing him to become more powerful than
 ever before" means in the help file. Change the divisor and every wall on all seventy levels
-moves, so the map the character spent months filling in describes somewhere that no longer
-exists. A regenerated character goes to 3, then 5, then 7: a dungeon of its own each time.
+moves. A regenerated character goes to 3, then 5, then 7: a dungeon of its own each time.
+
+The fountain knows what it has done. Before it adds the two it walks the character's explored map
+and zeroes rows 1 to 20 of every level from 1 to 70, so months of filling in are thrown away with
+the dungeon they described. Level 0 is the one it does not touch, which leaves you the twenty
+rows of the town — drawn for a town whose walls have moved as well.
 
 In the code: [wallSide](source:ts/revmap.js/wallSide), and `rev-tools/docs/DUNGEON.md`
-section 5 on the fountain at `1000:3ED0`.
+section 5 on the map at `1000:3DCC` and the fountain at `1000:3ED0`.
 
 ### Your explored map is twenty bits to a row
 
@@ -298,7 +302,10 @@ In the code: [COLUMNS](source:ts/revmap.js/COLUMNS) and [ROWS](source:ts/revmap.
 Walls are one rule; ladders and chutes are another, and the two know nothing about each other.
 The square's own coordinates go into
 `INT(((column + 7) ^ 1.3 * (row + 6) ^ 1.2 * (level + step + 1) ^ 1.1) MOD 300) - 3`, and the
-code that comes out says what is there: 1 to 9 a ladder, 0 a chute, 50 nothing.
+code that comes out says what is there: 0 a chute, 1 to 9 a ladder up out of this square, and 10
+or more sends the game asking the three levels below for a ladder down to one of them. The 50 is
+not a code the formula can produce. It is what the game writes when there is nothing here — when
+`7.NUM` has no bit for the square, or when the search below comes back empty-handed.
 
 `7.NUM` looks like the dungeon's feature file and is not. Every bit in it says only that a square
 holds something; which something still comes from the formula. And the file and the formula do
