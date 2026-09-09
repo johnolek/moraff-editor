@@ -371,16 +371,16 @@ forty and one too high for the fortieth.
 In the code: `rev-tools/docs/MONSTERS.md` part 2, on the name at `1000:80B0`, the level at
 `1000:80DE` and the kind at `1000:82E5`.
 
-### One of the twenty-two names is never met
+### The last two names have to be earned
 
-Each of `F6.COM` and `F7.COM` holds twenty-two monster names, and the rule that picks one reaches
-only the first twenty. Two corrections sit behind it: on levels 1 to 6, name 20 becomes name 12;
-and name 20 becomes name 22 once the monster has more than 140 hit points, which is the only way
-the twenty-second name gets into the game at all.
+Each of `F6.COM` and `F7.COM` holds twenty-two monster names, and the slot itself only ever picks
+one of the first twenty. Two corrections sit behind that, and both of them test the same pair of
+names, 19 and 20, and nothing else. On levels 1 to 6 the pair drops by eight, to 11 and 12. From
+level 7 down, a monster carrying more than 140 hit points goes the other way, to 21 and 22.
 
-Nothing reaches name 21. The variable is written in exactly one place, so that is the whole of
-it: `SPECTOR` in the first dungeon and `GHOST` in the second are sitting in the files, drawn,
-indexed, and impossible to meet.
+So the last two names are what a strong name 19 or 20 is met as, and there is nothing in either
+file you cannot meet. `SPECTOR` in the first dungeon and `GHOST` in the second are name 21, and
+92 slots of the shipped tables are already carrying enough hit points to be met as one.
 
 In the code: `rev-tools/docs/MONSTERS.md` part 2, on `1000:80B0` and the two corrections at
 `1000:81A6`.
