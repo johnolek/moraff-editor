@@ -145,6 +145,21 @@ Three things are this game's own:
 * **The letters are read in capitals.** There is no `UCASE$` anywhere in the module, so a
   lower-case `d` matches none of the branches and does nothing at all. This port reads the
   character as typed and behaves the same way.
+* **A message the game holds is held here too, and the level keeps moving behind it.** Every
+  `T=TIMER: WHILE TIMER-T < 2: WEND` at 1000:2F1A and every doubled one at 1000:2F35 is a frame
+  in `held.ts`: the loop runs straight past the wait, the screen as it stood at that moment is
+  kept, and the tab draws it for the two or four seconds the call asked for. Any key gives up
+  what is left of it, which is where the original would have been by the time it read the
+  keyboard again. Two things about this are not the original. The frame is the drawn screen
+  rather than the game behind it, because the port works the whole screen out from the game
+  every time it draws and the game has moved on by then; and the monsters' clock goes on ticking
+  while a frame is up, since the tick is the poll of a loop that is not waiting for anything
+  (`clock.ts`). So monsters walk about behind a screen that does not show it and have moved when
+  the frame comes down, where the original's busy loop leaves them exactly where they were —
+  `TIMER` is the only thing that runs there. Stopping the clock instead would let a display
+  timer change the game and put the run log at the mercy of what the tab was showing. The one
+  hold that is not ported is the four seconds at 1000:1941, in the A key that drops the coins,
+  which is not built.
 * **The words go where the game `LOCATE`s them** — the message rows top left, the spells top
   right, `EXP. VALUE:` at the bottom — and every line in them is the literal the executable holds.
   The lines the port keeps in a list rather than at a row are put back on rows in
