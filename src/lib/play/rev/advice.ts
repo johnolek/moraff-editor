@@ -32,6 +32,10 @@ export function revAdvice(game: RevGame): string[] {
 function revRolledAdvice(game: RevGame): string[] {
   const pc = game.pc;
   const roll = game.rng.random(7) + 1;
+  // 1000:06EB: the roll is left in the compiler's scratch cell, and a monster's own d20 starts
+  // from whatever is in that cell (`attack.ts`). So the number the advice rolled is part of how
+  // hard the next monster hits.
+  game.scratch = roll;
   const experience = pc.experience + revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE);
   // 1000:0783: the advice wants the experience past the threshold, not level with it.
   if (roll === 1 && experience > revExperienceForNextLevel(pc.level)) return ['You should stay at an Inn.'];

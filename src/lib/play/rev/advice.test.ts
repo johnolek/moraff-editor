@@ -58,3 +58,14 @@ describe('the line about the inn', () => {
     expect(revAdvice(game)).toEqual([]);
   });
 });
+
+describe('the scratch cell the advice leaves its roll in', () => {
+  it('holds the roll after every pass, as 1000:06EB does', () => {
+    for (const advice of [1, 4, 7]) {
+      const game = newRevGame(character(), rolls(advice));
+      game.scratch = 99;
+      revAdvice(game);
+      expect(game.scratch).toBe(advice);
+    }
+  });
+});
