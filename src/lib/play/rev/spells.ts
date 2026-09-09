@@ -1,5 +1,6 @@
 import { LEVELS } from '../../game/revmap.js';
 import type { RevMagicDesk } from './desk';
+import { REV_FOUR_SECONDS, REV_TWO_SECONDS } from './held';
 import { REV_MAGIC, revBasicNumber } from './magic';
 import { REV_VALUE, revValue, setRevValue, type RevPc } from './record';
 import { revKillMonster } from './kill';
@@ -134,6 +135,8 @@ async function askForALevel(game: RevGame, desk: RevMagicDesk, prompt: string): 
   if (level < 1) return null;
   if (level > REV_SPELL_LEVEL_COUNT || level > game.pc.spellPoints) {
     game.say(REV_NOT_ENOUGH_SPELL_POINTS);
+    // 1000:363B: two seconds to read it before the dungeon redraws.
+    game.delay(REV_TWO_SECONDS);
     return null;
   }
   return level;
@@ -195,6 +198,8 @@ function senseLocation(game: RevGame): void {
     `AND YOU ARE ON LEVEL${revBasicNumber(pc.dungeonLevel)}`,
   );
   pc.spellPoints -= 3;
+  // 1000:37C3: four seconds, which is the only way the two lines are read before the redraw.
+  game.delay(REV_FOUR_SECONDS);
 }
 
 /** How wide a BASIC print zone is, which is where a comma in a `PRINT` moves to. */
@@ -277,6 +282,8 @@ function mocciolo(game: RevGame, desk: RevMagicDesk): void {
     // 1000:3995: a point on every characteristic.
     for (let stat = 0; stat < pc.stats.length; stat++) pc.stats[stat] += 1;
     game.say('WOW!');
+    // 1000:39E4. The point off every characteristic at roll 5 says UH OH... and holds nothing.
+    game.delay(REV_FOUR_SECONDS);
     return;
   }
   if (roll === 2) {
@@ -311,6 +318,8 @@ function mocciolo(game: RevGame, desk: RevMagicDesk): void {
   pc.maxHp = pc.maxHp - game.rng.random(10) - game.rng.random(10) - 2 * pc.fromHealth + 2;
   if (pc.maxHp < 0) pc.maxHp = 1;
   game.say('Oh my God!');
+  // 1000:3AFB.
+  game.delay(REV_FOUR_SECONDS);
   revCapHitPoints(pc);
 }
 
@@ -418,6 +427,8 @@ function damageTheMonster(game: RevGame, level: number, damage: number): void {
   if (!fight) return;
   fight.hitPoints -= damage;
   game.say(`YOU DO${revBasicNumber(damage)} POINTS`);
+  // 1000:95A6: held before the monster is looked at, so the damage is read even where it kills.
+  game.delay(REV_TWO_SECONDS);
   if (fight.hitPoints < 1) revKillMonster(game);
 }
 
@@ -431,11 +442,15 @@ function killOutright(game: RevGame, level: number): void {
 function noEffect(game: RevGame, level: number): void {
   game.pc.spellPoints -= level;
   game.say('NO EFFECT ', '');
+  // 1000:954F.
+  game.delay(REV_TWO_SECONDS);
 }
 
 /** 1000:9555: the spell is done and the monster gets its turn. */
 function spellDone(game: RevGame, level: number): void {
   game.pc.spellPoints -= level;
+  // 1000:9563: two seconds with whatever the spell itself printed still on the screen.
+  game.delay(REV_TWO_SECONDS);
 }
 
 /** The monster's level, which in a fight is what DGROUP B6B4 holds. */
@@ -611,6 +626,8 @@ export async function revCastInAFight(game: RevGame, desk: RevMagicDesk): Promis
   if (level < 1 || level > REV_SPELL_LEVEL_COUNT) return;
   if (level > game.pc.spellPoints) {
     game.say(REV_NOT_ENOUGH_SPELL_POINTS);
+    // 1000:915B: the fight's own copy of the same refusal, held for the same two seconds.
+    game.delay(REV_TWO_SECONDS);
     return;
   }
   const choice = await revSpellMenu(game, desk, level, 'battle');

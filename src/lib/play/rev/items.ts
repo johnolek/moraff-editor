@@ -1,5 +1,6 @@
 import type { RevMagicDesk } from './desk';
 import type { RevSwing } from './fight';
+import { REV_TWO_SECONDS } from './held';
 import { revKillMonster } from './kill';
 import {
   REV_MAGIC,
@@ -431,7 +432,11 @@ export async function revUseAWandInAFight(game: RevGame, desk: RevMagicDesk): Pr
 /** 1000:0FAD: outside a fight the three battle wands say so and do nothing. */
 export async function revUseAWandInTheDungeon(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const colour = await revUseAWand(game, desk);
-  if (colour > 5 && colour < REV_WAND_COLOURS) game.say(REV_NO_EFFECT);
+  if (colour > 5 && colour < REV_WAND_COLOURS) {
+    game.say(REV_NO_EFFECT);
+    // 1000:0FD8: two seconds before the dungeon draws itself again over the line.
+    game.delay(REV_TWO_SECONDS);
+  }
 }
 
 /**
