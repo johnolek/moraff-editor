@@ -19,9 +19,10 @@ import type { RevGame } from './state';
  *   to their swing.
  * * **The monster's d20 accumulates into the scratch cell it rolls in** (1000:9A96) where the
  *   character's assigns (1000:8A14). That cell is DGROUP 52FC, which hundreds of statements use,
- *   so the monster's roll starts from whatever was last left in it. This port keeps a scratch
- *   number of its own on the game for the same reason, and every ported function that writes 52FC
- *   writes it here.
+ *   so the monster's roll starts from whatever was last left in it. In practice that is nearly
+ *   always the advice line's own `INT(RND * 7) + 1`, which the top of every pass of the dungeon
+ *   loop puts there (1000:06EB, `advice.ts`). This port keeps a scratch number of its own on the
+ *   game for the same reason, and every ported function that writes 52FC writes it here.
  * * **The three points a shallow monster loses off a solid blow can never be taken** (1000:9B95).
  *   The test wants damage over four, and the only band that has run by then adds at most four.
  *
