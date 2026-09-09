@@ -112,6 +112,25 @@ export const MW_MAP_LEFT = 4;
  *  a 768-row one. */
 export const mwMapTop = (height: number): number => Math.trunc((0x1ae * (height - 1)) / 0x4b0);
 
+/**
+ * The map the X key fills the screen with, from set_map_view (exe 2000:3ae1) called with 0 and
+ * FUN_3000_b066 (exe 3000:b066): seven-pixel cells over the whole eighty by a hundred and ten
+ * floor, four pixels in from the screen's top left corner — DS:448f, and DS:4491, which
+ * FUN_3000_b066 sets to 4 for a map as wide as the floor. A hundred and ten rows of seven reach
+ * past the bottom of a 768-row screen, so the last rows are off it, which is what the game does.
+ */
+export const MW_EXPANDED_CELL = 7;
+export const MW_EXPANDED_COLUMNS = 0x50;
+export const MW_EXPANDED_ROWS = 0x6e;
+export const MW_EXPANDED_TOP = 4;
+
+/**
+ * The square movecontrol centres that map on (exe 2000:aad5, the 0x78 branch): column 40 and row
+ * 55, which with a window the floor's own size shows the floor from its first square. The narrow
+ * video modes get rows 18, 55 and 92 in three screenfuls instead.
+ */
+export const MW_EXPANDED_CENTRE = { x: 0x28, y: 0x37 } as const;
+
 /** The colours the screen is drawn in. Entries 1 to 15 are the same in all eleven floor palettes,
  *  so a floor never changes any of these. */
 export const MW_COLOURS = {

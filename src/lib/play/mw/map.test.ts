@@ -9,8 +9,16 @@ import {
   ZOOM_MARK_COLOUR,
   ZOOM_SIDE_COLOUR,
 } from '../zoom-map';
-import { drawMwZoomMap, MORAFFS_WORLD_ZOOM_MAP } from './map';
-import { MW_COLOURS, MW_SCREEN_PIXELS } from './view3d/screen';
+import { drawMwExpandedMap, drawMwZoomMap, MORAFFS_WORLD_ZOOM_MAP } from './map';
+import {
+  MW_COLOURS,
+  MW_EXPANDED_CELL,
+  MW_EXPANDED_COLUMNS,
+  MW_EXPANDED_ROWS,
+  MW_EXPANDED_TOP,
+  MW_MAP_LEFT,
+  MW_SCREEN_PIXELS,
+} from './view3d/screen';
 
 const open = (): MapSquare => ({ n: 3, s: 3, w: 3, e: 3, solid: false, ladder: 0, chute: 0, trapdoor: -1, surface: 0 });
 
@@ -138,5 +146,49 @@ describe("a door's tick at the right-hand edge of the screen", () => {
     const edge = { x: 64 - 4 - 3, y: 4 };
     expect(pixelAt(drawAtEdge(MORAFFS_WORLD_ZOOM_MAP), edge.x, edge.y)).toBe(ZOOM_SIDE_COLOUR);
     expect(pixelAt(drawAtEdge(UNFORGIVEN_ZOOM_MAP), edge.x, edge.y)).toBe(0);
+  });
+});
+
+describe("the map Moraff's World's X key fills the screen with", () => {
+  const standing = { x: 12, y: 20 };
+
+  function expanded(): Frame {
+    const rows: MapSquare[][] = Array.from({ length: MW_EXPANDED_ROWS }, () =>
+      Array.from({ length: MW_EXPANDED_COLUMNS }, open),
+    );
+    const frame = newFrame(MW_SCREEN_PIXELS.width, MW_SCREEN_PIXELS.height);
+    drawMwExpandedMap(frame, {
+      rows,
+      at: standing,
+      map: { known: () => true, knownOnArrival: () => true },
+    });
+    return frame;
+  }
+
+  /** Where a square of the floor lands on that map. */
+  const cell = (x: number, y: number) => ({
+    x: MW_MAP_LEFT + x * MW_EXPANDED_CELL,
+    y: MW_EXPANDED_TOP + y * MW_EXPANDED_CELL,
+  });
+
+  it("shows the whole floor from the map's own corner, at seven pixels a square", () => {
+    const frame = expanded();
+    const first = cell(0, 0);
+    expect(pixelAt(frame, first.x, first.y)).toBe(ZOOM_CORNER_COLOUR);
+    expect(pixelAt(frame, first.x + 3, first.y + 3)).toBe(0);
+  });
+
+  it('fills the screen the map does not reach with the maroon it is drawn on', () => {
+    const frame = expanded();
+    expect(pixelAt(frame, MW_EXPANDED_COLUMNS * MW_EXPANDED_CELL + 20, 400)).toBe(MW_COLOURS.map);
+  });
+
+  it("marks the character's own square, which is what the original blinks there", () => {
+    const frame = expanded();
+    const here = cell(standing.x, standing.y);
+    expect(pixelAt(frame, here.x + 3, here.y + 3)).toBe(MW_COLOURS.menuKey);
+    // The square next door is a plain black one, so the mark is one square and not a smear.
+    const next = cell(standing.x + 1, standing.y);
+    expect(pixelAt(frame, next.x + 3, next.y + 3)).toBe(0);
   });
 });

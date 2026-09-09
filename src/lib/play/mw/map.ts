@@ -1,8 +1,20 @@
 import { fillRect, type Frame } from '../view3d/frame';
-import { drawZoomMap, drawZoomMarker, type ZoomMapFloor, type ZoomMapStyle } from '../zoom-map';
+import {
+  drawExpandedZoomMap,
+  drawZoomMap,
+  drawZoomMarker,
+  type ZoomMapFloor,
+  type ZoomMapStyle,
+  type ZoomMapWindow,
+} from '../zoom-map';
 import { drawZoomMonsters } from '../zoom-monsters';
 import {
   MW_COLOURS,
+  MW_EXPANDED_CELL,
+  MW_EXPANDED_CENTRE,
+  MW_EXPANDED_COLUMNS,
+  MW_EXPANDED_ROWS,
+  MW_EXPANDED_TOP,
   MW_MAP_CELL,
   MW_MAP_COLUMNS,
   MW_MAP_LEFT,
@@ -69,4 +81,42 @@ export function drawMwZoomMap(frame: Frame, floor: ZoomMapFloor): void {
   drawZoomMap(frame, floor, window, floor.at, MORAFFS_WORLD_ZOOM_MAP);
   drawZoomMarker(frame, window, MORAFFS_WORLD_ZOOM_MAP);
   drawZoomMonsters(frame, window, floor.at, floor.monsters ?? []);
+}
+
+/** Where the X key's map goes: from the same corner the corner map starts at, over the whole
+ *  floor. */
+export const mwExpandedMapWindow = (): ZoomMapWindow => ({
+  left: MW_MAP_LEFT,
+  top: MW_EXPANDED_TOP,
+  cell: MW_EXPANDED_CELL,
+  columns: MW_EXPANDED_COLUMNS,
+  rows: MW_EXPANDED_ROWS,
+});
+
+/**
+ * The colour the character's own square is left in on that map. FUN_2000_7d00 (exe 2000:7d00) is
+ * handed the counter movecontrol's wait keeps adding to, and unlike the corner map's own
+ * FUN_2000_7c8a (exe 2000:7c8a) it does not take it modulo 16, so the square blinks through the
+ * whole palette rather than through the first sixteen entries. One colour has to stand for that
+ * here, and it is the one the corner map's cursor is drawn in.
+ */
+const MW_EXPANDED_CURSOR = MW_COLOURS.menuKey;
+
+/**
+ * movecontrol's X key (exe 2000:aad5): the whole floor over the whole screen, the character's own
+ * square filled on top, and whatever monsters debug mode is marking.
+ *
+ * The colour FUN_3000_b066 fills the screen with before it draws is lost in the decompilation, so
+ * it is taken as the maroon the corner map's own box is filled with, which is what Dungeons of the
+ * Unforgiven's FUN_3000_8e75 fills its own expanded map with.
+ */
+export function drawMwExpandedMap(frame: Frame, floor: ZoomMapFloor): void {
+  const window = mwExpandedMapWindow();
+  drawExpandedZoomMap(frame, floor, MORAFFS_WORLD_ZOOM_MAP, {
+    window,
+    centre: MW_EXPANDED_CENTRE,
+    ground: MORAFFS_WORLD_ZOOM_MAP.box,
+    cursor: MW_EXPANDED_CURSOR,
+  });
+  drawZoomMonsters(frame, window, MW_EXPANDED_CENTRE, floor.monsters ?? []);
 }
