@@ -9,6 +9,12 @@ import type { Turn } from './engine';
  * Module I only goes onward and module V only back; in between the snake asks which. A character
  * rolled under the normal difficulty is turned back at the door of module V. Whatever happens,
  * the character arrives in the new module's town on a random open square.
+ *
+ * The crossing itself is a screen of its own: `tunnel.ts` draws it and `GameSession.crossToModule`
+ * is the order the original does it in.
+ *
+ * The screen the original shows for a module that is not installed — SORRY! and a telephone
+ * number to buy it on — is not built, since all five ship here.
  */
 
 /** The snake's teleporter menu, the refusal at module V's door, and the arrival. */
@@ -46,6 +52,8 @@ export async function changeModule(turn: Turn): Promise<boolean> {
     game.pressAnyKey();
     return false;
   }
+  // FUN_4000_771b is called with the module being arrived in, before the module index changes.
+  await session.crossToModule(pc.module + direction);
   pc.level = 0;
   pc.module += direction;
   relocate(game);
@@ -53,5 +61,10 @@ export async function changeModule(turn: Turn): Promise<boolean> {
   session.enterFloor(0);
   showHint(game, ARRIVED);
   game.pressAnyKey();
+  // The arrival box and its plaque are drawn on the tunnel, which nothing paints over until
+  // movecontrol comes round and draws the screen again. That is after this box's own key, so the
+  // key is taken here rather than at the top of the loop and the tunnel comes down with it.
+  await session.settle();
+  session.tunnel = null;
   return true;
 }
