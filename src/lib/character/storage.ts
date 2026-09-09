@@ -18,11 +18,16 @@ export function readStored(key: string): string | null {
   }
 }
 
-export function writeStored(key: string, value: string): void {
+/** Whether the value is now in the store. A browser with no store, and one whose store is full,
+ *  both come back false: nothing was kept either way. */
+export function writeStored(key: string, value: string): boolean {
+  const store = storage();
+  if (!store) return false;
   try {
-    storage()?.setItem(key, value);
+    store.setItem(key, value);
+    return true;
   } catch {
-    // A full or blocked store only costs the user the memory of what they were doing.
+    return false;
   }
 }
 

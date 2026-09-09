@@ -61,6 +61,7 @@ beforeEach(() => {
   app.characterId = null;
   app.game = 'unforgiven';
   app.tab = 'map';
+  app.rosterKept = true;
 });
 
 afterEach(() => {
@@ -204,6 +205,22 @@ describe('editing the character', () => {
     app.roster = [];
     restoreRoster();
     expect(currentEntry()!.bytes[0x816]).toBe(99);
+  });
+
+  it('says so when the browser will not keep the roster', () => {
+    vi.spyOn(globalThis.localStorage, 'setItem').mockImplementation(() => {
+      throw new Error('quota exceeded');
+    });
+    characterEdited();
+    vi.runAllTimers();
+    expect(app.rosterKept).toBe(false);
+  });
+
+  it('stops saying so once a write goes through', () => {
+    app.rosterKept = false;
+    characterEdited();
+    vi.runAllTimers();
+    expect(app.rosterKept).toBe(true);
   });
 
   it('is undone by restoring the import, in bytes the editor will notice', () => {

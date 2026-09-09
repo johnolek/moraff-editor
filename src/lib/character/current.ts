@@ -180,7 +180,7 @@ function remember(): void {
     clearTimeout(pendingWrite);
     pendingWrite = null;
   }
-  saveRoster(app.roster, app.characterId);
+  app.rosterKept = saveRoster(app.roster, app.characterId);
 }
 
 /**
@@ -194,6 +194,6 @@ function rememberSoon(): void {
   if (pendingWrite !== null) return;
   pendingWrite = setTimeout(() => {
     pendingWrite = null;
-    saveRoster(app.roster, app.characterId);
+    app.rosterKept = saveRoster(app.roster, app.characterId);
   }, EDIT_PAUSE_MS);
 }

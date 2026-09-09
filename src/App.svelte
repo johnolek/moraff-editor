@@ -81,6 +81,12 @@
       The rest is on the way.
     </p>
   {/if}
+  {#if !app.rosterKept}
+    <p class="storage-note">
+      Could not save your characters: the browser's storage is full or turned off. Anything edited now will be gone
+      when this page is closed.
+    </p>
+  {/if}
   <!-- Every tab stays mounted so the map view and the loaded save survive switching. -->
   <main class:hidden={app.tab !== 'map'}>
     <MapExplorer />
@@ -204,6 +210,13 @@
     padding: 8px 24px;
     border-bottom: 1px solid var(--line);
     color: var(--muted);
+    font-size: 13px;
+  }
+  .storage-note {
+    margin: 0;
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--line);
+    color: var(--warn);
     font-size: 13px;
   }
   main {

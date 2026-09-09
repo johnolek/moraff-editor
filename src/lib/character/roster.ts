@@ -82,7 +82,8 @@ export function restoreImport(entry: RosterEntry, now = new Date()): boolean {
   return true;
 }
 
-export function saveRoster(entries: RosterEntry[], currentId: string | null): void {
+/** Keep the roster in the browser. Says whether it went in. */
+export function saveRoster(entries: RosterEntry[], currentId: string | null): boolean {
   const stored: StoredRoster = {
     currentId,
     entries: entries.map((entry) => ({
@@ -97,7 +98,7 @@ export function saveRoster(entries: RosterEntry[], currentId: string | null): vo
       dead: entry.dead,
     })),
   };
-  writeStored(ROSTER_KEY, JSON.stringify(stored));
+  return writeStored(ROSTER_KEY, JSON.stringify(stored));
 }
 
 /** What was stored, with anything this build cannot read left out. */

@@ -36,13 +36,13 @@ describe('base64', () => {
 describe('the store', () => {
   it('gives back what was put in it', () => {
     useStorage(fakeStorage());
-    writeStored('key', 'value');
+    expect(writeStored('key', 'value')).toBe(true);
     expect(readStored('key')).toBe('value');
   });
 
-  it('reads nothing when there is no storage at all', () => {
+  it('reads nothing when there is no storage at all, and says nothing was kept', () => {
     useStorage(undefined);
-    writeStored('key', 'value');
+    expect(writeStored('key', 'value')).toBe(false);
     expect(readStored('key')).toBeNull();
   });
 
@@ -61,7 +61,7 @@ describe('the store', () => {
         throw new Error('access denied');
       },
     });
-    expect(() => writeStored('key', 'value')).not.toThrow();
+    expect(writeStored('key', 'value')).toBe(false);
     expect(readStored('key')).toBeNull();
   });
 });

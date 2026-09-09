@@ -77,6 +77,9 @@ export interface AppState {
   /** Bumped whenever the current character changes: a different one is chosen, or a field of
    *  the one in hand is edited. Everything that reads the record watches this. */
   characterVersion: number;
+  /** Whether the last attempt to keep the roster in the browser worked. False raises the notice
+   *  saying the characters are not being saved, so a full or blocked store is not silent. */
+  rosterKept: boolean;
 }
 
 export const app = $state<AppState>({
@@ -90,6 +93,7 @@ export const app = $state<AppState>({
   roster: [],
   characterId: null,
   characterVersion: 0,
+  rosterKept: true,
 });
 
 /** The character being worked on, or null when there is none. */
