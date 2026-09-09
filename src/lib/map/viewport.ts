@@ -91,21 +91,36 @@ export function fitFloor(width: number, height: number, bounds: Bounds = FULL_FL
   };
 }
 
-export function centerOn(view: Viewport, square: Point, width: number, height: number): Viewport {
+/*
+  The three below take `coveredBottom`: how many pixels of the foot of the canvas something drawn
+  over it hides, such as the bar the play display's orbs stand in. That strip is not canvas as far
+  as they are concerned — a square under it counts as off the canvas, and the middle of the canvas
+  is the middle of what is left — so the map moves before the character walks behind it.
+*/
+
+/** @param coveredBottom Pixels of the foot of the canvas that are hidden. */
+export function centerOn(view: Viewport, square: Point, width: number, height: number, coveredBottom = 0): Viewport {
   return {
     cell: view.cell,
     originX: width / 2 - (square.x + 0.5) * view.cell,
-    originY: height / 2 - (square.y + 0.5) * view.cell,
+    originY: (height - coveredBottom) / 2 - (square.y + 0.5) * view.cell,
   };
 }
 
-export function isVisible(view: Viewport, square: Point, width: number, height: number): boolean {
+/** @param coveredBottom Pixels of the foot of the canvas that are hidden. */
+export function isVisible(view: Viewport, square: Point, width: number, height: number, coveredBottom = 0): boolean {
   const x0 = view.originX + square.x * view.cell;
   const y0 = view.originY + square.y * view.cell;
-  return x0 >= 0 && y0 >= 0 && x0 + view.cell <= width && y0 + view.cell <= height;
+  return x0 >= 0 && y0 >= 0 && x0 + view.cell <= width && y0 + view.cell <= height - coveredBottom;
 }
 
-/** The same viewport when the square is on screen, otherwise one centred on it. */
-export function ensureVisible(view: Viewport, square: Point, width: number, height: number): Viewport {
-  return isVisible(view, square, width, height) ? view : centerOn(view, square, width, height);
+/**
+ * The same viewport when the square is on screen, otherwise one centred on it.
+ *
+ * @param coveredBottom Pixels of the foot of the canvas that are hidden.
+ */
+export function ensureVisible(view: Viewport, square: Point, width: number, height: number, coveredBottom = 0): Viewport {
+  return isVisible(view, square, width, height, coveredBottom)
+    ? view
+    : centerOn(view, square, width, height, coveredBottom);
 }

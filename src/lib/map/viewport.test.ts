@@ -144,3 +144,27 @@ describe('centerOn and ensureVisible', () => {
     expect(squareAt(ensureVisible(view, { x: 78, y: 0 }, 800, 600), 400, 300)).toEqual({ x: 78, y: 0 });
   });
 });
+
+describe('a canvas with its foot covered', () => {
+  // Square 50 is drawn from y = 550 to y = 560: on a 600px canvas, but under a 60px bar.
+  const square = { x: 0, y: 50 };
+
+  it('counts a square under the cover as off the canvas', () => {
+    expect(isVisible(view, square, 800, 600)).toBe(true);
+    expect(isVisible(view, square, 800, 600, 60)).toBe(false);
+  });
+
+  it('still counts a square clear of the cover as on it', () => {
+    expect(isVisible(view, { x: 0, y: 48 }, 800, 600, 60)).toBe(true);
+  });
+
+  it('centres a square in what is left rather than in the whole canvas', () => {
+    expect(centerOn(view, square, 800, 600, 60).originY).toBe(600 / 2 - 30 - 50.5 * 10);
+  });
+
+  it('moves the map when a step takes the square under the cover', () => {
+    const moved = ensureVisible(view, square, 800, 600, 60);
+    expect(moved).not.toBe(view);
+    expect(isVisible(moved, square, 800, 600, 60)).toBe(true);
+  });
+});
