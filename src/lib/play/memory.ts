@@ -411,7 +411,12 @@ function throughOpening(beams: Beam[], lo: Slope, hi: Slope): Beam[] {
  */
 function joined(beams: Beam[]): Beam[] {
   if (beams.length < 2) return beams;
-  const sorted = [...beams].sort((left, right) => (slopeBelow(left.lo, right.lo) ? -1 : 1));
+  // Two beams starting on the same slope are left in the order they came, rather than in
+  // whatever order the sort happens to leave a comparator that never says they are equal.
+  const sorted = [...beams].sort((left, right) => {
+    if (slopeBelow(left.lo, right.lo)) return -1;
+    return slopeBelow(right.lo, left.lo) ? 1 : 0;
+  });
   const merged: Beam[] = [sorted[0]];
   for (const beam of sorted.slice(1)) {
     const last = merged[merged.length - 1];
