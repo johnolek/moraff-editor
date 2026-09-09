@@ -63,6 +63,41 @@ describe('the item menu', () => {
   });
 });
 
+describe('the scratch cell the item menu answers through', () => {
+  /** One run of a menu: what it answered, and what it left in the cell. */
+  async function menu(
+    which: 'prep' | 'battle',
+    leaving: boolean,
+    typed: number[],
+    owned: number | null = null,
+  ): Promise<{ answer: number; cell: number }> {
+    const pc = revCharacter();
+    if (owned !== null) setRevValue(pc, owned, 1);
+    const { game, desk, keys } = revTestGame(pc);
+    game.scratch = 99;
+    keys.push(...typed);
+    const answer = await revItemMenu(game, desk, which, leaving);
+    return { answer, cell: game.scratch };
+  }
+
+  it('holds the line that was chosen, as 1000:14E5 does', async () => {
+    expect(await menu('prep', false, [KEY('2')], 48)).toMatchObject({ answer: 2, cell: 2 });
+  });
+
+  it('holds nothing for the way out of the fight prompt, as 1000:96D9 does', async () => {
+    expect(await menu('battle', true, [KEY('L')])).toMatchObject({ answer: 0, cell: 0 });
+  });
+
+  it('holds nothing where the fight prompt is asked for an item the character has none of', async () => {
+    expect(await menu('battle', true, [KEY('1')])).toMatchObject({ answer: 0, cell: 0 });
+  });
+
+  it('leaves the number standing where the dungeon is, since 1000:16D2 never clears it', async () => {
+    expect(await menu('prep', false, [KEY('1')])).toMatchObject({ answer: 0, cell: 1 });
+    expect(await menu('prep', false, [KEY('9')])).toMatchObject({ answer: 0, cell: 9 });
+  });
+});
+
 describe('the six items used out of a fight', () => {
   it('A TELEPORT SCROLL puts the character in the town under the rope', async () => {
     const pc = revCharacter({ dungeonLevel: 30 });

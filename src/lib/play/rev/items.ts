@@ -102,6 +102,10 @@ const ITEMS_ON_A_MENU = 6;
  * `leaving` is the flag at DGROUP B55C, which the fight prompt and the wizard's guild set: it
  * adds the "L = LEAVE" line, and it makes a choice the character does not own come back as
  * nothing instead of dropping out of the routine. It comes back 0 for "nothing chosen".
+ *
+ * Like the spell menu, the answer is handed back in the compiler's scratch cell — the `ON ...
+ * GOTO` at 1000:16EA and 98ED reads it out of there — so `game.scratch` is written where the
+ * original writes it. A monster's next swing starts its d20 from that cell (`attack.ts`).
  */
 export async function revItemMenu(
   game: RevGame,
@@ -120,15 +124,26 @@ export async function revItemMenu(
     }
     if (leaving) game.say(REV_LEAVE);
     const key = await desk.wait();
-    if (leaving && LEAVE_KEYS.includes(key)) return 0;
+    if (leaving && LEAVE_KEYS.includes(key)) {
+      // 1000:1496 and 96D9
+      game.scratch = 0;
+      return 0;
+    }
     const choice = typedNumber(key);
+    // 1000:14A9, 14E5, 96FA and 9726: what was typed goes in the cell before it is looked at.
+    game.scratch = choice;
     // 1000:14BF: the fight's menu asks again where the dungeon's gives up and goes back to the
     // loop.
     if (choice < 1 || choice > ITEMS_ON_A_MENU) {
       if (leaving) continue;
       return 0;
     }
-    if (held(choice) === 0) return 0;
+    if (held(choice) === 0) {
+      // 1000:1610 and 9813 answer nothing for an item the character has none of, where
+      // 1000:16D2 leaves the number that was typed standing and goes back to the loop.
+      if (leaving) game.scratch = 0;
+      return 0;
+    }
     return choice;
   }
 }
