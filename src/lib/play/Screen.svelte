@@ -7,6 +7,7 @@
   import { battleSpellLines } from '../game/port/screens';
   import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
   import type { DiscoveredMap } from '../map/draw-floor';
+  import type { Point } from '../map/viewport';
   import { SeededRng } from '../game/port/rng';
   import { facingArrowCells } from '../map/you';
   import { debugMonsterLines } from './debug-screen';
@@ -69,6 +70,8 @@
     /** The kind of monster picked out of debug mode's list, every one of which the zoom map
      *  rings, or null while nothing is picked. */
     highlightMonsterId?: string | null;
+    /** The squares of the route debug mode is drawing, which the zoom map dots. */
+    routeSquares?: Point[];
     /** Whether the numbers the game never prints are printed over the views, which is debug
      *  mode's own doing. */
     debug?: boolean;
@@ -113,6 +116,7 @@
     prompt,
     mapMonsters = [],
     highlightMonsterId = null,
+    routeSquares = [],
     debug = false,
     onmonster,
     killed = null,
@@ -291,6 +295,7 @@
       skull,
       mapMonsters,
       highlightMonsterId,
+      routeSquares,
       viewsDrawn,
       expandedMap,
       debug,
@@ -325,6 +330,7 @@
       monsters: mapMonsters,
       thumbnail: dotuMonsterThumbnail,
       highlight: highlightMonsterId,
+      route: routeSquares,
     };
     const paint = (): void => {
       // The plaque goes over everything else on the screen, whichever of them is up: FUN_2000_4054

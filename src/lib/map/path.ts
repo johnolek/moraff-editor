@@ -121,3 +121,23 @@ function buildRoute(rows: MapSquare[][], parent: Int32Array, end: number, width:
   }
   return { squares, hops, steps: squares.length - 1, doors, secretDoors, passWalls };
 }
+
+/**
+ * The route from a square to the nearest teleporter, which is what the map explorer's own button
+ * asks for and what debug mode draws beside a game being played.
+ *
+ * The route ends on the square beside the teleporter rather than on the teleporter itself,
+ * because a teleporter is a side rather than a square: walking into that side is what takes you.
+ */
+export function pathToNearestTeleporter(rows: MapSquare[][], start: Point, area: MapArea, passWall = false): Route | null {
+  return shortestPath(rows, start, hasTeleporterSide, area, passWall);
+}
+
+/** A route in words: how many steps it takes and what it goes through on the way. */
+export function routeWords(route: Route): string {
+  const parts = [`${route.steps} ${route.steps === 1 ? 'step' : 'steps'}`];
+  if (route.doors) parts.push(`${route.doors} ${route.doors === 1 ? 'door' : 'doors'}`);
+  if (route.secretDoors) parts.push(`${route.secretDoors} secret ${route.secretDoors === 1 ? 'door' : 'doors'}`);
+  if (route.passWalls) parts.push(`${route.passWalls} pass ${route.passWalls === 1 ? 'wall' : 'walls'}`);
+  return parts.join(' · ');
+}

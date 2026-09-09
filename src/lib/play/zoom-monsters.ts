@@ -69,7 +69,7 @@ export function zoomMapCell(
 }
 
 /** Whether a cell is one the map's window actually draws. */
-function onTheMap(map: ZoomMapWindow, cell: { column: number; row: number }): boolean {
+export function onTheZoomMap(map: ZoomMapWindow, cell: { column: number; row: number }): boolean {
   return cell.column >= 0 && cell.row >= 0 && cell.column < map.columns && cell.row < map.rows;
 }
 
@@ -89,7 +89,7 @@ export function zoomMapMonsterAt<T extends { x: number; y: number }>(
 ): T | null {
   const column = Math.floor((pixel.x - map.left) / map.cell);
   const row = Math.floor((pixel.y - map.top) / map.cell);
-  if (!onTheMap(map, { column, row })) return null;
+  if (!onTheZoomMap(map, { column, row })) return null;
   return monsters.find((monster) => {
     const cell = zoomMapCell(map, at, monster);
     return cell.column === column && cell.row === row;
@@ -113,7 +113,7 @@ export function drawZoomMonsters(
   const size = zoomThumbnailSize(map.cell);
   for (const monster of monsters) {
     const cell = zoomMapCell(map, at, monster);
-    if (!onTheMap(map, cell)) continue;
+    if (!onTheZoomMap(map, cell)) continue;
     const x = map.left + cell.column * map.cell;
     const y = map.top + cell.row * map.cell;
     const thumbnail =

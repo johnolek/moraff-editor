@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Game } from '../game/port/state';
+  import { routeWords, type Route } from '../map/path';
   import { SCREEN_COLOURS } from '../roller/screen';
   import type { PlayView } from './engine';
   import {
@@ -23,9 +24,23 @@
     /** The kind of monster picked out of the list, which both maps ring, or null while none is
      *  picked. */
     highlighted?: string | null;
+    /** Whether the button asking for the way to the nearest teleporter is on. */
+    routing?: boolean;
+    /** Whether that route is allowed to cast Pass Wall, the way the map explorer's is. */
+    routePassWall?: boolean;
+    /** The route that button found, null when there is none to be had, and undefined while the
+     *  button is off. */
+    route?: Route | null | undefined;
   }
 
-  let { game, view, highlighted = $bindable(null) }: Props = $props();
+  let {
+    game,
+    view,
+    highlighted = $bindable(null),
+    routing = $bindable(false),
+    routePassWall = $bindable(false),
+    route = undefined,
+  }: Props = $props();
 
   const numbers = $derived.by(() => {
     const place = view.place;
@@ -99,6 +114,20 @@
   <section>
     <h3>This floor</h3>
     {@render rows([{ label: 'Monsters left alive', value: String(numbers.onTheFloor) }])}
+    <div class="route">
+      <button type="button" class:picked={routing} onclick={() => (routing = !routing)}>
+        Path to nearest teleporter
+      </button>
+      <label class="toggle">
+        <input type="checkbox" bind:checked={routePassWall} />
+        <span>Allow Pass Wall</span>
+      </label>
+    </div>
+    {#if route}
+      <p class="note">{routeWords(route)}</p>
+    {:else if route === null}
+      <p class="note">No teleporter reachable from here.</p>
+    {/if}
     {#if numbers.kinds.length > 0}
       <h4>Every monster on this floor</h4>
       <ol class="kinds">
@@ -238,6 +267,35 @@
     margin: 0;
     font-size: 12px;
     color: var(--muted);
+  }
+  .route {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .route button {
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 3px 7px;
+    cursor: pointer;
+    color: var(--ink);
+    font: inherit;
+    font-size: 12px;
+  }
+  .route button.picked {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .toggle {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
   }
   .kinds {
     margin: 2px 0 0;

@@ -16,6 +16,7 @@
   import MonsterCard from './MonsterCard.svelte';
   import Panel from './Panel.svelte';
   import { monsterKindSquares } from './panel';
+  import { pathToNearestTeleporter } from '../map/path';
   import Portrait from './Portrait.svelte';
   import Screen from './Screen.svelte';
   import { runMoveControl, startGame, type CharacterFile, type GameSession, type PlayView } from './engine';
@@ -59,6 +60,10 @@
   /** The kind of monster picked out of the debug panel's list, which both maps ring until it is
    *  clicked again. */
   let highlightedMonsterId = $state.raw<string | null>(null);
+  /** Whether debug mode's button asking for the way to the nearest teleporter is on, and whether
+   *  that route may cast Pass Wall. */
+  let routingToTeleporter = $state(false);
+  let routePassWall = $state(false);
   let display = $state<PlayDisplay>(readPlayDisplay('unforgiven'));
   let colourblind = $state(readPlayColourblind('unforgiven'));
   let redraw = $state(readPlayRedraw('unforgiven'));
@@ -127,6 +132,23 @@
   const highlightedSquares = $derived(
     view === null ? [] : monsterKindSquares(monstersDrawn(mode, view), highlightedKind),
   );
+
+  /**
+   * The way to the nearest teleporter, worked out afresh from the square the character is
+   * standing on, so the route follows them as they walk it. It is null when no teleporter can be
+   * reached and undefined while the button is off, which is what tells the panel's two answers
+   * apart.
+   */
+  const teleporterRoute = $derived.by(() => {
+    if (!routingToTeleporter || !debugDrawn(mode) || view === null) return undefined;
+    return pathToNearestTeleporter(view.rows, view.place, UNFORGIVEN_MAP.area, routePassWall);
+  });
+
+  // A route of no steps at all is the character standing beside the teleporter, which is the
+  // arrival the button is turned off by.
+  $effect(() => {
+    if (teleporterRoute && teleporterRoute.steps === 0) routingToTeleporter = false;
+  });
 
   /** The mode belongs to the tab; the session carries it so that anything keeping a record of
    *  the run can say which mode it was played in. */
@@ -303,6 +325,7 @@
             discovered={zoomMap}
             mapMonsters={zoomMapMonsters(mode, view)}
             highlightMonsterId={highlightedKind}
+            routeSquares={teleporterRoute?.squares ?? []}
             debug={debugDrawn(mode)}
             onmonster={(monster) => (openMonsterId = monster.monsterId)}
             prompt={view.prompt}
@@ -325,6 +348,7 @@
             dungeon={view.place.module}
             monsters={monstersDrawn(mode, view)}
             marks={highlightedSquares}
+            route={teleporterRoute ?? null}
             discovered={discoveredMap}
             bounds={FULL_FLOOR}
             you={{ x: view.place.x, y: view.place.y, dir: view.place.dir }}
@@ -417,7 +441,13 @@
           <WallTexture game={UNFORGIVEN_MAP.id} dungeon={view.place.module} floor={view.place.floor} />
         {/if}
         {#if panelVisible(mode)}
-          <Panel game={session.game} {view} bind:highlighted={highlightedMonsterId} />
+          <Panel
+            game={session.game}
+            {view}
+            bind:highlighted={highlightedMonsterId}
+            bind:routing={routingToTeleporter}
+            bind:routePassWall
+            route={teleporterRoute} />
         {/if}
       </aside>
     </div>

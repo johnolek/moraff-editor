@@ -2,16 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { bundledDungeon } from '../game/dungeon';
 import type { MapSquare } from './game';
 import { MAP_ROWS, UNFORGIVEN_AREA } from './area';
-import { hasTeleporterSide, shortestPath } from './path';
+import { hasTeleporterSide, pathToNearestTeleporter, routeWords, shortestPath } from './path';
 
 function square(overrides: Partial<MapSquare> = {}): MapSquare {
   return { n: 0, s: 0, w: 0, e: 0, solid: false, ladder: 0, chute: 0, trapdoor: -1, town: 0, ...overrides };
 }
 
-/** The route the map's own teleporter button asks for: the search with the test `map/game.ts`
- *  names as Dungeons of the Unforgiven's `routeTo`. */
+/** The route the map's own teleporter button and debug mode's both ask for, over the area
+ *  Dungeons of the Unforgiven's floors are drawn on. */
 const toNearestTeleporter = (rows: MapSquare[][], start: { x: number; y: number }, passWall = false) =>
-  shortestPath(rows, start, hasTeleporterSide, UNFORGIVEN_AREA, passWall);
+  pathToNearestTeleporter(rows, start, UNFORGIVEN_AREA, passWall);
 
 // A 4-square corridor: open, door, secret door between the squares; a teleporter on the far east side.
 const corridor: MapSquare[][] = [[square({ e: 3 }), square({ w: 3, e: 1 }), square({ w: 1, e: 2 }), square({ w: 2, e: 4 })]];
@@ -163,5 +163,19 @@ describe('shortestPath on a real floor', () => {
       const b = route!.squares[i];
       expect(Math.abs(a.x - b.x) + Math.abs(a.y - b.y)).toBe(1);
     }
+  });
+});
+
+describe('a route in words', () => {
+  const plain = { squares: [], hops: [], steps: 4, doors: 0, secretDoors: 0, passWalls: 0 };
+
+  it('counts the steps and what the route goes through', () => {
+    expect(routeWords({ ...plain, doors: 2, secretDoors: 1, passWalls: 3 })).toBe(
+      '4 steps · 2 doors · 1 secret door · 3 pass walls',
+    );
+  });
+
+  it('leaves out what a route does not go through, and says one of a thing singly', () => {
+    expect(routeWords({ ...plain, steps: 1, doors: 1 })).toBe('1 step · 1 door');
   });
 });

@@ -12,9 +12,9 @@ import { panelVisible } from './mode';
  */
 
 const TABS = [
-  { game: 'Dungeons of the Unforgiven', file: 'src/lib/play/Play.svelte', panel: '<Panel ' },
-  { game: "Moraff's World", file: 'src/lib/play/mw/MwPlay.svelte', panel: '<MwPanel ' },
-  { game: "Moraff's Revenge", file: 'src/lib/play/rev/RevPlay.svelte', panel: '<RevPanel ' },
+  { game: 'Dungeons of the Unforgiven', file: 'src/lib/play/Play.svelte', panel: '<Panel' },
+  { game: "Moraff's World", file: 'src/lib/play/mw/MwPlay.svelte', panel: '<MwPanel' },
+  { game: "Moraff's Revenge", file: 'src/lib/play/rev/RevPlay.svelte', panel: '<RevPanel' },
 ];
 
 describe('the panel of numbers the game never prints', () => {
@@ -33,6 +33,8 @@ describe('the panel of numbers the game never prints', () => {
       expect(guard).toBeGreaterThan(column.opens);
       expect(guard).toBeLessThan(column.closes);
       // The mode is the whole of what the panel waits on: it is drawn right behind that guard.
+      // The tag alone is looked for, since a panel with props enough to wrap opens on its own
+      // line.
       expect(source.slice(guard, source.indexOf('{/if}', guard))).toContain(tab.panel);
     });
 

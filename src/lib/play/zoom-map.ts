@@ -1,4 +1,5 @@
 import type { DiscoveredMap } from '../map/draw-floor';
+import type { Point } from '../map/viewport';
 import type { MapSquare } from '../map/game';
 import { arrowPixel, FACING_ARROW, FACING_ARROW_SIZE } from '../map/you';
 import { drawLine, fillRect, plot, type Frame } from './view3d/frame';
@@ -96,6 +97,8 @@ export interface ZoomMapFloor {
   /** The kind of monster picked out of debug mode's list, every one of which is ringed, or null
    *  while nothing is picked. */
   highlight?: string | null;
+  /** The squares of the route debug mode is drawing, or undefined while it is drawing none. */
+  route?: Point[];
 }
 
 /** Which square of the floor a cell of the map shows. */

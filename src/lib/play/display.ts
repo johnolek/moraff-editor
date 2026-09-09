@@ -12,6 +12,7 @@ import {
   type ZoomMapWindow,
 } from './zoom-map';
 import { drawZoomMonsters } from './zoom-monsters';
+import { drawZoomRoute } from './zoom-route';
 
 /**
  * The whole screen `movecontrol` (exe 2000:c308) keeps up while the game is played: the four 3-D
@@ -330,6 +331,7 @@ export function drawZoomMapOnly(frame: Frame, floor: UnforgivenZoomMapFloor): vo
   const window = UNFORGIVEN_ZOOM_MAP.window(frame);
   drawZoomMap(frame, floor, window, floor.at, UNFORGIVEN_ZOOM_MAP);
   drawZoomMarker(frame, window, UNFORGIVEN_ZOOM_MAP, floor.at.dir);
+  drawZoomRoute(frame, window, floor.at, floor.route ?? []);
   drawZoomMonsters(frame, window, floor.at, floor.monsters ?? [], floor.thumbnail, floor.highlight);
 }
 
@@ -349,6 +351,7 @@ export function drawExpandedMap(frame: Frame, floor: UnforgivenZoomMapFloor): vo
     ground: EXPANDED_GROUND,
     cursor: EXPANDED_MARKER,
   });
+  drawZoomRoute(frame, window, EXPANDED_CENTRE, floor.route ?? []);
   drawZoomMonsters(frame, window, EXPANDED_CENTRE, floor.monsters ?? [], floor.thumbnail, floor.highlight);
 }
 
