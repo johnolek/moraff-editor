@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { DUN_COLUMNS, DUN_ROWS, isExplored, readBinFile, readDunFile, readDunFloors } from '../map/explored';
 import { dotuMapFiles, mapsFileName, mwMapFiles, revMapFile } from './export-maps';
@@ -75,4 +76,29 @@ describe('what a zip of them is called', () => {
     expect(mapsFileName('SAGEY')).toBe('SAGEY-maps.zip');
     expect(mapsFileName('')).toBe('character-maps.zip');
   });
+});
+
+/**
+ * Which character the Play tab hands its two exports.
+ *
+ * Both are about the game in progress, and the save editor can be pointed at another character
+ * while one is being played. The tab has no props to render it with — it plays whichever
+ * character is on the roster — so what is checked here is the source.
+ */
+describe('the character the Play tab exports', () => {
+  const shell = readFileSync('src/lib/play/PlayTab.svelte', 'utf8');
+
+  /** One of the tab's functions, from its opening line to the line that closes it. */
+  function tabFunction(name: string): string {
+    const opens = shell.indexOf(`function ${name}() {`);
+    expect(opens).toBeGreaterThan(-1);
+    return shell.slice(opens, shell.indexOf('\n  }', opens));
+  }
+
+  for (const name of ['exportMaps', 'exportRun']) {
+    it(`is the one being played in ${name}, not the one being worked on`, () => {
+      expect(tabFunction(name)).toContain('playedEntry()');
+      expect(tabFunction(name)).not.toContain('currentEntry()');
+    });
+  }
 });

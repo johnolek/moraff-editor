@@ -10,7 +10,7 @@
 <script lang="ts" generics="View extends PlayViewBase, Session extends PlaySession<View>">
   import type { Snippet } from 'svelte';
   import { untrack } from 'svelte';
-  import { app, currentEntry, type Leaderboard } from '../app-state.svelte';
+  import { app, currentEntry, entryById, type Leaderboard } from '../app-state.svelte';
   import { leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
   import type FloorCanvas from '../map/FloorCanvas.svelte';
   import { armSpeaker } from '../speaker';
@@ -248,19 +248,23 @@
     input.blur();
   }
 
+  /** The character being played, which is not always the one being worked on: the save editor
+   *  can be pointed at another character while a game is in progress. */
+  function playedEntry() {
+    return entryById(playingId);
+  }
+
   /** The map files this character would have beside them in the game's own folder. */
   function exportMaps() {
     const playing = session;
-    const entry = currentEntry();
+    const entry = playedEntry();
     if (playing && entry) downloadMapFiles(game.mapFiles(playing, entry), entry.name);
   }
 
   /** The character's whole run — every session it has been played in — as a file. */
   function exportRun() {
     const playing = session;
-    // The character being played, which is not always the one being worked on: the save editor
-    // can be pointed at another character while a game is in progress.
-    const entry = app.roster.find((candidate) => candidate.id === playingId);
+    const entry = playedEntry();
     if (!playing?.run || !entry) return;
     // The run goes into the roster entry after every key, and the game may not have read one
     // since this session began, so it is written down again before it is handed over.
