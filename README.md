@@ -122,6 +122,15 @@ Layout:
   included.
 - `src/lib/editor/` — the save editor: a typed field schema per game and a Svelte
   component per field kind.
+- `src/lib/roller/` — the New Character tab. One `RollerSession` runs all three
+  rollers: it answers the port's questions from the answers given so far, throws
+  when it runs out of them, and rolls again from the top with the same random
+  numbers when the next one comes in. What is one game's rather than another's is
+  a port table — `ROLLER_PORT`, `MW_ROLLER_PORT` and `REV_ROLLER_PORT`, each
+  saying how to start that game's roller, how to run it and what its screen shows
+  — and, in `NewCharacter.svelte`, a table of what the tab does with what it
+  rolls: the file names, the record writers, the sheet and how the menus are
+  answered.
 - `src/lib/bestiary/` — the Monsters tab all three games mount, and each game's own
   numbers beside it in `mw-bestiary/` and `rev-bestiary/`. `MonsterDatabase.svelte`
   is the two panes, `MonsterCard.svelte` the card the picked monster is drawn on —
