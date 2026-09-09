@@ -145,7 +145,14 @@ describe("the little mouse's lessons", () => {
     const start = findMwSquare(0, (square) => square.n === 3 && square.ladder === 0);
     const session = playingMw(mwCharacterFile({ floor: 0, lev: 0, ...start }), scripted);
     await pressMw(session, MW_KEY.arrowUp);
-    expect(session.box[0]).toBe('OBJECTIVE: USE ARROW KEYS TO');
+    // The lesson is drawn on the box's own fifth row rather than said into the box.
+    expect(session.game.screen[0]).toEqual({
+      text: 'OBJECTIVE: USE ARROW KEYS TO',
+      x: 0,
+      y: 0xf0,
+      font: 0,
+      colour: 3,
+    });
     expect(session.lessons.next).toBe(1);
   });
 });

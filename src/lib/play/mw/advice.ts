@@ -1,5 +1,6 @@
 import { canLevelUp } from '../../game/mw-port/levels';
-import type { MwGame } from '../../game/mw-port/state';
+import type { MwGameSession } from './engine';
+import { mwClearMessageBox, MW_MESSAGE_BOX } from './screens';
 
 /**
  * FUN_3000_9383 (WORLD.EXE 3000:9383, mw.c "FUN_3000_9383"): what a little mouse says about the
@@ -9,10 +10,42 @@ import type { MwGame } from '../../game/mw-port/state';
  * FUN_3000_8b27 (exe 3000:8b27) has a case for the first eleven and nothing at all for the last
  * three, so three steps out of every fourteen that reach it say nothing.
  *
- * The original draws these four lines at a time down the right-hand panel rather than in the
- * message box, and the flag at DS:4484 that would show the first lesson outright is never
- * written anywhere, so the lessons only ever arrive through the roll.
+ * The original draws these four lines at a time on the bottom half of the message box, each in a
+ * colour of its own rather than in the box's colour 5, and the flag at DS:4484 that would show
+ * the first lesson outright is never written anywhere, so the lessons only ever arrive through
+ * the roll.
  */
+
+/**
+ * Which row of the message box the mouse starts on. Both functions print at y 0xf0, 0x122, 0x154
+ * and 0x186, which are the box's fifth to eighth rows, and wipe the whole box first.
+ */
+const ADVICE_FIRST_ROW = 4;
+
+/** The colour every one of the fourteen lessons is printed in (exe 3000:8b27). */
+const LESSON_COLOUR = 3;
+
+/**
+ * What the mouse says, on the rows and in the colour the game prints it in.
+ *
+ * These are print_text calls rather than a message box, so nothing waits for a key afterwards and
+ * nothing is spread out to the box's right-hand edge. The fill_rect each of them starts with
+ * covers the strip above the box as well as the box itself, so both go.
+ */
+function squeak(session: MwGameSession, colour: number, lines: string[]): void {
+  const game = session.game;
+  session.clearBox();
+  mwClearMessageBox(game);
+  for (const [index, text] of lines.entries()) {
+    game.draw({
+      text,
+      x: 0,
+      y: MW_MESSAGE_BOX.y + (ADVICE_FIRST_ROW + index) * MW_MESSAGE_BOX.step,
+      font: 0,
+      colour,
+    });
+  }
+}
 
 /** The eleven lessons FUN_3000_8b27 has a case for, and the three empty slots after them. */
 const LESSONS: string[][] = [
@@ -102,102 +135,104 @@ export interface MwLessons {
  * The mouse's turn to speak, which movecontrol gives it after every step. A character below
  * their third level may get a lesson instead, and then nothing else is said.
  */
-export function adviseTheWalker(game: MwGame, lessons: MwLessons): void {
+export function adviseTheWalker(session: MwGameSession): void {
+  const game = session.game;
+  const lessons = session.lessons;
   const pc = game.pc;
   if (game.rng.random(5) !== 0) return;
   if (pc.lev < 3 && game.rng.random(6) === 1) {
     const lesson = LESSONS[lessons.next % LESSONS.length];
     lessons.next += 1;
-    if (lesson.length > 0) game.say(...lesson);
+    if (lesson.length > 0) squeak(session, LESSON_COLOUR, lesson);
     return;
   }
   switch (game.rng.random(8)) {
     case 0:
       // DS:4ee0 4efb 4f15 4f31
       if (pc.hp < Math.trunc(pc.maxHp / 4)) {
-        game.say(
+        squeak(session, 3, [
           'YOU ARE BADLY DAMAGED. YOU',
           'SHOULD CURE YOURSELF WITH',
           'THE CURE SPELL OR GO SEARCH',
           'THE TOWN FOR A TEMPLE.',
-        );
+        ]);
       }
       return;
     case 1:
       // DS:4f48 4f65 4f80 4e39
       if (pc.lev * 3 + 3 < pc.floor) {
-        game.say(
+        squeak(session, 4, [
           'I THINK YOU WILL NOT SURVIVE',
           'THIS DEEP - THE DEEPER YOU',
           'GO, THE MORE POWERFUL THE',
           'MONSTERS.',
-        );
+        ]);
       }
       return;
     case 2:
       // DS:4f9a 4fb4 4fd1 4fee
       if (pc.weight * 2 < pc.loadedWeight) {
-        game.say(
+        squeak(session, 5, [
           'YOU ARE CARRYING A LOT OF',
           'WEIGHT. THIS ALLOWS MONSTERS',
           'TO TAKE MORE STRIKES AT YOU.',
           'YOU SHOULD GO FIND A BANK.',
-        );
+        ]);
       }
       return;
     case 3:
       // DS:5009 5021 503c 5059
       if (canLevelUp(game)) {
-        game.say(
+        squeak(session, 6, [
           'YOU ARE READY TO GAIN A',
           'LEVEL, WHICH WILL MAKE YOU',
           'MORE POWERFUL. YOU MUST STAY',
           'AT AN INN TO GAIN A LEVEL.',
-        );
+        ]);
       }
       return;
     case 4:
       // DS:5074 5091 50ad 50c8. The three is the float at DS:45f1, so the advice comes once
       // the spell points are below a third of the maximum.
       if (pc.sp * 3 < pc.maxSp) {
-        game.say(
+        squeak(session, 6, [
           'YOU ARE RUNNING LOW ON SPELL',
           'POINTS. YOU CAN REGAIN YOUR',
           'SPELL POINTS BY STAYING AT',
           'AN INN IN THE TOWN.',
-        );
+        ]);
       }
       return;
     case 5:
       // DS:50dc 50f6 510f 4f40
       if (pc.diseaseTimer > 0) {
-        game.say(
+        squeak(session, 8, [
           "YOU DON'T FEEL VERY WELL.",
           'YOU SHOULD REALLY TRY TO',
           'GET A CURE DISEASE AT A',
           'TEMPLE.',
-        );
+        ]);
       }
       return;
     case 6:
       // DS:5127 5142 515c 5179
       if (pc.returnX === -1) {
-        game.say(
+        squeak(session, 3, [
           "DON'T YOU THINK YOU SHOULD",
           'BUY A RAISE DEAD CONTRACT',
           'WITH THE TEMPLE IN THE TOWN?',
           'IT HELPS A LOT WHEN YOU DIE.',
-        );
+        ]);
       }
       return;
     case 7:
       // DS:5196 51b2 51cd
       if (pc.poisonTimer > 0) {
-        game.say(
+        squeak(session, 7, [
           'YOU HAVE BEEN POISONED. FOR',
           'A FEW JEWELS YOU CAN GET A',
           'CURE POISON AT A TEMPLE.',
-        );
+        ]);
       }
   }
 }

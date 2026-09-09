@@ -705,7 +705,7 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     await session.settle();
     if (session.over) return;
     if (turn.step.dx !== 0 || turn.step.dy !== 0) {
-      adviseTheWalker(game, session.lessons);
+      adviseTheWalker(session);
       await session.settle();
     }
     await killTheDead(session);
