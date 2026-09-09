@@ -520,6 +520,36 @@ describe('replaying a run', () => {
     expect((await replayRun(log)).milestones).toEqual(log.milestones);
   });
 
+  it('ends with the record the game itself last wrote, and a game that wrote none ends with the one it started from', async () => {
+    // The roster is left holding the last record the game wrote when a player walks away, so a
+    // replay that saved for itself at the end would end somewhere the character never was.
+    const file = characterFile({ level: 3, dir: 0, ...floorSquare(3) });
+    const record = file.bytes.slice();
+    const run = new RunRecorder({ game: 'unforgiven', name: 'BRAWLER', record: file.bytes, seed: 12345 });
+    const session = startGame(file, run.rng, run);
+    void runMoveControl(session);
+    await settle();
+    session.finish();
+    const log = run.log();
+    expect(log.inputs).toEqual([]);
+
+    expect((await replayRun(log)).record).toEqual(record);
+  });
+
+  it('replays a session of a run the character had played before, counting on from it', async () => {
+    const before = runSoFar(7, 30);
+    const { run, session } = recordedGame({ level: 0, dir: 0, ...teleporterSquare() }, 12345, before);
+    for (const key of [KEY.arrowUp, KEY.enter, KEY.arrowUp]) await press(session, key);
+    session.finish();
+    const log = run.log();
+
+    const again = await replayRun(log, before);
+    expect(again.actions).toBe(log.actions);
+    expect(again.actions).toBeGreaterThan(7);
+    expect(again.time).toBe(log.time);
+    expect(again.milestones).toEqual(log.milestones);
+  });
+
   it('ends somewhere else when the keys have been tampered with', async () => {
     const start = townSquare();
     const { run, session, file } = recordedGame({ level: 0, dir: 0, ...start });

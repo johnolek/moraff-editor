@@ -517,7 +517,12 @@ export class RunRecorder {
 
 /** Where a session ended: what a claim about it is checked against. */
 export interface RunReplay {
-  /** The character's record as the game would save it, which is the whole of what they are. */
+  /**
+   * The record the game itself last wrote, which is the whole of what the character is.
+   *
+   * It is the same record the roster is left holding when a player walks away from a game, so
+   * it is also what the next session of the chain has to start from for the chain to join up.
+   */
   record: Uint8Array;
   place: { x: number; y: number; floor: number; dungeon: number; dir: number };
   /** The game's own clock, counting from the start of the chain. */
@@ -553,11 +558,14 @@ export interface RunGameEngine {
  * the same record, the same seed and the same keys, arrives at the same place. It runs under Node
  * as well as in a browser, since nothing here draws.
  *
+ * `before` is what the character's run had come to in the sessions before this one, which is what
+ * the session's own numbers count on from; a session played from a roll has none.
+ *
  * The engine it runs is this build's. A session whose `engine` is not {@link ENGINE_COMMIT} was made
  * by another one and its ending is only as good as the two engines agreeing; the caller is what
  * compares them.
  */
-export async function replayRun(recorded: RunSession): Promise<RunReplay> {
+export async function replayRun(recorded: RunSession, before?: RunTotals): Promise<RunReplay> {
   const record = bytesFromBase64(recorded.record);
   const run = new RunRecorder({
     game: recorded.game,
@@ -568,6 +576,7 @@ export async function replayRun(recorded: RunSession): Promise<RunReplay> {
     mode: recorded.mode,
     leaderboard: recorded.leaderboard,
     sound: recorded.sound,
+    before,
     replaying: true,
   });
   return RUN_GAMES[recorded.game].replay(recorded, run);
@@ -607,9 +616,6 @@ async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise
   }
   session.finish();
   stoppedReplay(session);
-  // save_player is what turns the character back into a record, and the record is what a claim
-  // about a run is made of. It writes nothing outside this replay.
-  session.save();
   const ended = run.log();
   const pc = session.game.pc;
   return {
@@ -643,7 +649,6 @@ async function replayMoraffsWorld(recorded: RunSession, run: RunRecorder): Promi
   }
   session.finish();
   stoppedReplay(session);
-  session.save();
   const ended = run.log();
   const pc = session.game.pc;
   return {
@@ -685,7 +690,6 @@ async function replayMoraffsRevenge(recorded: RunSession, run: RunRecorder): Pro
   }
   session.finish();
   stoppedReplay(session);
-  session.save();
   const ended = run.log();
   const pc = session.game.pc;
   return {
