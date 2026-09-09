@@ -20,6 +20,10 @@ import {
  * many actions and reached this. `replayRun` in `run.ts` makes the claim checkable; this puts a
  * verdict on what comes back, and `src/cli/verify-run.ts` is the command that prints one.
  *
+ * Every run gets a verdict, including one the engine could not play at all: a replay that throws
+ * is caught here and reported as one that cannot be checked, rather than being left to come out
+ * as a stack trace over the verdict.
+ *
  * Nothing here knows which games there are: a game is a line in `RUN_GAMES`, and everything this
  * needs of one it asks that line for. Nothing here draws either, so it runs under Node.
  */
@@ -105,7 +109,9 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
       record: await recordHash(replay.record),
     };
   } catch (thrown) {
-    verdict.status = 'failed';
+    // A replay that stopped part-way says nothing about the run either way: the log may be an
+    // honest one and the engine may be what broke. So the verdict is that it cannot be checked,
+    // with the message it stopped on, rather than a failure the run is blamed for.
     verdict.reason = `The replay stopped: ${thrown instanceof Error ? thrown.message : String(thrown)}`;
     return verdict;
   }

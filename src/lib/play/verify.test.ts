@@ -134,12 +134,21 @@ describe('verifying a run', () => {
     expect(verdict.reason).toContain('The replay never reached Won');
   });
 
-  it('fails a run whose log cannot be played at all', async () => {
+  it('cannot check a run whose log cannot be played at all', async () => {
     const log = await unforgivenRun();
     const verdict = await verifyRun({ ...log, record: 'not a record' });
 
-    expect(verdict.status).toBe('failed');
+    expect(verdict.status).toBe('unverifiable');
     expect(verdict.reason).toContain('The replay stopped');
+    expect(verdict.ending).toBeNull();
+  });
+
+  it("cannot check a run whose Moraff's Revenge record is not one", async () => {
+    const log = await moraffsRevengeRun();
+    const verdict = await verifyRun({ ...log, record: btoa('not a record') });
+
+    expect(verdict.status).toBe('unverifiable');
+    expect(verdict.reason).toBe("The replay stopped: These bytes are not a Moraff's Revenge character record.");
     expect(verdict.ending).toBeNull();
   });
 

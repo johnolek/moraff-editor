@@ -2,6 +2,7 @@ import type { PortedGameId } from '../app-state.svelte';
 import { SeededRng, type Rng } from '../game/port/rng';
 import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
+import { runPlayLoop, type PlayLoopSession } from './loop';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine';
 import { MW_KEY, mwTurn } from './mw/keys';
@@ -494,6 +495,17 @@ function loopRuns(): Promise<unknown> {
   return new Promise((resolve) => setTimeout(resolve));
 }
 
+/**
+ * A replay whose loop threw is no replay at all, so the throw is raised again here.
+ *
+ * `runPlayLoop` catches it to keep a tab from freezing; a replay has no tab, and the numbers a
+ * game left half-played hold would be read as the run having gone somewhere else rather than as
+ * the engine having stopped.
+ */
+function stoppedReplay(session: PlayLoopSession): void {
+  if (session.stopped !== null) throw new Error(session.stopped);
+}
+
 async function replayUnforgiven(log: RunLog, run: RunRecorder): Promise<RunReplay> {
   const file: CharacterFile = {
     bytes: run.record.slice(),
@@ -503,17 +515,18 @@ async function replayUnforgiven(log: RunLog, run: RunRecorder): Promise<RunRepla
     died() {},
   };
   const session = startGame(file, run.rng, run);
-  void runMoveControl(session);
+  void runPlayLoop(session, runMoveControl(session));
   await loopRuns();
   for (const input of log.inputs) {
     if (session.over) break;
     session.press(input);
     await loopRuns();
   }
+  session.finish();
+  stoppedReplay(session);
   // save_player is what turns the character back into a record, and the record is what a claim
   // about a run is made of. It writes nothing outside this replay.
   session.save();
-  session.finish();
   const pc = session.game.pc;
   return {
     record: file.bytes,
@@ -535,7 +548,7 @@ async function replayMoraffsWorld(log: RunLog, run: RunRecorder): Promise<RunRep
     died() {},
   };
   const session = startMwGame(file, run.rng, run);
-  void runMwMoveControl(session);
+  void runPlayLoop(session, runMwMoveControl(session));
   await loopRuns();
   for (const input of log.inputs) {
     if (session.over) break;
@@ -544,8 +557,9 @@ async function replayMoraffsWorld(log: RunLog, run: RunRecorder): Promise<RunRep
     else mwTurn(session, dir);
     await loopRuns();
   }
-  session.save();
   session.finish();
+  stoppedReplay(session);
+  session.save();
   const pc = session.game.pc;
   return {
     record: file.bytes,
@@ -575,7 +589,7 @@ async function replayMoraffsRevenge(log: RunLog, run: RunRecorder): Promise<RunR
     died() {},
   };
   const session = startRevGame(file, run.rng, run);
-  void runRevDungeon(session);
+  void runPlayLoop(session, runRevDungeon(session));
   await loopRuns();
   for (const input of log.inputs) {
     if (session.over) break;
@@ -583,8 +597,9 @@ async function replayMoraffsRevenge(log: RunLog, run: RunRecorder): Promise<RunR
     else session.press(input);
     await loopRuns();
   }
-  session.save();
   session.finish();
+  stoppedReplay(session);
+  session.save();
   const pc = session.game.pc;
   return {
     record: file.bytes,

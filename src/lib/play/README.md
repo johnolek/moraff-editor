@@ -106,7 +106,9 @@ what the log claims.
 * **Unverifiable** — nothing can be said either way. A run is only replayable from its own
   beginning to its own end, and a record the Save Editor wrote while the game was being played is
   not in the log: the log counts those as `edits`, and a run with any is unverifiable rather than
-  failed.
+  failed. So is a run whose replay stopped: a loop that throws is caught by `loop.ts` and raised
+  again where the replay ends, and the verdict carries the message it stopped on, since a log
+  the engine could not play through says nothing about whether the log is honest.
 * **A note** — an engine commit that is not this build's. That is a warning and not a failure:
   the two engines may well agree, and a replay that reproduces the run says they did.
 
