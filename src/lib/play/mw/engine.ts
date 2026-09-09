@@ -93,6 +93,21 @@ export type MwKeyHandler = KeyHandler<MwTurn>;
 /** What the Play tab draws. */
 export interface MwPlayView {
   place: { x: number; y: number; floor: number; dungeon: number; dir: number };
+  /**
+   * The character's hit points and spell points, and what they can hold.
+   *
+   * These are on the view rather than read off `session.game.pc` because the character is a
+   * plain object the game writes in place: nothing on the page would redraw when a blow lands.
+   * The tab is handed a fresh view after every action, so the map's orbs follow a fight.
+   */
+  hp: number;
+  maxHp: number;
+  sp: number;
+  maxSp: number;
+  /** Their own level and the experience they have earned, which the map's bar is drawn from and
+   *  which move for the same reason. */
+  level: number;
+  exp: number;
   rows: MapSquare[][];
   monsters: StockedMonster[];
   /** The monsters standing on a square the four 3-D views drew this turn, which is exactly the
@@ -428,6 +443,12 @@ export class MwGameSession extends KeyedSession<MwCharacter> {
     const drawn = mwDrawnMonsters(game);
     return {
       place: { x: pc.x, y: pc.y, floor: pc.floor, dungeon: pc.dungeon, dir: pc.dir },
+      hp: pc.hp,
+      maxHp: pc.maxHp,
+      sp: pc.sp,
+      maxSp: pc.maxSp,
+      level: pc.lev,
+      exp: pc.exp,
       rows: this.rows,
       monsters: drawn,
       visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
