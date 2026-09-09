@@ -1,6 +1,6 @@
 import type { Rng } from '../game/port/rng';
 import { LEVELS } from '../game/revmap.js';
-import { RevMonsters } from '../play/rev/monsters';
+import { RevMonsters, type RevStanding } from '../play/rev/monsters';
 import {
   dungeonForLevel,
   fightingHitPoints,
@@ -39,20 +39,25 @@ const browserRng: Rng = { random: (n) => Math.trunc(Math.random() * n) };
 export function stockRevFloor(level: number, rng: Rng): StockedMonster[] {
   const monsters = new RevMonsters();
   monsters.stock(level, rng);
-  const dungeon = dungeonForLevel(level);
-  return monsters.standing().map((standing) => {
-    const stored = monsters.strengths[standing.slot] ?? 0;
-    const name = nameIndexOf(standing.slot, level, stored);
-    return {
-      slot: standing.slot,
-      // The game numbers its columns and rows from 1 and the map numbers both from 0.
-      x: standing.column - 1,
-      y: standing.row - 1,
-      monsterId: monsterIdFor(dungeon, name),
-      level: monsterLevelOf(standing.slot),
-      hp: fightingHitPoints(standing.slot, stored),
-    };
-  });
+  return monsters.standing().map((standing) => revStockedMonster(standing, level, monsters.strengths[standing.slot] ?? 0));
+}
+
+/**
+ * One monster of a level as the map draws it: the square it stands on, and the name, level and
+ * hit points its slot number and its number in `2.NUM` work out.
+ *
+ * @param stored what `2.NUM` holds for the slot, which both the name and the hit points read.
+ */
+export function revStockedMonster(standing: RevStanding, level: number, stored: number): StockedMonster {
+  return {
+    slot: standing.slot,
+    // The game numbers its columns and rows from 1 and the map numbers both from 0.
+    x: standing.column - 1,
+    y: standing.row - 1,
+    monsterId: monsterIdFor(dungeonForLevel(level), nameIndexOf(standing.slot, level, stored)),
+    level: monsterLevelOf(standing.slot),
+    hp: fightingHitPoints(standing.slot, stored),
+  };
 }
 
 /** Moraff's Revenge draws no monster on its map — only the ladders — so the map marks them the

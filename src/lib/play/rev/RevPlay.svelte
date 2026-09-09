@@ -6,6 +6,7 @@
   import FloorCanvas from '../../map/FloorCanvas.svelte';
   import { MORAFFS_REVENGE_MAP } from '../../map/game';
   import PlayRoster from '../PlayRoster.svelte';
+  import { revStockedMonster } from '../../map/rev-stocking';
   import type { StockedMonster } from '../../map/stocking';
   import { FULL_FLOOR } from '../../map/viewport';
   import PixelText from '../../ui/PixelText.svelte';
@@ -86,9 +87,8 @@
     view === null ? [] : MORAFFS_REVENGE_MAP.floor(view.place.level, session?.game.pc.generation ?? 1),
   );
 
-  /** The monsters the map draws. The map's own drawing takes them in its zero-based coordinates
-   *  and asks for a monster id the catalogue knows, which this game has none of, so they come out
-   *  as the plain markers a floor with no pictures draws. */
+  /** The monsters the map draws, named the way the map explorer names the ones it stocks, so
+   *  that both reach the same entry of the Moraff's Revenge bestiary. */
   const monsters = $derived.by((): StockedMonster[] =>
     view === null
       ? []
@@ -96,14 +96,12 @@
   );
 
   function asStocked(standing: RevPlayView['monsters']): StockedMonster[] {
-    return standing.map((monster) => ({
-      slot: monster.slot,
-      x: monster.column - 1,
-      y: monster.row - 1,
-      monsterId: `rev-${monster.slot}`,
-      level: 0,
-      hp: 0,
-    }));
+    const playing = session;
+    if (!playing) return [];
+    const level = playing.game.pc.dungeonLevel;
+    return standing.map((monster) =>
+      revStockedMonster(monster, level, playing.game.monsters.strengths[monster.slot] ?? 0),
+    );
   }
 
   /**
