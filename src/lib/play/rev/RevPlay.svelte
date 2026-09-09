@@ -13,7 +13,7 @@
   import PixelText from '../../ui/PixelText.svelte';
   import { downloadMapFiles, revMapFile } from '../export-maps';
   import { downloadRunLog } from '../export-run';
-  import { actionWords, milestoneNote, milestoneWords, RunRecorder } from '../run';
+  import { actionWords, milestoneNote, milestoneWords, RunRecorder, RUN_GAMES } from '../run';
   import ScreenSwitch from '../ScreenSwitch.svelte';
   import {
     mapDrawn,
@@ -267,7 +267,7 @@
   }
 
   /** The game's own clock, which is the ticks the monsters moved on. */
-  const clockWords = (ticks: number) => `${ticks} tick${ticks === 1 ? '' : 's'}`;
+  const clockWords = RUN_GAMES.revenge.clockWords;
 </script>
 
 <svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} />
