@@ -497,7 +497,9 @@ export function clearStatsScreen(game: Game): void {
  */
 export function viewStats(game: Game): void {
   const pc = game.pc;
-  clearStatsScreen(game);
+  // FUN_3000_7508: the fill in colour 0 from x 700 to the right edge, which is the black the sheet
+  // is printed on; the menu, the map and the views to the left of it stay as they are.
+  clearToBlack(game, 700, 0, 0x640, 0x4b0);
   const lines = [
     `VIEW STATS FOR ${pc.name}`, // DS:2b49
     `RACE: ${RACES[pc.race].name}`, // DS:2b59 with the race table at DS:0130
