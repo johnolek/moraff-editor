@@ -3,6 +3,7 @@ import { SeededRng } from '../game/port/rng';
 import { COLUMNS, ROWS } from '../game/revmap.js';
 import { RevMonsters } from '../play/rev/monsters';
 import { dungeonForLevel, monsterById, SLOTS_PER_LEVEL, slotsForLevel } from '../rev-bestiary/monsters';
+import { closeUpOf } from '../rev-bestiary/pictures';
 import { MORAFFS_REVENGE_AREA } from './area';
 import { beyondMapCount } from './stocking';
 import { MORAFFS_REVENGE_STOCKING, stockRevFloor } from './rev-stocking';
@@ -87,10 +88,21 @@ describe('what the map says about a stocked monster', () => {
     expect(MORAFFS_REVENGE_STOCKING.describe(monster)).toBe(`${monsterById('1:6').monster.name} · level 7 · 24 HP`);
   });
 
-  it('draws no picture, the way the game’s own map draws none', () => {
+  it('draws the monster with the close-up the 3-D view meets it with', () => {
     const kind = MORAFFS_REVENGE_STOCKING.kind('1:6');
     expect(kind.boss).toBe(false);
-    expect(kind.picture(1, 5)).toBeNull();
+    const { dungeon, monster: drawn } = monsterById('1:6');
+    const closeUp = closeUpOf(dungeon, drawn);
+    expect(closeUp).not.toBeNull();
+    const picture = kind.picture(1, 5);
+    expect(picture).toMatchObject({ width: closeUp?.width, height: closeUp?.height });
+  });
+
+  it('leaves the background the picture was cut out of transparent', () => {
+    const picture = MORAFFS_REVENGE_STOCKING.kind('1:6').picture(1, 5);
+    const alpha = new Set<number>();
+    for (let at = 3; at < (picture?.data.length ?? 0); at += 4) alpha.add(picture!.data[at]);
+    expect([...alpha].sort()).toEqual([0, 255]);
   });
 
   it('counts the level’s monsters by type, commonest first', () => {

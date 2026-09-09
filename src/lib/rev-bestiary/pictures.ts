@@ -58,19 +58,26 @@ function rgb(colour: string): [number, number, number] {
   return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
 }
 
-/** The picture as pixels, in one of the two palettes. */
-export function renderPicture(picture: RevPicture, palette: number): RenderedPicture {
+/**
+ * The picture as pixels, in one of the two palettes.
+ *
+ * A `GET` image is a rectangle, so the monster comes with the background it was cut out of.
+ * `showBackground` false leaves colour 0 out of the picture altogether, which is what a monster
+ * drawn over something else wants — a square of the map, rather than a black box on it.
+ */
+export function renderPicture(picture: RevPicture, palette: number, showBackground = true): RenderedPicture {
   const colours = PALETTES[palette].map(rgb);
   const data = new Uint8ClampedArray(picture.width * picture.height * 4);
   for (let y = 0; y < picture.height; y++) {
     const row = picture.rows[y];
     for (let x = 0; x < picture.width; x++) {
-      const [red, green, blue] = colours[Number(row[x])];
+      const value = Number(row[x]);
+      const [red, green, blue] = colours[value];
       const at = (y * picture.width + x) * 4;
       data[at] = red;
       data[at + 1] = green;
       data[at + 2] = blue;
-      data[at + 3] = 255;
+      data[at + 3] = value === 0 && !showBackground ? 0 : 255;
     }
   }
   return { width: picture.width, height: picture.height, data };

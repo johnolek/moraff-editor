@@ -9,6 +9,7 @@ import {
   monsterLevelOf,
   nameIndexOf,
 } from '../rev-bestiary/monsters';
+import { closeUpOf, renderPicture } from '../rev-bestiary/pictures';
 import type { MapStocking, StockedKind } from './game';
 import type { MonsterCount, MonsterCountGroup, StockedMonster } from './stocking';
 
@@ -60,14 +61,32 @@ export function revStockedMonster(standing: RevStanding, level: number, stored: 
   };
 }
 
-/** Moraff's Revenge draws no monster on its map — only the ladders — so the map marks them the
- *  way the Play tab does, as plain markers, rather than with the pictures the 3-D view uses. */
+/**
+ * The colours a monster is drawn in here.
+ *
+ * `SCREEN 1` has two four-colour sets and the `@` key flips the game between them (1000:1038).
+ * The map is nobody's game, so it draws in the one the game starts in (1000:0174).
+ */
+const MAP_PALETTE = 0;
+
+/**
+ * One kind of monster as the map wants it.
+ *
+ * Moraff's Revenge draws no monster on its own map — only the ladders — so nothing here is a
+ * port. The picture is the close-up the 3-D view puts up when the monster is met, with the
+ * background it was `GET` out of left out so the map square shows through around it; a cell too
+ * small for a picture keeps the marker, which `../map/draw-monsters.ts` decides.
+ */
 function kind(id: string): StockedKind {
+  const { dungeon, monster } = monsterById(id);
   return {
-    name: monsterById(id).monster.name,
+    name: monster.name,
     boss: false,
     pictureKey: () => id,
-    picture: () => null,
+    picture: () => {
+      const closeUp = closeUpOf(dungeon, monster);
+      return closeUp === null ? null : renderPicture(closeUp, MAP_PALETTE, false);
+    },
   };
 }
 
