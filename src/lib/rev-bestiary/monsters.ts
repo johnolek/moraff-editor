@@ -207,13 +207,14 @@ export function neverMet(monster: RevMonster): boolean {
  * One in how many turns of the key loop moves a monster (1000:7EEC).
  *
  * The dungeon's key wait polls `INKEY$` instead of blocking, and each pass rolls this: on a
- * one-in-D draw the monster turn runs. D is `INT((165 - the monster's level + your level) *
- * speed / 20)`, never below 8, and `speed` is how many times faster the machine is than the one
- * the calibration at 1000:BF60 was written for, so the monsters move at the same rate on any
- * machine.
+ * one-in-D draw the monster turn runs. D is `INT((165 - L + your level) * speed / 20)`, never
+ * below 8. `L` is DGROUP B6B4, the level of the last monster the character met, which is the same
+ * variable the wander roll reads and is not the level of the monster whose turn it is. `speed` is
+ * how many times faster the machine is than the one the calibration at 1000:BF60 was written for,
+ * so the monsters move at the same rate on any machine.
  */
-export function monsterTurnOdds(monsterLevel: number, playerLevel: number, speed: number): number {
-  return Math.max(8, Math.trunc(((165 - monsterLevel + playerLevel) * speed) / 20));
+export function monsterTurnOdds(lastMonsterLevel: number, playerLevel: number, speed: number): number {
+  return Math.max(8, Math.trunc(((165 - lastMonsterLevel + playerLevel) * speed) / 20));
 }
 
 /**
