@@ -4,6 +4,7 @@ import { SeededRng } from '../../game/port/rng';
 import { REV_EAST, REV_NORTH, REV_SOUTH, REV_WEST } from './keys';
 import { MONSTER_BLOCKS_WAY, revStep } from './move';
 import { revFeatureUnder, revLookDown, REV_NOTHING } from './ladders';
+import { revMeetMonster } from './fight';
 import { newRevGame } from './state';
 import type { RevPc } from './record';
 
@@ -68,10 +69,31 @@ describe('a step', () => {
     expect(revStep(far, REV_SOUTH)).not.toBe('moved');
   });
 
+  it('walks onto a monster outside a fight, which is how a fight is started', () => {
+    const open = findSide(1, false);
+    const game = newRevGame(character({ column: open.column, row: open.row }), new SeededRng(1));
+    game.monsters.grid[22 * (open.row - 1) + open.column] = 5;
+    expect(revStep(game, REV_NORTH)).toBe('moved');
+    expect([game.pc.column, game.pc.row]).toEqual([open.column, open.row - 1]);
+    expect(game.said).not.toContain(MONSTER_BLOCKS_WAY);
+  });
+
+  it('is blocked by a monster once a fight is on, which is the only time the game says so', () => {
+    const open = findSide(1, false);
+    const game = newRevGame(character({ column: open.column, row: open.row }), new SeededRng(1));
+    game.monsters.stock(1, new SeededRng(1));
+    game.fight = revMeetMonster(game, 3);
+    game.monsters.grid[22 * (open.row - 1) + open.column] = 5;
+    expect(revStep(game, REV_NORTH)).toBe('monster');
+    expect([game.pc.column, game.pc.row]).toEqual([open.column, open.row]);
+    expect(game.said).toContain(MONSTER_BLOCKS_WAY);
+  });
+
   it('says a monster is in the way before it looks at the wall, so it says so through one', () => {
     const wall = findSide(1, true);
     const game = newRevGame(character({ column: wall.column, row: wall.row }), new SeededRng(1));
     game.monsters.stock(1, new SeededRng(1));
+    game.fight = revMeetMonster(game, 3);
     game.monsters.grid[22 * (wall.row - 1) + wall.column] = 5;
     expect(revStep(game, REV_NORTH)).toBe('monster');
     expect(game.said).toContain(MONSTER_BLOCKS_WAY);
@@ -80,6 +102,8 @@ describe('a step', () => {
   it('says it over the top of the FRONT box and rubs it out on the next step', () => {
     const open = findSide(1, false);
     const game = newRevGame(character({ column: open.column, row: open.row }), new SeededRng(1));
+    game.monsters.stock(1, new SeededRng(1));
+    game.fight = revMeetMonster(game, 3);
     game.monsters.grid[22 * (open.row - 1) + open.column] = 5;
     revStep(game, REV_NORTH);
     expect(game.kept.runs()).toEqual([{ row: 6, column: 22, text: MONSTER_BLOCKS_WAY }]);

@@ -45,6 +45,13 @@ export type RevStep = 'moved' | 'wall' | 'edge' | 'monster';
  * monster before it is tested for a wall** (1000:310D against 1000:3149), so walking into a wall
  * that happens to have a monster behind it says a monster is in the way — reporting a monster
  * that cannot be seen, and refusing the move for the wrong reason.
+ *
+ * **A monster only ever blocks a step made from inside a fight.** Each of the four branches ANDs
+ * the occupied square with DGROUP B50E standing at 1 (1000:30DF, 3198, 325A and 331C), and B50E
+ * says which of the two places the arrow came from: the dungeon's own dispatch clears it before
+ * every key (1000:099F) and the fight prompt sets it before handing the arrow to the same
+ * routine (1000:8716). So walking at a monster in a corridor takes the step, and the redraw the
+ * per-key routine falls into opens the fight against whatever is standing there (1000:4969).
  */
 export function revStep(game: RevGame, direction: number): RevStep {
   const step = DIRECTIONS[direction];
@@ -52,7 +59,7 @@ export function revStep(game: RevGame, direction: number): RevStep {
   const pc = game.pc;
   const column = pc.column + step.dColumn;
   const row = pc.row + step.dRow;
-  if (game.monsters.slotOn(column, row) > 0) {
+  if (game.fight !== null && game.monsters.slotOn(column, row) > 0) {
     game.kept.printAt(BLOCKS_ROW, BLOCKS_COLUMN, MONSTER_BLOCKS_WAY);
     game.say(MONSTER_BLOCKS_WAY);
     return 'monster';
