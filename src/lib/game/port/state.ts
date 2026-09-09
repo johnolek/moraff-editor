@@ -1,4 +1,5 @@
 import data from '../dotu-data.json';
+import type { ActionEvent } from '../action';
 import { BRIGHT_COLOURS } from '../dotu-pic.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX, HEIGHT, WIDTH } from '../unfmap.js';
 import type { Rng } from './rng';
@@ -376,7 +377,7 @@ export interface SpellChoice {
 /**
  * Something the original does after a spell that this port records instead of doing (see the
  * README's second departure), or something a ported function did that the run log of
- * `src/lib/play/run.ts` keeps as a milestone.
+ * `src/lib/play/run.ts` keeps: one of the run's actions, or a milestone.
  */
 export type GameEvent =
   /** load_level_map (exe 2000:7687) reads in another floor's monsters. */
@@ -404,7 +405,9 @@ export type GameEvent =
    * flea_inn (exe 2000:4fe7) has handed the character every level their experience has earned.
    * `level` is the one they wake on.
    */
-  | { kind: 'levelGained'; level: number };
+  | { kind: 'levelGained'; level: number }
+  /** One of the things a run counts, pushed where the game does it (`src/lib/game/action.ts`). */
+  | ActionEvent;
 
 /** The columns of the type table `mstats` (exe DS:5402) that the ported functions read. */
 export interface MonsterStats {

@@ -1,3 +1,4 @@
+import type { ActionEvent } from '../../game/action';
 import type { Rng } from '../../game/port/rng';
 import { RevMapMemory } from './memory';
 import { RevMonsters, type RevWalker } from './monsters';
@@ -32,11 +33,14 @@ export interface RevDrawnFrom {
   facing: number;
 }
 
-/** Something worth writing down about a run, which `../run.ts` turns into a milestone. */
+/** Something worth writing down about a run, which `../run.ts` counts as an action or keeps as a
+ *  milestone. */
 export type RevEvent =
   | { kind: 'levelGained'; level: number }
   | { kind: 'bossKilled'; boss: number }
-  | { kind: 'gameWon' };
+  | { kind: 'gameWon' }
+  /** One of the things a run counts, pushed where the game does it (`src/lib/game/action.ts`). */
+  | ActionEvent;
 
 /** What a fight holds while it is running (1000:8223). */
 export interface RevFight {

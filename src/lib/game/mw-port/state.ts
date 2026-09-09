@@ -1,3 +1,4 @@
+import type { ActionEvent } from '../action';
 import type { Rng } from '../port/rng';
 import { BorlandRng } from '../port/rng';
 import type { ScreenLine } from '../port/state';
@@ -259,7 +260,8 @@ export interface MwCharacter {
 
 /**
  * Something the original does that this port records instead of doing, or something a ported
- * function did that the run log of `src/lib/play/run.ts` keeps as a milestone.
+ * function did that the run log of `src/lib/play/run.ts` keeps: one of the run's actions, or a
+ * milestone.
  */
 export type MwEvent =
   /**
@@ -311,7 +313,9 @@ export type MwEvent =
    * The inn (WORLD.EXE 2000:35b1) has handed the character every level their experience has
    * earned. `level` is the one they wake on.
    */
-  | { kind: 'levelGained'; level: number };
+  | { kind: 'levelGained'; level: number }
+  /** One of the things a run counts, pushed where the game does it (`src/lib/game/action.ts`). */
+  | ActionEvent;
 
 /**
  * One answer to the three menus that the Write Scroll and Enchant Wand spells walk through: the
