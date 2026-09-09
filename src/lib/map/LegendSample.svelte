@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onScreen } from '../ui/on-screen.svelte';
   import { drawExplored, drawSquare } from './draw-floor';
   import type { MapGame, MapSquare } from './game';
   import { palette } from './palette';
@@ -9,6 +10,7 @@
   let { square, game, explored = false }: { square: MapSquare; game: MapGame; explored?: boolean } = $props();
 
   let canvas: HTMLCanvasElement;
+  const visible = onScreen(() => canvas);
 
   const animated = $derived([square.n, square.s, square.w, square.e].includes(4));
 
@@ -27,6 +29,12 @@
       if (explored) drawExplored(ctx, 2, 2, SIZE, SIZE);
     };
     if (!animated) {
+      paint(TELEPORTER_STILL_HUE);
+      return;
+    }
+    // Every tab stays mounted, so the sample keeps cycling behind whichever one is showing
+    // unless the loop is told where it is.
+    if (!visible.showing) {
       paint(TELEPORTER_STILL_HUE);
       return;
     }

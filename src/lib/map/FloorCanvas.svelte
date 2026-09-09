@@ -10,6 +10,7 @@
   import type { StockedMonster } from './stocking';
   import { drawTeleporters, teleporterHue, teleporterSegments } from './teleporters';
   import { centerOn, ensureVisible, fitFloor, pan, squareAt, wheelZoomFactor, zoomBy, zoomStep, type Bounds, type Point, type Viewport } from './viewport';
+  import { onScreen } from '../ui/on-screen.svelte';
   import { renderWallTexture, wallTexture } from './wall-texture';
   import { youAlpha } from './you';
 
@@ -213,10 +214,14 @@
     scheduleRender();
   });
 
+  const visible = onScreen(() => canvas);
+
   // Teleporter sides cycle through the rainbow and the "you are here" mark pulses, so the
-  // canvas redraws every frame while either is on the floor.
+  // canvas redraws every frame while either is on the floor and the canvas is where it can be
+  // seen: every tab stays mounted, and a hidden one has no business drawing.
   $effect(() => {
     if (!teleporters.length && !you) return;
+    if (!visible.showing) return;
     let frame = requestAnimationFrame(function tick() {
       render();
       frame = requestAnimationFrame(tick);
