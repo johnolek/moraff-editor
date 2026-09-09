@@ -216,6 +216,8 @@
     {/snippet}
     <MapHud
       closeUp={facing ? closeUp : undefined}
+      closeUpHp={facing ? { now: facing.hp, full: view.engagedFullHp } : undefined}
+      closeUpLines={debugDrawn(stage.mode) ? view.engagedDebugLines : []}
       hp={view.hp}
       maxHp={view.maxHp}
       sp={view.sp}
