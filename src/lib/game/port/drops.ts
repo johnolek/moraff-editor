@@ -508,7 +508,8 @@ export function dropMoney(game: Game): void {
     return;
   }
   game.dollarCapWarned = false;
-  // srand(clock()) at 4000:6b0a, deliberately not ported: see the README's third departure.
+  // srand at 4000:6b24, over the date and time read at 4000:6b1b, deliberately not ported: see
+  // the README's third departure.
   const deep = pc.level + 1;
   let amount = 0;
   if (pc.level > 4) {

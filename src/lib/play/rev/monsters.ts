@@ -52,8 +52,8 @@ export interface RevWalker {
   generation: number;
   /** The player's weight, which is what a monster notices them by (DGROUP B570). */
   weight: number;
-  /** The moves left on the invisibility spell, which is element 5 of the ten-value array
-   *  (DGROUP 6034). */
+  /** Element 5 of the ten-value array (DGROUP 6034), the invisibility spell's counter. The
+   *  notice roll at 1000:7342 tests it against 1 exactly, so any larger number is no help. */
   invisible: number;
   /** The slot the character is fighting, or 0 for no fight (DGROUP B50E with B69C). */
   fighting: number;
@@ -176,7 +176,8 @@ export class RevMonsters {
    *
    * A monster four squares away that is already the first awake one stays awake, and five away
    * for the second; otherwise it is forgotten. One that is lined up and within five squares
-   * rolls to notice the character, and the invisibility spell is what can stop it.
+   * rolls to notice the character, and an invisibility counter standing at exactly 1 is a second
+   * chance to be missed.
    */
   private noticing(slot: number, at: RevStanding, walker: RevWalker, rng: Rng): { awake: boolean; lined: boolean } {
     const away = Math.abs(walker.column - at.column) + Math.abs(walker.row - at.row);
