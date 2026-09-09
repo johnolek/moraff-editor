@@ -28,12 +28,23 @@ export interface RollerView<Line = ScreenLine, Pc = PlayerCharacter> {
   screen: Line[];
   /** What the roller is waiting for, or null once the character is finished. */
   question: Question | null;
+  /**
+   * The race the menu's pointer is sitting on, which is the one it draws in reverse, in the game
+   * whose race menu is walked with the arrow keys; null in the two whose menus are answered by
+   * number.
+   */
+  race: number | null;
+  /** How many columns wide the screen is, in the game that prints on a text grid; null in the
+   *  two that draw theirs as vectors instead. */
+  width: number | null;
   pc: Pc;
 }
 
-/** What the session knows that the game does not: what it is waiting for. */
+/** What the session knows that the game does not: what it is waiting for, and where the race
+ *  menu's pointer is. */
 export interface RollerState {
   question: Question | null;
+  race: number | null;
 }
 
 /** What a port needs to start one roll. */
@@ -41,6 +52,9 @@ export interface RollerSetup {
   /** The character number the roll is for, the way the game's own select screen picks one. */
   slot: number;
   rng: Rng;
+  /** Which race the menu's pointer is on, for the game whose race menu is walked; the other two
+   *  never look at it. */
+  race: number;
   /** The next answer to `question`, which throws when there is none yet. */
   take(question: Question): Answer;
 }
@@ -55,6 +69,9 @@ export interface RollerPort<Game, View> {
   newGame(setup: RollerSetup): Game;
   rollChar(game: Game): void;
   view(game: Game, state: RollerState): View;
+  /** The race menu's pointer, in the game whose menu is walked rather than numbered: the
+   *  question it belongs to and how many races it goes round. */
+  racePointer?: { question: Question; races: number };
 }
 
 /**
@@ -95,6 +112,8 @@ export class RollerSession<Game, View> {
   private readonly drawn: number[] = [];
   private game: Game;
   private question: Question | null = null;
+  /** Where the race menu's pointer is, which the arrow keys move and Return takes. */
+  private race = 1;
 
   /** `slot` is the character number the game picks before rolling: 20 to 29 in Dungeons of the
    *  Unforgiven, 0 to 9 in Moraff's World, and in Moraff's Revenge 1 to 10, which names the two
@@ -109,19 +128,47 @@ export class RollerSession<Game, View> {
   /** Answer the question the roller is waiting on and let it carry on. */
   answer(value: Answer): void {
     if (this.question === null) return;
+    if (this.onRacePointer()) this.race = Number(value);
     this.answers.push(value);
     this.game = this.run();
+  }
+
+  /**
+   * Move the race menu's pointer, the way the right and left arrows move it: one race on, round
+   * to the first past the last and to the last before the first. The two games whose race menus
+   * are answered by number have no pointer to move.
+   */
+  moveRace(step: number): void {
+    const pointer = this.port.racePointer;
+    if (pointer === undefined || !this.onRacePointer()) return;
+    const moved = this.race + step;
+    this.race = moved > pointer.races ? 1 : moved < 1 ? pointer.races : moved;
+    this.game = this.run();
+  }
+
+  /** Take the race the pointer is on, which is what Return does. */
+  takeRace(): void {
+    if (this.onRacePointer()) this.answer(this.race);
   }
 
   /** Throw the character away and roll another from the very first screen. */
   restart(): void {
     this.answers = [];
     this.drawn.length = 0;
+    this.race = 1;
     this.game = this.run();
   }
 
   view(): View {
-    return this.port.view(this.game, { question: this.question });
+    return this.port.view(this.game, {
+      question: this.question,
+      race: this.port.racePointer === undefined ? null : this.race,
+    });
+  }
+
+  /** Whether the roller is waiting at the menu the pointer belongs to. */
+  private onRacePointer(): boolean {
+    return this.port.racePointer !== undefined && this.question === this.port.racePointer.question;
   }
 
   private run(): Game {
@@ -130,7 +177,7 @@ export class RollerSession<Game, View> {
       if (next === this.answers.length) throw new NeedsAnswer(question);
       return this.answers[next++];
     };
-    const game = this.port.newGame({ slot: this.slot, rng: new RecordedRandom(this.drawn), take });
+    const game = this.port.newGame({ slot: this.slot, rng: new RecordedRandom(this.drawn), race: this.race, take });
     this.question = null;
     try {
       this.port.rollChar(game);
@@ -163,5 +210,5 @@ export const ROLLER_PORT: RollerPort<Game, RollerView> = {
       },
     }),
   rollChar,
-  view: (game, state) => ({ screen: game.screen, question: state.question, pc: game.pc }),
+  view: (game, state) => ({ screen: game.screen, question: state.question, race: state.race, width: null, pc: game.pc }),
 };

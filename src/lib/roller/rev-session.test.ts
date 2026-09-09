@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { REV_RACE_NAMES, REV_RACE_STATS } from '../game/rev-port/character';
-import { RevRollerSession } from './rev-session';
+import type { RevGame } from '../game/rev-port/state';
+import { REV_ROLLER_PORT, type RevRollerView } from './rev-session';
+import { RollerSession } from './session';
 
 /** Walk the roller to the end with the answers a player would give. */
-function finish(session: RevRollerSession, race: number, cls: number, name: string): void {
+function finish(session: RollerSession<RevGame, RevRollerView>, race: number, cls: number, name: string): void {
   session.answer(0);
   session.answer(0);
   session.answer(race);
@@ -14,7 +16,7 @@ function finish(session: RevRollerSession, race: number, cls: number, name: stri
 
 describe('the Moraff’s Revenge roller', () => {
   it('stops at each of the two instruction screens first', () => {
-    const session = new RevRollerSession(1);
+    const session = new RollerSession(REV_ROLLER_PORT, 1);
     expect(session.view().question).toBe('continue');
     expect(session.view().screen[0].text).toContain('These are the characteristics');
     session.answer(0);
@@ -23,7 +25,7 @@ describe('the Moraff’s Revenge roller', () => {
   });
 
   it('asks for the race once the instructions are done', () => {
-    const session = new RevRollerSession(1);
+    const session = new RollerSession(REV_ROLLER_PORT, 1);
     session.answer(0);
     session.answer(0);
     expect(session.view().question).toBe('revRace');
@@ -34,7 +36,7 @@ describe('the Moraff’s Revenge roller', () => {
   });
 
   it('moves the race pointer round with the arrows the way the game does', () => {
-    const session = new RevRollerSession(1);
+    const session = new RollerSession(REV_ROLLER_PORT, 1);
     session.answer(0);
     session.answer(0);
     expect(session.view().race).toBe(1);
@@ -48,7 +50,7 @@ describe('the Moraff’s Revenge roller', () => {
   });
 
   it('takes the race the pointer is on when Return is pressed', () => {
-    const session = new RevRollerSession(1);
+    const session = new RollerSession(REV_ROLLER_PORT, 1);
     session.answer(0);
     session.answer(0);
     session.moveRace(1);
@@ -58,7 +60,7 @@ describe('the Moraff’s Revenge roller', () => {
   });
 
   it('rolls the same character again after every answer', () => {
-    const session = new RevRollerSession(1);
+    const session = new RollerSession(REV_ROLLER_PORT, 1);
     session.answer(0);
     session.answer(0);
     session.answer(1);
@@ -70,7 +72,7 @@ describe('the Moraff’s Revenge roller', () => {
   });
 
   it('rolls a new character when the player says no, keeping the race', () => {
-    const session = new RevRollerSession(1);
+    const session = new RollerSession(REV_ROLLER_PORT, 1);
     session.answer(0);
     session.answer(0);
     session.answer(2);
@@ -83,7 +85,7 @@ describe('the Moraff’s Revenge roller', () => {
   });
 
   it('finishes with a character the game would take', () => {
-    const session = new RevRollerSession(3);
+    const session = new RollerSession(REV_ROLLER_PORT, 3);
     finish(session, 3, 2, 'gimli');
     const view = session.view();
     expect(view.question).toBeNull();
@@ -93,7 +95,7 @@ describe('the Moraff’s Revenge roller', () => {
   });
 
   it('starts over from the first screen', () => {
-    const session = new RevRollerSession(1);
+    const session = new RollerSession(REV_ROLLER_PORT, 1);
     finish(session, 4, 1, 'bilbo');
     session.restart();
     expect(session.view().question).toBe('continue');

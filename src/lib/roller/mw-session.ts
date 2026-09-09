@@ -24,5 +24,5 @@ export const MW_ROLLER_PORT: RollerPort<MwGame, MwRollerView> = {
       },
     }),
   rollChar,
-  view: (game, state) => ({ screen: game.screen, question: state.question, pc: game.pc }),
+  view: (game, state) => ({ screen: game.screen, question: state.question, race: state.race, width: null, pc: game.pc }),
 };

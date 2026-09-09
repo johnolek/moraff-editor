@@ -8,7 +8,7 @@
   import { CLASS_NAMES, RACES, typedName } from '../game/port/character';
   import type { Game, PlayerCharacter, ScreenLine } from '../game/port/state';
   import { REV_CLASS_NAMES, REV_RACE_NAMES, REV_STAT_NAMES, revTypedName } from '../game/rev-port/character';
-  import type { RevCharacter, RevScreenLine } from '../game/rev-port/state';
+  import type { RevCharacter, RevGame, RevScreenLine } from '../game/rev-port/state';
   import GameScreen from '../ui/GameScreen.svelte';
   import { isTyping } from '../ui/keys';
   import PixelText from '../ui/PixelText.svelte';
@@ -18,7 +18,7 @@
   import RevScreen from './RevScreen.svelte';
   import { MW_SCREEN_COLOURS, SCREEN_COLOURS } from './screen';
   import { newRevCharacterFile, newRevExploredFile, REV_SLOTS, revExploredFileName, revRecordFileName } from './rev-save-file';
-  import { RevRollerSession } from './rev-session';
+  import { REV_ROLLER_PORT, type RevRollerView } from './rev-session';
   import { newCharacterFile, slotFileName, SLOTS } from './save-file';
   import { ROLLER_PORT, RollerSession, type RollerView } from './session';
 
@@ -52,8 +52,8 @@
     },
   };
 
-  type Session = RollerSession<Game, RollerView> | RollerSession<MwGame, MwRollerView> | RevRollerSession;
-  type View = RollerView | MwRollerView | ReturnType<RevRollerSession['view']>;
+  type Session = RollerSession<Game, RollerView> | RollerSession<MwGame, MwRollerView> | RollerSession<RevGame, RevRollerView>;
+  type View = RollerView | MwRollerView | RevRollerView;
 
   let slot = $state(SLOTS[0]);
   let session = $state.raw<Session | null>(null);
@@ -78,7 +78,7 @@
   );
   /** Moraff's Revenge prints its name prompt on row 20 and the letters follow it. */
   const revShowing = $derived.by(() => {
-    if (view === null || !('width' in view)) return [];
+    if (view === null) return [];
     const lines = view.screen as RevScreenLine[];
     if (view.question !== 'name') return lines;
     return [...lines, { row: 20, column: 20, text: revTypedName(typed), colour: 7, background: 0 }];
@@ -158,7 +158,7 @@
 
   function start() {
     const started =
-      rolling === 'revenge' ? new RevRollerSession(slot) : rolling === 'moraffsWorld' ? new RollerSession(MW_ROLLER_PORT, slot) : new RollerSession(ROLLER_PORT, slot);
+      rolling === 'revenge' ? new RollerSession(REV_ROLLER_PORT, slot) : rolling === 'moraffsWorld' ? new RollerSession(MW_ROLLER_PORT, slot) : new RollerSession(ROLLER_PORT, slot);
     session = started;
     view = started.view();
     typed = '';
@@ -183,14 +183,14 @@
 
   /** The arrows on Moraff's Revenge's race menu, which move a pointer rather than answer. */
   function moveRace(step: number) {
-    if (!(session instanceof RevRollerSession)) return;
+    if (!session) return;
     session.moveRace(step);
     view = session.view();
   }
 
   /** Return on that menu, which takes the race the pointer is on. */
   function takeRace() {
-    if (!(session instanceof RevRollerSession)) return;
+    if (!session) return;
     session.takeRace();
     view = session.view();
     keepWhenDone();
@@ -293,7 +293,7 @@
            the game's own menu, so there is nothing left to draw once the roll is finished. -->
       {#if rolling === 'revenge'}
         {#if view.question !== null}
-          <RevScreen lines={revShowing} width={'width' in view ? view.width : 80} />
+          <RevScreen lines={revShowing} width={view.width ?? 80} />
         {/if}
       {:else}
         <GameScreen lines={showing} colours={rolling === 'moraffsWorld' ? MW_SCREEN_COLOURS : SCREEN_COLOURS} />
@@ -351,7 +351,7 @@
           {#each chosen.races as race, index}
             <button
               type="button"
-              class:picked={'race' in view && view.race === index + 1}
+              class:picked={view.race === index + 1}
               onclick={() => answer(index + 1)}>{index + 1}) {race}</button>
           {/each}
         </div>
