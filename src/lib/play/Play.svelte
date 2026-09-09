@@ -244,11 +244,6 @@
 
 {#snippet sideFoot(stage: Stage)}
   {#if sidePicturesVisible(stage.display)}
-    <Portrait
-      monster={stage.view.ahead ? stage.view.engaged : null}
-      module={stage.view.place.module}
-      floor={stage.view.place.floor}
-    />
     <WallTexture game={UNFORGIVEN_MAP.id} dungeon={stage.view.place.module} floor={stage.view.place.floor} />
   {/if}
   {#if panelVisible(stage.mode)}

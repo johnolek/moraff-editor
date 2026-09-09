@@ -20,7 +20,6 @@
   import PlayTab from '../PlayTab.svelte';
   import { bundledMwDungeon } from '../../game/mw-dungeon';
   import { experienceNeeded } from '../../game/mw-port/levels';
-  import { HUD_ORB_PX } from '../hud';
   import { MW_DIG_PROMPT } from './view3d/screen';
   import type { ScreenLine } from '../../game/port/state';
   import type { MwGameSession, MwPlayView } from './engine';
@@ -40,7 +39,6 @@
     mwCharacteristicLines,
     mwKeyMenuLines,
     mwMonsterViewCorner,
-    mwMonsterViewLines,
     mwMonsterViewSideLines,
     mwMonsterViewSides,
     mwStatusLines,
@@ -66,23 +64,8 @@
     width: MW_NORTH_VIEW.right - MW_NORTH_VIEW.x,
     height: LINE_HEIGHT,
   };
-  const MONSTER_BOTTOM = { ...MONSTER_TOP, y: MW_NORTH_VIEW.bottom - LINE_HEIGHT };
 
   /** The character's own numbers and the six characteristics, side by side along the bottom. */
-  const STATUS_HEIGHT = MW_STATUS_BLOCK.bottom - MW_STATUS_BLOCK.y;
-  const CHARACTERISTICS_WIDTH = MW_SCREEN.width - MW_STATUS_BLOCK.right;
-  const STATUS_WINDOW = {
-    x: MW_STATUS_BLOCK.x,
-    y: MW_STATUS_BLOCK.y,
-    width: MW_STATUS_BLOCK.right,
-    height: STATUS_HEIGHT,
-  };
-  const CHARACTERISTICS_WINDOW = {
-    x: MW_STATUS_BLOCK.right,
-    y: MW_STATUS_BLOCK.y,
-    width: CHARACTERISTICS_WIDTH,
-    height: STATUS_HEIGHT,
-  };
 
   let canvas = $state.raw<FloorCanvas | null>(null);
   let style = $state<MovementStyle>(readMovementStyle('moraffsWorld'));
@@ -113,12 +96,6 @@
   }
 
   /** Its level, its hit points and what killing it is worth, printed around that view. */
-  function monsterValues(stage: Stage): ScreenLine[] {
-    const engaged = stage.view.engaged;
-    if (engaged == null) return [];
-    return mwMonsterViewLines(stage.session.game, engaged.slot, monsterCorner(stage));
-  }
-
   /**
    * Everything the game prints on the play screen, each line where the game prints it: the
    * message box down the left, the menu of keys down the right, the numbers along the bottom, the
@@ -247,40 +224,19 @@
       </div>
     {/if}
     <div class="corner top-right" style:--share={MONSTER_TOP.width / MW_SCREEN.width}>
-      {#if view.engaged}
-        {@const values = monsterValues(stage)}
-        <div class="monster">
-          <MwPortrait monster={view.engaged} floor={view.place.floor} />
-          <div class="values top">
-            <GameScreen lines={values} window={MONSTER_TOP} colours={MW_SCREEN_COLOURS} />
-          </div>
-          <div class="values bottom">
-            <GameScreen lines={values} window={MONSTER_BOTTOM} colours={MW_SCREEN_COLOURS} />
-          </div>
-        </div>
-      {/if}
       {#if view.prompt}
         <!-- FUN_2000_a9bd (WORLD.EXE 2000:a9bd) prints this one in colour 5. -->
         <div class="status" style:color={MW_SCREEN_COLOURS[5]}>{view.prompt}</div>
       {/if}
     </div>
-    <!-- The heads-up display takes the bottom corners of the map, so the game's own two blocks
-         stand above it rather than under it. -->
-    <div class="bottom-blocks" style:bottom="calc(var(--inset) * 2 + {HUD_ORB_PX}px)">
-      <div class="block" style:flex={MW_STATUS_BLOCK.right}>
-        <GameScreen lines={mwStatusLines(stage.session.game)} window={STATUS_WINDOW} colours={MW_SCREEN_COLOURS} />
-      </div>
-      <div class="block" style:flex={CHARACTERISTICS_WIDTH}>
-        <GameScreen
-          lines={mwCharacteristicLines(stage.session.game)}
-          window={CHARACTERISTICS_WINDOW}
-          colours={MW_SCREEN_COLOURS} />
-      </div>
-    </div>
     {@const pc = stage.session.game.pc}
-    <!-- No picture of the monster being fought: this game's map already draws it, in the corner
-         of the game's own screen it belongs to. -->
+    <!-- The map is the site's own view, so the game's status blocks and its corner picture of the
+         monster give way to the heads-up display (John, 2026-09-09). -->
+    {#snippet closeUp()}
+      <MwPortrait monster={view.engaged} floor={view.place.floor} />
+    {/snippet}
     <MapHud
+      closeUp={view.engaged ? closeUp : undefined}
       hp={pc.hp}
       maxHp={pc.maxHp}
       sp={pc.sp}
@@ -377,38 +333,7 @@
     top: var(--inset);
     align-items: flex-end;
   }
-  .bottom-blocks {
-    position: absolute;
-    left: var(--inset);
-    right: var(--inset);
-    display: flex;
-    gap: 6px;
-    pointer-events: none;
-  }
-  .block {
-    min-width: 0;
-  }
-  .monster {
-    position: relative;
-    width: 100%;
-  }
   /* The strips FUN_2000_8728 clears before it prints, so that white on a light monster reads. */
-  .values {
-    position: absolute;
-    left: 0;
-    right: 0;
-  }
-  .values.top {
-    top: 0;
-  }
-  .values.bottom {
-    bottom: 0;
-  }
-  .values :global(.screen) {
-    background: rgba(0, 0, 0, 0.55);
-    border: none;
-    border-radius: 0;
-  }
   .status {
     padding: 6px 10px;
     border-radius: 8px;

@@ -162,11 +162,11 @@ export function debugDrawn(mode: PlayMode): boolean {
 }
 
 /**
- * Whether the two pictures beside the stage are shown: the monster standing in front of the
- * character, and the wall texture the floor is built from.
+ * Whether the wall texture the floor is built from is shown beside the stage.
  *
- * The game's own screen draws both of them already, the monster zoomed into the view ahead and the
- * texture on every wall of all four views, so they stand beside the map only, whatever the mode.
+ * The game's own screen draws it on every wall of all four views already, so it stands beside the
+ * map only, whatever the mode. The monster being fought is the map's own heads-up display's
+ * (`MapHud.svelte`), not a picture beside it (John, 2026-09-09).
  */
 export function sidePicturesVisible(display: PlayDisplay): boolean {
   return display === 'map';

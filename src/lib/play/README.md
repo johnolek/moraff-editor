@@ -72,7 +72,8 @@ something the original does, a comment says so.
   in both C games (`drawsquare` here, `draw_map_square` in Moraff's World) and so is shared with
   them, with a row of a table apiece for the few numbers they differ over.
 * **`panel.ts`, `Panel.svelte`, `Portrait.svelte`** — the numbers the game keeps and never
-  prints, beside the map, and the picture of the monster in front of the character over them.
+  prints, beside the map, and the picture of the monster in front of the character, which the
+  map's heads-up display (`MapHud.svelte`) shows at the top of the map.
   **`PortraitFrame.svelte`** is the box that picture sits in, which Moraff's World shares; each
   game hands its own picture in as a snippet.
 * **`hud.ts`, `MapHud.svelte`, `HudOrb.svelte`, `HudExpBar.svelte`** — what the map draws over
