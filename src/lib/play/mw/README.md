@@ -49,7 +49,8 @@ tab (`../PlayTab.svelte`), the map canvas, the screen renderer and the roster.
 * **`view3d/`** — the 3-D views and the screen they sit on; see below. **`MwScreen.svelte`**
   paints them and lays the game's own lines of text over them.
 * **`MwPlay.svelte`** — what this game puts in the Play tab: the game's screen or the top-down
-  map, whichever the switch is set to, the four corners of that screen laid over the map, and the
+  map, whichever the switch is set to, the four corners of that screen laid over the map, the
+  health and spell orbs and the experience bar of `../MapHud.svelte` under them, and the
   panel. The tab around them is `../PlayTab.svelte`, which all three games share, and this game's
   row of its `PLAY_GAMES` table is in `../games.ts`. `src/App.svelte` picks this wrapper or
   Dungeons of the Unforgiven's by the game showing.

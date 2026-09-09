@@ -75,6 +75,19 @@ something the original does, a comment says so.
   prints, beside the map, and the picture of the monster in front of the character over them.
   **`PortraitFrame.svelte`** is the box that picture sits in, which Moraff's World shares; each
   game hands its own picture in as a snippet.
+* **`hud.ts`, `MapHud.svelte`, `HudOrb.svelte`, `HudExpBar.svelte`** — what the map draws over
+  itself: the monster being fought centred at the top, a health orb and a spell orb in the bottom
+  corners and an experience bar between them. None of it is a port of anything. The map is the
+  site's own view of a game rather than a screen any game ever drew, so this is the site's own
+  look; it takes no clicks and reads the games' numbers without writing any, so the game, the run
+  log and a replay are the same with it and without it. `hud.ts` is the arithmetic: how full an
+  orb stands, and which stretch of a game's experience curve the bar draws. A level is only
+  handed over at an inn, so a character can walk around with the experience for several they have
+  not been given; the bar steps on to the next stretch for each one and a badge names the level it
+  has reached. Moraff's World takes all of it but the close-up, since its map draws that picture
+  already. Moraff's Revenge takes none of it: its record keeps no maximum spell points, its map
+  draws no monster, and the experience a kill is worth sits in a pot the game does not add up
+  until the character has slept somewhere.
 
 ## The run
 
