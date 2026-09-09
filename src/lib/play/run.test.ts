@@ -25,6 +25,7 @@ import {
   RunRecorder,
   RUN_GAMES,
   RUN_LOG_VERSION,
+  runLogOf,
   runTotals,
   TURN_INPUTS,
   type Milestone,
@@ -84,7 +85,7 @@ describe('the run log', () => {
     session.finish();
 
     const log = run.log();
-    expect(log.version).toBe(RUN_LOG_VERSION);
+    expect(runLogOf([log]).version).toBe(RUN_LOG_VERSION);
     expect(log.game).toBe('unforgiven');
     expect(log.name).toBe('BRAWLER');
     expect(log.mode).toBeNull();
@@ -643,8 +644,8 @@ describe('the words a run is shown with', () => {
   });
 
   it('names the file a run downloads as after the character', () => {
-    const log = new RunRecorder({ game: 'unforgiven', name: "GRIM WALD'S", record: new Uint8Array(4) }).log();
-    expect(runFileName(log)).toBe('grim-wald-s-run.json');
-    expect(runFileName({ ...log, name: '   ' })).toBe('character-run.json');
+    const session = new RunRecorder({ game: 'unforgiven', name: "GRIM WALD'S", record: new Uint8Array(4) }).log();
+    expect(runFileName(runLogOf([session]))).toBe('grim-wald-s-run.json');
+    expect(runFileName(runLogOf([{ ...session, name: '   ' }]))).toBe('character-run.json');
   });
 });

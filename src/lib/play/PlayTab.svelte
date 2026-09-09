@@ -22,7 +22,7 @@
   import { runPlayLoop } from './loop';
   import PlayRoster from './PlayRoster.svelte';
   import ScreenSwitch from './ScreenSwitch.svelte';
-  import { actionWords, milestoneNote, milestoneWords, RUN_GAMES } from './run';
+  import { actionWords, milestoneNote, milestoneWords, runLogOf, RUN_GAMES } from './run';
   import {
     colourblindFilter,
     PLAY_MODES,
@@ -258,7 +258,7 @@
   /** The run as it stands, as a file. */
   function exportRun() {
     const run = session?.run;
-    if (run) downloadRunLog({ ...run.log(), mode: session?.mode ?? null });
+    if (run) downloadRunLog(runLogOf([{ ...run.log(), mode: session?.mode ?? null }]));
   }
 
   /** The game's own words for its clock and for one of its dungeons. */

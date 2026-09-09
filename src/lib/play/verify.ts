@@ -1,4 +1,5 @@
 import type { Leaderboard } from '../app-state.svelte';
+import { bytesFromBase64, sameBytes } from '../bytes';
 import { isLeaderboard } from '../character/leaderboard';
 import {
   actionWords,
@@ -8,9 +9,13 @@ import {
   replayRun,
   RUN_GAMES,
   RUN_LOG_VERSION,
+  runLogOf,
+  runTotals,
   type Milestone,
   type MilestoneKind,
   type RunGame,
+  type RunLog,
+  type RunReplay,
   type RunSession,
   type RunTotals,
 } from './run';
@@ -40,7 +45,7 @@ export interface RunEnding {
   /** The loop came back: the character quit or died. */
   over: boolean;
   alive: boolean;
-  /** The run reached the end of the game. */
+  /** The run reached the end of the game, in this session or one before it. */
   won: boolean;
   /** SHA-256 of the record the run ended with, in hex, so that two runs claiming to end with the
    *  same character can be told apart without the records themselves. */
@@ -55,20 +60,34 @@ export interface RunVerdict {
   /** What is worth saying about a run that is not a reason to doubt it by itself. */
   notes: string[];
   game: RunGame;
+  /** The character's name and the mode it was last played in, from the newest session of the
+   *  chain. */
   name: string;
   mode: string | null;
   /** The board the character was rolled for, and null for a run played for its own sake. */
   leaderboard: Leaderboard | null;
-  /** The commit the log says it was played on, and the one this build was made from. */
-  engine: { log: string; build: string };
+  /** How many sittings the run was played in. */
+  sessions: number;
+  /** The commits the sessions say they were played on, oldest first and each named once, and the
+   *  one this build was made from. A chain played over weeks names as many engines as it was
+   *  played on. */
+  engine: { played: string[]; build: string };
+  /** What the log claims the whole run came to. */
   claimed: RunTotals;
-  /** What the replay reached, or null when there was none to run. */
+  /** What the replays reached, as far as they got, or null when there was none to run. */
   replayed: RunTotals | null;
+  /** Where the last replayed session ended. */
   ending: RunEnding | null;
 }
 
 /**
  * Play a run log again and say whether it is what it claims to be.
+ *
+ * The log is a chain of sessions, and each of them is replayed from the record it says it began
+ * with, counting on from what the sessions before it came to. Two things have to hold for the
+ * chain: every session has to reach what it claims, and every session has to start from the
+ * record the replay of the one before it ended with. The second is what stops a run being padded
+ * with a session of a character somebody else played, or with the same session twice.
  *
  * An engine that is not this build's is a note rather than a failure: the two may well agree, and
  * a replay that then reproduces the run says they did. It is only worth reading as an excuse when
@@ -76,46 +95,84 @@ export interface RunVerdict {
  * engine whose commit ends in `-dirty` gets a note of its own even where the two strings are the
  * same, since neither of them names the code it was built from.
  */
-export async function verifyRun(log: RunSession): Promise<RunVerdict> {
+export async function verifyRun(log: RunLog): Promise<RunVerdict> {
+  const sessions = log.sessions;
+  const newest = sessions[sessions.length - 1];
   const verdict: RunVerdict = {
     status: 'unverifiable',
     reason: null,
     notes: [],
-    game: log.game,
-    name: log.name,
-    mode: log.mode,
-    leaderboard: log.leaderboard ?? null,
-    engine: { log: log.engine, build: ENGINE_COMMIT },
-    claimed: { actions: log.actions, time: log.time, milestones: log.milestones },
+    game: newest.game,
+    name: newest.name,
+    mode: newest.mode,
+    leaderboard: newest.leaderboard ?? null,
+    sessions: sessions.length,
+    engine: { played: enginesPlayedOn(sessions), build: ENGINE_COMMIT },
+    claimed: runTotals(sessions),
     replayed: null,
     ending: null,
   };
-  const engineNote = whatToSayAboutTheEngine(log.engine, ENGINE_COMMIT);
-  if (engineNote !== null) verdict.notes.push(engineNote);
-  if (log.edits > 0) {
-    verdict.reason = `The character's record was written from outside the game ${timesWords(log.edits)} while the run was played, and those records are not in the log.`;
+  for (const engine of verdict.engine.played) {
+    const note = whatToSayAboutTheEngine(engine, ENGINE_COMMIT);
+    if (note !== null && !verdict.notes.includes(note)) verdict.notes.push(note);
+  }
+  const edits = sessions.reduce((count, session) => count + session.edits, 0);
+  if (edits > 0) {
+    verdict.reason = `The character's record was written from outside the game ${timesWords(edits)} while the run was played, and those records are not in the log.`;
     return verdict;
   }
-  try {
-    const replay = await replayRun(log);
-    verdict.replayed = { actions: replay.actions, time: replay.time, milestones: replay.milestones };
+  const replayed: RunTotals = { actions: 0, time: 0, milestones: [] };
+  let endedWith: Uint8Array | null = null;
+  for (const [at, session] of sessions.entries()) {
+    if (endedWith !== null && !sameBytes(bytesFromBase64(session.record), endedWith)) {
+      verdict.status = 'failed';
+      verdict.reason = `Session ${at + 1} does not start from the record session ${at} ended with.`;
+      return verdict;
+    }
+    let replay: RunReplay;
+    try {
+      replay = await replayRun(session, { ...replayed });
+    } catch (thrown) {
+      // A replay that stopped part-way says nothing about the run either way: the log may be an
+      // honest one and the engine may be what broke. So the verdict is that it cannot be checked,
+      // with the message it stopped on, rather than a failure the run is blamed for.
+      verdict.reason = `${whichSession(sessions.length, at)}The replay stopped: ${thrown instanceof Error ? thrown.message : String(thrown)}`;
+      return verdict;
+    }
+    replayed.actions = replay.actions;
+    replayed.time = replay.time;
+    replayed.milestones = [...replayed.milestones, ...replay.milestones];
+    verdict.replayed = { ...replayed, milestones: [...replayed.milestones] };
     verdict.ending = {
       place: replay.place,
       over: replay.over,
       alive: !replay.dead,
-      won: replay.milestones.some((milestone) => milestone.kind === 'win'),
+      // The end of the game is reached once, in whichever session reached it, and the run has
+      // been won from then on.
+      won: replayed.milestones.some((milestone) => milestone.kind === 'win'),
       record: await recordHash(replay.record),
     };
-  } catch (thrown) {
-    // A replay that stopped part-way says nothing about the run either way: the log may be an
-    // honest one and the engine may be what broke. So the verdict is that it cannot be checked,
-    // with the message it stopped on, rather than a failure the run is blamed for.
-    verdict.reason = `The replay stopped: ${thrown instanceof Error ? thrown.message : String(thrown)}`;
-    return verdict;
+    const mismatch = firstMismatch(session, replay);
+    if (mismatch !== null) {
+      verdict.status = 'failed';
+      verdict.reason = `${whichSession(sessions.length, at)}${mismatch}`;
+      return verdict;
+    }
+    endedWith = replay.record;
   }
-  verdict.reason = firstMismatch(log, verdict.replayed);
-  verdict.status = verdict.reason === null ? 'verified' : 'failed';
+  verdict.status = 'verified';
   return verdict;
+}
+
+/** Every engine the sessions of a run were played on, oldest first and each named once. */
+function enginesPlayedOn(sessions: readonly RunSession[]): string[] {
+  return [...new Set(sessions.map((session) => session.engine))];
+}
+
+/** Which session of the chain something is being said about, for a run played in more than one
+ *  sitting. A run played in one sitting has no session to name. */
+function whichSession(sessions: number, at: number): string {
+  return sessions === 1 ? '' : `Session ${at + 1}: `;
 }
 
 /**
@@ -142,30 +199,30 @@ export function whatToSayAboutTheEngine(logEngine: string, buildEngine: string):
 }
 
 /**
- * The first thing the replay did not reproduce, in words, or null when it reproduced all of it.
- * The milestones are compared one by one and in order, since a run is a sequence rather than a
- * bag: reaching the same things in another order is another run.
+ * The first thing the replay of a session did not reproduce, in words, or null when it reproduced
+ * all of it. The milestones are compared one by one and in order, since a run is a sequence
+ * rather than a bag: reaching the same things in another order is another run.
  */
-function firstMismatch(log: RunSession, replayed: RunTotals): string | null {
-  if (replayed.actions !== log.actions) {
-    return `The replay spent ${actionWords(replayed.actions)} and the log claims ${actionWords(log.actions)}.`;
+function firstMismatch(session: RunSession, replayed: RunTotals): string | null {
+  if (replayed.actions !== session.actions) {
+    return `The replay spent ${actionWords(replayed.actions)} and the log claims ${actionWords(session.actions)}.`;
   }
-  const clockWords = RUN_GAMES[log.game].clockWords;
-  if (replayed.time !== log.time) {
-    return `The replay's clock reached ${clockWords(replayed.time)} and the log claims ${clockWords(log.time)}.`;
+  const clockWords = RUN_GAMES[session.game].clockWords;
+  if (replayed.time !== session.time) {
+    return `The replay's clock reached ${clockWords(replayed.time)} and the log claims ${clockWords(session.time)}.`;
   }
-  const reach = Math.max(log.milestones.length, replayed.milestones.length);
+  const reach = Math.max(session.milestones.length, replayed.milestones.length);
   for (let at = 0; at < reach; at++) {
-    const claimed = log.milestones[at];
+    const claimed = session.milestones[at];
     const reached = replayed.milestones[at];
     if (claimed === undefined) {
-      return `The replay reached ${milestoneLine(log.game, reached)}, which the log does not claim.`;
+      return `The replay reached ${milestoneLine(session.game, reached)}, which the log does not claim.`;
     }
     if (reached === undefined) {
-      return `The replay never reached ${milestoneLine(log.game, claimed)}, which the log claims.`;
+      return `The replay never reached ${milestoneLine(session.game, claimed)}, which the log claims.`;
     }
     if (!sameMilestone(claimed, reached)) {
-      return `The log's milestone ${at + 1} is ${milestoneLine(log.game, claimed)}, and the replay reached ${milestoneLine(log.game, reached)}.`;
+      return `The log's milestone ${at + 1} is ${milestoneLine(session.game, claimed)}, and the replay reached ${milestoneLine(session.game, reached)}.`;
     }
   }
   return null;
@@ -205,39 +262,64 @@ async function recordHash(record: Uint8Array): Promise<string> {
  * A run log out of the text of a file, or null when the text is not one this build reads: not
  * JSON, not the shape of a log, a log of another version, or a game this build has no engine for.
  */
-export function readRunLog(text: string): RunSession | null {
+export function readRunLog(text: string): RunLog | null {
   let parsed: unknown;
   try {
     parsed = JSON.parse(text);
   } catch {
     return null;
   }
-  return isRunLog(parsed) ? parsed : null;
+  if (isRunLog(parsed)) return parsed;
+  return isOneSessionLog(parsed) ? runLogOf([parsed]) : null;
 }
 
-function isRunLog(value: unknown): value is RunSession {
+function isRunLog(value: unknown): value is RunLog {
   if (typeof value !== 'object' || value === null) return false;
   const log = value as Record<string, unknown>;
   return (
     log.version === RUN_LOG_VERSION &&
-    isRunGame(log.game) &&
-    typeof log.engine === 'string' &&
-    typeof log.name === 'string' &&
-    (log.mode === null || typeof log.mode === 'string') &&
+    Array.isArray(log.sessions) &&
+    // A run nobody has played is no run: there is nothing in it to check.
+    log.sessions.length > 0 &&
+    log.sessions.every(isRunSession)
+  );
+}
+
+/**
+ * The version a log had when it held one sitting at a game and called that the whole run, which
+ * is what every log written before MORF-359 is. Such a log reads as a chain of one session.
+ */
+const ONE_SESSION_LOG_VERSION = 2;
+
+function isOneSessionLog(value: unknown): value is RunSession {
+  if (typeof value !== 'object' || value === null) return false;
+  return (value as Record<string, unknown>).version === ONE_SESSION_LOG_VERSION && isRunSession(value);
+}
+
+/** Whether a value out of a file is one sitting at a game, written down the way this build
+ *  writes one. */
+export function isRunSession(value: unknown): value is RunSession {
+  if (typeof value !== 'object' || value === null) return false;
+  const session = value as Record<string, unknown>;
+  return (
+    isRunGame(session.game) &&
+    typeof session.engine === 'string' &&
+    typeof session.name === 'string' &&
+    (session.mode === null || typeof session.mode === 'string') &&
     // A log written before the site had leaderboards has no field, and reads as no board.
-    (log.leaderboard === null || log.leaderboard === undefined || isLeaderboard(log.leaderboard)) &&
+    (session.leaderboard === null || session.leaderboard === undefined || isLeaderboard(session.leaderboard)) &&
     // A log written before the sound flag was recorded simply has no field, and reads as null.
-    (log.sound === null || log.sound === undefined || typeof log.sound === 'boolean') &&
-    typeof log.startedAt === 'string' &&
-    typeof log.seed === 'number' &&
-    typeof log.record === 'string' &&
-    typeof log.actions === 'number' &&
-    typeof log.time === 'number' &&
-    typeof log.edits === 'number' &&
-    Array.isArray(log.inputs) &&
-    log.inputs.every((input) => typeof input === 'number') &&
-    Array.isArray(log.milestones) &&
-    log.milestones.every(isMilestone)
+    (session.sound === null || session.sound === undefined || typeof session.sound === 'boolean') &&
+    typeof session.startedAt === 'string' &&
+    typeof session.seed === 'number' &&
+    typeof session.record === 'string' &&
+    typeof session.actions === 'number' &&
+    typeof session.time === 'number' &&
+    typeof session.edits === 'number' &&
+    Array.isArray(session.inputs) &&
+    session.inputs.every((input) => typeof input === 'number') &&
+    Array.isArray(session.milestones) &&
+    session.milestones.every(isMilestone)
   );
 }
 

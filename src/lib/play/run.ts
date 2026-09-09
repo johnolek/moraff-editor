@@ -11,16 +11,21 @@ import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile } fr
 import { REV_KEY } from './rev/keys';
 
 /**
- * The run log: everything a game played here was, written down as it is played.
+ * The run log: everything a character has played here, written down as it is played.
  *
  * Two of the three games are turn based and every random number they draw comes from one
- * generator, so a run is completely described by three things — the character's record as play
- * began, the seed the generator was started from, and the keys that were pressed, in order.
- * Moraff's Revenge is not turn based, and the answer is the same shape: the ticks of the clock
- * its monsters move on are written into the log as inputs of their own, so a replay makes the
- * same number of them in the same places and needs no clock. Running the same engine over the
- * three again reproduces the whole game, which is what lets a claimed ending be checked rather
- * than believed. `replayRun` is the check.
+ * generator, so one sitting at a game is completely described by three things — the character's
+ * record as play began, the seed the generator was started from, and the keys that were pressed,
+ * in order. Moraff's Revenge is not turn based, and the answer is the same shape: the ticks of
+ * the clock its monsters move on are written into the log as inputs of their own, so a replay
+ * makes the same number of them in the same places and needs no clock. Running the same engine
+ * over the three again reproduces the whole game, which is what lets a claimed ending be checked
+ * rather than believed. `replayRun` is the check.
+ *
+ * A character is played more than once, and its run is all of those sittings: a chain of
+ * sessions, each starting from the record the one before it left behind, with the count of
+ * actions and the game's own clock running on through the lot. That is what a run log holds and
+ * what a verdict is passed on.
  *
  * Nothing here touches the browser: the log is built and replayed under Node just as it is in a
  * tab.
@@ -28,7 +33,7 @@ import { REV_KEY } from './rev/keys';
 
 /** The shape of the log itself. A reader that does not know this number should not trust what it
  *  finds. */
-export const RUN_LOG_VERSION = 2;
+export const RUN_LOG_VERSION = 3;
 
 /** Which of the playable games a run was played in. */
 export type RunGame = PortedGameId;
@@ -230,10 +235,9 @@ export function milestoneNote(milestone: Milestone, clock: string): string {
   return `After ${actionWords(milestone.actions)} and ${clock}, ${where}.`;
 }
 
-/** One sitting at a game, played, as it is written down and handed about. */
+/** One sitting at a game, played, as it is written down. */
 export interface RunSession {
-  version: number;
-  /** The commit of the engine the run was played on. */
+  /** The commit of the engine this session was played on. */
   engine: string;
   game: RunGame;
   /**
@@ -329,6 +333,23 @@ export interface RunStart {
 /** What a run had come to before it had been played at all. */
 function nothingYet(): RunTotals {
   return { actions: 0, time: 0, milestones: [] };
+}
+
+/**
+ * A character's whole run as it is handed about: every session it has been played in, oldest
+ * first.
+ *
+ * Each session starts from the record the one before it ended with, which is what makes the
+ * chain checkable as a whole rather than a sitting at a time.
+ */
+export interface RunLog {
+  version: number;
+  sessions: RunSession[];
+}
+
+/** The sessions of a character's run, as the log that is written to a file. */
+export function runLogOf(sessions: RunSession[]): RunLog {
+  return { version: RUN_LOG_VERSION, sessions };
 }
 
 /**
@@ -496,7 +517,6 @@ export class RunRecorder {
   log(): RunSession {
     this.note();
     return {
-      version: RUN_LOG_VERSION,
       engine: ENGINE_COMMIT,
       game: this.game,
       mode: this.mode,

@@ -12,6 +12,11 @@ export function bytesFromBase64(text: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
+/** Whether two runs of bytes hold the same bytes. */
+export function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
+  return left.length === right.length && left.every((byte, at) => byte === right[at]);
+}
+
 export function base64FromBytes(bytes: Uint8Array): string {
   let binary = '';
   for (const byte of bytes) binary += String.fromCharCode(byte);

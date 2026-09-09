@@ -10,7 +10,8 @@ import { MW_KEY, mwTurn } from './mw/keys';
 import { runRevDungeon, startRevGame } from './rev/engine';
 import { revCharacterFile, revRecord } from './rev/engine.test';
 import { REV_KEY } from './rev/keys';
-import { ENGINE_COMMIT, RunRecorder, type RunSession } from './run';
+import { ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals, type RunLog, type RunSession } from './run';
+import { RUN_LOG_VERSION } from './run';
 import { readRunLog, verifyRun, whatToSayAboutTheEngine } from './verify';
 
 /**
@@ -43,6 +44,34 @@ async function unforgivenRun(): Promise<RunSession> {
   session.save();
   session.finish();
   return run.log();
+}
+
+/**
+ * The same character played twice: the run above, left, and taken up again from the record it
+ * ended with. Its second sitting counts on from the first, which is what a chain of sessions is
+ * for and what a run is checked as.
+ */
+async function unforgivenChain(): Promise<RunLog> {
+  const first = await unforgivenRun();
+  const file = characterFile();
+  file.bytes = (await replayRun(first)).record;
+  const run = new RunRecorder({
+    game: 'unforgiven',
+    name: 'BRAWLER',
+    record: file.bytes,
+    seed: 999,
+    startedAt: '2026-09-07T01:00:00.000Z',
+    mode: 'faithful',
+    before: runTotals([first]),
+  });
+  const session = startGame(file, run.rng, run);
+  void runMoveControl(session);
+  await settle();
+  for (const key of [KEY.arrowUp, KEY.arrowLeft, KEY.enter, KEY.arrowUp]) {
+    await press(session, key);
+  }
+  session.finish();
+  return runLogOf([first, run.log()]);
 }
 
 /** The same in Moraff's World: four steps around a dungeon floor, a turn where the character
@@ -89,7 +118,7 @@ function ownEngineNotes(): string[] {
 describe('verifying a run', () => {
   it('verifies a run of Dungeons of the Unforgiven, milestone and all', async () => {
     const log = await unforgivenRun();
-    const verdict = await verifyRun(log);
+    const verdict = await verifyRun(runLogOf([log]));
 
     expect(verdict.status).toBe('verified');
     expect(verdict.reason).toBeNull();
@@ -102,7 +131,7 @@ describe('verifying a run', () => {
 
   it("verifies a run of Moraff's World, turns where the character stands and all", async () => {
     const log = await moraffsWorldRun();
-    const verdict = await verifyRun(log);
+    const verdict = await verifyRun(runLogOf([log]));
 
     expect(verdict.status).toBe('verified');
     expect(verdict.replayed).toEqual({ actions: log.actions, time: log.time, milestones: log.milestones });
@@ -111,7 +140,7 @@ describe('verifying a run', () => {
 
   it('fails a run whose action count has been raised', async () => {
     const log = await unforgivenRun();
-    const verdict = await verifyRun({ ...log, actions: log.actions + 1 });
+    const verdict = await verifyRun(runLogOf([{ ...log, actions: log.actions + 1 }]));
 
     expect(verdict.status).toBe('failed');
     expect(verdict.reason).toBe(
@@ -121,7 +150,7 @@ describe('verifying a run', () => {
 
   it('fails a run with a key taken out of it', async () => {
     const log = await unforgivenRun();
-    const verdict = await verifyRun({ ...log, inputs: log.inputs.slice(0, -2) });
+    const verdict = await verifyRun(runLogOf([{ ...log, inputs: log.inputs.slice(0, -2) }]));
 
     expect(verdict.status).toBe('failed');
   });
@@ -129,7 +158,7 @@ describe('verifying a run', () => {
   it('fails a run whose milestone has been edited', async () => {
     const log = await unforgivenRun();
     const milestones = [{ ...log.milestones[0], which: 2 }];
-    const verdict = await verifyRun({ ...log, milestones });
+    const verdict = await verifyRun(runLogOf([{ ...log, milestones }]));
 
     expect(verdict.status).toBe('failed');
     expect(verdict.reason).toContain("The log's milestone 1 is");
@@ -138,7 +167,7 @@ describe('verifying a run', () => {
   it('fails a run claiming a milestone it never reached', async () => {
     const log = await unforgivenRun();
     const invented = { kind: 'win', which: 0, actions: log.actions, time: log.time, floor: 0 } as const;
-    const verdict = await verifyRun({ ...log, milestones: [...log.milestones, invented] });
+    const verdict = await verifyRun(runLogOf([{ ...log, milestones: [...log.milestones, invented] }]));
 
     expect(verdict.status).toBe('failed');
     expect(verdict.reason).toContain('The replay never reached Won');
@@ -146,7 +175,7 @@ describe('verifying a run', () => {
 
   it('cannot check a run whose log cannot be played at all', async () => {
     const log = await unforgivenRun();
-    const verdict = await verifyRun({ ...log, record: 'not a record' });
+    const verdict = await verifyRun(runLogOf([{ ...log, record: 'not a record' }]));
 
     expect(verdict.status).toBe('unverifiable');
     expect(verdict.reason).toContain('The replay stopped');
@@ -155,7 +184,7 @@ describe('verifying a run', () => {
 
   it("cannot check a run whose Moraff's Revenge record is not one", async () => {
     const log = await moraffsRevengeRun();
-    const verdict = await verifyRun({ ...log, record: btoa('not a record') });
+    const verdict = await verifyRun(runLogOf([{ ...log, record: btoa('not a record') }]));
 
     expect(verdict.status).toBe('unverifiable');
     expect(verdict.reason).toBe("The replay stopped: These bytes are not a Moraff's Revenge character record.");
@@ -179,13 +208,13 @@ describe('verifying a run', () => {
 
   it('takes an engine that is not this build for a note rather than a failure', async () => {
     const log = await unforgivenRun();
-    const verdict = await verifyRun({ ...log, engine: 'aaaaaaa' });
+    const verdict = await verifyRun(runLogOf([{ ...log, engine: 'aaaaaaa' }]));
 
     expect(verdict.status).toBe('verified');
     expect(verdict.notes).toEqual([
       'The run was played on an engine other than this build, so a replay is only as good as the two agreeing.',
     ]);
-    expect(verdict.engine).toEqual({ log: 'aaaaaaa', build: log.engine });
+    expect(verdict.engine).toEqual({ played: ['aaaaaaa'], build: log.engine });
   });
 
   it('cannot check a run the save editor wrote a record into', async () => {
@@ -197,7 +226,7 @@ describe('verifying a run', () => {
     session.recordEdited(savePlayer({ ...loadPlayer(file.bytes), str: 99 }, file.bytes));
     await settle();
     session.finish();
-    const verdict = await verifyRun(run.log());
+    const verdict = await verifyRun(runLogOf([run.log()]));
 
     expect(verdict.status).toBe('unverifiable');
     expect(verdict.reason).toBe(
@@ -241,51 +270,115 @@ async function moraffsRevengeRun(): Promise<RunSession> {
   return run.log();
 }
 
+describe('verifying a run played in more than one sitting', () => {
+  it('verifies the chain and says what the whole run came to', async () => {
+    const log = await unforgivenChain();
+    const verdict = await verifyRun(log);
+
+    expect(verdict.status).toBe('verified');
+    expect(verdict.sessions).toBe(2);
+    expect(verdict.claimed.actions).toBe(log.sessions[1].actions);
+    expect(verdict.claimed.actions).toBeGreaterThan(log.sessions[0].actions);
+    expect(verdict.claimed.milestones).toEqual([...log.sessions[0].milestones, ...log.sessions[1].milestones]);
+    expect(verdict.replayed).toEqual(verdict.claimed);
+  });
+
+  it('fails a chain whose second session does not start where the first ended', async () => {
+    const log = await unforgivenChain();
+    const elsewhere = { ...log.sessions[1], record: log.sessions[0].record };
+    const verdict = await verifyRun(runLogOf([log.sessions[0], elsewhere]));
+
+    expect(verdict.status).toBe('failed');
+    expect(verdict.reason).toBe('Session 2 does not start from the record session 1 ended with.');
+  });
+
+  it('says which session of a chain the replay stopped agreeing with', async () => {
+    const log = await unforgivenChain();
+    const raised = { ...log.sessions[1], actions: log.sessions[1].actions + 1 };
+    const verdict = await verifyRun(runLogOf([log.sessions[0], raised]));
+
+    expect(verdict.status).toBe('failed');
+    expect(verdict.reason).toContain('Session 2: The replay spent');
+  });
+
+  it('cannot check a chain a record was written into in any of its sessions', async () => {
+    const log = await unforgivenChain();
+    const verdict = await verifyRun(runLogOf([{ ...log.sessions[0], edits: 1 }, log.sessions[1]]));
+
+    expect(verdict.status).toBe('unverifiable');
+    expect(verdict.reason).toContain('written from outside the game once');
+  });
+
+  it('names every engine the sessions were played on', async () => {
+    const log = await unforgivenChain();
+    const verdict = await verifyRun(runLogOf([{ ...log.sessions[0], engine: 'aaaaaaa' }, log.sessions[1]]));
+
+    expect(verdict.engine.played).toEqual(['aaaaaaa', ENGINE_COMMIT]);
+  });
+});
+
 describe('reading a run log out of a file', () => {
   it('reads back a log this build wrote', async () => {
-    const log = await unforgivenRun();
+    const log = runLogOf([await unforgivenRun()]);
     expect(readRunLog(JSON.stringify(log))).toEqual(log);
   });
 
   it('refuses anything that is not a log this build reads', async () => {
-    const log = await unforgivenRun();
+    const session = await unforgivenRun();
+    const log = runLogOf([session]);
     expect(readRunLog('')).toBeNull();
     expect(readRunLog('null')).toBeNull();
     expect(readRunLog('{}')).toBeNull();
     expect(readRunLog(JSON.stringify({ ...log, version: log.version + 1 }))).toBeNull();
-    expect(readRunLog(JSON.stringify({ ...log, game: 'snake' }))).toBeNull();
-    expect(readRunLog(JSON.stringify({ ...log, inputs: ['up'] }))).toBeNull();
-    expect(readRunLog(JSON.stringify({ ...log, milestones: [{ kind: 'boss' }] }))).toBeNull();
+    expect(readRunLog(JSON.stringify({ ...log, sessions: [] }))).toBeNull();
+    expect(readRunLog(JSON.stringify(runLogOf([{ ...session, game: 'snake' as RunSession['game'] }])))).toBeNull();
+    expect(readRunLog(JSON.stringify(runLogOf([{ ...session, inputs: ['up'] as unknown as number[] }])))).toBeNull();
+    expect(readRunLog(JSON.stringify(runLogOf([{ ...session, milestones: [{ kind: 'boss' }] as RunSession['milestones'] }])))).toBeNull();
+  });
+
+  it('reads a log written before a run was a chain of sessions, as a chain of one', async () => {
+    const session = await unforgivenRun();
+    const olderLog = { ...session, version: 2 };
+
+    const log = readRunLog(JSON.stringify(olderLog));
+    expect(log?.version).toBe(RUN_LOG_VERSION);
+    expect(log?.sessions).toHaveLength(1);
+    expect(log?.sessions[0].inputs).toEqual(session.inputs);
+    expect((await verifyRun(log!)).status).toBe('verified');
   });
 
   it('reads a log written before the site had boards, which simply has no field', async () => {
     const { leaderboard, ...older } = await unforgivenRun();
     expect(leaderboard).toBeNull();
-    expect(readRunLog(JSON.stringify(older))?.leaderboard).toBeUndefined();
-    expect(readRunLog(JSON.stringify({ ...older, leaderboard: 'faithful' }))?.leaderboard).toBe('faithful');
-    expect(readRunLog(JSON.stringify({ ...older, leaderboard: 'debug' }))).toBeNull();
+    const read = (session: unknown) => readRunLog(JSON.stringify({ version: RUN_LOG_VERSION, sessions: [session] }));
+    expect(read(older)?.sessions[0].leaderboard).toBeUndefined();
+    expect(read({ ...older, leaderboard: 'faithful' })?.sessions[0].leaderboard).toBe('faithful');
+    expect(read({ ...older, leaderboard: 'debug' })).toBeNull();
   });
 
   it('reads a log written before the sound flag was recorded, which simply has no field', async () => {
     const { sound, ...older } = await moraffsRevengeRun();
     expect(sound).toBe(false);
-    expect(readRunLog(JSON.stringify(older))).not.toBeNull();
-    expect(readRunLog(JSON.stringify({ ...older, sound: 'yes' }))).toBeNull();
+    const read = (session: unknown) => readRunLog(JSON.stringify({ version: RUN_LOG_VERSION, sessions: [session] }));
+    expect(read(older)).not.toBeNull();
+    expect(read({ ...older, sound: 'yes' })).toBeNull();
   });
 });
 
 /**
- * The three runs kept as files, which are what the `verify-run` command is tried against and what
- * says that a log written down today still verifies tomorrow.
+ * The runs kept as files, which are what the `verify-run` command is tried against and what says
+ * that a log written down today still verifies tomorrow. The three one-session ones were written
+ * before a run was kept as a chain and are left in that older shape on purpose, since a log
+ * somebody has kept from then still has to be readable.
  *
  * Writing them again, after a change to the engine that legitimately moves them:
  * `WRITE_RUN_FIXTURES=1 pnpm test src/lib/play/verify.test.ts`. A fixture that stops verifying
  * without one is the engine having changed a game under runs already played.
  */
 const FIXTURES = [
-  { file: 'unforgiven-run.json', record: unforgivenRun },
-  { file: 'moraffs-world-run.json', record: moraffsWorldRun },
-  { file: 'moraffs-revenge-run.json', record: moraffsRevengeRun },
+  { file: 'unforgiven-run.json', log: async () => runLogOf([await unforgivenRun()]) },
+  { file: 'moraffs-world-run.json', log: async () => runLogOf([await moraffsWorldRun()]) },
+  { file: 'moraffs-revenge-run.json', log: async () => runLogOf([await moraffsRevengeRun()]) },
 ];
 
 function fixturePath(file: string): URL {
@@ -296,7 +389,7 @@ describe('the runs kept beside these tests', () => {
   for (const fixture of FIXTURES) {
     it(`verifies ${fixture.file}`, async () => {
       if (process.env.WRITE_RUN_FIXTURES) {
-        writeFileSync(fixturePath(fixture.file), `${JSON.stringify(await fixture.record(), null, 2)}\n`);
+        writeFileSync(fixturePath(fixture.file), `${JSON.stringify(await fixture.log(), null, 2)}\n`);
       }
       const log = readRunLog(readFileSync(fixturePath(fixture.file), 'utf8'));
       if (log === null) throw new Error(`${fixture.file} is not a run log this build reads`);
@@ -304,7 +397,7 @@ describe('the runs kept beside these tests', () => {
       const verdict = await verifyRun(log);
       expect(verdict.reason).toBeNull();
       expect(verdict.status).toBe('verified');
-      expect(verdict.replayed).toEqual({ actions: log.actions, time: log.time, milestones: log.milestones });
+      expect(verdict.replayed).toEqual(runTotals(log.sessions));
     });
   }
 });

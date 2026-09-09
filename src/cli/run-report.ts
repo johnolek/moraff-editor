@@ -28,6 +28,7 @@ function reportLines(verdict: RunVerdict): string[] {
   const lines = [heading(verdict), verdictWords(verdict)];
   if (verdict.leaderboard !== null) lines.push(boardWords(verdict.leaderboard));
   lines.push('', 'The log claims:');
+  if (verdict.sessions > 1) lines.push(field('Sessions', String(verdict.sessions)));
   lines.push(field('Actions', actionWords(verdict.claimed.actions)));
   lines.push(field('Clock', clockWords(verdict.claimed.time)));
   const milestones = verdict.claimed.milestones.map((milestone) => milestoneLine(verdict.game, milestone));
@@ -41,7 +42,8 @@ function reportLines(verdict: RunVerdict): string[] {
     lines.push(field('Character', ending.won ? 'won' : ending.alive ? 'alive' : 'dead'));
     lines.push(field('Record', ending.record));
   }
-  lines.push('', `Engine: played on ${shortCommit(verdict.engine.log)}, checked by ${shortCommit(verdict.engine.build)}.`);
+  const played = verdict.engine.played.map(shortCommit).join(', ');
+  lines.push('', `Engine: played on ${played}, checked by ${shortCommit(verdict.engine.build)}.`);
   for (const note of verdict.notes) lines.push(`Note: ${note}`);
   return lines;
 }

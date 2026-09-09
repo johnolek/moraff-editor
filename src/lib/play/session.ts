@@ -1,3 +1,4 @@
+import { sameBytes } from '../bytes';
 import type { PlayLoopSession } from './loop';
 import type { PlayMode } from './mode';
 import { DEFAULT_PLAY_MODE } from './mode';
@@ -264,13 +265,4 @@ export abstract class KeyedSession<Record> implements PlayLoopSession {
   protected get keysWaiting(): number {
     return this.queued.length;
   }
-}
-
-/** Whether two records hold the same bytes. */
-function sameBytes(left: Uint8Array, right: Uint8Array): boolean {
-  if (left.length !== right.length) return false;
-  for (let at = 0; at < left.length; at++) {
-    if (left[at] !== right[at]) return false;
-  }
-  return true;
 }
