@@ -830,6 +830,9 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     }
     await resolveStep(turn);
     await session.settle();
+    // The record goes back to the roster after every key, so a player can always come back to
+    // where they were (John, 2026-09-09); the game's own save points are unchanged.
+    session.save();
     // FUN_2000_c28b (exe 2000:c28b): the map has scrolled off the character, so the view is
     // drawn again with them back in the middle of it.
     if (game.recenterMap) {

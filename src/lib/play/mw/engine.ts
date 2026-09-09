@@ -584,6 +584,9 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     session.fighting(() => resolveStep(turn));
     await session.settle();
     recentreTheMap(session);
+    // The record goes back to the roster after every key, so a player can always come back to
+    // where they were (John, 2026-09-09); the game's own save points are unchanged.
+    session.save();
   }
 }
 

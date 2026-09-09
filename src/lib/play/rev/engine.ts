@@ -661,6 +661,9 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     // signed off on, and never comes back through the per-key routine.
     if (game.fight === null && step !== 'monster' && !session.over) revDrawTheDungeonAgain(game, 'afterAPass');
     if (session.over) return;
+    // The record goes back to the roster after every key, so a player can always come back to
+    // where they were (John, 2026-09-09); the game's own save points are unchanged.
+    session.save();
   }
 }
 
