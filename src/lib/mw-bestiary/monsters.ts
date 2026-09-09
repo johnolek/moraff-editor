@@ -343,7 +343,3 @@ export const HELD_WEAPONS: MwWeapon[] = WEAPONS.slice(0, 8);
 export function weaponById(index: number): MwWeapon {
   return WEAPONS[index] ?? WEAPONS[0];
 }
-
-export function armourById(index: number): MwArmour {
-  return ARMOUR[index] ?? ARMOUR[0];
-}

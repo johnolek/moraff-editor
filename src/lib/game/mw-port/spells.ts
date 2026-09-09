@@ -8,8 +8,6 @@ import spellsHelp from '../mw-spells.hlp?raw';
 /** The four spell categories, in the order the game numbers them. */
 export const MW_SPELL_CATEGORIES = ['permanent', 'preparation', 'wizard', 'priest'] as const;
 
-export type MwSpellCategory = (typeof MW_SPELL_CATEGORIES)[number];
-
 /**
  * The four lines the spell screen's first menu offers (exe DS:4583, the first four of its eight
  * near pointers). The other four are the same categories again as "5) HELP-PERMANENT SPELLS" and
