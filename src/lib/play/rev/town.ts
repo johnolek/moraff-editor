@@ -2,7 +2,7 @@ import { townBuilding } from '../../game/revmap.js';
 import type { RevMagicDesk } from './desk';
 import { REV_FOUR_SECONDS } from './held';
 import { revItemMenu } from './items';
-import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue } from './record';
+import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue, wearsRingsOfHealth } from './record';
 import { REV_ITEM_TABLE, revSpellsAt } from './tables';
 import type { RevGame } from './state';
 
@@ -62,12 +62,6 @@ function maybeRobbed(game: RevGame): void {
   game.delay(REV_FOUR_SECONDS);
 }
 
-/** Whether the character wears the rings of health, which heal in full at the two cheaper inns
- *  (`CINT(B558) AND 1`, 1000:1E5C and 1000:1F92). */
-function wearsRings(game: RevGame): boolean {
-  return (Math.round(game.pc.rings) & 1) !== 0;
-}
-
 /** 1000:1E0A, 1F3D and 1FCD: a night at one of the three inns. */
 export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDesk): Promise<void> {
   const inn = INNS[which];
@@ -91,7 +85,7 @@ export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDe
     return;
   }
   pc.hp += inn.heals;
-  if (wearsRings(game)) pc.hp = pc.maxHp;
+  if (wearsRingsOfHealth(pc)) pc.hp = pc.maxHp;
   game.say(SLEEPING);
   maybeRobbed(game);
   // 1000:1E7B: the Flea Bag's own second roll, which the two better inns do not make.
