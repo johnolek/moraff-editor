@@ -24,8 +24,27 @@
 
   const STATS = ['STRENGTH', 'INTELLIGENCE', 'WISDOM', 'CONSTITUTION', 'AGILITY', 'LUCK'];
 
-  /** Everything about the tab that is one game's rather than the other's. */
-  const GAMES = {
+  /**
+   * Everything about the tab that is one game's rather than the other's.
+   *
+   * A row's own functions are only ever handed what that game's session rolled, which the types
+   * cannot show: the tab holds whichever game the switch is on, so it holds all three games'
+   * sessions and characters at once.
+   */
+  interface GameRoller {
+    name: string;
+    slots: number[];
+    races: string[];
+    classes: string[];
+    numbers: string;
+    folder: string;
+    /** What the game calls the file it writes the character to. */
+    fileName(slot: number): string;
+    /** A fresh roll of this game's dice for that character number. */
+    newSession(slot: number): Session;
+  }
+
+  const GAMES: Record<GameId, GameRoller> = {
     unforgiven: {
       name: 'Dungeons of the Unforgiven',
       slots: SLOTS,
@@ -33,6 +52,8 @@
       classes: CLASS_NAMES,
       numbers: 'The game keeps ten characters, in files named 20 to 29. Pick the one you want to write over — the game picks it before it rolls, and so does this.',
       folder: 'Back up the file you are replacing first. Drop the download into your game folder next to UNF.EXE, keeping the name, and the character is waiting on the select screen.',
+      fileName: slotFileName,
+      newSession: (slot) => new RollerSession(ROLLER_PORT, slot),
     },
     moraffsWorld: {
       name: "Moraff's World",
@@ -41,6 +62,8 @@
       classes: MW_CLASS_NAMES,
       numbers: 'The game keeps ten characters, in files named 0 to 9. Pick the one you want to write over — the game picks it before it rolls, and so does this.',
       folder: 'Back up the file you are replacing first. Drop the download into your game folder next to WORLD.EXE, keeping the name, and the character is waiting on the select screen.',
+      fileName: mwSlotFileName,
+      newSession: (slot) => new RollerSession(MW_ROLLER_PORT, slot),
     },
     revenge: {
       name: "Moraff's Revenge",
@@ -49,6 +72,8 @@
       classes: REV_CLASS_NAMES,
       numbers: 'The game has room for ten characters, in files named 1.EXE to 10.EXE. CHCHAR.EXE gives a new one the next free number; pick the one you want it to be.',
       folder: 'Back up the files you are replacing first. A character is two files — the record and the explored map — and both go in your game folder next to DUNSMALL.EXE, keeping their names. The name goes in F5.COM, which holds one quoted name to a line with "END" on the last: put this character’s name on the line its number says, so character 3 is the third name in the file.',
+      fileName: revRecordFileName,
+      newSession: (slot) => new RollerSession(REV_ROLLER_PORT, slot),
     },
   };
 
@@ -69,9 +94,7 @@
   /** The screen a key would answer: the game's own, or the character number asked for first. */
   const screen = $derived<RollerScreen | null>(session && view ? view.question : 'number');
   const menus = $derived({ races: chosen.races.length, classes: chosen.classes.length, numbers: chosen.slots.length });
-  const fileName = $derived(
-    rolling === 'revenge' ? revRecordFileName(slot) : rolling === 'moraffsWorld' ? mwSlotFileName(slot) : slotFileName(slot),
-  );
+  const fileName = $derived(chosen.fileName(slot));
   const sheet = $derived(view === null ? [] : sheetRows(view.pc));
   const showing = $derived(
     view === null ? [] : view.question === 'name' ? [...(view.screen as ScreenLine[]), nameBeingTyped()] : (view.screen as ScreenLine[]),
@@ -157,8 +180,7 @@
   });
 
   function start() {
-    const started =
-      rolling === 'revenge' ? new RollerSession(REV_ROLLER_PORT, slot) : rolling === 'moraffsWorld' ? new RollerSession(MW_ROLLER_PORT, slot) : new RollerSession(ROLLER_PORT, slot);
+    const started = chosen.newSession(slot);
     session = started;
     view = started.view();
     typed = '';
