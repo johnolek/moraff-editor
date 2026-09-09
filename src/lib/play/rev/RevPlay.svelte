@@ -35,6 +35,7 @@
   } from './engine';
   import { runPlayLoop } from '../loop';
   import { revGameKey } from './keys';
+  import { revArrowRun, revRedrawMs } from './pace';
   import { revCharacterMap } from './memory';
   import RevScreenCanvas from './screen/RevScreenCanvas.svelte';
   import { revCgaPalette } from './settings';
@@ -61,6 +62,9 @@
   let display = $state<PlayDisplay>(readPlayDisplay('revenge'));
   let colourblind = $state(readPlayColourblind('revenge'));
   let redraw = $state(readPlayRedraw('revenge'));
+  /** How many arrows have arrived in a row, which is what shortens the redraw (`pace.ts`). It is
+   *  the tab's own count: nothing the game does reads it and it reaches no run log. */
+  let arrowRun = $state(0);
 
   const character = $derived.by(() => {
     void app.characterVersion;
@@ -104,6 +108,15 @@
     const playing = session;
     if (!playing) return null;
     return playing.screen();
+  });
+
+  /**
+   * How long the game's screen takes to appear: the slider, less what the arrows being held down
+   * take off it (`pace.ts`). The view is read so that a press of `E` is felt on the next screen.
+   */
+  const screenRedraw = $derived.by(() => {
+    void view;
+    return revRedrawMs(redraw, session?.game.enterDelay ?? 0, arrowRun);
   });
 
   /**
@@ -207,7 +220,14 @@
     const key = revGameKey(event);
     if (key === null) return;
     event.preventDefault();
+    arrowRun = revArrowRun(arrowRun, key);
     session.press(key);
+  }
+
+  /** Letting a key go ends the run of arrows, which is where the original's own reset falls: a
+   *  pass whose `INKEY$` finds nothing waiting puts the count back to 0 (1000:4260). */
+  function onKeyUp(event: KeyboardEvent) {
+    if (revGameKey(event) !== null) arrowRun = 0;
   }
 
   /** A new mode shows what that mode shows, until the switch says otherwise. */
@@ -237,7 +257,7 @@
   }
 </script>
 
-<svelte:window onkeydown={onKeyDown} />
+<svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} />
 
 <div class="play">
   {#if !session || !view}
@@ -268,7 +288,7 @@
             screen={gameScreen}
             palette={screenColours.palette}
             background={screenColours.background}
-            {redraw} />
+            redraw={screenRedraw} />
         {:else}
         <FloorCanvas
           bind:this={canvas}
