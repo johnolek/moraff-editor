@@ -65,9 +65,12 @@ BASIC.
   the pass, so between the two what is on the screen is exactly what has been printed since:
   that is `game.cleared`, and while it is set every line the game says goes on the screen at the
   cursor rather than into the four message rows. The treasure (1000:A890), the death
-  (1000:A016), the quit (1000:0D8E), the pause (1000:7FFE) and the magic table (1000:AC87) are
-  the five, and the treasure's is the one that puts anything back — the flat map and the box
-  between the views, and not the four views. `held.ts` — the two-second and four-second waits
+  (1000:A016), the quit (1000:0D8E), the pause (1000:7FFE), the magic table (1000:AC87) and the
+  four town buildings that are not inns (`town.ts`: 1000:2358, 2528, 2824 and 2BBB) are the
+  nine, and the treasure's is the one that puts anything back — the flat map and the box
+  between the views, and not the four views. The three inns are the exception in the town: they
+  print over the top rows without clearing anything, so their words go in the message rows like
+  the dungeon's. `held.ts` — the two-second and four-second waits
   the game leaves a message up for, as a display timer. **`music.ts`** — the three tunes, the
   reader that turns a BASIC `PLAY` string into notes, and the four-second wait an inn takes in
   the hymn's place when the sound is off.
@@ -218,7 +221,14 @@ Three things are this game's own:
   `screen/from-game.ts`; a fight's own lines never went through that list at all, since every one
   of them carries a `LOCATE` of its own and they are printed straight onto `screen/kept.ts` —
   the swing on rows 10 and 11 over the map, the monster's answer from row 7, its drains down from
-  row 20 and MONSTER BLOCKS WAY over the FRONT box.
+  row 20 and MONSTER BLOCKS WAY over the FRONT box. A line too long for the forty columns wraps
+  onto the row under it, as the run-time wraps one, and a line of exactly forty characters and
+  the newline after it share a row (`screen/kept.ts`).
+* **An inn's wrapped line pushes the advice down where the original writes over it.** The
+  message rows are the port's own layout — the first thing said on row 1, the line of advice on
+  row 2, the rest below (`screen/from-game.ts`) — and the inns print a line of sixty-nine
+  characters at `LOCATE 1, 1` (1000:1DCE), which takes two rows. In DOS the second row lands on
+  top of the advice; here the advice moves to the row under it instead, so both are readable.
 * **`1.NUM` and `2.NUM` last as long as the tab.** The original saves them on the way out
   (`1000:B5C8`), so the monsters are the state of the disk and are shared by every character on it.
   A browser has no disk to share, so each session starts from the shipped tables.
