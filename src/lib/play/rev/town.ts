@@ -295,6 +295,11 @@ const THROWN_OUT_OF_THE_TEMPLE = [`${NOT_ENOUGH_MONEY}. The good`, '   cleric th
  *  disease and the poison the temple's third and fourth spells clear. */
 const POISONED_VALUE = 145;
 
+/** 1000:2639: the key is one of the five the `ON spell GOTO` has a target for. */
+function spellOnTheMenu(key: number): boolean {
+  return revTypedDigit(key) >= 1 && revTypedDigit(key) <= TEMPLE_PRICES.length;
+}
+
 /**
  * 1000:2044: a level gained, which the temple's fifth spell buys outright and a night at an inn
  * hands out for the experience the character has earned.
@@ -375,7 +380,7 @@ export async function revVisitTemple(game: RevGame, desk: RevTownDesk): Promise<
       LEAVE_LINE,
     );
     asked = true;
-    const key = await menuKey(desk, (typed) => typed === LEAVE || (revTypedDigit(typed) >= 1 && revTypedDigit(typed) <= TEMPLE_PRICES.length));
+    const key = await menuKey(desk, (typed) => typed === LEAVE || spellOnTheMenu(typed));
     if (key === LEAVE) return;
     const spell = revTypedDigit(key);
     if (pc.money < TEMPLE_PRICES[spell - 1]) {
@@ -547,8 +552,13 @@ const ITEM_LIST_PRICE = 'This will cost you 800 JP.';
 const SPELLS_COST = 'That will cost you';
 const JEWEL_PIECES = 'JP.';
 
-/** The two sets the guild will talk about, and how deep its levels go. */
+/** How deep the spell levels go, which `tables.ts` reads out of `F1.COM` (1000:2D8E). */
 const SPELL_LEVELS = 6;
+
+/** 1000:2D82: the key is one of the six levels the guild will read out. */
+function levelOnOffer(key: number): boolean {
+  return revTypedDigit(key) >= 1 && revTypedDigit(key) <= SPELL_LEVELS;
+}
 
 /** 1000:2C52 and 1000:2DF0: what the guild asks once it has been paid. */
 const GUILD_ITEM_SETS = ['P=Prep items (used while not fighting)', 'B=Battle items   L=Leave'];
@@ -633,7 +643,7 @@ async function readOutASpell(game: RevGame, desk: RevTownDesk): Promise<boolean>
   revSayKeepingTheCursor(game, SPELL_LEVEL_PROMPT);
   // 1000:2D60: the level is one key rather than a typed line, so `L` and every other letter read
   // as a 0 and ask again.
-  const key = await menuKey(desk, (typed) => typed === LEAVE || (revTypedDigit(typed) >= 1 && revTypedDigit(typed) <= SPELL_LEVELS));
+  const key = await menuKey(desk, (typed) => typed === LEAVE || levelOnOffer(typed));
   if (key === LEAVE) return true;
   const level = revTypedDigit(key);
   // DGROUP B5B2, which the wands that cast a spell for nothing read back (1000:9555).
