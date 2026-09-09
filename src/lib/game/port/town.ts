@@ -264,21 +264,31 @@ export function convertDollars(game: Game): void {
 }
 
 /**
- * bank (exe 2000:568b, unf.c "bank"), menu entry 2: a deposit. A typed amount larger than what
- * the character is carrying, or a negative one, deposits the lot.
+ * How much of a typed amount the bank moves: an amount larger than there is, or a negative one,
+ * moves the lot.
+ *
+ * The two C games clamp it with the same test, character for character -- Dungeons of the
+ * Unforgiven's bank (exe 2000:568b, unf.c "bank") and Moraff's World's (WORLD.EXE 2000:3716,
+ * mw.c "bank") -- which the rest of the two towns cannot say for themselves: the shops disagree
+ * over whether a character with exactly the price can afford it.
  */
+export function moveMoney(typed: number, available: number): number {
+  return typed > available || typed < 0 ? available : typed;
+}
+
+/** bank (exe 2000:568b, unf.c "bank"), menu entry 2: a deposit. */
 export function bankDeposit(game: Game, rubles: number): void {
   const pc = game.pc;
-  const amount = rubles > pc.money || rubles < 0 ? pc.money : rubles;
+  const amount = moveMoney(rubles, pc.money);
   pc.money -= amount;
   pc.bank += amount;
   showMoney(game);
 }
 
-/** bank (exe 2000:568b, unf.c "bank"), menu entry 3: a withdrawal, clamped the same way. */
+/** bank (exe 2000:568b, unf.c "bank"), menu entry 3: a withdrawal. */
 export function bankWithdraw(game: Game, rubles: number): void {
   const pc = game.pc;
-  const amount = rubles > pc.bank || rubles < 0 ? pc.bank : rubles;
+  const amount = moveMoney(rubles, pc.bank);
   pc.money += amount;
   pc.bank -= amount;
   showMoney(game);

@@ -1,3 +1,4 @@
+import { moveMoney } from '../port/town';
 import { HINT, loadHBin } from './hints';
 import { canLevelUp, levelFromExperience } from './levels';
 import type { MwGame } from './state';
@@ -386,7 +387,7 @@ export function bank(game: MwGame, choice: number, amount = 0): void {
   if (choice === 2) {
     // DS:2477 with the money on the end, then DS:2489 24a0
     game.say(`MONEY AVAILABLE: ${pc.money}`, 'PLEASE TYPE THE AMOUNT', '  AND HIT ENTER:');
-    const moved = amount > pc.money || amount < 0 ? pc.money : amount;
+    const moved = moveMoney(amount, pc.money);
     pc.money -= moved;
     pc.bank += moved;
     financialStatement(game);
@@ -395,7 +396,7 @@ export function bank(game: MwGame, choice: number, amount = 0): void {
   if (choice === 3) {
     // DS:2477 with the bank balance on the end, then DS:2489 24a0
     game.say(`MONEY AVAILABLE: ${pc.bank}`, 'PLEASE TYPE THE AMOUNT', '  AND HIT ENTER:');
-    const moved = amount > pc.bank || amount < 0 ? pc.bank : amount;
+    const moved = moveMoney(amount, pc.bank);
     pc.money += moved;
     pc.bank -= moved;
     financialStatement(game);
