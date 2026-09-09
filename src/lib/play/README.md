@@ -37,6 +37,8 @@ something the original does, a comment says so.
   **`building.ts`** — the picture of the store, temple, bank or inn the character has walked into,
   which takes the whole display over for as long as they are dealing with it.
   **`plaque.ts`** — the HIT ANY KEY plaque every message box waits behind.
+  **`tunnel.ts`** — the tunnel a module teleporter rushes at the player and the welcome printed
+  on it.
 * **`floor.ts`** — `load_level_map` and `stock_level`: arriving on a floor and the three-floor
   memory that decides whether its monsters are rolled again. **`memory.ts`** — the other half of
   arriving on a floor: the map the character has discovered, which is the same engine in both
@@ -288,6 +290,21 @@ The X key is the other screen of its own. `misc.ts` fills the display with the f
 new colour on every poll of the keyboard (exe 2000:d2fe), so it walks the palette from entry 0 and
 round again; that is a little canvas of its own over `expandedMarkerRect`, beside the arrow's, at
 the crawl's pace.
+
+Taking a module teleporter is a fourth: `FUN_4000_771b` (exe 4000:771b) fills the screen with
+black and draws an outline for every inset from the middle out to the edge, in colours that fall
+away with the distance and with the four corner pixels of each in a second colour, so the flat
+picture reads as a tunnel with diagonals running into it. `tunnel.ts` is the drawing and
+`GameSession.crossToModule` the order: the tunnel, 150 turns of the gradient bank over it,
+"WELCOME TO MODULE" and the module's numeral in the big font, and the plaque's own wait. The
+tunnel then stays as the backdrop while the arrival box is read, since nothing paints over it
+until `movecontrol` comes round and draws the screen again. Two departures are on
+`crossToModule`: the original throws away everything typed while the bank turns, and the port
+lets such a key give up the rest of the tunnel the way a key gives up any held screen; and by the
+code the key that answers the welcome would answer the arrival box's wait as well, since
+`FUN_2000_4054` reads the keyboard without draining it, but the real game leaves that box standing
+with its plaque up, so the port takes a key for each. The SORRY! screen for a module that is not
+installed is not built, since all five ship here.
 
 `screenTakenOver` is the rest of what was drawn, which is the help, the V screen,
 the monster manual, the pages behind the P key and the spell table, all of which draw across the
