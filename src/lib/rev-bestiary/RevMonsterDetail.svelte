@@ -198,18 +198,19 @@
       <SectionHeading title="How it moves" />
       <p>
         Monsters walk while you stand still: the dungeon polls the keyboard instead of waiting on it, and every pass
-        rolls a one in <code>INT((165 - {deepest} + your level) * speed / 20)</code> chance of moving one, never better
-        than one in {FLOOR_ODDS}. On its turn it either comes straight at you or wanders off, on a roll that goes by the
-        level of the last monster you met and by nothing about this one. Once it is beside you the game stops polling
-        and waits for your key, so the fight is turn by turn.
+        rolls a one in <code>INT((165 - the last monster's level + your level) * speed / 20)</code> chance of moving
+        one, never better than one in {FLOOR_ODDS}. The level in that is the last monster you met and nothing about
+        this one, so every monster on the level moves as often as every other. On its turn it either comes straight at
+        you or wanders off, on a roll that goes by that same level. Once it is beside you the game stops polling and
+        waits for your key, so the fight is turn by turn.
       </p>
       <p class="note">
-        The {deepest} is the level of the deepest of these on level {level}. Speed is how many times faster your machine
-        is than the one the game measures itself against at startup, so a faster machine polls proportionally more often
-        and the monsters keep the same pace whatever it is running on. On that reference machine the floor is what
-        decides it. The chase roll reads the last monster met as well: under 15 out of
-        <code>INT(RND * (its level + 35))</code> wanders instead, and that level is zero until you have met anybody,
-        which leaves {percent(chaseChance(0))} of the turns straight at you.
+        That level is zero until you have met anybody, and killing one puts the level you are standing on there rather
+        than the monster's. Speed is how many times faster your machine is than the one the game measures itself
+        against at startup, so a faster machine polls proportionally more often and the monsters keep the same pace
+        whatever it is running on. On that reference machine the floor is what decides it. The chase roll reads the
+        same level: under 15 out of <code>INT(RND * (that level + 35))</code> wanders instead, which leaves
+        {percent(chaseChance(0))} of the turns straight at you until you have met anybody.
       </p>
     </section>
   {/if}
