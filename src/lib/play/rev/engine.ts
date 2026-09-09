@@ -266,7 +266,8 @@ export class RevGameSession {
     // agility and the shield go, and the banners with them, while the player is sitting still
     // and watching the level shuffle around.
     if (this.game.fight !== null && revWearOffPotions(this.game)) drawAgain = true;
-    // 1000:08F6: a monster that has reached the character's square opens a fight at once.
+    // 1000:08F6: a monster that has reached the character's square sends the loop through the
+    // per-key routine, whose redraw opens the fight (1000:4969).
     if (this.game.fight === null && this.monsterHere() > 0) {
       const waiting = this.waiting;
       this.waiting = null;
@@ -679,7 +680,8 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     revCountDownBattleSpells(game);
     game.advice = revAdvice(game);
     const turn: RevTurn = { session, game, building: revBuildingUnder(pc.column, pc.row, pc.dungeonLevel) };
-    // 1000:08F6 and 1000:0946: a monster on the character's own square opens a fight.
+    // 1000:4969, in the redraw every key ends in: a monster on the character's own square, and
+    // no fight already on, opens one.
     if (game.fight === null && session.monsterHere() > 0) revMeetMonster(game, session.monsterHere());
     // 1000:845A and 1000:8517: a fight puts the three potion banners up again on the way to
     // every one of its keys, and 1000:85BA wears each potion off as it runs down before it waits

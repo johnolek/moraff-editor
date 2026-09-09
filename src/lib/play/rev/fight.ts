@@ -14,8 +14,9 @@ import type { RevFight, RevGame } from './state';
 /**
  * 1000:8223: meeting a monster, and the swing.
  *
- * The loop finds a monster on the character's own square (1000:08F6 and 1000:0946) and calls
- * 1000:3FFC, which opens the fight here. Everything about the monster comes out of its slot
+ * The loop finds a monster on the character's own square (1000:08F6 and 1000:0946) and calls the
+ * per-key routine 1000:3FFC, which ends in the redraw at 1000:4275; 1000:4969 asks the same
+ * question again there and jumps here. Everything about the monster comes out of its slot
  * number — `../../rev-bestiary/monsters.ts` is that rule, already ported for the Monsters tab —
  * and what this adds is what the fight itself keeps: the hit points, the kind's two adjustments
  * and the experience.
