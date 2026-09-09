@@ -353,7 +353,7 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 2000:7a78 | read_spell_help | 208 | reads entry n from USPELLS.HLP | WORLD (UNF.CPP) | show_spell_help |
 | 2000:7b48 | exp_needed | 126 | 250*1.4^(l-1)-80 / 250*2^(l-1) | WORLD (UNF.CPP) | FUN_2000_7bcd, defend |
 | 2000:7bcd | FUN_2000_7bcd | 164 |  | WORLD (UNF.CPP) | movecontrol |
-| 2000:7c71 | check_gain_level | 174 | exp > exp_needed(lev)? | WORLD (UNF.CPP) | flea_inn, draw_monster_view, kill_monster |
+| 2000:7c71 | check_gain_level | 174 | exp > exp_needed(lev)? | WORLD (UNF.CPP) | flea_inn, random_events_tick, kill_monster |
 | 2000:7d23 | gain_level | 196 | apply level-ups | WORLD (UNF.CPP) | flea_inn |
 | 2000:7dec | FUN_2000_7dec | 74 |  | WORLD (UNF.CPP) | strike |
 | 2000:7e36 | strike | 845 | player attack roll | WORLD (UNF.CPP) | movecontrol |
@@ -421,11 +421,11 @@ except where UNF.CPP gave them.  See METHOD.md for how the identifications were 
 | 3000:4a24 | read_uroll_line | 61 | reads the next line of UROLL.TXT, dropping every '|' | TOWN / MAGICFNC / CAT | give_hint, roll_char, FUN_3000_6a6a, tablet_message |
 | 3000:4a67 | show_rolled_character | 528 | draws the rolled character's numbers, or rubs them out again | TOWN / MAGICFNC / CAT | roll_char |
 | 3000:4c77 | roll_char | 7641 | character creation (stats, HP/SP, money) | TOWN / MAGICFNC / CAT | main |
-| 3000:6a6a | FUN_3000_6a6a | 288 |  | TOWN / MAGICFNC / CAT | FUN_3000_6b8a, draw_monster_view |
-| 3000:6b8a | FUN_3000_6b8a | 197 |  | TOWN / MAGICFNC / CAT | draw_monster_view |
+| 3000:6a6a | FUN_3000_6a6a | 288 |  | TOWN / MAGICFNC / CAT | FUN_3000_6b8a, random_events_tick |
+| 3000:6b8a | FUN_3000_6b8a | 197 |  | TOWN / MAGICFNC / CAT | random_events_tick |
 | 3000:6c6b | set_16_colours | 50 | BIOS palette for 16-colour modes | TOWN / MAGICFNC / CAT | set_palette |
-| 3000:6c9d | boss_office_message | 488 | 'A MESSAGE FROM THE OFFICE OF' screen with the boss picture | TOWN / MAGICFNC / CAT | draw_monster_view |
-| 3000:6e85 | draw_monster_view | 423 | draws the engaged monster picture | TOWN / MAGICFNC / CAT | movecontrol |
+| 3000:6c9d | boss_office_message | 488 | 'A MESSAGE FROM THE OFFICE OF' screen with the boss picture | TOWN / MAGICFNC / CAT | random_events_tick |
+| 3000:6e85 | random_events_tick | 423 | the per-step tick: the boss office message every 250 steps, then the random hints and events | TOWN / MAGICFNC / CAT | movecontrol |
 | 3000:703c | FUN_3000_703c | 22 |  | TOWN / MAGICFNC / CAT | FUN_3000_7052 |
 | 3000:7052 | FUN_3000_7052 | 352 |  | TOWN / MAGICFNC / CAT | movecontrol |
 | 3000:71be | FUN_3000_71be | 40 |  | TOWN / MAGICFNC / CAT | FUN_3000_7545 |

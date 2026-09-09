@@ -1591,7 +1591,7 @@ void __cdecl16far FUN_1000_14cc(undefined2 param_1)
 }
 
 
-// ==== N_LXMUL @ 1000:14f8 (size 23) callers: FUN_2000_041b,FUN_2000_05da,FUN_2000_0923,FUN_2000_0fc5,FUN_2000_1d4f,FUN_2000_20db,FUN_2000_216f,FUN_2000_2268,FUN_2000_295b,FUN_2000_31bc,Random,g_store,temple,flea_inn,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7832,strike,defend,pass_moment,attack_timing,trapdoor_dest,FUN_2000_c28b,movecontrol,cast_a_spell,FUN_3000_00a8,FUN_3000_0837,draw_3d_view,draw_map_square,FUN_3000_342d,roll_char,draw_monster_view,FUN_3000_7508,FUN_3000_8d7e,FUN_3000_8e75,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,monster_manual,FUN_4000_0035,FUN_4000_069a,pfont,psfont,set_palette,FUN_4000_3adc,FUN_4000_3b05,FUN_4000_3c20,FUN_4000_4225,FUN_4000_433e,scale_image2,typed_name,FUN_4000_580e,FUN_4000_593f,drop_money,module_transition_screen  // 32-bit multiply helper: DX:AX * CX:BX
+// ==== N_LXMUL @ 1000:14f8 (size 23) callers: FUN_2000_041b,FUN_2000_05da,FUN_2000_0923,FUN_2000_0fc5,FUN_2000_1d4f,FUN_2000_20db,FUN_2000_216f,FUN_2000_2268,FUN_2000_295b,FUN_2000_31bc,Random,g_store,temple,flea_inn,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7832,strike,defend,pass_moment,attack_timing,trapdoor_dest,FUN_2000_c28b,movecontrol,cast_a_spell,FUN_3000_00a8,FUN_3000_0837,draw_3d_view,draw_map_square,FUN_3000_342d,roll_char,random_events_tick,FUN_3000_7508,FUN_3000_8d7e,FUN_3000_8e75,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,monster_manual,FUN_4000_0035,FUN_4000_069a,pfont,psfont,set_palette,FUN_4000_3adc,FUN_4000_3b05,FUN_4000_3c20,FUN_4000_4225,FUN_4000_433e,scale_image2,typed_name,FUN_4000_580e,FUN_4000_593f,drop_money,module_transition_screen  // 32-bit multiply helper: DX:AX * CX:BX
 
 long __cdecl16far N_LXMUL(long a,long b)
 
@@ -1684,7 +1684,7 @@ void FUN_1000_1555(void)
 }
 
 
-// ==== N_LDIV @ 1000:1558 (size 4) callers: FUN_2000_041b,FUN_2000_05da,FUN_2000_0923,FUN_2000_0fc5,FUN_2000_1598,FUN_2000_1d4f,FUN_2000_20db,FUN_2000_216f,FUN_2000_2268,FUN_2000_295b,FUN_2000_31bc,Random,g_store,temple,flea_inn,bank,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7800,FUN_2000_7832,strike,defend,call_check_eng,pass_moment,attack_timing,FUN_2000_bce5,trapdoor_dest,FUN_2000_c28b,movecontrol,cast_a_spell,FUN_3000_00a8,FUN_3000_0837,draw_3d_view,FUN_3000_342d,roll_char,draw_monster_view,FUN_3000_7508,FUN_3000_8d7e,FUN_3000_8e75,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,monster_manual,FUN_4000_069a,pfont,psfont,apply_palette,set_palette,FUN_4000_3adc,FUN_4000_3b05,FUN_4000_3c20,FUN_4000_4225,FUN_4000_433e,scale_image2,typed_name,FUN_4000_580e,FUN_4000_593f,drop_money,module_transition_screen  // signed 32-bit divide (stack args, retf 8)
+// ==== N_LDIV @ 1000:1558 (size 4) callers: FUN_2000_041b,FUN_2000_05da,FUN_2000_0923,FUN_2000_0fc5,FUN_2000_1598,FUN_2000_1d4f,FUN_2000_20db,FUN_2000_216f,FUN_2000_2268,FUN_2000_295b,FUN_2000_31bc,Random,g_store,temple,flea_inn,bank,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7800,FUN_2000_7832,strike,defend,call_check_eng,pass_moment,attack_timing,FUN_2000_bce5,trapdoor_dest,FUN_2000_c28b,movecontrol,cast_a_spell,FUN_3000_00a8,FUN_3000_0837,draw_3d_view,FUN_3000_342d,roll_char,random_events_tick,FUN_3000_7508,FUN_3000_8d7e,FUN_3000_8e75,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,monster_manual,FUN_4000_069a,pfont,psfont,apply_palette,set_palette,FUN_4000_3adc,FUN_4000_3b05,FUN_4000_3c20,FUN_4000_4225,FUN_4000_433e,scale_image2,typed_name,FUN_4000_580e,FUN_4000_593f,drop_money,module_transition_screen  // signed 32-bit divide (stack args, retf 8)
 
 long __stdcall16far N_LDIV(long a,long b)
 
@@ -1862,7 +1862,7 @@ long FUN_1000_1603(void)
 }
 
 
-// ==== N_LXLSH @ 1000:1606 (size 30) callers: FUN_2000_0fc5,FUN_2000_2268,FUN_2000_31bc,flea_inn,get_mtype,defend,call_check_eng,pass_moment,FUN_3000_00a8,FUN_3000_0837,draw_monster_view,drop_spellbook,drop_scroll,drop_paper,post_kill_heal,drop_money  // 32-bit shift left
+// ==== N_LXLSH @ 1000:1606 (size 30) callers: FUN_2000_0fc5,FUN_2000_2268,FUN_2000_31bc,flea_inn,get_mtype,defend,call_check_eng,pass_moment,FUN_3000_00a8,FUN_3000_0837,random_events_tick,drop_spellbook,drop_scroll,drop_paper,post_kill_heal,drop_money  // 32-bit shift left
 
 long __cdecl16far N_LXLSH(long a,char n)
 
@@ -2146,7 +2146,7 @@ void __cdecl16far srand(ushort seed)
 }
 
 
-// ==== rand @ 1000:18b6 (size 38) callers: FUN_2000_31bc,Random,temple,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7800,FUN_2000_7832,strike,defend,call_check_eng,pass_moment,attack_timing,FUN_2000_bce5,trapdoor_dest,movecontrol,draw_3d_view,roll_char,draw_monster_view,FUN_3000_8d7e,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,set_palette,drop_money  // seed = seed*0x015A4E35+1; return (seed>>16)&0x7fff
+// ==== rand @ 1000:18b6 (size 38) callers: FUN_2000_31bc,Random,temple,main,get_mtype,stock_level,FUN_2000_77ae,FUN_2000_7800,FUN_2000_7832,strike,defend,call_check_eng,pass_moment,attack_timing,FUN_2000_bce5,trapdoor_dest,movecontrol,draw_3d_view,roll_char,random_events_tick,FUN_3000_8d7e,title_screen,drop_weapon,drop_armor,drop_spellbook,drop_scroll,drop_wand,drop_paper,find_item,post_kill_heal,post_kill_sp,kill_monster,go_up_level,go_down_level,set_palette,drop_money  // seed = seed*0x015A4E35+1; return (seed>>16)&0x7fff
 
 short __cdecl16far rand(void)
 
@@ -10232,7 +10232,7 @@ undefined2 __cdecl16far FUN_2000_412a(void)
 }
 
 
-// ==== Random @ 2000:4156 (size 84) callers: get_mtype,stock_level,defend,FUN_2000_9232,use_magic_item,attack_timing,movecontrol,draw_monster_view,title_screen,drop_spellbook,drop_scroll,drop_wand,drop_paper,kill_monster,explosion,sleep_monster,relocate,go_away,autokill,spell_effect  // srand(clock()) then random(n)
+// ==== Random @ 2000:4156 (size 84) callers: get_mtype,stock_level,defend,FUN_2000_9232,use_magic_item,attack_timing,movecontrol,random_events_tick,title_screen,drop_spellbook,drop_scroll,drop_wand,drop_paper,kill_monster,explosion,sleep_monster,relocate,go_away,autokill,spell_effect  // srand(clock()) then random(n)
 
 undefined2 __cdecl16far Random(int param_1)
 
@@ -12728,7 +12728,7 @@ void __cdecl16far FUN_2000_7bcd(void)
 }
 
 
-// ==== check_gain_level @ 2000:7c71 (size 174) callers: flea_inn,draw_monster_view,kill_monster  // exp > exp_needed(lev)?
+// ==== check_gain_level @ 2000:7c71 (size 174) callers: flea_inn,random_events_tick,kill_monster  // exp > exp_needed(lev)?
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -16405,7 +16405,7 @@ LAB_2000_cddc:
         DAT_6000_0273 = 0;
       }
       else {
-        draw_monster_view();
+        random_events_tick();
       }
     }
     if ((DAT_6000_2517 != -1) && (*DAT_6000_c64b < 1)) {
@@ -20662,7 +20662,7 @@ LAB_3000_5fda:
 }
 
 
-// ==== FUN_3000_6a6a @ 3000:6a6a (size 288) callers: FUN_3000_6b8a,draw_monster_view
+// ==== FUN_3000_6a6a @ 3000:6a6a (size 288) callers: FUN_3000_6b8a,random_events_tick
 
 void __cdecl16far FUN_3000_6a6a(int param_1)
 
@@ -20705,7 +20705,7 @@ void __cdecl16far FUN_3000_6a6a(int param_1)
 }
 
 
-// ==== FUN_3000_6b8a @ 3000:6b8a (size 197) callers: draw_monster_view
+// ==== FUN_3000_6b8a @ 3000:6b8a (size 197) callers: random_events_tick
 
 void __cdecl16far FUN_3000_6b8a(uint param_1)
 
@@ -20783,7 +20783,7 @@ void __cdecl16far set_16_colours(undefined1 param_1,undefined1 param_2)
 }
 
 
-// ==== boss_office_message @ 3000:6c9d (size 488) callers: draw_monster_view  // 'A MESSAGE FROM THE OFFICE OF' screen with the boss picture
+// ==== boss_office_message @ 3000:6c9d (size 488) callers: random_events_tick  // 'A MESSAGE FROM THE OFFICE OF' screen with the boss picture
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
@@ -20847,11 +20847,11 @@ void __cdecl16far boss_office_message(void)
 }
 
 
-// ==== draw_monster_view @ 3000:6e85 (size 423) callers: movecontrol  // draws the engaged monster picture
+// ==== random_events_tick @ 3000:6e85 (size 423) callers: movecontrol  // the per-step tick: the boss office message every 250 steps, then the random hints and events
 
 /* WARNING: Globals starting with '_' overlap smaller symbols at the same address */
 
-void __cdecl16far draw_monster_view(void)
+void __cdecl16far random_events_tick(void)
 
 {
   int iVar1;

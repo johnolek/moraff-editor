@@ -126,7 +126,7 @@ KNOWN = {
  "3000:5fda": ("design_char", "redistribute points screen"),
  "3000:6c6b": ("set_16_colours", "BIOS palette for 16-colour modes"),
  "3000:6c9d": ("boss_office_message", "'A MESSAGE FROM THE OFFICE OF' screen with the boss picture"),
- "3000:6e85": ("draw_monster_view", "draws the engaged monster picture"),
+ "3000:6e85": ("random_events_tick", "the per-step tick: the boss office message every 250 steps, then the random hints and events"),
  "3000:77e2": ("view_stats", "the V screen"),
  "3000:7c6d": ("read_spell_help", "USPELLS.HLP reader"),
  "3000:81ba": ("myrand", "the dungeon hash"),

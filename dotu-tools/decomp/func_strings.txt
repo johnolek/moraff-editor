@@ -416,7 +416,7 @@
 3000:6b8a FUN_3000_6b8a size=197 ncallers=1 | 
 3000:6c6b set_16_colours size=50 ncallers=1 | 
 3000:6c9d boss_office_message size=488 ncallers=1 | Null_pointer_assignment_Divide_e ; A_MESSAGE_FROM ; THE_OFFICE_OF_THE ; RACE_
-3000:6e85 draw_monster_view size=423 ncallers=1 | 
+3000:6e85 random_events_tick size=423 ncallers=1 | 
 3000:703c FUN_3000_703c size=22 ncallers=1 | 
 3000:7052 FUN_3000_7052 size=352 ncallers=1 | 
 3000:71be FUN_3000_71be size=40 ncallers=1 | 
