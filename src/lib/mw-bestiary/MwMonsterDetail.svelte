@@ -2,10 +2,10 @@
 <script lang="ts">
   import { untrack } from 'svelte';
   import { app, currentEntry } from '../app-state.svelte';
+  import MonsterCard from '../bestiary/MonsterCard.svelte';
   import { blockWheel } from '../editor/block-wheel';
   import { MORAFFS_WORLD } from '../editor/games';
   import { percent } from '../ui/format';
-  import PixelText from '../ui/PixelText.svelte';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import MwMonsterPicture from './MwMonsterPicture.svelte';
   import {
@@ -129,41 +129,31 @@
   }
 </script>
 
-<article>
-  <div class="top">
-    <div class="art">
-      {#if entry.pictureDrawn}
-        <MwMonsterPicture {entry} {floor} />
-      {:else}
-        <p class="missing">No picture</p>
-      {/if}
-    </div>
-    <div class="facts">
-      <h2><PixelText text={entry.name} scale={2} /></h2>
-      <p class="group">{groupLabel}</p>
+<MonsterCard
+  name={entry.name}
+  groupLine={groupLabel}
+  numbersTitle="Numbers"
+  numbers={stats}
+  {effects}
+  {art}
+  {tableNote}
+  {body} />
 
-      <section>
-        <SectionHeading title="Numbers" />
-        <dl>
-          {#each stats as [label, value]}
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          {/each}
-        </dl>
-        <p class="note">
-          All three of the first numbers come off your swing; the third goes on to its own attack as well.
-        </p>
-        {#if effects.length > 0}
-          <ul class="effects">
-            {#each effects as effect}
-              <li>{effect}</li>
-            {/each}
-          </ul>
-        {/if}
-      </section>
-    </div>
-  </div>
+{#snippet art()}
+  {#if entry.pictureDrawn}
+    <MwMonsterPicture {entry} {floor} />
+  {:else}
+    <p class="missing">No picture</p>
+  {/if}
+{/snippet}
 
+{#snippet tableNote()}
+  <p class="note">
+    All three of the first numbers come off your swing; the third goes on to its own attack as well.
+  </p>
+{/snippet}
+
+{#snippet body()}
   <section>
     <SectionHeading title="Where it turns up" />
     <p>{floorLine}</p>
@@ -275,25 +265,9 @@
       <p class="note">Load a Moraff’s World character in the Save Editor to start from their numbers.</p>
     {/if}
   </section>
-</article>
+{/snippet}
 
 <style>
-  article {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-    padding: 20px 24px;
-  }
-  .top {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-  }
-  .art {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
   .missing {
     display: flex;
     align-items: center;
@@ -305,29 +279,6 @@
     font-size: 12px;
     color: var(--muted);
   }
-  .facts {
-    flex: 1;
-    min-width: 240px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-  h2 {
-    margin: 0;
-    line-height: 0;
-    color: var(--ink);
-  }
-  .group {
-    margin: 0;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .note {
-    margin: 6px 0 0;
-    font-size: 12px;
-    color: var(--muted);
-    max-width: 62ch;
-  }
   .note button {
     background: none;
     border: none;
@@ -336,32 +287,6 @@
     color: var(--accent);
     cursor: pointer;
     text-decoration: underline;
-  }
-  dl {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 2px 12px;
-    margin: 12px 0 0;
-    font-size: 13px;
-  }
-  dt {
-    color: var(--muted);
-  }
-  dd {
-    margin: 0;
-  }
-  p {
-    margin: 0;
-    font-size: 14px;
-    max-width: 62ch;
-  }
-  ul {
-    margin: 8px 0 0;
-    padding-left: 18px;
-    font-size: 13px;
-  }
-  .effects li {
-    color: var(--warn);
   }
   .pickers {
     display: flex;
@@ -388,8 +313,5 @@
   }
   select {
     width: auto;
-  }
-  code {
-    font-size: 12px;
   }
 </style>
