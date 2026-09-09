@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Rng } from '../../game/port/rng';
-import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue, type RevPc } from './record';
+import {
+  REV_ARMOUR_VALUE,
+  REV_UNBANKED_EXPERIENCE_VALUE,
+  REV_VALUE,
+  revValue,
+  setRevValue,
+  type RevPc,
+} from './record';
+import { revRolls } from './spells.test-support';
+import { revStatsSheet } from './stats';
 import { newRevGame, type RevGame } from './state';
 import {
   revBuildingUnder,
@@ -131,6 +140,77 @@ describe('the temple', () => {
     const game = started(character({ money: 1 }));
     await revVisitTemple(game, desk('1'));
     expect(game.said.join(' ')).toContain('throws you out');
+  });
+});
+
+describe('the night the experience is spent', () => {
+  /** The `Experience` line of the V sheet, which is the only place the banked number is shown. */
+  function experienceOnTheSheet(game: RevGame): string {
+    return revStatsSheet(game).find((line) => line.startsWith('Experience')) ?? '';
+  }
+
+  it('gains a level for every threshold the two experiences together pass', async () => {
+    const pc = character({ money: 40, level: 1, experience: 0, maxHp: 30, hp: 10 });
+    setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, 2000);
+    const game = started(pc);
+    await revStayAtInn(game, 0, desk('Y'));
+    // 610 and 1672 are the thresholds for the second and the third level; the fourth wants 3656.
+    expect(pc.level).toBe(3);
+    // The Flea Bag's own point, then nine hit points a level: the roll of two, the six health
+    // gives this character and the flat one.
+    expect(pc.maxHp).toBe(30 + 9 + 9);
+    expect(pc.hp).toBe(10 + 1 + 9 + 9);
+  });
+
+  it('banks the pot and puts it on the sheet', async () => {
+    const pc = character({ money: 40, level: 1, experience: 0 });
+    setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, 2000);
+    const game = started(pc);
+    expect(experienceOnTheSheet(game)).toContain('             0');
+    await revStayAtInn(game, 0, desk('Y'));
+    expect(pc.experience).toBe(2000);
+    expect(revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE)).toBe(0);
+    expect(experienceOnTheSheet(game)).toContain('          2000');
+  });
+
+  it('gains nothing for a character short of the next level', async () => {
+    const pc = character({ money: 40, level: 1, experience: 0, maxHp: 30, hp: 10 });
+    setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, 500);
+    const game = started(pc);
+    await revStayAtInn(game, 0, desk('Y'));
+    expect(pc.level).toBe(1);
+    expect(pc.maxHp).toBe(30);
+    expect(pc.experience).toBe(500);
+  });
+
+  it('spends it on the night the Flea Bag Inn makes the character sick', async () => {
+    const pc = character({ money: 40, level: 1, experience: 0 });
+    setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, 2000);
+    // The robbery's roll, then the sickness's, then the roll each level's hit points take.
+    const game = started(pc, revRolls([2, 1, 2, 2]));
+    await revStayAtInn(game, 0, desk('Y'));
+    expect(revValue(pc, REV_VALUE.disease)).toBe(1);
+    expect(pc.level).toBe(3);
+    expect(pc.experience).toBe(2000);
+  });
+
+  it('spends it on a night at the Kings Inn, which makes no rolls at all', async () => {
+    const pc = character({ money: 10000, level: 1, experience: 0 });
+    setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, 2000);
+    const game = started(pc);
+    await revStayAtInn(game, 2, desk('Y'));
+    expect(pc.level).toBe(3);
+    expect(pc.experience).toBe(2000);
+  });
+
+  it('leaves a character who cannot pay with everything still in the pot', async () => {
+    const pc = character({ money: 5, level: 1, experience: 0 });
+    setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, 2000);
+    const game = started(pc);
+    await revStayAtInn(game, 0, desk('Y'));
+    expect(pc.level).toBe(1);
+    expect(pc.experience).toBe(0);
+    expect(revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE)).toBe(2000);
   });
 });
 

@@ -1,9 +1,19 @@
 import { townBuilding } from '../../game/revmap.js';
+import { revExperienceForNextLevel } from './advice';
 import type { RevMagicDesk } from './desk';
+import { revWorkOutSpellPoints } from './fountain';
 import { REV_FOUR_SECONDS } from './held';
 import { revItemMenu } from './items';
 import { revPlayKingsInnHymn, revPlayTempleMarch } from './music';
-import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue, wearsRingsOfHealth } from './record';
+import {
+  REV_ARMOUR_VALUE,
+  REV_UNBANKED_EXPERIENCE_VALUE,
+  REV_VALUE,
+  revValue,
+  setRevValue,
+  wearsRingsOfHealth,
+} from './record';
+import { revEndPreppedSpells } from './spells';
 import { REV_ITEM_TABLE, revSpellsAt } from './tables';
 import type { RevGame } from './state';
 
@@ -50,6 +60,8 @@ const INNS = [
 /** 1000:1EE2: one night in ten leaves the character with nothing — not the money, and not the
  *  weapons either. */
 function maybeRobbed(game: RevGame): void {
+  // 1000:1EE5: the ten the roll is against is left in the scratch cell on the way past.
+  game.scratch = 10;
   if (game.rng.random(10) !== 1) return;
   const pc = game.pc;
   pc.money = 0;
@@ -84,21 +96,50 @@ export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDe
     revPlayKingsInnHymn(game);
     // 1000:203E: the wait the inn takes on top of that, whichever it was.
     game.delay(REV_FOUR_SECONDS);
-    return;
+  } else {
+    pc.hp += inn.heals;
+    if (wearsRingsOfHealth(pc)) pc.hp = pc.maxHp;
+    game.say(SLEEPING);
+    // 1000:1FAE: the Yuppydom leaves a twenty in the scratch cell that nothing reads.
+    if (which === 1) game.scratch = 20;
+    maybeRobbed(game);
+    // 1000:1E7B: the Flea Bag's own second roll, which the two better inns do not make.
+    if (which === 0 && game.rng.random(10) === 1) {
+      pc.stats[3] -= 1;
+      setRevValue(pc, REV_VALUE.disease, 1);
+      game.say(...SICK);
+      // 1000:1ED0 and 1ED3: the wait twice over, so this is the longest the game holds anything.
+      game.delay(REV_FOUR_SECONDS);
+      game.delay(REV_FOUR_SECONDS);
+    }
   }
-  pc.hp += inn.heals;
-  if (wearsRingsOfHealth(pc)) pc.hp = pc.maxHp;
-  game.say(SLEEPING);
-  maybeRobbed(game);
-  // 1000:1E7B: the Flea Bag's own second roll, which the two better inns do not make.
-  if (which === 0 && game.rng.random(10) === 1) {
-    pc.stats[3] -= 1;
-    setRevValue(pc, REV_VALUE.disease, 1);
-    game.say(...SICK);
-    // 1000:1ED0 and 1ED3: the wait twice over, so this is the longest the game holds anything.
-    game.delay(REV_FOUR_SECONDS);
-    game.delay(REV_FOUR_SECONDS);
+  // 1000:1E92, 1EDF, 1FBA and 2041: all four ways a night can go end in the same place, the
+  // robbed night and the sick one included.
+  revNightsExperience(game);
+}
+
+/**
+ * 1000:2094: what a night at an inn is really for.
+ *
+ * A kill puts its experience in a pot of its own (record value 21) and the character sheet
+ * prints only the banked number, so nothing in the dungeon ever moves it. Here the two together
+ * buy a level for every threshold they are past, and then the pot is folded into the banked
+ * number and emptied — which is why the sheet does not show a kill's experience until its
+ * killer has slept somewhere.
+ */
+function revNightsExperience(game: RevGame): void {
+  const pc = game.pc;
+  for (;;) {
+    const earned = pc.experience + revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE);
+    if (earned <= revExperienceForNextLevel(pc.level)) break;
+    revGainALevel(game);
   }
+  // 1000:20EB: the spell points are worked out again from the level the night has left.
+  revWorkOutSpellPoints(pc);
+  pc.experience = Math.floor(pc.experience + revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE));
+  setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, 0);
+  // 1000:210F: a night in a bed is where the two prep spells wear off.
+  revEndPreppedSpells(game);
 }
 
 /** 1000:22F7's own lines. */
