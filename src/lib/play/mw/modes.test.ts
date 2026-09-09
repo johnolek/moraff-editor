@@ -124,3 +124,16 @@ describe("the monsters debug mode marks on the map in the screen's corner", () =
     expect(marks('speedrun')).toEqual([0, 0]);
   });
 });
+
+describe("the details a click on a monster's picture opens", () => {
+  it('is asked for by the tab and answered with the monster clicked', () => {
+    expect(source).toContain('onmonster={(monster) => (openMonsterId = monster.monsterId)}');
+    expect(source).toContain('<MonsterCard');
+  });
+
+  it('keeps the keyboard off the game while it is up', () => {
+    expect(source).toContain('if (openMonsterId !== null) {');
+    expect(source).toContain("if (event.key === 'Escape') openMonsterId = null;");
+  });
+});
+

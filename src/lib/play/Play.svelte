@@ -8,7 +8,10 @@
   import WallTexture from '../map/WallTexture.svelte';
   import GameScreen from '../ui/GameScreen.svelte';
   import PixelText from '../ui/PixelText.svelte';
+  import MonsterDetail from '../bestiary/MonsterDetail.svelte';
+  import { monsterGroups } from '../bestiary/monsters';
   import MessageBox from './MessageBox.svelte';
+  import MonsterCard from './MonsterCard.svelte';
   import Panel from './Panel.svelte';
   import Portrait from './Portrait.svelte';
   import Screen from './Screen.svelte';
@@ -158,8 +161,33 @@
     return () => cancelAnimationFrame(frame);
   });
 
+  /**
+   * The monster whose details debug mode has open, by the id the Monsters tab keys it by. An id
+   * rather than the monster itself, since the catalogue entry is what the card is drawn from and
+   * what was clicked is only where it stood.
+   */
+  let openMonsterId = $state<string | null>(null);
+
+  /** The catalogue entry that id names, and the heading of the list it is under, which is what
+   *  the Monsters tab puts over its own card. */
+  const openMonster = $derived.by(() => {
+    if (openMonsterId === null) return null;
+    for (const group of monsterGroups()) {
+      const entry = group.monsters.find((monster) => monster.id === openMonsterId);
+      if (entry) return { entry, groupLabel: group.label };
+    }
+    return null;
+  });
+
   function onKeyDown(event: KeyboardEvent) {
     if (app.tab !== 'play' || !session || session.over) return;
+    // The keyboard belongs to the details while they are up: Escape shuts them and nothing else
+    // reaches the game.
+    if (openMonsterId !== null) {
+      if (event.key === 'Escape') openMonsterId = null;
+      event.preventDefault();
+      return;
+    }
     if (isTyping(event.target)) return;
     const key = gameKey(event);
     if (key === null) return;
@@ -249,6 +277,7 @@
             discovered={zoomMap}
             mapMonsters={zoomMapMonsters(mode, view)}
             debug={debugDrawn(mode)}
+            onmonster={(monster) => (openMonsterId = monster.monsterId)}
             prompt={view.prompt}
             killed={view.killed}
             viewsDrawn={view.viewsDrawn}
@@ -281,6 +310,14 @@
           {#if view.screen.length > 0}
             <div class="overlay"><GameScreen lines={view.screen} /></div>
           {/if}
+        {/if}
+        {#if openMonster}
+          <MonsterCard
+            monsterId={openMonster.entry.id}
+            name={openMonster.entry.name}
+            onclose={() => (openMonsterId = null)}
+            detail={monsterDetail}
+          />
         {/if}
         {#if view.over}
           <div class="over">
@@ -357,6 +394,14 @@
     </div>
   {/if}
 </div>
+
+<!-- Keyed on the monster, the way the Monsters tab keys its own card, so the level and floor
+     controls inside it start fresh for each one. -->
+{#snippet monsterDetail()}
+  {#key openMonsterId}
+    <MonsterDetail entry={openMonster!.entry} groupLabel={openMonster!.groupLabel} />
+  {/key}
+{/snippet}
 
 <style>
   .play {
