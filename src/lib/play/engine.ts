@@ -143,8 +143,6 @@ export interface PlayView {
   /** How much of the display that screen was drawn on black, and null where the port does not
    *  know the rectangle and the whole display goes black behind it. */
   screenCleared: ScreenRect | null;
-  /** The battle banner: the monster being faced, as engagement_timing prints it. */
-  banner: string[];
   /** The box the game puts up on a square with a ladder or a doorway, where it draws it. */
   prompt: ScreenLine[] | null;
   /** Seconds of game time the character has spent. */
@@ -200,8 +198,6 @@ export class GameSession {
     this.game.menuBox = lines;
   }
 
-  /** The lines of the battle banner, which the game prints beside the monster. */
-  banner: string[] = [];
   /** DS:034c: the twelve lines view_battle_spells (exe 2000:9417) has showing, which is how it
    *  knows whether anything has changed since it last drew them. */
   battleSpellsShown: boolean[] = [];
@@ -295,8 +291,6 @@ export class GameSession {
   private waiting: ((key: number) => void) | null = null;
   /** A ported function has called mgetch_message and is owed a key once it has finished. */
   private waitOwed = false;
-  /** Whether what the game says is going to the banner rather than the message box. */
-  private sayingBanner = false;
   /** The record as the game last read it or wrote it back, which is how a record the save editor
    *  has written is told from the game's own save. */
   private known: Uint8Array;
@@ -339,8 +333,7 @@ export class GameSession {
     // with pfont is a screen. The two are kept apart here the way they are on the screen.
     const said = this.game.say;
     this.game.say = (...lines: string[]) => {
-      if (this.sayingBanner) this.banner = [...this.banner, ...lines];
-      else this.showBox(lines);
+      this.showBox(lines);
       said(...lines);
     };
     // A tablet is a screen of its own rather than a box, and FUN_3000_9026 waits for a key at the
@@ -506,21 +499,23 @@ export class GameSession {
   }
 
   /**
-   * engagement_timing (exe 2000:b782): the banner about the monster in front of the character,
-   * which the original prints beside the monster rather than in the message box.
+   * The two things movecontrol does about the battle banner before it draws anything else.
+   *
+   * At 2000:c602 a box defend printed over the banner is answered by printing it again. At
+   * 2000:c613 a banner with nothing standing ahead of the character any more is taken down, and
+   * whatever else was on the block goes with it.
+   *
+   * The original reaches engagement_timing on the first of those whatever is ahead, and reads
+   * the six bytes in front of the monster table when nothing is; the port has nothing to read
+   * there and puts the flag down without drawing.
    */
-  showBanner(): void {
+  settleBanner(): void {
     const game = this.game;
-    this.banner = [];
-    if (game.engagedAhead !== -1) {
-      this.sayingBanner = true;
-      engagementTiming(game);
-      this.sayingBanner = false;
-      return;
+    if (game.reprintBattleInfo) {
+      game.reprintBattleInfo = false;
+      if (game.engagedAhead !== -1) engagementTiming(game);
     }
-    // movecontrol at 2000:c613: the banner is up and nothing is standing ahead any more, so the
-    // block it was printed down is wiped, and whatever else was on it goes at the same time.
-    if (!game.battleInfoOn) return;
+    if (!game.battleInfoOn || game.engagedAhead !== -1) return;
     game.battleInfoOn = false;
     this.wipeMessageBlock();
   }
@@ -639,6 +634,10 @@ export class GameSession {
     this.game.redrawView = false;
     this.drawnFrom = { x: pc.x, y: pc.y, level: pc.level };
     this.viewsDrawn += 1;
+    // movecontrol at 2000:cbed: the banner goes up again straight after the views, and nowhere
+    // else on an ordinary pass. That is why it stands untouched while the character swings,
+    // casts or opens a screen, and why it says what is in front of them the moment they move.
+    if (this.game.engagedAhead !== -1) engagementTiming(this.game);
   }
 
   /** Tell the Play tab to draw. */
@@ -663,13 +662,12 @@ export class GameSession {
       rows: this.rows,
       monsters: drawn,
       visible: drawn.filter((monster) => this.memory.isVisible(monster.x, monster.y)),
-      box: messageBoxScreen({ box: this.box, banner: this.banner, drawn: printed }),
+      box: messageBoxScreen({ box: this.box, drawn: printed }),
       // The expanded map has covered the display, so every line the game has drawn belongs to
       // that screen — including the two the X branch puts in the corner the message box stands
       // in, which erase_menu_block emptied on the way in.
       screen: this.expandedMap ? printed : screenTakenOver(printed),
       screenCleared: game.blackedOut,
-      banner: this.banner,
       prompt: ladderPrompt(ladderUnder(game), pc.level === 0 ? buildingUnder(game) : 0),
       seconds: game.secondsElapsed,
       engaged: facing === -1 ? null : (drawn.find((monster) => monster.slot === facing) ?? null),
@@ -812,7 +810,7 @@ export async function runMoveControl(session: GameSession): Promise<void> {
     }
     attackTiming(game);
     if (game.engaged === -1) pc.sleepTimer = 0;
-    session.showBanner();
+    session.settleBanner();
     if (pc.deepestFloor < pc.level) pc.deepestFloor = pc.level;
     // Every square the four 3-D views draw is marked. The original marks them only on a pass it
     // draws the views on, which marks the same squares either way — the geometry has not

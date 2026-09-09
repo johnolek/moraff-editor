@@ -1,4 +1,4 @@
-import { BATTLE_HP_Y, BATTLE_TEXT_COLOUR, BLOW_Y, MENU_X, menuLine } from '../game/port/screens';
+import { BATTLE_HP_Y, BLOW_Y, menuLine } from '../game/port/screens';
 import type { Game, ScreenLine, ScreenRect } from '../game/port/state';
 import { BATTLE_SPELLS_BOX } from './display';
 
@@ -56,35 +56,10 @@ export function messageBoxLines(lines: string[]): ScreenLine[] {
   return lines.slice(0, MESSAGE_BOX_LINES).map((text, index) => menuLine(text, index));
 }
 
-/**
- * Where the four lines engagement_timing (exe 2000:b782) says go: the monster's level, its name,
- * what killing it is worth, and the line its type carries. Each is a plain pfont call at
- * {@link MENU_X} in the body font; none of them is spread out the way a long menu line is.
- *
- * The banner's fifth line is the hit points, which print_battle_hp_info (exe 2000:b68d) draws at
- * {@link BATTLE_HP_Y} — third down the screen rather than last. The gap that leaves, from 0x379
- * to 0x441, is where strike (exe 2000:7e36) draws the blow at {@link BLOW_Y}, over a banner
- * nothing wipes for it.
- */
-export const BATTLE_BANNER_Y = [0x329, 0x351, 0x441, 0x469];
-
-/** The battle banner's lines, ready for the screen renderer. */
-export function battleBannerLines(lines: string[]): ScreenLine[] {
-  return lines.slice(0, BATTLE_BANNER_Y.length).map((text, index) => ({
-    text,
-    x: MENU_X,
-    y: BATTLE_BANNER_Y[index],
-    font: 0,
-    colour: BATTLE_TEXT_COLOUR,
-  }));
-}
-
 /** What the game has drawn and where it stands, for {@link messageBoxScreen}. */
 export interface MessageBoxShowing {
   /** The eight strings the last box filled the buffer with. */
   box: string[];
-  /** The battle banner's own lines, which the session collects out of the box. */
-  banner: string[];
   /** Every line the game has drawn with pfont, wherever it drew it. */
   drawn: ScreenLine[];
 }
@@ -95,7 +70,8 @@ export interface MessageBoxShowing {
  * strike (exe 2000:7e36) and print_battle_hp_info (exe 2000:b68d) are the only routines that draw
  * on the block without wiping the whole of it: each calls FUN_2000_295b (exe 2000:295b) on the
  * strip its own lines stand on and leaves the rest alone. So the battle banner is still standing
- * around them, and a message box that was up loses only the lines those strips cover.
+ * around them, and a message box that was up loses only the lines those strips cover rather than
+ * being taken for a block somebody filled again.
  */
 const BATTLE_STRIPS = [
   { top: 0x3c5, bottom: 0x419, drawnAt: BLOW_Y },
@@ -118,17 +94,12 @@ function wipedForTheFight(strips: typeof BATTLE_STRIPS, y: number): boolean {
  *
  * The eight lines hold whichever of the game's two ways of filling them came last, and the game
  * makes that easy to tell: everything that draws its own lines down that block — mset_gmenu, the
- * pockets menu, view_prep_spells — wipes the block with FUN_2000_2820 first, and so does
- * FUN_2000_2f5d before it copies a box in. So a line drawn on the block is newer than the box,
- * and with nothing drawn there the box shows; with no box either, the battle banner does.
+ * pockets menu, view_prep_spells, the battle banner — wipes the block with FUN_2000_2820 first,
+ * and so does FUN_2000_2f5d before it copies a box in. So a line drawn on the block is newer
+ * than the box, and with nothing drawn there the box shows.
  *
  * The strip above the eight lines is drawn either way: it is where kill_monster puts "YOU KILLED
  * IT!" and FUN_3000_a1c4 puts "GOOD NEWS...", over whatever the block holds.
- *
- * The banner is engagement_timing (exe 2000:b782), which prints in that same block: it wipes the
- * eight lines with FUN_2000_2820 and draws its five over them at {@link BATTLE_BANNER_Y}, and
- * movecontrol wipes the block again as soon as there is no monster ahead any more (exe 2000:c308,
- * the DS:c657 branch).
  */
 export function messageBoxScreen(showing: MessageBoxShowing): ScreenLine[] {
   const drawn = showing.drawn.filter(onMessageBox);
@@ -136,11 +107,7 @@ export function messageBoxScreen(showing: MessageBoxShowing): ScreenLine[] {
   const filled = drawn.some(
     (line) => line.y >= MESSAGE_BOX_LINES_TOP && !wipedForTheFight(strips, line.y),
   );
-  const lines = filled
-    ? []
-    : showing.box.length > 0
-      ? messageBoxLines(showing.box)
-      : battleBannerLines(showing.banner);
+  const lines = filled ? [] : messageBoxLines(showing.box);
   return [...lines.filter((line) => !wipedForTheFight(strips, line.y)), ...drawn];
 }
 

@@ -200,16 +200,26 @@ game drew them at:
 
 `screens.ts` is where the two are put back together, since the game does not keep them apart on
 the screen: `messageBoxScreen` is what stands in the message box — the eight lines the last box or
-menu filled, or the battle banner when nothing has been said, and over them whatever `pfont` has
-drawn inside the box's own rectangle, which is where a kill puts "YOU KILLED IT!", a drop puts
-"GOOD NEWS...", a monster's swing puts what it did, and a swing of the character's own puts the
-blow and the monster's hit points.
+menu filled, and over them whatever `pfont` has drawn inside the box's own rectangle, which is
+where the battle banner stands, where a kill puts "YOU KILLED IT!", a drop puts "GOOD NEWS...", a
+monster's swing puts what it did, and a swing of the character's own puts the blow and the
+monster's hit points.
 
 The banner and the blow stand together because of what each of them wipes. Everything that fills
 the eight lines wipes the whole block first, so a line drawn there means the block was filled
-again and neither the box nor the banner shows. `strike` and `print_battle_hp_info` are the two
-exceptions: each wipes only the strip its own lines stand on, so the banner is still there around
-them and a box that was up loses only the lines those strips cover.
+again and the box does not show. `strike` and `print_battle_hp_info` are the two exceptions: each
+wipes only the strip its own lines stand on, so the banner is still there around them and a box
+that was up loses only the lines those strips cover.
+
+**The battle banner is drawn, not said.** `engagement_timing` (exe 2000:b782) wipes the eight
+lines with `FUN_2000_2820` and draws four of its own over them, and `print_battle_hp_info` draws
+the fifth; a box put up afterwards wipes them all off again. `movecontrol` draws it in exactly
+two places, and `GameSession` keeps to both: straight after the four views (exe 2000:cbed), so a
+banner only ever appears on a pass the views were drawn on, and at the top of a pass where
+`defend` has printed a box over it and raised DS:c649 (exe 2000:c602). A banner with nothing
+standing ahead of the character any more takes the whole block with it (exe 2000:c613). So a
+monster that walks up to a character standing still is not named until they move, turn or are
+hit — which is what the original does.
 
 A third thing is neither: **the stone tablet**, which is `tablet.ts` and `FUN_3000_9026` (exe
 3000:9026). The little snake's four-line messages — the greeting on reaching the town and the
@@ -367,7 +377,6 @@ Nothing the game does reads it.
 | `monsters` | every monster standing on the floor, for the map |
 | `box` | the message box: its eight lines and the bar above them |
 | `screen` | the screen the game has taken the display over with |
-| `banner` | `engagement_timing`'s lines about the monster being faced, which the box shows when nothing has been said |
 | `prompt` | the ladder or doorway box |
 | `seconds` | game time spent, which `call_check_eng` counts |
 | `engaged` | the monster being faced, with its level and hit points |

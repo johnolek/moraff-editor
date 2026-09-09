@@ -26,9 +26,16 @@ describe('killing the monster being fought', () => {
     await press(session, 0x1b);
     expect(game.pc.exp).toBe(before + worth);
     // A monk is refused every drop, so the kill draws its one line and asks for no key at all.
-    // The hit points line the battle banner was drawn with is still on the block underneath it:
-    // nothing wipes the block for a kill, and the screen the delay holds is the screen as it was.
-    expect(boxText(session)).toEqual(['IT HAS 50 HEALTH POINTS LEFT', 'YOU KILLED IT!']);
+    // The battle banner is still on the block underneath it: nothing wipes the block for a kill,
+    // and the screen the delay holds is the screen as it was.
+    expect(boxText(session)).toEqual([
+      'YOU ARE FIGHTING A LEVEL 1',
+      'GIANT GARBAGE CAN',
+      'EXP. VALUE: 24                  ',
+      'WHAT AN ANNOYING MONSTER...',
+      'IT HAS 50 HEALTH POINTS LEFT',
+      'YOU KILLED IT!',
+    ]);
     expect(session.box).toEqual([]);
     expect([monster.x, monster.y]).toEqual([GARBAGE_CAN, GARBAGE_CAN]);
     expect(session.view().engaged).toBeNull();

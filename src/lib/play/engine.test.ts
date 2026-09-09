@@ -49,6 +49,22 @@ async function press(session: GameSession, key: number): Promise<void> {
 /** Let the loop run without pressing anything, for a turn that starts by itself. */
 const settle = () => new Promise((resolve) => setTimeout(resolve));
 
+/** What stands in the message box, which is where engagement_timing draws the battle banner. */
+const bannerText = (session: GameSession): string[] =>
+  session.view().box.map((line) => line.text);
+
+/**
+ * Two turnarounds, which leave the character facing the way they were and cost no time.
+ *
+ * movecontrol draws the four views again only where the redraw flag is up or the character is
+ * not where they were, and the battle banner goes up with them, so a monster planted in front of
+ * a character who has not moved is not named until they do something that redraws.
+ */
+async function turnAndBack(session: GameSession): Promise<void> {
+  await press(session, KEY.arrowDown);
+  await press(session, KEY.arrowDown);
+}
+
 const floorOf = (level: number, module = 0) => UNFORGIVEN_MAP.floor(level, module);
 
 /** The first square of a floor a test can be run on, by whatever it needs to be. */
@@ -147,9 +163,9 @@ describe('the moment after an action', () => {
     monster.x = start.x;
     monster.y = start.y - 1;
     session.game.monsterMap[monster.y * 80 + monster.x] = 0;
-    await press(session, KEY.escape);
+    await turnAndBack(session);
     expect(session.view().engaged?.slot).toBe(0);
-    expect(session.view().banner[0]).toContain('YOU ARE FIGHTING A LEVEL');
+    expect(bannerText(session)).toContainEqual(expect.stringContaining('YOU ARE FIGHTING A LEVEL'));
   });
 });
 
@@ -313,14 +329,15 @@ describe('the message box', () => {
     monster.x = start.x;
     monster.y = start.y - 1;
     game.monsterMap[monster.y * 80 + monster.x] = 0;
-    await press(session, KEY.escape);
-    expect(session.view().banner[0]).toContain('YOU ARE FIGHTING A LEVEL');
+    await turnAndBack(session);
+    expect(bannerText(session)).toContainEqual(expect.stringContaining('YOU ARE FIGHTING A LEVEL'));
     game.say('SAID WHILE IT WAS STANDING THERE');
     game.monsterMap[monster.y * 80 + monster.x] = 0xff;
     monster.x = 1;
     monster.y = 1;
     await press(session, KEY.escape);
     expect(session.box).toEqual([]);
+    expect(bannerText(session)).toEqual([]);
   });
 
   it('takes the box and the line above it off with the key its wait asks for', async () => {

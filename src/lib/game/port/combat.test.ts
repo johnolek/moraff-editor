@@ -22,7 +22,13 @@ import {
   strike,
 } from './combat';
 import { BorlandRng } from './rng';
-import { MENU_X, MESSAGE_LINE_Y } from './screens';
+import {
+  BATTLE_BANNER_Y,
+  BATTLE_HP_Y,
+  BATTLE_TEXT_COLOUR,
+  MENU_X,
+  MESSAGE_LINE_Y,
+} from './screens';
 import type { Game, Monster, MonsterKind, PlayerCharacter } from './state';
 import { MAP_PLAYER, monsterAt, newGame, setMonsterMap } from './state';
 
@@ -777,17 +783,28 @@ describe('attackTiming', () => {
 });
 
 describe('the battle banner', () => {
-  it('prints the level, the name, the experience and the hit points', () => {
+  it('draws the level, the name, the experience and the hit points', () => {
     const { game } = fighting(41, { dir: 3, level: 5 }, { x: 41, y: 50, level: 40, hp: 1234 });
     engagementTiming(game);
     expect(game.battleInfoOn).toBe(true);
-    expect(game.messages).toEqual([
-      'YOU ARE FIGHTING A LEVEL 40',
-      'GARGALON',
-      'EXP. VALUE: ' + expValue(game, 0).toFixed(0).padEnd(20),
-      'THIS IS AN AVERAGE JOE (JILL)',
-      'IT HAS 1234 HEALTH POINTS LEFT',
-    ]);
+    // pfont is given the string, its place and a colour and nothing else: none of the five is
+    // spread out to the right edge the way a long menu line is.
+    expect(game.screen).toEqual(
+      [
+        ['YOU ARE FIGHTING A LEVEL 40', BATTLE_BANNER_Y[0]],
+        ['GARGALON', BATTLE_BANNER_Y[1]],
+        ['EXP. VALUE: ' + expValue(game, 0).toFixed(0).padEnd(20), BATTLE_BANNER_Y[2]],
+        ['THIS IS AN AVERAGE JOE (JILL)', BATTLE_BANNER_Y[3]],
+        ['IT HAS 1234 HEALTH POINTS LEFT', BATTLE_HP_Y],
+      ].map(([text, y]) => ({ text, x: MENU_X, y, font: 0, colour: BATTLE_TEXT_COLOUR })),
+    );
+  });
+
+  it('wipes the eight lines a box left on the block before it draws', () => {
+    const { game } = fighting(41, { dir: 3, level: 5 }, { x: 41, y: 50, level: 40 });
+    game.say('SOMETHING SAID EARLIER');
+    engagementTiming(game);
+    expect(game.menuBox).toEqual([]);
   });
 
   it.each([
@@ -798,7 +815,7 @@ describe('the battle banner', () => {
   ])('shortens the label to %s on floor %i', (floor, label) => {
     const { game } = fighting(41, { dir: 3, level: floor }, { x: 41, y: 50, level: 40 });
     engagementTiming(game);
-    expect(game.messages[2]).toBe(label + expValue(game, 0).toFixed(0).padEnd(20));
+    expect(game.screen[2].text).toBe(label + expValue(game, 0).toFixed(0).padEnd(20));
   });
 
   it('agrees with dotu-mech on what a kill is worth', () => {

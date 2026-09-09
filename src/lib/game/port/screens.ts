@@ -44,6 +44,18 @@ export const BLOW_Y = [0x3c9, 0x3f1];
 export const BATTLE_HP_Y = 0x379;
 
 /**
+ * Where the four lines engagement_timing (exe 2000:b782) draws go: the monster's level at
+ * 2000:b7c1, its name at 2000:b7f5, what killing it is worth at 2000:b89f and the line its type
+ * carries at 2000:b8e1. Each is a plain pfont call at {@link MENU_X} in the body font; none of
+ * them is spread out the way a long menu line is.
+ *
+ * The banner's fifth line is the hit points, which print_battle_hp_info draws at
+ * {@link BATTLE_HP_Y} — third down the screen rather than last. The gap that leaves, from 0x379
+ * to 0x441, is where strike (exe 2000:7e36) draws the blow at {@link BLOW_Y}.
+ */
+export const BATTLE_BANNER_Y = [0x329, 0x351, 0x441, 0x469];
+
+/**
  * How long a menu line has to be before the game spreads it out instead of printing it plainly.
  *
  * mset_gmenu measures the line and sends anything of 27 characters or more through FUN_4000_593f

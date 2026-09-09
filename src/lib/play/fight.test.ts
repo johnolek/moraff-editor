@@ -44,9 +44,8 @@ describe('swinging at a monster', () => {
   it('draws the blow in the gap the battle banner leaves, with the banner standing', async () => {
     const session = await facingAMonster(highest);
     const monster = session.game.monsters[0];
-    // The snake's arrival hint is standing in the box, and the banner only shows with the box
-    // empty; the wait behind that box is what takes it down in the game.
-    session.wipeMessageBlock();
+    // The banner was drawn over the snake's arrival hint when the views went up, since
+    // engagement_timing wipes the eight lines before it draws its own four.
     await press(session, KEY.fight);
     expect(boxPlaces(session)).toEqual([
       ['YOU ARE FIGHTING A LEVEL 1', MENU_X, 0x329],

@@ -1,7 +1,9 @@
 import {
+  BATTLE_BANNER_Y,
   BATTLE_HP_Y,
   BATTLE_TEXT_COLOUR,
   BLOW_Y,
+  clearMenuBlock,
   clearMessageLine,
   clearRect,
   MENU_X,
@@ -251,9 +253,9 @@ function puffball(game: Game, slot: number): number {
   monster.type = 0;
   monster.level = 0;
   game.redrawView = true;
-  // The original wipes the top of the block with FUN_2000_295b before it draws. The battle
-  // banner this port keeps is a list of strings rather than lines on the screen, so there is
-  // nothing on that rectangle for a wipe to take off.
+  // FUN_2000_295b (exe 2000:83e5): the first two lines of the battle banner, so the monster the
+  // puffball was is not still named beside the line saying it has gone.
+  clearRect(game, 0x398, 0x329, 0x640, 0x379);
   game.draw(messageLine(said, DRAIN_COLOUR));
   // Without the wait the line is gone before it is seen: the loop draws the banner again as soon
   // as the move is over, and the block the banner is printed down is wiped first.
@@ -666,8 +668,9 @@ export function printBattleHpInfo(game: Game): void {
  * The label in front of the experience gets shorter the deeper the floor is, because the number
  * behind it gets longer, and past floor 80 there is no room for a label at all.
  *
- * The four lines it prints itself go to the message box; the fifth is
- * {@link printBattleHpInfo}, which draws itself.
+ * It wipes the eight lines of the message block with FUN_2000_2820 and draws its four over
+ * them, so whatever box was standing there goes; the fifth line is {@link printBattleHpInfo},
+ * which wipes its own strip.
  *
  * The caller only reaches this with a monster in front of the player. The original would read
  * the six bytes in front of the monster table if there were not.
@@ -678,9 +681,10 @@ export function engagementTiming(game: Game): void {
   game.engagedAhead = checkEngagement(game);
   const monster = game.monsters[game.engagedAhead];
   const kind = game.monsterKinds[monster.type];
+  clearMenuBlock(game);
   // DS:1b13 with the level written on the end
-  game.say(`YOU ARE FIGHTING A LEVEL ${monster.level}`);
-  game.say(kind.name);
+  game.draw(battleLine(`YOU ARE FIGHTING A LEVEL ${monster.level}`, BATTLE_BANNER_Y[0]));
+  game.draw(battleLine(kind.name, BATTLE_BANNER_Y[1]));
   let label = ''; // DS:06f0
   if (pc.level <= 80) {
     if (pc.level <= 40) {
@@ -689,8 +693,9 @@ export function engagementTiming(game: Game): void {
     } else label = 'EX:'; // DS:1b2d
   }
   // DS:12fb is "%-20.0f", so the number is padded out to twenty columns with spaces
-  game.say(label + expValue(game, game.engagedAhead).toFixed(0).padEnd(20));
-  game.say(game.monsterStats[kind.type].text);
+  const worth = label + expValue(game, game.engagedAhead).toFixed(0).padEnd(20);
+  game.draw(battleLine(worth, BATTLE_BANNER_Y[2]));
+  game.draw(battleLine(game.monsterStats[kind.type].text, BATTLE_BANNER_Y[3]));
   printBattleHpInfo(game);
 }
 
