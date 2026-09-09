@@ -58,12 +58,6 @@ import { explainTrapdoor, goThroughTrapDoor, trapdoorUnder } from './trapdoor';
  * it dispatches on, the monsters' answer, and the step it resolves at the end.
  */
 
-/**
- * Not a key: what the loop's wait hands back when the save editor has written the record while
- * the game was waiting for one.
- */
-export const MW_RECORD_EDITED = RECORD_EDITED;
-
 /** Where the character record lives while it is being played. `write` is save_player (WORLD.EXE
  *  2000:58bf). */
 export interface MwCharacterFile extends CharacterFile {
@@ -558,7 +552,7 @@ export async function runMwMoveControl(session: MwGameSession): Promise<void> {
     const key = await session.keyOrEdit();
     // The square the pass was worked out from is the one the record has just replaced, so the
     // pass starts again rather than answering a key with what the character used to be.
-    if (key === MW_RECORD_EDITED) continue;
+    if (key === RECORD_EDITED) continue;
     session.clearBox();
     // The strip above the box goes with it. A kill's own messages are never wiped by the game —
     // the fill_rect after each covers the box rather than the strip — so one would otherwise

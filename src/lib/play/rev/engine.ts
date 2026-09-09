@@ -80,9 +80,6 @@ import { REV_NOT_BUILT, revClearScreen, revDrawTheDungeonAgain, revSayGoodbye } 
  * without any clock at all.
  */
 
-/** Not a key: the loop's wait hands this back when the save editor has written the record. */
-export const REV_RECORD_EDITED = RECORD_EDITED;
-
 /** Not a key: one tick of the monsters' clock, which the log keeps where it happened. */
 export const REV_CLOCK_TICK = -0x202;
 
@@ -351,7 +348,7 @@ export class RevGameSession extends KeyedSession<RevPc> {
         for (;;) {
           if (this.monsterHere() > 0 && this.game.fight === null) return null;
           const key = await this.poll();
-          if (key !== REV_CLOCK_TICK && key !== REV_RECORD_EDITED) return key;
+          if (key !== REV_CLOCK_TICK && key !== RECORD_EDITED) return key;
         }
       },
       wait: async () => {
@@ -631,7 +628,7 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
       revWearOffPotions(game);
     }
     const key = await session.poll();
-    if (key === REV_RECORD_EDITED || key === REV_CLOCK_TICK) continue;
+    if (key === RECORD_EDITED || key === REV_CLOCK_TICK) continue;
     // The words the last key printed come down when the next one arrives, which is what the
     // redraw at 1000:3029 does to them.
     game.said = [];

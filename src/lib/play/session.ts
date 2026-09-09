@@ -1,3 +1,4 @@
+import type { PlayLoopSession } from './loop';
 import type { PlayMode } from './mode';
 import { DEFAULT_PLAY_MODE } from './mode';
 import type { RunRecorder } from './run';
@@ -63,7 +64,7 @@ export interface KeyHandler<Turn> {
  * `Record` is the character as the game holds it, which is what {@link readRecord} makes of a
  * record's bytes.
  */
-export abstract class KeyedSession<Record> {
+export abstract class KeyedSession<Record> implements PlayLoopSession {
   /** The loop has come back: the character has quit or died. */
   over = false;
   /** Why the play loop stopped, when it stopped because it threw (`loop.ts`), or null. */
@@ -127,12 +128,18 @@ export abstract class KeyedSession<Record> {
     if (this.queued.length < KEY_QUEUE) this.queued.push(key);
   }
 
-  /** Whatever was typed and not read yet is thrown away rather than answering the next turn. */
+  /**
+   * The `while (kbhit()) getch();` each game strikes its keyboard with — exe 2000:7f2b in
+   * Dungeons of the Unforgiven, flush_keys at WORLD.EXE 4000:3532, and the eighteen `INKEY$`
+   * reads at DUNSMALL.EXE 1000:2FCB — which is this queue here: whatever was typed while the
+   * game was busy is thrown away rather than answering the next turn.
+   */
   flushKeys(): void {
     this.queued = [];
   }
 
-  /** getch: the next key, once there is one. */
+  /** getch (exe 4000:417b, WORLD.EXE 1000:28b4, DUNSMALL.EXE 1000:2F71): the next key, once
+   *  there is one. */
   key(): Promise<number> {
     const queued = this.queued.shift();
     if (queued !== undefined) {
@@ -149,8 +156,9 @@ export abstract class KeyedSession<Record> {
   }
 
   /**
-   * The key the loop waits for at the top of a pass, or {@link RECORD_EDITED} when the save
-   * editor writes the record while it waits.
+   * The key the loop waits for at the top of a pass — exe 2000:c82d, movecontrol's own read in
+   * Moraff's World, and the `INKEY$` poll at DUNSMALL.EXE 1000:087F — or {@link RECORD_EDITED}
+   * when the save editor writes the record while it waits.
    *
    * Nothing of the game's own is running while the loop waits here, which is what makes it the
    * one place a record written outside the game is safe to take.
