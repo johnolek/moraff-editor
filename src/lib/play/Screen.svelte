@@ -11,6 +11,7 @@
   import { facingArrowCells } from '../map/you';
   import { debugMonsterLines } from './debug-screen';
   import { dotuMonsterThumbnail } from './monster-thumbnails';
+  import { onScreen } from '../ui/on-screen.svelte';
   import { inRect } from './screens';
   import { zoomMapMonsterAt } from './zoom-monsters';
   import type { KilledOnScreen } from './engine';
@@ -119,6 +120,9 @@
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
+  /** Whether the tab the screen is on is the one showing, since the tabs all stay mounted and
+   *  neither the arrow's timer nor the two animations below is worth running behind one. */
+  const visible = onScreen(() => canvas);
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
   const paintFrame = framePainter(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
   let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
@@ -427,10 +431,11 @@
       if (timer !== null) clearInterval(timer);
       timer = null;
     };
+    const showing = visible.showing;
     // A tab nobody is looking at is not worth a timer, and a browser throttles one anyway.
     const follow = (): void => {
       stop();
-      if (document.hidden) return;
+      if (document.hidden || !showing) return;
       timer = setInterval(() => {
         lit = 1 - lit;
         draw();
@@ -459,7 +464,7 @@
     const holding = painted;
     const running = fade;
     const target = canvas;
-    if (!holding || !target || running === null) return;
+    if (!holding || !target || running === null || !visible.showing) return;
     const context = target.getContext('2d');
     if (!context) return;
     const started = performance.now();
@@ -484,7 +489,7 @@
   $effect(() => {
     const holding = painted;
     const target = canvas;
-    if (!holding || !target || plaque !== 'showing') return;
+    if (!holding || !target || plaque !== 'showing' || !visible.showing) return;
     const context = target.getContext('2d');
     if (!context) return;
     let steps = 0;
