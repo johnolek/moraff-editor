@@ -20,7 +20,8 @@
  *
  * - `stepped` — a step the square ahead allowed, which moved the character.
  * - `waited` — a moment spent standing still.
- * - `dug` — a hole dug through the floor.
+ * - `dug` — a hole dug through the floor, the six moments spent on a dig a monster interrupted,
+ *   or the move elsewhere on the floor the game makes for a Fighter too deep to dig.
  * - `trapdoorTaken` — a trap door opened with its key and dropped through.
  * - `ladderTaken` — a ladder climbed, and Dungeons of the Unforgiven's module teleporter.
  * - `buildingEntered` — one of the town's buildings opened.
@@ -51,14 +52,71 @@ export const ACTION_KINDS = [
 export type ActionKind = (typeof ACTION_KINDS)[number];
 
 /**
+ * Where a spell was cast from, in the two games that ask. Only `spellPoints` — the character's
+ * own head — spends spell points; the other three spend the scroll, the wand's charge or the
+ * sheet of paper.
+ */
+export type CastSource = 'spellPoints' | 'scroll' | 'wand' | 'paper';
+
+/**
+ * Which spell a cast was, named and numbered the way its own game names and numbers it.
+ *
+ * Dungeons of the Unforgiven and Moraff's World both hold 120 spells in four lists of ten lines
+ * of three, so a cast there is three numbers and one of four places it was cast from. Moraff's
+ * Revenge holds two sets of twelve, one for the dungeon and one for a fight, and a cast there is
+ * a single number out of the set its prompt offers.
+ */
+export type CastSpell =
+  | {
+      game: 'unforgiven';
+      /** 0 permanent, 1 preparation, 2 wizard battle, 3 priest battle. */
+      type: number;
+      /** 0 to 9, one less than the level the menu prints. */
+      level: number;
+      /** 0 to 2, the spell's place on its line of three. */
+      slot: number;
+      source: CastSource;
+      /** The name the game's own spell menu prints. */
+      name: string;
+    }
+  | {
+      game: 'moraffsWorld';
+      /** 0 permanent, 1 preparation, 2 wizard, 3 priestly. */
+      category: number;
+      /** 0 to 9, one less than the level the menu prints. */
+      levelIndex: number;
+      /** 0 to 2, the spell's place on its line of three. */
+      slot: number;
+      source: CastSource;
+      /** The name the game's own spell grid prints. */
+      name: string;
+    }
+  | {
+      game: 'revenge';
+      /** The dungeon's own twelve spells, or the fight prompt's twelve. */
+      set: 'prep' | 'battle';
+      /** 1 to 6. */
+      level: number;
+      /** 1 to 12: which spell of the set the level and the menu's answer reach. */
+      number: number;
+      /** The name the menu offers, out of the game's own `F1.COM` table. */
+      name: string;
+    };
+
+/** A spell cast, which is also how a scroll or a wand is written. */
+export interface CastEvent {
+  kind: 'cast';
+  spell: CastSpell;
+}
+
+/**
  * One action, as a game's ported functions push it.
  *
- * It carries its kind and nothing else for now; MORF-361 is what gives each of them the damage,
- * the names and the counts a run journal reads out in words.
+ * A cast says which spell it was; every other kind carries its own kind and nothing else, and
+ * MORF-361 is what gives those the damage, the names and the counts a run journal reads out in
+ * words.
  */
-export interface ActionEvent {
-  kind: ActionKind;
-}
+export type ActionEvent = { kind: Exclude<ActionKind, 'cast'> } | CastEvent;
 
 const KINDS: ReadonlySet<string> = new Set<string>(ACTION_KINDS);
 

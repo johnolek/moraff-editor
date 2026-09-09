@@ -1,5 +1,12 @@
 import data from '../mw-data.json';
-import { MW_BOOK_SLOTS_PER_CATEGORY, MW_PRIESTLY_CLASSES, MW_WIZARD_CLASSES } from './spells';
+import type { CastSource } from '../action';
+import {
+  MW_BOOK_SLOTS_PER_CATEGORY,
+  MW_PRIESTLY_CLASSES,
+  MW_SPELL_NAMES,
+  MW_WIZARD_CLASSES,
+  mwSpellRecord,
+} from './spells';
 import type { MwGame } from './state';
 import { MW_SQUARE_EMPTY, MW_SQUARE_PLAYER, mwOccupantAt, mwSetOccupant } from './state';
 
@@ -1404,6 +1411,14 @@ export const MW_FROM_SCROLL = 2;
 export const MW_FROM_WAND = 3;
 export const MW_FROM_PAPER = 4;
 
+/** Which of the four places a spell was cast from, as the run's own record of a cast names it. */
+function mwCastSource(source: number): CastSource {
+  if (source === MW_FROM_SCROLL) return 'scroll';
+  if (source === MW_FROM_WAND) return 'wand';
+  if (source === MW_FROM_PAPER) return 'paper';
+  return 'spellPoints';
+}
+
 /**
  * The game time spell_screen hands its caller for a spell that worked: ten for a battle spell,
  * a hundred for a preparation spell, and 36,096 for a permanent one.
@@ -1521,7 +1536,17 @@ export function castSpell(
     return 0;
   }
   if (!spellEffect(game, category, levelIndex, slot)) return 0;
-  game.events.push({ kind: 'cast' });
+  game.events.push({
+    kind: 'cast',
+    spell: {
+      game: 'moraffsWorld',
+      category,
+      levelIndex,
+      slot,
+      source: mwCastSource(source),
+      name: MW_SPELL_NAMES[mwSpellRecord(category, levelIndex + 1, slot)],
+    },
+  });
   if (source === MW_FROM_SPELLBOOK) pc.sp -= cost;
   else heldIn(game, source)[category * MW_BOOK_SLOTS_PER_CATEGORY + levelIndex * 3 + slot] -= 1;
   // A spell that moved the character to another floor stops here, so a permanent spell cast in

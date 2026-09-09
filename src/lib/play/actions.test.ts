@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isActionKind } from '../game/action';
+import { isActionKind, type CastEvent } from '../game/action';
 import { bundledDungeon } from '../game/dungeon';
 import { spellIndex } from '../game/port/inventory';
 import { BorlandRng, type Rng } from '../game/port/rng';
@@ -25,6 +25,11 @@ const lowest: Rng = { random: () => 0 };
  *  hints, the floors loaded — is not something a run counts. */
 function actionsPushed(game: Game): string[] {
   return game.events.filter((event) => isActionKind(event.kind)).map((event) => event.kind);
+}
+
+/** The spell each cast on the list was of. */
+function spellsCast(game: Game): CastEvent['spell'][] {
+  return game.events.filter((event): event is CastEvent => event.kind === 'cast').map((event) => event.spell);
 }
 
 /** The first square of a floor a test can be run on, by whatever it needs to be. */
@@ -184,6 +189,16 @@ describe('the spell', () => {
     await press(session, SPELL_C);
     expect(session.game.pc.protection).toBe(1);
     expect(actionsPushed(session.game)).toEqual(['cast']);
+  });
+
+  it('names the spell that was cast, and where it was cast from', async () => {
+    const session = wizardInTheTown();
+    await press(session, KEY.cast);
+    await press(session, 0x33);
+    await press(session, SPELL_C);
+    expect(spellsCast(session.game)).toEqual([
+      { game: 'unforgiven', type: 2, level: 0, slot: 2, source: 'spellPoints', name: 'MINOR PROTECTION' },
+    ]);
   });
 
   it('counts nothing for the spell table opened and left', async () => {

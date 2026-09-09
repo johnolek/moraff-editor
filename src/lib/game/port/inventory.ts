@@ -1,4 +1,5 @@
 import spellsHelp from '../uspells.hlp?raw';
+import type { CastSource } from '../action';
 import { giveHint } from './hints';
 import { spellEffect } from './magic';
 import {
@@ -127,6 +128,14 @@ export function spellsOwned(pc: PlayerCharacter, source: number): number[] {
 /** Where a spell sits in one of those 180-long arrays. */
 export function spellIndex(type: number, level: number, slot: number): number {
   return type * 45 + level * 3 + slot;
+}
+
+/** Which of the four places a spell was cast from, as the run's own record of a cast names it. */
+function castSource(source: number): CastSource {
+  if (source === CAST_SCROLL) return 'scroll';
+  if (source === CAST_WAND) return 'wand';
+  if (source === CAST_PAPER) return 'paper';
+  return 'spellPoints';
 }
 
 /**
@@ -462,7 +471,17 @@ export function castSpell(
     return { seconds: 0, battleSpellsShown };
   }
   if (!spellEffect(game, type, level, slot)) return { seconds: 0, battleSpellsShown };
-  game.events.push({ kind: 'cast' });
+  game.events.push({
+    kind: 'cast',
+    spell: {
+      game: 'unforgiven',
+      type,
+      level,
+      slot,
+      source: castSource(source),
+      name: SPELL_MENU_NAMES[type][level * 3 + slot],
+    },
+  });
   const shown = viewBattleSpells(game, battleSpellsShown);
   if (source === CAST_SPELLBOOK) pc.sp -= spellCost(level);
   else spellsOwned(pc, source)[spellIndex(type, level, slot)] -= 1;

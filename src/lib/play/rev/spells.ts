@@ -1,3 +1,4 @@
+import type { CastSpell } from '../../game/action';
 import { LEVELS } from '../../game/revmap.js';
 import type { RevMagicDesk } from './desk';
 import { REV_FOUR_SECONDS, REV_TWO_SECONDS } from './held';
@@ -125,6 +126,11 @@ function revSpellArm(game: RevGame, level: number, choice: number): number {
   return arm;
 }
 
+/** Which spell the menu's answer named, for the run's own record of the cast. */
+function revCastSpell(set: RevSpellSet, level: number, choice: number, arm: number): CastSpell {
+  return { game: 'revenge', set, level, number: arm, name: revSpellsAt(level, set)[choice - 1].name };
+}
+
 /**
  * 1000:35AC: the C key in the dungeon.
  *
@@ -137,8 +143,9 @@ export async function revCastInTheDungeon(game: RevGame, desk: RevMagicDesk): Pr
   if (level === null) return;
   const choice = await revSpellMenu(game, desk, level, 'prep');
   if (choice === NO_SPELL) return;
-  game.events.push({ kind: 'cast' });
-  await REV_PREP_SPELLS[revSpellArm(game, level, choice) - 1].cast(game, desk, level);
+  const arm = revSpellArm(game, level, choice);
+  game.events.push({ kind: 'cast', spell: revCastSpell('prep', level, choice, arm) });
+  await REV_PREP_SPELLS[arm - 1].cast(game, desk, level);
 }
 
 /** The level prompt both routines open with, or null where they turn round. */
@@ -662,6 +669,7 @@ export async function revCastInAFight(game: RevGame, desk: RevMagicDesk): Promis
   }
   const choice = await revSpellMenu(game, desk, level, 'battle');
   if (choice === NO_SPELL) return;
-  game.events.push({ kind: 'cast' });
-  await REV_BATTLE_SPELLS[revSpellArm(game, level, choice) - 1].cast(game, desk, level);
+  const arm = revSpellArm(game, level, choice);
+  game.events.push({ kind: 'cast', spell: revCastSpell('battle', level, choice, arm) });
+  await REV_BATTLE_SPELLS[arm - 1].cast(game, desk, level);
 }

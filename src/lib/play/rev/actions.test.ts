@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isActionKind } from '../../game/action';
+import { isActionKind, type CastEvent } from '../../game/action';
 import { SeededRng } from '../../game/port/rng';
 import { COLUMNS, ROWS, blocked, townBuilding } from '../../game/revmap.js';
 import { RevGameSession, runRevDungeon, startRevGame } from './engine';
@@ -17,6 +17,11 @@ import type { RevGame } from './state';
 /** The actions the game has pushed, oldest first. */
 function actionsPushed(game: RevGame): string[] {
   return game.events.filter((event) => isActionKind(event.kind)).map((event) => event.kind);
+}
+
+/** The spell each cast on the list was of. */
+function spellsCast(game: RevGame): CastEvent['spell'][] {
+  return game.events.filter((event): event is CastEvent => event.kind === 'cast').map((event) => event.spell);
 }
 
 /** Let the loop take what it has been given and come back to waiting. */
@@ -88,6 +93,9 @@ const COLUMN = 23;
 const ROW = 24;
 const LEVEL = 25;
 const SWORD = 142;
+const SPELL_POINTS = 22;
+/** Which of the two dungeon spells of level 1 the character was taught, as a bitfield. */
+const PREP_LEVEL_1 = 118;
 const FIRST_PILL = 162;
 const FIRST_WAND = 168;
 
@@ -184,6 +192,27 @@ describe('the fight prompt', () => {
     const session = await beside();
     await press(session, REV_KEY.mace);
     expect(session.view().box.join(' ')).toContain('YOU DO NOT HAVE THAT');
+    expect(actionsPushed(session.game)).toEqual([]);
+    session.finish();
+  });
+});
+
+describe('the spell menu', () => {
+  it('counts the spell the menu picked and names it', async () => {
+    const session = await playing({ [SPELL_POINTS]: 5, [PREP_LEVEL_1]: 1 });
+    await press(session, REV_KEY.cast);
+    await press(session, ONE);
+    await press(session, ONE);
+    expect(actionsPushed(session.game)).toEqual(['cast']);
+    expect(spellsCast(session.game)).toEqual([{ game: 'revenge', set: 'prep', level: 1, number: 1, name: 'CURE' }]);
+    session.finish();
+  });
+
+  it('counts nothing for a level the character cannot pay for', async () => {
+    const session = await playing({ [SPELL_POINTS]: 0, [PREP_LEVEL_1]: 1 });
+    await press(session, REV_KEY.cast);
+    await press(session, ONE);
+    expect(session.view().box.join(' ')).toContain('NOT ENOUGH SPELL POINTS');
     expect(actionsPushed(session.game)).toEqual([]);
     session.finish();
   });

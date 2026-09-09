@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isActionKind } from '../../game/action';
+import { isActionKind, type CastEvent } from '../../game/action';
 import { bundledMwDungeon } from '../../game/mw-dungeon';
 import { mwSpellBookSlot } from '../../game/mw-port/spells';
 import type { MwGame } from '../../game/mw-port/state';
@@ -22,6 +22,11 @@ const highest: Rng = { random: (n) => (n > 1 ? n - 1 : 0) };
  *  hints, the weight added up again — is not something a run counts. */
 function actionsPushed(game: MwGame): string[] {
   return game.events.filter((event) => isActionKind(event.kind)).map((event) => event.kind);
+}
+
+/** The spell each cast on the list was of. */
+function spellsCast(game: MwGame): CastEvent['spell'][] {
+  return game.events.filter((event): event is CastEvent => event.kind === 'cast').map((event) => event.spell);
 }
 
 /** A square of the town with nothing on it, so a key is the only thing happening. */
@@ -182,6 +187,16 @@ describe('the spell screen', () => {
     await pressMw(session, SPELL_B);
     expect(session.game.pc.protectionLevel).toBe(1);
     expect(actionsPushed(session.game)).toEqual(['cast']);
+  });
+
+  it('names the spell that was cast, and where it was cast from', async () => {
+    const session = priestInTheTown();
+    await pressMw(session, MW_KEY.cast);
+    await pressMw(session, 0x34);
+    await pressMw(session, SPELL_B);
+    expect(spellsCast(session.game)).toEqual([
+      { game: 'moraffsWorld', category: 3, levelIndex: 0, slot: 1, source: 'spellPoints', name: 'MINOR PROTECTION' },
+    ]);
   });
 
   it('counts nothing for the grid opened and left', async () => {
