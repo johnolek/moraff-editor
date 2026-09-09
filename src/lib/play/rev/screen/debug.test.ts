@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { SeededRng } from '../../../game/port/rng';
 import { newRevGame, type RevGame } from '../state';
-import { revMeetMonster, revSwingTarget } from '../fight';
+import { revLowestSwing, revMeetMonster, revSwingTarget } from '../fight';
 import type { RevPc } from '../record';
-import { drawRevDebug, revDebugLines, REV_DEBUG_ROW } from './debug';
+import { drawRevDebug, revDebugLines, REV_CANNOT_MISS, REV_DEBUG_ROW } from './debug';
 import { newFrame } from '../../view3d/frame';
 import { CELL } from './font';
 import { TEXT } from './colours';
@@ -35,8 +35,8 @@ function character(fields: Partial<RevPc> = {}): RevPc {
   };
 }
 
-function fighting(): RevGame {
-  const game = newRevGame(character(), new SeededRng(3));
+function fighting(fields: Partial<RevPc> = {}): RevGame {
+  const game = newRevGame(character(fields), new SeededRng(3));
   game.monsters.stock(1, new SeededRng(1));
   game.fight = revMeetMonster(game, 3);
   return game;
@@ -49,8 +49,18 @@ describe('what debug mode adds to a fight', () => {
   });
 
   it('prints the number a swing has to beat', () => {
-    const game = fighting();
+    // A weakling: the least a swing of theirs can roll is 1, which the monster in front of them
+    // beats.
+    const game = fighting({ stats: [1, 10, 10, 15, 12, 14] });
+    expect(revSwingTarget(game)).toBeGreaterThanOrEqual(revLowestSwing(game.pc));
     expect(revDebugLines(game)).toEqual([`TO HIT:${revSwingTarget(game)}`]);
+  });
+
+  it('says a swing cannot miss once the number is under the least one can roll', () => {
+    // Twenty strength puts fourteen on every throw of the die, and the die itself is at least 1.
+    const game = fighting();
+    expect(revLowestSwing(game.pc)).toBe(15);
+    expect(revDebugLines(game)).toEqual([`TO HIT:${revSwingTarget(game)}${REV_CANNOT_MISS}`]);
   });
 
   it('prints it under the four rows the game says things on', () => {

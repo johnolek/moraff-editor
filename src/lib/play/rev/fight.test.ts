@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { SeededRng, type Rng } from '../../game/port/rng';
 import { HIT_POINTS_PER_LEVEL, monsterLevelOf } from '../../rev-bestiary/monsters';
 import {
+  revLowestSwing,
   revMeetMonster,
   revMonsterAnswers,
   revOwnsWeapon,
@@ -251,5 +252,18 @@ describe('the number a swing has to beat', () => {
     game.fight = revMeetMonster(game, 3);
     setRevValue(game.pc, REV_VALUE.swordPlus, 4);
     expect(revSwing(game, 'sword').target).toBe(revSwing(game, 'fists').target);
+  });
+
+  it('is beaten every time once it is under the least a swing can roll', () => {
+    // Strength 20 and level 3: fourteen and three on every throw of the die, and the die is at
+    // least 1.
+    const pc = character({ level: 3 });
+    expect(revLowestSwing(pc)).toBe(18);
+    for (let seed = 1; seed <= 200; seed++) {
+      const game = newRevGame(pc, new SeededRng(seed));
+      game.monsters.stock(1, new SeededRng(1));
+      game.fight = revMeetMonster(game, 3);
+      expect(revSwing(game, 'fists').roll).toBeGreaterThanOrEqual(revLowestSwing(pc));
+    }
   });
 });

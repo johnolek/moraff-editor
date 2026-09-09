@@ -190,6 +190,19 @@ export function revSwingTarget(game: RevGame): number | null {
 }
 
 /**
+ * 1000:89FD: the lowest an exploding d20 can come out at, which is what says whether a swing can
+ * miss at all.
+ *
+ * Every throw of the die adds seven tenths of strength and the character's level to the running
+ * total, and the die itself is at least 1, so no swing can roll under this. A weapon's plus goes
+ * on top (1000:8A5C and 1000:8A76) and can only help. The hit test at 1000:8B1B wants the roll
+ * over the number to beat, so a number under this one cannot be missed with anything.
+ */
+export function revLowestSwing(pc: RevPc): number {
+  return Math.trunc(0.7 * pc.stats[0]) + 1 + pc.level;
+}
+
+/**
  * 1000:89FD: the swing.
  *
  * The roll is an exploding d20 — a 20 rolls again and both are counted — with seven tenths of
