@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { EXPLORED_STRIDE, readBinFile } from '../../map/explored';
+import { EXPLORED_STRIDE, isRevExploredFile, readBinFile } from '../../map/explored';
+import { COLUMNS as REVENGE_COLUMNS, ROWS as REVENGE_ROWS } from '../../game/revmap.js';
 import { RevMapMemory, type RevMapStore } from './memory';
 
 /** A store that keeps the bytes in hand rather than in the browser. */
@@ -94,6 +95,18 @@ describe('the file beside the character', () => {
     const file = readBinFile('1.BIN', memory.bytes());
     expect([...file.floors[6].squares].sort((a, b) => a - b)).toEqual([0, 18 * EXPLORED_STRIDE + 19]);
     expect([...file.floors[5].squares]).toEqual([2 * EXPLORED_STRIDE + 6]);
+  });
+
+  it('writes a level a Scroll of Seeing mapped as a file the site reads back as a map', () => {
+    const memory = new RevMapMemory();
+    memory.markLevelSeen(4);
+    const bytes = memory.bytes();
+
+    // The save editor sorts a dropped file by this, so a map it says no to is taken for a record.
+    expect(isRevExploredFile('1.BIN', bytes)).toBe(true);
+    const file = readBinFile('1.BIN', bytes);
+    expect(file.floors[4].squares.size).toBe(REVENGE_COLUMNS * REVENGE_ROWS);
+    expect(file.floors[3].squares.size).toBe(0);
   });
 
   it('reads back the map it saved', () => {

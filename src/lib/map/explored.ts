@@ -309,14 +309,15 @@ export function isRevExploredFile(name: string, bytes: Uint8Array): boolean {
 }
 
 /** The array's values, or null when they are not the whole numbers a row of the map holds.
- *  Bit 20 is never set in a shipped file, which is what says the twenty columns run down from
- *  bit 19 rather than up from bit 0. */
+ *  The twenty columns run down from bit 19 rather than up from bit 0, and one bit above them is
+ *  allowed: the Scroll of Seeing assigns `2 ^ 21 - 1` into every row of the level it maps
+ *  (1000:1765), so a map saved after one has bit 20 set on those rows. */
 function binRows(data: Uint8Array): number[] | null {
   if (data.length < BIN_LEVEL_STRIDE * 4) return null;
   const rows: number[] = [];
   for (let at = 0; at + 4 <= data.length; at += 4) {
     const value = mbfSingle(data, at);
-    if (!Number.isInteger(value) || value < 0 || value >= 2 ** BIN_TOP_COLUMN_BIT) return null;
+    if (!Number.isInteger(value) || value < 0 || value >= 2 ** (BIN_TOP_COLUMN_BIT + 1)) return null;
     rows.push(value);
   }
   return rows;
