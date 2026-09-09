@@ -24,6 +24,9 @@ export interface RevTextRun {
   text: string;
   /** One of CGA's sixteen, which is what `COLOR` names in `SCREEN 0`. */
   colour: number;
+  /** What goes behind the glyph, which is `COLOR`'s second half: black everywhere but the race
+   *  the character roller's menu is sitting on. */
+  background?: number;
 }
 
 /**
@@ -47,14 +50,21 @@ export function revExpandTabs(text: string): string {
   return out;
 }
 
-/** The whole page: every run printed where it was `LOCATE`d, in the colour it was printed in. */
-export function drawRevTextScreen(runs: RevTextRun[]): Frame {
-  const screen = newFrame(TEXT_SCREEN_WIDTH, TEXT_SCREEN_HEIGHT);
+/**
+ * The whole page: every run printed where it was `LOCATE`d, in the colour it was printed in.
+ *
+ * `columns` is the `WIDTH` the screen is in. The help is eighty; CHCHAR.EXE's roller starts at
+ * eighty for its instructions and narrows to forty for the rest, and forty columns of the same
+ * font is 320 pixels rather than 640.
+ */
+export function drawRevTextScreen(runs: RevTextRun[], columns = TEXT_COLUMNS): Frame {
+  const screen = newFrame(columns * CELL, TEXT_SCREEN_HEIGHT);
   for (const run of runs) {
     for (let at = 0; at < run.text.length; at++) {
       const column = run.column + at;
-      if (column > TEXT_COLUMNS) break;
-      drawGlyph(screen, run.text.charCodeAt(at), (column - 1) * CELL, (run.row - 1) * CELL, run.colour);
+      if (column > columns) break;
+      const x = (column - 1) * CELL;
+      drawGlyph(screen, run.text.charCodeAt(at), x, (run.row - 1) * CELL, run.colour, run.background ?? 0);
     }
   }
   return screen;

@@ -42,13 +42,17 @@ export const REV_RACE_STATS: number[][] = [
 export const REV_TOWN_ROWS = [96, 240, 9180, 15872, 512, 512, 512, 512, 512, 1536, 1984, 64, 0, 0, 0, 0, 0, 0, 0, 0];
 
 /**
- * The number the game's `NAME` file holds, which CHCHAR reads at its offset 03B1.
+ * The answer to the question BEGIN.EXE asks, which it writes into the game's `NAME` file and
+ * CHCHAR reads back at its offset 03B1.
  *
- * Nothing but colour comes of it: zero prints every paragraph in white (CHCHAR 040C) and anything
- * else cycles through six colours (CHCHAR 044E), and the race menu highlights with `2 * n + 7`
- * (CHCHAR 0965). The disk this was read off holds 10.
+ * The question is "Color (Y or N)?", so the number is 1 or 0. Nothing but colour comes of it:
+ * zero prints every paragraph in white (CHCHAR 040C) and one cycles through the seven
+ * (CHCHAR 044E), the race menu is drawn in `2 * n + 7` (CHCHAR 0965), and the rolled numbers
+ * take a colour at random only when it is one (CHCHAR 0BAE). DUNSMALL.EXE reads the same number
+ * and tests it against 0 and then against 1 (1000:0116 and 1000:0166), so anything else would
+ * leave its own help pages with no colours set at all. This port is a colour monitor.
  */
-export const REV_COLOUR_SETTING: number = 10;
+export const REV_COLOUR_SETTING: number = 1;
 
 /**
  * The colour table the paragraphs cycle through, `C(J) = J + 9` (CHCHAR 044E), filled from J = 0,
@@ -230,7 +234,9 @@ function adviceScreen(game: RevGame): void {
 function raceMenu(game: RevGame): number {
   cls(game);
   game.width = 40;
-  colour(game, REV_COLOUR_SETTING === 0 ? 7 : 9);
+  // 0933: the prompt goes on before any COLOR of this screen's, so it keeps the white the
+  // instruction screens left standing. The 7 or 9 that 0956 works out here goes into a variable
+  // nothing ever reads.
   locate(game, 25, 1);
   printLine(game, 'HIT RETURN TO MAKE SELECTION');
   const pointing = game.race ?? 1;

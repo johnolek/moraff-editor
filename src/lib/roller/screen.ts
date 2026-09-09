@@ -1,5 +1,6 @@
 import mwPalettes from '../game/mw-palettes.json';
 import palettes from '../game/palettes.json';
+import { CGA_COLOURS } from '../play/rev/screen/colours';
 import type { ScreenLine } from '../game/port/state';
 
 /** One entry of the game's palette, whose three components are the 6 bits the VGA DAC takes. */
@@ -32,6 +33,15 @@ export const SCREEN_COLOURS: string[] = fixedColours(palettes.m1_s1_dungeon);
  * the other game has (20, 0, 0).
  */
 export const MW_SCREEN_COLOURS: string[] = fixedColours(mwPalettes.palettes[0]);
+
+/**
+ * Moraff's Revenge's sixteen, which are the card's rather than a palette of the game's.
+ *
+ * CHCHAR.EXE rolls its character on a text screen — `SCREEN 0` at its offset 0049 — and there a
+ * `COLOR` names one of CGA's own sixteen attributes. The other two games draw their rollers in a
+ * graphics mode and set a palette to go with it, so their sixteen are their own.
+ */
+export const REV_SCREEN_COLOURS: string[] = CGA_COLOURS;
 
 /**
  * How far apart pfont (exe 4000:0bb3) sets the characters of each of its three fonts, in the 1600

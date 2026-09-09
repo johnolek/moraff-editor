@@ -262,6 +262,45 @@ describe('the screens', () => {
     expect(menu.screen.find((line) => line.text === 'Human')?.background).toBe(0);
   });
 
+  it('takes the paragraphs through the seven colours in the order the table has them', () => {
+    let keys = 0;
+    const game = newRevGame({
+      rng: spread(1),
+      askRace: () => 1,
+      askKeep: () => 0,
+      askClass: () => 1,
+      askName: () => 'x',
+      pressAnyKey: () => {
+        keys += 1;
+        if (keys === 1) throw new Error('stop');
+      },
+    });
+    expect(() => rollChar(game)).toThrow('stop');
+    const first = ['These are the char', 'Strength:', 'Intelligence:', 'Wisdom:', 'Health:', 'Agility:', 'Laziness:'];
+    const colours = first.map((start) => game.screen.find((line) => line.text.trimStart().startsWith(start))?.colour);
+    expect(colours).toEqual([10, 11, 12, 13, 14, 15, 9]);
+  });
+
+  it('draws the race menu in blue and its prompt in the white the screen before left', () => {
+    const menu = newRevGame({
+      rng: spread(1),
+      race: 3,
+      askRace: () => {
+        throw new Error('menu drawn');
+      },
+      askKeep: () => 0,
+      askClass: () => 1,
+      askName: () => 'x',
+      pressAnyKey: () => {},
+    });
+    expect(() => rollChar(menu)).toThrow('menu drawn');
+    // CHCHAR 0965: COLOR 2 * NAME + 7, and NAME is the 1 that says the monitor is a colour one.
+    expect(menu.screen.find((line) => line.text === 'RACE:')).toMatchObject({ colour: 9, background: 0 });
+    expect(menu.screen.find((line) => line.text === 'Elf')).toMatchObject({ colour: 0, background: 9 });
+    expect(menu.screen.find((line) => line.text === 'Human')).toMatchObject({ colour: 9, background: 0 });
+    expect(menu.screen.find((line) => line.text === 'HIT RETURN TO MAKE SELECTION')?.colour).toBe(15);
+  });
+
   it('prints the roll from row three down', () => {
     const game = newRevGame({
       rng: new ScriptedRng([0, ...Array<number>(52).fill(0)]),

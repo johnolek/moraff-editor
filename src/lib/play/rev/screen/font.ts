@@ -53,13 +53,22 @@ export function glyphRows(code: number): Uint8Array {
  * One character at a pixel position, the cell painted opaque.
  *
  * `SCREEN 1` has no text plane, so a character's own pixels go down in `colour` and the rest of
- * the cell in colour 0 -- which is how the game rubs a line out by printing spaces over it.
+ * the cell in colour 0 -- which is how the game rubs a line out by printing spaces over it. The
+ * text screens the help and the character roller run on do have one, and there the second half
+ * of a `COLOR` is what goes behind the glyph.
  */
-export function drawGlyph(frame: Frame, code: number, x: number, y: number, colour: number): void {
+export function drawGlyph(
+  frame: Frame,
+  code: number,
+  x: number,
+  y: number,
+  colour: number,
+  background = 0,
+): void {
   const rows = glyphRows(code);
   for (let row = 0; row < CELL; row++) {
     for (let bit = 0; bit < CELL; bit++) {
-      plot(frame, x + bit, y + row, rows[row] & (0x80 >> bit) ? colour : 0);
+      plot(frame, x + bit, y + row, rows[row] & (0x80 >> bit) ? colour : background);
     }
   }
 }

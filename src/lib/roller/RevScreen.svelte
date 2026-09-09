@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { RevScreenLine } from '../game/rev-port/state';
-  import { SCREEN_COLOURS } from './screen';
+  import { REV_SCREEN_COLOURS } from './screen';
 
   interface Props {
     /** What CHCHAR.EXE has printed, in the order it printed it. */
@@ -82,7 +82,7 @@
   {#each rows as runs}
     <div class="row">
       {#each runs as run}
-        <span style:color={SCREEN_COLOURS[run.colour]} style:background={SCREEN_COLOURS[run.background]}>{run.text}</span>
+        <span style:color={REV_SCREEN_COLOURS[run.colour]} style:background={REV_SCREEN_COLOURS[run.background]}>{run.text}</span>
       {/each}
     </div>
   {/each}
