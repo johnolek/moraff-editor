@@ -33,11 +33,13 @@ tab, the map canvas, the screen renderer and the roster.
 * **`replay.ts`** — how a ported function that stops for a menu is run at all.
 * **`menus.ts`** — the menus `movecontrol` and the spells build themselves.
 * **`advice.ts`** — the little mouse: eight pieces of advice and fourteen lessons.
-* **`map.ts`** — the little map at the far left of the middle band. `draw_map_square` (exe
-  3000:a97d) is the same routine Dungeons of the Unforgiven draws its own corner map with, so the
-  drawing is `../zoom-map.ts` and this file is the row of the table this game fills in: where the
-  map sits, its eighteen by thirty-eight of ten-pixel cells, the maroon box, a building's colour,
-  and the cursor that stands where the other game points an arrow.
+* **`map.ts`** — the little map at the far left of the middle band, and the X key's map over the
+  whole screen. `draw_map_square` (exe 3000:a97d) is the same routine Dungeons of the Unforgiven
+  draws its own corner map with, so the drawing is `../zoom-map.ts` and this file is the row of
+  the table this game fills in: where the map sits, its eighteen by thirty-eight of ten-pixel
+  cells, the maroon box, a building's colour, and the cursor that stands where the other game
+  points an arrow. The expanded map is the same drawing at seven pixels a square over the floor's
+  own eighty by a hundred and ten, which both games' X keys share.
 * **`panel.ts`, `MwPanel.svelte`** — the numbers the game keeps and never prints, in the column
   beside the map, which `../mode.ts` shows in debug alone. **`MwPortrait.svelte`** — the picture of the monster in front of the character.
 * **`view3d/`** — the 3-D views and the screen they sit on; see below. **`MwScreen.svelte`**
@@ -201,10 +203,12 @@ Nothing. Every key movecontrol dispatches on is answered, and so is the gate on 
 which is the one place the game leaves the dungeon behind: it asks which dungeon to walk out
 into rather than drawing the overworld. `mwNotBuiltYet` in `screens.ts` has no callers left.
 
-The keys that are about the screen rather than the game — B the brick speed, O the sound, X the
-floor a third at a time, Z the 3-D view close up, and the three that step one colour of the
-background on — are answered in `display.ts` with a box each saying what the game would have
-done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
+X is a screen of its own: it clears the display, fills it with the whole floor at seven pixels a
+square and prints the way to the floor's quest boss beside it, which is the branch a screen wider
+than 320 pixels takes (`display.ts` and `map.ts`). The other keys that are about the screen rather
+than the game — B the brick speed, O the sound, Z the 3-D view close up, and the three that step
+one colour of the background on — are answered in `display.ts` with a box each saying what the
+game would have done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
 
 ## Where this leaves the original
 
@@ -217,6 +221,10 @@ done, the way `../misc.ts` answers the same keys for Dungeons of the Unforgiven.
   screen alone, so a kill's own messages are held for theirs by the Play tab's display timer
   (`../timed.ts`); the flashes while a hole is dug are kept as
   well, on the strip the original draws them on.
+* **The X key's map does not blink.** FUN_2000_7d00 (exe 2000:7d00) redraws the character's own
+  square in a new colour every time round the wait, and it takes the counter raw where the corner
+  map's FUN_2000_7c8a takes it modulo 16, so that square runs through the whole palette. The port
+  draws it once, in the corner map's own cursor colour.
 * **The map is drawn instead of the 3-D view.** What the four views would have shown is still
   worked out, since it is what the map remembers and what says which monsters can be seen
   (`../memory.ts`); in speedrun and in debug the whole floor and every monster on it are drawn
