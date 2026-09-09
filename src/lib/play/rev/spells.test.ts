@@ -82,6 +82,15 @@ describe('the scratch cell the spell menu answers through', () => {
     expect((await menu(pc, [KEY('7'), KEY('1')])).asking).toEqual([3, 7]);
   });
 
+  it('holds the arm of the ON GOTO the C key jumps to, as 1000:3676 does', async () => {
+    const pc = revCharacter();
+    knowsEverything(pc);
+    const { game, desk, keys } = revTestGame(pc);
+    keys.push(KEY('3'), KEY('1'));
+    await revCastInTheDungeon(game, desk);
+    expect(game.scratch).toBe(5);
+  });
+
   it('holds the third answer for Escape, for a spell not known and for a monster arriving', async () => {
     const known = revCharacter();
     knowsEverything(known);

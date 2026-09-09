@@ -112,6 +112,20 @@ export async function revSpellMenu(
 }
 
 /**
+ * 1000:3676 and 918E: which of the twelve a level and the menu's answer name.
+ *
+ * Both C keys work the arm of their `ON ... GOTO` out in the scratch cell, over the answer the
+ * menu left there. It is still standing when the monster answers the key, since eight of the
+ * twelve battle spells write nothing of their own over it, so it is the number their d20 starts
+ * from (`attack.ts`).
+ */
+function revSpellArm(game: RevGame, level: number, choice: number): number {
+  const arm = 2 * level + choice - 2;
+  game.scratch = arm;
+  return arm;
+}
+
+/**
  * 1000:35AC: the C key in the dungeon.
  *
  * The level has to be one the character has the spell points for, and the test is `level > 6 OR
@@ -123,7 +137,7 @@ export async function revCastInTheDungeon(game: RevGame, desk: RevMagicDesk): Pr
   if (level === null) return;
   const choice = await revSpellMenu(game, desk, level, 'prep');
   if (choice === NO_SPELL) return;
-  await REV_PREP_SPELLS[2 * level + choice - 2 - 1].cast(game, desk, level);
+  await REV_PREP_SPELLS[revSpellArm(game, level, choice) - 1].cast(game, desk, level);
 }
 
 /** The level prompt both routines open with, or null where they turn round. */
@@ -631,5 +645,5 @@ export async function revCastInAFight(game: RevGame, desk: RevMagicDesk): Promis
   }
   const choice = await revSpellMenu(game, desk, level, 'battle');
   if (choice === NO_SPELL) return;
-  await REV_BATTLE_SPELLS[2 * level + choice - 2 - 1].cast(game, desk, level);
+  await REV_BATTLE_SPELLS[revSpellArm(game, level, choice) - 1].cast(game, desk, level);
 }
