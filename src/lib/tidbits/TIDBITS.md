@@ -126,12 +126,17 @@ In the code: [strike](source:ts/combat.ts/strike), [defend](source:ts/combat.ts/
 
 ### The damage cap is a cliff, not a ceiling
 
-At the end of the monster's attack there is a line that looks like a cap on four times the floor
-number. What it actually writes is the floor number. A hit that comes to four times the floor
-gets through untouched; a hit one point bigger is cut all the way down to the floor number.
+Near the end of the monster's attack there is a line that looks like a cap on four times the
+floor number. What it actually writes is the floor number. A hit that comes to four times the
+floor gets through untouched; a hit one point bigger is cut all the way down to the floor number.
 
 On floor 90 that is the difference between taking 360 and taking 90. The biggest hits in the
 game are the ones you barely feel.
+
+It only applies while the floor is deeper than your character level. The line sits inside the
+block that adds the deep-floor rolls, so a character who has caught up with the floor is never
+near it, and it is not the last word either: after it come the cap of 3 on a level-0 character,
+the halving under level 3, and the breath weapon, which throws the number away and rolls its own.
 
 In the code: [defend](source:ts/combat.ts/defend) and
 [the monster hitting back](formula:defend).
@@ -258,9 +263,10 @@ Armor. Cast the deepest one you have and never a shallower one afterwards.
 
 The Shadow bosses' rewards write the same number, so the +101 the Great Shadow Ogeroth puts on a
 weapon is one permanent Enchant Weapon away from being +5 again. The preparation-list Enchant
-Weapon and Enchant Armor are safe. They keep their plus in a slot of their own, which is added on
-top of the item's when you swing or are hit and wiped when the spell wears off, and they never
-touch the item's own number.
+Weapon and Enchant Armor are safe. They keep their plus in a slot of their own, wiped when the
+spell wears off, and they never touch the item's own number. On a weapon that slot is added on top
+of the weapon's own plus when you swing. On armour it stands alone, because the sum that decides
+whether a monster hits you never reads the armour's own plus at all.
 
 In the code: [enchantWeaponPerm](source:ts/magic.ts/enchantWeaponPerm),
 [enchantArmorPerm](source:ts/magic.ts/enchantArmorPerm),
