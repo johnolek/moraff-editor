@@ -353,9 +353,11 @@ stepping back onto the floor you just left. A dead monster lands at byte 8100, w
 the square x 20, y 101. Every corpse on the floor piles onto that one square.
 
 The game kills whatever you are facing the moment its hit points drop below one, so a can with
-none dies before you swing. It pays 18 experience every time, on every floor, and still rolls the
-weapon, armour, money and "you find" drops, which scale with the floor rather than with the
-monster.
+none dies before you swing. It pays 18 experience every time, on every floor, and still rolls all
+seven drops. Two of them scale with the floor, the money and the "you find" item. The weapon and
+the armour do not scale with anything: the slot is emptied before the drops are rolled and both
+of those roll against the level of the monster in the slot, which is now zero, so every kill in
+the game rolls them at the odds of a level-0 monster.
 
 A puffball is the same thing without the fight: it does not hit, it moves one of your statistics
 up or down, and then it runs exactly this code on itself.
@@ -413,8 +415,11 @@ hovering; their feet are underneath the water.
 ### The Shadow bosses are holes in the shape of another monster
 
 Every Shadow boss shares its picture with the first regular monster of its section. Shadow
-Ogeroth is the Ogeroth, Shadow Vulture is the Vulture Of Death, Shadow Evil God is Zeus. The
-only thing that differs between the two records is the tint colour.
+Ogeroth is the Ogeroth, Shadow Vulture is the Vulture Of Death, Shadow Evil God is Zeus. What
+differs by the tint colour alone is the picture. The two records are not the same at all: every
+Shadow boss carries special 100, type 5 and an experience multiplier of 16 where the regular
+monster has its own, and several of them drop the regular's level drain, stat drain or breath
+weapon on the way.
 
 The boss's tint is exactly the value the picture drawer reads as "do not draw this pixel", so a
 Shadow boss is not a dark version of the monster. It is that monster with every tinted pixel
