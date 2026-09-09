@@ -64,6 +64,13 @@ const BEFORE_THE_FIND_MS = 750;
 const FIND_MS = 3000;
 
 /**
+ * The beat kill_monster settles for with the last of its boxes off the screen, before it tells a
+ * new character that they are hurt or have earned a level (exe 3000:bcf6). The high speed option
+ * skips it along with the two messages behind it.
+ */
+const KILL_SETTLE_MS = 500;
+
+/**
  * kill_monster (exe 3000:b12d, unf.c "kill_monster"): the menu a section boss's orb puts up, and
  * the row of the weapon or armor table it comes back with.
  *
@@ -356,7 +363,9 @@ export async function killMonster(game: Game): Promise<void> {
     }
   }
   game.engaged = -1;
-  if (game.highSpeed || pc.lev !== 0) return;
+  if (game.highSpeed) return;
+  game.delay(KILL_SETTLE_MS);
+  if (pc.lev !== 0) return;
   if (pc.hp + 15 < pc.maxHp) showHint(game, pc.cls === 0 ? 79 : 80);
   if (checkGainLevel(game)) showHint(game, 81);
 }

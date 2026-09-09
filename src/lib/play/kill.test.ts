@@ -184,7 +184,13 @@ describe('the skull the kill paints over the monster', () => {
     await press(session, LEAVE);
     expect(session.view().killed).toEqual({ dir, monsterId });
 
+    // The kill settles for half a second once its last box is gone, and the skull stands on the
+    // screen that settle is holding as surely as it stood on the boxes before it.
     await press(session, LEAVE);
+    expect(session.view().killed).toEqual({ dir, monsterId });
+
+    // A key gives the settle up, and the pass it starts is where the views are drawn again.
+    await press(session, KEY.escape);
     expect(session.view().killed).toBeNull();
   });
 

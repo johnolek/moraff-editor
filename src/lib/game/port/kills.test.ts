@@ -91,7 +91,7 @@ describe('killMonster', () => {
     const game = killing(always(0));
     await killMonster(game);
     expect(game.messages[0]).toBe('YOU KILLED IT!');
-    expect(delays).toEqual([1050]);
+    expect(delays).toEqual([1050, 500]);
     expect(game.screen).toEqual([]);
     expect(keysWaitedFor).toBe(0);
   });
@@ -154,6 +154,9 @@ describe('killMonster', () => {
     const game = killing(always(0), { lev: 1, exp: 1000000, hp: 50, maxHp: 100 });
     await killMonster(game);
     expect(game.messages).not.toContain('GOOD NEWS!');
+    // The settle is outside the test on the character's level, so it is taken either way; the
+    // high speed option is the one thing that drops it.
+    expect(delays).toEqual([1050, 500]);
   });
 
   it('finds nothing one time in three once the find rolls have landed', async () => {
@@ -166,7 +169,7 @@ describe('killMonster', () => {
     expect(game.messages).toContain('NOTHING! (HIT ANY KEY)');
     // "YOU KILLED IT!" and "YOU FIND..." are each wiped once their delay is up, so the line the
     // kill leaves behind is the one it waits on, and the one key it asks for is that line's.
-    expect(delays).toEqual([1050, 750, 3000]);
+    expect(delays).toEqual([1050, 750, 3000, 500]);
     expect(game.screen).toEqual([
       { text: 'NOTHING! (HIT ANY KEY)', x: 0x3a2, y: 0x301, font: 0, colour: 8 },
     ]);
