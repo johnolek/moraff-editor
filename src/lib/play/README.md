@@ -284,7 +284,10 @@ the pictures and the thin one is the line `manual.ts` prints.
 
 The X key is the other screen of its own. `misc.ts` fills the display with the floor's map and
 `display.ts` draws it, at seven pixels a square over the whole eighty by a hundred and ten, with
-`FUN_2000_bf91`'s way to the section boss beside it.
+`FUN_2000_bf91`'s way to the section boss beside it. The character's own square is refilled in a
+new colour on every poll of the keyboard (exe 2000:d2fe), so it walks the palette from entry 0 and
+round again; that is a little canvas of its own over `expandedMarkerRect`, beside the arrow's, at
+the crawl's pace.
 
 `screenTakenOver` is the rest of what was drawn, which is the help, the V screen,
 the monster manual, the pages behind the P key and the spell table, all of which draw across the

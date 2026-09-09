@@ -24,6 +24,7 @@
     drawExpandedMap,
     drawScreenFurniture,
     expandedMapWindow,
+    expandedMarkerRect,
     EXPANDED_CENTRE,
     FACING_ARROW_RECT,
     fillScreenBox,
@@ -40,6 +41,7 @@
     blankPlaque,
     cycleGradientBank,
     drawPlaque,
+    GRADIENT_STEP_MS,
     GRADIENT_STEPS_PER_SECOND,
     holdsGradientBank,
   } from './plaque';
@@ -144,6 +146,7 @@
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
   const painter = framePainter(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
   let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
+  let markerCanvas = $state.raw<HTMLCanvasElement | null>(null);
   /** The screen as it was last painted, for the palette crawl and the fades to work from, with
    *  whether anything on it is drawn out of the gradient bank the crawl turns. */
   let painted = $state.raw<{ frame: Frame; palette: Rgb[]; crawls: boolean } | null>(null);
@@ -200,6 +203,9 @@
       cleared === null &&
       !plaque,
   );
+
+  /** The character's own square on the X key's map, which the tab flickers a canvas over. */
+  const marker = $derived(expandedMarkerRect(place));
 
   /**
    * Whether the map the monsters are marked on is the one on the screen, which is what a click
@@ -455,10 +461,34 @@
   });
 
   /**
+   * A timer for one of the little canvases over the screen, which runs only while the Play tab is
+   * the one on the stage and the page is not hidden: a tab nobody is looking at is not worth one,
+   * and a browser throttles it anyway. The returned function is what the effect gives back.
+   */
+  function whileShowing(showing: boolean, ms: number, step: () => void): () => void {
+    let timer: ReturnType<typeof setInterval> | null = null;
+    const stop = (): void => {
+      if (timer !== null) clearInterval(timer);
+      timer = null;
+    };
+    const follow = (): void => {
+      stop();
+      if (document.hidden || !showing) return;
+      timer = setInterval(step, ms);
+    };
+    follow();
+    document.addEventListener('visibilitychange', follow);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', follow);
+    };
+  }
+
+  /**
    * The arrow on the little map flashing (`display.ts` for the period and the two colours).
    *
    * It is a canvas of its own over the arrow's own seven by seven pixels rather than a second
-   * whole-frame animation beside the plaque's: nothing else on the screen changes with it, and
+   * whole-frame animation beside the crawl's: nothing else on the screen changes with it, and
    * repainting a 1024 by 768 frame three times a second to turn seven pixels over is not worth
    * the work. Redrawing the arrow in colour 0 is what the game itself does, so a square with a
    * town building on it keeps its own colour around the dark half.
@@ -480,28 +510,40 @@
       context.fillStyle = colours[lit];
       for (const cell of cells) context.fillRect(cell.x, cell.y, 1, 1);
     };
-    let timer: ReturnType<typeof setInterval> | null = null;
-    const stop = (): void => {
-      if (timer !== null) clearInterval(timer);
-      timer = null;
-    };
-    const showing = visible.showing;
-    // A tab nobody is looking at is not worth a timer, and a browser throttles one anyway.
-    const follow = (): void => {
-      stop();
-      if (document.hidden || !showing) return;
-      timer = setInterval(() => {
-        lit = 1 - lit;
-        draw();
-      }, ARROW_FLASH_MS);
+    draw();
+    return whileShowing(visible.showing, ARROW_FLASH_MS, () => {
+      lit = 1 - lit;
+      draw();
+    });
+  });
+
+  /**
+   * The character's own square flickering on the X key's map.
+   *
+   * `movecontrol`'s X branch (exe 2000:d2fe) fills that square through `FUN_2000_a068` (exe
+   * 2000:a068) every time round the loop it waits for a key in, in the low byte of a counter it
+   * starts at zero and adds one to per poll, so the square walks the whole palette and round
+   * again — which is how a character is found on a floor with a lot of it revealed. It is a canvas
+   * of its own for the same reason the arrow's flash is, and it steps at the crawl's own pace,
+   * since both are the original counting passes of a busy loop.
+   */
+  $effect(() => {
+    const target = markerCanvas;
+    if (!target) return;
+    const context = target.getContext('2d');
+    if (!context) return;
+    const size = marker.size;
+    let step = 0;
+    const draw = (): void => {
+      const [r, g, b] = palette[step % 256] ?? [0, 0, 0];
+      context.fillStyle = `rgb(${r} ${g} ${b})`;
+      context.fillRect(0, 0, size, size);
     };
     draw();
-    follow();
-    document.addEventListener('visibilitychange', follow);
-    return () => {
-      stop();
-      document.removeEventListener('visibilitychange', follow);
-    };
+    return whileShowing(visible.showing, GRADIENT_STEP_MS, () => {
+      step += 1;
+      draw();
+    });
   });
 
   /**
@@ -594,6 +636,18 @@
       style:height="{(FACING_ARROW_RECT.size / SCREEN_PIXELS.height) * 100}%"
     ></canvas>
   {/if}
+  {#if expandedMap}
+    <canvas
+      class="marker"
+      bind:this={markerCanvas}
+      width={marker.size}
+      height={marker.size}
+      style:left="{(marker.x / SCREEN_PIXELS.width) * 100}%"
+      style:top="{(marker.y / SCREEN_PIXELS.height) * 100}%"
+      style:width="{(marker.size / SCREEN_PIXELS.width) * 100}%"
+      style:height="{(marker.size / SCREEN_PIXELS.height) * 100}%"
+    ></canvas>
+  {/if}
 </div>
 
 <style>
@@ -611,9 +665,11 @@
     width: 100%;
     height: 100%;
   }
-  /* The arrow on the little map: its corner and its size are the seven pixels it stands in, as
-     fractions of the same box the screen's own canvas fills. */
-  canvas.arrow {
+  /* The two little canvases over the screen: the arrow on the map in the corner, and the
+     character's own square on the map the X key fills the screen with. Each is placed by the
+     pixels it stands in, as fractions of the same box the screen's own canvas fills. */
+  canvas.arrow,
+  canvas.marker {
     position: absolute;
   }
 </style>
