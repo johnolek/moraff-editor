@@ -5,6 +5,12 @@ import mwPalettes from '../game/mw-palettes.json';
 import { sectionInfo } from '../game/sections';
 import { wallImages as moraffsWorldWallImages } from '../mw-bestiary/pictures';
 import { wallPictureFile } from '../game/port/pictures';
+import {
+  WALL_BASE as MORAFFS_WORLD_WALL_BASE,
+  WALL_GRADIENT as MORAFFS_WORLD_WALL_GRADIENT,
+  WALL_STONE,
+  WALL_TINT as MORAFFS_WORLD_WALL_TINT,
+} from '../play/mw/view3d/pictures';
 import { WALL_BASE, WALL_GRADIENT, WALL_TINT } from '../play/view3d/pictures';
 import { wallPixelIndex } from '../play/view3d/texture';
 
@@ -43,23 +49,9 @@ const UNFORGIVEN_WALL_IMAGE = 3;
 
 /**
  * The drawer reads the screen column for picture values 18 and 19, and the swatch is not on a
- * screen. It is one of the three wall materials, whose pixels are all below 16, so no pixel of
- * it ever asks.
+ * screen. Neither game's wall material has a pixel that high, so no pixel of a swatch ever asks.
  */
 const NO_COLUMN = 0;
-
-/**
- * WALL.PIC holds a door and a wall, and FUN_3000_31f3 (exe 3000:31f3, mw.c) draws the second on
- * every side that is not a door.
- */
-const MORAFFS_WORLD_WALL_IMAGE = 1;
-
-/**
- * A wall pixel is drawn in the floor's own wall colours: draw_wall_picture (exe 3000:04d3, mw.c
- * "draw_wall_picture") adds DGROUP 0x43a4, which is 16 and is never written, to every value
- * below 16, and set_palette fills entries 16 to 31 from one of eleven sets.
- */
-const MORAFFS_WORLD_WALL_BASE = 16;
 
 /** How many wall colour sets set_palette (exe 4000:10ee) rotates through. */
 const MORAFFS_WORLD_WALL_SETS = mwPalettes.palettes.length;
@@ -88,11 +80,16 @@ function moraffsWorldWallTexture(floor: number): WallTexture {
   const set = ((floor % MORAFFS_WORLD_WALL_SETS) + MORAFFS_WORLD_WALL_SETS) % MORAFFS_WORLD_WALL_SETS;
   return {
     file: 'wall.pic',
-    image: MORAFFS_WORLD_WALL_IMAGE,
+    image: WALL_STONE,
     caption: `Floor ${floor} walls, colour set ${set + 1} of ${MORAFFS_WORLD_WALL_SETS}`,
     key: `moraffsWorld:${set}`,
     palette: vgaToRgb(mwPalettes.palettes[set]),
-    pixelIndex: (value) => value + MORAFFS_WORLD_WALL_BASE,
+    pixelIndex: (value) =>
+      wallPixelIndex(value, NO_COLUMN, PIC_W, {
+        base: MORAFFS_WORLD_WALL_BASE,
+        tint: MORAFFS_WORLD_WALL_TINT,
+        gradient: MORAFFS_WORLD_WALL_GRADIENT,
+      }),
     images: moraffsWorldWallImages,
   };
 }
