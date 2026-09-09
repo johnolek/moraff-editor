@@ -5,6 +5,7 @@ import { newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
 import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
+import { settle } from './fight-sim';
 import { KEY } from './keys';
 
 /** What the fight, kill and item tests set a game up with. Nothing outside a test imports this. */
@@ -44,7 +45,7 @@ export async function press(session: GameSession, key: number): Promise<void> {
 }
 
 /** Let the loop run without pressing anything, for a turn that starts by itself. */
-export const settle = (): Promise<unknown> => new Promise((resolve) => setTimeout(resolve));
+export { settle };
 
 /** The first square of the town with a way out on `side` and nothing else on it: north for a
  *  character to walk or fight straight ahead, west for one fighting to their left. */

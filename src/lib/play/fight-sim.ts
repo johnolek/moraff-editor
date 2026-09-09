@@ -1,0 +1,281 @@
+import { levelDistribution } from '../bestiary/distribution';
+import type { Monster } from '../bestiary/monsters';
+import { rollHp } from '../bestiary/roll';
+import { savePlayer } from '../game/port/record';
+import type { Rng } from '../game/port/rng';
+import { MAP_EMPTY, MAP_PLAYER, setMonsterMap, type PlayerCharacter } from '../game/port/state';
+import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
+import { GameSession, runMoveControl, startGame, type CharacterFile } from './engine';
+import { monsterTypeOf } from './floor';
+import { KEY } from './keys';
+import { runPlayLoop } from './loop';
+
+/**
+ * The Fight tab: one monster, a copy of a character, and the game's own loop between them.
+ *
+ * Nothing here is a port of anything — the original has no such screen. It is the setup
+ * `src/lib/play/battle.test-support.ts` builds for the fight tests, made into something a player
+ * can fill in: the record is copied and edited, the monster is put down with the kind, level and
+ * hit points that were asked for, and `movecontrol` is then left to run the fight exactly as the
+ * Play tab does.
+ *
+ * Two things are deliberately not the Play tab's. The fight is set on a dungeon floor rather
+ * than in the town, because call_check_eng (exe 2000:a319) gives no monster its attacks while
+ * the character stands on floor 0, so a town fight is one-sided. And the session carries no
+ * `RunRecorder`, so nothing here is written down as a run.
+ */
+
+/** The monster slot the fight's own monster stands in, which is the slot a floor's Shadow boss
+ *  would have had. */
+const FIGHT_SLOT = 0;
+
+/** The way the character faces, which is the way the monster is put down. */
+const NORTH = 0;
+
+/** The monster the fight is against, as the setup form has it. */
+export interface FightMonster {
+  /** The catalogue id `src/lib/map/stocking.ts` knows the kind by. */
+  monsterId: string;
+  /** 0-based, the module whose floor the fight is set on. */
+  module: number;
+  /** A floor of that module the monster can really be stocked on, which is what decides the
+   *  section the game loads its monster table from. */
+  floor: number;
+  /** The level the monster is stored with. */
+  level: number;
+  hp: number;
+}
+
+/** Everything a fight is built out of. */
+export interface FightSetup {
+  /** The record the character was copied from. Only the fields the form does not show are read
+   *  out of it; nothing here ever writes it back to the roster. */
+  record: Uint8Array;
+  /** That record as the form has edited it, which is the character the fight is fought with. */
+  character: PlayerCharacter;
+  monster: FightMonster;
+}
+
+/** A group of the record's number fields, under the heading and the labels the Save Editor gives
+ *  them (`src/lib/editor/games.ts`). */
+export interface FightFieldGroup {
+  title: string;
+  fields: { key: FightFieldKey; label: string }[];
+}
+
+/** The fields of the character record the setup form edits, which are the ones that are plain
+ *  numbers; the weapon and the armor are picked from lists of their own. */
+export type FightFieldKey = {
+  [Key in keyof PlayerCharacter]: PlayerCharacter[Key] extends number ? Key : never;
+}[keyof PlayerCharacter];
+
+/**
+ * The numbers a fight reads, in the Save Editor's own groups and words.
+ *
+ * Everything `src/lib/game/port/combat.ts` reads off the character is here, less the timers the
+ * spells set — those are cast rather than typed — and less where the character is standing,
+ * which the fight decides for itself.
+ */
+export const FIGHT_FIELDS: FightFieldGroup[] = [
+  { title: 'Level & Experience', fields: [{ key: 'lev', label: 'Player Level' }] },
+  {
+    title: 'Vitals',
+    fields: [
+      { key: 'hp', label: 'Current HP' },
+      { key: 'maxHp', label: 'Maximum HP' },
+      { key: 'sp', label: 'Current SP' },
+      { key: 'maxSp', label: 'Maximum SP' },
+    ],
+  },
+  {
+    title: 'Stats',
+    fields: [
+      { key: 'str', label: 'Strength' },
+      { key: 'iq', label: 'Intelligence' },
+      { key: 'wis', label: 'Wisdom' },
+      { key: 'con', label: 'Constitution' },
+      { key: 'dex', label: 'Agility' },
+      { key: 'luck', label: 'Luck' },
+    ],
+  },
+  {
+    title: 'Rings & Worn Items',
+    fields: [
+      { key: 'gauntlet', label: 'Gauntlets' },
+      { key: 'protRing', label: 'Ring of Protection' },
+      { key: 'bodyArmor', label: 'Body Armor' },
+      { key: 'regenRings', label: 'Rings of Regeneration' },
+      { key: 'luckyCharms', label: 'Lucky Charms' },
+    ],
+  },
+  {
+    title: 'Special Items',
+    fields: [
+      { key: 'grenades', label: 'Nuclear Hand Grenades' },
+      { key: 'healingPotions', label: 'Potions of Healing' },
+    ],
+  },
+];
+
+/**
+ * The levels stock_level (exe 2000:671e) could store a monster with on a floor of this base
+ * level.
+ *
+ * The hit points are rolled from the floor's base level and the stored level is nudged away from
+ * it afterwards, so the two numbers need not agree (`src/lib/bestiary/roll.ts`). This is how far
+ * that nudge reaches, which is the same spread the Monsters tab charts.
+ */
+export function monsterLevelRange(baseLevel: number): { from: number; to: number } {
+  const levels = levelDistribution(baseLevel);
+  return { from: levels[0].level, to: levels[levels.length - 1].level };
+}
+
+/** The hit points stock_level rolls a monster of this kind on a floor of this base level. */
+export function rollFightHp(entry: Monster, baseLevel: number, rnd: () => number = Math.random): number {
+  return rollHp(entry, baseLevel, rnd);
+}
+
+/**
+ * The square the character stands on to fight, the monster standing on the square to the north.
+ *
+ * It has to be a square movecontrol does nothing of its own on: a ladder, a trap door or a chute
+ * under the character's feet all take the turn before a key can be pressed.
+ */
+export function fightSquare(floor: number, module: number): { x: number; y: number } {
+  const rows: MapSquare[][] = UNFORGIVEN_MAP.floor(floor, module);
+  for (let y = 2; y < 100; y++) {
+    for (let x = 1; x < 76; x++) {
+      const square = rows[y][x];
+      if (square.solid || square.n !== 3 || rows[y - 1][x].solid) continue;
+      if (square.ladder !== 0 || square.trapdoor !== -1 || square.chute !== 0) continue;
+      return { x, y };
+    }
+  }
+  throw new Error(`no square to fight on, floor ${floor} of module ${module + 1}`);
+}
+
+/**
+ * Set a fight up: the character standing alone on a floor of the module, facing the square the
+ * monster will be sent to, with `movecontrol` running.
+ *
+ * The monster comes afterwards rather than now, because cast_a_spell refuses a preparation spell
+ * while a monster is engaged (exe DS:206f) and `movecontrol` engages one on its first pass, so a
+ * monster put down here would be a monster no preparation spell could be cast against.
+ */
+export function startFight(setup: FightSetup, rng: Rng): GameSession {
+  const square = fightSquare(setup.monster.floor, setup.monster.module);
+  const character: PlayerCharacter = {
+    ...setup.character,
+    level: setup.monster.floor,
+    module: setup.monster.module,
+    dir: NORTH,
+    x: square.x,
+    y: square.y,
+  };
+  const session = startGame(fightFile(savePlayer(character, setup.record)), rng);
+  emptyTheFloor(session);
+  void runPlayLoop(session, runMoveControl(session));
+  return session;
+}
+
+/**
+ * Put the monster down on the square the character faces and let the loop take it up.
+ *
+ * `movecontrol` works out what it is fighting at the top of a pass, so a monster put down while
+ * the loop waits for a key is not met until the next key. The escape is that key: nothing is
+ * bound to it, so the pass it buys does nothing but run attack_timing (exe 2000:b8f7).
+ *
+ * @returns false when the character is facing rock, where no monster of the game's ever stands.
+ */
+export async function sendInTheMonster(session: GameSession, monster: FightMonster): Promise<boolean> {
+  const ahead = squareAhead(session);
+  if (ahead === null) return false;
+  plantTheMonster(session, monster, ahead);
+  session.press(KEY.escape);
+  await settle();
+  return true;
+}
+
+/** The square the character faces, or null when it is rock or off the edge of the floor. 0 is
+ *  north, 1 south, 2 west, 3 east, which is how `stepForward` (`move.ts`) reads the same byte. */
+function squareAhead(session: GameSession): { x: number; y: number } | null {
+  const pc = session.game.pc;
+  const x = pc.x + (pc.dir === 2 ? -1 : pc.dir === 3 ? 1 : 0);
+  const y = pc.y + (pc.dir === 0 ? -1 : pc.dir === 1 ? 1 : 0);
+  return session.rows[y]?.[x]?.solid === false ? { x, y } : null;
+}
+
+/**
+ * The character file a fight is played out of: a copy of the record, and nothing that reaches
+ * the roster.
+ *
+ * `write` keeps whatever the game saved for as long as the fight lasts, and `died` does nothing
+ * at all, so a character killed here is not marked dead the way one killed in the Play tab is
+ * (`characterDied` in `src/lib/character/current.ts`).
+ */
+function fightFile(bytes: Uint8Array<ArrayBuffer>): CharacterFile {
+  return {
+    bytes,
+    write(written) {
+      this.bytes = written;
+    },
+    died() {},
+  };
+}
+
+/**
+ * Take every monster off the floor.
+ *
+ * load_level_map has just stocked it with 145 of them and a fight wants one, so the rest go: an
+ * empty floor is the floor a character who had killed them all would be standing on, and nothing
+ * else walks into the fight.
+ */
+function emptyTheFloor(session: GameSession): void {
+  const game = session.game;
+  for (const slot of game.monsters) {
+    slot.x = 0;
+    slot.y = 0;
+    slot.hp = 0;
+    slot.type = 0;
+    slot.level = 1;
+  }
+  game.monsterMap.fill(MAP_EMPTY);
+  setMonsterMap(game, game.pc.x, game.pc.y, MAP_PLAYER);
+}
+
+/** The one monster the fight is against, with the kind, level and hit points the form asked
+ *  for, standing on the square the character faces. */
+function plantTheMonster(session: GameSession, monster: FightMonster, at: { x: number; y: number }): void {
+  const game = session.game;
+  const planted = game.monsters[FIGHT_SLOT];
+  planted.x = at.x;
+  planted.y = at.y;
+  planted.hp = monster.hp;
+  planted.level = monster.level;
+  planted.type = monsterTypeOf(monster.monsterId);
+  setMonsterMap(game, at.x, at.y, FIGHT_SLOT);
+}
+
+/** The monster the fight was set up against, as the game holds it. */
+export function fightMonster(session: GameSession) {
+  return session.game.monsters[FIGHT_SLOT];
+}
+
+/** How a fight stands. */
+export type FightOutcome = 'waiting' | 'fighting' | 'monsterDead' | 'characterDead';
+
+/**
+ * Whether either of the two is dead yet. A monster is dead the moment its hit points run out,
+ * which is where movecontrol kills it (`kill.ts`).
+ *
+ * @param sent whether the monster has been sent in, since an empty slot before that reads as a
+ *   monster with no hit points left.
+ */
+export function fightOutcome(session: GameSession, sent: boolean): FightOutcome {
+  if (session.dead) return 'characterDead';
+  if (!sent) return 'waiting';
+  return fightMonster(session).hp < 1 ? 'monsterDead' : 'fighting';
+}
+
+/** Let the loop get as far as it can with the keys it has been given. */
+export const settle = (): Promise<unknown> => new Promise((resolve) => setTimeout(resolve));
