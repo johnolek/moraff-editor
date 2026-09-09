@@ -21,7 +21,8 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 // --fight puts the fight's own lines up, --killed the screen a kill leaves (the dead monster's
 // picture with YOU KILLED IT!! and HIT RETURN printed across it) and --potions the three
-// banners a fight prints while the potions of speed, shielding and fire last.
+// banners a fight prints while the potions of speed, shielding and fire last. --death draws the
+// screen a death that has run out of raises leaves.
 //
 // The screen is written in TypeScript, so it is loaded through Vite's own module loader rather
 // than by adding a runner to the project.
@@ -38,6 +39,8 @@ const { YOU_KILLED_IT } = await load('play/rev/kill.ts');
 const { REV_HIT_RETURN } = await load('play/rev/treasure.ts');
 const { revPotionBanners } = await load('play/rev/items.ts');
 const { REV_MAGIC } = await load('play/rev/magic.ts');
+const { YOURE_DEAD, CARRIED_OUT, RAISE_FAILED } = await load('play/rev/death.ts');
+const { REV_BETTER_LUCK } = await load('play/rev/screens.ts');
 
 const args = {};
 for (let i = 2; i < process.argv.length; i++) {
@@ -100,13 +103,21 @@ if (args.killed) {
   kept.printAt(16, 24, YOU_KILLED_IT);
   kept.printAt(17, 26, REV_HIT_RETURN);
 }
+// 1000:A016: the death blacks the screen out and prints from row 15 down, and the sign-off at
+// 1000:B5C8 follows the raise that did not work.
+let cleared = null;
+if (args.death) {
+  cleared = 'bare';
+  kept.locate(15, 1);
+  for (const line of [YOURE_DEAD, ...CARRIED_OUT, RAISE_FAILED, '', REV_BETTER_LUCK]) kept.print(line);
+}
 if (args.potions) {
   const pc = { values: new Array(340).fill(0), seconds: 0 };
   for (const value of [REV_MAGIC.speedUntil, REV_MAGIC.shieldingUntil, REV_MAGIC.fireUntil]) pc.values[value - 1] = 100;
   revPotionBanners({ pc, seconds: 0, kept });
 }
 
-const frame = drawRevScreen({ place, known, occupancy, words, kept });
+const frame = drawRevScreen({ place, known, occupancy, words, kept, cleared });
 const rgba = toRgba(frame, revRgb(num('palette', 0), num('background', 0)));
 writeFileSync(out, encodePng(frame.width * scale, frame.height * scale, enlarge(rgba, frame.width, frame.height, scale)));
 console.log(
