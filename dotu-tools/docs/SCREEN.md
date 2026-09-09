@@ -168,12 +168,28 @@ into one rectangle, over the monster still on the screen.
 The port draws it in `src/lib/play/view3d/render.ts`, and redraws the dead monster underneath it
 because it paints a fresh screen every pass where the original leaves the last one standing.
 
-### What is not drawn
+### The water, in the three water sections
 
-`draw_3d_view` follows the monster with the water overlay at exe 3000:24c8: when a built-in
-monster was drawn short in a water section, DS:c3af's picture is drawn over the same
-rectangle in a colour DS:c6e9 picks. `draw_map_square` does the same at exe 3000:307c for
-the monsters further off. Neither is ported, at any distance.
+`draw_3d_view` follows the monster with it at exe 3000:24c8 and `draw_map_square` at exe
+3000:307c, and the two sites are the same code with the same test, so the water is drawn at
+every distance the monster is.
+
+The test is that the monster was just drawn short — DS:4fc5 holding 140 rather than 200,
+which `load_section_pictures` (exe 2000:372c) arranges by setting DS:031d for sections 4, 8
+and 20 and which only applies to the 22 built-in monsters — and that `overlay.pic` was read
+at all, which is DS:031b.
+
+`overlay.pic`'s **first** image then goes into the monster's own rectangle, out of the same
+window of source columns, with DS:4fc5 put back to the whole 200 rows. The colour-set base
+becomes 0x3a in a 256-colour mode (0x10 colours take -0x18 instead), and the tint is left
+holding the monster's own colour byte: nothing between the two calls writes DS:4fbd.
+
+Which way round it faces is decided again, and separately, at each site. `draw_3d_view`
+rolls a second coin flip of its own at exe 3000:24fe, so the water can lie the other way
+round from the thing standing in it; `draw_map_square` reads the square's own x again (exe
+3000:30b2), so there the two always agree.
+
+The port draws both in `src/lib/play/view3d/render.ts`.
 
 ## The message box
 
