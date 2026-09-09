@@ -3,6 +3,7 @@ import { TEXT } from './colours';
 import { drawText } from './font';
 import { drawRevDebug } from './debug';
 import type { RevKeptScreen } from './kept';
+import type { RevClearedScreen } from '../state';
 import { drawMap, drawMapMonsters } from './map';
 import { drawMiddleBox, drawMonstersInPanel, type RevOccupancy } from './monsters';
 import { blit, SCREEN_HEIGHT, SCREEN_WIDTH } from './paint';
@@ -59,6 +60,9 @@ export interface RevScreenState {
   /** What the game has printed and not painted over, drawn last and over everything else the
    *  way the original's `PRINT` goes over whatever was on those cells (`kept.ts`). */
   kept?: RevKeptScreen;
+  /** The game has cleared the screen and has not drawn the dungeon over it again, so what is on
+   *  it is only what has been printed since (`../screens.ts`). */
+  cleared?: RevClearedScreen | null;
 }
 
 /** The five boxes: the four views and the character's own square between them. */
@@ -85,6 +89,23 @@ export function drawRevScreen(state: RevScreenState): Frame {
   const screen = newFrame(SCREEN_WIDTH, SCREEN_HEIGHT);
   const occupancy = state.occupancy ?? NOBODY;
   const words = state.words ?? {};
+
+  // A cleared screen is black with nothing on it but what has been printed since the CLS. The
+  // treasure's is the one that puts anything back: 1000:A896 draws the flat map again and
+  // 1000:A899 the box between the views, and neither the four views nor a word of the message
+  // rows is drawn until the redraw at the end of the pass.
+  if (state.cleared) {
+    if (state.cleared === 'map') {
+      if (state.known) {
+        drawMap(screen, { ...state.place, known: state.known });
+        drawMapMonsters(screen, state.place, state.mapMonsters ?? []);
+      }
+      drawMiddleBox(screen, state.place, occupancy, state.kept?.picture ?? null);
+    }
+    drawRevDebug(screen, state.debugLines ?? []);
+    for (const run of state.kept?.runs() ?? []) drawText(screen, run.text, run.row, run.column, TEXT);
+    return screen;
+  }
 
   if (state.known) {
     drawMap(screen, { ...state.place, known: state.known });

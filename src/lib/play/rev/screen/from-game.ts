@@ -87,6 +87,7 @@ export function revScreenStateOf(game: RevGame, options: RevScreenModeOptions): 
     occupancy: occupancyOf(game),
     mapMonsters: options.debug ? game.monsters.standing() : [],
     kept: game.kept,
+    cleared: game.cleared,
     debugLines: options.debug ? revDebugLines(game) : [],
     words: {
       messages: messagesOf(game),

@@ -12,6 +12,16 @@ import { REV_VALUE, revValue, type RevPc } from './record';
  * {@link RevPc}; this is everything else the loop reads and writes.
  */
 
+/**
+ * What is on the screen after a `CLS`, until the dungeon is drawn over it again.
+ *
+ * `null` is the game's own screen. `bare` is a screen with nothing on it but what has been
+ * printed since it was cleared, which is what death, the quit, the pause and the magic table
+ * leave. `map` is the treasure's, which puts the flat map and the close-up box back before it
+ * prints (1000:A896 calls 1000:580F and 1000:6BAF).
+ */
+export type RevClearedScreen = 'bare' | 'map';
+
 /** Something worth writing down about a run, which `../run.ts` turns into a milestone. */
 export type RevEvent =
   | { kind: 'levelGained'; level: number }
@@ -109,6 +119,9 @@ export interface RevGame {
   /** What the game has printed on the screen and not painted over (`screen/kept.ts`). Nothing
    *  here is read back by the game: it is only what the tab draws. */
   kept: RevKeptScreen;
+  /** The screen has been cleared and the dungeon has not been drawn over it yet, so what is on
+   *  it is what has been printed since (`screens.ts`). */
+  cleared: RevClearedScreen | null;
   /** Things worth writing into a run log. */
   events: RevEvent[];
   /** The loop has come back: the character has quit or died. */
@@ -217,6 +230,7 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     prompt: null,
     banner: [],
     kept: new RevKeptScreen(),
+    cleared: null,
     events: [],
     over: false,
     keyOwed: false,
@@ -231,6 +245,9 @@ export function newRevGame(pc: RevPc, rng: Rng, memory: RevMapMemory = new RevMa
     scratch: 0,
     say(...lines: string[]) {
       game.said.push(...lines);
+      // On a cleared screen the game prints at the cursor and BASIC moves it down a row for
+      // every line, so what is said is where it lands rather than in the message rows.
+      if (game.cleared !== null) for (const line of lines) game.kept.print(line);
     },
     pressAnyKey() {
       game.keyOwed = true;
