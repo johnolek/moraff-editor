@@ -4,6 +4,7 @@ import { COLUMNS, LEVELS, ROWS, mbfSingle } from '../../game/revmap.js';
 import { REV_TOWN_ROWS } from '../../game/rev-port/character';
 import { REV_MAP_SINGLES, revExploredBytes } from '../../roller/rev-save-file';
 import type { DiscoveredMap } from '../../map/draw-floor';
+import { REV_LEVEL_STRIDE, REV_TOP_COLUMN_BIT } from '../../map/explored';
 
 /**
  * The map a Moraff's Revenge character has discovered, which is `DIM M(20, 71)` at DGROUP
@@ -18,17 +19,9 @@ import type { DiscoveredMap } from '../../map/draw-floor';
  * character is loaded (1000:B964).
  */
 
-/** Rows per level in the array, of which the game uses 1 to 19: `21 * level + row`
- *  (1000:5417). */
-const LEVEL_STRIDE = 21;
-
 /** How many rows the Scroll of Seeing and the fountain of youth run over, which is one more than
  *  the nineteen the move code and the map ever reach (1000:1740 and 1000:3DCC). */
 const ARRAY_ROWS = 20;
-
-/** Column 1 is bit 19 and column 20 is bit 0: `INT(M(row, level) / 2 ^ (20 - column)) MOD 2`
- *  (1000:5449). */
-const TOP_COLUMN_BIT = 20;
 
 /** What the Scroll of Seeing assigns into every row of a level: `2 ^ 21 - 1` (1000:1765), which
  *  is one bit more than there are columns and is the fingerprint a scrolled level carries. */
@@ -85,9 +78,9 @@ export class RevMapMemory {
 
   /** 1000:5417 with 1000:5449: is the square one the character has stood on? */
   isKnown(column: number, row: number, level: number): boolean {
-    const mask = this.rows[LEVEL_STRIDE * level + row];
+    const mask = this.rows[REV_LEVEL_STRIDE * level + row];
     if (mask === undefined) return false;
-    return Math.trunc(mask / 2 ** (TOP_COLUMN_BIT - column)) % 2 === 1;
+    return Math.trunc(mask / 2 ** (REV_TOP_COLUMN_BIT - column)) % 2 === 1;
   }
 
   /**
@@ -99,7 +92,7 @@ export class RevMapMemory {
    */
   markStep(column: number, row: number, level: number): boolean {
     if (this.isKnown(column, row, level)) return false;
-    this.rows[LEVEL_STRIDE * level + row] += 2 ** (TOP_COLUMN_BIT - column);
+    this.rows[REV_LEVEL_STRIDE * level + row] += 2 ** (REV_TOP_COLUMN_BIT - column);
     return true;
   }
 
@@ -109,14 +102,14 @@ export class RevMapMemory {
    * twenty-first bit for a column that does not exist.
    */
   markLevelSeen(level: number): void {
-    for (let row = 1; row <= ARRAY_ROWS; row++) this.rows[LEVEL_STRIDE * level + row] = SCROLLED_ROW;
+    for (let row = 1; row <= ARRAY_ROWS; row++) this.rows[REV_LEVEL_STRIDE * level + row] = SCROLLED_ROW;
   }
 
   /** The fountain of youth (1000:3DCC): rows 1 to 20 of levels 1 to 70 are zeroed and the town
    *  is left alone. */
   forgetTheDungeon(): void {
     for (let level = 1; level <= LEVELS; level++) {
-      for (let row = 1; row <= ARRAY_ROWS; row++) this.rows[LEVEL_STRIDE * level + row] = 0;
+      for (let row = 1; row <= ARRAY_ROWS; row++) this.rows[REV_LEVEL_STRIDE * level + row] = 0;
     }
   }
 

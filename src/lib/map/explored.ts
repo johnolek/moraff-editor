@@ -266,11 +266,18 @@ export function staleFloorWarning(rock: number, game: MapGame, dungeon: number):
  *
  * The game numbers its columns and rows from 1 and the map numbers both from 0.
  */
-const BSAVE_MARKER = 0xfd;
-const BSAVE_HEADER_BYTES = 7;
-/** Level L's rows start at element 21 * L + 1, row 0 being unused. */
-const BIN_LEVEL_STRIDE = 21;
-const BIN_TOP_COLUMN_BIT = 20;
+/** What a BSAVEd file starts with, and the bytes of its header: the marker, the segment and
+ *  offset the array was at, and the length. */
+export const REV_BSAVE_MARKER = 0xfd;
+export const REV_BSAVE_HEADER_BYTES = 7;
+
+/** Rows per level in the array: `21 * level + row` (1000:5417), of which the game uses 1 to 19
+ *  and row 0 is unused. */
+export const REV_LEVEL_STRIDE = 21;
+
+/** Column 1 is bit 19 and column 20 is bit 0: `INT(M(row, level) / 2 ^ (20 - column)) MOD 2`
+ *  (1000:5449). */
+export const REV_TOP_COLUMN_BIT = 20;
 
 /** The character a file name names, or null when it is not named `<n>.BIN`. */
 export function binFileName(name: string): { slot: number } | null {
@@ -282,18 +289,18 @@ export function binFileName(name: string): { slot: number } | null {
  *  are not those of an explored map. */
 export function readBinFile(name: string, bytes: Uint8Array): ExploredFile {
   if (!binFileName(name)) throw new Error(`${name} is not named <n>.BIN, like 5.BIN.`);
-  if (bytes[0] !== BSAVE_MARKER) throw new Error(`${name} does not start with the FD marker a BSAVEd file starts with.`);
+  if (bytes[0] !== REV_BSAVE_MARKER) throw new Error(`${name} does not start with the FD marker a BSAVEd file starts with.`);
   const length = bytes[5] | (bytes[6] << 8);
-  const data = bytes.subarray(BSAVE_HEADER_BYTES, BSAVE_HEADER_BYTES + length);
+  const data = bytes.subarray(REV_BSAVE_HEADER_BYTES, REV_BSAVE_HEADER_BYTES + length);
   const rows = binRows(data);
   if (!rows) throw new Error(`${name} is ${bytes.length} bytes, which is not the size of an explored map.`);
   const floors: ExploredFloor[] = [];
-  for (let floor = 0; (floor + 1) * BIN_LEVEL_STRIDE <= rows.length; floor++) {
+  for (let floor = 0; (floor + 1) * REV_LEVEL_STRIDE <= rows.length; floor++) {
     const squares = new Set<number>();
     for (let row = 1; row <= REVENGE_ROWS; row++) {
-      const mask = rows[floor * BIN_LEVEL_STRIDE + row];
+      const mask = rows[floor * REV_LEVEL_STRIDE + row];
       for (let column = 1; column <= REVENGE_COLUMNS; column++) {
-        if (Math.trunc(mask / 2 ** (BIN_TOP_COLUMN_BIT - column)) % 2 === 1) {
+        if (Math.trunc(mask / 2 ** (REV_TOP_COLUMN_BIT - column)) % 2 === 1) {
           squares.add((row - 1) * EXPLORED_STRIDE + (column - 1));
         }
       }
@@ -322,11 +329,11 @@ export function isRevExploredFile(name: string, bytes: Uint8Array): boolean {
  *  allowed: the Scroll of Seeing assigns `2 ^ 21 - 1` into every row of the level it maps
  *  (1000:1765), so a map saved after one has bit 20 set on those rows. */
 function binRows(data: Uint8Array): number[] | null {
-  if (data.length < BIN_LEVEL_STRIDE * 4) return null;
+  if (data.length < REV_LEVEL_STRIDE * 4) return null;
   const rows: number[] = [];
   for (let at = 0; at + 4 <= data.length; at += 4) {
     const value = mbfSingle(data, at);
-    if (!Number.isInteger(value) || value < 0 || value >= 2 ** (BIN_TOP_COLUMN_BIT + 1)) return null;
+    if (!Number.isInteger(value) || value < 0 || value >= 2 ** (REV_TOP_COLUMN_BIT + 1)) return null;
     rows.push(value);
   }
   return rows;

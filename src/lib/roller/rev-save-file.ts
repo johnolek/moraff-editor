@@ -1,4 +1,5 @@
 import { formatRevRecord, REV_VALUE_COUNT } from '../game/rev-port/record';
+import { REV_BSAVE_HEADER_BYTES, REV_BSAVE_MARKER } from '../map/explored';
 import type { RevCharacter } from '../game/rev-port/state';
 
 /**
@@ -160,16 +161,16 @@ export function newRevExploredFile(pc: RevCharacter): Uint8Array<ArrayBuffer> {
  * short of {@link REV_MAP_SINGLES} is written as zeroes.
  */
 export function revExploredBytes(singles: readonly number[]): Uint8Array<ArrayBuffer> {
-  const bytes = new Uint8Array(7 + MAP_LENGTH + 1);
-  bytes[0] = 0xfd;
+  const bytes = new Uint8Array(REV_BSAVE_HEADER_BYTES + MAP_LENGTH + 1);
+  bytes[0] = REV_BSAVE_MARKER;
   const header = new DataView(bytes.buffer);
   header.setUint16(1, MAP_SEGMENT, true);
   header.setUint16(3, MAP_OFFSET, true);
   header.setUint16(5, MAP_LENGTH, true);
   for (let index = 0; index < REV_MAP_SINGLES; index++) {
     const four = mbfBytes(singles[index] ?? 0);
-    for (let i = 0; i < 4; i++) bytes[7 + index * 4 + i] = four[i];
+    for (let i = 0; i < 4; i++) bytes[REV_BSAVE_HEADER_BYTES + index * 4 + i] = four[i];
   }
-  bytes[7 + MAP_LENGTH] = END_OF_FILE;
+  bytes[REV_BSAVE_HEADER_BYTES + MAP_LENGTH] = END_OF_FILE;
   return bytes;
 }
