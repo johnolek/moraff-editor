@@ -61,6 +61,13 @@
     answerBase: 0 | 1;
     /** What the game prints between a class menu's number and the class. */
     classSeparator: string;
+    /** How the game draws: the two older games in vectors, in these colours, and Moraff's
+     *  Revenge on a text grid, which has a palette of its own. */
+    display: { kind: 'vectors'; colours: string[] } | { kind: 'text' };
+    /** How many letters of a name the game keeps, or null where the tab does not cut it short. */
+    nameLimit: number | null;
+    /** What the name box says before anything is typed. */
+    namePlaceholder: string;
   }
 
   const GAMES: Record<GameId, GameRoller> = {
@@ -77,6 +84,9 @@
       sheet: dotuSheet,
       answerBase: 0,
       classSeparator: ') ',
+      display: { kind: 'vectors', colours: SCREEN_COLOURS },
+      nameLimit: 18,
+      namePlaceholder: 'Up to 18 letters, digits and spaces',
     },
     moraffsWorld: {
       name: "Moraff's World",
@@ -91,6 +101,9 @@
       sheet: mwSheet,
       answerBase: 0,
       classSeparator: ') ',
+      display: { kind: 'vectors', colours: MW_SCREEN_COLOURS },
+      nameLimit: 18,
+      namePlaceholder: 'Up to 18 letters, digits and spaces',
     },
     revenge: {
       name: "Moraff's Revenge",
@@ -106,6 +119,9 @@
       sheet: revSheet,
       answerBase: 1,
       classSeparator: '=',
+      display: { kind: 'text' },
+      nameLimit: null,
+      namePlaceholder: 'The name, which goes in F5.COM',
     },
   };
 
@@ -348,12 +364,12 @@
 
       <!-- CHCHAR.EXE clears the screen before it writes the character out and then chains back to
            the game's own menu, so there is nothing left to draw once the roll is finished. -->
-      {#if rolling === 'revenge'}
+      {#if chosen.display.kind === 'text'}
         {#if view.question !== null}
           <RevScreen lines={revShowing} width={view.width ?? 80} />
         {/if}
       {:else}
-        <GameScreen lines={showing} colours={rolling === 'moraffsWorld' ? MW_SCREEN_COLOURS : SCREEN_COLOURS} />
+        <GameScreen lines={showing} colours={chosen.display.colours} />
       {/if}
 
       {#if view.question === 'continue'}
@@ -396,10 +412,10 @@
         <div class="choices">
           <input
             type="text"
-            maxlength={rolling === 'revenge' ? undefined : 18}
+            maxlength={chosen.nameLimit}
             bind:value={typed}
             onkeydown={(event) => event.key === 'Enter' && enterName()}
-            placeholder={rolling === 'revenge' ? 'The name, which goes in F5.COM' : 'Up to 18 letters, digits and spaces'}
+            placeholder={chosen.namePlaceholder}
           />
           <button type="button" disabled={typed.trim() === ''} onclick={enterName}>Enter</button>
         </div>
