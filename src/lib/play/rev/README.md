@@ -67,6 +67,8 @@ BASIC.
   six pills and the nine wands), `treasure.ts` (what a kill drops), `fountain.ts`. `magic.ts`
   names the record numbers all four read, `tables.ts` is `F1.COM` and `F2.COM`, and `desk.ts` is
   the handful of things a menu asks the session for.
+* **`pace.ts`** — how much a run of held arrows takes off the time a screen takes to appear, which
+  is the one thing that reads the delay the `E` key sets.
 * **`monsters.ts`** — the occupancy grid, the stocking, and the turn one monster takes.
   **`clock.ts`** — the poll those turns are rolled in.
 * **`memory.ts`** — `DIM M(20, 71)`, and the `<n>.BIN` it is saved as.
@@ -130,6 +132,25 @@ in the town writes nothing into the log.
 whenever the slot after the cursor is one of the two the "it has noticed you" code marked. It costs
 the poll wall-clock time and so slows every monster while one is awake; how much it costs cannot be
 read off the program, so the tick rate here is constant.
+
+## Holding an arrow down
+
+The game draws faster the longer an arrow keeps coming, and `pace.ts` is that rule — the
+arithmetic, and the two corrections to the notes it came with, are in the file. Where it lands is
+the Play tab's Redraw speed slider (`../README.md`), which is how long a new screen takes to
+appear from the top row down: a run of arrows takes the same fraction off that time as the
+original takes off its own wait before a redraw, a sixth of the delay per arrow and all of it past
+the third.
+
+Three things follow.
+
+* **With the slider at Instant the screen already appears at once**, so there is nothing for a
+  held arrow to shorten and none of this can be seen. It shows when the slider is on.
+* **With the `E` delay at the 0 it starts at** the game has no wait to shorten either, so the
+  slider's time stands however long an arrow is held. Pressing `E` is what turns the acceleration
+  on, exactly as it is in the original.
+* **The count belongs to the tab.** It is no number of the game's, nothing the loop does reads it,
+  and a replay comes out the same whether the run was played in taps or in one long press.
 
 ## The run
 
@@ -199,14 +220,16 @@ Three things are this game's own:
   `enterLevel` clamps to 0 and 70, so here the same climb comes back to the town. What the
   original makes of a floor of -1 has not been watched.
 * **The town's pictures are not drawn.** The monsters' are.
-* **Two of the four keys about the screen change it; the other two only keep their numbers.**
+* **Two of the four keys about the screen always change it, a third does while the redraw slider
+  is on, and the fourth only keeps its number.**
   `@` flips the screen between the two `SCREEN 1` palettes and `#` steps the colour standing
   behind everything through CGA's sixteen, both as the game does (1000:1038 and 1000:0FF5).
   `settings.ts` writes the two numbers, `screen/colours.ts` turns them into the four colours the
   canvas paints the 320 by 200 buffer with, and `rev-tools/reference/render_screen.mjs` takes the
   same two as `--palette` and `--background`, so a PNG of the screen can be made in whatever the
-  tab is showing. `E` writes the redraw delay the way the game does and nothing here redraws on a
-  timer, so that number is only kept. `O` turns the sound off and on again as the game does and
+  tab is showing. `E` writes the redraw delay the way the game does, and what reads it is the tab's
+  own redraw pace: the delay says how much a run of held arrows takes off the time a screen takes
+  to appear (`pace.ts`). `O` turns the sound off and on again as the game does and
   says in the box that there is none to play. None of the four spends an action and none of them
   touches the character, so they go into the run log as the inputs they are and a replay comes out
   the same whatever colours it was played in.

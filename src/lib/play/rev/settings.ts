@@ -68,9 +68,11 @@ export function revToggleSound(game: RevGame): void {
  * 1000:0F00: `E` asks for the delay the game waits out before every redraw, so that several
  * movement keys can be typed ahead of it (1000:412A busy-waits in it).
  *
- * Nothing here redraws on a timer, so the number is kept and nothing reads it. The tab's number
- * reader takes one digit rather than a typed line, so the delay only ever reaches 9 and the cap
- * the original puts on it at 1000:0F53 never bites; it is kept all the same.
+ * Nothing here busy-waits, but the number is what says how much a held arrow speeds the screen
+ * up (`pace.ts`): with the delay at the 0 it starts at, holding one changes nothing, as in the
+ * original. The tab's number reader takes one digit rather than a typed line, so the delay only
+ * ever reaches 9 and the cap the original puts on it at 1000:0F53 never bites; it is kept all
+ * the same.
  */
 export async function revSetEnterDelay(game: RevGame, desk: RevTownDesk): Promise<void> {
   const typed = await desk.number(ENTER_DELAY_PROMPT);

@@ -142,8 +142,9 @@ export interface RevGame {
   numbersChanged: boolean;
   /**
    * DGROUP B542: the delay 1000:0F00 asks for, which the original busy-waits in before a redraw
-   * (1000:412A) so that several movement keys can be typed ahead of it. Nothing here redraws on
-   * a timer, so nothing reads it.
+   * (1000:412A) so that several movement keys can be typed ahead of it. Nothing here busy-waits,
+   * but the number is read: a run of held arrows takes the same fraction off the time the tab's
+   * screen takes to appear as it takes off this wait (`pace.ts`).
    */
   enterDelay: number;
   /** DGROUP B46E: the colour the screen is drawn on, 0 to 16 (1000:0FF5). */
