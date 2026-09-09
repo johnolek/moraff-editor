@@ -1,4 +1,5 @@
 import { HINT, loadHBin } from './hints';
+import { playMwDeath } from './sound';
 import type { MwGame } from './state';
 
 /**
@@ -171,8 +172,11 @@ const DEAD_HP = -100;
  * instead, so the port records the deletion and leaves the record where it lands: hit points at
  * -100, which is what the original writes so that movecontrol's next test still finds them
  * below zero and leaves the game.
+ *
+ * The dirge is the first thing it does, before any of that.
  */
 export function die(game: MwGame): MwDeath {
+  playMwDeath(game);
   const pc = game.pc;
   if (pc.returnX === -1) {
     game.events.push({ kind: 'characterFilesDeleted', slot: game.slot });

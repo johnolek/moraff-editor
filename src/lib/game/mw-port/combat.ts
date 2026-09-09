@@ -13,6 +13,7 @@ import {
 } from './drops';
 import { HINT, loadHBin } from './hints';
 import { canLevelUp, experienceNeeded, goDownLevel } from './levels';
+import { playMwBlowLanded, playMwBlowTaken, playMwMonsterKilled } from './sound';
 import type { MwGame } from './state';
 import {
   MW_SQUARE_EMPTY,
@@ -178,6 +179,7 @@ export function strike(game: MwGame): number {
     let line = bearing(game, game.engaged);
     if (pc.floor < 5) line += 'TAKES '; // DS:2708
     // The damage, then DS:270f
+    playMwBlowLanded(game);
     game.say(`${line}${damage} POINTS DAMAGE`);
   }
   // The original writes through the pointer at DS:cd28, which attack_timing aims at the engaged
@@ -458,6 +460,7 @@ export function monsterTurn(game: MwGame, slot: number): number {
     if (pc.lev === 0) line += 'MONSTER ';
     if (damage < 1) line += 'MISSES YOU!';
     else line += `DOES ${damage}` + (damage === 1 ? ' POINT' : ' POINTS');
+    if (damage > 0) playMwBlowTaken(game);
     game.say(line);
     const buffer = damage > 0 ? drainsAndAilments(game, slot) : '';
     // The original prints the shared string buffer again here, so a characteristic drain's line
@@ -1120,8 +1123,11 @@ const KILL_SETTLE_MS = 500;
  *
  * A level 0 character gets two pieces of advice at the end: one about the temple if they are
  * fifteen hit points down, and one about the inn if they are ready for their first level.
+ *
+ * The two-note chime is the first thing it does, so the player hears the kill before reading it.
  */
 export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
+  playMwMonsterKilled(game);
   const pc = game.pc;
   const slot = game.engaged;
   const monster = game.monsters[slot];
