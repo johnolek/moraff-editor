@@ -10,17 +10,17 @@ does, including the parts that look like accidents.
 
 ## Where this is going
 
-This port is meant to become the game: Dungeons of the Unforgiven, playable in a browser and
-almost entirely faithful to the 1993 original, built function by function out of the
-decompilation until enough of it is here to run. Every piece of logic it runs is a cited port of
-the function it came from, bugs included.
+This port is the game: Dungeons of the Unforgiven, playable in a browser and almost entirely
+faithful to the 1993 original, built function by function out of the decompilation. Every piece
+of logic it runs is a cited port of the function it came from, bugs included.
 
-The one deliberate difference in play will be the random numbers. The original re-seeds from the
-clock before nearly every roll, so what it hands back falls into patterns a player can feel — see
-"Your to-hit roll is a clock" in `dotu-tools/docs/TIDBITS.md`. The browser game will roll
-genuinely random ones, which is why `Rng` is something a `Game` is handed rather than something a
-ported function reaches for: `BorlandRng` reproduces the original's rolls for a test that has to
-match them, and a real source of randomness goes in to play.
+The one deliberate difference in play is the random numbers. The original re-seeds from the clock
+before nearly every roll, so what it hands back falls into patterns a player can feel — see "Your
+to-hit roll is a clock" in `dotu-tools/docs/TIDBITS.md`. A game played here draws its numbers from
+one generator seeded once at the start of the run, which is why `Rng` is something a `Game` is
+handed rather than something a ported function reaches for: `BorlandRng` reproduces the original's
+rolls for a test that has to match them, and the run's own seeded generator goes in to play, which
+is what lets a run be played again from its log.
 
 ## The three deliberate departures
 
@@ -55,8 +55,8 @@ it; the original then reloads the game around them, and this port does not. Wher
 calls `load_level_map` (exe 2000:7687) to read in the new floor's monsters, and `give_hint`
 (exe 2000:313a) with `mgetch_message` (exe 4000:418d) to show Youth's hint out of `UH.BIN`, the
 port appends to `game.events` and carries on. The character record ends up holding exactly what
-the original leaves in it; what is missing is the world around it, which nothing in this slice
-reads. The rest of moving between floors — writing the explored map out, redrawing the screen —
+the original leaves in it; what is missing is the world around it, which the play engine in
+`src/lib/play/` sees to when it reads those events. The rest of moving between floors — writing the explored map out, redrawing the screen —
 happens above `spell_effect`, in the caller, and is not part of this port either way.
 
 Combat stops in the same place. `defend` writes the character record back out to its file five
@@ -177,13 +177,17 @@ between one screen of the roller and the next. `game.pressAnyKey()` is `mgetch_m
 * `inventory.ts` — the screens a spell or an item is picked off: `cast_a_spell`'s type menu, its
   thirty-spell table in both layouts and what casting one costs, the spell descriptions out of
   USPELLS.HLP, the pockets screen, and the three menus Write Scroll and Enchant Wand walk through.
+* `hints.ts` — the lines of `UH.BIN` and `UH2.BIN`: what the little snake says, and the tablets
+  the town and the arrival screens print.
+* `pictures.ts` — which of the four wall files each of the twenty sections is drawn from.
+* `spell-index.ts` — which function of `magic.ts` each of the game's 120 spells runs, so that a
+  spell's own code can be shown without running anything.
 
 `movecontrol` itself, the loop all of this is played in, is in `src/lib/play/`, which has a
 README of its own about the keys, the screens and where the rest of the game plugs in.
 
-## What is not ported yet
+## What is ported elsewhere
 
-* The 3-D view (`draw_3d_view`, exe 3000:0f75) and the drawing around it. The map explorer's
-  canvas is what a game being played is drawn on instead.
-* The dungeon generator is not here but is ported: verbatim from the reference bundle, in
-  `src/lib/game/unfmap.js`.
+* The 3-D view (`draw_3d_view`, exe 3000:0f75) and the drawing around it, in
+  `src/lib/play/view3d/`, which is where the screen a game is played on is drawn.
+* The dungeon generator, verbatim from the reference bundle, in `src/lib/game/unfmap.js`.
