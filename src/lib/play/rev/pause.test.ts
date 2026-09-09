@@ -45,7 +45,6 @@ function pressing(key: string): { game: RevGame; desk: RevTownDesk; shown: strin
       screen.push(...game.kept.runs());
       return key.charCodeAt(0);
     },
-    number: async () => null,
   };
   return { game, desk, shown, screen };
 }

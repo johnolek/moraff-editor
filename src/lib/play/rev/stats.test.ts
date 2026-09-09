@@ -78,7 +78,6 @@ describe('the character sheet the V key puts up', () => {
         seen.rows = game.kept.runs().length;
         return ' '.charCodeAt(0);
       },
-      number: async () => null,
     };
     await revShowStats(game, desk);
     // 1000:19FD to 1C4A: a cleared screen with the sheet and the prompt on it...

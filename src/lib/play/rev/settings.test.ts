@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { SeededRng } from '../../game/port/rng';
 import { REV_TWO_SECONDS } from './held';
 import type { RevPc } from './record';
+import { REV_KEY } from './keys';
 import {
   ENTER_DELAY_PROMPT,
+  LONGEST_ENTER_DELAY,
   SOUND_OFF,
   SOUND_ON,
   revCgaPalette,
@@ -43,18 +45,10 @@ function playing(): RevGame {
   return newRevGame(pc, new SeededRng(1));
 }
 
-/** A player who types one key at a number prompt, and the prompt they were shown. */
-function typing(key: string): { desk: RevTownDesk; asked: string[] } {
-  const asked: string[] = [];
-  const desk: RevTownDesk = {
-    key: async () => key.charCodeAt(0),
-    number: async (prompt) => {
-      asked.push(...prompt);
-      const digit = key.charCodeAt(0) - '0'.charCodeAt(0);
-      return digit >= 0 && digit <= 9 ? digit : null;
-    },
-  };
-  return { desk, asked };
+/** A player who types the keys a test names and then presses return. */
+function typing(...keys: string[]): RevTownDesk {
+  let at = 0;
+  return { key: async () => (keys[at] === undefined ? REV_KEY.enter : keys[at++].charCodeAt(0)) };
 }
 
 describe('the background colour', () => {
@@ -110,19 +104,28 @@ describe('the sound', () => {
 });
 
 describe('the enter delay', () => {
-  it('asks in the game\'s own words and keeps what was typed', async () => {
+  it("asks in the game's own words at the top of the screen and keeps what was typed", async () => {
     const game = playing();
-    const { desk, asked } = typing('7');
-    await revSetEnterDelay(game, desk);
-    expect(asked).toEqual(ENTER_DELAY_PROMPT);
-    expect(game.enterDelay).toBe(7);
+    await revSetEnterDelay(game, typing('3', '0', '0'));
+    expect(game.said).toEqual(ENTER_DELAY_PROMPT);
+    expect(game.kept.runs().map((run) => run.text)).toEqual([
+      ENTER_DELAY_PROMPT[0],
+      `${ENTER_DELAY_PROMPT[1]}300 `,
+    ]);
+    expect(game.enterDelay).toBe(300);
   });
 
-  it('leaves the delay alone when nothing was typed', async () => {
+  it('takes the whole number the four digits can reach, and caps it at the 3000 of 1000:0F53', async () => {
+    const game = playing();
+    await revSetEnterDelay(game, typing('9', '9', '9', '9'));
+    expect(game.enterDelay).toBe(LONGEST_ENTER_DELAY);
+  });
+
+  it('sets the delay to nothing when return comes with nothing typed', async () => {
     const game = playing();
     game.enterDelay = 4;
-    await revSetEnterDelay(game, typing('X').desk);
-    expect(game.enterDelay).toBe(4);
+    await revSetEnterDelay(game, typing('X'));
+    expect(game.enterDelay).toBe(0);
   });
 });
 

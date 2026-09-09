@@ -1,5 +1,7 @@
 import { PALETTE_COUNT } from '../../rev-bestiary/pictures';
 import { REV_TWO_SECONDS } from './held';
+import { REV_ENTER_DELAY_DIGITS, revTypeANumber } from './number';
+import { revSayKeepingTheCursor, revSayOnTheScreen } from './screens';
 import type { RevGame } from './state';
 import type { RevTownDesk } from './town';
 
@@ -19,6 +21,10 @@ export const LONGEST_ENTER_DELAY = 3000;
 
 /** 1000:0F23 and 0F2F: what the enter delay asks. */
 export const ENTER_DELAY_PROMPT = ['Try delays between 0 (Default) and 3000.', 'Enter delay and hit return:'];
+
+/** 1000:0F17: `LOCATE 1, 1`, which is where it asks. */
+const ENTER_DELAY_ROW = 1;
+const ENTER_DELAY_COLUMN = 1;
 
 /** 1000:108D and 109C: what the sound key says it has done. */
 export const SOUND_ON = 'SOUND ON';
@@ -67,12 +73,17 @@ export function revToggleSound(game: RevGame): void {
  *
  * Nothing here busy-waits, but the number is what says how much a held arrow speeds the screen
  * up (`pace.ts`): with the delay at the 0 it starts at, holding one changes nothing, as in the
- * original. The tab's number reader takes one digit rather than a typed line, so the delay only
- * ever reaches 9 and the cap the original puts on it at 1000:0F53 never bites; it is kept all
- * the same.
+ * original.
+ *
+ * The two lines go at the top of the screen over whatever the dungeon has drawn there
+ * (1000:0F17), which is the only place this key writes; the second ends with a semicolon, so the
+ * digits are typed beside it. Four of them are allowed (1000:0F38), which is what lets a player
+ * ask for more than the 3000 the game will take.
  */
 export async function revSetEnterDelay(game: RevGame, desk: RevTownDesk): Promise<void> {
-  const typed = await desk.number(ENTER_DELAY_PROMPT);
-  if (typed === null) return;
+  game.kept.locate(ENTER_DELAY_ROW, ENTER_DELAY_COLUMN);
+  revSayOnTheScreen(game, ENTER_DELAY_PROMPT[0]);
+  revSayKeepingTheCursor(game, ENTER_DELAY_PROMPT[1]);
+  const typed = await revTypeANumber(game, desk, REV_ENTER_DELAY_DIGITS);
   game.enterDelay = typed > LONGEST_ENTER_DELAY ? LONGEST_ENTER_DELAY : typed;
 }

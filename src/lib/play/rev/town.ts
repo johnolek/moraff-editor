@@ -4,6 +4,7 @@ import type { RevMagicDesk } from './desk';
 import { revWorkOutSpellPoints } from './fountain';
 import { REV_FOUR_SECONDS } from './held';
 import { revItemMenu } from './items';
+import { REV_BANK_DIGITS, revTypeANumber, revTypedDigit } from './number';
 import { revPlayInnHymn, revPlayTempleMarch } from './music';
 import {
   REV_ARMOUR_VALUE,
@@ -30,8 +31,6 @@ import type { RevGame } from './state';
 export interface RevTownDesk {
   /** 1000:2F71: a key, once there is one. */
   key(): Promise<number>;
-  /** 1000:21F3: a number typed and ended with return, or null for nothing typed. */
-  number(prompt: string[]): Promise<number | null>;
 }
 
 /** The building on a town square, 1 to 7, and 0 for open ground. */
@@ -191,14 +190,16 @@ export async function revVisitBank(game: RevGame, desk: RevTownDesk): Promise<vo
     const key = await desk.key();
     if (key === LEAVE) return;
     if (key === DEPOSIT) {
-      const amount = await desk.number(DEPOSIT_PROMPT);
-      if (amount !== null && amount > 0 && amount <= pc.money) {
+      game.say(...DEPOSIT_PROMPT);
+      const amount = await revTypeANumber(game, desk, REV_BANK_DIGITS);
+      if (amount > 0 && amount <= pc.money) {
         pc.money -= amount;
         pc.bank += amount;
       }
     } else if (key === WITHDRAW) {
-      const amount = await desk.number(WITHDRAW_PROMPT);
-      if (amount !== null && amount > 0 && amount <= pc.bank) {
+      game.say(...WITHDRAW_PROMPT);
+      const amount = await revTypeANumber(game, desk, REV_BANK_DIGITS);
+      if (amount > 0 && amount <= pc.bank) {
         pc.bank -= amount;
         pc.money += amount;
       }
@@ -379,6 +380,9 @@ const GUILD_OPENS = [
   "L-LEAVE WIZARD'S GUILD",
 ];
 
+/** 1000:2D57: what the guild asks before it reads a spell level. */
+const SPELL_LEVEL_PROMPT = 'Type the spell level (1-6): ';
+
 /** 1000:2DAE: what one level of spells costs, `INT(level ^ 1.75 * 220)`. */
 export function revSpellLevelPrice(level: number): number {
   return Math.trunc(level ** 1.75 * 220);
@@ -431,8 +435,11 @@ export async function revVisitGuild(game: RevGame, desk: RevTownDesk, magic: Rev
       continue;
     }
     if (key !== '1'.charCodeAt(0)) continue;
-    const level = await desk.number(['Type the spell level (1-6): ']);
-    if (level === null || level < 1 || level > 6) continue;
+    // 1000:2D60: the level is one key rather than a typed line, so `L` and every other letter
+    // read as a 0 and ask again.
+    game.say(SPELL_LEVEL_PROMPT);
+    const level = revTypedDigit(await desk.key());
+    if (level < 1 || level > 6) continue;
     const price = revSpellLevelPrice(level);
     game.say(`That will cost you ${price} JP.`);
     if (price > pc.money) {

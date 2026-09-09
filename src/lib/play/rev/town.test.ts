@@ -55,7 +55,6 @@ function desk(...keys: string[]): RevTownDesk {
   let at = 0;
   return {
     key: async () => (keys[at] === undefined ? 'L'.charCodeAt(0) : keys[at++].charCodeAt(0)),
-    number: async () => null,
   };
 }
 

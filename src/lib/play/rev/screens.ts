@@ -72,6 +72,30 @@ export function revDrawTheDungeonAgain(game: RevGame, after: RevRedraw): void {
   };
 }
 
+/**
+ * `PRINT line`, on the screen rather than in the message rows.
+ *
+ * `say` puts a line on the screen only once something has cleared it, because on the game's own
+ * screen the message rows are where a line the loop prints belongs. The enter delay is the one
+ * routine that prints over the dungeon without clearing anything first (1000:0F17), so this is
+ * how it reaches the screen.
+ */
+export function revSayOnTheScreen(game: RevGame, line: string): void {
+  game.said.push(line);
+  game.kept.print(line);
+}
+
+/**
+ * `PRINT line;`, which leaves the cursor at the end of the line instead of starting a new row.
+ *
+ * Every prompt a number is typed at ends with the semicolon (1000:23FB, 2427 and 0F32), which is
+ * what puts the digits beside the question rather than under it.
+ */
+export function revSayKeepingTheCursor(game: RevGame, line: string): void {
+  game.said.push(line);
+  game.kept.printKeepingTheCursor(line);
+}
+
 /** 1000:020B, printed by 1000:C5B0: what a screen that has taken the display over waits with. */
 export const REV_HIT_ANY_KEY = 'Hit any key';
 

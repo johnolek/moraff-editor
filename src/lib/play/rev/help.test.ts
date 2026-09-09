@@ -42,7 +42,6 @@ function pressing(keys: string[]): { desk: RevTownDesk; boxes: string[][]; game:
       boxes.push(game.said.slice());
       return (keys[at++] ?? '').charCodeAt(0);
     },
-    number: async () => null,
   };
   return { desk, boxes, game };
 }

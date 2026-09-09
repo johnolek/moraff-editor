@@ -372,13 +372,7 @@ export class RevGameSession extends KeyedSession<RevPc> {
 
   /** The town desk, which is how a building asks its questions. */
   desk(): RevTownDesk {
-    return {
-      key: () => this.key(),
-      number: async (prompt) => {
-        this.game.say(...prompt);
-        return revReadNumber(await this.key());
-      },
-    };
+    return { key: () => this.key() };
   }
 
   view(): RevPlayView {
@@ -409,18 +403,6 @@ export class RevGameSession extends KeyedSession<RevPc> {
       run: this.run?.summary() ?? null,
     };
   }
-}
-
-/**
- * 1000:21F3: a number typed at a prompt.
- *
- * The original reads a whole line; the tab has no line editor of its own, so one digit key is
- * one number and anything else is nothing typed. What the buildings do with the answer is the
- * original's.
- */
-export function revReadNumber(key: number): number | null {
-  const digit = key - '0'.charCodeAt(0);
-  return digit >= 0 && digit <= 9 ? digit : null;
 }
 
 /** Start playing a character. */

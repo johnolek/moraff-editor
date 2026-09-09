@@ -10,7 +10,6 @@ import type { RevTownDesk } from './town';
 /** A player who answers every wait with the space bar. */
 const pressing: RevTownDesk = {
   key: async () => ' '.charCodeAt(0),
-  number: async () => null,
 };
 
 /** A dying character and the rolls the death is to make, in the order it makes them. */

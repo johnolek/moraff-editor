@@ -417,7 +417,6 @@ describe('the magic items screen', () => {
         onTheScreen = game.kept.runs().map((run) => run.text);
         return ' '.charCodeAt(0);
       },
-      number: async () => null,
     });
     // 1000:3B19: the list is on a cleared screen from row 1 down, with the wait under it.
     expect(onTheScreen[0]).toBe('YOU HAVE THE FOLLOWING MAGIC ITEMS:');
