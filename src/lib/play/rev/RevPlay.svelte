@@ -9,6 +9,7 @@
   import { revStockedMonster } from '../../map/rev-stocking';
   import type { StockedMonster } from '../../map/stocking';
   import { FULL_FLOOR } from '../../map/viewport';
+  import { isTyping } from '../../ui/keys';
   import PixelText from '../../ui/PixelText.svelte';
   import { downloadMapFiles, revMapFile } from '../export-maps';
   import { downloadRunLog } from '../export-run';
@@ -267,11 +268,6 @@
 
   /** The game's own clock, which is the ticks the monsters moved on. */
   const clockWords = (ticks: number) => `${ticks} tick${ticks === 1 ? '' : 's'}`;
-
-  function isTyping(target: EventTarget | null): boolean {
-    if (!(target instanceof HTMLElement)) return false;
-    return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
-  }
 </script>
 
 <svelte:window onkeydown={onKeyDown} onkeyup={onKeyUp} />

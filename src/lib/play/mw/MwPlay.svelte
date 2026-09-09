@@ -9,6 +9,7 @@
   import { FULL_FLOOR } from '../../map/viewport';
   import WallTexture from '../../map/WallTexture.svelte';
   import GameScreen from '../../ui/GameScreen.svelte';
+  import { isTyping } from '../../ui/keys';
   import { MW_SCREEN_COLOURS } from '../../roller/screen';
   import PixelText from '../../ui/PixelText.svelte';
   import MwMonsterDetail from '../../mw-bestiary/MwMonsterDetail.svelte';
@@ -385,11 +386,6 @@
 
   /** The game's own clock, which the panel calls "moves spent". */
   const clockWords = RUN_GAMES.moraffsWorld.clockWords;
-
-  function isTyping(target: EventTarget | null): boolean {
-    if (!(target instanceof HTMLElement)) return false;
-    return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
-  }
 </script>
 
 <svelte:window onkeydown={onKeyDown} />

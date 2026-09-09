@@ -9,6 +9,7 @@
   import { FULL_FLOOR } from '../map/viewport';
   import WallTexture from '../map/WallTexture.svelte';
   import GameScreen from '../ui/GameScreen.svelte';
+  import { isTyping } from '../ui/keys';
   import PixelText from '../ui/PixelText.svelte';
   import MonsterDetail from '../bestiary/MonsterDetail.svelte';
   import { monsterGroups } from '../bestiary/monsters';
@@ -280,11 +281,6 @@
 
   /** The game's own clock, which the panel calls "spent down here". */
   const clockWords = RUN_GAMES.unforgiven.clockWords;
-
-  function isTyping(target: EventTarget | null): boolean {
-    if (!(target instanceof HTMLElement)) return false;
-    return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
-  }
 </script>
 
 <svelte:window onkeydown={onKeyDown} />

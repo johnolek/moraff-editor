@@ -10,6 +10,7 @@
   import { REV_CLASS_NAMES, REV_RACE_NAMES, REV_STAT_NAMES, revTypedName } from '../game/rev-port/character';
   import type { RevCharacter, RevScreenLine } from '../game/rev-port/state';
   import GameScreen from '../ui/GameScreen.svelte';
+  import { isTyping } from '../ui/keys';
   import PixelText from '../ui/PixelText.svelte';
   import { DESIGN_STAT_KEYS, rollerKey, type RollerScreen } from './keys';
   import { MW_SLOTS, mwSlotFileName, newMwCharacterFile } from './mw-save-file';
@@ -236,11 +237,6 @@
     else if (screen === 'name') enterName();
     else if (screen === 'revRace') takeRace();
     else start();
-  }
-
-  function isTyping(target: EventTarget | null): boolean {
-    if (!(target instanceof HTMLElement)) return false;
-    return ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
   }
 
   function save(bytes: Uint8Array<ArrayBuffer>, name: string) {
