@@ -241,6 +241,61 @@ Only the teleporter sign has a pixel above 15; the doors and the three wall mate
 every `ufwallN` stop at 15.  Moraff's World's `draw_wall_picture` (mw.c 3000:04d3) is the
 same routine recompiled, with 0x40 in place of 0x80 in the two gradient lines.
 
+### The second blitter, `FUN_4000_433e` (4000:433e)
+
+`scale_image2` is not the only row-run drawer.  `FUN_4000_433e` draws the same `.PIC` rows with a
+colour rule of its own, and five things use it: `FUN_2000_4506` for the frame around a town
+building's picture, `FUN_3000_9026` for the stone tablet's slab, `boss_office_message` for the
+panel behind the boss's picture, `draw_map_square` for the water overlay over a distant monster,
+and `title_screen`.  It has no mirroring and no vertical flip — rows come from a 200-entry table
+scaled to the rectangle's height — and its last two arguments clip and re-scale the source
+columns rather than saying anything about colour.  Every caller but `FUN_3000_9026` passes 0 and
+0xff there, which is the whole picture.
+
+The rule, read out of its instructions in the 4000 segment (256-colour modes; below that it
+dithers odd rows the way `scale_image2` does, at 4625 and 4726).  Base 0x20 exactly, dispatched at
+4602 — and on a **word** read of DS:4fc1, so a base of 0x20 with a non-zero byte after it takes
+the other branch instead:
+
+```
+v == 0                     not drawn                                         460c
+v == 29 and tint == 0x20   not drawn                                         4615, 461b
+v < 29                     index = v + 0x20                                  468e, 4694
+v == 29                    index = tint   # an entry in its own right, no base added   469a
+v == 30                    index = (gradientRow % 160) + 0x60                46a8, 46b9
+v >= 31                    index = 0x100 - (gradientRow % 160)               46c1, 46cf
+```
+
+Every other base, dispatched at 470d:
+
+```
+v == 0                     not drawn                                         470d
+v == 17 and tint == 0x20   not drawn                                         4716, 471c
+then, in this order:       if v == 16: v = 0                                 478f
+                           if v == 17: v = tint                              479a
+index = (v + base) & 0xff  # a byte add, from DS:4fc1                        47ae
+```
+
+Five things differ from `scale_image2`:
+
+* **There is no 0x40 branch.**  Colour set 4 goes through the general rule here, where
+  `scale_image2` would give it the tint bank.
+* **The tinted value in the 0x20 bank is one higher**: 29 here, 28 there.  `scale_image2` reads 29
+  as a down-gradient; this reads it as the tint, and only 31 counts down the bank.
+* **The down-gradient counts from 0x100, not 0xff**, so a row at the top of the bank comes out
+  entry 0 once the byte is taken rather than entry 255.
+* **The "skip" tint is the constant 0x20, not the bank's base.**  `scale_image2` drops a tinted
+  pixel when the tint equals the base it is drawing at; this one compares against 0x20 whatever
+  base it has.
+* **The substitutions do not cascade, and value 18 has no case at all.**  Value 16 becomes 0
+  first and value 17 becomes the tint afterwards, so a tint of 16 stays 16 and gets the base
+  added.  `secondTint` (DS:4fbf) is never read here.
+
+Nothing in the port goes through this rule.  Every picture it draws with this function — the
+tablet's slab, a building's frame, the boss's panel — is one of the section's wall materials,
+whose pixel values stop at 15, and at 15 and below the two rules are the same `v + base`, so the
+port draws them all with `scale_image2`.
+
 In water sections the built-in monsters (garbage cans, puffballs, flasks) are drawn 140
 rows tall instead of 200 with the water overlay (`overlay.pic`) over the bottom — that is
 why they look like they are floating.
