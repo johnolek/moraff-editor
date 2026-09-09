@@ -54,9 +54,8 @@
   let view = $state.raw<RevPlayView | null>(null);
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredLevel = $state.raw<number | null>(null);
-  const storedMode = readPlayMode('revenge');
-  let mode = $state<PlayMode>(storedMode);
-  let display = $state<PlayDisplay>(readPlayDisplay('revenge', storedMode));
+  let mode = $state<PlayMode>(readPlayMode('revenge'));
+  let display = $state<PlayDisplay>(readPlayDisplay('revenge'));
 
   const character = $derived.by(() => {
     void app.characterVersion;

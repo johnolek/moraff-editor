@@ -69,9 +69,8 @@
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
   let style = $state<MovementStyle>(readMovementStyle('moraffsWorld'));
-  const storedMode = readPlayMode('moraffsWorld');
-  let mode = $state<PlayMode>(storedMode);
-  let display = $state<PlayDisplay>(readPlayDisplay('moraffsWorld', storedMode));
+  let mode = $state<PlayMode>(readPlayMode('moraffsWorld'));
+  let display = $state<PlayDisplay>(readPlayDisplay('moraffsWorld'));
 
   const character = $derived.by(() => {
     void app.characterVersion;

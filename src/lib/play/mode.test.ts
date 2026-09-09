@@ -3,7 +3,7 @@ import type { StockedMonster } from '../map/stocking';
 import {
   DEFAULT_PLAY_MODE,
   debugDrawn,
-  defaultPlayDisplay,
+  DEFAULT_PLAY_DISPLAY,
   monstersDrawn,
   panelVisible,
   PLAY_DISPLAYS,
@@ -140,11 +140,9 @@ describe('the two pictures beside the stage', () => {
   });
 });
 
-describe('which of the two a mode shows until the player switches', () => {
-  it("is the game's screen whatever the mode", () => {
-    expect(defaultPlayDisplay('faithful')).toBe('screen');
-    expect(defaultPlayDisplay('speedrun')).toBe('screen');
-    expect(defaultPlayDisplay('debug')).toBe('screen');
+describe('which of the two is shown until the player switches', () => {
+  it("is the game's screen, whatever the mode", () => {
+    expect(DEFAULT_PLAY_DISPLAY).toBe('screen');
   });
 
   it('offers the two, each with a label', () => {
@@ -154,35 +152,28 @@ describe('which of the two a mode shows until the player switches', () => {
 });
 
 describe('the switch between the screen and the map', () => {
-  it('shows the screen in every mode until it has been touched', () => {
+  it('shows the screen until it has been touched', () => {
     useStorage(fakeStorage());
-    expect(readPlayDisplay('unforgiven', 'faithful')).toBe('screen');
-    expect(readPlayDisplay('unforgiven', 'debug')).toBe('screen');
+    expect(readPlayDisplay('unforgiven')).toBe('screen');
   });
 
   it('remembers the choice for one game without touching the other', () => {
     useStorage(fakeStorage());
     writePlayDisplay('unforgiven', 'map');
-    expect(readPlayDisplay('unforgiven', 'faithful')).toBe('map');
-    expect(readPlayDisplay('moraffsWorld', 'faithful')).toBe('screen');
+    expect(readPlayDisplay('unforgiven')).toBe('map');
+    expect(readPlayDisplay('moraffsWorld')).toBe('screen');
   });
 
-  it('overrides the mode both ways', () => {
-    useStorage(fakeStorage());
-    writePlayDisplay('revenge', 'screen');
-    expect(readPlayDisplay('revenge', 'debug')).toBe('screen');
-  });
-
-  it('falls back to the mode when what is stored is not one of the two', () => {
+  it('falls back to the default when what is stored is not one of the two', () => {
     const storage = fakeStorage();
     useStorage(storage);
     storage.setItem('moraff-tools.play.revenge.display', 'both');
-    expect(readPlayDisplay('revenge', 'faithful')).toBe('screen');
+    expect(readPlayDisplay('revenge')).toBe('screen');
   });
 
-  it('shows what the mode shows where there is nowhere to remember anything', () => {
+  it('shows the default where there is nowhere to remember anything', () => {
     useStorage(undefined);
     writePlayDisplay('moraffsWorld', 'map');
-    expect(readPlayDisplay('moraffsWorld', 'faithful')).toBe('screen');
+    expect(readPlayDisplay('moraffsWorld')).toBe('screen');
   });
 });

@@ -78,18 +78,16 @@ function isPlayDisplay(value: unknown): value is PlayDisplay {
 }
 
 /**
- * What a game shows before the player has chosen: the game's own screen, whatever the mode.
+ * What a game shows before the player has chosen: the game's own screen.
  * John (2026-09-08): the 3-D view is the default even for debug and speedrun; the top-down map
  * is a toggle of its own, which the mode never resets.
  */
-export function defaultPlayDisplay(_mode: PlayMode): PlayDisplay {
-  return 'screen';
-}
+export const DEFAULT_PLAY_DISPLAY: PlayDisplay = 'screen';
 
-/** Which of the two this game shows: the player's choice, or what the mode shows. */
-export function readPlayDisplay(game: PortedGameId, mode: PlayMode): PlayDisplay {
+/** Which of the two this game shows: the player's choice, or the default above. */
+export function readPlayDisplay(game: PortedGameId): PlayDisplay {
   const stored = readStored(PREFIX + game + DISPLAY_SUFFIX);
-  return isPlayDisplay(stored) ? stored : defaultPlayDisplay(mode);
+  return isPlayDisplay(stored) ? stored : DEFAULT_PLAY_DISPLAY;
 }
 
 export function writePlayDisplay(game: PortedGameId, display: PlayDisplay): void {

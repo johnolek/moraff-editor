@@ -49,9 +49,8 @@
   let canvas = $state.raw<FloorCanvas | null>(null);
   let centredFloor = $state.raw<number | null>(null);
   let style = $state<MovementStyle>(readMovementStyle('unforgiven'));
-  const storedMode = readPlayMode('unforgiven');
-  let mode = $state<PlayMode>(storedMode);
-  let display = $state<PlayDisplay>(readPlayDisplay('unforgiven', storedMode));
+  let mode = $state<PlayMode>(readPlayMode('unforgiven'));
+  let display = $state<PlayDisplay>(readPlayDisplay('unforgiven'));
 
   const character = $derived.by(() => {
     void app.characterVersion;
