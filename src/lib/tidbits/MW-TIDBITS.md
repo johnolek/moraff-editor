@@ -587,24 +587,28 @@ In the code: [monster_killed](source:c/monster_killed),
 The two bits that describe a side of a square have four values: wall, door, secret door, open. Only
 a wall stops you. A door and a secret door are both walked through without a word.
 
-The whole of the difference is what the automap draws: a door gets a line with a gap and two
-marks, a secret door gets a solid line exactly like a wall. So a secret door is not locked, not
-hidden by a roll, and not searched for. It is a wall on the map that is not a wall, and walking at
-it is the only way to find out.
+The whole of the difference is what the automap draws. A door gets the wall's own full line and
+then two short bars laid across it and a mark in the middle; a secret door gets the line and
+nothing else, which is exactly what a wall gets. So a secret door is not locked, not hidden by a
+roll, and not searched for. It is a wall on the map that is not a wall, and walking at it is the
+only way to find out.
+
+"You cannot fight through a door", above, is what the four values do to a fight.
 
 In the code: [wall_side](source:c/wall_side), [draw_map_square](source:c/draw_map_square) and
 [side](source:ts/mwmap.js/side).
 
-### Changing dungeon does not clear the map you have explored
+### Changing dungeon throws the map you have explored away
 
 Your explored squares are kept in `.DUN` files, one per save slot per block of 32 floors, and they
-are a bitmap of where you have been and nothing else — no walls, no monsters, no items.
+are a bitmap of where you have been and nothing else — no walls, no monsters, no items. Nothing in
+one says which dungeon it belongs to, and nothing needs to: leaving the overworld for a dungeon
+whose number is not the one you came out of deletes all eight of the slot's files and blanks the
+32 maps in memory.
 
-Walking into a different entrance on the overworld blanks the 32 floor maps the game holds in
-memory and marks the loaded block as none, but the files on disk are left where they are, and
-arriving on a floor reads the old block straight back in. Nothing in the file says which dungeon
-it belongs to. A character who wanders the overworld ends up with an explored map that is two
-dungeons layered on top of one another.
+So the map only survives a trip to the surface if you go back down the same hole. There is no
+warning, and the eight `unlink` calls are the same eight a death without a raise dead contract
+makes.
 
 Inside those files is a smaller oddity: the bitmap that says which rows are present is built by a
 loop that tests its own counter rather than the map, so every row is always marked present. A
@@ -661,8 +665,9 @@ left out of it entirely.
 The exchange destroys what does not divide. Each kind is divided by its own rate on its own, the
 quotient rounded towards zero, and then all six counters are set to zero whatever the quotient
 was: 199 copper stones convert to nothing and are gone. So converting small piles often is
-strictly worse than hoarding and converting once, and the worst a single visit can burn is just
-under four jewels' worth.
+strictly worse than hoarding and converting once. Only four of the six divide at all, since a
+platinum stone is worth five jewels and a jewel stone one, so the worst a single visit can burn is
+199/200 plus 11/12 plus 3/4 plus a half: a little over three jewels.
 
 In the code: [bank](source:c/bank), [financial_statement](source:c/financial_statement) and
 [view_stats](source:c/view_stats).
@@ -710,6 +715,10 @@ In the code: [inn](source:c/inn), [level_from_experience](source:c/level_from_ex
 Every step costs `(100 + what you are carrying - 10 times your agility) / 100 + 1` moves, and
 those moves are what buy an adjacent monster its turns. The weight counts your body, your armour,
 your weapons — and your coins, at a pound for every sixteen metal stones.
+
+The step only pays it half the time. A coin flip stands in front of the whole business of spending
+time, so one step in two costs nothing at all however much you are carrying, and the weight is
+worth half of what the arithmetic says.
 
 A character who has been hoarding copper for the exchange rate is walking around slower and being
 hit more for it, and the little mouse will eventually notice and tell them to find a bank.
@@ -792,8 +801,9 @@ A character below their third level gets a lesson from a little mouse now and th
 from a list of fourteen. The routine that prints them has a case for the first eleven and nothing
 whatever for the last three.
 
-So three steps in fourteen that reach the lesson code print an empty box and move the counter on,
-and the eleven real lessons come round in a cycle three slots longer than they need to be.
+Those three cases are bare breaks, so nothing at all is drawn: whatever panel was on the screen
+stays where it is and the counter moves on. Three steps in fourteen do nothing, and the eleven
+real lessons come round in a cycle three slots longer than they need to be.
 
 The fourth lesson, when it does arrive, says `LEFT IS EAST, RIGHT IS WEST`.
 
