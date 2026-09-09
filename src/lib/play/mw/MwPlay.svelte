@@ -430,6 +430,7 @@
               expandedMap={view.expandedMap}
               barCorners={sideMonsters.map((side) => side.corner)}
               onmonster={(monster) => (openMonsterId = monster.monsterId)}
+              {redraw}
             />
           </div>
         {:else}

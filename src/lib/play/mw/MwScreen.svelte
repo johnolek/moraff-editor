@@ -13,6 +13,7 @@
   import { renderMwView, type MwViewMonster, type MwViewScene } from './view3d/render';
   import { drawMwScreenText } from './view3d/text';
   import { drawMwMonsterBars } from './view3d/monster-bar';
+  import { onScreen } from '../../ui/on-screen.svelte';
   import { zoomMapMonsterAt } from '../zoom-monsters';
   import { MORAFFS_WORLD_ZOOM_MAP, drawMwExpandedMap, drawMwZoomMap, mwExpandedMapWindow } from './map';
   import { mwMonsterThumbnail } from './monster-thumbnails';
@@ -64,6 +65,9 @@
     /** Told which monster a click on the map in the corner landed on, for the tab to open its
      *  details. Only debug mode marks them, so in the other two modes nothing is ever found. */
     onmonster?: (monster: StockedMonster) => void;
+    /** How long a new screen takes to appear, in milliseconds, revealed from the top down the
+     *  way a slow machine drew one (`../mode.ts`). Nothing at all draws it in one go. */
+    redraw?: number;
   }
 
   let {
@@ -81,14 +85,26 @@
     expandedMap = false,
     barCorners = [],
     onmonster,
+    redraw = 0,
   }: Props = $props();
 
   const WIDTH = MW_SCREEN_PIXELS.width;
   const HEIGHT = MW_SCREEN_PIXELS.height;
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
+  /** Whether the tab the screen is on is the one showing, since every tab of the site stays
+   *  mounted and a wipe behind one would be drawing for nobody. */
+  const visible = onScreen(() => canvas);
   /** The screen's own painter, so every repaint writes over the same RGBA buffer. */
   const painter = framePainter(WIDTH, HEIGHT);
+  /** How long this screen takes to appear: the player's choice while the tab is showing. */
+  const revealed = $derived(visible.showing ? redraw : 0);
+
+  /** A screen going off the page part-drawn is shown whole at once, rather than leaving the
+   *  player a half-drawn screen to come back to. */
+  $effect(() => {
+    if (!visible.showing) painter.finish();
+  });
 
   const drawn = $derived.by((): MwViewMonster[] =>
     monsters.flatMap((monster) => {
@@ -143,7 +159,7 @@
     if (expandedMap) {
       drawMwExpandedMap(frame, { rows, at: place, map: discovered, monsters: mapMonsters, thumbnail: mwMonsterThumbnail });
       drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
-      painter.paint(context, frame, floorPalette(place.floor));
+      painter.reveal(context, frame, floorPalette(place.floor), revealed);
       return;
     }
 
@@ -159,7 +175,7 @@
     // screen, so the frame goes black before its lines are painted.
     if (cleared) fillRect(frame, 0, 0, WIDTH, HEIGHT, 0);
     drawMwScreenText(frame, MW_SCREEN_PIXELS, lines);
-    painter.paint(context, frame, floorPalette(place.floor));
+    painter.reveal(context, frame, floorPalette(place.floor), revealed);
   });
 
   /**
