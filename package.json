@@ -23,6 +23,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "verify-run": "vite build --config vite.verify.config.ts --logLevel warn && node dist-cli/verify-run.mjs",
     "build:server": "vite build --config vite.server.config.ts --logLevel warn",
+    "build:engine": "vite build --config vite.engine.config.ts --logLevel warn",
     "start:server": "node dist-server/main.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
