@@ -21,6 +21,9 @@ pnpm test     # vitest
 pnpm check    # svelte-check
 pnpm build    # single-file dist/index.html
 pnpm dev
+
+pnpm build:server  # dist-server/main.mjs, the run server
+pnpm start:server  # run it
 ```
 
 ## Layout and rules
@@ -35,6 +38,9 @@ pnpm dev
 - The Tidbits tab follows the game switch: a game has one when
   `src/lib/tidbits/files.ts` names a file for it and `src/lib/tabs.ts` lists the
   tab for it.
+- `server/` is the run server, one Node process on `node:http` and `node:sqlite`
+  built by `vite.server.config.ts`; its tests run under the same `pnpm test` and
+  `server/README.md` is how it is deployed.
 - Real game folders live in `~/games/4unf for claude/` (DotU), `~/games/mworld/`
   (Moraff's World) and `~/games/rev2/` (Moraff's Revenge); never modify them and
   never commit copies of saves or executables. Tests use synthetic buffers.

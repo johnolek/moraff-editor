@@ -99,6 +99,8 @@ pnpm check        # svelte-check / TypeScript
 pnpm build        # dist/index.html, one self-contained file
 
 pnpm verify-run <run.json>   # check a run downloaded from a Play tab
+pnpm build:server            # dist-server/main.mjs, the run server
+pnpm start:server            # run it
 ```
 
 `verify-run` plays a run's log through the engine again and says whether it
@@ -112,6 +114,10 @@ to try it on in `src/lib/play/fixtures/`.
 
 Layout:
 
+- `server/` — the run server: one Node process that will take runs from the Play
+  tab, check them by replaying them and keep the leaderboards, with its own
+  README for building, configuring and deploying it. It is in this repository so
+  that one commit is one engine build.
 - `src/lib/game/` — the DotU dungeon generator and file parsers, verbatim copies
   of `dotu-tools/reference/`. A test keeps them byte-identical; change the bundle
   first, then copy.
