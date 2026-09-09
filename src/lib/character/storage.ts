@@ -33,6 +33,15 @@ export function writeStored(key: string, value: string): boolean {
   }
 }
 
+/** Take a key out of the store. A browser with no store has nothing to take out of it. */
+export function removeStored(key: string): void {
+  try {
+    storage()?.removeItem(key);
+  } catch {
+    // A store that will not answer has not kept the key either.
+  }
+}
+
 /** The bytes a stored base64 string holds, or null when the store holds something that is not
  *  base64 at all -- anything may have written to it, so a bad value is answered rather than
  *  thrown. */
