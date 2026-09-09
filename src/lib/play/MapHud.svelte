@@ -25,6 +25,11 @@
      * with, which the bar beside its picture is drawn from. Left out when no monster is faced.
      */
     closeUpHp?: { now: number; full: number };
+    /**
+     * The lines debug mode prints over the monster on the game's own screen, which stand over
+     * the picture here too. The caller leaves them out in the modes that print none.
+     */
+    closeUpLines?: string[];
     /** The character's hit points and what they can hold. */
     hp: number;
     maxHp: number;
@@ -38,7 +43,8 @@
     needed: (level: number) => number;
   }
 
-  let { closeUp, closeUpHp, hp, maxHp, sp, maxSp, level, exp, needed }: Props = $props();
+  let { closeUp, closeUpHp, closeUpLines, hp, maxHp, sp, maxSp, level, exp, needed }: Props =
+    $props();
 </script>
 
 <div class="hud" style:--orb-cap="{HUD_ORB_PX}px">
@@ -47,7 +53,12 @@
       {#if closeUpHp}
         <HudMonsterBar value={closeUpHp.now} max={closeUpHp.full} />
       {/if}
-      <div class="frame">{@render closeUp()}</div>
+      <div class="frame">
+        {@render closeUp()}
+        {#if closeUpLines && closeUpLines.length > 0}
+          <div class="lines">{#each closeUpLines as line}<div>{line}</div>{/each}</div>
+        {/if}
+      </div>
     </div>
   {/if}
   <div class="foot">
@@ -95,6 +106,21 @@
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  }
+  /* Inside the top left corner of the picture, which is where the game's own screen prints the
+     same lines over the view the monster stands in. The site's own type rather than the game's,
+     since nothing else on this display is drawn in the game's. */
+  .lines {
+    position: absolute;
+    left: calc(var(--orb-size) * 0.06);
+    top: calc(var(--orb-size) * 0.05);
+    right: calc(var(--orb-size) * 0.06);
+    font-size: calc(var(--orb-size) * 0.085);
+    line-height: 1.3;
+    color: #fff;
+    text-shadow:
+      0 0 4px #000,
+      0 1px 2px #000;
   }
   .foot {
     position: absolute;
