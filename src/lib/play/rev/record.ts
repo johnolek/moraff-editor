@@ -200,6 +200,9 @@ export const REV_VALUE = {
   /** DGROUP 1BA2: whether the character is diseased, which the temple charges 400 jewel pieces
    *  to cure (1000:1C21 and 1000:271B). */
   disease: 144,
+  /** DGROUP 1BD6: the character owns the town, which the store sells for a million (1000:2B70).
+   *  All it buys is the bank's sign (1000:235E) and the store's eighth line going away. */
+  town: 157,
 } as const;
 
 /** DGROUP B56C: which armour the character wears, 0 to 4 as the store sells it (1000:2A9A). */

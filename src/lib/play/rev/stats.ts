@@ -1,5 +1,5 @@
 import { revBasicNumber } from './magic';
-import { REV_ARMOUR_VALUE, REV_VALUE, revValue } from './record';
+import { REV_ARMOUR_VALUE, REV_VALUE, revValue, type RevPc } from './record';
 import { revClearScreen, revDrawTheDungeonAgain, revHitAnyKey } from './screens';
 import type { RevGame } from './state';
 import { REV_SPELL_LEVELS } from './tables';
@@ -38,6 +38,22 @@ const WEAPONS = [
   { value: REV_VALUE.sword, name: 'SWORD ' },
   { value: REV_VALUE.mace, name: 'MACE' },
 ];
+
+/**
+ * 1000:1AEB to 1B62: what the character wears and what they own, which is where the routine
+ * stops when DGROUP B582 is set.
+ *
+ * The store sets it (1000:2833) and nothing else does, so these two lines are the sheet's and
+ * the store's between them. Every weapon owned is printed with a semicolon after it (1000:1B08),
+ * which is what puts all three on the label's own line.
+ */
+export function revWearingAndWeapons(pc: RevPc): string[] {
+  const owned = WEAPONS.filter((weapon) => revValue(pc, weapon.value) === 1).map((weapon) => weapon.name);
+  return [
+    `${REV_WEARING}${REV_ARMOUR_WORN[revValue(pc, REV_ARMOUR_VALUE)] ?? ''}`,
+    `${REV_WEAPONS_OWNED}${owned.join('')}`,
+  ];
+}
 
 /** 1000:1B76 and 1B82: the health line, whose numbers are BASIC's own. */
 export const REV_HEALTH_POINTS = 'Health points: ';
@@ -101,11 +117,7 @@ export function revStatsSheet(game: RevGame): string[] {
   // after (`tables.ts`), in the record's own order.
   REV_SPELL_LEVELS.forEach((level, at) => lines.push(revPrintUsing(level.stat, pc.stats[at])));
   lines.push('');
-  lines.push(`${REV_WEARING}${REV_ARMOUR_WORN[revValue(pc, REV_ARMOUR_VALUE)] ?? ''}`);
-  // 1000:1B08: every weapon owned is printed with a semicolon after it, so the three of them
-  // are on the label's own line.
-  const owned = WEAPONS.filter((weapon) => revValue(pc, weapon.value) === 1).map((weapon) => weapon.name);
-  lines.push(`${REV_WEAPONS_OWNED}${owned.join('')}`);
+  lines.push(...revWearingAndWeapons(pc));
   lines.push(`${REV_HEALTH_POINTS}${revBasicNumber(pc.hp)}${OF}${revBasicNumber(pc.maxHp)}`);
   for (const line of NUMBERED_LINES) lines.push(revPrintUsing(`${line.label}${NUMBER_FIELD}`, line.of(game)));
   if (revValue(pc, REV_VALUE.disease) > 0) lines.push(...REV_DISEASED);
