@@ -479,7 +479,9 @@
     // FUN_2000_9d17 draws the arrow after the four views.
     drawZoomMapMarker(frame, place.dir);
     // The lines are printed by pfont as the game goes rather than drawn again with the screen, so
-    // they are not replayed: they go up with the whole frame once the last paint is down.
+    // they are not replayed: they go up with the whole frame once the last paint is down. The
+    // journal is put back for the painter once they are drawn.
+    const replayed = frame.journal;
     frame.journal = undefined;
     // The boss's taunt stands on the play screen: boss_office_message (exe 3000:6c9d) wipes
     // nothing before it lays the panel down, so the views are still underneath it.
@@ -490,6 +492,7 @@
     // blacks the whole display out instead.
     if (cleared) clearScreenRect(frame, cleared);
     drawDotuScreenText(frame, SCREEN_PIXELS, text);
+    frame.journal = replayed;
     paint();
   });
 
