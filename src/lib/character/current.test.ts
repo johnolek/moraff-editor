@@ -16,6 +16,9 @@ import {
   unloadCharacter,
 } from './current';
 import { RevMapMemory, revCharacterMap } from '../play/rev/memory';
+import { REV_VALUE_COUNT } from '../game/rev-port/record';
+import { revPlayerFromValues, saveRevPlayer } from '../play/rev/record';
+import { characterStatus } from './record';
 
 /** Enough of the browser's Storage to stand in for it. */
 function fakeStorage(): Storage {
@@ -45,6 +48,13 @@ function fakeHistory(): Pick<History, 'state' | 'replaceState'> {
     },
     replaceState: (next: unknown) => void (entry = next),
   };
+}
+
+/** A Moraff's Revenge character file, which holds no name and so is known by its level. */
+function revengeSave(level: number): Uint8Array<ArrayBuffer> {
+  const pc = revPlayerFromValues(Array<number>(REV_VALUE_COUNT).fill(0));
+  pc.level = level;
+  return saveRevPlayer(pc);
 }
 
 /** A save file with a name in it and room for the rest of the record. */
@@ -81,6 +91,15 @@ describe('importing a save file', () => {
     importCharacter('unforgiven', 'sagey.sav', saveFile(''));
     expect(currentEntry()?.name).toBe('sagey.sav');
     expect(currentEntry()?.slot).toBeNull();
+  });
+
+  it('makes a Moraff’s Revenge save the character the site is on', () => {
+    importCharacter('revenge', '3.EXE', revengeSave(6));
+    expect(app.game).toBe('revenge');
+    expect(currentEntry()?.name).toBe('3.EXE');
+    // The bottom bar names a character only once the record can be read, which is what left a
+    // Moraff's Revenge character showing as no character at all.
+    expect(characterStatus(currentEntry()!)?.lev).toBe(6);
   });
 
   it('keeps the file exactly as it came in', () => {
