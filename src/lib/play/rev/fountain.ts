@@ -1,5 +1,6 @@
 import { LEVELS } from '../../game/revmap.js';
 import type { RevMagicDesk } from './desk';
+import { REV_FOUR_SECONDS } from './held';
 import { REV_MAGIC } from './magic';
 import { REV_STAT_COUNT, REV_UNBANKED_EXPERIENCE_VALUE, revValue, setRevValue, type RevPc } from './record';
 import { revArriveInTheTown, revEndPreppedSpells } from './spells';
@@ -72,6 +73,9 @@ export function revWorkOutSpellPoints(pc: RevPc): void {
 export function revDrinkFromTheFountain(game: RevGame, desk: RevMagicDesk): void {
   const pc = game.pc;
   game.say(REV_YOU_FEEL_STRANGE);
+  // 1000:3DC0: four seconds on a screen the drink has just cleared, which is the whole of what
+  // the player is shown before they are back in the town.
+  game.delay(REV_FOUR_SECONDS);
   game.memory.forgetTheDungeon();
   revRollTheFountain(game);
   pc.level = 0;

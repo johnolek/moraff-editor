@@ -1,4 +1,5 @@
 import type { RevMagicDesk } from './desk';
+import { REV_FOUR_SECONDS } from './held';
 import { REV_KEY } from './keys';
 import { REV_FEEL_VERY_GOOD } from './items';
 import {
@@ -382,13 +383,15 @@ const BOOK_SUBJECTS = ['strength.', 'learning.', 'wizdom.', 'health.', 'agility.
  * A line that has nothing to give — magic the character already has better of, and anything at
  * all offered to a wizard — says NOTHING instead.
  *
- * The four seconds 1000:2F35 holds YOU FIND... on the screen for are not kept, since nothing in
- * this port waits; the two flushes around them are.
+ * The four seconds 1000:2F35 holds YOU FIND... on the screen for are held here as a frame, and
+ * so are the two flushes of the keyboard around them.
  */
 async function theTable(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const rng = game.rng;
   game.flushKeys();
   game.say(REV_YOU_FIND);
+  // 1000:ACA2: four seconds with the line alone on a screen the table has just cleared.
+  game.delay(REV_FOUR_SECONDS);
   const plus = Math.floor(Math.floor(revFraction(rng) * game.pc.dungeonLevel) / 3) + 1;
   const line = rng.random(22) + 1;
   game.scratch = line;

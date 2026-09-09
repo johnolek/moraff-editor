@@ -1,3 +1,4 @@
+import { REV_FOUR_SECONDS } from './held';
 import { REV_MAGIC, revFloorStats } from './magic';
 import { REV_STAT_COUNT, REV_VALUE, revValue, setRevValue } from './record';
 import type { RevGame } from './state';
@@ -70,7 +71,8 @@ function revDiseaseDrain(game: RevGame): void {
   const stat = game.rng.random(REV_STAT_COUNT) + 1;
   pc.stats[stat - 1] -= 1;
   game.say(NEEDS_A_CURE);
-  // 1000:40EB holds that line on the screen for four seconds, which this port does not; it is
-  // one of the message holds `rev-tools/docs/FAITHFUL-GAPS.md` keeps together.
+  // 1000:40EB: four seconds with the line on row 1, which is a quarter of the time between two
+  // drains at the pace the clock ticks.
+  game.delay(REV_FOUR_SECONDS);
   revFloorStats(pc);
 }

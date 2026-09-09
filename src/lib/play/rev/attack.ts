@@ -1,5 +1,6 @@
 import { dungeonForLevel } from '../../rev-bestiary/monsters';
 import { REV_FIGHT_LINES } from './fight';
+import { REV_TWO_SECONDS } from './held';
 import { revFraction } from './magic';
 import { REV_ARMOUR_VALUE, REV_STAT_COUNT, REV_VALUE, revValue, setRevValue } from './record';
 import type { RevPc } from './record';
@@ -264,10 +265,10 @@ export function revMonsterAttack(game: RevGame, save: () => void): RevMonsterSwi
     // swinging again. The loop is what asks about the death itself.
     if (game.pc.level < 0 || game.pc.hp < 0) return swing;
     // 1000:9F84: two seconds at 1000:2F1A for the player to read the numbers that have just
-    // changed, and then the flush at 1000:2FCB of whatever they typed while reading. The screen
-    // here is not one that waits, so the pause is left out and the flush is not.
+    // changed, and then the flush at 1000:2FCB of whatever they typed while reading.
     if (game.numbersChanged) {
       game.numbersChanged = false;
+      game.delay(REV_TWO_SECONDS);
       game.flushKeys();
     }
     // 1000:9FA5 rolls whether or not the flag allows a second swing, so the roll is spent either

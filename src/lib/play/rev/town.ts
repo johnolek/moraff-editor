@@ -1,5 +1,6 @@
 import { townBuilding } from '../../game/revmap.js';
 import type { RevMagicDesk } from './desk';
+import { REV_FOUR_SECONDS } from './held';
 import { revItemMenu } from './items';
 import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue } from './record';
 import { REV_ITEM_TABLE, revSpellsAt } from './tables';
@@ -57,6 +58,8 @@ function maybeRobbed(game: RevGame): void {
   setRevValue(pc, REV_VALUE.swordPlus, 0);
   setRevValue(pc, REV_VALUE.macePlus, 0);
   game.say(ROBBED);
+  // 1000:1F39.
+  game.delay(REV_FOUR_SECONDS);
 }
 
 /** Whether the character wears the rings of health, which heal in full at the two cheaper inns
@@ -82,6 +85,9 @@ export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDe
     // 1000:2014: the Kings Inn's own cleric, which is the whole of what the price buys.
     pc.hp = pc.maxHp;
     game.say(SLEEPING, 'A hotel staff cleric heals all of your', '   wounds.');
+    // 1000:203E. The four seconds are where the Kings Inn's hymn plays (1000:1FC9), so they are
+    // there whether or not there is anything to hear.
+    game.delay(REV_FOUR_SECONDS);
     return;
   }
   pc.hp += inn.heals;
@@ -93,6 +99,9 @@ export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDe
     pc.stats[3] -= 1;
     setRevValue(pc, REV_VALUE.disease, 1);
     game.say(...SICK);
+    // 1000:1ED0 and 1ED3: the wait twice over, so this is the longest the game holds anything.
+    game.delay(REV_FOUR_SECONDS);
+    game.delay(REV_FOUR_SECONDS);
   }
 }
 
@@ -193,6 +202,8 @@ export async function revVisitTemple(game: RevGame, desk: RevTownDesk): Promise<
     if (spell < 0 || spell >= TEMPLE_PRICES.length) continue;
     if (pc.money < TEMPLE_PRICES[spell]) {
       game.say(`Jewel pieces with character: ${Math.trunc(pc.money)}`, '. The good', '   cleric throws you out.');
+      // 1000:27F4.
+      game.delay(REV_FOUR_SECONDS);
       return;
     }
     pc.money -= TEMPLE_PRICES[spell];
@@ -273,14 +284,20 @@ export async function revVisitStore(game: RevGame, desk: RevTownDesk): Promise<v
     // weapon `F1.COM` says a wizard can use.
     if (line > 0 && pc.cls !== 1) {
       game.say(...NOT_FOR_A_WIZARD);
+      // 1000:29B3.
+      game.delay(REV_FOUR_SECONDS);
       continue;
     }
     if (goods.owned !== null && revValue(pc, goods.owned) === 1) {
       game.say(ALREADY_HAVE);
+      // 1000:2BB2, which both refusals of the store fall into.
+      game.delay(REV_FOUR_SECONDS);
       continue;
     }
     if (goods.owned === null && revValue(pc, REV_ARMOUR_VALUE) >= goods.armour) {
       game.say(DONT_NEED);
+      // 1000:2BB2 again.
+      game.delay(REV_FOUR_SECONDS);
       continue;
     }
     if (pc.money < goods.price) continue;
@@ -344,6 +361,8 @@ export async function revVisitGuild(game: RevGame, desk: RevTownDesk, magic: Rev
       game.say('This will cost you 800 JP.');
       if (pc.money < REV_MAGIC_ITEM_LIST_PRICE) {
         game.say(...CANNOT_PAY);
+        // 1000:2F14.
+        game.delay(REV_FOUR_SECONDS);
         return;
       }
       await readOutAnItem(game, desk, magic);
@@ -356,6 +375,8 @@ export async function revVisitGuild(game: RevGame, desk: RevTownDesk, magic: Rev
     game.say(`That will cost you ${price} JP.`);
     if (price > pc.money) {
       game.say(...CANNOT_PAY);
+      // 1000:2F14 again, which is where both ways of not affording the guild end up.
+      game.delay(REV_FOUR_SECONDS);
       return;
     }
     await readOutASpell(game, desk, level, price);
