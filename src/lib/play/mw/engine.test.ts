@@ -336,3 +336,48 @@ describe('falling down a chute', () => {
     expect(session.view().screen.map((line) => line.text)).toEqual(['UH OH... A SINKING FEELING...']);
   });
 });
+
+describe('the monster the map draws a close-up of', () => {
+  /** A generator whose every roll comes out as high as it can, so a swing lands and hurts. */
+  const highest: Rng = { random: (n) => (n > 1 ? n - 1 : 0) };
+
+  /** Put a monster on the square the character faces. The town has none of its own, so this is
+   *  the only thing on the floor. */
+  const standInFront = (hp: number) => (session: MwGameSession) => {
+    const pc = session.game.pc;
+    Object.assign(session.game.monsters[0], { x: pc.x, y: pc.y - 1, hp, type: 1, depth: 3 });
+    mwSetOccupant(session.game, pc.x, pc.y - 1, 0);
+  };
+
+  const fighter = () =>
+    mwCharacterFile({
+      floor: 0,
+      dir: 0,
+      weapon: 6,
+      str: 80,
+      luck: 80,
+      lev: 40,
+      ...findMwSquare(0, (square) => square.n === 3 && square.ladder === 0),
+    });
+
+  it('carries the hit points it was stocked with, whatever a swing has left it', async () => {
+    const session = playingMw(fighter(), highest, standInFront(4000));
+    await settleMw();
+    expect(session.view().engagedFullHp).toBe(4000);
+    await pressMw(session, MW_KEY.fight);
+    expect(session.view().engaged?.hp).toBeLessThan(4000);
+    expect(session.view().engagedFullHp).toBe(4000);
+  });
+
+  it('carries the lines debug mode prints over it, and none with nothing faced', async () => {
+    const session = playingMw(fighter(), highest, standInFront(400));
+    await settleMw();
+    const lines = session.view().engagedDebugLines;
+    expect(lines[0]).toMatch(/^HIT:\d+\.\d%$/);
+    expect(lines[1]).toMatch(/^IT HITS:\d+\.\d%$/);
+    session.game.engaged = -1;
+    expect(session.view().engaged).toBeNull();
+    expect(session.view().engagedFullHp).toBe(0);
+    expect(session.view().engagedDebugLines).toEqual([]);
+  });
+});

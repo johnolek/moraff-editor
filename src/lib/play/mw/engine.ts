@@ -1,7 +1,7 @@
 import { attackTiming } from '../../game/mw-port/combat';
 import { bundledMwDungeon } from '../../game/mw-dungeon';
 import { recomputeWeight } from '../../game/mw-port/magic';
-import { mwMenuKey, mwLineMenuKey } from '../../game/mw-port/screens';
+import { mwMenuKey, mwLineMenuKey, MW_MONSTER_VIEW_CORNERS } from '../../game/mw-port/screens';
 import type { MwCharacter, MwGame } from '../../game/mw-port/state';
 import { MW_SQUARE_PLAYER, mwClearMessageLine, mwSetOccupant, newMwGame } from '../../game/mw-port/state';
 import type { Rng } from '../../game/port/rng';
@@ -11,6 +11,7 @@ import type { StockedMonster } from '../../map/stocking';
 import { adviseTheWalker, type MwLessons } from './advice';
 import { fallDownAChute, chuteUnder } from './chute';
 import { mwDie } from './death';
+import { mwDebugMonsterLines } from './debug-screen';
 import { castAtTheSpellScreen, useAnItem } from './cast';
 import {
   changeTheBrickSpeed,
@@ -127,6 +128,20 @@ export interface MwPlayView {
   moves: number;
   /** The monster the character is facing, or null. */
   engaged: StockedMonster | null;
+  /**
+   * The hit points that monster was stocked with, which is the full mark of the bar beside its
+   * picture; 0 when nothing is being faced.
+   *
+   * On the view rather than asked of the session for the same reason the character's own hit
+   * points are: a swing writes the monster's record in place, and nothing on the page would
+   * redraw off it.
+   */
+  engagedFullHp: number;
+  /**
+   * The lines debug mode prints over that monster, which the map's close-up shows in debug mode
+   * and in no other; empty when nothing is being faced.
+   */
+  engagedDebugLines: string[];
   /** DS:119f, which the key menu's sound line offers the opposite of. */
   sound: boolean;
   /** The loop has come back: the character has quit or died. */
@@ -441,6 +456,7 @@ export class MwGameSession extends KeyedSession<MwCharacter> {
     const game = this.game;
     const pc = game.pc;
     const drawn = mwDrawnMonsters(game);
+    const engaged = game.engaged === -1 ? null : (drawn.find((monster) => monster.slot === game.engaged) ?? null);
     return {
       place: { x: pc.x, y: pc.y, floor: pc.floor, dungeon: pc.dungeon, dir: pc.dir },
       hp: pc.hp,
@@ -462,7 +478,11 @@ export class MwGameSession extends KeyedSession<MwCharacter> {
       ),
       banner: this.timed.showingBanner(this.banner),
       moves: game.movesTaken,
-      engaged: game.engaged === -1 ? null : (drawn.find((monster) => monster.slot === game.engaged) ?? null),
+      engaged,
+      engagedFullHp: engaged === null ? 0 : this.floors.fullHp(engaged.slot, engaged.hp),
+      // The map draws the one close-up wherever the monster stands, so the lines are broken at
+      // the width of the view ahead, which is the corner the map's own screen uses too.
+      engagedDebugLines: mwDebugMonsterLines(game, MW_MONSTER_VIEW_CORNERS.north).map((line) => line.text),
       sound: game.sound,
       over: this.over,
       dead: this.dead,
