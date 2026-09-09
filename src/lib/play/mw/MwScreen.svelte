@@ -12,7 +12,8 @@
   import { renderMwView, type MwViewMonster, type MwViewScene } from './view3d/render';
   import { drawMwScreenText } from './view3d/text';
   import { drawMwMonsterBars } from './view3d/monster-bar';
-  import { drawMwExpandedMap, drawMwZoomMap } from './map';
+  import { zoomMapMonsterAt } from '../zoom-monsters';
+  import { MORAFFS_WORLD_ZOOM_MAP, drawMwExpandedMap, drawMwZoomMap, mwExpandedMapWindow } from './map';
   import { mwMonsterThumbnail } from './monster-thumbnails';
   import {
     MW_KEY_MENU_RECT,
@@ -21,6 +22,7 @@
     MW_SCREEN_PIXELS,
     MW_SCREEN_UNITS_X,
     MW_SCREEN_UNITS_Y,
+    MW_EXPANDED_CENTRE,
     MW_VIEWS,
     MW_WHOLE_SCREEN_VIEW,
   } from './view3d/screen';
@@ -58,6 +60,9 @@
     /** The corner of every view with a monster standing beside the character, which is where a
      *  hit-point bar goes. */
     barCorners?: MwMonsterViewCorner[];
+    /** Told which monster a click on the map in the corner landed on, for the tab to open its
+     *  details. Only debug mode marks them, so in the other two modes nothing is ever found. */
+    onmonster?: (monster: StockedMonster) => void;
   }
 
   let {
@@ -74,6 +79,7 @@
     zoomed = null,
     expandedMap = false,
     barCorners = [],
+    onmonster,
   }: Props = $props();
 
   const WIDTH = MW_SCREEN_PIXELS.width;
@@ -139,6 +145,26 @@
     context.putImageData(new ImageData(toRgba(frame, floorPalette(place.floor)), WIDTH, HEIGHT), 0, 0);
   });
 
+  /**
+   * Which monster a click landed on, if any.
+   *
+   * The canvas is the game's own 1024 by 768 screen scaled to whatever room the column has, so a
+   * click is scaled back to those pixels and read off the map — the one beside the views, or the
+   * whole floor while the X key's map is up. A page the game has taken the display over covers
+   * the map, so nothing on it can be clicked while one is up.
+   */
+  function onpointerup(event: PointerEvent): void {
+    if (!onmonster || cleared || mapMonsters.length === 0) return;
+    const box = (event.currentTarget as HTMLCanvasElement).getBoundingClientRect();
+    if (box.width === 0 || box.height === 0) return;
+    const at = { x: ((event.clientX - box.left) / box.width) * WIDTH, y: ((event.clientY - box.top) / box.height) * HEIGHT };
+    const window = expandedMap
+      ? mwExpandedMapWindow()
+      : MORAFFS_WORLD_ZOOM_MAP.window({ width: WIDTH, height: HEIGHT });
+    const found = zoomMapMonsterAt(window, expandedMap ? MW_EXPANDED_CENTRE : place, mapMonsters, at);
+    if (found) onmonster(found);
+  }
+
   /** The message box and the key menu, which movecontrol blanks before it draws in them. */
   function drawBoxes(frame: Frame): void {
     const toX = (x: number) => Math.trunc(((WIDTH - 1) * x) / 0x63f);
@@ -151,7 +177,7 @@
 
 <!-- The game's screen: the views, the boxes around them and the game's own lines of text. -->
 <div class="screen" style:aspect-ratio="{MW_SCREEN_UNITS_X} / {MW_SCREEN_UNITS_Y}">
-  <canvas bind:this={canvas} width={WIDTH} height={HEIGHT}></canvas>
+  <canvas bind:this={canvas} width={WIDTH} height={HEIGHT} {onpointerup}></canvas>
 </div>
 
 <style>

@@ -12,6 +12,7 @@
   import { debugMonsterLines } from './debug-screen';
   import { dotuMonsterThumbnail } from './monster-thumbnails';
   import { inRect } from './screens';
+  import { zoomMapMonsterAt } from './zoom-monsters';
   import type { KilledOnScreen } from './engine';
   import {
     ARROW_DARK_COLOUR,
@@ -20,6 +21,8 @@
     clearScreenRect,
     drawExpandedMap,
     drawScreenFurniture,
+    expandedMapWindow,
+    EXPANDED_CENTRE,
     FACING_ARROW_RECT,
     fillScreenBox,
     keyMenuLines,
@@ -27,6 +30,7 @@
     SCREEN_PIXELS,
     SCREEN_WINDOW,
     statusLines,
+    UNFORGIVEN_ZOOM_MAP,
   } from './display';
   import type { PlaqueState } from './engine';
   import { fadedPalette, fadeSteps, FADE_STEP_MS, type Fade } from './fade';
@@ -63,6 +67,9 @@
     /** Whether the numbers the game never prints are printed over the views, which is debug
      *  mode's own doing. */
     debug?: boolean;
+    /** Told which monster a click on the zoom map landed on, for the tab to open its details.
+     *  Only debug mode marks them, so in the other two modes nothing is ever found. */
+    onmonster?: (monster: StockedMonster) => void;
     /** The HIT U/D box, where draw_ladder_prompt puts it. */
     prompt: ScreenLine[] | null;
     /** The monster the skull is standing over, or null when nothing has just been killed. */
@@ -98,6 +105,7 @@
     prompt,
     mapMonsters = [],
     debug = false,
+    onmonster,
     killed = null,
     viewsDrawn = 0,
     expandedMap = false,
@@ -155,6 +163,34 @@
       cleared === null &&
       !plaque,
   );
+
+  /**
+   * Whether the map the monsters are marked on is the one on the screen, which is what a click
+   * can be about. Every screen that takes the display over covers it.
+   */
+  const mapShowing = $derived(
+    expandedMap || (!tablet && !sectionScreen && !buildingScreen && cleared === null),
+  );
+
+  /**
+   * Which monster a click landed on, if any.
+   *
+   * The canvas is the game's own 1024 by 768 screen scaled to whatever room the column has, so a
+   * click is scaled back to those pixels and read off the map — the corner one, or the whole
+   * floor while the X key's map is up.
+   */
+  function onpointerup(event: PointerEvent): void {
+    if (!onmonster || !mapShowing || mapMonsters.length === 0) return;
+    const box = (event.currentTarget as HTMLCanvasElement).getBoundingClientRect();
+    if (box.width === 0 || box.height === 0) return;
+    const at = {
+      x: ((event.clientX - box.left) / box.width) * SCREEN_PIXELS.width,
+      y: ((event.clientY - box.top) / box.height) * SCREEN_PIXELS.height,
+    };
+    const window = expandedMap ? expandedMapWindow() : UNFORGIVEN_ZOOM_MAP.window(SCREEN_PIXELS);
+    const found = zoomMapMonsterAt(window, expandedMap ? EXPANDED_CENTRE : place, mapMonsters, at);
+    if (found) onmonster(found);
+  }
 
   /**
    * Everything the tab paints afresh every pass. None of these is a line the game has printed —
@@ -432,6 +468,7 @@
     bind:this={canvas}
     width={SCREEN_PIXELS.width}
     height={SCREEN_PIXELS.height}
+    {onpointerup}
   ></canvas>
   {#if arrowFlashing}
     <canvas
