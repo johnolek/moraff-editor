@@ -5,13 +5,13 @@ import type { MwStockedMonster } from './stocking';
 import { MONSTER_SLOTS } from './stocking';
 
 /**
- * The character record Moraff's World writes, as far as `roll_char` fills it in.
+ * The character record Moraff's World writes.
  *
- * The whole record is 0x928 bytes and the roller is the only function ported so far, so what is
- * here is what the roller reads or writes. Each field's comment gives the save offset and the
- * global the original reaches it through: the record sits at `DS:c0f2`, so `DAT_6000_xxxx` is
- * save offset `xxxx - 0xc0f2`. The names are the labels the Moraff's World schema in
- * `src/lib/editor/games.ts` gives those offsets.
+ * The whole record is 0x928 bytes, and what is named here is what the ported functions read or
+ * write. Each field's comment gives the save offset and the global the original reaches it
+ * through: the record sits at `DS:c0f2`, so `DAT_6000_xxxx` is save offset `xxxx - 0xc0f2`. The
+ * names are the labels the Moraff's World schema in `src/lib/editor/games.ts` gives those
+ * offsets.
  */
 export interface MwCharacter {
   /** 0x00, DS:c0f2: upper case, at most the 18 characters read_string takes. */

@@ -3,7 +3,7 @@
 A faithful TypeScript port of Moraff's World, read out of `mw-tools/decomp/mw.c` — Ghidra's
 decompilation of the 1993 registered `WORLD.EXE`, with the names the reverse engineering worked
 out. `mw-tools/decomp/README.md` explains how that file was made, and `mw-tools/docs/ROLLER.md`
-is the prose alongside the one piece of the game ported here.
+is the prose alongside the character roller, which is where this port started.
 
 This is not a reimplementation and not a tidy-up. Every function here does what the 1993 code
 does, including the parts that look like accidents.
@@ -16,10 +16,9 @@ a lot of shape.
 
 ## Where this is going
 
-The Dungeons of the Unforgiven port is meant to become that game, playable in a browser. This
-one is the same: `src/lib/play/mw/` is the play loop these functions are called from, and
-`roll_char` makes a character the real game will load, so the New Character tab can roll one for
-either game.
+The Dungeons of the Unforgiven port is that game, playable in a browser, and this one is the
+same: `src/lib/play/mw/` is the play loop these functions are called from, and `roll_char` makes
+a character the real game will load, so the New Character tab can roll one for either game.
 
 ## The departures
 
@@ -38,8 +37,8 @@ reads back, down to the numbering.
 **A ported function stops at the character record.** Where `roll_char` calls `save_player` (exe
 2000:58bf) to write the file, and `generate_section` (exe 2000:46a4) to build the floor the
 character starts on, the port appends to `game.events` and carries on. The record ends up
-holding exactly what the original leaves in it; what is missing is the world around it, and
-nothing of the world is ported yet.
+holding exactly what the original leaves in it; what is missing is the world around it, which
+the play loop in `src/lib/play/mw/` sees to when it reads those events.
 
 **The port never reseeds the random number generator.** `roll_char` calls `srand(time(NULL))`
 once, between the instruction screen and the race menu. The port calls nothing there and says so
