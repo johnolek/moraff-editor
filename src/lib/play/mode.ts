@@ -94,6 +94,24 @@ export function writePlayDisplay(game: PortedGameId, display: PlayDisplay): void
   writeStored(PREFIX + game + DISPLAY_SUFFIX, display);
 }
 
+/** Where the choice is kept, one key per game, beside the mode and the display. */
+const COLOURBLIND_SUFFIX = '.colourblind';
+
+/**
+ * Whether the stage is drawn through a red-green colourblindness simulation.
+ *
+ * This is a filter over the pixels the port has already drawn and nothing else: the game's
+ * palettes, its drawing and everything it decides are untouched, and turning it on mid-game
+ * changes only what the screen looks like.
+ */
+export function readPlayColourblind(game: PortedGameId): boolean {
+  return readStored(PREFIX + game + COLOURBLIND_SUFFIX) === 'on';
+}
+
+export function writePlayColourblind(game: PortedGameId, on: boolean): void {
+  writeStored(PREFIX + game + COLOURBLIND_SUFFIX, on ? 'on' : 'off');
+}
+
 /**
  * Whether the column of numbers the game keeps and never prints is shown — the engaged monster's
  * hit points and the chance a swing lands, the charges on every wand and scroll, the turns left

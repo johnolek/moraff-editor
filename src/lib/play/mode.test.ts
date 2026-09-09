@@ -8,9 +8,11 @@ import {
   panelVisible,
   PLAY_DISPLAYS,
   PLAY_MODES,
+  readPlayColourblind,
   readPlayDisplay,
   readPlayMode,
   sidePicturesVisible,
+  writePlayColourblind,
   writePlayDisplay,
   writePlayMode,
   zoomMapMonsters,
@@ -175,5 +177,32 @@ describe('the switch between the screen and the map', () => {
     useStorage(undefined);
     writePlayDisplay('moraffsWorld', 'map');
     expect(readPlayDisplay('moraffsWorld')).toBe('screen');
+  });
+});
+
+describe('the colourblindness simulation', () => {
+  it('is off until it has been asked for', () => {
+    useStorage(fakeStorage());
+    expect(readPlayColourblind('unforgiven')).toBe(false);
+  });
+
+  it('remembers the choice for one game without touching the other', () => {
+    useStorage(fakeStorage());
+    writePlayColourblind('unforgiven', true);
+    expect(readPlayColourblind('unforgiven')).toBe(true);
+    expect(readPlayColourblind('moraffsWorld')).toBe(false);
+  });
+
+  it('turns back off again', () => {
+    useStorage(fakeStorage());
+    writePlayColourblind('revenge', true);
+    writePlayColourblind('revenge', false);
+    expect(readPlayColourblind('revenge')).toBe(false);
+  });
+
+  it('is off where there is nowhere to remember anything', () => {
+    useStorage(undefined);
+    writePlayColourblind('moraffsWorld', true);
+    expect(readPlayColourblind('moraffsWorld')).toBe(false);
   });
 });
