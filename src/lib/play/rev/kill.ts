@@ -5,6 +5,11 @@ import type { RevGame } from './state';
 /** 1000:A4E7: what a kill says. */
 export const YOU_KILLED_IT = 'YOU KILLED IT!!';
 
+/** Where it says it: `LOCATE 16, 24` at 1000:A4D8, straight across the close-up of the monster
+ *  it killed, which is drawn from (225, 112). */
+const KILLED_ROW = 16;
+const KILLED_COLUMN = 24;
+
 /**
  * 1000:A335: the monster is dead.
  *
@@ -24,6 +29,11 @@ export function revKillMonster(game: RevGame): void {
   game.dropsAPill = fight.kind === 5;
   setRevValue(pc, REV_UNBANKED_EXPERIENCE_VALUE, revValue(pc, REV_UNBANKED_EXPERIENCE_VALUE) + fight.experience);
   game.fight = null;
+  // 1000:A4C1 empties the square and 1000:A4C7 asks 1000:6BAF to fill the box between the views
+  // from it. It finds nothing standing there and returns at 1000:6BDE without rubbing anything
+  // out, so the dead monster's picture is still on the screen for the next two lines to be
+  // printed across it. Nothing blanks that box but 1000:58F7, which the kill never reaches.
+  game.kept.picture = { name: fight.name, level: pc.dungeonLevel };
   game.monsters.grid[GRID_STRIDE * pc.row + pc.column] = 0;
   // 1000:A3C8: what the clock reads as "the monster's level" becomes the dungeon level.
   game.lastMonsterLevel = pc.dungeonLevel;
@@ -41,6 +51,9 @@ export function revKillMonster(game: RevGame): void {
   // 1000:A4CD: `Go Away!' leaves the monster's treasure behind and the monster alive somewhere
   // else, so the kill it runs says nothing.
   if (game.monsterLeft) game.monsterLeft = false;
-  else game.say(YOU_KILLED_IT);
+  else {
+    game.kept.printAt(KILLED_ROW, KILLED_COLUMN, YOU_KILLED_IT);
+    game.say(YOU_KILLED_IT);
+  }
   game.killed = true;
 }

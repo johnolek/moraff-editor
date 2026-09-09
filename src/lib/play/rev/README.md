@@ -60,6 +60,9 @@ BASIC.
 * **`screen/`** — the screen the game draws, as a 320 by 200 buffer of colour indexes: the four
   3-D views and the box between them (`views.ts`, `monsters.ts`), the map of the squares walked on
   (`map.ts`), everything printed (`text.ts`), and `screen.ts` to put them together.
+  `kept.ts` is the one part of it that is not worked out afresh every time: the lines the game
+  `LOCATE`s and `PRINT`s stay on the screen until it writes over them, so they are held on a
+  character grid of their own and drawn last, over everything else.
   `rev-tools/reference/render_screen.mjs` writes one out as a PNG.
 * **`RevPlay.svelte`** — the tab. **`RevPanel.svelte`** — the numbers the game keeps and never
   prints, which `../mode.ts` shows in debug alone.

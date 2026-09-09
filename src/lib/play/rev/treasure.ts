@@ -145,6 +145,11 @@ const LEAVE_KEYS = ['L'.charCodeAt(0), 'l'.charCodeAt(0)];
 /** 1000:A508: what the kill waits at before it hands anything over. */
 export const REV_HIT_RETURN = 'HIT RETURN';
 
+/** Where it waits: `LOCATE 17, 26` at 1000:A4F9, on the row under YOU KILLED IT!! and over the
+ *  same picture. */
+const HIT_RETURN_ROW = 17;
+const HIT_RETURN_COLUMN = 26;
+
 /**
  * 1000:A505: the kill waits at HIT RETURN.
  *
@@ -153,6 +158,7 @@ export const REV_HIT_RETURN = 'HIT RETURN';
  * every other key.
  */
 async function waitForReturn(game: RevGame, desk: RevMagicDesk): Promise<void> {
+  game.kept.printAt(HIT_RETURN_ROW, HIT_RETURN_COLUMN, REV_HIT_RETURN);
   game.say(REV_HIT_RETURN);
   game.flushKeys();
   for (;;) {
@@ -288,6 +294,9 @@ async function offerTheCoins(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const pc = game.pc;
   const coins = revRollTreasure(game);
   if (coins.value <= 0) return;
+  // 1000:A890: the treasure takes the screen over, which is what finally rubs out the dead
+  // monster and the two lines printed across it.
+  game.kept.clear();
   game.say(...revTreasureFound(coins));
   if (pc.weight + coins.weight >= TOO_HEAVY_AT) {
     game.say(REV_TOO_HEAVY);

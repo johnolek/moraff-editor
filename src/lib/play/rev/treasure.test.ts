@@ -106,6 +106,27 @@ describe('the HIT RETURN a kill waits at', () => {
     await revTreasureFromAKill(game, desk);
     expect(game.said).toEqual([REV_HIT_RETURN]);
   });
+
+  it('waits on the row under YOU KILLED IT!!, over the same picture', async () => {
+    const pc = revCharacter();
+    const { game, desk } = revTestGame(pc, revRolls([0, 0]));
+    await revTreasureFromAKill(game, desk);
+    expect(game.kept.runs()).toContainEqual({ row: 17, column: 26, text: REV_HIT_RETURN });
+  });
+
+  it('takes the dead monster away when the treasure clears the screen', async () => {
+    const pc = revCharacter({ dungeonLevel: 1, weight: 150 });
+    const { game, desk, keys } = revTestGame(
+      pc,
+      revRolls([1, FRACTION(0.25), FRACTION(0.5), FRACTION(0.5), 0, 0]),
+    );
+    game.lastMonsterLevel = 1;
+    game.kept.picture = { name: 6, level: 1 };
+    keys.push(REV_KEY.enter, KEY('L'));
+    await revTreasureFromAKill(game, desk);
+    expect(game.kept.picture).toBeNull();
+    expect(game.kept.runs()).toEqual([]);
+  });
 });
 
 describe('the spellbook a kill drops', () => {

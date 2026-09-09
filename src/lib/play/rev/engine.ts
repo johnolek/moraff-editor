@@ -658,6 +658,12 @@ export async function runRevDungeon(session: RevGameSession): Promise<void> {
     if (step !== 'monster') revPass(game);
     // The fight is over the moment the character is no longer standing on the monster.
     if (game.fight !== null && session.monsterHere() !== game.fight.slot) revLeaveTheFight(game);
+    // 1000:3FFC ends by falling into 1000:4260 and the redraw of the map and the views at
+    // 1000:4275, which paints over everything the key printed on them -- the picture in the box
+    // between the views among it (1000:47EA into 1000:58F7). A fight never gets there: its own
+    // loop goes back to 1000:84C1 instead, which is why the lines a swing prints stay up until
+    // the next swing blanks them. The step a monster blocked does not either (1000:33EA).
+    if (game.fight === null && step !== 'monster') game.kept.clear();
     if (session.over) return;
   }
 }
