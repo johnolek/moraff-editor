@@ -50,6 +50,17 @@ BASIC.
   `settings.ts` — so that two people can add two keys without touching the same file.
 * **`pass.ts`** — 1000:3FFC, what the game does on the far side of every key whatever the key
   was: the rings of health healing and the disease drain.
+* **`screens.ts`** — the screens that take the whole display over. A `CLS` blacks the screen out
+  and puts the cursor at 1, 1, and nothing draws the dungeon again until the redraw at the end of
+  the pass, so between the two what is on the screen is exactly what has been printed since:
+  that is `game.cleared`, and while it is set every line the game says goes on the screen at the
+  cursor rather than into the four message rows. The treasure (1000:A890), the death
+  (1000:A016), the quit (1000:0D8E), the pause (1000:7FFE) and the magic table (1000:AC87) are
+  the five, and the treasure's is the one that puts anything back — the flat map and the box
+  between the views, and not the four views. `held.ts` — the two-second and four-second waits
+  the game leaves a message up for, as a display timer.
+* **`death.ts`** — 1000:A013, where two coin flips decide between the end of the character, a
+  reincarnation and a raise.
 * **The magic** — `spells.ts` (the twenty-four spells), `items.ts` (the twelve magic items, the
   six pills and the nine wands), `treasure.ts` (what a kill drops), `fountain.ts`. `magic.ts`
   names the record numbers all four read, `tables.ts` is `F1.COM` and `F2.COM`, and `desk.ts` is
