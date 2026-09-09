@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { blocked } from '../../game/revmap.js';
 import { SeededRng } from '../../game/port/rng';
 import { formatRevRecord, REV_VALUE_COUNT } from '../../game/rev-port/record';
 import { REV_KEY } from './keys';
@@ -303,6 +304,32 @@ describe('a fight', () => {
   it('opens when a monster reaches the character', async () => {
     const session = await beside();
     expect(session.view().fight).not.toBeNull();
+    expect(session.view().fight?.slot).toBe(41);
+    session.finish();
+  });
+
+  it('opens when the character walks at a monster, which is how one is usually met', async () => {
+    const { session } = await playing(9, revRecord({ 25: 2, 23: 10, 24: 10, 142: 1 }));
+    session.enterLevel(2);
+    const pc = session.game.pc;
+    session.game.monsters.grid[22 * pc.row + pc.column] = 0;
+    // The one of the four sides of the character's square the level's wall rule leaves open.
+    const sides = [
+      { facing: 1, kind: 1, asked: { column: pc.column, row: pc.row }, to: { column: pc.column, row: pc.row - 1 } },
+      { facing: 2, kind: 2, asked: { column: pc.column + 1, row: pc.row }, to: { column: pc.column + 1, row: pc.row } },
+      { facing: 3, kind: 1, asked: { column: pc.column, row: pc.row + 1 }, to: { column: pc.column, row: pc.row + 1 } },
+      { facing: 4, kind: 2, asked: { column: pc.column, row: pc.row }, to: { column: pc.column - 1, row: pc.row } },
+    ];
+    const open = sides.find((side) => !blocked(side.kind, side.asked.column, side.asked.row, 2, pc.generation));
+    expect(open).toBeDefined();
+    pc.facing = open!.facing;
+    session.game.monsters.grid[22 * open!.to.row + open!.to.column] = 41;
+    session.game.monsters.positions[41] = 32 * open!.to.row + open!.to.column;
+
+    session.press(REV_KEY.arrowUp);
+    await settled();
+
+    expect([pc.column, pc.row]).toEqual([open!.to.column, open!.to.row]);
     expect(session.view().fight?.slot).toBe(41);
     session.finish();
   });
