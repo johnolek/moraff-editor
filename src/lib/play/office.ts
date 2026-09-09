@@ -60,12 +60,13 @@ export async function randomEventsTick(turn: Turn): Promise<void> {
  * boss_office_message (exe 3000:6c9d, unf.c "boss_office_message"): the taunt a section's Shadow
  * boss sends while it is still alive, which the snake offers and only shows if it is asked to.
  *
- * The boss's own picture stands beside the taunt in a panel of the section's wall material
- * (`boss-office.ts`), on top of the play screen: the routine wipes nothing before it draws, and
- * the key it waits for at the end is what takes the panel down again.
+ * Reading it takes the display over. erase_menu_block (exe 4000:42b4) blanks it, the stone tablet
+ * comes down across the bottom with the four lines of the taunt on it, and the boss stands in a
+ * panel of the section's wall material with three lines of the big font beside it saying whose
+ * office the message is from (`boss-office.ts`).
  *
- * What the port still does differently is the taunt's own four lines, which the original reads
- * off the stone tablet brought down for them and this port prints in the message box.
+ * The port also keeps the four lines in the message box, where the column beside the map reads
+ * them; the original has them on the tablet alone.
  */
 async function bossOfficeMessage(session: GameSession): Promise<void> {
   const game = session.game;
@@ -74,8 +75,8 @@ async function bossOfficeMessage(session: GameSession): Promise<void> {
   showHint(game, 123);
   const chosen = await session.choice(MESSAGE_MENU);
   if (chosen !== READ_IT) return;
-  readBossOfficeMessage(game, tablet);
-  session.bossOffice = { section: sectionOf(game.pc.module, game.pc.level) };
+  const lines = readBossOfficeMessage(game, tablet);
+  session.bossOffice = { section: sectionOf(game.pc.module, game.pc.level), lines };
   await game.key();
   session.bossOffice = null;
   session.box = [];

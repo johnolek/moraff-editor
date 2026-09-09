@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { BOSS_OFFICE_PANEL, drawBossOffice } from './boss-office';
+import { drawBossOffice } from './boss-office';
 import { SCREEN_PIXELS } from './display';
 import { NO_PICTURES, type ViewPictures } from './view3d/pictures';
 import { sectionMonsterRecords } from './section-screen';
@@ -22,9 +22,12 @@ const sectionPictures = (): ViewPictures => {
   };
 };
 
-function draw(from: ViewPictures): Frame {
+/** Four lines of a taunt, standing in for whatever UH2.BIN holds for this section. */
+const TAUNT = ['I HAVE BEEN WATCHING YOU', 'AND I AM NOT IMPRESSED', '', 'THE SHADOW'];
+
+function draw(from: ViewPictures, lines: string[] = TAUNT): Frame {
   const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
-  drawBossOffice(frame, SCREEN_PIXELS, { section: SECTION }, from);
+  drawBossOffice(frame, SCREEN_PIXELS, { section: SECTION, lines }, from);
   return frame;
 }
 
@@ -69,15 +72,35 @@ describe("the panel beside the boss's taunt", () => {
     }
   });
 
-  it('draws nothing outside the panel', () => {
+  it('leaves the display bare between the panel and the tablet', () => {
     const frame = draw(sectionPictures());
-    expect([...entriesIn(frame, BOSS_OFFICE_PANEL.right + 4, 1, 0x63f, 0x4af)]).toEqual([]);
-    expect([...entriesIn(frame, 1, BOSS_OFFICE_PANEL.bottom + 4, 0x63f, 0x4af)]).toEqual([]);
+    // Right of the panel, above the slab: where the three lines of the big font are printed,
+    // which the tab draws over the picture rather than into it.
+    expect([...entriesIn(frame, 0x16c + 4, 1, 0x63f, 0x218)]).toEqual([]);
   });
 
-  it('draws nothing at all when the bundle has no pictures', () => {
+  it('lowers the tablet across the bottom, in the slab stone', () => {
+    // The top of the slab, which DS:2412 = 3 drops from 0x122 to 0x21c, above where the fat
+    // stroke of the first line of the taunt reaches.
+    const used = entriesIn(draw(sectionPictures()), 0x100, 0x220, 0x500, 0x240);
+    expect(used.size).toBeGreaterThan(1);
+    for (const entry of used) {
+      expect(entry).toBeGreaterThanOrEqual(SLAB_BASE);
+      expect(entry).toBeLessThanOrEqual(SLAB_BASE + 31);
+    }
+  });
+
+  it('cuts the taunt into the lowered slab', () => {
+    // The two passes of the big font, a fat dark stroke and a thin bright one over it, on the
+    // band the first line stands in.
+    const used = entriesIn(draw(sectionPictures()), 100, 0x253, 0x5dc, 0x2a3);
+    expect(used.has(14)).toBe(true);
+    expect(used.has(15)).toBe(true);
+  });
+
+  it('draws nothing at all with neither a picture nor a word', () => {
     const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
-    drawBossOffice(frame, SCREEN_PIXELS, { section: SECTION }, NO_PICTURES);
+    drawBossOffice(frame, SCREEN_PIXELS, { section: SECTION, lines: [] }, NO_PICTURES);
     expect([...entriesIn(frame, 1, 1, 0x63f, 0x4af)]).toEqual([]);
   });
 });

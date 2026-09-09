@@ -47,7 +47,7 @@
     GRADIENT_STEPS_PER_SECOND,
     holdsGradientBank,
   } from './plaque';
-  import { BOSS_OFFICE_PANEL, drawBossOffice, type BossOffice } from './boss-office';
+  import { drawBossOffice, type BossOffice } from './boss-office';
   import { drawBuilding, type TownBuilding } from './building';
   import { drawSectionScreen, type SectionScreen } from './section-screen';
   import { drawTablet } from './tablet';
@@ -179,16 +179,8 @@
   /** What a screen whose own fill the port does not know blacks out, which is all of it. */
   const WHOLE_DISPLAY: ScreenRect = { x: 0, y: 0, right: SCREEN_WINDOW.width, bottom: SCREEN_WINDOW.height };
 
-  /**
-   * The rectangle a screen that is up has been drawn on black, and null when none is up.
-   *
-   * The boss's taunt is the one screen that wipes nothing at all: its three lines are drawn
-   * straight over the play screen (`boss-office.ts`), so they do not mean the display has been
-   * taken over.
-   */
-  const cleared = $derived(
-    screen.length === 0 || bossOffice ? null : (screenCleared ?? WHOLE_DISPLAY),
-  );
+  /** The rectangle a screen that is up has been drawn on black, and null when none is up. */
+  const cleared = $derived(screen.length === 0 ? null : (screenCleared ?? WHOLE_DISPLAY));
 
   // Walking into a building raises DS:2505 and calls set_palette again (exe 2000:c9ac), which
   // copies the two shop tables over the banks the building picture is drawn out of.
@@ -270,14 +262,8 @@
         ],
   );
 
-  /**
-   * What is standing over the lines the tab draws of its own accord: the black a screen was drawn
-   * on, or the panel the boss's taunt lays down over the key menu.
-   */
-  const covered = $derived(cleared ?? (bossOffice ? BOSS_OFFICE_PANEL : null));
-
   const text = $derived([
-    ...(covered === null ? standing : standing.filter((line) => !inRect(covered, line))),
+    ...(cleared === null ? standing : standing.filter((line) => !inRect(cleared, line))),
     ...screen,
     ...(debug ? debugMonsterLines(game) : []),
   ]);
@@ -411,6 +397,15 @@
       paint();
       return;
     }
+    // The section boss's taunt (boss_office_message, exe 3000:6c9d), which is a screen of its own:
+    // erase_menu_block blanks the display, the tablet comes down lowered with the taunt on it and
+    // the boss stands in a panel beside the three lines saying whose office the message is from.
+    if (bossOffice) {
+      drawBossOffice(frame, SCREEN_PIXELS, bossOffice, viewPictures(bossOffice.section));
+      drawDotuScreenText(frame, SCREEN_PIXELS, text);
+      paint();
+      return;
+    }
     // The S key's screen (monster_manual, exe 3000:c39d): the section's five monsters in their
     // panels and the slab its words are read off, with the lines the manual printed over them.
     if (sectionScreen) {
@@ -483,9 +478,6 @@
     // journal is put back for the painter once they are drawn.
     const replayed = frame.journal;
     frame.journal = undefined;
-    // The boss's taunt stands on the play screen: boss_office_message (exe 3000:6c9d) wipes
-    // nothing before it lays the panel down, so the views are still underneath it.
-    if (bossOffice) drawBossOffice(frame, SCREEN_PIXELS, bossOffice, viewPictures(bossOffice.section));
     // A screen that takes the display over fills the rectangle it draws in with colour 0 first:
     // FUN_3000_7dfc (exe 3000:7dfc) fills its two columns that way and cast_a_spell the top of
     // the screen its spell table stands on. A screen whose rectangle the port does not know

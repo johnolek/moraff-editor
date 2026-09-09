@@ -1,24 +1,24 @@
-import type { ScreenRect } from '../game/port/state';
 import type { Frame } from './view3d/frame';
+import { fillRect } from './view3d/frame';
 import type { ViewPictures } from './view3d/pictures';
 import { scaleImage } from './view3d/scale';
 import { sectionMonsterRecords } from './section-screen';
-import { SLAB_BASE, SLAB_TINT, TABLET_SLAB_IMAGE } from './tablet';
+import { drawTabletLines, drawTabletSlab, SLAB_BASE, SLAB_TINT, TABLET_LOWERED, TABLET_SLAB_IMAGE } from './tablet';
 
 /**
- * The picture beside the taunt a section's Shadow boss sends: `boss_office_message` (exe
- * 3000:6c9d, unf.c "boss_office_message") lays a panel of the section's own wall material down
- * the left of the screen and stands the boss inside it, with three lines of the big font to its
- * right saying whose office the message is from.
+ * The screen a section's Shadow boss sends its taunt on: `boss_office_message` (exe 3000:6c9d,
+ * unf.c "boss_office_message") erases the display, brings the stone tablet down across the bottom
+ * with the four lines of the taunt on it, lays a panel of the section's own wall material down
+ * the left and stands the boss inside it, with three lines of the big font to its right saying
+ * whose office the message is from.
  *
  * `office.ts` is the message itself and `src/lib/game/port/town.ts` prints the three lines.
  * Everything here is the drawing, and every coordinate is in the 1600 by 1200 grid the game
  * places everything in.
  *
- * Nothing is wiped first. The routine has already brought the stone tablet down (`tablet.ts`,
- * with DS:2412 set to 3, which drops the slab by 0xfa), and `FUN_3000_9026` fades the palette
- * down and back up around the slab rather than clearing the display, so the panel and its three
- * lines land on top of the four 3-D views the character was walking through.
+ * The one thing the port declines is the palette: `FUN_3000_9026` blacks the DAC before it draws
+ * the slab and brings it back up afterwards (exe 4000:5b3f and 4000:5b91), so the original's
+ * office rises out of black. The port has no palette to fade and draws the whole screen at once.
  */
 
 /** The screen the grid is drawn onto, in pixels. */
@@ -34,28 +34,17 @@ export interface BossOfficeScreen {
 const PANEL = { x1: 1, y1: 1, x2: 0x168, y2: 0x1ea };
 const PICTURE = { x1: 0x19, y1: 0x19, x2: 0x145, y2: 0x1d1 };
 
-/**
- * The same panel as a rectangle, for the lines the tab draws of its own accord.
- *
- * The original draws the key menu once, when `movecontrol` last came round, and the panel is laid
- * straight over the top of it; nothing puts those words back until the taunt has been read. The
- * tab paints its own lines afresh every pass, so it has to leave out the ones standing here.
- */
-export const BOSS_OFFICE_PANEL: ScreenRect = {
-  x: PANEL.x1,
-  y: PANEL.y1,
-  right: PANEL.x2,
-  bottom: PANEL.y2,
-};
-
-/** What the tab needs to draw the screen: which section's boss is sending the message. */
+/** What the tab needs to draw the screen. */
 export interface BossOffice {
   /** The section the character is standing in, 1 to 20. */
   section: number;
+  /** The four lines of the taunt, which are read off the lowered tablet (`tablet.ts`). */
+  lines: string[];
 }
 
 /**
- * The panel and the boss standing in it.
+ * The office: the display erased, the tablet lowered with the taunt on it, and the boss standing
+ * in its panel.
  *
  * The panel goes through `FUN_4000_433e` rather than `scale_image2`, and the two blitters have
  * colour rules of their own (see `dotu-tools/docs/PICTURES.md`); the wall material has no pixel
@@ -70,6 +59,13 @@ export function drawBossOffice(
   showing: BossOffice,
   pictures: ViewPictures,
 ): void {
+  // erase_menu_block (exe 4000:42b4) fills the whole display with colour 0, so nothing of the
+  // screen the character was walking through is left under the office.
+  fillRect(frame, 0, 0, frame.width - 1, frame.height - 1, 0);
+  // The tablet is brought down before the panel is laid over the top of it, so the slab's own
+  // stone goes on first.
+  drawTabletSlab(frame, screen, pictures.wall ?? null, TABLET_LOWERED, SLAB_TINT);
+  drawTabletLines(frame, screen, showing.lines, TABLET_LOWERED);
   const stone = pictures.wall?.[TABLET_SLAB_IMAGE] ?? null;
   if (stone) {
     scaleImage(frame, PANEL.x1, PANEL.y1, PANEL.x2, PANEL.y2, stone, 0, 0xff, {

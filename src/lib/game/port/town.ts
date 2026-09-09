@@ -502,10 +502,14 @@ export const BOSS_OFFICE_TEXT = { x: 400, font: 2, colour: 15, rows: [0x1e, 0xbe
 /**
  * boss_office_message (exe 3000:6c9d, unf.c "boss_office_message"): the message itself, once the
  * player has asked to read it, and the count of the section's taunts that goes up with it.
+ *
+ * @returns the four lines of the taunt, which the original reads off the stone tablet it brings
+ * down for them (`src/lib/play/boss-office.ts` draws it).
  */
-export function readBossOfficeMessage(game: Game, tablet: number): void {
+export function readBossOfficeMessage(game: Game, tablet: number): string[] {
   const pc = game.pc;
-  game.say(...tabletMessage(tablet));
+  const lines = tabletMessage(tablet);
+  game.say(...lines);
   const name = game.monsterKinds[22].name;
   // DS:28ea, 28f9, then the boss's name with the ':' at DS:266e on the end. These are pfont
   // calls beside the boss's own picture rather than a message box, so they stand on the screen
@@ -514,6 +518,7 @@ export function readBossOfficeMessage(game: Game, tablet: number): void {
     game.draw({ text, x: BOSS_OFFICE_TEXT.x, y: BOSS_OFFICE_TEXT.rows[index], font: BOSS_OFFICE_TEXT.font, colour: BOSS_OFFICE_TEXT.colour });
   });
   pc.bossTaunts[sectionNumber(pc.module, pc.level)] += 1;
+  return lines;
 }
 
 /**

@@ -72,7 +72,9 @@ describe("the boss's message", () => {
     expect(session.game.screen.filter((line) => line.x === 400).map((line) => line.y)).toEqual([
       0x1e, 0xbe, 0x15e,
     ]);
-    expect(session.bossOffice).toEqual({ section: 1 });
+    // The office carries the same four lines the box is showing, which is what the tablet the
+    // routine brings down is drawn with.
+    expect(session.bossOffice).toEqual({ section: 1, lines: session.box });
     expect(session.game.pc.bossTaunts[0]).toBe(1);
     await press(session, KEY.arrowUp);
     expect(session.bossOffice).toBeNull();
