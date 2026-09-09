@@ -213,6 +213,34 @@ describe('the monsters', () => {
     session.finish();
   });
 
+  it('draws the screen again on a tick that moved one of them', async () => {
+    const { session } = await playing();
+    session.enterLevel(3);
+    let draws = 0;
+    session.onChange = () => {
+      draws += 1;
+    };
+    session.tick();
+    expect(draws).toBe(1);
+    session.finish();
+  });
+
+  it('leaves the screen alone on a tick that moved nobody', async () => {
+    const { session } = await playing();
+    session.enterLevel(3);
+    let draws = 0;
+    session.onChange = () => {
+      draws += 1;
+    };
+    // The poll moves a monster on a roll of exactly 1, so a generator that only ever rolls 0
+    // leaves every one of them where it stands.
+    session.game.rng = { random: () => 0 };
+    session.tick();
+    expect(session.ticks).toBe(1);
+    expect(draws).toBe(0);
+    session.finish();
+  });
+
   it('rolls nothing at all in the town, which the loop jumps straight past', async () => {
     const { session } = await playing();
     const before = session.game.monsters.positions.slice();

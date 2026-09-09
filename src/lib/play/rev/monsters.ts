@@ -77,6 +77,9 @@ export class RevMonsters {
   awake2 = 0;
   /** DGROUP B530: the slot whose turn it is. */
   moving = 0;
+  /** How many steps the monsters have taken between them. Nothing in the game counts this; the
+   *  Play tab reads it to tell a clock tick that moved somebody from one that moved nobody. */
+  moves = 0;
   /** The level the grid holds, so that nothing walks on a level nobody is standing on. */
   private level = -1;
 
@@ -265,5 +268,6 @@ export class RevMonsters {
     this.grid[to] = this.grid[from];
     this.grid[from] = held;
     this.positions[slot] = COLUMN_SCALE * row + column;
+    this.moves += 1;
   }
 }

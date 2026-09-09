@@ -64,7 +64,7 @@ import { newRevGame, revWalker, type RevGame } from './state';
 import { revScreenStateOf } from './screen/from-game';
 import { drawRevScreen, type RevScreenState } from './screen/screen';
 import type { Frame } from '../view3d/frame';
-import { debugDrawn } from '../mode';
+import { debugDrawn, panelVisible } from '../mode';
 import type { RevStanding } from './monsters';
 import { REV_NOT_BUILT, revClearScreen, revDrawTheDungeonAgain, revSayGoodbye } from './screens';
 
@@ -259,18 +259,23 @@ export class RevGameSession {
     // `TIMER`, which the three potions that wear off are timed against.
     this.game.seconds = (this.ticks * REV_TICK_MS) / 1000;
     const walker = revWalker(this.game);
+    const moves = this.game.monsters.moves;
     for (let pass = 0; pass < REV_POLLS_PER_TICK; pass++) revPoll(this.game.monsters, walker, this.game.lastMonsterLevel, this.game.rng);
+    let drawAgain = this.game.monsters.moves !== moves;
     // 1000:85BA: the fight's poll asks on every pass whether a potion has run down, so the
     // agility and the shield go, and the banners with them, while the player is sitting still
     // and watching the level shuffle around.
-    if (this.game.fight !== null) revWearOffPotions(this.game);
+    if (this.game.fight !== null && revWearOffPotions(this.game)) drawAgain = true;
     // 1000:08F6: a monster that has reached the character's square opens a fight at once.
     if (this.game.fight === null && this.monsterHere() > 0) {
       const waiting = this.waiting;
       this.waiting = null;
       waiting?.(REV_CLOCK_TICK);
+      drawAgain = true;
     }
-    this.changed();
+    // Debug mode's panel prints the cursor the clock walks and the two slots it has marked awake,
+    // which move on every tick whether or not anything on the level did.
+    if (drawAgain || panelVisible(this.mode)) this.changed();
   }
 
   /** The slot standing on the character's own square (1000:08F6). */

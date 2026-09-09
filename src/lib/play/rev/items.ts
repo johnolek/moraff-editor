@@ -585,16 +585,21 @@ export function revPotionBanners(game: RevGame): void {
  *
  * Setting the second to reach back to zero is what makes each of these happen once: the first
  * half of the test cannot pass again afterwards.
+ *
+ * Says whether any of the three went, which is what the clock's tick draws the screen again for.
  */
-export function revWearOffPotions(game: RevGame): void {
+export function revWearOffPotions(game: RevGame): boolean {
+  let wornOff = false;
   for (const banner of REV_POTION_BANNERS) {
     const until = revValue(game.pc, banner.until);
     if (until > 0 && until < game.seconds) {
       setRevValue(game.pc, banner.until, 0);
       banner.wearOff?.(game);
       game.kept.blank(banner.row, POTION_BANNER_COLUMN, banner.blank);
+      wornOff = true;
     }
   }
+  return wornOff;
 }
 
 /**
