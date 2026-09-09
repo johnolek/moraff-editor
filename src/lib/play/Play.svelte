@@ -294,7 +294,8 @@
             buildingScreen={view.buildingScreen}
             bossOffice={view.bossOffice}
             plaque={view.plaque}
-            fade={view.fade} />
+            fade={view.fade}
+            {redraw} />
         {:else}
           <FloorCanvas
             bind:this={canvas}

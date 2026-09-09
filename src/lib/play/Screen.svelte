@@ -93,6 +93,9 @@
     plaque?: PlaqueState | null;
     /** The palette fade running over the screen (`fade.ts`), or null when none is. */
     fade?: Fade | null;
+    /** How long a new screen takes to appear, in milliseconds, revealed from the top down the
+     *  way a slow machine drew one (`mode.ts`). Nothing at all draws it in one go. */
+    redraw?: number;
   }
 
   let {
@@ -117,6 +120,7 @@
     bossOffice = null,
     plaque = null,
     fade = null,
+    redraw = 0,
   }: Props = $props();
 
   let canvas = $state.raw<HTMLCanvasElement | null>(null);
@@ -128,6 +132,9 @@
   let arrowCanvas = $state.raw<HTMLCanvasElement | null>(null);
   /** The screen as it was last painted, for the plaque's crawl and the fades to work from. */
   let painted = $state.raw<{ frame: Frame; palette: Rgb[] } | null>(null);
+  /** How long this screen takes to appear: the player's choice, and nothing at all behind a tab
+   *  nobody is looking at, where a wipe would be drawing for no one. */
+  const revealed = $derived(visible.showing ? redraw : 0);
 
   const section = $derived(sectionInfo(place.module, place.floor));
   const part = $derived(section?.part ?? 1);
@@ -322,7 +329,15 @@
       // copies the two shop tables over the banks the building picture is drawn out of.
       // A fade's first step is drawn here so that nothing of the screen shows at full strength
       // before the animation below has its first frame.
-      painter.paint(context, frame, fade === null ? palette : fadedPalette(palette, fade, 0));
+      // Neither a fade nor the plaque's crawl is revealed a row at a time: both repaint the whole
+      // screen many times a second below, which would undo a wipe as soon as it started.
+      const animated = fade !== null || plaque === 'showing';
+      painter.reveal(
+        context,
+        frame,
+        fade === null ? palette : fadedPalette(palette, fade, 0),
+        animated ? 0 : revealed,
+      );
       painted = plaque === 'showing' || fade !== null ? { frame, palette } : null;
     };
     // The stone tablet the snake's words are read on (exe 3000:9026), which is a screen of its own:
@@ -398,6 +413,15 @@
     if (cleared) clearScreenRect(frame, cleared);
     drawDotuScreenText(frame, SCREEN_PIXELS, text);
     paint();
+  });
+
+  /**
+   * A screen going off the page part-drawn is shown whole at once, the same rule the animations
+   * below keep: a wipe left half-finished behind a hidden tab would be what the player came back
+   * to.
+   */
+  $effect(() => {
+    if (!visible.showing) painter.finish();
   });
 
   /**
