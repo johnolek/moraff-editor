@@ -442,12 +442,22 @@ finds nothing on, which `1000:563F` then leaves at 50 as well. `revmap.py` and
   and the map, which sets the flag at `B65A` first (`1000:5293`), keeps the code
   and draws a circle for it (`1000:52BB`). `H3.OVL`'s map key: "Circle ...
   Represents Chute."
-* **The three coordinate comparisons at `1000:064D`** — `B4CE`, `B4D6` and
-  `B4DA` against the column, the row and the level — are asking whether the
-  player is standing where a chute dropped it. `1000:356F` is the only thing
-  that writes those three, and it is the end of the chute at `1000:3428`. So the
-  "False floor." at `1000:567C` is a chute continuing: land at the bottom of one
-  and the square you land on lets you go down again.
+* **The coordinate comparisons at `1000:064D`** — `B4CE`, `B4D6` and `B4DA`
+  against the column, the row and the level — are asking whether the player is
+  standing where a chute dropped it. `1000:356F` is the only thing that writes
+  those three, and it is the end of the chute at `1000:3428`. So the "False
+  floor." at `1000:567C` is a chute continuing: land at the bottom of one and
+  the square you land on lets you go down again.
+
+  **The level is matched twice, so the fall goes on for two levels and not
+  one.** `1000:069D` compares `B4DA` against the level and `1000:06AD` compares
+  it against the level less one; `1000:06BB` ORs the two results and takes
+  either. `1000:0680` also wants a level below 70, since the drop has to go
+  somewhere. The drop itself, at `1000:0E0F`, adds the code of 1 that
+  `1000:06C6` put on the square to the level and touches nothing else, so the
+  landing at `B4DA` stays where the chute left it: from the landing level you
+  can take `D` onto the level under it, take `D` again onto the one under
+  *that*, and then the arithmetic no longer matches and it stops.
 * **A chute drops one, two or three levels, onto the same square.** Ghidra ends
   the enclosing function at `340C`, so `dunsmall.c` has nothing for it; the
   listing does. `1000:3428` prints "YOU FELL DOWN A CHUTE!", `1000:348B` saves

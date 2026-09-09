@@ -694,9 +694,11 @@ The false floor is what a chute leaves behind. `1000:064D` asks for the code of
 the square just stepped onto, and if it is over 3 — no ladder — and the square
 is the one a chute dropped the player on, it sets the code to 1 and calls
 `1000:567C`, which prints `"   False floor.   "` and the `D-GO DOWN` prompt, so
-the fall goes on another level. The three coordinate comparisons it makes are
-against `B4CE`, `B4D6` and `B4DA`, and the only thing that writes those three is
-the end of the chute at `1000:356F`.
+the fall goes on another level. The coordinate comparisons it makes are against
+`B4CE`, `B4D6` and `B4DA`, and the only thing that writes those three is the end
+of the chute at `1000:356F`. The level is matched twice — against `B4DA` and
+against `B4DA` plus one — so the drop is offered on the landing level and on the
+level under it, and `DUNGEON.md` section 8 has the rest.
 
 On the automap the marked squares are drawn as their own symbol, in one of two
 shapes depending on the sign of the code (`1000:52BB`, `1000:52F2`,
