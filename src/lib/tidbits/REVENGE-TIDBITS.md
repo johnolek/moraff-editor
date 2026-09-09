@@ -385,16 +385,19 @@ indexed, and impossible to meet.
 In the code: `rev-tools/docs/MONSTERS.md` part 2, on `1000:80B0` and the two corrections at
 `1000:81A6`.
 
-### The deeper it lives, the harder it hunts
+### The whole floor moves at the pace of the last monster you met
 
-A monster taking its turn decides between wandering and coming at you by rolling against its own
-level plus 35 and asking whether the result is under 15. On level 5 that is a wander fifteen
-turns in forty; on level 65, fifteen in a hundred. Deep monsters barely wander at all.
-
-How often anything gets a turn at all leans the same way. The odds of a monster moving on a given
-pass of the loop come from `165 - its level + your level`, so a deeper monster moves more often,
-and a higher-level character sees the whole floor move less often — but never worse than one pass
+A monster taking its turn decides between wandering and coming at you by rolling against a level
+plus 35 and asking whether the result is under 15, so the bigger that level is, the less anything
+wanders. How often a monster gets a turn at all comes from `165 - the same level + your level`,
+and the bigger it is the more often the floor moves — but never oftener than one pass of the loop
 in eight, whatever the arithmetic says.
+
+The level in both is one variable, and it is not the level of the monster taking the step. Two
+places write it. One is the attack message, which fills it in from the monster that has just
+reached you. The other is the refill after a kill, which sets it to the floor you are standing on.
+So a monster four levels deeper than the floor makes every monster on that floor quicker and more
+determined for as long as it lives, and killing it puts the floor back to its own depth.
 
 In the code: `rev-tools/docs/MONSTERS.md` part 1, on the odds at `1000:7EEC` and the choice at
 `1000:73B6`.
