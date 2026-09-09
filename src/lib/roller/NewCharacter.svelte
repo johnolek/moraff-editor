@@ -27,6 +27,10 @@
   /** A character one of the three games has rolled. */
   type RolledCharacter = PlayerCharacter | MwCharacter | RevCharacter;
 
+  /** One line of the sheet the tab prints under the game's own screen: its label and what it
+   *  says. */
+  type SheetRow = [string, string];
+
   /**
    * Everything about the tab that is one game's rather than the other's.
    *
@@ -49,6 +53,8 @@
     writeRecord(pc: RolledCharacter): Uint8Array<ArrayBuffer>;
     /** The second file Moraff's Revenge writes beside the record, which is the explored map. */
     explored?: { fileName(slot: number): string; write(pc: RolledCharacter): Uint8Array<ArrayBuffer> };
+    /** The finished character read out under the game's own screen. */
+    sheet(pc: RolledCharacter): SheetRow[];
   }
 
   const GAMES: Record<GameId, GameRoller> = {
@@ -62,6 +68,7 @@
       fileName: slotFileName,
       newSession: (slot) => new RollerSession(ROLLER_PORT, slot),
       writeRecord: newCharacterFile,
+      sheet: dotuSheet,
     },
     moraffsWorld: {
       name: "Moraff's World",
@@ -73,6 +80,7 @@
       fileName: mwSlotFileName,
       newSession: (slot) => new RollerSession(MW_ROLLER_PORT, slot),
       writeRecord: newMwCharacterFile,
+      sheet: mwSheet,
     },
     revenge: {
       name: "Moraff's Revenge",
@@ -85,6 +93,7 @@
       newSession: (slot) => new RollerSession(REV_ROLLER_PORT, slot),
       writeRecord: newRevCharacterFile,
       explored: { fileName: revExploredFileName, write: newRevExploredFile },
+      sheet: revSheet,
     },
   };
 
@@ -106,7 +115,7 @@
   const screen = $derived<RollerScreen | null>(session && view ? view.question : 'number');
   const menus = $derived({ races: chosen.races.length, classes: chosen.classes.length, numbers: chosen.slots.length });
   const fileName = $derived(chosen.fileName(slot));
-  const sheet = $derived(view === null ? [] : sheetRows(view.pc));
+  const sheet = $derived(view === null ? [] : chosen.sheet(view.pc));
   const showing = $derived(
     view === null ? [] : view.question === 'name' ? [...(view.screen as ScreenLine[]), nameBeingTyped()] : (view.screen as ScreenLine[]),
   );
@@ -129,42 +138,19 @@
     return { text: name, x: 0, y: 1000, spreadTo: Math.round((0x44c / 18) * name.length), font: 2, colour: 4 };
   }
 
-  /** The finished character under the game's own screen, with the money the screen never shows. */
-  function sheetRows(pc: RolledCharacter): [string, string][] {
-    if ('unknown150' in pc) {
-      return [
-        ['RACE', REV_RACE_NAMES[pc.race - 1].toUpperCase()],
-        ['CLASS', REV_CLASS_NAMES[pc.cls - 1].toUpperCase()],
-        ...REV_STAT_NAMES.map((stat, index): [string, string] => [stat.toUpperCase(), String(pc.stats[index])]),
-        ['TOTAL', String(pc.stats.reduce((total, stat) => total + stat, 0))],
-        ['HEALTH POINTS', String(pc.maxHp)],
-        ['SPELL POINTS', String(pc.spellPoints)],
-        ['WEIGHT', `${pc.weight} POUNDS`],
-        ['POCKET MONEY', String(pc.money)],
-      ];
-    }
-    const stats: [string, string][] = STATS.map((stat, index) => [
-      stat,
-      String([pc.str, pc.iq, pc.wis, pc.con, pc.dex, pc.luck][index]),
-    ]);
-    if ('ageMinutes' in pc) {
-      return [
-        ['RACE', MW_RACES[pc.race].name],
-        ['SEX', pc.sex === 0 ? 'MALE' : 'FEMALE'],
-        ...stats,
-        ['HEIGHT', `${pc.height} INCHES`],
-        ['WEIGHT', `${pc.weight} POUNDS`],
-        ['AGE', `${Math.trunc(pc.ageMinutes / MINUTES_PER_YEAR)} YEARS`],
-        ['CLASS', MW_CLASS_NAMES[pc.cls]],
-        ['HEALTH POINTS', String(pc.maxHp)],
-        ['SPELL POINTS', String(pc.maxSp)],
-        ['JEWELS', String(pc.money)],
-      ];
-    }
+  /** The six characteristics, which Dungeons of the Unforgiven and Moraff's World keep in the
+   *  same fields and print in the same order. */
+  function characteristicRows(pc: PlayerCharacter | MwCharacter): SheetRow[] {
+    const stats = [pc.str, pc.iq, pc.wis, pc.con, pc.dex, pc.luck];
+    return STATS.map((stat, index): SheetRow => [stat, String(stats[index])]);
+  }
+
+  /** The finished Dungeons of the Unforgiven character, with the money its screen never shows. */
+  function dotuSheet(pc: PlayerCharacter): SheetRow[] {
     return [
       ['RACE', RACES[pc.race].name],
       ['SEX', pc.sex === 0 ? 'MALE' : 'FEMALE'],
-      ...stats,
+      ...characteristicRows(pc),
       ['HEIGHT', `${pc.height * 4} INCHES`],
       ['WEIGHT', `${pc.weight} POUNDS`],
       ['AGE', `${pc.age} YEARS`],
@@ -173,6 +159,38 @@
       ['SPELL POINTS', String(pc.maxSp)],
       ['RUBLES', String(pc.money)],
       ['MAGIC CRYSTALS', String(pc.crystals)],
+    ];
+  }
+
+  /** The finished Moraff's World character, whose age is kept in minutes and whose money is
+   *  jewels. */
+  function mwSheet(pc: MwCharacter): SheetRow[] {
+    return [
+      ['RACE', MW_RACES[pc.race].name],
+      ['SEX', pc.sex === 0 ? 'MALE' : 'FEMALE'],
+      ...characteristicRows(pc),
+      ['HEIGHT', `${pc.height} INCHES`],
+      ['WEIGHT', `${pc.weight} POUNDS`],
+      ['AGE', `${Math.trunc(pc.ageMinutes / MINUTES_PER_YEAR)} YEARS`],
+      ['CLASS', MW_CLASS_NAMES[pc.cls]],
+      ['HEALTH POINTS', String(pc.maxHp)],
+      ['SPELL POINTS', String(pc.maxSp)],
+      ['JEWELS', String(pc.money)],
+    ];
+  }
+
+  /** The finished Moraff's Revenge character, which keeps its six characteristics in one array
+   *  and numbers its races and classes from one. */
+  function revSheet(pc: RevCharacter): SheetRow[] {
+    return [
+      ['RACE', REV_RACE_NAMES[pc.race - 1].toUpperCase()],
+      ['CLASS', REV_CLASS_NAMES[pc.cls - 1].toUpperCase()],
+      ...REV_STAT_NAMES.map((stat, index): SheetRow => [stat.toUpperCase(), String(pc.stats[index])]),
+      ['TOTAL', String(pc.stats.reduce((total, stat) => total + stat, 0))],
+      ['HEALTH POINTS', String(pc.maxHp)],
+      ['SPELL POINTS', String(pc.spellPoints)],
+      ['WEIGHT', `${pc.weight} POUNDS`],
+      ['POCKET MONEY', String(pc.money)],
     ];
   }
 
