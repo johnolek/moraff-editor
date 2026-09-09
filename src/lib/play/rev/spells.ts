@@ -265,6 +265,10 @@ function changeLevel(game: RevGame, desk: RevMagicDesk): void {
   const pc = game.pc;
   let step = game.rng.random(10) - 5;
   if (step === 0) step = -1;
+  // 1000:388F, with the step of nothing turned into one at 1000:38A2: both are the scratch cell,
+  // and the floor it moves to is worked out over the top of it rather than in it (1000:38A5), so
+  // the step is what is left standing.
+  game.scratch = step;
   let level = pc.dungeonLevel + step;
   if (level < 0) level = 0;
   if (level > LEVELS) level = LEVELS;
@@ -290,7 +294,9 @@ function heal(game: RevGame): void {
 function mocciolo(game: RevGame, desk: RevMagicDesk): void {
   const pc = game.pc;
   pc.spellPoints -= 6;
+  // 1000:397A: the d6 is rolled in the scratch cell, which is what the ON GOTO jumps on.
   const roll = game.rng.random(6) + 1;
+  game.scratch = roll;
   if (roll === 1) {
     // 1000:3995: a point on every characteristic.
     for (let stat = 0; stat < pc.stats.length; stat++) pc.stats[stat] += 1;

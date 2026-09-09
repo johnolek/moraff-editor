@@ -221,6 +221,22 @@ describe("the dungeon's twelve spells", () => {
     expect(game.said).toEqual(['WOW!']);
   });
 
+  it('CHANGE LEVEL leaves the step it took in the scratch cell, as 1000:388F does', () => {
+    const pc = revCharacter({ dungeonLevel: 10 });
+    const { game, desk } = revTestGame(pc, revRolls([5]));
+    game.scratch = 99;
+    REV_PREP_SPELLS[8].cast(game, desk, 5);
+    expect(game.scratch).toBe(-1);
+  });
+
+  it('MOCCIOLO leaves the arm it jumped to there, as 1000:397A does', () => {
+    const pc = revCharacter();
+    const { game, desk } = revTestGame(pc, revRolls([2]));
+    game.scratch = 99;
+    REV_PREP_SPELLS[11].cast(game, desk, 6);
+    expect(game.scratch).toBe(3);
+  });
+
   it('MOCCIOLO takes two levels and every point of experience on a six', () => {
     const pc = revCharacter({ level: 9, experience: 5000, maxHp: 60, fromHealth: 6 });
     const { game, desk } = revTestGame(pc, revRolls([5, 3, 4]));
