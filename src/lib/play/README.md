@@ -64,7 +64,8 @@ something the original does, a comment says so.
   loop is called, what a browser key means to it, and where on the floor its view says the
   character is standing. The look is a plain stylesheet rather than a scoped one, because scoped
   styles do not reach snippets written in another component; where one value has to serve all
-  three it is this game's.
+  three it is this game's. The run block's milestones are the whole chain's, so the line shows the
+  last four of them and a chip counting the ones before it, which names them all on hover.
 * **`Play.svelte`** — this game's snippets: the game's screen or the top-down map, the message
   box, the two pictures and the panel. **`display.ts`, `Screen.svelte`** — the screen itself: the boxes `movecontrol` fills, the
   key menu, the zoom map, the status block and everything the game has printed, over the four
