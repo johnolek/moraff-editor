@@ -261,6 +261,8 @@ half of this is `server/README.md`.
   way every stretch the server never saw is.
 * **The shapes on the wire** are `stream.ts`'s, and `server/runs.ts` imports them, so the two
   halves agree about a batch in one place.
+* **Where a sent run ends up** is the Boards tab, `src/lib/boards/`: the server's boards, its feed
+  of announcements, and a page for any run standing on one.
 
 ## Waiting for a key
 

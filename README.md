@@ -114,10 +114,13 @@ to try it on in `src/lib/play/fixtures/`.
 
 Layout:
 
-- `server/` — the run server: one Node process that will take runs from the Play
-  tab, check them by replaying them and keep the leaderboards, with its own
-  README for building, configuring and deploying it. It is in this repository so
-  that one commit is one engine build.
+- `server/` — the run server: one Node process that takes runs from the Play tab,
+  checks them by replaying them, keeps the leaderboards and announces what a
+  checked run came to, with its own README for building, configuring and
+  deploying it. It is in this repository so that one commit is one engine build.
+- `src/lib/boards/` — the Boards tab: the run server's boards and its feed of
+  announcements, and a page for any run on them. All three games have it, and
+  only a build given a server address (`VITE_RUN_SERVER`) shows it at all.
 - `src/lib/game/` — the DotU dungeon generator and file parsers, verbatim copies
   of `dotu-tools/reference/`. A test keeps them byte-identical; change the bundle
   first, then copy.

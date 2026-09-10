@@ -35,6 +35,9 @@ pnpm start:server  # run it
 - The map explorer, the Play tab, the save editor, the monsters and the character
   roller cover all three games; the spells cover DotU and Moraff's World; the fight simulator,
   the calculators, the formulas and the snake are DotU's alone.
+- The Boards tab (`src/lib/boards/`) covers all three games and shows only in a build given
+  a run server address (`VITE_RUN_SERVER`); `server/boards.ts` is the only server module the
+  site may import a value from.
 - The Tidbits tab follows the game switch: a game has one when
   `src/lib/tidbits/files.ts` names a file for it and `src/lib/tabs.ts` lists the
   tab for it.
