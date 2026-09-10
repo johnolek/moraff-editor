@@ -1,6 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { RunLog, RunSession, RunTotals } from '../src/lib/play/run';
 import type { CheckedSession, RunVerdict } from '../src/lib/play/verify';
+import { deepestReach, highestLevel } from './boards';
 import { shortCommit, type EngineStore, type KeptEngine, type SessionVerifier } from './engines';
 import { batchesOf, sessionsOf, type KeptBatch, type KeptSession } from './runs';
 
@@ -138,6 +139,12 @@ export interface KeptVerdict {
   timed: boolean;
   /** Whether the run may go on a board at all. */
   eligible: boolean;
+  game: string;
+  /** The board the character was rolled for, and null for a run that is on no board. */
+  leaderboard: string | null;
+  /** How far the run got, and the highest level it reached. */
+  deepest: number;
+  level: number;
   engines: string[];
   verifiedAt: string;
 }
@@ -285,15 +292,19 @@ function keepVerdict(
   // the character back into it. The verifier says as much on its own; this says it again here so
   // that a board never has to trust an engine build about it.
   const eligible = verdict.status === 'verified' && edits === 0;
+  // The game, the board and the two numbers a board sorts on go here as well as being reachable
+  // through the character's rows and the milestones, so that reading a board is one table and no
+  // JSON. `server/boards.ts` is what they are for.
   database
     .prepare(
       `INSERT INTO verdicts (character_id, status, reason, actions, time, milestones, play_ms, timed,
-                             eligible, engine_commits, verified_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                             eligible, game, leaderboard, deepest, level, engine_commits, verified_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT (character_id) DO UPDATE SET
          status = excluded.status, reason = excluded.reason, actions = excluded.actions,
          time = excluded.time, milestones = excluded.milestones, play_ms = excluded.play_ms,
-         timed = excluded.timed, eligible = excluded.eligible,
+         timed = excluded.timed, eligible = excluded.eligible, game = excluded.game,
+         leaderboard = excluded.leaderboard, deepest = excluded.deepest, level = excluded.level,
          engine_commits = excluded.engine_commits, verified_at = excluded.verified_at`,
     )
     .run(
@@ -306,6 +317,10 @@ function keepVerdict(
       timing.playMs,
       Number(timing.timed),
       Number(eligible),
+      verdict.game,
+      verdict.leaderboard,
+      deepestReach(verdict.game, totals.milestones),
+      highestLevel(totals.milestones),
       JSON.stringify(verdict.engine.played),
     );
 }
@@ -322,6 +337,10 @@ export function verdictFor(database: DatabaseSync, characterId: string): KeptVer
         play_ms: number;
         timed: number;
         eligible: number;
+        game: string;
+        leaderboard: string | null;
+        deepest: number;
+        level: number;
         engine_commits: string;
         verified_at: string;
       }
@@ -336,6 +355,10 @@ export function verdictFor(database: DatabaseSync, characterId: string): KeptVer
     playMs: row.play_ms,
     timed: row.timed === 1,
     eligible: row.eligible === 1,
+    game: row.game,
+    leaderboard: row.leaderboard,
+    deepest: row.deepest,
+    level: row.level,
     engines: JSON.parse(row.engine_commits) as string[],
     verifiedAt: row.verified_at,
   };

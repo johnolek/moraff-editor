@@ -212,6 +212,31 @@ describe('replaying a run once its last batch has arrived', () => {
     });
   });
 
+  it('writes down what the boards read the run by', async () => {
+    await play(
+      fakeEngines(() => ({
+        replayed: {
+          actions: 12,
+          time: 30,
+          milestones: [
+            { kind: 'dungeon', which: 2, actions: 4, time: 10, floor: 3 },
+            { kind: 'level', which: 5, actions: 9, time: 20, floor: 3 },
+            { kind: 'death', which: 0, actions: 12, time: 30, floor: 3 },
+          ],
+        },
+      })),
+      { batch: batch({ session: header }), at: 1000 },
+      { batch: batch({ sequence: 1, ending: true }), at: 6000 },
+    );
+
+    expect(verdictFor(database, CHARACTER)).toMatchObject({
+      game: 'unforgiven',
+      leaderboard: 'speedrun',
+      deepest: 2,
+      level: 5,
+    });
+  });
+
   it('keeps a run whose keys nobody could have pressed, off the wall clock', async () => {
     await play(
       fakeEngines(() => ({})),
