@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { claimName, myName, offTheBoards, playerSecret, setOffTheBoards } from './player';
+import { claimName, myName, newPassphrase, offTheBoards, playerSecret, setOffTheBoards, signIn } from './player';
 
 /** Enough of the browser's Storage to stand in for it. */
 function fakeStorage(): Storage {
@@ -116,10 +116,22 @@ describe('claimName', () => {
     vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
     const { calls } = fakeServer(200, { name: 'Moraff' });
 
-    expect(await claimName('Moraff')).toEqual({ ok: true, name: 'Moraff' });
+    expect(await claimName('Moraff')).toEqual({ ok: true, name: 'Moraff', passphrase: null });
     expect(calls[0].url).toBe('https://runs.example.com/players');
     expect(headerOf(calls[0].init, 'Authorization')).toBe(`Bearer ${playerSecret()}`);
     expect(calls[0].init.body).toBe('{"name":"Moraff"}');
+  });
+
+  it('carries the passphrase back when the claim made a player', async () => {
+    useStorage(fakeStorage());
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(200, { name: 'Moraff', passphrase: 'acid acorn acre afar affix aged' });
+
+    expect(await claimName('Moraff')).toEqual({
+      ok: true,
+      name: 'Moraff',
+      passphrase: 'acid acorn acre afar affix aged',
+    });
   });
 
   it('shows the words the server refused with', async () => {
@@ -165,5 +177,53 @@ describe('myName', () => {
 
     expect(await myName()).toBeNull();
     expect(calls).toEqual([]);
+  });
+});
+
+describe('signIn', () => {
+  it('says the name and the passphrase, and answers with the name that stands', async () => {
+    useStorage(fakeStorage());
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    const { calls } = fakeServer(200, { name: 'Moraff' });
+
+    expect(await signIn('Moraff', 'acid acorn acre afar affix aged')).toEqual({
+      ok: true,
+      name: 'Moraff',
+      passphrase: null,
+    });
+    expect(calls[0].url).toBe('https://runs.example.com/players/sign-in');
+    expect(headerOf(calls[0].init, 'Authorization')).toBe(`Bearer ${playerSecret()}`);
+    expect(calls[0].init.body).toBe('{"name":"Moraff","passphrase":"acid acorn acre afar affix aged"}');
+  });
+
+  it('shows the words the server refused with', async () => {
+    useStorage(fakeStorage());
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(401, { error: 'That name and passphrase do not go together.' });
+
+    expect(await signIn('Moraff', 'wrong words here at all')).toEqual({
+      ok: false,
+      message: 'That name and passphrase do not go together.',
+    });
+  });
+});
+
+describe('newPassphrase', () => {
+  it('asks the server for one and answers with the words', async () => {
+    useStorage(fakeStorage());
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    const { calls } = fakeServer(200, { passphrase: 'acid acorn acre afar affix aged' });
+
+    expect(await newPassphrase()).toEqual({ ok: true, passphrase: 'acid acorn acre afar affix aged' });
+    expect(calls[0].url).toBe('https://runs.example.com/players/passphrase');
+    expect(headerOf(calls[0].init, 'Authorization')).toBe(`Bearer ${playerSecret()}`);
+  });
+
+  it('shows the words the server refused with', async () => {
+    useStorage(fakeStorage());
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    fakeServer(403, { error: 'This device has no name yet.' });
+
+    expect(await newPassphrase()).toEqual({ ok: false, message: 'This device has no name yet.' });
   });
 });
