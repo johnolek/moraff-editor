@@ -316,6 +316,37 @@ describe('announcing a run that has been checked', () => {
     expect(announcements[2]).toMatchObject({ player: 'Moraff', name: 'Grond', game: 'unforgiven', floor: 7, level: 5 });
   });
 
+  it('checks and announces nothing for a character rolled for no board', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: { ...header, leaderboard: null } }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, ending: true }), 6000);
+    await endRun(sql, CHARACTER, 'death');
+
+    const announcements = await verifyKeptRun(
+      sql,
+      fakeEngines(() => ({ replayed: { actions: 12, time: 30, milestones: DIED } })),
+      CHARACTER,
+    );
+
+    expect(announcements).toEqual([]);
+    expect(await verdictFor(sql, CHARACTER)).toBeNull();
+  });
+
+  it('checks and announces nothing for a run played in debug', async () => {
+    const debug = { mode: 'debug', actions: 12, time: 30, edits: 0, milestones: [] };
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, claims: debug }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, ending: true, claims: debug }), 6000);
+    await endRun(sql, CHARACTER, 'death');
+
+    const announcements = await verifyKeptRun(
+      sql,
+      fakeEngines(() => ({ replayed: { actions: 12, time: 30, milestones: DIED } })),
+      CHARACTER,
+    );
+
+    expect(announcements).toEqual([]);
+    expect(await verdictFor(sql, CHARACTER)).toBeNull();
+  });
+
   it('announces nothing about a run that could not be checked', async () => {
     const announcements = await playToADeath(
       fakeEngines(() => ({ status: 'unverifiable', reason: 'not kept', replayed: { actions: 12, time: 30, milestones: DIED } })),

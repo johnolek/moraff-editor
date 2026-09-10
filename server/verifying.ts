@@ -173,6 +173,7 @@ export async function verifyKeptRun(
 ): Promise<Announcement[]> {
   const sessions = await sessionsOf(sql, characterId);
   if (sessions.length === 0) return [];
+  if (!forTheBoards(sessions[sessions.length - 1])) return [];
   const batches = await batchesOf(sql, characterId);
   const timing = runTiming(batches);
   const log = runLogFrom(sessions, batches);
@@ -184,6 +185,19 @@ export async function verifyKeptRun(
   const eligible = verdict.status === 'verified' && edits === 0;
   await keepVerdict(sql, characterId, verdict, timing, eligible);
   return eligible ? announceVerifiedRun(sql, characterId, verdict, timing) : [];
+}
+
+/**
+ * Whether a run is one to check at all, which the newest sitting of the chain says.
+ *
+ * Every character of a signed-in player is kept here, so that the player finds them all wherever
+ * they sign in, and most of them are nobody's competition: one rolled for no board is played for
+ * its own sake, and debug is the mode with the game's hidden numbers on the screen. Those get
+ * their saves and no verdict — there is nothing to rank them against — so nothing is replayed for
+ * them and nothing is announced about them.
+ */
+function forTheBoards(newest: KeptSession): boolean {
+  return newest.leaderboard !== null && newest.mode !== 'debug';
 }
 
 /** What a checked run has to announce: how it ended, and the milestones the replay reached. */
