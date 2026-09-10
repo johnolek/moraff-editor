@@ -5,9 +5,11 @@
   "type": "module",
   "packageManager": "pnpm@10.14.0",
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@sveltejs/vite-plugin-svelte": "^7.3.0",
     "@tsconfig/svelte": "^5.0.8",
     "@types/node": "^26.4.1",
+    "@types/pg": "^8.23.1",
     "fake-indexeddb": "^6.2.5",
     "svelte": "^5.57.0",
     "svelte-check": "^4.7.6",
@@ -24,11 +26,13 @@
     "verify-run": "vite build --config vite.verify.config.ts --logLevel warn && node dist-cli/verify-run.mjs",
     "build:server": "vite build --config vite.server.config.ts --logLevel warn",
     "build:engine": "vite build --config vite.engine.config.ts --logLevel warn",
+    "publish:engine": "vite build --config vite.publish-engine.config.ts --logLevel warn && node dist-server/publish-engine.mjs",
     "start:server": "node dist-server/main.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "chart.js": "^4.5.1"
+    "chart.js": "^4.5.1",
+    "pg": "^8.23.0"
   }
 }
