@@ -73,7 +73,7 @@ export async function resolveStep(turn: Turn): Promise<void> {
   if (step.dx !== 0 || step.dy !== 0) await randomEventsTick(turn);
   const side = sideStepped(turn);
   if (side === MODULE_TELEPORTER) {
-    await changeModule(turn, 'stepped');
+    await changeModule(turn, { kind: 'stepped', dir: pc.dir });
     return;
   }
   if (side === 0) {
@@ -142,7 +142,7 @@ export async function resolveStep(turn: Turn): Promise<void> {
     arriveSquare(game);
     if (pc.mapCursorX < 1) game.recenterMap = true;
   }
-  if (pc.x !== from.x || pc.y !== from.y) game.events.push({ kind: 'stepped' });
+  if (pc.x !== from.x || pc.y !== from.y) game.events.push({ kind: 'stepped', dir: pc.dir });
   if (pc.maxHp < pc.hp) pc.hp = pc.maxHp;
 }
 

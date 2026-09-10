@@ -48,6 +48,7 @@ export function chuteUnder(game: Game): number {
 export async function fallDownChute(turn: Turn, destination: number): Promise<void> {
   const { game, session } = turn;
   if (destination === game.pc.level) return;
+  game.events.push({ kind: 'chuteTaken', from: { x: game.pc.x, y: game.pc.y }, to: destination });
   session.enterFloor(destination);
   session.save();
   clearMenuBlock(game);

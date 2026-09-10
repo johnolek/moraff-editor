@@ -2,7 +2,7 @@ import { sectionOf } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
 import { attackTiming, engagementTiming } from '../game/port/combat';
 import { CAST_SPELLBOOK } from '../game/port/inventory';
-import { tabletMessage, townTablet } from '../game/port/hints';
+import { sectionNumber, tabletMessage, townTablet } from '../game/port/hints';
 import { checkDeath } from '../game/port/kills';
 import { arriveSquare, leaveSquare } from '../game/port/moment';
 import { loadPlayer, savePlayer } from '../game/port/record';
@@ -591,6 +591,9 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
   /** Arriving on a floor: the floor itself, then its monsters. */
   enterFloor(level: number): void {
     const game = this.game;
+    // Which section the character was in before the floor changes, since a section is five
+    // floors and arriving on one of another section's is what brings its own monsters.
+    const leaving = sectionNumber(game.pc.module, game.pc.level);
     game.engaged = -1;
     game.pc.level = level;
     this.rows = UNFORGIVEN_MAP.floor(level, game.pc.module);
@@ -598,6 +601,9 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     this.memory.enterFloor(game.pc.module, level);
     this.memory.markArrival(this.rows, game.pc.x, game.pc.y);
     game.recenterMap = true;
+    game.events.push({ kind: 'floorReached', floor: level });
+    const section = sectionNumber(game.pc.module, level);
+    if (section !== leaving) game.events.push({ kind: 'sectionReached', section });
     // load_level_map greets a character every time floor 0 is loaded (exe 2000:7687 tests
     // DS:2320, which nothing ever sets), so the snake's tablet is read on every arrival in town.
     greetTheTown(this);

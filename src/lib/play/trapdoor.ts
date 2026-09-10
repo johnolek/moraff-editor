@@ -78,11 +78,12 @@ export function goThroughTrapDoor(turn: Turn): void {
     game.pressAnyKey();
     return;
   }
+  const from = { x: game.pc.x, y: game.pc.y };
   const [x, y] = bundledDungeon.trapdoorDest(turn.trapdoor, game.pc.module);
   game.pc.x = x;
   game.pc.y = y;
   game.pc.level = turn.trapdoor;
   hintOnFloor(game);
   session.enterFloor(turn.trapdoor);
-  game.events.push({ kind: 'trapdoorTaken' });
+  game.events.push({ kind: 'trapdoorTaken', from, to: turn.trapdoor });
 }

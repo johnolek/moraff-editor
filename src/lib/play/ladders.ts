@@ -5,7 +5,7 @@ import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { hintOnFloor } from './arrival';
 import type { Turn } from './engine';
 import { changeModule } from './modules';
-import { enterBuilding } from './town';
+import { buildingName, enterBuilding } from './town';
 
 /**
  * The ladders: U to climb one, D to go down one, and the module teleporter waiting at the bottom
@@ -62,15 +62,16 @@ export const LADDER_PROMPT_Y = 0x258;
 export async function goUp(turn: Turn): Promise<void> {
   const { game, session } = turn;
   if (turn.ladder < 0) {
-    session.enterFloor(game.pc.level + turn.ladder);
+    const to = game.pc.level + turn.ladder;
+    session.enterFloor(to);
     hintOnFloor(game);
-    game.events.push({ kind: 'ladderTaken' });
+    game.events.push({ kind: 'ladderTaken', to });
     return;
   }
   if (turn.building !== 0) {
     // The building is counted on the way in rather than on the way out, so that what a player is
     // shown while they are inside one already has it.
-    game.events.push({ kind: 'buildingEntered' });
+    game.events.push({ kind: 'buildingEntered', building: buildingName(game.pc.module, turn.building) });
     await enterBuilding(turn);
     return;
   }
@@ -91,10 +92,13 @@ export async function goDown(turn: Turn): Promise<void> {
     return;
   }
   if (BOTTOM_LEVEL[game.pc.module] < game.pc.level + turn.ladder) {
-    await changeModule(turn, 'ladderTaken');
+    // The module teleporter stands at the bottom of a module and lands the character in the next
+    // module's town, which is floor 0 of it.
+    await changeModule(turn, { kind: 'ladderTaken', to: 0 });
     return;
   }
-  session.enterFloor(game.pc.level + turn.ladder);
+  const to = game.pc.level + turn.ladder;
+  session.enterFloor(to);
   hintOnFloor(game);
-  game.events.push({ kind: 'ladderTaken' });
+  game.events.push({ kind: 'ladderTaken', to });
 }

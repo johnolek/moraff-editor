@@ -1,5 +1,6 @@
 import { showHint } from '../game/port/drops';
 import { relocate } from '../game/port/moment';
+import type { JournalEvent } from '../game/journal-events';
 import type { Turn } from './engine';
 
 /**
@@ -38,7 +39,10 @@ const LAST_MODULE = 4;
  * reaching the teleporter was used. It is pushed as the crossing begins rather than when it is
  * over, so the count already has it while the crossing screen is up.
  */
-export async function changeModule(turn: Turn, took: 'stepped' | 'ladderTaken'): Promise<boolean> {
+export async function changeModule(
+  turn: Turn,
+  took: Extract<JournalEvent, { kind: 'stepped' | 'ladderTaken' }>,
+): Promise<boolean> {
   const { game, session } = turn;
   const pc = game.pc;
   let direction = 0;
@@ -56,11 +60,12 @@ export async function changeModule(turn: Turn, took: 'stepped' | 'ladderTaken'):
     game.pressAnyKey();
     return false;
   }
-  game.events.push({ kind: took });
+  game.events.push(took);
   // FUN_4000_771b is called with the module being arrived in, before the module index changes.
   await session.crossToModule(pc.module + direction);
   pc.level = 0;
   pc.module += direction;
+  game.events.push({ kind: 'dungeonReached', dungeon: pc.module });
   relocate(game);
   session.save();
   session.enterFloor(0);
