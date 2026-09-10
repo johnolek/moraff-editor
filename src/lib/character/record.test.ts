@@ -12,6 +12,7 @@ import {
   levelLabel,
   recordName,
   slotFromFileName,
+  statLabels,
   withSeparators,
 } from './record';
 
@@ -216,6 +217,17 @@ describe('the status block of a Moraff’s Revenge character', () => {
 
   it('is nothing at all for bytes that are not a character file', () => {
     expect(characterStatus({ game: MORAFFS_REVENGE.id, name: '3.EXE', slot: 3, bytes: new Uint8Array(4) })).toBeNull();
+  });
+});
+
+describe('the labels for a game’s six characteristics', () => {
+  it('are the ones the two C games print', () => {
+    expect(statLabels(UNFORGIVEN.id)).toEqual(['STR', 'INT', 'WIZ', 'CON', 'DEX', 'LUCK']);
+    expect(statLabels(MORAFFS_WORLD.id)).toEqual(['STR', 'INT', 'WIZ', 'CON', 'DEX', 'LUCK']);
+  });
+
+  it('are Moraff’s Revenge’s own six for it', () => {
+    expect(statLabels(MORAFFS_REVENGE.id)).toEqual(['STR', 'INT', 'WIS', 'HEA', 'AGI', 'LAZ']);
   });
 });
 

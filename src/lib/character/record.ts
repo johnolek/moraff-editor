@@ -83,6 +83,17 @@ const STAT_LABELS = ['STR', 'INT', 'WIZ', 'CON', 'DEX', 'LUCK'];
  *  wisdom, health, agility and laziness. */
 const REV_STAT_LABELS = ['STR', 'INT', 'WIS', 'HEA', 'AGI', 'LAZ'];
 
+/**
+ * The labels for one game's six characteristics, in the order that game's record keeps them.
+ *
+ * A page that shows the six as a column each — the boards' table of everyone — has to head those
+ * columns before it has read anybody's record, so the labels are asked for by game rather than
+ * taken off a status block.
+ */
+export function statLabels(game: string): string[] {
+  return game === MORAFFS_REVENGE.id ? REV_STAT_LABELS : STAT_LABELS;
+}
+
 /** The five suits of Moraff's Revenge, in the order the store numbers them from the robes a new
  *  character stands up in (1000:2A9A). */
 const REV_ARMOR_NAMES = ['ROBES', 'LEATHER', 'CHAIN', 'PLATE', 'FIELD PLATE'];
