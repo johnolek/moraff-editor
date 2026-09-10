@@ -1,7 +1,6 @@
 import { sectionOf } from '../game/dotu-files.js';
 import { bundledDungeon } from '../game/dungeon';
 import { attackTiming, engagementTiming } from '../game/port/combat';
-import { CAST_SPELLBOOK } from '../game/port/inventory';
 import { sectionNumber, tabletMessage, townTablet } from '../game/port/hints';
 import { checkDeath } from '../game/port/kills';
 import { arriveSquare, leaveSquare } from '../game/port/moment';
@@ -14,7 +13,7 @@ import { UNFORGIVEN_AREA } from '../map/area';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import type { StockedMonster } from '../map/stocking';
 import { boxesOf } from './boxes';
-import { castASpell, useAnItem } from './cast';
+import { castFromSpellbook, useAnItem } from './cast';
 import { chuteUnder, fallDownChute } from './chute';
 import { debugMonsterLines } from './debug-screen';
 import { digHole } from './dig';
@@ -769,7 +768,7 @@ export const KEY_HANDLERS: Record<number, KeyHandler> = {
   [KEY.f1]: { c: 'FUN_3000_7dfc', run: (turn) => showHelp(turn.session) },
   [KEY.fight]: { c: 'strike', run: swingAtMonster },
   [KEY.repeatFight]: { c: 'movecontrol, the DS:0437 repeat flag', run: keepSwinging },
-  [KEY.cast]: { c: 'cast_a_spell', run: (turn) => castASpell(turn, CAST_SPELLBOOK) },
+  [KEY.cast]: { c: 'cast_a_spell', run: castFromSpellbook },
   [KEY.useItem]: { c: 'movecontrol, case 0x69, and use_magic_item', run: useAnItem },
   [KEY.viewPrepSpells]: { c: 'view_prep_spells', run: showPrepSpells },
   [KEY.viewBattleSpells]: { c: 'view_battle_spells', run: showBattleSpells },

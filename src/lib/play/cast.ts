@@ -84,19 +84,24 @@ function clearSpellList(game: Game, mini: boolean): void {
 /**
  * cast_a_spell (exe 2000:e017, unf.c "cast_a_spell"): cast a spell out of `source`, which is the
  * spellbook for the C key and a scroll, a wand or a sheet of paper for the I key.
+ *
+ * What comes back is the seconds of game time the cast took, which movecontrol is what spends
+ * them on. A cast that gave up took none: a menu escaped, a list the character's class is
+ * refused, a description read off one of the four help lists, the layout switched, or a spell
+ * there were not the points for.
  */
-export async function castASpell(turn: Turn, source: number): Promise<void> {
+export async function castASpell(turn: Turn, source: number): Promise<number> {
   const { game, session } = turn;
   if (!drawCastTypeMenu(game, source)) {
     game.pressAnyKey();
-    return;
+    return 0;
   }
   const line = await menuChoice(game, (key) => gmenuChoice(1, 8, key));
-  if (line === 'escape') return;
+  if (line === 'escape') return 0;
   const type = line - 1;
   if (!castTypeAllowed(game, source, type)) {
     game.pressAnyKey();
-    return;
+    return 0;
   }
   drawSpellList(game, source, type, session.miniSpellMenu);
   game.redrawView = true;
@@ -106,24 +111,23 @@ export async function castASpell(turn: Turn, source: number): Promise<void> {
     clearSpellList(game, session.miniSpellMenu);
     if (choice.kind === 'switchLayout') {
       session.miniSpellMenu = !session.miniSpellMenu;
-      return;
+      return 0;
     }
-    if (choice.kind === 'escape') return;
+    if (choice.kind === 'escape') return 0;
     if (type < 4) {
-      await castPickedSpell(turn, source, type, choice.level, choice.slot);
-      return;
+      return await castPickedSpell(turn, source, type, choice.level, choice.slot);
     }
     // The four help lists show a description and wait; mset_gmenu called with a first of -1 takes
     // whatever key is pressed, escape included, and the description stays on the screen.
     showSpellHelp(game, type - 4, choice.level, choice.slot);
     anyKeyChoice(await game.key());
-    return;
+    return 0;
   }
 }
 
 /**
- * The rest of cast_a_spell once a spell has been picked, and the time movecontrol (exe 2000:c308)
- * spends on it afterwards.
+ * The rest of cast_a_spell once a spell has been picked, which hands back the seconds the spell
+ * took.
  *
  * A spell that moves the character to another floor is loaded onto it here: the original's
  * spell_effect calls load_level_map itself, which the port records as an event instead — see the
@@ -135,7 +139,7 @@ async function castPickedSpell(
   type: number,
   level: number,
   slot: number,
-): Promise<void> {
+): Promise<number> {
   const { game, session } = turn;
   const affordable = source !== CAST_SPELLBOOK || spellCost(level) <= game.pc.sp;
   if (affordable) await askSpellQuestion(game, type, level, slot);
@@ -146,7 +150,15 @@ async function castPickedSpell(
   // which waits for a key.
   if (!affordable) game.pressAnyKey();
   if (game.pc.level !== floorBefore) session.enterFloor(game.pc.level);
-  spendSpellSeconds(game, result.seconds);
+  return result.seconds;
+}
+
+/**
+ * movecontrol (exe 2000:c308, unf.c "movecontrol"), its 0x63 branch: the C key, which casts out
+ * of the spellbook and then spends what the cast took.
+ */
+export async function castFromSpellbook(turn: Turn): Promise<void> {
+  spendSpellSeconds(turn.game, await castASpell(turn, CAST_SPELLBOOK));
 }
 
 /**
@@ -210,7 +222,7 @@ export async function useAnItem(turn: Turn): Promise<void> {
   if (line === 'escape') return;
   const source = ITEM_MENU_SOURCES[line - 1];
   if (source !== undefined) {
-    await castASpell(turn, source);
+    spendSpellSeconds(game, await castASpell(turn, source));
     return;
   }
   if (line === 5) {
