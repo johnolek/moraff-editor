@@ -213,7 +213,7 @@ export class RevGameSession extends KeyedSession<RevPc> {
   tick(): void {
     // 1000:0891: the town skips the clock outright, which is why nothing walks there.
     if (this.game.over || this.game.pc.dungeonLevel === 0) return;
-    this.run?.input(REV_CLOCK_TICK);
+    this.run?.unpressed(REV_CLOCK_TICK);
     this.ticks += 1;
     // `TIMER`, which the three potions that wear off are timed against.
     this.game.seconds = (this.ticks * REV_TICK_MS) / 1000;

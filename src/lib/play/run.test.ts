@@ -8,7 +8,7 @@ import { runPlayLoop } from './loop';
 import { KEY } from './keys';
 import { runMwMoveControl, startMwGame, type MwCharacterFile, type MwGameSession } from './mw/engine';
 import { findMwSquare, mwCharacterFile } from './mw/engine.test';
-import { runRevDungeon, startRevGame, type RevCharacterFile, type RevGameSession } from './rev/engine';
+import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile, type RevGameSession } from './rev/engine';
 import { revCharacterFile, revRecord } from './rev/engine.test';
 import { REV_KEY } from './rev/keys';
 import { loadMwPlayer, saveMwPlayer } from './mw/record';
@@ -179,6 +179,24 @@ describe('the run log', () => {
     expect(inputs.slice(3).every((key) => key === KEY.fight)).toBe(true);
     expect(inputs.length).toBeGreaterThan(3);
     expect(inputs).not.toContain(KEY.viewStats);
+    // The three keys the game read are the three the player pressed; the swings after them are
+    // the game's own, and the run server holds a run to a human speed by this count.
+    expect(run.presses).toBe(3);
+  });
+
+  it("counts Moraff's Revenge's clock ticks as inputs nobody pressed", async () => {
+    const { run, session } = recordedRevGame();
+    await settle();
+    // The town skips the clock outright, so the character goes down a level first.
+    session.enterLevel(2);
+    session.tick();
+    session.tick();
+    session.press(REV_KEY.arrowLeft);
+    await settle();
+    session.finish();
+
+    expect(run.log().inputs.filter((input) => input === REV_CLOCK_TICK)).toHaveLength(2);
+    expect(run.presses).toBe(1);
   });
 
   it("writes down Moraff's World's turn where the character stands", async () => {

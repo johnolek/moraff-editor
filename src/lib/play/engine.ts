@@ -433,7 +433,7 @@ export class GameSession extends KeyedSession<PlayerCharacter> {
     const key = await readKey(this);
     // With the flag up the loop takes F without reading the keyboard, so that swing reaches the
     // run log here rather than through press.
-    if (repeating) this.run?.input(key);
+    if (repeating) this.run?.unpressed(key);
     return key;
   }
 

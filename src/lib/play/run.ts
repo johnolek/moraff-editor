@@ -325,6 +325,18 @@ export class RunRecorder {
   readonly rng: Rng;
   readonly inputs: number[] = [];
   /**
+   * How many of those inputs the player pressed.
+   *
+   * Not all of them are: a held Ctrl-F swings without the keyboard being read (`engine.ts`) and
+   * Moraff's Revenge's clock ticks are inputs of the log as well (`rev/engine.ts`), and nobody
+   * pressed either. The run server holds a run to a speed a person can play at, and it counts
+   * this rather than the length of the log, which those two would swell.
+   *
+   * It is not part of the log and nothing about a replay depends on it: a replay makes the same
+   * inputs whether or not anybody was sitting there.
+   */
+  presses = 0;
+  /**
    * How many actions the run has spent, counting from the start of the chain.
    *
    * An action is a thing that happened to the character or to the world, which the games push
@@ -376,14 +388,23 @@ export class RunRecorder {
     this.deepest = clock().floor;
   }
 
-  /** A key on its way into the game. */
+  /** A key on its way into the game, pressed by the player. */
   input(key: number): void {
+    this.inputs.push(key);
+    this.presses += 1;
+  }
+
+  /** An input the game made for itself rather than reading: Ctrl-F's own swings and Moraff's
+   *  Revenge's clock ticks, which are in the log so that a replay makes the same ones. */
+  unpressed(key: number): void {
     this.inputs.push(key);
   }
 
-  /** Moraff's World's turn where the character stands, which is no key of the game's. */
+  /** Moraff's World's turn where the character stands, which is no key of the game's. It is an
+   *  arrow the player pressed all the same. */
   turned(dir: number): void {
     this.inputs.push(TURN_INPUTS[dir]);
+    this.presses += 1;
   }
 
   /**
