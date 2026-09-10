@@ -1,6 +1,6 @@
-import type { DatabaseSync } from 'node:sqlite';
 import type { Milestone } from '../src/lib/play/run';
 import type { BatchClaims, BatchSession, RunBatch } from '../src/lib/play/stream';
+import type { Queries } from './sql';
 
 /**
  * A run as it arrives: the character, its sittings, and the stretches of keys the site sends
@@ -46,8 +46,8 @@ interface CharacterRow {
   game: string;
   mode: string | null;
   name: string;
-  created_at: string;
-  finished_at: string | null;
+  created_at: Date;
+  finished_at: Date | null;
   outcome: string | null;
 }
 
@@ -61,48 +61,48 @@ interface CharacterRow {
  * when it holds the same stretch, and refused when it holds another, so that nothing a run was
  * really played with is quietly dropped.
  */
-export function takeBatch(
-  database: DatabaseSync,
+export async function takeBatch(
+  sql: Queries,
   characterId: string,
   playerId: number,
   batch: RunBatch,
   arrivedAt: number,
-): BatchTaken {
-  const character = characterRow(database, characterId);
+): Promise<BatchTaken> {
+  const character = await characterRow(sql, characterId);
   if (character !== null && character.player_id !== playerId) return { taken: false, because: 'another-player' };
   if (character === null && batch.session === undefined) return { taken: false, because: 'no-such-sitting' };
-  const already = batchAlreadyHere(database, characterId, batch.sessionIndex, batch.sequence);
+  const already = await batchAlreadyHere(sql, characterId, batch.sessionIndex, batch.sequence);
   if (already !== null && !sameStretch(already, batch)) return { taken: false, because: 'changed-resend' };
-  if (character === null) startCharacter(database, characterId, playerId, batch);
-  else describeCharacter(database, characterId, batch);
+  if (character === null) await startCharacter(sql, characterId, playerId, batch);
+  else await describeCharacter(sql, characterId, batch);
 
-  if (batch.session !== undefined) keepSession(database, characterId, batch);
-  else if (!updateSessionClaims(database, characterId, batch)) return { taken: false, because: 'no-such-sitting' };
+  if (batch.session !== undefined) await keepSession(sql, characterId, batch);
+  else if (!(await updateSessionClaims(sql, characterId, batch))) return { taken: false, because: 'no-such-sitting' };
 
-  appendBatch(database, characterId, batch, arrivedAt);
+  await appendBatch(sql, characterId, batch, arrivedAt);
   return { taken: true, received: batch.sequence, ending: batch.ending };
 }
 
-function characterRow(database: DatabaseSync, characterId: string): CharacterRow | null {
-  const row = database.prepare('SELECT * FROM characters WHERE id = ?').get(characterId) as CharacterRow | undefined;
-  return row ?? null;
+async function characterRow(sql: Queries, characterId: string): Promise<CharacterRow | null> {
+  const rows = await sql.query<CharacterRow>('SELECT * FROM characters WHERE id = $1', [characterId]);
+  return rows[0] ?? null;
 }
 
-export function runFor(database: DatabaseSync, characterId: string): KeptRun | null {
-  const row = database
-    .prepare(
-      `SELECT c.*, p.name AS player FROM characters c
-       JOIN players p ON p.id = c.player_id WHERE c.id = ?`,
-    )
-    .get(characterId) as (CharacterRow & { player: string }) | undefined;
+export async function runFor(sql: Queries, characterId: string): Promise<KeptRun | null> {
+  const rows = await sql.query<CharacterRow & { player: string }>(
+    `SELECT c.*, p.name AS player FROM characters c
+     JOIN players p ON p.id = c.player_id WHERE c.id = $1`,
+    [characterId],
+  );
+  const row = rows[0];
   if (row === undefined) return null;
   return {
     id: row.id,
     game: row.game,
     mode: row.mode,
     name: row.name,
-    createdAt: row.created_at,
-    finishedAt: row.finished_at,
+    createdAt: row.created_at.toISOString(),
+    finishedAt: row.finished_at === null ? null : row.finished_at.toISOString(),
     outcome: row.outcome,
     playerId: row.player_id,
     player: row.player,
@@ -111,70 +111,74 @@ export function runFor(database: DatabaseSync, characterId: string): KeptRun | n
 
 /** The character has ended its run, which is a death or a win and nothing else: leaving the game
  *  is not an ending, since the character is played again from where it stood. */
-export function endRun(database: DatabaseSync, characterId: string, outcome: 'death' | 'win'): void {
-  database
-    .prepare("UPDATE characters SET finished_at = datetime('now'), outcome = ? WHERE id = ?")
-    .run(outcome, characterId);
+export async function endRun(sql: Queries, characterId: string, outcome: 'death' | 'win'): Promise<void> {
+  await sql.query('UPDATE characters SET finished_at = now(), outcome = $1 WHERE id = $2', [outcome, characterId]);
 }
 
-function startCharacter(database: DatabaseSync, characterId: string, playerId: number, batch: RunBatch): void {
+async function startCharacter(sql: Queries, characterId: string, playerId: number, batch: RunBatch): Promise<void> {
   const session = batch.session;
   if (session === undefined) return;
-  database
-    .prepare('INSERT INTO characters (id, player_id, game, mode, name) VALUES (?, ?, ?, ?, ?)')
-    .run(characterId, playerId, session.game, batch.claims.mode, session.name);
+  await sql.query('INSERT INTO characters (id, player_id, game, mode, name) VALUES ($1, $2, $3, $4, $5)', [
+    characterId,
+    playerId,
+    session.game,
+    batch.claims.mode,
+    session.name,
+  ]);
 }
 
 /** The name and the mode a character shows by are the newest sitting's, since a character is
  *  renamed on the roster and a run not locked to a board can be played another way tomorrow. */
-function describeCharacter(database: DatabaseSync, characterId: string, batch: RunBatch): void {
+async function describeCharacter(sql: Queries, characterId: string, batch: RunBatch): Promise<void> {
   const name = batch.session?.name;
-  if (name === undefined) database.prepare('UPDATE characters SET mode = ? WHERE id = ?').run(batch.claims.mode, characterId);
-  else database.prepare('UPDATE characters SET mode = ?, name = ? WHERE id = ?').run(batch.claims.mode, name, characterId);
+  if (name === undefined) {
+    await sql.query('UPDATE characters SET mode = $1 WHERE id = $2', [batch.claims.mode, characterId]);
+  } else {
+    await sql.query('UPDATE characters SET mode = $1, name = $2 WHERE id = $3', [batch.claims.mode, name, characterId]);
+  }
 }
 
-function keepSession(database: DatabaseSync, characterId: string, batch: RunBatch): void {
+async function keepSession(sql: Queries, characterId: string, batch: RunBatch): Promise<void> {
   const session = batch.session;
   if (session === undefined) return;
   const claims = batch.claims;
-  database
-    .prepare(
-      `INSERT INTO sessions (character_id, session_index, seed, engine, game, leaderboard, sound, name,
-                             started_at, record, mode, actions, time, edits, milestones)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (character_id, session_index) DO UPDATE SET
-         mode = excluded.mode, actions = excluded.actions, time = excluded.time,
-         edits = excluded.edits, milestones = excluded.milestones`,
-    )
-    .run(
+  await sql.query(
+    `INSERT INTO sessions (character_id, session_index, seed, engine, game, leaderboard, sound, name,
+                           started_at, record, mode, actions, time, edits, milestones)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+     ON CONFLICT (character_id, session_index) DO UPDATE SET
+       mode = excluded.mode, actions = excluded.actions, time = excluded.time,
+       edits = excluded.edits, milestones = excluded.milestones`,
+    [
       characterId,
       batch.sessionIndex,
       session.seed,
       session.engine,
       session.game,
       session.leaderboard,
-      session.sound === null ? null : Number(session.sound),
+      session.sound,
       session.name,
       session.startedAt,
-      session.record,
+      Buffer.from(session.record, 'base64'),
       claims.mode,
       claims.actions,
       claims.time,
       claims.edits,
       JSON.stringify(claims.milestones),
-    );
+    ],
+  );
 }
 
 /** The claims of a sitting already known, and whether there was one to write them to. */
-function updateSessionClaims(database: DatabaseSync, characterId: string, batch: RunBatch): boolean {
+async function updateSessionClaims(sql: Queries, characterId: string, batch: RunBatch): Promise<boolean> {
   const claims = batch.claims;
-  const written = database
-    .prepare(
-      `UPDATE sessions SET mode = ?, actions = ?, time = ?, edits = ?, milestones = ?
-       WHERE character_id = ? AND session_index = ?`,
-    )
-    .run(claims.mode, claims.actions, claims.time, claims.edits, JSON.stringify(claims.milestones), characterId, batch.sessionIndex);
-  return written.changes > 0;
+  const written = await sql.query(
+    `UPDATE sessions SET mode = $1, actions = $2, time = $3, edits = $4, milestones = $5
+     WHERE character_id = $6 AND session_index = $7
+     RETURNING character_id`,
+    [claims.mode, claims.actions, claims.time, claims.edits, JSON.stringify(claims.milestones), characterId, batch.sessionIndex],
+  );
+  return written.length > 0;
 }
 
 /**
@@ -183,19 +187,18 @@ function updateSessionClaims(database: DatabaseSync, characterId: string, batch:
  * The batch has to be looked at before anything is written, because a batch that is refused
  * leaves the run exactly as it was.
  */
-function batchAlreadyHere(
-  database: DatabaseSync,
+async function batchAlreadyHere(
+  sql: Queries,
   characterId: string,
   sessionIndex: number,
   sequence: number,
-): KeptBatch | null {
-  const row = database
-    .prepare(
-      `SELECT session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
-       WHERE character_id = ? AND session_index = ? AND sequence = ?`,
-    )
-    .get(characterId, sessionIndex, sequence) as BatchRow | undefined;
-  return row === undefined ? null : keptBatchOf(row);
+): Promise<KeptBatch | null> {
+  const rows = await sql.query<BatchRow>(
+    `SELECT session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
+     WHERE character_id = $1 AND session_index = $2 AND sequence = $3`,
+    [characterId, sessionIndex, sequence],
+  );
+  return rows.length === 0 ? null : keptBatchOf(rows[0]);
 }
 
 /**
@@ -220,22 +223,21 @@ function sameStretch(kept: KeptBatch, sent: RunBatch): boolean {
 
 /** A batch under a sequence already here arrived before, so nothing is written and the sitting
  *  keeps the stamp of when that stretch really landed. */
-function appendBatch(database: DatabaseSync, characterId: string, batch: RunBatch, arrivedAt: number): void {
-  database
-    .prepare(
-      `INSERT INTO batches (character_id, session_index, sequence, inputs, pressed, arrived_at, ending)
-       VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (character_id, session_index, sequence) DO NOTHING`,
-    )
-    .run(
+async function appendBatch(sql: Queries, characterId: string, batch: RunBatch, arrivedAt: number): Promise<void> {
+  await sql.query(
+    `INSERT INTO batches (character_id, session_index, sequence, inputs, pressed, arrived_at, ending)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     ON CONFLICT (character_id, session_index, sequence) DO NOTHING`,
+    [
       characterId,
       batch.sessionIndex,
       batch.sequence,
       JSON.stringify(batch.inputs),
       batch.pressed,
       arrivedAt,
-      Number(batch.ending),
-    );
+      batch.ending,
+    ],
+  );
 }
 
 /** One batch as it was kept, which is what a run is assembled and timed from. */
@@ -248,38 +250,35 @@ export interface KeptBatch {
   ending: boolean;
 }
 
-/**
- * A row of the batches table. It is a type rather than an interface so that a row out of
- * `node:sqlite`, which is a bag of columns, can be read as one.
- */
+/** A row of the batches table. It is a type rather than an interface so that a bag of columns can
+ *  be read as one. */
 type BatchRow = {
   session_index: number;
   sequence: number;
-  inputs: string;
+  inputs: number[];
   pressed: number;
   arrived_at: number;
-  ending: number;
+  ending: boolean;
 };
 
 function keptBatchOf(row: BatchRow): KeptBatch {
   return {
     sessionIndex: row.session_index,
     sequence: row.sequence,
-    inputs: JSON.parse(row.inputs) as number[],
+    inputs: row.inputs,
     pressed: row.pressed,
     arrivedAt: row.arrived_at,
-    ending: row.ending === 1,
+    ending: row.ending,
   };
 }
 
 /** Every batch of a character's run, oldest sitting first and in the order the site sent them. */
-export function batchesOf(database: DatabaseSync, characterId: string): KeptBatch[] {
-  const rows = database
-    .prepare(
-      `SELECT session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
-       WHERE character_id = ? ORDER BY session_index, sequence`,
-    )
-    .all(characterId) as BatchRow[];
+export async function batchesOf(sql: Queries, characterId: string): Promise<KeptBatch[]> {
+  const rows = await sql.query<BatchRow>(
+    `SELECT session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
+     WHERE character_id = $1 ORDER BY session_index, sequence`,
+    [characterId],
+  );
   return rows.map(keptBatchOf);
 }
 
@@ -302,40 +301,38 @@ export interface KeptSession {
 }
 
 /** Every sitting of a character's run, oldest first. */
-export function sessionsOf(database: DatabaseSync, characterId: string): KeptSession[] {
-  const rows = database
-    .prepare('SELECT * FROM sessions WHERE character_id = ? ORDER BY session_index')
-    .all(characterId) as {
+export async function sessionsOf(sql: Queries, characterId: string): Promise<KeptSession[]> {
+  const rows = await sql.query<{
     session_index: number;
     seed: number;
     engine: string;
     game: string;
     leaderboard: string | null;
-    sound: number | null;
+    sound: boolean | null;
     name: string;
     started_at: string;
-    record: string;
+    record: Uint8Array;
     mode: string | null;
     actions: number;
     time: number;
     edits: number;
-    milestones: string;
-  }[];
+    milestones: Milestone[];
+  }>('SELECT * FROM sessions WHERE character_id = $1 ORDER BY session_index', [characterId]);
   return rows.map((row) => ({
     sessionIndex: row.session_index,
     seed: row.seed,
     engine: row.engine,
     game: row.game,
     leaderboard: row.leaderboard,
-    sound: row.sound === null ? null : row.sound === 1,
+    sound: row.sound,
     name: row.name,
     startedAt: row.started_at,
-    record: row.record,
+    record: Buffer.from(row.record).toString('base64'),
     mode: row.mode,
     actions: row.actions,
     time: row.time,
     edits: row.edits,
-    milestones: JSON.parse(row.milestones) as Milestone[],
+    milestones: row.milestones,
   }));
 }
 

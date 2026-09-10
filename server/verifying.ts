@@ -1,4 +1,3 @@
-import type { DatabaseSync } from 'node:sqlite';
 import { shortCommit } from '../src/lib/commit';
 import type { Milestone, RunLog, RunSession, RunTotals } from '../src/lib/play/run';
 import type { CheckedSession, RunVerdict } from '../src/lib/play/verify';
@@ -6,6 +5,7 @@ import { announceRun, type Announcement } from './announcing';
 import { deepestReach, highestLevel } from './boards';
 import type { EngineStore, KeptEngine, SessionVerifier } from './engines';
 import { batchesOf, runFor, sessionsOf, type KeptBatch, type KeptSession } from './runs';
+import type { Queries } from './sql';
 
 /**
  * Putting a run back together and passing a verdict on it.
@@ -167,13 +167,13 @@ const THE_WHOLE_CHAIN_AT_ONCE =
  * back is what was announced this time, which is what there is to push to anybody listening.
  */
 export async function verifyKeptRun(
-  database: DatabaseSync,
+  sql: Queries,
   engines: EngineStore,
   characterId: string,
 ): Promise<Announcement[]> {
-  const sessions = sessionsOf(database, characterId);
+  const sessions = await sessionsOf(sql, characterId);
   if (sessions.length === 0) return [];
-  const batches = batchesOf(database, characterId);
+  const batches = await batchesOf(sql, characterId);
   const timing = runTiming(batches);
   const log = runLogFrom(sessions, batches);
   const edits = sessions.reduce((count, session) => count + session.edits, 0);
@@ -182,21 +182,21 @@ export async function verifyKeptRun(
   // the character back into it. The verifier says as much on its own; this says it again here so
   // that a board never has to trust an engine build about it.
   const eligible = verdict.status === 'verified' && edits === 0;
-  keepVerdict(database, characterId, verdict, timing, eligible);
-  return eligible ? announceVerifiedRun(database, characterId, verdict, timing) : [];
+  await keepVerdict(sql, characterId, verdict, timing, eligible);
+  return eligible ? announceVerifiedRun(sql, characterId, verdict, timing) : [];
 }
 
 /** What a checked run has to announce: how it ended, and the milestones the replay reached. */
-function announceVerifiedRun(
-  database: DatabaseSync,
+async function announceVerifiedRun(
+  sql: Queries,
   characterId: string,
   verdict: RunVerdict,
   timing: RunTiming,
-): Announcement[] {
-  const run = runFor(database, characterId);
+): Promise<Announcement[]> {
+  const run = await runFor(sql, characterId);
   if (run === null || run.outcome === null) return [];
   const totals = verdict.replayed ?? verdict.claimed;
-  return announceRun(database, {
+  return announceRun(sql, {
     characterId,
     player: run.player,
     name: run.name,
@@ -318,30 +318,28 @@ function unverifiable(log: RunLog, reason: string): RunVerdict {
   return { ...verdictOf(log, ''), reason };
 }
 
-function keepVerdict(
-  database: DatabaseSync,
+async function keepVerdict(
+  sql: Queries,
   characterId: string,
   verdict: RunVerdict,
   timing: RunTiming,
   eligible: boolean,
-): void {
+): Promise<void> {
   const totals = verdict.replayed ?? verdict.claimed;
   // The game, the board and the two numbers a board sorts on go here as well as being reachable
   // through the character's rows and the milestones, so that reading a board is one table and no
   // JSON. `server/boards.ts` is what they are for.
-  database
-    .prepare(
-      `INSERT INTO verdicts (character_id, status, reason, actions, time, milestones, play_ms, timed,
-                             eligible, game, leaderboard, deepest, level, engine_commits, verified_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-       ON CONFLICT (character_id) DO UPDATE SET
-         status = excluded.status, reason = excluded.reason, actions = excluded.actions,
-         time = excluded.time, milestones = excluded.milestones, play_ms = excluded.play_ms,
-         timed = excluded.timed, eligible = excluded.eligible, game = excluded.game,
-         leaderboard = excluded.leaderboard, deepest = excluded.deepest, level = excluded.level,
-         engine_commits = excluded.engine_commits, verified_at = excluded.verified_at`,
-    )
-    .run(
+  await sql.query(
+    `INSERT INTO verdicts (character_id, status, reason, actions, time, milestones, play_ms, timed,
+                           eligible, game, leaderboard, deepest, level, engine_commits, verified_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now())
+     ON CONFLICT (character_id) DO UPDATE SET
+       status = excluded.status, reason = excluded.reason, actions = excluded.actions,
+       time = excluded.time, milestones = excluded.milestones, play_ms = excluded.play_ms,
+       timed = excluded.timed, eligible = excluded.eligible, game = excluded.game,
+       leaderboard = excluded.leaderboard, deepest = excluded.deepest, level = excluded.level,
+       engine_commits = excluded.engine_commits, verified_at = excluded.verified_at`,
+    [
       characterId,
       verdict.status,
       verdict.reason,
@@ -349,52 +347,52 @@ function keepVerdict(
       totals.time,
       JSON.stringify(totals.milestones),
       timing.playMs,
-      Number(timing.timed),
-      Number(eligible),
+      timing.timed,
+      eligible,
       verdict.game,
       verdict.leaderboard,
       deepestReach(verdict.game, totals.milestones),
       highestLevel(totals.milestones),
       JSON.stringify(verdict.engine.played),
-    );
+    ],
+  );
 }
 
 /** The verdict a run was given, or null when it has not been replayed. */
-export function verdictFor(database: DatabaseSync, characterId: string): KeptVerdict | null {
-  const row = database.prepare('SELECT * FROM verdicts WHERE character_id = ?').get(characterId) as
-    | {
-        status: string;
-        reason: string | null;
-        actions: number;
-        time: number;
-        milestones: string;
-        play_ms: number;
-        timed: number;
-        eligible: number;
-        game: string;
-        leaderboard: string | null;
-        deepest: number;
-        level: number;
-        engine_commits: string;
-        verified_at: string;
-      }
-    | undefined;
+export async function verdictFor(sql: Queries, characterId: string): Promise<KeptVerdict | null> {
+  const rows = await sql.query<{
+    status: string;
+    reason: string | null;
+    actions: number;
+    time: number;
+    milestones: Milestone[];
+    play_ms: number;
+    timed: boolean;
+    eligible: boolean;
+    game: string;
+    leaderboard: string | null;
+    deepest: number;
+    level: number;
+    engine_commits: string[];
+    verified_at: Date;
+  }>('SELECT * FROM verdicts WHERE character_id = $1', [characterId]);
+  const row = rows[0];
   if (row === undefined) return null;
   return {
     status: row.status,
     reason: row.reason,
     actions: row.actions,
     time: row.time,
-    milestones: JSON.parse(row.milestones) as Milestone[],
+    milestones: row.milestones,
     playMs: row.play_ms,
-    timed: row.timed === 1,
-    eligible: row.eligible === 1,
+    timed: row.timed,
+    eligible: row.eligible,
     game: row.game,
     leaderboard: row.leaderboard,
     deepest: row.deepest,
     level: row.level,
-    engines: JSON.parse(row.engine_commits) as string[],
-    verifiedAt: row.verified_at,
+    engines: row.engine_commits,
+    verifiedAt: row.verified_at.toISOString(),
   };
 }
 
@@ -417,7 +415,7 @@ export interface RunVerifier {
  * run whose last batch was answered seconds before the replay finished.
  */
 export function createRunVerifier(
-  database: DatabaseSync,
+  sql: Queries,
   engines: EngineStore,
   announced: (announcements: Announcement[]) => void,
 ): RunVerifier {
@@ -431,7 +429,7 @@ export function createRunVerifier(
       line = line.then(async () => {
         waiting.delete(characterId);
         try {
-          announced(await verifyKeptRun(database, engines, characterId));
+          announced(await verifyKeptRun(sql, engines, characterId));
         } catch (thrown) {
           console.error(`Replaying the run of ${characterId} failed:`, thrown);
         }

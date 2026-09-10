@@ -1,26 +1,21 @@
-import { mkdtempSync, rmSync } from 'node:fs';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { announceRun } from './announcing';
-import { openRunDatabase } from './db';
 import { createRunServer } from './http';
-
-const directory = mkdtempSync(join(tmpdir(), 'moraff-announcements-'));
+import type { Sql } from './sql';
+import { openTestDatabase } from './test-sql';
 
 describe('asking the server what it has announced', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
   let server: Server;
   let origin: string;
 
   beforeAll(async () => {
-    database = openRunDatabase(join(directory, 'runs.sqlite'));
-    database.prepare('INSERT INTO players (id, secret_hash, name) VALUES (1, ?, ?)').run('mine', 'Moraff');
-    database.prepare("INSERT INTO characters (id, player_id, game, name) VALUES ('grond', 1, 'unforgiven', 'Grond')").run();
-    announceRun(database, {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES (1, $1, $2)', ['mine', 'Moraff']);
+    await sql.exec("INSERT INTO characters (id, player_id, game, name) VALUES ('grond', 1, 'unforgiven', 'Grond')");
+    await announceRun(sql, {
       characterId: 'grond',
       player: 'Moraff',
       name: 'Grond',
@@ -36,15 +31,7 @@ describe('asking the server what it has announced', () => {
       time: 30,
       playMs: 5000,
     });
-    server = createRunServer(
-      {
-        port: 0,
-        databasePath: join(directory, 'runs.sqlite'),
-        allowedOrigin: 'https://johnolek.github.io',
-        enginesPath: join(directory, 'engines'),
-      },
-      database,
-    );
+    server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -53,8 +40,7 @@ describe('asking the server what it has announced', () => {
     await new Promise<void>((resolve, reject) => {
       server.close((thrown) => (thrown ? reject(thrown) : resolve()));
     });
-    database.close();
-    rmSync(directory, { recursive: true, force: true });
+    await sql.close();
   });
 
   it('answers with the announcements newest first', async () => {

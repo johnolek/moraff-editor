@@ -1,17 +1,14 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { request, type IncomingMessage, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Announcement } from './announcing';
-import { openRunDatabase } from './db';
+import { publishEngine } from './engines';
 import { openFeed, type Feed } from './feed';
 import { createRunServer } from './http';
 import type { RunBatch } from './runs';
+import type { Sql } from './sql';
+import { openTestDatabase } from './test-sql';
 
-const directory = mkdtempSync(join(tmpdir(), 'moraff-feed-'));
 const ENGINE = 'a'.repeat(40);
 
 /** A secret shaped the way the site makes them: 32 bytes base64url, which is 43 characters. */
@@ -32,10 +29,8 @@ const SITTING = {
 };
 
 /** A build small enough to read, which passes the run it is handed and says it died on floor 7. */
-function writeFakeEngine(): void {
-  mkdirSync(join(directory, 'engines', ENGINE), { recursive: true });
-  writeFileSync(
-    join(directory, 'engines', ENGINE, 'engine.mjs'),
+function fakeEngine(): Uint8Array {
+  return Buffer.from(
     `export const ENGINE_COMMIT = '${ENGINE}';\n` +
       `const died = [{ kind: 'death', which: 0, actions: 2, time: 4, floor: 7 }];\n` +
       `export function verifyRun(log) {\n` +
@@ -106,7 +101,7 @@ function listen(origin: string): Promise<Listener> {
 }
 
 describe('listening to the feed', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
   let feed: Feed;
   let server: Server;
   let origin: string;
@@ -130,19 +125,10 @@ describe('listening to the feed', () => {
   }
 
   beforeAll(async () => {
-    writeFakeEngine();
-    database = openRunDatabase(join(directory, 'runs.sqlite'));
+    sql = await openTestDatabase();
+    await publishEngine(sql, ENGINE, fakeEngine());
     feed = openFeed();
-    server = createRunServer(
-      {
-        port: 0,
-        databasePath: join(directory, 'runs.sqlite'),
-        allowedOrigin: 'https://johnolek.github.io',
-        enginesPath: join(directory, 'engines'),
-      },
-      database,
-      feed,
-    );
+    server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql, feed);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -152,8 +138,7 @@ describe('listening to the feed', () => {
     await new Promise<void>((resolve, reject) => {
       server.close((thrown) => (thrown ? reject(thrown) : resolve()));
     });
-    database.close();
-    rmSync(directory, { recursive: true, force: true });
+    await sql.close();
   });
 
   it('answers a page that asks for the feed with a stream that stays open', async () => {

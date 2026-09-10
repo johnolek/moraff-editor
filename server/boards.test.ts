@@ -1,11 +1,11 @@
-import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { Milestone, MilestoneKind } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
 import { boardPage, deepestReach, highestLevel, RUNS_PER_PAGE, type BoardName } from './boards';
 import type { EngineStore } from './engines';
-import { applyMigrations, BUNDLED_MIGRATIONS } from './migrations';
 import { endRun, takeBatch } from './runs';
+import type { Sql } from './sql';
+import { openTestDatabase } from './test-sql';
 import { createRunVerifier } from './verifying';
 
 function reached(kind: MilestoneKind, which: number, floor = 0): Milestone {
@@ -71,7 +71,7 @@ interface Kept {
   level: number;
 }
 
-function keep(database: DatabaseSync, over: Partial<Kept> & { id: string }): void {
+async function keep(sql: Sql, over: Partial<Kept> & { id: string }): Promise<void> {
   const run: Kept = {
     player: 'John',
     name: 'Grond',
@@ -91,103 +91,105 @@ function keep(database: DatabaseSync, over: Partial<Kept> & { id: string }): voi
   };
   // No test here hands the server a secret, so the player's name stands in for its hash: all the
   // column has to be is one player's own.
-  database.prepare('INSERT OR IGNORE INTO players (secret_hash, name) VALUES (?, ?)').run(run.player, run.player);
-  const player = database.prepare('SELECT id FROM players WHERE name = ?').get(run.player) as { id: number };
-  database
-    .prepare('INSERT INTO characters (id, player_id, game, name, finished_at, outcome) VALUES (?, ?, ?, ?, ?, ?)')
-    .run(run.id, player.id, run.game, run.name, run.finishedAt, run.outcome);
-  database
-    .prepare(
-      `INSERT INTO verdicts (character_id, status, reason, actions, time, milestones, play_ms, timed,
-                             eligible, game, leaderboard, deepest, level, engine_commits)
-       VALUES (?, ?, NULL, ?, ?, '[]', ?, ?, ?, ?, ?, ?, ?, '[]')`,
-    )
-    .run(
+  await sql.query('INSERT INTO players (secret_hash, name) VALUES ($1, $2) ON CONFLICT (secret_hash) DO NOTHING', [
+    run.player,
+    run.player,
+  ]);
+  const players = await sql.query<{ id: number }>('SELECT id FROM players WHERE name = $1', [run.player]);
+  await sql.query(
+    'INSERT INTO characters (id, player_id, game, name, finished_at, outcome) VALUES ($1, $2, $3, $4, $5, $6)',
+    [run.id, players[0].id, run.game, run.name, run.finishedAt, run.outcome],
+  );
+  await sql.query(
+    `INSERT INTO verdicts (character_id, status, reason, actions, time, milestones, play_ms, timed,
+                           eligible, game, leaderboard, deepest, level, engine_commits)
+     VALUES ($1, $2, NULL, $3, $4, '[]', $5, $6, $7, $8, $9, $10, $11, '[]')`,
+    [
       run.id,
       run.status,
       run.actions,
       run.time,
       run.playMs,
-      Number(run.timed),
-      Number(run.eligible),
+      run.timed,
+      run.eligible,
       run.game,
       run.leaderboard,
       run.deepest,
       run.level,
-    );
+    ],
+  );
 }
 
-function fresh(): DatabaseSync {
-  const database = new DatabaseSync(':memory:');
-  applyMigrations(database, BUNDLED_MIGRATIONS);
-  return database;
-}
-
-function ids(database: DatabaseSync, board: BoardName, over: { game?: string; leaderboard?: string; page?: number } = {}): string[] {
-  return boardPage(database, {
+async function ids(
+  sql: Sql,
+  board: BoardName,
+  over: { game?: string; leaderboard?: string; page?: number } = {},
+): Promise<string[]> {
+  const page = await boardPage(sql, {
     game: over.game ?? 'unforgiven',
     leaderboard: over.leaderboard ?? 'speedrun',
     board,
     page: over.page ?? 1,
-  }).rows.map((row) => row.characterId);
+  });
+  return page.rows.map((row) => row.characterId);
 }
 
 describe('the order a board puts runs in', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
 
-  beforeEach(() => {
-    database = fresh();
+  beforeEach(async () => {
+    sql = await openTestDatabase();
   });
 
-  afterEach(() => {
-    database.close();
+  afterEach(async () => {
+    await sql.close();
   });
 
-  it('puts the wins with the fewest actions first', () => {
-    keep(database, { id: 'slow', actions: 900 });
-    keep(database, { id: 'quick', actions: 90 });
-    keep(database, { id: 'died', actions: 9, outcome: 'death' });
+  it('puts the wins with the fewest actions first', async () => {
+    await keep(sql, { id: 'slow', actions: 900 });
+    await keep(sql, { id: 'quick', actions: 90 });
+    await keep(sql, { id: 'died', actions: 9, outcome: 'death' });
 
-    expect(ids(database, 'actions')).toEqual(['quick', 'slow']);
+    expect(await ids(sql, 'actions')).toEqual(['quick', 'slow']);
   });
 
-  it("puts the wins with the least on the game's own clock first", () => {
-    keep(database, { id: 'later', time: 900 });
-    keep(database, { id: 'sooner', time: 90 });
+  it("puts the wins with the least on the game's own clock first", async () => {
+    await keep(sql, { id: 'later', time: 900 });
+    await keep(sql, { id: 'sooner', time: 90 });
 
-    expect(ids(database, 'clock')).toEqual(['sooner', 'later']);
+    expect(await ids(sql, 'clock')).toEqual(['sooner', 'later']);
   });
 
-  it('puts the wins played in the least time first, and leaves out the ones nobody timed', () => {
-    keep(database, { id: 'long', playMs: 900000 });
-    keep(database, { id: 'short', playMs: 90000 });
-    keep(database, { id: 'untimed', playMs: 90000, timed: false });
-    keep(database, { id: 'never-watched', playMs: 0 });
+  it('puts the wins played in the least time first, and leaves out the ones nobody timed', async () => {
+    await keep(sql, { id: 'long', playMs: 900000 });
+    await keep(sql, { id: 'short', playMs: 90000 });
+    await keep(sql, { id: 'untimed', playMs: 90000, timed: false });
+    await keep(sql, { id: 'never-watched', playMs: 0 });
 
-    expect(ids(database, 'wall')).toEqual(['short', 'long']);
+    expect(await ids(sql, 'wall')).toEqual(['short', 'long']);
   });
 
-  it('puts the runs that got furthest first, and the fewest actions first among them', () => {
-    keep(database, { id: 'shallow', deepest: 1 });
-    keep(database, { id: 'deep-slow', deepest: 4, actions: 900 });
-    keep(database, { id: 'deep-quick', deepest: 4, actions: 90 });
+  it('puts the runs that got furthest first, and the fewest actions first among them', async () => {
+    await keep(sql, { id: 'shallow', deepest: 1 });
+    await keep(sql, { id: 'deep-slow', deepest: 4, actions: 900 });
+    await keep(sql, { id: 'deep-quick', deepest: 4, actions: 90 });
 
-    expect(ids(database, 'deepest')).toEqual(['deep-quick', 'deep-slow', 'shallow']);
+    expect(await ids(sql, 'deepest')).toEqual(['deep-quick', 'deep-slow', 'shallow']);
   });
 
-  it('puts the highest level first, whether the run was won or lost', () => {
-    keep(database, { id: 'low', level: 2 });
-    keep(database, { id: 'high', level: 20, outcome: 'death' });
+  it('puts the highest level first, whether the run was won or lost', async () => {
+    await keep(sql, { id: 'low', level: 2 });
+    await keep(sql, { id: 'high', level: 20, outcome: 'death' });
 
-    expect(ids(database, 'level')).toEqual(['high', 'low']);
+    expect(await ids(sql, 'level')).toEqual(['high', 'low']);
   });
 
-  it('puts the newest death first, and says where it happened and at what level', () => {
-    keep(database, { id: 'older', outcome: 'death', finishedAt: '2026-09-01T00:00:00.000Z' });
-    keep(database, { id: 'newer', outcome: 'death', finishedAt: '2026-09-08T00:00:00.000Z', deepest: 3, level: 7 });
-    keep(database, { id: 'won' });
+  it('puts the newest death first, and says where it happened and at what level', async () => {
+    await keep(sql, { id: 'older', outcome: 'death', finishedAt: '2026-09-01T00:00:00.000Z' });
+    await keep(sql, { id: 'newer', outcome: 'death', finishedAt: '2026-09-08T00:00:00.000Z', deepest: 3, level: 7 });
+    await keep(sql, { id: 'won' });
 
-    const page = boardPage(database, { game: 'unforgiven', leaderboard: 'speedrun', board: 'deaths', page: 1 });
+    const page = await boardPage(sql, { game: 'unforgiven', leaderboard: 'speedrun', board: 'deaths', page: 1 });
 
     expect(page.rows.map((row) => row.characterId)).toEqual(['newer', 'older']);
     expect(page.rows[0]).toMatchObject({ deepest: 3, level: 7, outcome: 'death', player: 'John', name: 'Grond' });
@@ -195,80 +197,80 @@ describe('the order a board puts runs in', () => {
 });
 
 describe('which runs a board holds at all', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
 
-  beforeEach(() => {
-    database = fresh();
+  beforeEach(async () => {
+    sql = await openTestDatabase();
   });
 
-  afterEach(() => {
-    database.close();
+  afterEach(async () => {
+    await sql.close();
   });
 
-  it('never mixes faithful with speedrun', () => {
-    keep(database, { id: 'faithful-run', leaderboard: 'faithful' });
-    keep(database, { id: 'speedrun-run', leaderboard: 'speedrun' });
+  it('never mixes faithful with speedrun', async () => {
+    await keep(sql, { id: 'faithful-run', leaderboard: 'faithful' });
+    await keep(sql, { id: 'speedrun-run', leaderboard: 'speedrun' });
 
-    expect(ids(database, 'actions', { leaderboard: 'faithful' })).toEqual(['faithful-run']);
-    expect(ids(database, 'actions', { leaderboard: 'speedrun' })).toEqual(['speedrun-run']);
+    expect(await ids(sql, 'actions', { leaderboard: 'faithful' })).toEqual(['faithful-run']);
+    expect(await ids(sql, 'actions', { leaderboard: 'speedrun' })).toEqual(['speedrun-run']);
   });
 
-  it('never mixes one game with another', () => {
-    keep(database, { id: 'unforgiven-run', game: 'unforgiven' });
-    keep(database, { id: 'revenge-run', game: 'revenge' });
+  it('never mixes one game with another', async () => {
+    await keep(sql, { id: 'unforgiven-run', game: 'unforgiven' });
+    await keep(sql, { id: 'revenge-run', game: 'revenge' });
 
-    expect(ids(database, 'actions', { game: 'revenge' })).toEqual(['revenge-run']);
+    expect(await ids(sql, 'actions', { game: 'revenge' })).toEqual(['revenge-run']);
   });
 
-  it('leaves out a run that may not be on a board', () => {
-    keep(database, { id: 'edited', eligible: false });
+  it('leaves out a run that may not be on a board', async () => {
+    await keep(sql, { id: 'edited', eligible: false });
 
-    expect(ids(database, 'deepest')).toEqual([]);
+    expect(await ids(sql, 'deepest')).toEqual([]);
   });
 
-  it('leaves out a run that was never verified', () => {
-    keep(database, { id: 'unchecked', status: 'unverifiable', eligible: false });
+  it('leaves out a run that was never verified', async () => {
+    await keep(sql, { id: 'unchecked', status: 'unverifiable', eligible: false });
 
-    expect(ids(database, 'deepest')).toEqual([]);
+    expect(await ids(sql, 'deepest')).toEqual([]);
   });
 
-  it('leaves out a character that was rolled for no board', () => {
-    keep(database, { id: 'free', leaderboard: null });
+  it('leaves out a character that was rolled for no board', async () => {
+    await keep(sql, { id: 'free', leaderboard: null });
 
-    expect(ids(database, 'deepest')).toEqual([]);
-    expect(ids(database, 'deepest', { leaderboard: 'faithful' })).toEqual([]);
+    expect(await ids(sql, 'deepest')).toEqual([]);
+    expect(await ids(sql, 'deepest', { leaderboard: 'faithful' })).toEqual([]);
   });
 });
 
 describe('paging a board', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
 
-  beforeEach(() => {
-    database = fresh();
-    for (let at = 0; at < RUNS_PER_PAGE + 2; at++) keep(database, { id: `run-${at}`, actions: at });
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    for (let at = 0; at < RUNS_PER_PAGE + 2; at++) await keep(sql, { id: `run-${at}`, actions: at });
   });
 
-  afterEach(() => {
-    database.close();
+  afterEach(async () => {
+    await sql.close();
   });
 
-  it('holds fifty runs on a page and says there is another', () => {
-    const page = boardPage(database, { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', page: 1 });
+  it('holds fifty runs on a page and says there is another', async () => {
+    const page = await boardPage(sql, { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', page: 1 });
 
     expect(page.rows).toHaveLength(RUNS_PER_PAGE);
     expect(page.rows[0].characterId).toBe('run-0');
     expect(page.more).toBe(true);
   });
 
-  it('goes on from where the page before it stopped', () => {
-    const page = boardPage(database, { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', page: 2 });
+  it('goes on from where the page before it stopped', async () => {
+    const page = await boardPage(sql, { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', page: 2 });
 
     expect(page.rows.map((row) => row.characterId)).toEqual(['run-50', 'run-51']);
     expect(page.more).toBe(false);
   });
 
-  it('is empty past the end of the board', () => {
-    expect(ids(database, 'actions', { page: 3 })).toEqual([]);
+  it('is empty past the end of the board', async () => {
+    expect(await ids(sql, 'actions', { page: 3 })).toEqual([]);
   });
 });
 
@@ -278,7 +280,7 @@ describe('a run that went the whole way through the verifier', () => {
 
   /** A build that passes the run it is handed, reaching the milestones the boards read. */
   const engines: EngineStore = {
-    keptCommits: () => [ENGINE],
+    keptCommits: () => Promise.resolve([ENGINE]),
     engineFor: () =>
       Promise.resolve({
         kept: true,
@@ -313,12 +315,12 @@ describe('a run that went the whole way through the verifier', () => {
   };
 
   it('stands on the boards of its game and its own leaderboard', async () => {
-    const database = fresh();
-    database.prepare('INSERT INTO players (id, secret_hash, name) VALUES (1, ?, ?)').run('mine', 'John');
+    const sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES (1, $1, $2)', ['mine', 'John']);
     const won: Milestone[] = [{ kind: 'win', which: 0, actions: 12, time: 30, floor: 2 }];
     const claims = { mode: 'speedrun', actions: 12, time: 30, edits: 0, milestones: [] as Milestone[] };
-    takeBatch(
-      database,
+    await takeBatch(
+      sql,
       CHARACTER,
       1,
       {
@@ -341,19 +343,19 @@ describe('a run that went the whole way through the verifier', () => {
       },
       1000,
     );
-    takeBatch(
-      database,
+    await takeBatch(
+      sql,
       CHARACTER,
       1,
       { sessionIndex: 0, sequence: 1, inputs: [106], pressed: 1, ending: true, claims: { ...claims, milestones: won } },
       6000,
     );
-    endRun(database, CHARACTER, 'win');
-    const verifier = createRunVerifier(database, engines, () => {});
+    await endRun(sql, CHARACTER, 'win');
+    const verifier = createRunVerifier(sql, engines, () => {});
     verifier.verifySoon(CHARACTER);
     await verifier.idle();
 
-    const page = boardPage(database, { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', page: 1 });
+    const page = await boardPage(sql, { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions', page: 1 });
 
     expect(page.rows).toHaveLength(1);
     expect(page.rows[0]).toMatchObject({
@@ -368,7 +370,7 @@ describe('a run that went the whole way through the verifier', () => {
       level: 8,
       outcome: 'win',
     });
-    expect(ids(database, 'actions', { leaderboard: 'faithful' })).toEqual([]);
-    database.close();
+    expect(await ids(sql, 'actions', { leaderboard: 'faithful' })).toEqual([]);
+    await sql.close();
   });
 });

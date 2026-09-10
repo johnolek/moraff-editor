@@ -1,22 +1,15 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import type { DatabaseSync } from 'node:sqlite';
 import { shortCommit } from '../src/lib/commit';
 import type { ServerConfig } from './config';
 import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
 import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './boards';
 import { writeCorsHeaders } from './cors';
-import { openEngineStore } from './engines';
+import { ENGINE_COMMIT, openEngineStore, type EngineStore } from './engines';
 import { openFeed, type Feed } from './feed';
 import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor } from './players';
 import { endRun, readRunBatch, runFor, sessionsOf, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
+import type { Queries } from './sql';
 import { createRunVerifier, verdictFor, type KeptVerdict, type RunVerifier } from './verifying';
-
-/**
- * The commit the server was built from, put here at build time the way the site's build and the
- * run verifier get theirs. A run is replayed by the engine that produced it, so a server has to
- * be able to say which engine it is carrying; `/health` is where it says so.
- */
-const ENGINE_COMMIT: string = typeof __ENGINE_COMMIT__ === 'string' ? __ENGINE_COMMIT__ : 'unknown';
 
 /** What a refused request says. The site shows these words as they are. */
 const NOT_A_SECRET = 'That is not a player secret.';
@@ -49,6 +42,10 @@ const MOST_BATCH_BYTES = 8 * 1024 * 1024;
 /** What a character is called in a path: the id of a roster entry in somebody's browser. */
 const CHARACTER_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
+/** The one thing about the box that reaches an answer: which origin a browser is told may read
+ *  one. Everything else in the configuration is `main.ts`'s. */
+export type ServerOrigin = Pick<ServerConfig, 'allowedOrigin'>;
+
 /**
  * The server.
  *
@@ -57,9 +54,9 @@ const CHARACTER_ID = /^[A-Za-z0-9_-]{1,64}$/;
  * those pages go rather than wait for them; anything that does not care about stopping gets one
  * of its own.
  */
-export function createRunServer(config: ServerConfig, database: DatabaseSync, feed: Feed = openFeed()): Server {
-  const engines = openEngineStore(config.enginesPath);
-  const verifier = createRunVerifier(database, engines, (announcements) => feed.announce(announcements));
+export function createRunServer(config: ServerOrigin, sql: Queries, feed: Feed = openFeed()): Server {
+  const engines = openEngineStore(sql);
+  const verifier = createRunVerifier(sql, engines, (announcements) => feed.announce(announcements));
 
   return createServer((request, response) => {
     writeCorsHeaders(response, request.headers.origin, config.allowedOrigin);
@@ -76,28 +73,24 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync, fe
 
     if (request.method === 'GET' && path === '/health') {
       // The engines kept are what a run older than this build is replayed with, so a deploy is
-      // read here: its own commit, and every commit it left a build behind for.
-      sendJson(response, 200, {
-        ok: true,
-        engineCommit: ENGINE_COMMIT,
-        engines: engines.keptCommits().map(shortCommit),
-      });
+      // read here: its own commit, and every commit it kept a build for.
+      void sendHealth(response, engines);
       return;
     }
 
     if (request.method === 'GET' && path === '/players/me') {
-      sendMyName(response, database, bearerSecret(request));
+      void sendMyName(response, sql, bearerSecret(request));
       return;
     }
 
     if (request.method === 'POST' && path === '/players') {
-      void claimName(request, response, database);
+      void claimName(request, response, sql);
       return;
     }
 
     const batches = path.match(/^\/runs\/([^/]+)\/batches$/);
     if (request.method === 'POST' && batches !== null) {
-      void takeRunBatch(request, response, database, verifier, decodeURIComponent(batches[1]));
+      void takeRunBatch(request, response, sql, verifier, decodeURIComponent(batches[1]));
       return;
     }
 
@@ -107,15 +100,15 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync, fe
     }
 
     if (request.method === 'GET' && path === '/announcements') {
-      sendAnnouncements(response, database, asked.searchParams.get('before'), asked.searchParams.get('limit'));
+      void sendAnnouncements(response, sql, asked.searchParams.get('before'), asked.searchParams.get('limit'));
       return;
     }
 
     const board = path.match(/^\/boards\/([^/]+)\/([^/]+)\/([^/]+)$/);
     if (request.method === 'GET' && board !== null) {
-      sendBoard(
+      void sendBoard(
         response,
-        database,
+        sql,
         decodeURIComponent(board[1]),
         decodeURIComponent(board[2]),
         decodeURIComponent(board[3]),
@@ -126,7 +119,7 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync, fe
 
     const run = path.match(/^\/runs\/([^/]+)$/);
     if (request.method === 'GET' && run !== null) {
-      sendRun(request, response, database, decodeURIComponent(run[1]));
+      void sendRun(request, response, sql, decodeURIComponent(run[1]));
       return;
     }
 
@@ -142,14 +135,19 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync, fe
  * board with nothing on it, so it is a 404 and not an empty page. The rules about which runs
  * stand on a board and in what order are `server/boards.ts`.
  */
-function sendBoard(
+async function sendHealth(response: ServerResponse, engines: EngineStore): Promise<void> {
+  const kept = await engines.keptCommits();
+  sendJson(response, 200, { ok: true, engineCommit: ENGINE_COMMIT, engines: kept.map(shortCommit) });
+}
+
+async function sendBoard(
   response: ServerResponse,
-  database: DatabaseSync,
+  sql: Queries,
   game: string,
   leaderboard: string,
   board: string,
   asked: string | null,
-): void {
+): Promise<void> {
   if (!isBoardGame(game) || !isBoardLeaderboard(leaderboard) || !isBoardName(board)) {
     sendJson(response, 404, { error: `No such board: ${game}/${leaderboard}/${board}` });
     return;
@@ -159,7 +157,7 @@ function sendBoard(
     sendJson(response, 400, { error: NOT_A_PAGE });
     return;
   }
-  sendJson(response, 200, boardPage(database, { game, leaderboard, board, page }));
+  sendJson(response, 200, await boardPage(sql, { game, leaderboard, board, page }));
 }
 
 /** Which page of a board was asked for, counting from one, or null when the query names
@@ -178,19 +176,19 @@ function pageAsked(asked: string | null): number | null {
  * is reading, and a page number would show one twice or skip one as they arrive. `before` is the
  * oldest id the reader already has, and a request that names none is asking for the newest.
  */
-function sendAnnouncements(
+async function sendAnnouncements(
   response: ServerResponse,
-  database: DatabaseSync,
+  sql: Queries,
   before: string | null,
   limit: string | null,
-): void {
+): Promise<void> {
   const from = idAsked(before);
   const most = limitAsked(limit);
   if (from === undefined || most === null) {
     sendJson(response, 400, { error: NOT_A_HISTORY_PAGE });
     return;
   }
-  sendJson(response, 200, announcementsBefore(database, from, most));
+  sendJson(response, 200, await announcementsBefore(sql, from, most));
 }
 
 /** The id to read back from, null for a request that names none, and undefined for a query that
@@ -209,12 +207,12 @@ function limitAsked(asked: string | null): number | null {
   return limit >= 1 && limit <= ANNOUNCEMENTS_PER_PAGE ? limit : null;
 }
 
-function sendMyName(response: ServerResponse, database: DatabaseSync, secret: string | null): void {
+async function sendMyName(response: ServerResponse, sql: Queries, secret: string | null): Promise<void> {
   if (secret === null) {
     sendJson(response, 400, { error: NOT_A_SECRET });
     return;
   }
-  const name = playerNameFor(database, secret);
+  const name = await playerNameFor(sql, secret);
   if (name === null) {
     sendJson(response, 404, { error: NO_NAME_YET });
     return;
@@ -222,14 +220,14 @@ function sendMyName(response: ServerResponse, database: DatabaseSync, secret: st
   sendJson(response, 200, { name });
 }
 
-async function claimName(request: IncomingMessage, response: ServerResponse, database: DatabaseSync): Promise<void> {
+async function claimName(request: IncomingMessage, response: ServerResponse, sql: Queries): Promise<void> {
   const secret = bearerSecret(request);
   if (secret === null) {
     sendJson(response, 400, { error: NOT_A_SECRET });
     return;
   }
   const body = await readJsonBody(request);
-  const claim = claimPlayerName(database, secret, (body as { name?: unknown } | null)?.name);
+  const claim = await claimPlayerName(sql, secret, (body as { name?: unknown } | null)?.name);
   if (!claim.claimed) {
     sendJson(response, claim.because === 'taken' ? 409 : 400, {
       error: claim.because === 'taken' ? NAME_TAKEN : NOT_A_NAME,
@@ -251,7 +249,7 @@ async function claimName(request: IncomingMessage, response: ServerResponse, dat
 async function takeRunBatch(
   request: IncomingMessage,
   response: ServerResponse,
-  database: DatabaseSync,
+  sql: Queries,
   verifier: RunVerifier,
   characterId: string,
 ): Promise<void> {
@@ -260,7 +258,7 @@ async function takeRunBatch(
     sendJson(response, 400, { error: NOT_A_SECRET });
     return;
   }
-  const player = playerFor(database, secret);
+  const player = await playerFor(sql, secret);
   if (player === null) {
     sendJson(response, 403, { error: NO_NAME_YET });
     return;
@@ -272,14 +270,14 @@ async function takeRunBatch(
   }
   // The arrival is stamped here, by this server's clock, because it is the one thing about a run
   // that the page it was played in cannot be asked for.
-  const taken = takeBatch(database, characterId, player, batch, Date.now());
+  const taken = await takeBatch(sql, characterId, player, batch, Date.now());
   if (!taken.taken) {
     const refused = whyTheBatchWasRefused(taken.because);
     sendJson(response, refused.status, { error: refused.error });
     return;
   }
   if (taken.ending) {
-    endRun(database, characterId, wonOrDied(batch.claims));
+    await endRun(sql, characterId, wonOrDied(batch.claims));
     // Replaying a long run takes seconds and the browser is waiting on this answer, so the run
     // goes in line and the site asks for the verdict afterwards.
     verifier.verifySoon(characterId);
@@ -340,21 +338,21 @@ export interface RunAnswer {
  * points at. A run still being played, or one that failed or could not be checked, is the
  * player's own business, so it takes their secret.
  */
-function sendRun(
+async function sendRun(
   request: IncomingMessage,
   response: ServerResponse,
-  database: DatabaseSync,
+  sql: Queries,
   characterId: string,
-): void {
-  const run = CHARACTER_ID.test(characterId) ? runFor(database, characterId) : null;
+): Promise<void> {
+  const run = CHARACTER_ID.test(characterId) ? await runFor(sql, characterId) : null;
   if (run === null) {
     sendJson(response, 404, { error: NO_SUCH_RUN });
     return;
   }
-  const verdict = verdictFor(database, characterId);
+  const verdict = await verdictFor(sql, characterId);
   if (verdict === null || verdict.status !== 'verified') {
     const secret = bearerSecret(request);
-    const player = secret === null ? null : playerFor(database, secret);
+    const player = secret === null ? null : await playerFor(sql, secret);
     if (player === null || player !== run.playerId) {
       sendJson(response, 403, { error: NOT_YOUR_RUN });
       return;
@@ -369,7 +367,7 @@ function sendRun(
     createdAt: run.createdAt,
     finishedAt: run.finishedAt,
     outcome: run.outcome,
-    sessions: sessionsOf(database, characterId).map((session) => ({
+    sessions: (await sessionsOf(sql, characterId)).map((session) => ({
       index: session.sessionIndex,
       engine: session.engine,
       startedAt: session.startedAt,

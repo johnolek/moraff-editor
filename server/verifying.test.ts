@@ -1,14 +1,11 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Milestone, RunLog, RunSession } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
 import { announcementsBefore, type Announcement } from './announcing';
-import { openEngineStore, type EngineStore } from './engines';
-import { applyMigrations, BUNDLED_MIGRATIONS } from './migrations';
+import { openEngineStore, publishEngine, type EngineStore } from './engines';
 import { endRun, takeBatch, type BatchSession, type KeptBatch, type RunBatch } from './runs';
+import type { Sql } from './sql';
+import { openTestDatabase } from './test-sql';
 import { createRunVerifier, replayChain, runLogFrom, runTiming, verdictFor, verifyKeptRun, type RunTiming } from './verifying';
 
 const CHARACTER = 'k3p9x1-ab12cd';
@@ -124,7 +121,7 @@ describe('putting a run back together', () => {
 /** An engine build that says what a test wants it to say about the run it is handed. */
 function fakeEngines(verdictFor: (log: RunLog) => Partial<RunVerdict>): EngineStore {
   return {
-    keptCommits: () => [ENGINE],
+    keptCommits: () => Promise.resolve([ENGINE]),
     engineFor: (commit) =>
       Promise.resolve(
         commit === ENGINE
@@ -180,17 +177,20 @@ function batch(over: Partial<RunBatch> = {}): RunBatch {
 }
 
 describe('replaying a run once its last batch has arrived', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
 
-  beforeEach(() => {
-    database = new DatabaseSync(':memory:');
-    applyMigrations(database, BUNDLED_MIGRATIONS);
-    database.prepare('INSERT INTO players (id, secret_hash, name) VALUES (?, ?, ?)').run(ME, 'mine', 'John');
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'John']);
+  });
+
+  afterEach(async () => {
+    await sql.close();
   });
 
   async function play(engines: EngineStore, ...batches: { batch: RunBatch; at: number }[]): Promise<void> {
-    for (const sent of batches) takeBatch(database, CHARACTER, ME, sent.batch, sent.at);
-    const verifier = createRunVerifier(database, engines, () => {});
+    for (const sent of batches) await takeBatch(sql, CHARACTER, ME, sent.batch, sent.at);
+    const verifier = createRunVerifier(sql, engines, () => {});
     verifier.verifySoon(CHARACTER);
     await verifier.idle();
   }
@@ -202,7 +202,7 @@ describe('replaying a run once its last batch has arrived', () => {
       { batch: batch({ sequence: 1, ending: true }), at: 6000 },
     );
 
-    expect(verdictFor(database, CHARACTER)).toMatchObject({
+    expect(await verdictFor(sql, CHARACTER)).toMatchObject({
       status: 'verified',
       actions: 12,
       time: 30,
@@ -230,7 +230,7 @@ describe('replaying a run once its last batch has arrived', () => {
       { batch: batch({ sequence: 1, ending: true }), at: 6000 },
     );
 
-    expect(verdictFor(database, CHARACTER)).toMatchObject({
+    expect(await verdictFor(sql, CHARACTER)).toMatchObject({
       game: 'unforgiven',
       leaderboard: 'speedrun',
       deepest: 2,
@@ -245,7 +245,7 @@ describe('replaying a run once its last batch has arrived', () => {
       { batch: batch({ sequence: 1, pressed: 900, ending: true }), at: 6000 },
     );
 
-    expect(verdictFor(database, CHARACTER)).toMatchObject({ status: 'verified', timed: false, eligible: true });
+    expect(await verdictFor(sql, CHARACTER)).toMatchObject({ status: 'verified', timed: false, eligible: true });
   });
 
   it('keeps a run written from outside the game off the boards', async () => {
@@ -262,18 +262,18 @@ describe('replaying a run once its last batch has arrived', () => {
       },
     );
 
-    expect(verdictFor(database, CHARACTER)).toMatchObject({ status: 'unverifiable', eligible: false });
+    expect(await verdictFor(sql, CHARACTER)).toMatchObject({ status: 'unverifiable', eligible: false });
   });
 
   it('says a run cannot be checked when the engine it was played on is not kept', async () => {
     const nothingKept: EngineStore = {
-      keptCommits: () => [],
+      keptCommits: () => Promise.resolve([]),
       engineFor: () => Promise.resolve({ kept: false, reason: 'The engine the run was played on is not kept here.' }),
     };
 
     await play(nothingKept, { batch: batch({ session: header, ending: true }), at: 1000 });
 
-    expect(verdictFor(database, CHARACTER)).toMatchObject({
+    expect(await verdictFor(sql, CHARACTER)).toMatchObject({
       status: 'unverifiable',
       reason: 'The engine the run was played on is not kept here.',
       eligible: false,
@@ -287,19 +287,22 @@ describe('announcing a run that has been checked', () => {
     { kind: 'level', which: 5, actions: 9, time: 20, floor: 3 },
     { kind: 'death', which: 0, actions: 12, time: 30, floor: 7 },
   ];
-  let database: DatabaseSync;
+  let sql: Sql;
 
-  beforeEach(() => {
-    database = new DatabaseSync(':memory:');
-    applyMigrations(database, BUNDLED_MIGRATIONS);
-    database.prepare('INSERT INTO players (id, secret_hash, name) VALUES (?, ?, ?)').run(ME, 'mine', 'Moraff');
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'Moraff']);
+  });
+
+  afterEach(async () => {
+    await sql.close();
   });
 
   async function playToADeath(engines: EngineStore): Promise<Announcement[]> {
-    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
-    takeBatch(database, CHARACTER, ME, batch({ sequence: 1, ending: true }), 6000);
-    endRun(database, CHARACTER, 'death');
-    return verifyKeptRun(database, engines, CHARACTER);
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, ending: true }), 6000);
+    await endRun(sql, CHARACTER, 'death');
+    return verifyKeptRun(sql, engines, CHARACTER);
   }
 
   it('announces the milestones the replay reached and how the run ended', async () => {
@@ -319,7 +322,7 @@ describe('announcing a run that has been checked', () => {
     );
 
     expect(announcements).toEqual([]);
-    expect(announcementsBefore(database, null, 50).announcements).toEqual([]);
+    expect((await announcementsBefore(sql, null, 50)).announcements).toEqual([]);
   });
 });
 
@@ -327,7 +330,7 @@ describe('replaying a chain whose sittings name more than one commit', () => {
   const OLDER = 'e'.repeat(40);
   const NEWER = 'f'.repeat(40);
   const ON_ITS_OWN = 'd'.repeat(40);
-  let directory: string;
+  let sql: Sql;
 
   /**
    * A build small enough to read.
@@ -336,10 +339,8 @@ describe('replaying a chain whose sittings name more than one commit', () => {
    * handed the record of the sitting before, so a chain that comes out verified is one whose
    * sittings each went to the build they name, joined up in order.
    */
-  function writeFakeEngine(commit: string, aSittingAtATime: boolean): void {
-    mkdirSync(join(directory, commit), { recursive: true });
-    writeFileSync(
-      join(directory, commit, 'engine.mjs'),
+  function fakeEngine(commit: string, aSittingAtATime: boolean): Uint8Array {
+    return Buffer.from(
       `export const ENGINE_COMMIT = '${commit}';\n` +
         `export function verifyRun(log) {\n` +
         `  const newest = log.sessions[log.sessions.length - 1];\n` +
@@ -387,15 +388,15 @@ describe('replaying a chain whose sittings name more than one commit', () => {
     };
   }
 
-  beforeAll(() => {
-    directory = mkdtempSync(join(tmpdir(), 'moraff-chain-engines-'));
-    writeFakeEngine(OLDER, true);
-    writeFakeEngine(NEWER, true);
-    writeFakeEngine(ON_ITS_OWN, false);
+  beforeAll(async () => {
+    sql = await openTestDatabase();
+    await publishEngine(sql, OLDER, fakeEngine(OLDER, true));
+    await publishEngine(sql, NEWER, fakeEngine(NEWER, true));
+    await publishEngine(sql, ON_ITS_OWN, fakeEngine(ON_ITS_OWN, false));
   });
 
-  afterAll(() => {
-    rmSync(directory, { recursive: true, force: true });
+  afterAll(async () => {
+    await sql.close();
   });
 
   it('hands each sitting to the build it was played on', async () => {
@@ -404,7 +405,7 @@ describe('replaying a chain whose sittings name more than one commit', () => {
       sessions: [sitting({ engine: OLDER, inputs: [104, 106] }), sitting({ engine: NEWER, inputs: [107, 108, 109] })],
     };
 
-    const verdict = await replayChain(openEngineStore(directory), log);
+    const verdict = await replayChain(openEngineStore(sql), log);
 
     expect(verdict.reason).toBeNull();
     expect(verdict.status).toBe('verified');
@@ -418,7 +419,7 @@ describe('replaying a chain whose sittings name more than one commit', () => {
   it('hands the whole chain to the newest build when one of them cannot take a sitting', async () => {
     const log: RunLog = { version: 3, sessions: [sitting({ engine: ON_ITS_OWN })] };
 
-    const verdict = await replayChain(openEngineStore(directory), log);
+    const verdict = await replayChain(openEngineStore(sql), log);
 
     expect(verdict.status).toBe('verified');
     expect(verdict.notes).toContain(
@@ -432,7 +433,7 @@ describe('replaying a chain whose sittings name more than one commit', () => {
       sessions: [sitting({ engine: OLDER }), sitting({ engine: 'b'.repeat(40) })],
     };
 
-    const verdict = await replayChain(openEngineStore(directory), log);
+    const verdict = await replayChain(openEngineStore(sql), log);
 
     expect(verdict.status).toBe('unverifiable');
     expect(verdict.reason).toContain('is not kept here');

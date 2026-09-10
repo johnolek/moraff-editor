@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Queries } from './sql';
 
 /**
  * Players, who never sign up.
@@ -19,9 +19,8 @@ const SECRET = /^[A-Za-z0-9_-]{43}$/;
 
 /**
  * What a name may be made of. Letters, digits, spaces and four plain marks, which rules out every
- * control character on its own, and ASCII letters only because that is exactly what SQLite's
- * NOCASE folds: a rule wider than the fold would let two players hold names the boards cannot
- * tell apart.
+ * control character and everything a page would have to escape to show. Names are held without
+ * regard to case, so two of these are the same name.
  */
 const NAME = /^[A-Za-z0-9 ._'-]{2,24}$/;
 
@@ -42,21 +41,19 @@ function secretHash(secret: string): string {
 }
 
 /** The player this secret belongs to, or null when no player has claimed a name with it. */
-export function playerFor(database: DatabaseSync, secret: string): number | null {
+export async function playerFor(sql: Queries, secret: string): Promise<number | null> {
   if (!isPlayerSecret(secret)) return null;
-  const row = database.prepare('SELECT id FROM players WHERE secret_hash = ?').get(secretHash(secret)) as
-    | { id: number }
-    | undefined;
-  return row?.id ?? null;
+  const rows = await sql.query<{ id: number }>('SELECT id FROM players WHERE secret_hash = $1', [secretHash(secret)]);
+  return rows[0]?.id ?? null;
 }
 
 /** The name on the boards for this secret, or null when it has none. */
-export function playerNameFor(database: DatabaseSync, secret: string): string | null {
+export async function playerNameFor(sql: Queries, secret: string): Promise<string | null> {
   if (!isPlayerSecret(secret)) return null;
-  const row = database.prepare('SELECT name FROM players WHERE secret_hash = ?').get(secretHash(secret)) as
-    | { name: string }
-    | undefined;
-  return row?.name ?? null;
+  const rows = await sql.query<{ name: string }>('SELECT name FROM players WHERE secret_hash = $1', [
+    secretHash(secret),
+  ]);
+  return rows[0]?.name ?? null;
 }
 
 /** What became of a claim: the name is this player's now, or why it is not. */
@@ -67,19 +64,21 @@ export type NameClaim = { claimed: true; name: string } | { claimed: false; beca
  * claimed and renaming it if it had one already. Names go first come: one held by another player
  * is refused, and one the caller is giving up becomes free for anybody.
  */
-export function claimPlayerName(database: DatabaseSync, secret: string, name: unknown): NameClaim {
+export async function claimPlayerName(sql: Queries, secret: string, name: unknown): Promise<NameClaim> {
   const wanted = validPlayerName(name);
   if (wanted === null) return { claimed: false, because: 'invalid' };
 
-  const player = playerFor(database, secret);
-  // The name column is NOCASE, so this finds a player holding the name in any spelling of case.
-  const holder = database.prepare('SELECT id FROM players WHERE name = ?').get(wanted) as { id: number } | undefined;
+  const player = await playerFor(sql, secret);
+  // Folded, the way the unique index on the name is, so this finds a player holding the name in
+  // any spelling of case.
+  const holders = await sql.query<{ id: number }>('SELECT id FROM players WHERE lower(name) = lower($1)', [wanted]);
+  const holder = holders[0];
   if (holder !== undefined && holder.id !== player) return { claimed: false, because: 'taken' };
 
   if (player === null) {
-    database.prepare('INSERT INTO players (secret_hash, name) VALUES (?, ?)').run(secretHash(secret), wanted);
+    await sql.query('INSERT INTO players (secret_hash, name) VALUES ($1, $2)', [secretHash(secret), wanted]);
   } else {
-    database.prepare('UPDATE players SET name = ? WHERE id = ?').run(wanted, player);
+    await sql.query('UPDATE players SET name = $1 WHERE id = $2', [wanted, player]);
   }
   return { claimed: true, name: wanted };
 }

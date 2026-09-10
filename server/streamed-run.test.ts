@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
-import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import type { RunSession } from '../src/lib/play/run';
 import { RunStream, type StreamedSession } from '../src/lib/play/stream';
 import { readRunLog, verifyRun } from '../src/lib/play/verify';
-import { applyMigrations, BUNDLED_MIGRATIONS } from './migrations';
 import { batchesOf, sessionsOf, takeBatch } from './runs';
+import type { Sql } from './sql';
+import { openTestDatabase } from './test-sql';
 import { runLogFrom } from './verifying';
 
 /**
@@ -26,11 +26,10 @@ const ME = 1;
 /** How often the site sends, which is the gap the batches of this run land over. */
 const SENDING_INTERVAL_MS = 5000;
 
-function openDatabase(): DatabaseSync {
-  const database = new DatabaseSync(':memory:');
-  applyMigrations(database, BUNDLED_MIGRATIONS);
-  database.prepare('INSERT INTO players (id, secret_hash, name) VALUES (?, ?, ?)').run(ME, 'mine', 'John');
-  return database;
+async function openDatabase(): Promise<Sql> {
+  const sql = await openTestDatabase();
+  await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'John']);
+  return sql;
 }
 
 /**
@@ -65,20 +64,20 @@ describe('a run streamed to the server and replayed out of it', () => {
       leaderboard: log.sessions[0].leaderboard ?? null,
       sound: log.sessions[0].sound ?? null,
     };
-    const database = openDatabase();
+    const sql = await openDatabase();
     const game = playing(recorded);
     let arrivedAt = 1000;
     let answering = false;
-    const stream = new RunStream(game.sitting, (batch) => {
+    const stream = new RunStream(game.sitting, async (batch) => {
       // The server takes the batch either way. What is lost the first time is only its answer,
       // which is the case the site cannot tell apart from a batch that never arrived.
-      const taken = takeBatch(database, CHARACTER, ME, batch, arrivedAt);
+      const taken = await takeBatch(sql, CHARACTER, ME, batch, arrivedAt);
       arrivedAt += SENDING_INTERVAL_MS;
       if (!answering) {
         answering = true;
-        return Promise.resolve({ took: false, refusal: null });
+        return { took: false, refusal: null };
       }
-      return Promise.resolve(taken.taken ? { took: true } : { took: false, refusal: taken.because });
+      return taken.taken ? { took: true } : { took: false, refusal: taken.because };
     });
 
     game.play(3);
@@ -86,11 +85,11 @@ describe('a run streamed to the server and replayed out of it', () => {
     game.play(recorded.inputs.length - 3);
     expect(await stream.send(true)).toEqual({ sent: 'taken' });
 
-    const kept = runLogFrom(sessionsOf(database, CHARACTER), batchesOf(database, CHARACTER));
+    const kept = runLogFrom(await sessionsOf(sql, CHARACTER), await batchesOf(sql, CHARACTER));
     expect(kept.sessions[0].inputs).toEqual(recorded.inputs);
     const verdict = await verifyRun(kept);
     expect(verdict.reason).toBeNull();
     expect(verdict.status).toBe('verified');
-    database.close();
+    await sql.close();
   });
 });

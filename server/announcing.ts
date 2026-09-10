@@ -1,5 +1,5 @@
-import type { DatabaseSync } from 'node:sqlite';
 import type { Milestone, MilestoneKind } from '../src/lib/play/run';
+import type { Queries } from './sql';
 
 /**
  * What the server says about a run once it has been checked.
@@ -68,7 +68,7 @@ const ANNOUNCED_MILESTONES: readonly MilestoneKind[] = ['boss', 'dungeon', 'leve
  * comes back is only what was written this time, which is what there is to push to anybody
  * listening.
  */
-export function announceRun(database: DatabaseSync, run: AnnouncedRun): Announcement[] {
+export async function announceRun(sql: Queries, run: AnnouncedRun): Promise<Announcement[]> {
   const made: Announcement[] = [];
   let dungeon = 0;
   let level = 0;
@@ -76,7 +76,7 @@ export function announceRun(database: DatabaseSync, run: AnnouncedRun): Announce
     if (milestone.kind === 'dungeon') dungeon = milestone.which;
     if (milestone.kind === 'level') level = Math.max(level, milestone.which);
     if (!ANNOUNCED_MILESTONES.includes(milestone.kind)) continue;
-    const written = announce(database, run, {
+    const written = await announce(sql, run, {
       kind: milestone.kind,
       which: milestone.which,
       actions: milestone.actions,
@@ -88,7 +88,7 @@ export function announceRun(database: DatabaseSync, run: AnnouncedRun): Announce
     if (written !== null) made.push(written);
   }
   const ended = run.milestones[run.milestones.length - 1];
-  const outcome = announce(database, run, {
+  const outcome = await announce(sql, run, {
     kind: run.outcome,
     which: 0,
     actions: run.actions,
@@ -113,16 +113,14 @@ interface AnnouncementMoment {
 }
 
 /** Write one announcement, or nothing at all when that character has already made it. */
-function announce(database: DatabaseSync, run: AnnouncedRun, moment: AnnouncementMoment): Announcement | null {
-  const row = database
-    .prepare(
-      `INSERT INTO announcements (character_id, kind, which, game, leaderboard, player, name,
-                                  actions, time, floor, dungeon, level, play_ms)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT (character_id, kind, which) DO NOTHING
-       RETURNING *`,
-    )
-    .get(
+async function announce(sql: Queries, run: AnnouncedRun, moment: AnnouncementMoment): Promise<Announcement | null> {
+  const rows = await sql.query<AnnouncementRow>(
+    `INSERT INTO announcements (character_id, kind, which, game, leaderboard, player, name,
+                                actions, time, floor, dungeon, level, play_ms)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+     ON CONFLICT (character_id, kind, which) DO NOTHING
+     RETURNING *`,
+    [
       run.characterId,
       moment.kind,
       moment.which,
@@ -136,8 +134,9 @@ function announce(database: DatabaseSync, run: AnnouncedRun, moment: Announcemen
       moment.dungeon,
       moment.level,
       run.playMs,
-    ) as AnnouncementRow | undefined;
-  return row === undefined ? null : announcementOf(row);
+    ],
+  );
+  return rows.length === 0 ? null : announcementOf(rows[0]);
 }
 
 /** How many announcements a page of the history holds, which is also the most one may ask for. */
@@ -156,20 +155,24 @@ export interface AnnouncementPage {
  * being read, and an offset would show one twice or skip one as they arrive. `before` is the
  * oldest id the reader already has, so the next page starts under it.
  */
-export function announcementsBefore(database: DatabaseSync, before: number | null, limit: number): AnnouncementPage {
+export async function announcementsBefore(
+  sql: Queries,
+  before: number | null,
+  limit: number,
+): Promise<AnnouncementPage> {
   // One row more than a page is asked for and is not shown: that is the whole answer to whether
   // there is more behind, without counting the table.
-  const rows = database
-    .prepare(
-      `SELECT * FROM announcements${before === null ? '' : ' WHERE id < ?'}
-       ORDER BY id DESC LIMIT ?`,
-    )
-    .all(...(before === null ? [limit + 1] : [before, limit + 1])) as AnnouncementRow[];
+  const rows = await sql.query<AnnouncementRow>(
+    before === null
+      ? 'SELECT * FROM announcements ORDER BY id DESC LIMIT $1'
+      : 'SELECT * FROM announcements WHERE id < $1 ORDER BY id DESC LIMIT $2',
+    before === null ? [limit + 1] : [before, limit + 1],
+  );
   return { announcements: rows.slice(0, limit).map(announcementOf), more: rows.length > limit };
 }
 
-/** A row of the announcements table. It is a type rather than an interface so that a row out of
- *  `node:sqlite`, which is a bag of columns, can be read as one. */
+/** A row of the announcements table. It is a type rather than an interface so that a bag of
+ *  columns can be read as one. */
 type AnnouncementRow = {
   id: number;
   character_id: string;
@@ -185,7 +188,7 @@ type AnnouncementRow = {
   dungeon: number;
   level: number;
   play_ms: number;
-  at: string;
+  at: Date;
 };
 
 function announcementOf(row: AnnouncementRow): Announcement {
@@ -204,6 +207,6 @@ function announcementOf(row: AnnouncementRow): Announcement {
     dungeon: row.dungeon,
     level: row.level,
     playMs: row.play_ms,
-    at: row.at,
+    at: row.at.toISOString(),
   };
 }

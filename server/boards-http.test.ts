@@ -1,53 +1,40 @@
-import { mkdtempSync, rmSync } from 'node:fs';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { RUNS_PER_PAGE } from './boards';
-import { openRunDatabase } from './db';
 import { createRunServer } from './http';
-
-const directory = mkdtempSync(join(tmpdir(), 'moraff-boards-'));
+import type { Sql } from './sql';
+import { openTestDatabase } from './test-sql';
 
 /** A run already replayed and written down, which is all a board reads. */
-function keep(
-  database: DatabaseSync,
+async function keep(
+  sql: Sql,
   run: { id: string; game?: string; leaderboard?: string; outcome?: string; actions?: number },
-): void {
-  database
-    .prepare('INSERT INTO characters (id, player_id, game, name, finished_at, outcome) VALUES (?, 1, ?, ?, ?, ?)')
-    .run(run.id, run.game ?? 'unforgiven', 'Grond', '2026-09-01T00:00:00.000Z', run.outcome ?? 'win');
-  database
-    .prepare(
-      `INSERT INTO verdicts (character_id, status, actions, time, milestones, play_ms, timed, eligible,
-                             game, leaderboard, deepest, level, engine_commits)
-       VALUES (?, 'verified', ?, 30, '[]', 5000, 1, 1, ?, ?, 2, 7, '[]')`,
-    )
-    .run(run.id, run.actions ?? 100, run.game ?? 'unforgiven', run.leaderboard ?? 'speedrun');
+): Promise<void> {
+  await sql.query(
+    'INSERT INTO characters (id, player_id, game, name, finished_at, outcome) VALUES ($1, 1, $2, $3, $4, $5)',
+    [run.id, run.game ?? 'unforgiven', 'Grond', '2026-09-01T00:00:00.000Z', run.outcome ?? 'win'],
+  );
+  await sql.query(
+    `INSERT INTO verdicts (character_id, status, actions, time, milestones, play_ms, timed, eligible,
+                           game, leaderboard, deepest, level, engine_commits)
+     VALUES ($1, 'verified', $2, 30, '[]', 5000, true, true, $3, $4, 2, 7, '[]')`,
+    [run.id, run.actions ?? 100, run.game ?? 'unforgiven', run.leaderboard ?? 'speedrun'],
+  );
 }
 
 describe('asking the server for a board', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
   let server: Server;
   let origin: string;
 
   beforeAll(async () => {
-    database = openRunDatabase(join(directory, 'runs.sqlite'));
-    database.prepare('INSERT INTO players (id, secret_hash, name) VALUES (1, ?, ?)').run('mine', 'John');
-    keep(database, { id: 'slow', actions: 900 });
-    keep(database, { id: 'quick', actions: 90 });
-    keep(database, { id: 'faithful-run', leaderboard: 'faithful' });
-    server = createRunServer(
-      {
-        port: 0,
-        databasePath: join(directory, 'runs.sqlite'),
-        allowedOrigin: 'https://johnolek.github.io',
-        enginesPath: join(directory, 'engines'),
-      },
-      database,
-    );
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES (1, $1, $2)', ['mine', 'John']);
+    await keep(sql, { id: 'slow', actions: 900 });
+    await keep(sql, { id: 'quick', actions: 90 });
+    await keep(sql, { id: 'faithful-run', leaderboard: 'faithful' });
+    server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -56,8 +43,7 @@ describe('asking the server for a board', () => {
     await new Promise<void>((resolve, reject) => {
       server.close((thrown) => (thrown ? reject(thrown) : resolve()));
     });
-    database.close();
-    rmSync(directory, { recursive: true, force: true });
+    await sql.close();
   });
 
   it("answers with the runs of that game and board, in the board's order", async () => {
@@ -111,7 +97,7 @@ describe('asking the server for a board', () => {
   });
 
   it('holds fifty runs on a page', async () => {
-    for (let at = 0; at < RUNS_PER_PAGE; at++) keep(database, { id: `deep-${at}`, actions: 1000 + at });
+    for (let at = 0; at < RUNS_PER_PAGE; at++) await keep(sql, { id: `deep-${at}`, actions: 1000 + at });
 
     const board = await (await fetch(`${origin}/boards/unforgiven/speedrun/actions`)).json();
 

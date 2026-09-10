@@ -1,6 +1,6 @@
-import type { DatabaseSync } from 'node:sqlite';
 import type { Leaderboard, PortedGameId } from '../src/lib/app-state.svelte';
 import type { Milestone } from '../src/lib/play/run';
+import type { Queries } from './sql';
 
 /**
  * The boards: which runs go on one, and what order they stand in.
@@ -131,7 +131,7 @@ export function isBoardName(board: string): board is BoardName {
  * stands in.
  *
  * Every order ends in when the run finished, so that two runs with the same number stand in the
- * order they were played rather than in whatever order SQLite happens to hand them back.
+ * order they were played rather than in whatever order the rows happen to come back in.
  *
  * The wall-clock board wants a play time there is something to compare: a run the server watched
  * none of — played with the server unreachable and sent afterwards — comes to no play time at
@@ -140,32 +140,31 @@ export function isBoardName(board: string): board is BoardName {
 const ORDERS: Record<BoardName, { holds: string | null; order: string }> = {
   actions: { holds: "c.outcome = 'win'", order: 'v.actions ASC, c.finished_at ASC' },
   clock: { holds: "c.outcome = 'win'", order: 'v.time ASC, c.finished_at ASC' },
-  wall: { holds: "c.outcome = 'win' AND v.timed = 1 AND v.play_ms > 0", order: 'v.play_ms ASC, c.finished_at ASC' },
+  wall: { holds: "c.outcome = 'win' AND v.timed AND v.play_ms > 0", order: 'v.play_ms ASC, c.finished_at ASC' },
   deepest: { holds: null, order: 'v.deepest DESC, v.actions ASC, c.finished_at ASC' },
   level: { holds: null, order: 'v.level DESC, v.actions ASC, c.finished_at ASC' },
   deaths: { holds: "c.outcome = 'death'", order: 'c.finished_at DESC' },
 };
 
 /** One page of a board. Pages count from one. */
-export function boardPage(
-  database: DatabaseSync,
+export async function boardPage(
+  sql: Queries,
   asked: { game: string; leaderboard: string; board: BoardName; page: number },
-): BoardPage {
+): Promise<BoardPage> {
   const board = ORDERS[asked.board];
   // One row more than a page is asked for, and it is not shown: that is the whole answer to
   // whether there is a page after this one, without counting the board twice.
-  const rows = database
-    .prepare(
-      `SELECT v.character_id, p.name AS player, c.name AS name, v.actions, v.time, v.play_ms,
-              v.timed, v.deepest, v.level, c.outcome, c.finished_at
-       FROM verdicts v
-       JOIN characters c ON c.id = v.character_id
-       JOIN players p ON p.id = c.player_id
-       WHERE v.game = ? AND v.leaderboard = ? AND v.eligible = 1${board.holds === null ? '' : ` AND ${board.holds}`}
-       ORDER BY ${board.order}
-       LIMIT ? OFFSET ?`,
-    )
-    .all(asked.game, asked.leaderboard, RUNS_PER_PAGE + 1, (asked.page - 1) * RUNS_PER_PAGE) as BoardRowShape[];
+  const rows = await sql.query<BoardRowShape>(
+    `SELECT v.character_id, p.name AS player, c.name AS name, v.actions, v.time, v.play_ms,
+            v.timed, v.deepest, v.level, c.outcome, c.finished_at
+     FROM verdicts v
+     JOIN characters c ON c.id = v.character_id
+     JOIN players p ON p.id = c.player_id
+     WHERE v.game = $1 AND v.leaderboard = $2 AND v.eligible${board.holds === null ? '' : ` AND ${board.holds}`}
+     ORDER BY ${board.order}
+     LIMIT $3 OFFSET $4`,
+    [asked.game, asked.leaderboard, RUNS_PER_PAGE + 1, (asked.page - 1) * RUNS_PER_PAGE],
+  );
   return {
     game: asked.game,
     leaderboard: asked.leaderboard,
@@ -176,8 +175,8 @@ export function boardPage(
   };
 }
 
-/** A row as SQLite hands it back. It is a type rather than an interface so that a bag of columns
- *  can be read as one. */
+/** A row as the database hands it back. It is a type rather than an interface so that a bag of
+ *  columns can be read as one. */
 type BoardRowShape = {
   character_id: string;
   player: string;
@@ -185,11 +184,11 @@ type BoardRowShape = {
   actions: number;
   time: number;
   play_ms: number;
-  timed: number;
+  timed: boolean;
   deepest: number;
   level: number;
   outcome: string | null;
-  finished_at: string | null;
+  finished_at: Date | null;
 };
 
 function rowOf(row: BoardRowShape): BoardRow {
@@ -200,10 +199,10 @@ function rowOf(row: BoardRowShape): BoardRow {
     actions: row.actions,
     clock: row.time,
     playMs: row.play_ms,
-    timed: row.timed === 1,
+    timed: row.timed,
     deepest: row.deepest,
     level: row.level,
     outcome: row.outcome,
-    at: row.finished_at,
+    at: row.finished_at === null ? null : row.finished_at.toISOString(),
   };
 }

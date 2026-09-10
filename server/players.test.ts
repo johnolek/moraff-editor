@@ -1,34 +1,22 @@
-import { mkdtempSync, rmSync } from 'node:fs';
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import type { DatabaseSync } from 'node:sqlite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { ServerConfig } from './config';
-import { openRunDatabase } from './db';
 import { createRunServer } from './http';
-
-const directory = mkdtempSync(join(tmpdir(), 'moraff-players-'));
+import type { Sql } from './sql';
+import { openTestDatabase } from './test-sql';
 
 /** Two secrets shaped the way the site makes them: 32 bytes base64url, which is 43 characters. */
 const MINE = 'A'.repeat(43);
 const THEIRS = 'B'.repeat(43);
 
 describe('players over HTTP', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
   let server: Server;
   let origin: string;
 
   beforeAll(async () => {
-    const config: ServerConfig = {
-      port: 0,
-      databasePath: join(directory, 'runs.sqlite'),
-      allowedOrigin: 'https://johnolek.github.io',
-      enginesPath: join(directory, 'engines'),
-    };
-    database = openRunDatabase(config.databasePath);
-    server = createRunServer(config, database);
+    sql = await openTestDatabase();
+    server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -37,8 +25,7 @@ describe('players over HTTP', () => {
     await new Promise<void>((resolve, reject) => {
       server.close((thrown) => (thrown ? reject(thrown) : resolve()));
     });
-    database.close();
-    rmSync(directory, { recursive: true, force: true });
+    await sql.close();
   });
 
   function claim(secret: string, name: unknown): Promise<Response> {

@@ -1,34 +1,22 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
 import type { Server } from 'node:http';
-import type { DatabaseSync } from 'node:sqlite';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { ServerConfig } from './config';
-import { openRunDatabase } from './db';
+import { publishEngine } from './engines';
 import { createRunServer } from './http';
+import type { Sql } from './sql';
+import { openTestDatabase } from './test-sql';
 
-const enginesPath = mkdtempSync(join(tmpdir(), 'moraff-engines-'));
 const DEPLOYED = 'a'.repeat(40);
 
-const config: ServerConfig = {
-  port: 0,
-  databasePath: ':memory:',
-  allowedOrigin: 'https://johnolek.github.io',
-  enginesPath,
-};
-
 describe('the run server over HTTP', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
   let server: Server;
   let origin: string;
 
   beforeAll(async () => {
-    mkdirSync(join(enginesPath, DEPLOYED), { recursive: true });
-    writeFileSync(join(enginesPath, DEPLOYED, 'engine.mjs'), `export const ENGINE_COMMIT = '${DEPLOYED}';\n`);
-    database = openRunDatabase(config.databasePath);
-    server = createRunServer(config, database);
+    sql = await openTestDatabase();
+    await publishEngine(sql, DEPLOYED, Buffer.from(`export const ENGINE_COMMIT = '${DEPLOYED}';\n`));
+    server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   });
@@ -37,8 +25,7 @@ describe('the run server over HTTP', () => {
     await new Promise<void>((resolve, reject) => {
       server.close((thrown) => (thrown ? reject(thrown) : resolve()));
     });
-    database.close();
-    rmSync(enginesPath, { recursive: true, force: true });
+    await sql.close();
   });
 
   it('answers /health with the engine commit it was built from', async () => {

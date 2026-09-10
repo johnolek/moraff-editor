@@ -1,7 +1,7 @@
-import { DatabaseSync } from 'node:sqlite';
-import { beforeEach, describe, expect, it } from 'vitest';
-import { applyMigrations, BUNDLED_MIGRATIONS } from './migrations';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { batchesOf, readRunBatch, runFor, sessionsOf, takeBatch, type BatchSession, type RunBatch } from './runs';
+import type { Sql } from './sql';
+import { openTestDatabase } from './test-sql';
 
 const CHARACTER = 'k3p9x1-ab12cd';
 
@@ -33,20 +33,23 @@ function batch(over: Partial<RunBatch> = {}): RunBatch {
 }
 
 describe('taking the batches of a run', () => {
-  let database: DatabaseSync;
+  let sql: Sql;
 
-  beforeEach(() => {
-    database = new DatabaseSync(':memory:');
-    applyMigrations(database, BUNDLED_MIGRATIONS);
-    database.prepare('INSERT INTO players (id, secret_hash, name) VALUES (?, ?, ?)').run(ME, 'mine', 'John');
-    database.prepare('INSERT INTO players (id, secret_hash, name) VALUES (?, ?, ?)').run(THEM, 'theirs', 'Somebody');
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'John']);
+    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [THEM, 'theirs', 'Somebody']);
   });
 
-  it('makes the character and the sitting known from the first batch', () => {
-    const taken = takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  it('makes the character and the sitting known from the first batch', async () => {
+    const taken = await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
 
     expect(taken).toEqual({ taken: true, received: 0, ending: false });
-    expect(runFor(database, CHARACTER)).toMatchObject({
+    expect(await runFor(sql, CHARACTER)).toMatchObject({
       id: CHARACTER,
       game: 'unforgiven',
       mode: 'speedrun',
@@ -55,85 +58,86 @@ describe('taking the batches of a run', () => {
       outcome: null,
       player: 'John',
     });
-    expect(sessionsOf(database, CHARACTER)).toMatchObject([{ sessionIndex: 0, seed: 12345, record: 'AAEC' }]);
+    expect(await sessionsOf(sql, CHARACTER)).toMatchObject([{ sessionIndex: 0, seed: 12345, record: 'AAEC' }]);
   });
 
-  it('appends the batches of a sitting in the order they were sent', () => {
-    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
-    takeBatch(database, CHARACTER, ME, batch({ sequence: 1, inputs: [107] }), 6000);
-    takeBatch(database, CHARACTER, ME, batch({ sequence: 2, inputs: [108, 109] }), 11000);
+  it('appends the batches of a sitting in the order they were sent', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [107] }), 6000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 2, inputs: [108, 109] }), 11000);
 
-    expect(batchesOf(database, CHARACTER).map((kept) => kept.inputs)).toEqual([[104, 106], [107], [108, 109]]);
+    expect((await batchesOf(sql, CHARACTER)).map((kept) => kept.inputs)).toEqual([[104, 106], [107], [108, 109]]);
   });
 
-  it('answers a batch it has already been sent without playing it twice', () => {
-    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
-    takeBatch(database, CHARACTER, ME, batch({ sequence: 1, inputs: [107] }), 6000);
+  it('answers a batch it has already been sent without playing it twice', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [107] }), 6000);
 
-    const again = takeBatch(database, CHARACTER, ME, batch({ sequence: 1, inputs: [107] }), 9000);
+    const again = await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [107] }), 9000);
 
     expect(again).toEqual({ taken: true, received: 1, ending: false });
-    expect(batchesOf(database, CHARACTER).map((kept) => kept.inputs)).toEqual([[104, 106], [107]]);
-    expect(batchesOf(database, CHARACTER)[1].arrivedAt).toBe(6000);
+    const kept = await batchesOf(sql, CHARACTER);
+    expect(kept.map((batch) => batch.inputs)).toEqual([[104, 106], [107]]);
+    expect(kept[1].arrivedAt).toBe(6000);
   });
 
-  it('refuses a batch sent again under a sequence it holds, with another stretch in it', () => {
-    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
-    takeBatch(database, CHARACTER, ME, batch({ sequence: 1, inputs: [107], pressed: 1 }), 6000);
+  it('refuses a batch sent again under a sequence it holds, with another stretch in it', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [107], pressed: 1 }), 6000);
 
-    const changed = takeBatch(database, CHARACTER, ME, batch({ sequence: 1, inputs: [107, 108], pressed: 2 }), 9000);
+    const changed = await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [107, 108], pressed: 2 }), 9000);
 
     expect(changed).toEqual({ taken: false, because: 'changed-resend' });
-    expect(batchesOf(database, CHARACTER).map((kept) => kept.inputs)).toEqual([[104, 106], [107]]);
+    expect((await batchesOf(sql, CHARACTER)).map((kept) => kept.inputs)).toEqual([[104, 106], [107]]);
   });
 
-  it('leaves the sitting alone when it refuses a batch sent again with another stretch in it', () => {
-    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
+  it('leaves the sitting alone when it refuses a batch sent again with another stretch in it', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
 
-    takeBatch(
-      database,
+    await takeBatch(
+      sql,
       CHARACTER,
       ME,
       batch({ inputs: [104], pressed: 1, claims: { mode: 'faithful', actions: 1, time: 2, edits: 3, milestones: [] } }),
       6000,
     );
 
-    expect(sessionsOf(database, CHARACTER)[0]).toMatchObject({ mode: 'speedrun', actions: 2, time: 4, edits: 0 });
+    expect((await sessionsOf(sql, CHARACTER))[0]).toMatchObject({ mode: 'speedrun', actions: 2, time: 4, edits: 0 });
   });
 
-  it('keeps the newest claims the sitting has made', () => {
-    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
-    takeBatch(
-      database,
+  it('keeps the newest claims the sitting has made', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await takeBatch(
+      sql,
       CHARACTER,
       ME,
       batch({ sequence: 1, claims: { mode: 'speedrun', actions: 9, time: 20, edits: 1, milestones: [] } }),
       6000,
     );
 
-    expect(sessionsOf(database, CHARACTER)[0]).toMatchObject({ actions: 9, time: 20, edits: 1 });
+    expect((await sessionsOf(sql, CHARACTER))[0]).toMatchObject({ actions: 9, time: 20, edits: 1 });
   });
 
-  it('refuses a batch for a character another player is playing', () => {
-    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
+  it('refuses a batch for a character another player is playing', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
 
-    const theirs = takeBatch(database, CHARACTER, THEM, batch({ sequence: 1 }), 6000);
+    const theirs = await takeBatch(sql, CHARACTER, THEM, batch({ sequence: 1 }), 6000);
 
     expect(theirs).toEqual({ taken: false, because: 'another-player' });
-    expect(batchesOf(database, CHARACTER)).toHaveLength(1);
+    expect(await batchesOf(sql, CHARACTER)).toHaveLength(1);
   });
 
-  it('refuses a batch of a sitting it was never told about', () => {
-    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
+  it('refuses a batch of a sitting it was never told about', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
 
-    const stray = takeBatch(database, CHARACTER, ME, batch({ sessionIndex: 4, sequence: 0 }), 6000);
+    const stray = await takeBatch(sql, CHARACTER, ME, batch({ sessionIndex: 4, sequence: 0 }), 6000);
 
     expect(stray).toEqual({ taken: false, because: 'no-such-sitting' });
   });
 
-  it('refuses the first batch of a character with no sitting on it', () => {
-    expect(takeBatch(database, CHARACTER, ME, batch(), 1000)).toEqual({ taken: false, because: 'no-such-sitting' });
-    expect(runFor(database, CHARACTER)).toBeNull();
+  it('refuses the first batch of a character with no sitting on it', async () => {
+    expect(await takeBatch(sql, CHARACTER, ME, batch(), 1000)).toEqual({ taken: false, because: 'no-such-sitting' });
+    expect(await runFor(sql, CHARACTER)).toBeNull();
   });
 });
 
