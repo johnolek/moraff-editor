@@ -111,7 +111,7 @@ export function streamedSession(run: RunRecorder, index: number, entry: RosterEn
 export function characterSave(entry: RosterEntry): CharacterSave {
   return {
     record: base64FromBytes(entry.bytes),
-    maps: readCharacterMaps(entry),
+    maps: readCharacterMaps(entry.id),
     slot: entry.slot,
     dead: entry.dead,
     leaderboard: entry.leaderboard,

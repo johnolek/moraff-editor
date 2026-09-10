@@ -1,5 +1,6 @@
 import { base64FromBytes } from '../bytes';
-import { fromBase64, jsonStore } from '../character/storage';
+import { readCharacterMaps, writeCharacterMaps } from '../character/maps';
+import { fromBase64 } from '../character/storage';
 import {
   DUN_COLUMNS,
   DUN_FLOOR_BYTES,
@@ -67,8 +68,8 @@ function setBit(bitmap: Uint8Array, x: number, y: number): boolean {
  *
  * The original writes those bitmaps to a file of their own beside the character's record —
  * `<slot><quarter><module>.DUN` in Dungeons of the Unforgiven, `<slot><block>.DUN` in Moraff's
- * World — and this keeps a blob of its own beside the roster entry, so the Save Editor's
- * download of the record is the record alone, exactly as the game's own file is.
+ * World — and this keeps a row of its own beside the character in the browser's database, so the
+ * Save Editor's download of the record is the record alone, exactly as the game's own file is.
  */
 export type StoredMaps = Record<string, string>;
 
@@ -93,16 +94,28 @@ export interface MapStore {
   clear(): void;
 }
 
-const MAPS_PREFIX = 'moraff-tools.maps.';
-
-/** Where one character's explored maps are kept. */
-export function characterMapsKey(id: string): string {
-  return MAPS_PREFIX + id;
-}
-
-/** The explored maps kept beside one roster entry. */
+/**
+ * The explored maps kept beside one roster entry, which is the JSON above as one string
+ * (`src/lib/character/maps.ts`).
+ *
+ * A character that has explored nothing, and one whose string is not the JSON this writes, both
+ * read as no floors at all, so the game can always write into what it reads back.
+ */
 export function characterMaps(id: string): MapStore {
-  return jsonStore<StoredMaps>(characterMapsKey(id));
+  return {
+    read() {
+      const stored = readCharacterMaps(id);
+      if (stored === null) return {};
+      try {
+        const parsed: unknown = JSON.parse(stored);
+        return typeof parsed === 'object' && parsed !== null ? (parsed as StoredMaps) : {};
+      } catch {
+        return {};
+      }
+    },
+    write: (maps) => writeCharacterMaps(id, JSON.stringify(maps)),
+    clear: () => writeCharacterMaps(id, null),
+  };
 }
 
 /** The squares of a floor, as the map draws and the explored-map reader indexes them. */

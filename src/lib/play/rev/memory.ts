@@ -1,4 +1,6 @@
-import { blobStore } from '../../character/storage';
+import { base64FromBytes } from '../../bytes';
+import { readCharacterMaps, writeCharacterMaps } from '../../character/maps';
+import { fromBase64 } from '../../character/storage';
 import { COLUMNS, LEVELS, ROWS, mbfSingle } from '../../game/revmap.js';
 import { REV_TOWN_ROWS } from '../../game/rev-port/character';
 import { REV_MAP_SINGLES, revExploredBytes } from '../../roller/rev-save-file';
@@ -34,16 +36,17 @@ export interface RevMapStore {
   clear(): void;
 }
 
-const MAPS_PREFIX = 'moraff-tools.revenge-map.';
-
-/** Where one character's explored map is kept. */
-export function revCharacterMapKey(id: string): string {
-  return MAPS_PREFIX + id;
-}
-
-/** The explored map kept beside one roster entry, as the game keeps `<n>.BIN` beside `<n>.EXE`. */
+/** The explored map kept beside one roster entry, as the game keeps `<n>.BIN` beside `<n>.EXE`.
+ *  It is the BSAVE image written base64 (`src/lib/character/maps.ts`). */
 export function revCharacterMap(id: string): RevMapStore {
-  return blobStore(revCharacterMapKey(id));
+  return {
+    read() {
+      const stored = readCharacterMaps(id);
+      return stored === null ? null : fromBase64(stored);
+    },
+    write: (bytes) => writeCharacterMaps(id, base64FromBytes(bytes)),
+    clear: () => writeCharacterMaps(id, null),
+  };
 }
 
 /** One character's explored map while they are being played. */

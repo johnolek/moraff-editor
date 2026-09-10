@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RevMapMemory, revCharacterMap } from '../play/rev/memory';
+import { RevMapMemory } from '../play/rev/memory';
 import type { RosterEntry } from '../app-state.svelte';
 import type { JournalEntry } from '../play/journal';
 import { RunRecorder, type RunSession } from '../play/run';
@@ -60,6 +60,7 @@ function saveFile(name: string): Uint8Array<ArrayBuffer> {
  */
 type State = typeof import('../app-state.svelte');
 type Current = typeof import('./current');
+type RevMemory = typeof import('../play/rev/memory');
 
 let app: State['app'];
 let currentEntry: State['currentEntry'];
@@ -78,6 +79,9 @@ let restoreRoster: Current['restoreRoster'];
 let runSessionPlayed: Current['runSessionPlayed'];
 let switchGame: Current['switchGame'];
 let catchUpWithTheServer: Current['catchUpWithTheServer'];
+/** The explored maps are held in the page and written behind it, so the store a test reads them
+ *  back through has to be the one the modules under test are writing into. */
+let revCharacterMap: RevMemory['revCharacterMap'];
 let unloadCharacter: Current['unloadCharacter'];
 let voidCurrentLeaderboard: Current['voidCurrentLeaderboard'];
 
@@ -87,6 +91,7 @@ beforeEach(async () => {
   useStorage(fakeStorage());
   vi.stubGlobal('history', fakeHistory());
   ({ app, currentEntry, entryById } = await import('../app-state.svelte'));
+  ({ revCharacterMap } = await import('../play/rev/memory'));
   ({
     characterEdited,
     chooseCharacter,
@@ -163,6 +168,32 @@ describe('an explored map dropped beside the character', () => {
   it('is refused when the character being worked on belongs to another game', () => {
     importCharacter('unforgiven', '21', saveFile('SAGEY'));
     expect(importRevExploredMap(new RevMapMemory().bytes())).toBeNull();
+  });
+
+  it('is still beside the character after a reload', async () => {
+    importCharacter('revenge', '1.EXE', revenge());
+    const walked = new RevMapMemory();
+    walked.markStep(5, 7, 3);
+    const kept = importRevExploredMap(walked.bytes())!;
+
+    await rememberNow();
+    await restoreRoster();
+
+    expect(new RevMapMemory(revCharacterMap(kept.id)).isKnown(5, 7, 3)).toBe(true);
+  });
+
+  it('goes with the character when it is taken off the roster', async () => {
+    importCharacter('revenge', '1.EXE', revenge());
+    const walked = new RevMapMemory();
+    walked.markStep(5, 7, 3);
+    const kept = importRevExploredMap(walked.bytes())!;
+    await rememberNow();
+
+    forgetCharacter(kept.id);
+    await rememberNow();
+    await restoreRoster();
+
+    expect(new RevMapMemory(revCharacterMap(kept.id)).isKnown(5, 7, 3)).toBe(false);
   });
 });
 

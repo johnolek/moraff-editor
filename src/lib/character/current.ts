@@ -15,7 +15,7 @@ import type { JournalEntry } from '../play/journal';
 import type { RunSession } from '../play/run';
 import { tabFor } from '../tabs';
 import { carryOverStoredRoster } from './carry-over';
-import { writeCharacterMaps } from './maps';
+import { forgetCharacterMaps, loadKeptMaps, writeCharacterMaps } from './maps';
 import { recordName, slotFromFileName } from './record';
 import {
   markDead,
@@ -104,6 +104,7 @@ export function forgetCharacter(id: string): void {
   changedCharacters.delete(id);
   for (const session of changedSessions) if (session.startsWith(`${id}/`)) changedSessions.delete(session);
   saveCurrentCharacter(app.characterId);
+  forgetCharacterMaps(id);
   void keeping(dropCharacter(id));
   // A player with a name has their characters on the server, so forgetting one here forgets it
   // everywhere; otherwise the next roster read would bring it straight back.
@@ -209,6 +210,7 @@ export function restoreGame(): void {
  */
 export async function restoreRoster(): Promise<void> {
   await carryOverStoredRoster();
+  await loadKeptMaps();
   const entries = await readRoster();
   app.roster = entries ?? [];
   const stored = loadCurrentCharacter();
@@ -244,7 +246,7 @@ export async function catchUpWithTheServer(): Promise<void> {
     if (kept !== null && deviceIsAhead(kept.run, character.run)) continue;
     const entry = entryFromServer(character, kept);
     if (entry === null) continue;
-    writeCharacterMaps(entry, character.maps);
+    writeCharacterMaps(entry.id, character.maps);
     taken.push(entry);
     for (let at = 0; at < entry.run.length; at++) played.push({ entry, at });
   }

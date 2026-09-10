@@ -1,32 +1,42 @@
-import type { RosterEntry } from '../app-state.svelte';
-import { MORAFFS_REVENGE } from '../editor/games';
-import { characterMapsKey } from '../play/memory';
-import { revCharacterMapKey } from '../play/rev/memory';
-import { readStored, removeStored, writeStored } from './storage';
+import { keepMaps, readKeptMaps } from './roster-db';
 
 /**
- * The squares a character has discovered, as one value that can be handed about whole.
+ * The squares a character has discovered, as one string that can be handed about whole.
  *
  * Two games keep a bitmap per floor and Moraff's Revenge keeps one array for the whole character,
- * so what the two stores hold is not the same shape (`src/lib/play/memory.ts` and
+ * so what the two hold is not the same shape (`src/lib/play/memory.ts` and
  * `src/lib/play/rev/memory.ts`). Neither the run server nor the roster reads it: both keep the
- * string the store holds and hand it back the way it came, which is why this is one function
- * rather than a shape everything has to agree about.
+ * string the store holds and hand it back the way it came, which is why this is one string rather
+ * than a shape everything has to agree about.
+ *
+ * The game reads and writes the maps in the middle of a turn and has nothing to wait on a
+ * database with, so they are held here as the page runs and the database is written behind them.
+ * {@link loadKeptMaps} is the one read, at start-up, and nothing asks for a character's maps
+ * before it.
  */
 
-/** Where the maps of one character are kept, which is one key either way. */
-function mapsKey(entry: RosterEntry): string {
-  return entry.game === MORAFFS_REVENGE.id ? revCharacterMapKey(entry.id) : characterMapsKey(entry.id);
+/** Every character's explored maps, by character id, as the page holds them. */
+let kept = new Map<string, string>();
+
+/** Bring the explored maps of every character out of the database, which a visit does once. */
+export async function loadKeptMaps(): Promise<void> {
+  kept = await readKeptMaps();
 }
 
 /** The character's explored maps, or null for one that has discovered none. */
-export function readCharacterMaps(entry: RosterEntry): string | null {
-  const kept = readStored(mapsKey(entry));
-  return kept === null || kept === '' ? null : kept;
+export function readCharacterMaps(id: string): string | null {
+  return kept.get(id) ?? null;
 }
 
 /** Put these explored maps beside the character, or take away the ones it had. */
-export function writeCharacterMaps(entry: RosterEntry, maps: string | null): void {
-  if (maps === null) removeStored(mapsKey(entry));
-  else writeStored(mapsKey(entry), maps);
+export function writeCharacterMaps(id: string, maps: string | null): void {
+  if (maps === null) kept.delete(id);
+  else kept.set(id, maps);
+  void keepMaps(id, maps);
+}
+
+/** The page's copy of a character's maps, dropped with the character. The row in the database
+ *  goes with `dropCharacter` in `roster-db.ts`. */
+export function forgetCharacterMaps(id: string): void {
+  kept.delete(id);
 }
