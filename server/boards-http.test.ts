@@ -105,3 +105,166 @@ describe('asking the server for a board', () => {
     expect(board.more).toBe(true);
   });
 });
+
+/** A character whose chain has been replayed while it was being played, which is all a board of
+ *  the living reads. */
+async function alive(
+  sql: Sql,
+  who: {
+    id: string;
+    level?: number;
+    deepest?: number;
+    actions?: number;
+    status?: string;
+    leaderboard?: string;
+    playingUntil?: string | null;
+    heardAt?: string;
+    ended?: boolean;
+    rolledAt?: string;
+  },
+): Promise<void> {
+  await sql.query(
+    `INSERT INTO characters (id, player_id, game, name, created_at, finished_at, outcome, leased_to,
+                             leased_until, saved_at)
+     VALUES ($1, 1, 'unforgiven', $2, $3, $4, $5, 'a-device', $6, $7)`,
+    [
+      who.id,
+      `Grond ${who.id}`,
+      who.rolledAt ?? '2026-09-01T00:00:00.000Z',
+      who.ended === true ? '2026-09-08T00:00:00.000Z' : null,
+      who.ended === true ? 'death' : null,
+      who.playingUntil ?? null,
+      who.heardAt ?? '2026-09-08T12:00:00.000Z',
+    ],
+  );
+  await sql.query(
+    `INSERT INTO living (character_id, status, level, deepest, actions, time, game, leaderboard,
+                         replayed_through)
+     VALUES ($1, $2, $3, $4, $5, 30, 'unforgiven', $6, 1)`,
+    [who.id, who.status ?? 'verified', who.level ?? 3, who.deepest ?? 1, who.actions ?? 100, who.leaderboard ?? 'speedrun'],
+  );
+}
+
+describe('asking the server for a board of the living', () => {
+  let sql: Sql;
+  let server: Server;
+  let origin: string;
+
+  /** A lease that has not lapsed, far enough ahead to still stand when the board is read. */
+  const stillPlaying = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+  beforeAll(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES (1, $1)', ['John']);
+    await alive(sql, { id: 'low', level: 2, deepest: 4, rolledAt: '2026-09-01T00:00:00.000Z' });
+    await alive(sql, {
+      id: 'high',
+      level: 9,
+      deepest: 1,
+      playingUntil: stillPlaying,
+      heardAt: '2026-09-08T13:00:00.000Z',
+      rolledAt: '2026-09-02T00:00:00.000Z',
+    });
+    await alive(sql, { id: 'not-checked', level: 20, status: 'failed', rolledAt: '2026-09-03T00:00:00.000Z' });
+    await alive(sql, { id: 'dead', level: 30, ended: true, rolledAt: '2026-09-04T00:00:00.000Z' });
+    await alive(sql, { id: 'faithful-one', level: 15, leaderboard: 'faithful', rolledAt: '2026-09-05T00:00:00.000Z' });
+    server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve, reject) => {
+      server.close((thrown) => (thrown ? reject(thrown) : resolve()));
+    });
+    await sql.close();
+  });
+
+  async function living(query: string) {
+    const response = await fetch(`${origin}/boards/unforgiven/speedrun/living${query}`);
+    return { status: response.status, body: await response.json() };
+  }
+
+  it('answers with the living of that game and board, highest level first', async () => {
+    const { status, body } = await living('?sort=level');
+
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ game: 'unforgiven', leaderboard: 'speedrun', sort: 'level', page: 1, more: false });
+    expect(body.rows.map((row: { characterId: string }) => row.characterId)).toEqual(['high', 'low']);
+  });
+
+  it('ranks them by how far they have got when asked for that', async () => {
+    expect((await living('?sort=deepest')).body.rows.map((row: { characterId: string }) => row.characterId)).toEqual([
+      'low',
+      'high',
+    ]);
+  });
+
+  it('ranks them by level when the request names no order', async () => {
+    expect((await living('')).body).toMatchObject({ sort: 'level' });
+  });
+
+  it('says which of them is being played at this moment, and when each was last heard from', async () => {
+    const rows = (await living('?sort=level')).body.rows;
+
+    expect(rows[0]).toMatchObject({
+      characterId: 'high',
+      player: 'John',
+      level: 9,
+      deepest: 1,
+      actions: 100,
+      clock: 30,
+      playing: true,
+      heardAt: '2026-09-08T13:00:00.000Z',
+    });
+    expect(rows[1]).toMatchObject({ characterId: 'low', playing: false });
+  });
+
+  it('leaves off a character whose chain the replay would not pass', async () => {
+    const on = (await living('?sort=level')).body.rows.map((row: { characterId: string }) => row.characterId);
+
+    expect(on).not.toContain('not-checked');
+  });
+
+  it('leaves off a character whose run has ended', async () => {
+    const on = (await living('?sort=level')).body.rows.map((row: { characterId: string }) => row.characterId);
+
+    expect(on).not.toContain('dead');
+  });
+
+  it("leaves off the other board's characters", async () => {
+    const on = (await living('?sort=level')).body.rows.map((row: { characterId: string }) => row.characterId);
+
+    expect(on).not.toContain('faithful-one');
+    expect((await fetch(`${origin}/boards/unforgiven/faithful/living`)).status).toBe(200);
+  });
+
+  it('refuses an order the living are not ranked in', async () => {
+    const { status, body } = await living('?sort=richest');
+
+    expect(status).toBe(400);
+    expect(body.error).toBe('That is not an order the living are ranked in.');
+  });
+
+  it('refuses a page that is not a page number', async () => {
+    expect((await living('?page=first')).status).toBe(400);
+  });
+
+  it('says there is no such board for a game it does not play', async () => {
+    expect((await fetch(`${origin}/boards/wizardry/speedrun/living`)).status).toBe(404);
+  });
+
+  it('holds fifty characters on a page', async () => {
+    for (let at = 0; at < RUNS_PER_PAGE; at++) {
+      await alive(sql, { id: `crowd-${at}`, level: 1, actions: 1000 + at });
+    }
+
+    const first = (await living('?sort=level')).body;
+    const second = (await living('?sort=level&page=2')).body;
+
+    expect(first.rows).toHaveLength(RUNS_PER_PAGE);
+    expect(first.more).toBe(true);
+    expect(second.rows).toHaveLength(2);
+    expect(second.more).toBe(false);
+  });
+});

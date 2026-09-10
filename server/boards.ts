@@ -78,6 +78,33 @@ export const BOARDS: readonly Board[] = [
   { name: 'deaths', sortedOn: 'at', sorts: 'Deaths, newest first' },
 ];
 
+/**
+ * The boards of the living: characters still being played, ranked by how high they have levelled
+ * and by how far they have got.
+ *
+ * They are not among `BOARDS` above, because every row of one of those is about a run that has
+ * ended -- how it came out, how long it took, when it finished -- and these are about a run that
+ * has not. What they do share is the picker the site offers them all in, so they carry a name and
+ * the words that name it the same way.
+ */
+export type LivingSort = 'level' | 'deepest';
+
+export interface LivingBoard {
+  name: `living-${LivingSort}`;
+  sortedOn: LivingSort;
+  /** What the board holds and how it is ordered, in a few words for the site to show. */
+  sorts: string;
+}
+
+export const LIVING_BOARDS: readonly LivingBoard[] = [
+  { name: 'living-level', sortedOn: 'level', sorts: 'Still alive, by level' },
+  { name: 'living-deepest', sortedOn: 'deepest', sorts: 'Still alive, by depth' },
+];
+
+export function isLivingSort(sort: string): sort is LivingSort {
+  return LIVING_BOARDS.some((board) => board.sortedOn === sort);
+}
+
 /** How many runs a page of a board holds. */
 export const RUNS_PER_PAGE = 50;
 
@@ -204,5 +231,116 @@ function rowOf(row: BoardRowShape): BoardRow {
     level: row.level,
     outcome: row.outcome,
     at: row.finished_at === null ? null : row.finished_at.toISOString(),
+  };
+}
+
+/** One character as a board of the living shows it. */
+export interface LivingRow {
+  characterId: string;
+  /** The name the player claimed on this server, and the character's own. */
+  player: string;
+  name: string;
+  /** The highest level and the furthest reach the replay of the chain so far found. */
+  level: number;
+  deepest: number;
+  actions: number;
+  /** The game's own clock, which is seconds in Dungeons of the Unforgiven and moves in Moraff's
+   *  World. */
+  clock: number;
+  /** Whether a device is playing the character at this moment, which is its lease not yet having
+   *  lapsed. */
+  playing: boolean;
+  /** When the server last heard from the device playing it. */
+  heardAt: string | null;
+}
+
+export interface LivingPage {
+  game: string;
+  leaderboard: string;
+  sort: LivingSort;
+  page: number;
+  rows: LivingRow[];
+  /** Whether there is a page after this one. */
+  more: boolean;
+}
+
+/**
+ * The order each board of the living stands in.
+ *
+ * Both end in the fewest actions and then the oldest character, so that two characters standing
+ * equally deep or equally high are in a settled order rather than in whatever order the rows come
+ * back in, and the one who got there for less is first.
+ */
+const LIVING_ORDERS: Record<LivingSort, string> = {
+  level: 'l.level DESC, l.actions ASC, c.created_at ASC',
+  deepest: 'l.deepest DESC, l.actions ASC, c.created_at ASC',
+};
+
+/**
+ * One page of a board of the living. Pages count from one.
+ *
+ * A character is on a board while three things hold: the chain it has played came out verified,
+ * its run has not ended, and it was rolled for this board. A snapshot the replay failed or could
+ * not check keeps the character off, and so does a death or a win, since a run that has ended has
+ * a verdict of its own and stands on the boards above.
+ *
+ * `now` is what the lease is read against: a character whose lease has not lapsed has a device
+ * playing it at this moment.
+ */
+export async function livingPage(
+  sql: Queries,
+  asked: { game: string; leaderboard: string; sort: LivingSort; page: number },
+  now: number,
+): Promise<LivingPage> {
+  // One row more than a page is asked for, and it is not shown: that is the whole answer to
+  // whether there is a page after this one, without counting the board twice.
+  const rows = await sql.query<LivingRowShape>(
+    `SELECT l.character_id, p.name AS player, c.name AS name, l.level, l.deepest, l.actions,
+            l.time, c.leased_until, c.saved_at
+     FROM living l
+     JOIN characters c ON c.id = l.character_id
+     JOIN players p ON p.id = c.player_id
+     WHERE l.game = $1 AND l.leaderboard = $2 AND l.status = 'verified' AND c.finished_at IS NULL
+     ORDER BY ${LIVING_ORDERS[asked.sort]}
+     LIMIT $3 OFFSET $4`,
+    [asked.game, asked.leaderboard, RUNS_PER_PAGE + 1, (asked.page - 1) * RUNS_PER_PAGE],
+  );
+  return {
+    game: asked.game,
+    leaderboard: asked.leaderboard,
+    sort: asked.sort,
+    page: asked.page,
+    rows: rows.slice(0, RUNS_PER_PAGE).map((row) => livingRowOf(row, now)),
+    more: rows.length > RUNS_PER_PAGE,
+  };
+}
+
+/** A row as the database hands it back. It is a type rather than an interface so that a bag of
+ *  columns can be read as one. */
+type LivingRowShape = {
+  character_id: string;
+  player: string;
+  name: string;
+  level: number;
+  deepest: number;
+  actions: number;
+  time: number;
+  leased_until: Date | null;
+  saved_at: Date | null;
+};
+
+function livingRowOf(row: LivingRowShape, now: number): LivingRow {
+  return {
+    characterId: row.character_id,
+    player: row.player,
+    name: row.name,
+    level: row.level,
+    deepest: row.deepest,
+    actions: row.actions,
+    clock: row.time,
+    playing: row.leased_until !== null && row.leased_until.getTime() > now,
+    // Every batch of the sitting being played carries the character itself, and this is when the
+    // newest of those landed, so it is when the server last heard anything of the run.
+    heardAt: row.saved_at === null ? null : row.saved_at.toISOString(),
   };
 }

@@ -3,7 +3,7 @@ import { shortCommit } from '../src/lib/commit';
 import type { ServerConfig } from './config';
 import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
 import { openSignInAttempts, type SignInAttempts } from './attempts';
-import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './boards';
+import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName, isLivingSort, livingPage } from './boards';
 import { writeCorsHeaders } from './cors';
 import { ENGINE_COMMIT, openEngineStore, type EngineStore } from './engines';
 import { openFeed, type Feed } from './feed';
@@ -49,6 +49,7 @@ const NO_SUCH_RUN = 'No such run.';
 const NO_SUCH_CHARACTER = 'No character of yours has that name here.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
 const NOT_A_PAGE = 'That is not a page of a board.';
+const NOT_A_LIVING_SORT = 'That is not an order the living are ranked in.';
 const NOT_A_HISTORY_PAGE = 'That is not a page of the announcements.';
 
 /** A players request carries a field or two, so anything longer than this is not one. */
@@ -152,6 +153,19 @@ export function createRunServer(config: ServerOrigin, sql: Sql, feed: Feed = ope
       return;
     }
 
+    const living = path.match(/^\/boards\/([^/]+)\/([^/]+)\/living$/);
+    if (request.method === 'GET' && living !== null) {
+      void sendLivingBoard(
+        response,
+        sql,
+        decodeURIComponent(living[1]),
+        decodeURIComponent(living[2]),
+        asked.searchParams.get('sort'),
+        asked.searchParams.get('page'),
+      );
+      return;
+    }
+
     const board = path.match(/^\/boards\/([^/]+)\/([^/]+)\/([^/]+)$/);
     if (request.method === 'GET' && board !== null) {
       void sendBoard(
@@ -206,6 +220,39 @@ async function sendBoard(
     return;
   }
   sendJson(response, 200, await boardPage(sql, { game, leaderboard, board, page }));
+}
+
+/**
+ * One page of a board of the living: the characters of that game and board still being played,
+ * ranked by what a replay of the chain each has played so far reached.
+ *
+ * `sort` is which of the two orders, and a request that names none is asking for the level. Only
+ * a character whose replay came out verified is here, and only while its run has not ended, which
+ * is what `server/boards.ts` decides.
+ */
+async function sendLivingBoard(
+  response: ServerResponse,
+  sql: Queries,
+  game: string,
+  leaderboard: string,
+  sort: string | null,
+  asked: string | null,
+): Promise<void> {
+  if (!isBoardGame(game) || !isBoardLeaderboard(leaderboard)) {
+    sendJson(response, 404, { error: `No such board: ${game}/${leaderboard}/living` });
+    return;
+  }
+  const order = sort ?? 'level';
+  if (!isLivingSort(order)) {
+    sendJson(response, 400, { error: NOT_A_LIVING_SORT });
+    return;
+  }
+  const page = pageAsked(asked);
+  if (page === null) {
+    sendJson(response, 400, { error: NOT_A_PAGE });
+    return;
+  }
+  sendJson(response, 200, await livingPage(sql, { game, leaderboard, sort: order, page }, Date.now()));
 }
 
 /** Which page of a board was asked for, counting from one, or null when the query names
