@@ -62,6 +62,7 @@ function saveFile(name: string): Uint8Array<ArrayBuffer> {
 type State = typeof import('../app-state.svelte');
 type Current = typeof import('./current');
 type RevMemory = typeof import('../play/rev/memory');
+type Streaming = typeof import('../play/streaming');
 
 let app: State['app'];
 let currentEntry: State['currentEntry'];
@@ -83,6 +84,9 @@ let catchUpWithTheServer: Current['catchUpWithTheServer'];
 /** The explored maps are held in the page and written behind it, so the store a test reads them
  *  back through has to be the one the modules under test are writing into. */
 let revCharacterMap: RevMemory['revCharacterMap'];
+/** Starting a game is what tells the modules under test that the batches of a run are carrying
+ *  the character, so the sender has to be the one they are asking. */
+let streamRun: Streaming['streamRun'];
 let unloadCharacter: Current['unloadCharacter'];
 let voidCurrentLeaderboard: Current['voidCurrentLeaderboard'];
 
@@ -93,6 +97,7 @@ beforeEach(async () => {
   vi.stubGlobal('history', fakeHistory());
   ({ app, currentEntry, entryById } = await import('../app-state.svelte'));
   ({ revCharacterMap } = await import('../play/rev/memory'));
+  ({ streamRun } = await import('../play/streaming'));
   ({
     characterEdited,
     chooseCharacter,
@@ -650,6 +655,54 @@ describe('the characters the server is keeping for this player', () => {
 
     expect(server.calls).toEqual([]);
     expect(app.roster).toEqual([]);
+  });
+
+  it('sends a character changed with no game running to the server at once', async () => {
+    keepRolledCharacter('unforgiven', 'SAGEY', 21, saveFile('SAGEY'));
+    const entry = app.roster[0];
+    await rememberNow();
+    const server = serverHolding([]);
+
+    characterEdited();
+    await rememberNow();
+
+    expect(server.calls).toEqual([`PUT https://runs.example.com/players/me/characters/${entry.id}`]);
+  });
+
+  it('leaves a character being played to the batches of its run', async () => {
+    keepRolledCharacter('unforgiven', 'SAGEY', 21, saveFile('SAGEY'));
+    const entry = app.roster[0];
+    await rememberNow();
+    const server = serverHolding([]);
+    // The sender hangs a listener on the window, and these tests run under Node.
+    vi.stubGlobal('window', { addEventListener: () => undefined, removeEventListener: () => undefined });
+    const streamer = streamRun({
+      characterId: entry.id,
+      session: {
+        index: 0,
+        log: () => sitting(0, 2),
+        presses: () => 2,
+        save: () => ({
+          record: 'AAEC',
+          maps: null,
+          slot: entry.slot,
+          dead: false,
+          leaderboard: null,
+          createdAt: entry.createdAt,
+          editedAt: entry.editedAt,
+        }),
+      },
+      earlier: [],
+      mode: () => 'faithful',
+      onMark: () => undefined,
+      movedOn: () => undefined,
+    })!;
+
+    characterEdited();
+    await rememberNow();
+    streamer.stop();
+
+    expect(server.calls.filter((call) => call.startsWith('PUT'))).toEqual([]);
   });
 
   it('forgets a character on the server as well as here', async () => {

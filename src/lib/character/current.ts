@@ -11,6 +11,7 @@ import {
 } from '../game-choice';
 import { recordTab } from '../history';
 import { revCharacterMap } from '../play/rev/memory';
+import { runIsBeingSent } from '../play/streaming';
 import type { JournalEntry } from '../play/journal';
 import type { RunSession } from '../play/run';
 import { tabFor } from '../tabs';
@@ -28,7 +29,13 @@ import {
   withoutEntry,
 } from './roster';
 import { dropCharacter, keepPlayed, readRoster, type PlayedSession } from './roster-db';
-import { deviceIsAhead, entryFromServer, forgetOnServer, readServerRoster } from './server-roster';
+import {
+  deviceIsAhead,
+  entryFromServer,
+  forgetOnServer,
+  keepCharacterOnServer,
+  readServerRoster,
+} from './server-roster';
 
 /** Put a save file that has just been read on the roster and start working on it. */
 export function importCharacter(game: string, fileName: string, bytes: Uint8Array<ArrayBuffer>): void {
@@ -368,6 +375,9 @@ function write(): Promise<void> {
   changedCharacters.clear();
   changedSessions.clear();
   if (characters.length === 0 && sessions.length === 0) return writing;
+  // A character being played is on its way to the server with every batch of its run; one changed
+  // with no game running has nothing else to carry it there.
+  for (const entry of characters) if (!runIsBeingSent(entry.id)) void keepCharacterOnServer(entry);
   return keeping(keepPlayed(characters, sessions));
 }
 

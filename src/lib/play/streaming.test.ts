@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { setOffTheBoards } from '../player';
 import type { RunSession } from './run';
-import { streamRun, type RunMark } from './streaming';
+import { runIsBeingSent, streamRun, type RunMark } from './streaming';
 import type { StreamedSession } from './stream';
 
 /** Enough of the browser's Storage to stand in for it. */
@@ -195,5 +195,21 @@ describe('sending a run while the player is off the boards', () => {
     await settled();
 
     expect(run.posts).toEqual(['https://runs.example.com/runs/k3p9x1-ab12cd/batches']);
+  });
+});
+
+describe('whether a run is being sent', () => {
+  it('names the character while the game is going and not once it has been left', () => {
+    browser();
+    const running = sender();
+
+    expect(runIsBeingSent('k3p9x1-ab12cd')).toBe(true);
+
+    running.stop();
+    expect(runIsBeingSent('k3p9x1-ab12cd')).toBe(false);
+  });
+
+  it('names no character nobody is playing', () => {
+    expect(runIsBeingSent('never-played')).toBe(false);
   });
 });

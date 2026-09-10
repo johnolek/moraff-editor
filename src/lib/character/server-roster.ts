@@ -1,6 +1,7 @@
 import type { RosterEntry } from '../app-state.svelte';
-import { playerSecret } from '../player';
+import { offTheBoards, playerSecret } from '../player';
 import type { RunSession } from '../play/run';
+import { characterSave } from '../play/streaming';
 import { isRunSession } from '../play/verify';
 import { runServerUrl } from '../run-server';
 import { isLeaderboard } from './leaderboard';
@@ -53,6 +54,35 @@ export async function readServerRoster(): Promise<ServerCharacter[] | null> {
   return Array.isArray(characters)
     ? characters.map(serverCharacter).filter((character): character is ServerCharacter => character !== null)
     : null;
+}
+
+/**
+ * Put a character on the server as this device holds it now, which is what an edit made with no
+ * game running is.
+ *
+ * A character's record otherwise travels with the batches of a run, so an edit made in the Save
+ * Editor would wait for the next sitting and be lost if another device played the character
+ * first. The server makes the character known where it has never been told about it, so a
+ * character rolled and edited here is on the player's other devices before it is ever played.
+ *
+ * Nothing is done about a refusal. A device that has claimed no name has no roster on the server
+ * to keep, and a character another device is playing at this moment is being written by that
+ * device after every key; either way the edit stands on the roster here and goes up with the next
+ * batch of the next sitting.
+ */
+export async function keepCharacterOnServer(entry: RosterEntry): Promise<void> {
+  const server = runServerUrl();
+  if (server === null || offTheBoards()) return;
+  try {
+    await fetch(`${server}/players/me/characters/${encodeURIComponent(entry.id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${playerSecret()}` },
+      body: JSON.stringify({ game: entry.game, name: entry.name, save: characterSave(entry) }),
+    });
+  } catch {
+    // A server that was not reached holds whatever it held before, and the character here is
+    // unchanged by the attempt.
+  }
 }
 
 /** Take a character off the server for good, which is what forgetting one here means for a player

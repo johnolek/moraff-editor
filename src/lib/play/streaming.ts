@@ -87,6 +87,20 @@ interface RunVerdictAnswer {
   playMs: number;
 }
 
+/** The characters a run is being sent for, by roster entry id. */
+const beingSent = new Set<string>();
+
+/**
+ * Whether a run of this character is being sent now.
+ *
+ * Every batch carries the character as the device holds it, so while a run is going there is
+ * nothing for anything else to send: `src/lib/character/current.ts` asks this before sending a
+ * character edited outside a game.
+ */
+export function runIsBeingSent(id: string): boolean {
+  return beingSent.has(id);
+}
+
 /** A run being sent, which the Play tab starts with the game and stops when the game is left. */
 export interface RunStreamer {
   /** The character has died or won, which is the last batch of the run. */
@@ -170,6 +184,7 @@ class Streamer implements RunStreamer {
     private readonly run: StreamRun,
   ) {
     this.stream = new RunStream(run.session, (batch) => this.postBatch(batch), run.earlier);
+    beingSent.add(run.characterId);
     this.tick = setInterval(() => void this.send(false), SEND_EVERY_MS);
     window.addEventListener('pagehide', this.onHide);
     // The first batch would not go for another five seconds, and a player who has opted out
@@ -190,6 +205,7 @@ class Streamer implements RunStreamer {
   stop(): void {
     if (this.stopped) return;
     this.stopped = true;
+    beingSent.delete(this.run.characterId);
     clearInterval(this.tick);
     window.removeEventListener('pagehide', this.onHide);
     if (!this.over) void this.send(false);

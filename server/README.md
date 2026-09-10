@@ -278,11 +278,21 @@ goes on with the server unreachable and catches up when it is back.
 | Endpoint                             | What it does                                      |
 | ------------------------------------ | ------------------------------------------------- |
 | `GET /players/me/characters`         | Every character of that player, oldest first: the record and the maps the newest batch carried, what a roster shows about each, the chain of sittings put back together out of the stretches that arrived, and whether another device of theirs is playing it now. 403 when the device has claimed no name. |
+| `PUT /players/me/characters/:id`     | Takes one character as the device holds it now — the same character a batch carries, with the game and the name beside it — and makes it known where the server has never been told about it. 200 with `{ "kept": "<id>" }`, 403 when the device has claimed no name, 409 when the character belongs to another player or is being played on another device, 400 when the body is not a character. |
 | `DELETE /players/me/characters/:id`  | Forgets one for good: its run, the verdict on it and whatever was announced about it go with it. 404 when no character of that player's has that id, which is also what a character of somebody else's is answered with. |
 
 A character reaches this list by being played, since the first batch of a
-sitting is what makes one known here. One rolled and never played is still only
-on the device it was rolled in.
+sitting is what makes one known here, or by being sent on its own with the PUT
+above, which is what a device does with an edit made in the Save Editor while
+no game is running. Without that the edit would wait for the next sitting and be
+lost if another device played the character first.
+
+That PUT respects the lease and never takes it. A character another device is
+playing at this moment is having its record written by that device after every
+key, so an edit landing in the middle of that would be written over by the next
+batch; the device is told 409 and the edit stands where it was made. A device
+playing a character sends nothing this way at all, since its batches are
+already carrying the character.
 
 The chain comes back as the log the site wrote, which is what makes the merge on
 the site's side a comparison of two chains: the server's copy stands unless the

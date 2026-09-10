@@ -297,6 +297,13 @@ half of this is `server/README.md`.
   `src/lib/character/maps.ts`, which holds them in the page while the game is being played and
   writes the row behind it, since a game in the middle of a turn has nothing to wait on a database
   with.
+* **A character changed with no game running** goes to the server on its own, through
+  `PUT /players/me/characters/:id` (`keepCharacterOnServer` in
+  `src/lib/character/server-roster.ts`), as soon as the change is written down here. Otherwise an
+  edit made in the Save Editor would wait for the next sitting and be lost if another device
+  played the character first. It rides the same pause an edit is written on, so a burst of typing
+  is one send, and it is skipped while a run of that character is being sent — those batches are
+  already carrying the character (`runIsBeingSent` in `streaming.ts`).
 * **The sequence** is the site's count of the batches of a sitting, and the server holds a stretch
   under its sequence. A batch whose answer was lost is sent again under the same number holding
   the same keys, so the server recognises it rather than playing it twice, and everything played
