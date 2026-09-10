@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { DatabaseSync } from 'node:sqlite';
 import type { ServerConfig } from './config';
+import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './boards';
 import { writeCorsHeaders } from './cors';
 import { openEngineStore, shortCommit } from './engines';
 import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor } from './players';
@@ -25,6 +26,7 @@ const NO_SUCH_SITTING = 'That run has no such sitting.';
 const CHANGED_RESEND = 'That stretch of the run arrived before, holding something else.';
 const NO_SUCH_RUN = 'No such run.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
+const NOT_A_PAGE = 'That is not a page of a board.';
 
 /** A players request carries a field or two, so anything longer than this is not one. */
 const MOST_BODY_BYTES = 1024;
@@ -57,7 +59,8 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync): S
     }
 
     // A request line carries only the path, so parsing it needs a base; this one goes nowhere.
-    const path = new URL(request.url ?? '/', 'http://run-server').pathname;
+    const asked = new URL(request.url ?? '/', 'http://run-server');
+    const path = asked.pathname;
 
     if (request.method === 'GET' && path === '/health') {
       // The engines kept are what a run older than this build is replayed with, so a deploy is
@@ -86,6 +89,19 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync): S
       return;
     }
 
+    const board = path.match(/^\/boards\/([^/]+)\/([^/]+)\/([^/]+)$/);
+    if (request.method === 'GET' && board !== null) {
+      sendBoard(
+        response,
+        database,
+        decodeURIComponent(board[1]),
+        decodeURIComponent(board[2]),
+        decodeURIComponent(board[3]),
+        asked.searchParams.get('page'),
+      );
+      return;
+    }
+
     const run = path.match(/^\/runs\/([^/]+)$/);
     if (request.method === 'GET' && run !== null) {
       sendRun(request, response, database, decodeURIComponent(run[1]));
@@ -94,6 +110,43 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync): S
 
     sendJson(response, 404, { error: `No such endpoint: ${path}` });
   });
+}
+
+/**
+ * One page of one board.
+ *
+ * The three parts of the path are a board there is: a game the site plays, one of faithful and
+ * speedrun, and one of the six boards. Anything else is not a board that exists rather than a
+ * board with nothing on it, so it is a 404 and not an empty page. The rules about which runs
+ * stand on a board and in what order are `server/boards.ts`.
+ */
+function sendBoard(
+  response: ServerResponse,
+  database: DatabaseSync,
+  game: string,
+  leaderboard: string,
+  board: string,
+  asked: string | null,
+): void {
+  if (!isBoardGame(game) || !isBoardLeaderboard(leaderboard) || !isBoardName(board)) {
+    sendJson(response, 404, { error: `No such board: ${game}/${leaderboard}/${board}` });
+    return;
+  }
+  const page = pageAsked(asked);
+  if (page === null) {
+    sendJson(response, 400, { error: NOT_A_PAGE });
+    return;
+  }
+  sendJson(response, 200, boardPage(database, { game, leaderboard, board, page }));
+}
+
+/** Which page of a board was asked for, counting from one, or null when the query names
+ *  something that is not a page. A request that names none is asking for the first. */
+function pageAsked(asked: string | null): number | null {
+  if (asked === null) return 1;
+  if (!/^[0-9]{1,6}$/.test(asked)) return null;
+  const page = Number(asked);
+  return page >= 1 ? page : null;
 }
 
 function sendMyName(response: ServerResponse, database: DatabaseSync, secret: string | null): void {
