@@ -1,6 +1,7 @@
 import { HINT, loadHBin } from './hints';
 import { playMwDeath } from './sound';
 import type { MwGame } from './state';
+import { mwMonsterSeen } from './state';
 
 /**
  * Going up a level, going down one, and what happens when the hit points run out.
@@ -178,6 +179,10 @@ const DEAD_HP = -100;
 export function die(game: MwGame): MwDeath {
   playMwDeath(game);
   const pc = game.pc;
+  // The monster being fought is what killed the character, and there is none where a poison, a
+  // disease or one of the two spells that cost hit points finished them.
+  const killer = game.engaged === -1 ? null : mwMonsterSeen(game, game.engaged);
+  game.events.push({ kind: 'died', monster: killer, floor: pc.floor, dungeon: pc.dungeon });
   if (pc.returnX === -1) {
     game.events.push({ kind: 'characterFilesDeleted', slot: game.slot });
     pc.hp = DEAD_HP;
@@ -195,6 +200,7 @@ export function die(game: MwGame): MwDeath {
     game.events.push({ kind: 'characterFilesDeleted', slot: game.slot });
   }
   pc.dungeon = pc.returnDungeon;
+  game.events.push({ kind: 'raised', dungeon: pc.dungeon });
   pc.returnX = -1;
   game.engaged = -1;
   game.redrawView = true;

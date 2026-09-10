@@ -20,6 +20,7 @@ import {
   MW_SQUARE_PLAYER,
   mwClearMessageLine,
   mwMessageLine,
+  mwMonsterSeen,
   mwOccupantAt,
   mwSetOccupant,
 } from './state';
@@ -232,6 +233,13 @@ function puffball(game: MwGame, slot: number): number {
   const monster = game.monsters[slot];
   const amount = MONSTERS[monster.type].statDrain;
   const stat = puffballStat(game, amount);
+  // The monster is read before its slot is emptied below, which is what the journal names it by.
+  game.events.push({
+    kind: 'statChanged',
+    stat,
+    by: amount < 0 ? -1 : 1,
+    monster: mwMonsterSeen(game, slot),
+  });
   game.eraseScreen();
   // DS:276e / DS:2784, after the characteristic's own name
   const said = stat + (amount < 0 ? ' DRAINED BY PUFFBALL!' : ' RAISED BY PUFFBALL!');
@@ -254,6 +262,13 @@ function puffball(game: MwGame, slot: number): number {
 }
 
 /**
+ * What a monster's breath weapon is called, by the byte its row carries: 1 fire, 2 ice, 3 acid,
+ * 4 green phlegm, 5 black slime (exe DS:27af 27b4 27b8 27bd 27ca). A monster with no breath
+ * weapon carries 0 and never breathes.
+ */
+export const MW_BREATH_NAMES = ['', 'FIRE', 'ICE', 'ACID', 'GREEN PHLEGM', 'BLACK SLIME'];
+
+/**
  * The breath half of monster_turn (WORLD.EXE 2000:615c, mw.c "monster_turn"): half the time, a
  * monster whose row names a breath weapon breathes it instead of swinging, and the damage worked
  * out above is thrown away for `depth + random(depth)`, halved by the matching resistance.
@@ -266,13 +281,8 @@ function breathe(game: MwGame, slot: number): number {
   const monster = game.monsters[slot];
   const breath = MONSTERS[monster.type].breath;
   const lines = ['', '', '', '', '', '', '', ''];
-  // DS:2799, then DS:27af 27b4 27b8 27bd 27ca for the five kinds
-  lines[0] = 'THE MONSTER BREATHES ';
-  if (breath === 1) lines[0] += 'FIRE';
-  if (breath === 2) lines[0] += 'ICE';
-  if (breath === 3) lines[0] += 'ACID';
-  if (breath === 4) lines[0] += 'GREEN PHLEGM';
-  if (breath === 5) lines[0] += 'BLACK SLIME';
+  // DS:2799, then the five of MW_BREATH_NAMES
+  lines[0] = 'THE MONSTER BREATHES ' + (MW_BREATH_NAMES[breath] ?? '');
   let damage = monster.depth + game.rng.random(monster.depth);
   if (breath === 1 && pc.antiFireTimer > 0) damage = Math.trunc(damage / 2);
   if (breath === 2 && pc.antiColdTimer > 0) damage = Math.trunc(damage / 2);
@@ -292,6 +302,7 @@ function breathe(game: MwGame, slot: number): number {
   if (breath === 4 && pc.resistDiseaseTimer < 1) {
     if (pc.diseaseTimer < 1) pc.diseaseTimer = AFFLICTION_MOVES;
     game.events.push({ kind: 'playerSaved' });
+    game.events.push({ kind: 'afflicted', what: 'disease', monster: mwMonsterSeen(game, slot) });
     // DS:283e 285b
     lines[3] = 'YOU FEEL VERY SICK. YOU NEED';
     lines[4] = '  A CURE DISEASE SPELL.';
@@ -299,6 +310,7 @@ function breathe(game: MwGame, slot: number): number {
   if (breath === 5 && pc.resistPoisonTimer < 1) {
     if (pc.poisonTimer < 1) pc.poisonTimer = AFFLICTION_MOVES;
     game.events.push({ kind: 'playerSaved' });
+    game.events.push({ kind: 'afflicted', what: 'poison', monster: mwMonsterSeen(game, slot) });
     // DS:2873 288e
     lines[3] = 'YOU FEEL KIND OF WEAK. YOU';
     lines[4] = '  MIGHT GET A CURE POISON.';
@@ -330,6 +342,12 @@ function drainsAndAilments(game: MwGame, slot: number): string {
     pc.exp = experienceNeeded(pc.lev - 1);
     for (let lost = 0; lost < kind.levelDrain; lost++) goDownLevel(game);
     game.events.push({ kind: 'playerSaved' });
+    game.events.push({
+      kind: 'levelLost',
+      levels: kind.levelDrain,
+      level: pc.lev,
+      monster: mwMonsterSeen(game, slot),
+    });
     // DS:28c5 with the count, then DS:28da or DS:28d1
     const lost = `  YOU LOSE ${kind.levelDrain}` + (kind.levelDrain < 2 ? ' LEVEL!' : ' LEVELS!');
     // DS:28e2, the line above, an empty line, DS:28ff
@@ -341,6 +359,13 @@ function drainsAndAilments(game: MwGame, slot: number): string {
     // DS:290b / DS:291e, after the characteristic's own name
     buffer = stat + (kind.statDrain < 0 ? ' HAS BEEN DRAINED!' : ' HAS BEEN RAISED!');
     game.events.push({ kind: 'playerSaved' });
+    // Every one of the twelve values in the table moves its characteristic by exactly a point.
+    game.events.push({
+      kind: 'statChanged',
+      stat,
+      by: kind.statDrain < 0 ? -1 : 1,
+      monster: mwMonsterSeen(game, slot),
+    });
     game.say(buffer);
   }
   if (kind.kind !== 0) {
@@ -359,6 +384,7 @@ function drainsAndAilments(game: MwGame, slot: number): string {
         'HIT ANY KEY',
       );
       if (pc.poisonTimer < 1) pc.poisonTimer = AFFLICTION_MOVES;
+      game.events.push({ kind: 'afflicted', what: 'poison', monster: mwMonsterSeen(game, slot) });
     }
     if (kind.kind === DISEASES && pc.resistDiseaseTimer < 1) {
       // DS:29ad 29c6 29d1 296b 29ec 29a4, an empty line, DS:28ff
@@ -373,6 +399,7 @@ function drainsAndAilments(game: MwGame, slot: number): string {
         'HIT ANY KEY',
       );
       if (pc.diseaseTimer < 1) pc.diseaseTimer = AFFLICTION_MOVES;
+      game.events.push({ kind: 'afflicted', what: 'disease', monster: mwMonsterSeen(game, slot) });
     }
   }
   return buffer;
@@ -449,7 +476,9 @@ export function monsterTurn(game: MwGame, slot: number): number {
   if (pc.lev === 0 && damage > 4) damage = game.rng.random(4) + 1;
   // Random(2) is only rolled for a monster that has a breath weapon, so a monster without one
   // costs the sequence nothing here.
+  let breathed: number | null = null;
   if (kind.breath !== 0 && game.rng.random(2) !== 0) {
+    breathed = kind.breath;
     damage = breathe(game, slot);
   } else {
     game.eraseScreen();
@@ -469,6 +498,7 @@ export function monsterTurn(game: MwGame, slot: number): number {
     game.delay(damage < 1 ? MONSTER_MISS_MS : MONSTER_HIT_MS);
   }
   if (damage > 0) pc.hp -= damage;
+  game.events.push({ kind: 'hit', monster: mwMonsterSeen(game, slot), damage, breath: breathed });
   return damage;
 }
 
@@ -710,6 +740,7 @@ export function attackTiming(game: MwGame): number {
     // The original also aims the pointer at DS:cd28 at this monster's hit points, which is what
     // strike writes its damage through.
     game.engaged = slot;
+    if (slot !== -1) game.events.push({ kind: 'met', monster: mwMonsterSeen(game, slot), slot });
     if (winsFirstMove(game)) {
       const start = game.rng.random(pc.dex);
       if (game.engaged !== -1) game.monsterTimers[game.engaged] = start;
@@ -794,10 +825,20 @@ export function spendTime(game: MwGame, moves: number): void {
 export function swing(game: MwGame): void {
   const pc = game.pc;
   if (game.engaged === -1) return;
+  // The monster is read before the swing, since the time it spends afterwards gives whatever is
+  // standing beside the character its own turns.
+  const monster = mwMonsterSeen(game, game.engaged);
   game.lastStrikeDamage = strike(game);
   spendTime(game, WEAPONS[pc.weapon].swingTime);
   if (85 - pc.dex > 1) spendTime(game, Math.trunc((85 - pc.dex) / 5));
-  game.events.push({ kind: 'swung' });
+  // The name is the weapon in hand, which is what a Power Weapon spell swings the damage die of
+  // without replacing.
+  game.events.push({
+    kind: 'swung',
+    weapon: WEAPONS[pc.weapon].name,
+    monster,
+    damage: game.lastStrikeDamage,
+  });
 }
 
 /**
@@ -1139,7 +1180,12 @@ export function monsterKilled(game: MwGame, choices: MwKillChoices): void {
     game.draw(mwMessageLine('YOU KILLED IT!', KILL_MESSAGE_COLOUR)); // DS:678d
     game.delay(KILLED_IT_MS);
   }
-  pc.exp += experienceForKill(game, slot);
+  // The monster and what it was worth are read before the slot is emptied below, which is where
+  // every loot roll after this reads a depth of zero.
+  const seen = mwMonsterSeen(game, slot);
+  const experience = experienceForKill(game, slot);
+  pc.exp += experience;
+  game.events.push({ kind: 'killed', monster: seen, experience });
   if (kind.levelDrain > 0) levelDrainerExtras(game);
   mwSetOccupant(game, monster.x, monster.y, MW_SQUARE_EMPTY);
   monster.x = 100;

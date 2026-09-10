@@ -132,6 +132,8 @@ describe('die', () => {
     expect(game.engaged).toBe(-1);
     expect(game.recenterMap).toBe(true);
     expect(game.events).toEqual([
+      { kind: 'died', monster: null, floor: 17, dungeon: 0 },
+      { kind: 'raised', dungeon: 0 },
       { kind: 'playerSaved' },
       { kind: 'hintShown', record: HINT.death },
       { kind: 'hintShown', record: HINT.raised },
@@ -150,7 +152,7 @@ describe('die', () => {
     const game = newMwGame({ pc: { dungeon: 42, returnDungeon: 0, returnX: 1, returnY: 1 } });
     die(game);
     expect(game.pc.dungeon).toBe(0);
-    expect(game.events[0]).toEqual({ kind: 'characterFilesDeleted', slot: 0 });
+    expect(game.events[1]).toEqual({ kind: 'characterFilesDeleted', slot: 0 });
   });
 
   it('marks the character dead without a contract and leaves the record at -100', () => {
@@ -158,6 +160,7 @@ describe('die', () => {
     expect(die(game)).toBe('dead');
     expect(game.pc.hp).toBe(-100);
     expect(game.events).toEqual([
+      { kind: 'died', monster: null, floor: 0, dungeon: 0 },
       { kind: 'characterFilesDeleted', slot: 3 },
       { kind: 'hintShown', record: HINT.death },
       { kind: 'hintShown', record: HINT.noContract },
