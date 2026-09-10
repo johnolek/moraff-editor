@@ -112,9 +112,10 @@ export interface CastEvent {
 /**
  * One action, as a game's ported functions push it.
  *
- * A cast says which spell it was; every other kind carries its own kind and nothing else, and
- * MORF-361 is what gives those the damage, the names and the counts a run journal reads out in
- * words.
+ * A cast says which spell it was, and the rest carry their own kind and nothing else. A game
+ * whose journal has been grown pushes the richer shapes of `src/lib/game/journal-events.ts`
+ * instead, which carry the same kinds with the damage, the names and the numbers on them; the
+ * counting reads the kind either way.
  */
 export type ActionEvent = { kind: Exclude<ActionKind, 'cast'> } | CastEvent;
 

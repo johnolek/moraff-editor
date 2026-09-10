@@ -556,6 +556,7 @@ export const BOSS_OFFICE_TEXT = { x: 400, font: 2, colour: 15, rows: [0x1e, 0xbe
  */
 export function readBossOfficeMessage(game: Game, tablet: number): string[] {
   const pc = game.pc;
+  game.events.push({ kind: 'tabletRead', entry: tablet, section: sectionNumber(pc.module, pc.level) });
   const lines = tabletMessage(tablet);
   game.say(...lines);
   const name = game.monsterKinds[22].name;

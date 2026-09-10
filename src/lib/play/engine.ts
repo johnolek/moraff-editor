@@ -744,6 +744,7 @@ function greetTheTown(session: GameSession): void {
   if (session.game.pc.level !== 0) return;
   const tablet = townTablet(session.game.pc.deepestFloor);
   if (tablet === null) return;
+  session.game.events.push({ kind: 'tabletRead', entry: tablet, section: null });
   session.game.tablet(...tabletMessage(tablet));
 }
 

@@ -18,6 +18,7 @@ export function hintOnFloor(game: Game): void {
   skipTheNextTick(game);
   const hint = hintOnArrival(game.pc.module, game.pc.level, game.pc.objective[game.pc.module], game.rng);
   if (hint === null) return;
+  game.events.push({ kind: 'hintRead', hint });
   showHint(game, hint);
   game.pressAnyKey();
 }

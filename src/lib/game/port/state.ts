@@ -1,5 +1,4 @@
 import data from '../dotu-data.json';
-import type { ActionEvent } from '../action';
 import type { JournalEvent, MonsterSeen } from '../journal-events';
 import { BRIGHT_COLOURS } from '../dotu-pic.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX, HEIGHT, WIDTH } from '../unfmap.js';
@@ -422,8 +421,6 @@ export type GameEvent =
   | { kind: 'hintRead'; hint: number }
   /** bank (exe 2000:568b), menu entry 1: Greater-American Dollars changed into rubles. */
   | { kind: 'dollarsChanged'; dollars: number; rubles: number }
-  /** One of the things a run counts, pushed where the game does it (`src/lib/game/action.ts`). */
-  | ActionEvent
   /** One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
    *  where the kinds a run counts as actions carry their numbers. */
   | JournalEvent;
