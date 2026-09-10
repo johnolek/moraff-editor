@@ -1,19 +1,20 @@
 import type { Leaderboard, PortedGameId } from '../app-state.svelte';
 import { runServerUrl } from '../run-server';
-// The three shapes the server answers with, and nothing but the shapes: these are types, so none
-// of the server's code comes along with them.
+// The shapes the server answers with, and nothing but the shapes: these are types, so none of the
+// server's code comes along with them.
 import type { Announcement } from '../../../server/announcing';
 import type { BoardName, BoardPage, BoardRow, LivingPage, LivingRow, LivingSort } from '../../../server/boards';
+import type { EveryoneAnswer, EveryoneRow } from '../../../server/everyone';
 import type { RunAnswer } from '../../../server/http';
 
 /**
  * Reading the boards, the runs and the announcements off the run server.
  *
  * Everything here is one round trip and a shape the page can draw: a page of a board, a page of
- * the living, the page after either added to what is already shown, one run, and a page of the
- * history. A call that could not be made comes back as what the page already had with `failed` on
- * it, so a board that is showing stays on screen while the server is unreachable and the page
- * says so.
+ * the living, the page after either added to what is already shown, everyone of one game, one
+ * run, and a page of the history. A call that could not be made comes back as what the page
+ * already had with `failed` on it, so a board that is showing stays on screen while the server is
+ * unreachable and the page says so.
  *
  * A build with no server address has no boards at all, and the tab is not offered
  * (`src/lib/tabs.ts`); nothing here is called in such a build.
@@ -92,6 +93,23 @@ async function readLivingPage(asked: LivingAsked, page: number): Promise<LivingP
   return await readJson<LivingPage>(
     `/boards/${asked.game}/${asked.leaderboard}/living?sort=${asked.sort}&page=${page}`,
   );
+}
+
+/** Everyone of one game as the page holds it. There is no paging: the whole table comes at once,
+ *  since the reader sorts it themselves. */
+export interface LoadedEveryone {
+  rows: EveryoneRow[];
+  failed: boolean;
+}
+
+/** Nobody read yet, which is what the table starts from and goes back to when the game changes. */
+export const NO_EVERYONE: LoadedEveryone = { rows: [], failed: false };
+
+/** Every character of one game the server has checked, whatever has become of it. */
+export async function loadEveryone(game: PortedGameId): Promise<LoadedEveryone> {
+  const table = await readJson<EveryoneAnswer>(`/boards/${game}/everyone`);
+  if (table === null) return { rows: [], failed: true };
+  return { rows: table.rows, failed: false };
 }
 
 /** One run and the verdict on it, or nothing when it could not be read. A run is only opened from

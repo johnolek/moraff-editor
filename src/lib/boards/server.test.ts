@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { BoardRow, LivingRow } from '../../../server/boards';
+import type { EveryoneRow } from '../../../server/everyone';
 import {
   loadAnnouncements,
   loadBoard,
+  loadEveryone,
   loadLiving,
   loadMore,
   loadMoreLiving,
@@ -43,6 +45,25 @@ function livingRow(name: string): LivingRow {
     clock: 30,
     playing: true,
     heardAt: '2026-09-09 21:00:00',
+  };
+}
+
+function everyoneRow(name: string): EveryoneRow {
+  return {
+    characterId: name,
+    player: 'Moraff',
+    name,
+    leaderboard: 'speedrun',
+    status: 'alive',
+    playing: false,
+    level: 7,
+    deepest: 2,
+    actions: 100,
+    clock: 30,
+    playMs: 0,
+    timed: false,
+    at: '2026-09-09 21:00:00',
+    now: { cls: 'Sage', hp: 40, maxHp: 55, stats: [18, 21, 16, 14, 12, 7] },
   };
 }
 
@@ -143,6 +164,24 @@ describe('reading a board of the living', () => {
     answering('unreachable');
 
     expect(await loadLiving(ALIVE)).toEqual({ rows: [], page: 0, more: false, failed: true });
+  });
+});
+
+describe('reading everyone', () => {
+  it('asks for the whole table of that game', async () => {
+    const server = answering({ game: 'unforgiven', rows: [everyoneRow('Grond'), everyoneRow('Thok')] });
+
+    const table = await loadEveryone('unforgiven');
+
+    expect(server.asked).toEqual(['https://runs.example.com/boards/unforgiven/everyone']);
+    expect(table.rows.map((each) => each.name)).toEqual(['Grond', 'Thok']);
+    expect(table.failed).toBe(false);
+  });
+
+  it('has nothing to show and says so when the server cannot be reached', async () => {
+    answering('unreachable');
+
+    expect(await loadEveryone('unforgiven')).toEqual({ rows: [], failed: true });
   });
 });
 
