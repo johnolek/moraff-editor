@@ -255,3 +255,23 @@
   font-size: 11px;
   line-height: 1.4;
 }
+
+/* Whether the run is reaching the run server, and the verdict on it once it has ended. */
+.play .run-mark {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.play .run-mark.good {
+  color: var(--good);
+}
+.play .run-mark.bad {
+  color: var(--warn);
+}
+.play .run-mark .why {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}

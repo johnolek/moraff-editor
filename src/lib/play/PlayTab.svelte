@@ -9,7 +9,7 @@
 -->
 <script lang="ts" generics="View extends PlayViewBase, Session extends PlaySession<View>">
   import type { Snippet } from 'svelte';
-  import { untrack } from 'svelte';
+  import { onDestroy, untrack } from 'svelte';
   import { app, currentEntry, entryById, type Leaderboard } from '../app-state.svelte';
   import { leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
   import type FloorCanvas from '../map/FloorCanvas.svelte';
@@ -23,6 +23,7 @@
   import { runPlayLoop } from './loop';
   import PlayRoster from './PlayRoster.svelte';
   import ScreenSwitch from './ScreenSwitch.svelte';
+  import { streamedSession, streamRun, type RunMark, type RunStreamer } from './streaming';
   import { actionWords, lastMilestones, milestoneNote, milestoneWords, runLogOf, RUN_GAMES } from './run';
   import {
     colourblindFilter,
@@ -102,6 +103,10 @@
   /** The mode this game is being played in: the board's for a locked character, and the one the
    *  radios were left on for any other. */
   const mode = $derived<PlayMode>(lock ?? chosenMode);
+  /** The run being sent to the run server as it is played, and what to say about it. A build
+   *  given no server address has neither. */
+  let streamer = $state.raw<RunStreamer | null>(null);
+  let runMark = $state.raw<RunMark | null>(null);
   let display = $state<PlayDisplay>(untrack(() => readPlayDisplay(game.id)));
   let colourblind = $state(untrack(() => readPlayColourblind(game.id)));
   let redraw = $state(untrack(() => readPlayRedraw(game.id)));
@@ -115,6 +120,10 @@
   function start() {
     const entry = currentEntry();
     if (!entry) return;
+    // Where this game comes in the character's run, taken before it starts: the roster entry gains
+    // this sitting as soon as a key is pressed.
+    const at = entry.run.length;
+    const earlier = [...entry.run];
     const started = game.start(entry, sound);
     started.onChange = () => (view = started.view());
     centredFloor = null;
@@ -122,6 +131,16 @@
     playingId = entry.id;
     lock = entry.leaderboard;
     view = started.view();
+    runMark = null;
+    if (started.run) {
+      streamer = streamRun({
+        characterId: entry.id,
+        session: streamedSession(started.run, at),
+        earlier,
+        mode: () => mode,
+        onMark: (mark) => (runMark = mark),
+      });
+    }
     void runPlayLoop(started, game.loop(started));
   }
 
@@ -169,11 +188,29 @@
 
   function leave() {
     session?.finish();
+    streamer?.stop();
+    streamer = null;
+    runMark = null;
     session = null;
     playingId = null;
     lock = null;
     view = null;
   }
+
+  /** A tab closed or switched away from leaves whatever was played last unsent otherwise. */
+  onDestroy(() => streamer?.stop());
+
+  /** The end of a run, which is a death or a win: the last batch goes and the server replays the
+   *  whole chain. Quitting is not an end -- the character is played again from where it stood. */
+  $effect(() => {
+    const showing = view;
+    const playing = session;
+    if (!showing || !playing?.run) return;
+    // This sitting's own milestones rather than the whole chain's: a character that won and is
+    // being played again has a win behind it, and that run ended when it was reached.
+    const won = playing.run.milestones.some((milestone) => milestone.kind === 'win');
+    if (showing.dead || won) untrack(() => streamer?.ended());
+  });
 
   /** The mode belongs to the tab; the session carries it so that anything keeping a record of
    *  the run can say which mode it was played in. */
@@ -379,6 +416,14 @@
           {/if}
           {@render afterModes(stage)}
         </div>
+        {#if runMark}
+          <div class="run-mark {runMark.tone}" role="status">
+            <span>{runMark.words}</span>
+            {#if runMark.note}
+              <span class="why">{runMark.note}</span>
+            {/if}
+          </div>
+        {/if}
         <BoardName />
         {@render sideFoot?.(stage)}
       </aside>
