@@ -2,8 +2,8 @@
 
 One Node process that answers HTTP on a port, keeps everything in one SQLite
 file, and allows the site's origin. So far it answers `GET /health`, the two
-players endpoints and the two runs endpoints below; the leaderboards and the
-feed are the rest of
+players endpoints, the two runs endpoints and the boards below; the feed is the
+rest of
 [MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
 
 It lives in this repository so one commit is one engine build: the code that
@@ -82,7 +82,7 @@ how long the run took, and the stamps are an answer the server owns.
 | Endpoint                      | What it does                                                     |
 | ----------------------------- | ---------------------------------------------------------------- |
 | `POST /runs/:id/batches`      | Takes one stretch of a run. 200 with `{ "received": <sequence> }`, 403 when the device has claimed no name, 409 when the character belongs to another player or a sequence comes back holding another stretch, 400 when the body is not a batch or names a sitting the server was never told about. |
-| `GET /runs/:id`               | The character, how it ended, and the verdict on it. A verified run is anybody's to read; one still being played, one that failed and one that could not be checked take the secret of the player whose run it is. 404 when nothing has been played under that id. |
+| `GET /runs/:id`               | The character, who played it, the sittings it was played in with the engine build each names, how it ended, and the verdict on it with the milestones the replay reached. A verified run is anybody's to read; one still being played, one that failed and one that could not be checked take the secret of the player whose run it is. 404 when nothing has been played under that id. |
 
 `:id` is the id of a roster entry in somebody's browser. The character is made
 known by its first batch and belongs to the player whose secret sent it, so
@@ -139,6 +139,54 @@ happened. A run any sitting of which names an engine not kept
 here is unverifiable rather than failed. `eligible` is whether the run may go on
 a board at all: verified, and with no record ever written into the character
 from outside the game.
+
+## The boards
+
+| Endpoint                               | What it does                                      |
+| -------------------------------------- | ------------------------------------------------- |
+| `GET /boards/:game/:leaderboard/:board` | One page of one board, fifty runs to a page. `?page=` for the ones after the first, counting from one. 404 when the three parts do not name a board there is, 400 when `page` is not a page number. |
+
+`:game` is `unforgiven`, `moraffsWorld` or `revenge`; `:leaderboard` is
+`faithful` or `speedrun`. A path that names anything else is a 404 rather than
+an empty board, since a board with nothing on it means nobody has played it yet
+and that is a different answer.
+
+`:board` is one of six, and `server/boards.ts` is where the rules about them
+live, so that the site can name them the same way when it draws them:
+
+| Board     | What stands on it                                   |
+| --------- | --------------------------------------------------- |
+| `actions` | Wins, fewest actions first                          |
+| `clock`   | Wins, least on the game's own clock first           |
+| `wall`    | Wins, least time played first                       |
+| `deepest` | Every run, furthest first, then fewest actions      |
+| `level`   | Every run, highest level first, then fewest actions |
+| `deaths`  | Deaths, newest first                                |
+
+Faithful and speedrun are never mixed: they are different games to play, so
+runs of one say nothing about runs of the other. A run's board is the one its
+character was rolled for and locked to for life, and a character rolled for no
+board is on none of them. Only a run that came out verified with no record
+written into it from outside the game is on a board at all, which is what
+`eligible` on its verdict says.
+
+Every board's rows are the same shape — the player's name and the character's,
+the actions, the game's clock, the play time and whether it may be believed,
+how far the run got, the highest level it reached, how it ended and when — and
+the board says which of those it was put in order of. Two runs with the same
+number stand in the order they were played.
+
+`wall` holds only a run the server watched: one played with the server
+unreachable and sent afterwards comes to no play time at all, and would
+otherwise top a board of the fastest wins with a run nobody timed.
+
+How far a run got is not the same number in all three games. Moraff's Revenge
+has one dungeon and seventy floors of it, so a run of it is measured by the
+floor the character stood on; the other two are measured by the module or the
+dungeon reached, and a run that never left the one it started in stands at 0,
+which is Module I and the town. The highest level is the highest a run levelled
+to, and a character that never gained a level stands at 0: what it was rolled
+at is no part of the run.
 
 ## Engine builds
 
