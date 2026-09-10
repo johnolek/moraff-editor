@@ -57,7 +57,7 @@ function reportLines(verdict: RunVerdict): string[] {
  * been written yet has none, and there is nothing to say.
  */
 function summaryOfTheRun(verdict: RunVerdict, names: SummaryNames): string[] {
-  const journal = verdict.journal ?? [];
+  const journal = verdict.journal;
   if (journal.length === 0) return [];
   const totals = verdict.replayed ?? verdict.claimed;
   const summary = summarizeJournal(journal, totals);

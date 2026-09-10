@@ -154,6 +154,7 @@ function fakeEngines(verdictFor: (log: RunLog) => Partial<RunVerdict>): EngineSt
                     engine: { played: [ENGINE], build: ENGINE },
                     claimed: { actions: 0, time: 0, milestones: [] },
                     replayed: { actions: 12, time: 30, milestones: [] },
+                    journal: [],
                     ending: null,
                     ...verdictFor(log),
                   } as RunVerdict),

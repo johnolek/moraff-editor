@@ -294,6 +294,8 @@ async function replaySittingBySitting(
       // part-way is caught inside the build and comes back as a verdict of its own.
       return unverifiable(log, `The engine build ${shortCommit(session.engine)} stopped: ${whatStoppedIt(thrown)}`);
     }
+    // A build kept from a commit older than the run journal hands back a sitting with none.
+    verdict.journal.push(...(checked.journal ?? []));
     if (checked.totals !== null) verdict.replayed = checked.totals;
     if (checked.ending !== null) verdict.ending = checked.ending;
     if (checked.status !== 'verified') {
@@ -328,6 +330,7 @@ function verdictOf(log: RunLog, build: string): RunVerdict {
     engine: { played: [...new Set(log.sessions.map((session) => session.engine))], build },
     claimed: { actions: newest.actions, time: newest.time, milestones: [] },
     replayed: null,
+    journal: [],
     ending: null,
   };
 }

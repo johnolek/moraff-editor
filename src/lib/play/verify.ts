@@ -82,10 +82,10 @@ export interface RunVerdict {
    *
    * It is what the run was rather than whether it is honest, and it is the replay's rather than
    * the log's: the log carries no journal, and a replay writing the same one is the point of
-   * keeping it out of the log. A game whose journal has not been written yet has none, and so
-   * does a verdict reached without a replay having been run at all.
+   * keeping it out of the log. It is empty for a game whose journal has not been written yet,
+   * and for a verdict reached without a replay having been run at all.
    */
-  journal?: JournalEntry[];
+  journal: JournalEntry[];
   /** Where the last replayed session ended. */
   ending: RunEnding | null;
 }
@@ -239,7 +239,7 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
     const note = whatToSayAboutTheEngine(engine, ENGINE_COMMIT);
     if (note !== null && !verdict.notes.includes(note)) verdict.notes.push(note);
   }
-  const journal = verdict.journal ?? [];
+  const journal = verdict.journal;
   let before: RunTotals = { actions: 0, time: 0, milestones: [] };
   let after: Uint8Array | null = null;
   for (const [at, session] of sessions.entries()) {

@@ -309,6 +309,7 @@ describe('a run that went the whole way through the verifier', () => {
                   { kind: 'win', which: 0, actions: 12, time: 30, floor: 2 },
                 ],
               },
+              journal: [],
               ending: null,
             } as RunVerdict),
         },
