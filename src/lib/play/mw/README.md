@@ -266,10 +266,10 @@ for Dungeons of the Unforgiven.
   is drawn rather than the squares walked, and debug alone marks every monster on it
   (`../mode.ts`).
 * **No `<slot>MON.MAP`.** The three floors of monsters live only as long as the tab is open.
-* **The `.DUN` files are a blob beside the roster entry.** The explored maps are written where
-  the original writes them — when the character crosses out of the 32 floors in memory, on the
-  way out through the gate, and on Q — and kept as `moraff-tools.maps.<entry>`, one bitmap per
-  floor in the game's own row bytes.
+* **The `.DUN` files are a row beside the character.** The explored maps are written where the
+  original writes them — when the character crosses out of the 32 floors in memory, on the way out
+  through the gate, and on Q — and kept in the `maps` store of the browser's database, keyed by
+  the character's id, one bitmap per floor in the game's own row bytes.
 * **The character file is the roster entry.** `save_player` writes the record back through the
   roster, which is the real 2,344-byte file, so a character can be downloaded and played on in
   DOS. Death writes nothing, which is what the original does short of deleting the file; the

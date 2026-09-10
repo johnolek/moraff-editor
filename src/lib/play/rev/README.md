@@ -248,9 +248,10 @@ Four things are this game's own:
   the town into every new character's `<n>.BIN` from a DATA statement of its own, and a character
   who has never been played here gets the same twenty rows. A character imported from a game
   folder brings their record but not their `.BIN`, so what they had walked in DOS is not here.
-* **The `.BIN` is a blob beside the roster entry.** The explored map is written where the original
-  writes it — on Q, and just before a chute drops the character — as the same BSAVE image, so it
-  reads back as the `<n>.BIN` it is. A death deletes it, which the original does too.
+* **The `.BIN` is a row beside the character.** The explored map is written where the original
+  writes it — on Q, and just before a chute drops the character — as the same BSAVE image written
+  base64 into the `maps` store of the browser's database, so it reads back as the `<n>.BIN` it is.
+  A death deletes it, which the original does too.
 * **The character file is the roster entry.** The save writes the real 340-number text record, so
   a character can be downloaded and played on in DOS. A death writes nothing; the roster marks the
   entry and keeps the bytes.

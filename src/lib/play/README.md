@@ -142,7 +142,8 @@ played, so that a claimed ending can be checked by playing it again rather than 
   it was reached. `RunRecorder` is handed what the run had come to `before` this session, and
   `runTotals` adds a chain up.
 * **Where it is kept** — on the roster entry (`RosterEntry.run`) in the page, in the browser's
-  database beside the record (`src/lib/character/roster-db.ts`), and, for a player who has claimed
+  database beside the record and the squares the character has discovered
+  (`src/lib/character/roster-db.ts`), and, for a player who has claimed
   a name, on the run server, which is what puts the roster on their other devices. A signed-in
   page merges the two at startup and the server's copy stands, except where this device holds keys
   the server has never been sent; `src/lib/character/server-roster.ts` is that rule and
@@ -293,7 +294,9 @@ half of this is `server/README.md`.
   another device picks it up from. The maps are left out of a batch whose maps are the ones the
   batch before it carried: they are by far the biggest thing on the wire and most keys change
   nothing about them. Where they are kept beside the character is
-  `src/lib/character/maps.ts`.
+  `src/lib/character/maps.ts`, which holds them in the page while the game is being played and
+  writes the row behind it, since a game in the middle of a turn has nothing to wait on a database
+  with.
 * **The sequence** is the site's count of the batches of a sitting, and the server holds a stretch
   under its sequence. A batch whose answer was lost is sent again under the same number holding
   the same keys, so the server recognises it rather than playing it twice, and everything played
@@ -790,12 +793,12 @@ only.
   character has discovered in faithful and every square in the other two modes.
 * **No `?MON.MAP`.** The original reads the floor a character is loaded onto out of their monster
   map file; a browser has none, so a floor is stocked afresh on arrival.
-* **The `.DUN` is a blob beside the roster entry.** The explored maps are written and read where
-  the original writes and reads them — when the character crosses out of the 32 floors in memory,
-  when the module changes, and on Q — so a death still loses everything learned since the last of
-  those, exactly as it does in DOS. What the browser keeps is `moraff-tools.maps.<entry>`, one
-  bitmap per floor in the game's own row bytes, so the Save Editor's download of the record is
-  still the record alone.
+* **The `.DUN` is a row beside the character.** The explored maps are written and read where the
+  original writes and reads them — when the character crosses out of the 32 floors in memory, when
+  the module changes, and on Q — so a death still loses everything learned since the last of
+  those, exactly as it does in DOS. What the browser keeps is a row of the `maps` store of its
+  database, keyed by the character's id, holding one bitmap per floor in the game's own row bytes,
+  so the Save Editor's download of the record is still the record alone.
 * **The character file is the roster entry.** `save_player` writes the record back through
   `CharacterFile.write`, which is the real 2,697-byte file with its checksum, so a character can
   be downloaded and played on in DOS. Death writes nothing, neither the record nor the map, which
