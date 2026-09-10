@@ -16,7 +16,6 @@ function row(over: Partial<EveryoneRow> & { name: string }): EveryoneRow {
   return {
     characterId: over.name,
     player: 'John',
-    name: over.name,
     leaderboard: 'speedrun',
     status: 'alive',
     playing: false,

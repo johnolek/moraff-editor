@@ -1,8 +1,9 @@
 import { GAME_CHOICES } from '../game-choice';
 import { isRunGame, RUN_GAMES } from '../play/run';
+import type { EveryoneStatus } from '../../../server/everyone';
 
 /**
- * Every word the two boards pages show, and the few turns of phrase they put a server's numbers
+ * Every word the boards pages show, and the few turns of phrase they put a server's numbers
  * into.
  *
  * It is all here so that changing what a heading or an empty state says is one file. What the
@@ -35,6 +36,36 @@ export const BOARDS_PAGE = {
   nothingAnnounced: 'Nothing has been announced yet.',
   announcementsUnreachable: 'The announcements are not answering.',
 };
+
+/**
+ * The table of everyone: the checkboxes over it, the headings it does not share with the boards,
+ * and what it says when there is nothing to show. The headings it does share — the player, the
+ * character, the level, how far, the actions, the play time — are `BOARDS_PAGE` above.
+ */
+export const EVERYONE = {
+  pick: 'Everyone',
+  showing: 'Show:',
+  onBoard: 'Board:',
+  ofClass: 'Class:',
+  alive: 'Alive',
+  dead: 'Dead',
+  won: 'Won',
+  playing: 'Playing now',
+  board: 'Board',
+  status: 'Status',
+  cls: 'Class',
+  hp: 'HP',
+  when: 'When',
+  empty: 'Nobody has a verified run in this game yet.',
+  filteredOut: 'Nothing matches those filters.',
+};
+
+/** What has become of one character. A character a device is playing at this moment is said to be
+ *  playing rather than alive, since that is the one row on the table still moving. */
+export function statusWords(status: EveryoneStatus, playing: boolean): string {
+  if (status === 'alive') return playing ? EVERYONE.playing : EVERYONE.alive;
+  return status === 'won' ? EVERYONE.won : EVERYONE.dead;
+}
 
 /** A run's own page, which a row on a board opens. */
 export const RUN_PAGE = {
