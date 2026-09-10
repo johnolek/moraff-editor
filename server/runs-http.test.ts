@@ -154,7 +154,10 @@ describe('streaming a run over HTTP', () => {
 
     expect(response.status).toBe(200);
     const run = await response.json();
-    expect(run).toMatchObject({ id: CHARACTER, game: 'unforgiven', name: 'Grond', sessions: 1, verdict: null });
+    expect(run).toMatchObject({ id: CHARACTER, game: 'unforgiven', name: 'Grond', player: 'John', verdict: null });
+    expect(run.sessions).toEqual([
+      { index: 0, engine: ENGINE, startedAt: '2026-09-09T12:00:00.000Z', actions: 2, time: 4 },
+    ]);
   });
 
   it('keeps an unchecked run to the player whose run it is', async () => {
@@ -172,6 +175,7 @@ describe('streaming a run over HTTP', () => {
     expect(run.outcome).toBe('death');
     expect(run.finishedAt).not.toBeNull();
     expect(run.verdict).toMatchObject({ status: 'verified', actions: 12, time: 30, eligible: true });
+    expect(run.verdict.milestones).toEqual([]);
   });
 
   it('says there is no such run for a character nobody has played here', async () => {
@@ -182,7 +186,11 @@ describe('streaming a run over HTTP', () => {
 
   /** The replay happens behind the answer to the last batch, so the run is asked for until the
    *  verdict is there, which is what the site does too. */
-  async function untilVerdict(): Promise<{ outcome: string; finishedAt: string; verdict: { status: string } }> {
+  async function untilVerdict(): Promise<{
+    outcome: string;
+    finishedAt: string;
+    verdict: { status: string; milestones: unknown[] };
+  }> {
     for (let tries = 0; tries < 50; tries++) {
       const response = await fetch(`${origin}/runs/${CHARACTER}`);
       if (response.status === 200) {

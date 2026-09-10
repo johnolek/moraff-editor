@@ -36,7 +36,8 @@ export interface KeptRun {
   finishedAt: string | null;
   outcome: string | null;
   playerId: number;
-  sessions: number;
+  /** The name the player who played it claimed on this server. */
+  player: string;
 }
 
 interface CharacterRow {
@@ -88,11 +89,13 @@ function characterRow(database: DatabaseSync, characterId: string): CharacterRow
 }
 
 export function runFor(database: DatabaseSync, characterId: string): KeptRun | null {
-  const row = characterRow(database, characterId);
-  if (row === null) return null;
-  const counted = database
-    .prepare('SELECT COUNT(*) AS sessions FROM sessions WHERE character_id = ?')
-    .get(characterId) as { sessions: number };
+  const row = database
+    .prepare(
+      `SELECT c.*, p.name AS player FROM characters c
+       JOIN players p ON p.id = c.player_id WHERE c.id = ?`,
+    )
+    .get(characterId) as (CharacterRow & { player: string }) | undefined;
+  if (row === undefined) return null;
   return {
     id: row.id,
     game: row.game,
@@ -102,7 +105,7 @@ export function runFor(database: DatabaseSync, characterId: string): KeptRun | n
     finishedAt: row.finished_at,
     outcome: row.outcome,
     playerId: row.player_id,
-    sessions: counted.sessions,
+    player: row.player,
   };
 }
 

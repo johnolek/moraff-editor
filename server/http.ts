@@ -5,7 +5,7 @@ import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './board
 import { writeCorsHeaders } from './cors';
 import { openEngineStore, shortCommit } from './engines';
 import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor } from './players';
-import { endRun, readRunBatch, runFor, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
+import { endRun, readRunBatch, runFor, sessionsOf, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
 import { createRunVerifier, verdictFor, type RunVerifier } from './verifying';
 
 /**
@@ -246,7 +246,9 @@ function wonOrDied(claims: BatchClaims): 'death' | 'win' {
 }
 
 /**
- * A run and the verdict on it.
+ * A run and the verdict on it, which is what a run's page is drawn from: who played it, the
+ * sittings it was played in and the engine build each of them names, and the verdict with the
+ * milestones the replay reached.
  *
  * A verified run is anybody's to read: it is what a board is made of and what an announcement
  * points at. A run still being played, or one that failed or could not be checked, is the
@@ -277,10 +279,19 @@ function sendRun(
     game: run.game,
     mode: run.mode,
     name: run.name,
+    player: run.player,
     createdAt: run.createdAt,
     finishedAt: run.finishedAt,
     outcome: run.outcome,
-    sessions: run.sessions,
+    // The keys and the record a sitting was replayed from are no part of a page about the run,
+    // so what goes out is when it was played, what it came to and the build that played it.
+    sessions: sessionsOf(database, characterId).map((session) => ({
+      index: session.sessionIndex,
+      engine: session.engine,
+      startedAt: session.startedAt,
+      actions: session.actions,
+      time: session.time,
+    })),
     verdict,
   });
 }

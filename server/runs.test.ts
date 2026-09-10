@@ -53,7 +53,7 @@ describe('taking the batches of a run', () => {
       name: 'Grond',
       finishedAt: null,
       outcome: null,
-      sessions: 1,
+      player: 'John',
     });
     expect(sessionsOf(database, CHARACTER)).toMatchObject([{ sessionIndex: 0, seed: 12345, record: 'AAEC' }]);
   });
