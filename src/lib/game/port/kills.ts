@@ -21,7 +21,7 @@ import { playDeath, playMonsterKilled } from './sound';
 import { checkGainLevel } from './levels';
 import { MESSAGE_LINE_Y, clearMessageLine, messageLine } from './screens';
 import type { Game } from './state';
-import { MAP_EMPTY, setMonsterMap } from './state';
+import { MAP_EMPTY, monsterSeen, setMonsterMap } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
 // the unpacked executable. The comment on each say call gives the address of every line it
@@ -313,7 +313,9 @@ export async function killMonster(game: Game): Promise<void> {
     game.delay(game.highSpeed ? KILLED_IT_MS_HIGH_SPEED : KILLED_IT_MS);
     clearMessageLine(game);
   }
-  pc.exp += expValue(game, slot);
+  const experience = expValue(game, slot);
+  pc.exp += experience;
+  game.events.push({ kind: 'killed', monster: monsterSeen(game, slot), experience });
   if (kind.levelDrain > 0) drainerBonus(game);
   setMonsterMap(game, monster.x, monster.y, MAP_EMPTY);
   monster.x = GARBAGE_CAN;
@@ -387,6 +389,10 @@ export async function killMonster(game: Game): Promise<void> {
  */
 export function playerDies(game: Game): void {
   playDeath(game);
+  // The monster being fought is what killed the character, and there is none where a poison or
+  // a disease finished them.
+  const killer = game.engaged === -1 ? null : monsterSeen(game, game.engaged);
+  game.events.push({ kind: 'died', monster: killer, floor: game.pc.level, dungeon: game.pc.module });
   game.pc.hp = -100;
   showHint(game, 26);
   showHint(game, 117 + game.rng.random(5));

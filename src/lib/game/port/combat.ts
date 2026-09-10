@@ -11,7 +11,7 @@ import {
 } from './screens';
 import { playBlowLanded, playBlowTaken } from './sound';
 import type { Game, ScreenLine } from './state';
-import { MAP_EMPTY, MAP_PLAYER, monsterAt, setMonsterMap } from './state';
+import { MAP_EMPTY, MAP_PLAYER, monsterAt, monsterSeen, setMonsterMap } from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
 // the unpacked executable. The comment on each printed line gives the address of every string it
@@ -330,10 +330,12 @@ function drainsAndAilments(game: Game, slot: number): void {
   const drain = kind.levelDrain;
   if ((drain < 0 || (drain !== 0 && pc.lev > 0)) && pc.resistDrainTimer < 1) {
     game.delay(DRAIN_MS);
+    let taken = 0;
     if (drain < 1) {
       // The amount taken is the float 30.0 at DS:14df, not the monster's own number, which is
       // only what the message prints. Every experience drainer in the game holds -30, so the
       // two agree by luck rather than by design.
+      taken = Math.min(pc.exp, 30);
       if (pc.exp <= 30) pc.exp = 0;
       else pc.exp -= 30;
     } else {
@@ -342,6 +344,8 @@ function drainsAndAilments(game: Game, slot: number): void {
       for (let i = 0; i < drain; i++) goDownLevel(game);
     }
     game.events.push({ kind: 'playerSaved' });
+    if (drain < 1) game.events.push({ kind: 'experienceDrained', experience: taken, monster: monsterSeen(game, slot) });
+    else game.events.push({ kind: 'levelLost', levels: drain, level: pc.lev, monster: monsterSeen(game, slot) });
     // DS:14e3, then DS:1500 for experience and DS:14f8 / DS:14ef for one level or several
     const lost =
       drain < 1
@@ -473,7 +477,9 @@ export function defend(game: Game, slot: number): number {
   if (pc.lev < 3 && damage > 6) damage = Math.trunc(damage / 2);
   // Random(2) is only rolled for a monster that has a breath weapon, so a monster without one
   // costs the sequence nothing here.
+  let breathed: number | null = null;
   if (kind.breath !== 0 && game.rng.random(2) !== 0) {
+    breathed = kind.breath;
     damage = breathe(game, slot);
   } else {
     // FUN_2000_28be (exe 2000:28be): the strip the line is about to go on.
@@ -496,6 +502,7 @@ export function defend(game: Game, slot: number): number {
     }
   }
   if (damage > 0) pc.hp -= damage;
+  game.events.push({ kind: 'hit', monster: monsterSeen(game, slot), damage, breath: breathed });
   return damage;
 }
 
@@ -608,6 +615,7 @@ export function attackTiming(game: Game): number {
   }
   if (slot !== game.engaged) {
     game.engaged = slot;
+    if (slot !== -1) game.events.push({ kind: 'met', monster: monsterSeen(game, slot), slot });
     // The original also aims the pointer at DS:c64b at this monster's hit points, which is what
     // strike writes its damage through.
     if (

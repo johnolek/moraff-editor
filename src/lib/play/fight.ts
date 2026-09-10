@@ -1,5 +1,6 @@
 import { printBattleHpInfo, spendAttackTime, strike } from '../game/port/combat';
-import { showHint } from '../game/port/drops';
+import { showHint, WEAPON_NAMES } from '../game/port/drops';
+import { monsterSeen } from '../game/port/state';
 import type { GameSession, Turn } from './engine';
 import { KEY } from './keys';
 
@@ -31,13 +32,18 @@ export function swingAtMonster(turn: Turn): void {
     game.pressAnyKey();
     return;
   }
+  // The monster is read before the swing, since a swing that kills it leaves the slot holding
+  // whatever kill_monster parks there.
+  const monster = monsterSeen(game, game.engaged);
   const damage = strike(game);
   if (damage > 0) printBattleHpInfo(game);
   // The `while (kbhit()) getch();` strike (exe 2000:7f2b) ends with, which throws away whatever
   // was typed while the swing was on the screen.
   turn.session.flushKeys();
   spendAttackTime(game);
-  game.events.push({ kind: 'swung' });
+  // The name is the weapon in hand, which is what a Power Weapon spell swings the damage die
+  // of without replacing.
+  game.events.push({ kind: 'swung', weapon: WEAPON_NAMES[game.pc.weapon], monster, damage });
 }
 
 /**

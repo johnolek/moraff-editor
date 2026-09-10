@@ -1,6 +1,6 @@
 import data from '../dotu-data.json';
 import type { ActionEvent } from '../action';
-import type { JournalEvent } from '../journal-events';
+import type { JournalEvent, MonsterSeen } from '../journal-events';
 import { BRIGHT_COLOURS } from '../dotu-pic.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX, HEIGHT, WIDTH } from '../unfmap.js';
 import type { Rng } from './rng';
@@ -733,6 +733,15 @@ export interface Game {
 export function monsterAt(game: Game, x: number, y: number): number {
   const value = game.monsterMap[y * WIDTH + x];
   return value === MAP_EMPTY ? -1 : value;
+}
+
+/**
+ * The monster in a slot as a run journal names it: its kind, its level and the name every
+ * battle message calls it by.
+ */
+export function monsterSeen(game: Game, slot: number): MonsterSeen {
+  const monster = game.monsters[slot];
+  return { type: monster.type, level: monster.level, name: game.monsterKinds[monster.type].name };
 }
 
 /** set_monster_map (exe 2000:65dc, unf.c "set_monster_map"): write one square of the map. */
