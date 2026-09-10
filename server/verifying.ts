@@ -410,10 +410,181 @@ export async function verdictFor(sql: Queries, characterId: string): Promise<Kep
   };
 }
 
+/**
+ * How long a snapshot of a character still being played stands before its chain is worth
+ * replaying again.
+ *
+ * A replay is the engine playing the whole run through from its first key, and it manages about
+ * eight hundred keys a second: an hour at the game is a few thousand keys and replays in seconds,
+ * while a chain played all day takes a minute. Doing that after every five-second batch would
+ * leave the server time for nothing else, so a chain is replayed again at most this often --
+ * unless the site claims the character has reached something a board of the living shows, which
+ * is worth going for at once.
+ *
+ * Replays are done one at a time, so a chain long enough to take longer than this only keeps the
+ * line busy rather than piling replays on top of each other, and the board says when each
+ * character was last heard from.
+ */
+export const REPLAY_LIVING_AFTER_MS = 2 * 60 * 1000;
+
+/** What a replay of a character's chain reached, while that character was still being played. */
+export interface LivingSnapshot {
+  /** How the replay came out, in the same three words a verdict uses. Only a verified snapshot
+   *  stands on a board of the living. */
+  status: string;
+  reason: string | null;
+  level: number;
+  deepest: number;
+  actions: number;
+  time: number;
+  /** The id of the last batch the replay took in. */
+  replayedThrough: number;
+  replayedAt: string;
+}
+
+/** The snapshot a character's chain last came to, or null when it has never been replayed. */
+export async function livingSnapshotFor(sql: Queries, characterId: string): Promise<LivingSnapshot | null> {
+  const rows = await sql.query<{
+    status: string;
+    reason: string | null;
+    level: number;
+    deepest: number;
+    actions: number;
+    time: number;
+    replayed_through: number;
+    replayed_at: Date;
+  }>('SELECT * FROM living WHERE character_id = $1', [characterId]);
+  const row = rows[0];
+  if (row === undefined) return null;
+  return {
+    status: row.status,
+    reason: row.reason,
+    level: row.level,
+    deepest: row.deepest,
+    actions: row.actions,
+    time: row.time,
+    replayedThrough: row.replayed_through,
+    replayedAt: row.replayed_at.toISOString(),
+  };
+}
+
+/**
+ * Replay the chain a character has played so far and write down what it came to, where that is
+ * worth doing.
+ *
+ * What comes back is the snapshot that stands afterwards, which is the one already kept when
+ * nothing had changed enough to replay for. Null is for a character there is no board of the
+ * living for at all: one whose run has ended is `verifyKeptRun`'s, and one rolled for no board or
+ * played in debug is ranked against nothing.
+ */
+export async function snapshotLivingRun(
+  sql: Queries,
+  engines: EngineStore,
+  characterId: string,
+  now: number,
+): Promise<LivingSnapshot | null> {
+  if (!(await stillBeingPlayed(sql, characterId))) return null;
+  const sessions = await sessionsOf(sql, characterId);
+  if (sessions.length === 0 || !forTheBoards(sessions[sessions.length - 1])) return null;
+  const held = await livingSnapshotFor(sql, characterId);
+  const batches = await batchesOf(sql, characterId);
+  const newest = batches[batches.length - 1]?.id ?? 0;
+  if (!worthReplaying(held, newest, claimedReach(sessions), now)) return held;
+  return keepLivingSnapshot(sql, characterId, await replayChain(engines, runLogFrom(sessions, batches)), newest, now);
+}
+
+/**
+ * Whether the character's run is still going.
+ *
+ * A run that has ended has a verdict of its own and is on no board of the living, so replaying
+ * its chain again would be a long piece of work for an answer nobody reads.
+ */
+async function stillBeingPlayed(sql: Queries, characterId: string): Promise<boolean> {
+  const rows = await sql.query<{ finished_at: Date | null }>('SELECT finished_at FROM characters WHERE id = $1', [
+    characterId,
+  ]);
+  return rows[0]?.finished_at === null;
+}
+
+/** How far up and how far down a character has got, which is what a board of the living ranks
+ *  by. */
+interface Reach {
+  level: number;
+  deepest: number;
+}
+
+/** What the site claims the character has reached over its whole run. Each sitting claims the
+ *  milestones reached in that sitting, so the run's are all of them together. */
+function claimedReach(sessions: readonly KeptSession[]): Reach {
+  const milestones = sessions.flatMap((session) => session.milestones);
+  return {
+    level: highestLevel(milestones),
+    deepest: deepestReach(sessions[sessions.length - 1].game, milestones),
+  };
+}
+
+/**
+ * Whether a character's chain is worth replaying again.
+ *
+ * A batch has to have arrived past the one the snapshot took in, or nothing has been played since
+ * and the replay would reach exactly what is already written down. Beyond that there are two
+ * reasons to go: the site claims a level or a depth past the one the last replay found, which is
+ * the only kind of change a board of the living shows; or the snapshot is old enough that its
+ * numbers are no longer a picture of now.
+ *
+ * The claims are a reason to look and never what goes on the board -- what the board shows is
+ * what the replay reached. They are not read at all where the last replay did not come out
+ * verified: such a character is off the board whatever the site says about it, so there is
+ * nothing to hurry for and the two minutes are soon enough.
+ */
+function worthReplaying(held: LivingSnapshot | null, newest: number, claimed: Reach, now: number): boolean {
+  if (held === null) return true;
+  if (newest <= held.replayedThrough) return false;
+  if (now - Date.parse(held.replayedAt) >= REPLAY_LIVING_AFTER_MS) return true;
+  return held.status === 'verified' && (claimed.level > held.level || claimed.deepest > held.deepest);
+}
+
+async function keepLivingSnapshot(
+  sql: Queries,
+  characterId: string,
+  verdict: RunVerdict,
+  replayedThrough: number,
+  now: number,
+): Promise<LivingSnapshot> {
+  const totals = verdict.replayed ?? verdict.claimed;
+  await sql.query(
+    `INSERT INTO living (character_id, status, reason, level, deepest, actions, time, game,
+                         leaderboard, replayed_through, replayed_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, to_timestamp($11::double precision / 1000.0))
+     ON CONFLICT (character_id) DO UPDATE SET
+       status = excluded.status, reason = excluded.reason, level = excluded.level,
+       deepest = excluded.deepest, actions = excluded.actions, time = excluded.time,
+       game = excluded.game, leaderboard = excluded.leaderboard,
+       replayed_through = excluded.replayed_through, replayed_at = excluded.replayed_at`,
+    [
+      characterId,
+      verdict.status,
+      verdict.reason,
+      highestLevel(totals.milestones),
+      deepestReach(verdict.game, totals.milestones),
+      totals.actions,
+      totals.time,
+      verdict.game,
+      verdict.leaderboard,
+      replayedThrough,
+      now,
+    ],
+  );
+  return (await livingSnapshotFor(sql, characterId)) as LivingSnapshot;
+}
+
 /** Runs waiting to be replayed, one at a time, off the request that ended them. */
 export interface RunVerifier {
-  /** Put this character's run in line. */
+  /** Put this character's ended run in line to be judged. */
   verifySoon(characterId: string): void;
+  /** Put this character in line to have the chain it has played so far replayed, so that a board
+   *  of the living can say where it stands. */
+  snapshotSoon(characterId: string): void;
   /** Settles when everything in line when it was called has been replayed. */
   idle(): Promise<void>;
 }
@@ -421,9 +592,11 @@ export interface RunVerifier {
 /**
  * The line runs are replayed in.
  *
- * A long run takes seconds to replay, and the browser sending the last batch of it is waiting on
- * an answer, so the answer goes first and the replay happens behind it. One at a time, because a
- * replay is the whole engine running as fast as it can and two at once would only make both slow.
+ * A long run takes seconds to replay, and the browser sending the batch that put it here is
+ * waiting on an answer, so the answer goes first and the replay happens behind it. One at a time,
+ * because a replay is the whole engine running as fast as it can and two at once would only make
+ * both slow -- which is also why the boards of the living share this line rather than keeping one
+ * of their own.
  *
  * `announced` is handed everything a checked run had to say, which is how the feed hears about a
  * run whose last batch was answered seconds before the replay finished.
@@ -436,17 +609,30 @@ export function createRunVerifier(
   let line: Promise<void> = Promise.resolve();
   const waiting = new Set<string>();
 
+  /** One piece of work behind everything already in line, and never the same piece twice over:
+   *  what it is called is both what it is waiting under and what a failure is reported as. */
+  function inLine(what: string, work: () => Promise<void>): void {
+    if (waiting.has(what)) return;
+    waiting.add(what);
+    line = line.then(async () => {
+      waiting.delete(what);
+      try {
+        await work();
+      } catch (thrown) {
+        console.error(`${what} failed:`, thrown);
+      }
+    });
+  }
+
   return {
     verifySoon(characterId: string): void {
-      if (waiting.has(characterId)) return;
-      waiting.add(characterId);
-      line = line.then(async () => {
-        waiting.delete(characterId);
-        try {
-          announced(await verifyKeptRun(sql, engines, characterId));
-        } catch (thrown) {
-          console.error(`Replaying the run of ${characterId} failed:`, thrown);
-        }
+      inLine(`Replaying the run of ${characterId}`, async () => {
+        announced(await verifyKeptRun(sql, engines, characterId));
+      });
+    },
+    snapshotSoon(characterId: string): void {
+      inLine(`Replaying the chain ${characterId} has played so far`, async () => {
+        await snapshotLivingRun(sql, engines, characterId, Date.now());
       });
     },
     idle(): Promise<void> {

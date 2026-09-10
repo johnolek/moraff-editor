@@ -6,7 +6,18 @@ import { openEngineStore, publishEngine, type EngineStore } from './engines';
 import { endRun, takeBatch, type BatchSender, type BatchSession, type KeptBatch, type RunBatch } from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
-import { createRunVerifier, replayChain, runLogFrom, runTiming, verdictFor, verifyKeptRun, type RunTiming } from './verifying';
+import {
+  createRunVerifier,
+  livingSnapshotFor,
+  replayChain,
+  REPLAY_LIVING_AFTER_MS,
+  runLogFrom,
+  runTiming,
+  snapshotLivingRun,
+  verdictFor,
+  verifyKeptRun,
+  type RunTiming,
+} from './verifying';
 
 const CHARACTER = 'k3p9x1-ab12cd';
 const ENGINE = 'a'.repeat(40);
@@ -468,5 +479,153 @@ describe('replaying a chain whose sittings name more than one commit', () => {
 
     expect(verdict.status).toBe('unverifiable');
     expect(verdict.reason).toContain('is not kept here');
+  });
+});
+
+describe('replaying the chain of a character still being played', () => {
+  /** What the replay says the character has reached: module II and level five. */
+  const REACHED: Milestone[] = [
+    { kind: 'dungeon', which: 2, actions: 4, time: 10, floor: 3 },
+    { kind: 'level', which: 5, actions: 9, time: 20, floor: 3 },
+  ];
+  const AT_NOON = Date.parse('2026-09-09T12:00:00.000Z');
+  let sql: Sql;
+  let replays: number;
+
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
+    replays = 0;
+  });
+
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  /** An engine that counts what it is asked to replay, so a test can say whether a replay
+   *  happened at all. */
+  function counting(reached: Milestone[] = REACHED): EngineStore {
+    return fakeEngines(() => {
+      replays += 1;
+      return { replayed: { actions: 12, time: 30, milestones: reached } };
+    });
+  }
+
+  /** One more batch of the sitting, with what the site claims by then. */
+  async function played(sequence: number, claimed: Milestone[], at: number): Promise<void> {
+    await takeBatch(
+      sql,
+      CHARACTER,
+      ME,
+      batch({
+        sequence,
+        session: sequence === 0 ? header : undefined,
+        claims: { mode: 'speedrun', actions: 12, time: 30, edits: 0, milestones: claimed },
+      }),
+      at,
+    );
+  }
+
+  it('writes down the level and the depth the replay reached', async () => {
+    await played(0, [], 1000);
+
+    const snapshot = await snapshotLivingRun(sql, counting(), CHARACTER, AT_NOON);
+
+    expect(snapshot).toMatchObject({ status: 'verified', level: 5, deepest: 2, actions: 12, time: 30 });
+    expect(await livingSnapshotFor(sql, CHARACTER)).toMatchObject({ level: 5, deepest: 2 });
+  });
+
+  it('leaves the chain alone while nothing has been played since', async () => {
+    const engines = counting();
+    await played(0, [], 1000);
+    await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON);
+
+    await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON + 1000);
+
+    expect(replays).toBe(1);
+  });
+
+  it('leaves the chain alone for a batch that reaches nothing new', async () => {
+    const engines = counting();
+    await played(0, [], 1000);
+    await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON);
+    await played(1, [], 6000);
+
+    await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON + 5000);
+
+    expect(replays).toBe(1);
+  });
+
+  it('replays again for a batch claiming a level past the one the replay found', async () => {
+    const engines = counting([]);
+    await played(0, [], 1000);
+    await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON);
+    await played(1, [{ kind: 'level', which: 6, actions: 11, time: 28, floor: 3 }], 6000);
+
+    await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON + 5000);
+
+    expect(replays).toBe(2);
+  });
+
+  it('replays again two minutes on, whatever the site claims', async () => {
+    const engines = counting();
+    await played(0, [], 1000);
+    await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON);
+    await played(1, [], 6000);
+
+    await snapshotLivingRun(sql, engines, CHARACTER, AT_NOON + REPLAY_LIVING_AFTER_MS);
+
+    expect(replays).toBe(2);
+  });
+
+  it('keeps the snapshot of a chain the replay refused, with why', async () => {
+    await played(0, [], 1000);
+
+    const snapshot = await snapshotLivingRun(
+      sql,
+      fakeEngines(() => ({ status: 'failed', reason: 'The replay spent 3 actions and the log claims 12.' })),
+      CHARACTER,
+      AT_NOON,
+    );
+
+    expect(snapshot).toMatchObject({ status: 'failed', reason: 'The replay spent 3 actions and the log claims 12.' });
+  });
+
+  it('replays nothing for a character whose run has ended', async () => {
+    await played(0, [], 1000);
+    await endRun(sql, CHARACTER, 'death');
+
+    expect(await snapshotLivingRun(sql, counting(), CHARACTER, AT_NOON)).toBeNull();
+    expect(replays).toBe(0);
+  });
+
+  it('replays nothing for a character rolled for no board', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: { ...header, leaderboard: null } }), 1000);
+
+    expect(await snapshotLivingRun(sql, counting(), CHARACTER, AT_NOON)).toBeNull();
+    expect(replays).toBe(0);
+  });
+
+  it('replays nothing for a character played in debug', async () => {
+    await takeBatch(
+      sql,
+      CHARACTER,
+      ME,
+      batch({ session: header, claims: { mode: 'debug', actions: 12, time: 30, edits: 0, milestones: [] } }),
+      1000,
+    );
+
+    expect(await snapshotLivingRun(sql, counting(), CHARACTER, AT_NOON)).toBeNull();
+    expect(replays).toBe(0);
+  });
+
+  it('takes a snapshot for a batch the line was told about', async () => {
+    const verifier = createRunVerifier(sql, counting(), () => {});
+    await played(0, [], 1000);
+
+    verifier.snapshotSoon(CHARACTER);
+    await verifier.idle();
+
+    expect(await livingSnapshotFor(sql, CHARACTER)).toMatchObject({ status: 'verified', level: 5 });
   });
 });

@@ -458,6 +458,11 @@ async function takeRunBatch(
     // Replaying a long run takes seconds and the browser is waiting on this answer, so the run
     // goes in line and the site asks for the verdict afterwards.
     verifier.verifySoon(characterId);
+  } else {
+    // The boards of the living show what a replay of the chain so far reached, so every batch is
+    // a reason to look at the character again. The line decides whether enough has changed to be
+    // worth another replay; this only says that something arrived.
+    verifier.snapshotSoon(characterId);
   }
   sendJson(response, 200, { received: taken.received });
 }
