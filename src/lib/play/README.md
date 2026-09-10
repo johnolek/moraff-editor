@@ -186,6 +186,11 @@ rev-parse HEAD`; vitest reads the same config, so a test sees it too.
 record it says it began with and counting on from what the sessions before it came to, and says
 whether what comes back is what the log claims.
 
+`verifySession` is one session of that — the replay, the comparison with what the session claims,
+and the check that it starts from the record it was handed — and `verifyRun` is the walk along the
+chain between them. The run server calls it a session at a time, because it keeps an engine build
+per commit and a chain's sessions have to be replayed by the builds they were played on.
+
 * **Verified** — every session spent the same actions, its clock reached the same number, and it
   reached the same milestones in the same order, each at the same action count, clock and floor;
   and every session started from the record the replay of the one before it ended with, byte for
