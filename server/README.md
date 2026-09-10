@@ -1,9 +1,9 @@
 # Run server
 
 One Node process that answers HTTP on a port, keeps everything in Postgres, and
-allows the site's origin. So far it answers `GET /health`, the two players
-endpoints, the two runs endpoints, the boards and the announcements below; what
-is left of
+allows the site's origin. So far it answers `GET /health`, the players
+endpoints, the two runs endpoints, the player's characters, the boards and the
+announcements below; what is left of
 [MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367)
 is the boards of the living.
 
@@ -148,24 +148,63 @@ how long the run took, and the stamps are an answer the server owns.
 
 | Endpoint                      | What it does                                                     |
 | ----------------------------- | ---------------------------------------------------------------- |
-| `POST /runs/:id/batches`      | Takes one stretch of a run. 200 with `{ "received": <sequence> }`, 403 when the device has claimed no name, 409 when the character belongs to another player or a sequence comes back holding another stretch, 400 when the body is not a batch or names a sitting the server was never told about. |
-| `GET /runs/:id`               | The character, who played it, the sittings it was played in with the engine build each names, how it ended, and the verdict on it with the milestones the replay reached. A verified run is anybody's to read; one still being played, one that failed and one that could not be checked take the secret of the player whose run it is. 404 when nothing has been played under that id. |
+| `POST /runs/:id/batches`      | Takes one stretch of a run. 200 with `{ "received": <sequence> }`, 403 when the device has claimed no name, 409 when the character belongs to another player, is being played on another device, has been played on somewhere else since, or a sequence comes back holding another stretch, 400 when the body is not a batch or names a sitting the server was never told about. A refusal carries `because` beside the words, which is what the site acts on. |
+| `GET /runs/:id`               | The character, who played it, the sittings it was played in with the engine build each names, how it ended, the verdict on it with the milestones the replay reached, and whether another device of the player's is playing it now. A verified run is anybody's to read; one still being played, one that failed and one that could not be checked take the secret of the player whose run it is. 404 when nothing has been played under that id. |
 
 `:id` is the id of a roster entry in somebody's browser. The character is made
 known by its first batch and belongs to the player whose secret sent it, so
 nothing is registered anywhere and no second player can send for it.
 
 A batch is the keys played since the last one, how many of them the player
-pressed, and what the sitting claims to have come to; the first batch of a
-sitting carries the seed, the engine commit and the record a replay starts
-from. The sequence is the site's count of the batches of that sitting, and the
-server keeps one stretch under each sequence. A batch whose answer was lost is
-sent again under the same number holding the same keys, and is recognised
-rather than played twice; everything played while it was in the air goes in the
-batch after it rather than being folded into it, since the server would take
-the sequence it already holds and the difference would be gone. A sequence that
-comes back holding another stretch is refused, and nothing about the run
-changes.
+pressed, what the sitting claims to have come to, and the character itself; the
+first batch of a sitting carries the seed, the engine commit and the record a
+replay starts from. The sequence is the site's count of the batches of that
+sitting, and the server keeps one stretch under each sequence. A batch whose
+answer was lost is sent again under the same number holding the same keys, and
+is recognised rather than played twice; everything played while it was in the
+air goes in the batch after it rather than being folded into it, since the
+server would take the sequence it already holds and the difference would be
+gone. A sequence that comes back holding another stretch is refused, and
+nothing about the run changes.
+
+A batch that carries its own sitting is a different matter, because it always
+carries that sitting from its first key: the first batch of a game holds
+everything played so far, and a sitting the server was never told about goes as
+one batch of the whole thing. Every new sitting sends the ones before it that
+way, since the device cannot know which of them the server was ever told about.
+So where the server already holds that sitting, what is new about the batch is
+only the keys beyond the ones already kept, and they go in as a stretch of
+their own after them. Anything else about a sitting already here — another
+seed, another moment, keys that do not go on from the ones here — is a second
+run of the same character played somewhere else, and is refused as having moved
+on.
+
+### The character, and the lease
+
+Every batch of the sitting being played carries the character as the device
+holds it now: the record, the squares it has discovered, and the rest of what a
+roster shows about it. The chain says how the character got where it is, but
+reading that back is a replay of every sitting it has ever been played in, so
+the character itself rides along with the keys and the newest one sent is what
+another device picks it up from. The maps are left out of a batch whose maps are
+the ones the batch before it carried, since they are by far the biggest thing
+there and most keys change nothing about them.
+
+The stretch of keys and the character go in together, in one transaction on one
+connection, with the character's row locked for the length of it. They are two
+halves of one fact — this is the character, and these are the keys that brought
+it here — and a server that took one without the other would hand the next
+device a character its run cannot be followed to.
+
+That lock is also what makes two devices playing one character one after the
+other rather than two racing sets of statements, and the lease is what stops
+them playing it at once. A batch leases the character to the device that sent it
+— named by the SHA-256 of that device's secret, the same hash a player is
+recognised by — for **half a minute** past its arrival, which is six times the
+sending interval. A batch from another device inside that lease is refused 409
+`leased`; once it has lapsed the next device to send takes it over. The site
+asks `GET /runs/:id` before it starts a game so that the second device is told
+rather than finding out five seconds in.
 
 ### Play time
 
@@ -195,6 +234,13 @@ The batch that ends a run — a death or a win — is answered at once and the r
 goes in a line to be replayed behind it, because replaying a long run takes
 seconds. The site asks `GET /runs/:id` until the verdict is there.
 
+Only a run there is something to rank is checked at all. Every character of a
+player with a name is kept here, and most of them are nobody's competition: one
+rolled for no board is played for its own sake, and debug is the mode with the
+game's hidden numbers on the screen. Those get their saves and no verdict, so
+nothing is replayed for them and nothing is announced about them, and the site
+knows not to wait for a verdict that is not coming.
+
 Each sitting is replayed by the engine build it names, and the server walks the
 chain between them, carrying what the run had come to and the record the
 sitting before it ended with from one build to the next. So a run played across
@@ -206,6 +252,29 @@ happened. A run any sitting of which names an engine not kept
 here is unverifiable rather than failed. `eligible` is whether the run may go on
 a board at all: verified, and with no record ever written into the character
 from outside the game.
+
+## The characters
+
+A character belongs to the player rather than to the browser it was rolled in.
+Sign in on a second device with the name and the passphrase and the roster is
+there: every character with its record, the squares it has discovered and the
+chain of sittings it has been played in. The device keeps its own copy, so play
+goes on with the server unreachable and catches up when it is back.
+
+| Endpoint                             | What it does                                      |
+| ------------------------------------ | ------------------------------------------------- |
+| `GET /players/me/characters`         | Every character of that player, oldest first: the record and the maps the newest batch carried, what a roster shows about each, the chain of sittings put back together out of the stretches that arrived, and whether another device of theirs is playing it now. 403 when the device has claimed no name. |
+| `DELETE /players/me/characters/:id`  | Forgets one for good: its run, the verdict on it and whatever was announced about it go with it. 404 when no character of that player's has that id, which is also what a character of somebody else's is answered with. |
+
+A character reaches this list by being played, since the first batch of a
+sitting is what makes one known here. One rolled and never played is still only
+on the device it was rolled in.
+
+The chain comes back as the log the site wrote, which is what makes the merge on
+the site's side a comparison of two chains: the server's copy stands unless the
+device holds keys the server has never been sent, which is what playing with the
+server unreachable leaves behind. `src/lib/character/server-roster.ts` is that
+half.
 
 ## The boards
 

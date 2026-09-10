@@ -141,8 +141,12 @@ played, so that a claimed ending can be checked by playing it again rather than 
   rather than starting it over, and a milestone is stamped with what the whole run had spent when
   it was reached. `RunRecorder` is handed what the run had come to `before` this session, and
   `runTotals` adds a chain up.
-* **Where it is kept** — on the roster entry (`RosterEntry.run`) in the page, and in the
-  browser's database beside the record (`src/lib/character/roster-db.ts`). The session being
+* **Where it is kept** — on the roster entry (`RosterEntry.run`) in the page, in the browser's
+  database beside the record (`src/lib/character/roster-db.ts`), and, for a player who has claimed
+  a name, on the run server, which is what puts the roster on their other devices. A signed-in
+  page merges the two at startup and the server's copy stands, except where this device holds keys
+  the server has never been sent; `src/lib/character/server-roster.ts` is that rule and
+  `restoreRoster` is where it happens. The session being
   played is the last of the chain, written again wherever the record is written, which is after
   every key: the record and that one session go into the store together and nothing else on the
   roster is touched, so a tab closed in the middle of a game loses nothing and the next session
@@ -242,11 +246,20 @@ half of this is `server/README.md`.
 
 * **`stream.ts`** is what a batch holds, and nothing in it touches the browser: the keys played
   since the last batch it built, how many of them the player pressed, what the sitting claims to
-  have come to, and, the first time, the seed, the engine commit and the record a replay starts
-  from. A batch that failed to go is kept as it was built and goes again as it was, so a flush
-  after a stretch with no server sends several batches, oldest first. The sittings the character
-  was played in before the server was told about it go first, one batch each, or the server would
-  hold a chain starting part-way through.
+  have come to, the character itself, and, the first time, the seed, the engine commit and the
+  record a replay starts from. A batch that failed to go is kept as it was built and goes again as
+  it was, so a flush after a stretch with no server sends several batches, oldest first. The
+  sittings the character was played in before this one go first, one batch each holding the whole
+  sitting, since the device cannot know which of them the server was ever told about; the server
+  adds whatever keys of such a sitting it has not got and takes the rest as arriving twice.
+* **The character on the batch** is the record as it stands, the squares it has discovered and the
+  rest of what the roster shows about it (`characterSave` in `streaming.ts`). The chain says how
+  the character got where it is, but reading that back is a replay of every sitting it has ever
+  been played in, so the character rides along with the keys and the newest one sent is what
+  another device picks it up from. The maps are left out of a batch whose maps are the ones the
+  batch before it carried: they are by far the biggest thing on the wire and most keys change
+  nothing about them. Where they are kept beside the character is
+  `src/lib/character/maps.ts`.
 * **The sequence** is the site's count of the batches of a sitting, and the server holds a stretch
   under its sequence. A batch whose answer was lost is sent again under the same number holding
   the same keys, so the server recognises it rather than playing it twice, and everything played
@@ -254,16 +267,26 @@ half of this is `server/README.md`.
   one of the two halves has lost track of the run.
 * **`streaming.ts`** is the part that touches the browser: a batch every five seconds, one more
   when the game is left, one that outlives a page on its way out, and the last one at a death or a
-  win, after which it asks for the verdict until the replay has given one. Nothing goes while the
-  mode is debug, and a build given no server address does none of it. The mark the Play tab shows
-  in its side column — sending, not answering, refused, off the boards, and the verdict — is here
-  too, since every one of those words is about what became of the sending.
+  win. Every character of a player with a name goes, so that it is there on whatever device they
+  sign in on next — one rolled for no board, and one played in debug, which is the mode with the
+  game's hidden numbers on the screen. Only a character rolled for a board and played in a mode
+  that counts is checked and ranked, so only those wait for a verdict; the rest are told they were
+  saved. A build given no server address does none of it. The mark the Play tab shows in its side
+  column — sending, saving, not answering, refused, off the boards, and the verdict — is here too,
+  since every one of those words is about what became of the sending.
+* **One device at a time.** A character is leased to the device that last sent a batch for it, for
+  half a minute, and the Play tab asks the server before it starts a game rather than letting the
+  player find out five seconds in that the character is being played elsewhere. A batch refused
+  because the server holds a newer run of the character — another device carried it on while this
+  one was away — is the one refusal the tab does something about: it takes the server's copy of
+  the character over the one here and says so.
 * **The opt-out** is `offTheBoards` in `src/lib/player.ts`, kept beside the device secret and off
-  until the player ticks the box in `BoardName.svelte`. The sender asks before every batch rather
-  than once when the game starts, so turning it on stops the sending part-way through a run and
-  turning it off sends from then on. What was played meanwhile goes in the next batch, and the gap
-  in front of that batch is longer than the server counts as play, so that stretch is untimed the
-  way every stretch the server never saw is.
+  until the player ticks the box in `BoardName.svelte`. It is what it says: nothing at all leaves
+  the device, so a player who opts out keeps their characters in this browser and nowhere else.
+  The sender asks before every batch rather than once when the game starts, so turning it on stops
+  the sending part-way through a run and turning it off sends from then on. What was played
+  meanwhile goes in the next batch, and the gap in front of that batch is longer than the server
+  counts as play, so that stretch is untimed the way every stretch the server never saw is.
 * **The shapes on the wire** are `stream.ts`'s, and `server/runs.ts` imports them, so the two
   halves agree about a batch in one place.
 * **Where a sent run ends up** is the Boards tab, `src/lib/boards/`: the server's boards, its feed
