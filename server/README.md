@@ -1,9 +1,10 @@
 # Run server
 
 One Node process that answers HTTP on a port, keeps everything in one SQLite
-file, and allows the site's origin. So far it answers `GET /health` and the two
-players endpoints below; the runs, the leaderboards and the feed are the rest
-of [MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
+file, and allows the site's origin. So far it answers `GET /health`, the two
+players endpoints and the two runs endpoints below; the leaderboards and the
+feed are the rest of
+[MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
 
 It lives in this repository so one commit is one engine build: the code that
 will replay a run to check it is the same code the site played it with.
@@ -69,6 +70,66 @@ else: a rule any wider would let two players hold names the boards cannot tell
 apart.
 
 Losing the browser's storage loses the secret, and nothing here gets it back.
+
+## Runs
+
+A run arrives while it is being played rather than whole at the end. The site
+sends what has been played every five seconds and when the game is left, and
+the server stamps each stretch as it lands. That is the whole reason for the
+shape: the page a run is played in is the player's own, so it cannot be asked
+how long the run took, and the stamps are an answer the server owns.
+
+| Endpoint                      | What it does                                                     |
+| ----------------------------- | ---------------------------------------------------------------- |
+| `POST /runs/:id/batches`      | Takes one stretch of a run. 200 with `{ "received": <sequence> }`, 403 when the device has claimed no name, 409 when the character belongs to another player, 400 when the body is not a batch or names a sitting the server was never told about. |
+| `GET /runs/:id`               | The character, how it ended, and the verdict on it. A verified run is anybody's to read; one still being played, one that failed and one that could not be checked take the secret of the player whose run it is. 404 when nothing has been played under that id. |
+
+`:id` is the id of a roster entry in somebody's browser. The character is made
+known by its first batch and belongs to the player whose secret sent it, so
+nothing is registered anywhere and no second player can send for it.
+
+A batch is the keys played since the last one, how many of them the player
+pressed, and what the sitting claims to have come to; the first batch of a
+sitting carries the seed, the engine commit and the record a replay starts
+from. The sequence is the site's count of the batches of that sitting, and it
+is what makes a resend harmless: the site moves on to the next number only once
+the server has said it has this one, so a batch whose answer was lost is sent
+again under the same number and is recognised rather than played twice.
+
+### Play time
+
+The run's wall clock is the sum of the gaps between the batches of one sitting,
+counting a gap only when it is no longer than **three times the sending
+interval**, which is 15 seconds. Anything longer is time the player had left the
+game and counts for nothing, which is what makes a speedrun of a character that
+takes twenty hours possible at all. The first batch of a sitting has no batch
+before it, so the stretch of play in front of it — at most one interval, and
+everything played before the server was ever told about the character — counts
+for nothing either.
+
+A stretch carrying more keys than anybody could have pressed in the time it
+covers — more than **20 a second**, over its gap and a second's grace — takes
+the run off the wall-clock board and leaves everything else about it alone: it
+keeps its actions, its milestones and its verdict. The grace is there because
+the last batch of a run goes the moment the character dies, right behind the one
+before it.
+
+Only presses are counted, not inputs: a held Ctrl-F swings on its own and
+Moraff's Revenge's clock ticks are inputs of the log too, and nobody pressed
+either of those.
+
+### The verdict
+
+The batch that ends a run — a death or a win — is answered at once and the run
+goes in a line to be replayed behind it, because replaying a long run takes
+seconds. The site asks `GET /runs/:id` until the verdict is there.
+
+The run is replayed by the engine build the newest sitting names. A build
+replays a whole chain rather than a sitting at a time, so a chain played across
+several commits is replayed by the newest of them and the verdict's own notes
+say so; a run whose engine is not kept here is unverifiable rather than failed.
+`eligible` is whether the run may go on a board at all: verified, and with no
+record ever written into the character from outside the game.
 
 ## Engine builds
 
