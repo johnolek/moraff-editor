@@ -23,7 +23,7 @@ const migrationSources = import.meta.glob('./migrations/*.sql', {
  * files and none of it is hidden in the runner.
  *
  * They are read into the bundle when the server is built rather than off disk when it starts, so
- * what gets copied to the box is one file.
+ * what goes in the image is one file.
  */
 export const BUNDLED_MIGRATIONS: Migration[] = Object.entries(migrationSources)
   .map(([path, sql]) => ({ name: path.slice(path.lastIndexOf('/') + 1), sql }))
