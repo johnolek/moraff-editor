@@ -1,6 +1,7 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { shortCommit } from '../src/lib/commit';
 import type { RunLog } from '../src/lib/play/run';
 import type { CheckedSession, RunVerdict, SessionInChain } from '../src/lib/play/verify';
 
@@ -140,9 +141,3 @@ function keptCommits(directory: string): string[] {
     .sort();
 }
 
-/** A commit as a reader wants it: the first seven characters, and the `-dirty` that says the
- *  build was made from a tree with changes in it. */
-export function shortCommit(commit: string): string {
-  const [sha, ...rest] = commit.split('-');
-  return [sha.slice(0, 7), ...rest].join('-');
-}

@@ -1,4 +1,5 @@
 import type { Leaderboard } from '../lib/app-state.svelte';
+import { shortCommit } from '../lib/commit';
 import { GAME_CHOICES } from '../lib/game-choice';
 import { actionWords, RUN_GAMES, type RunGame } from '../lib/play/run';
 import { milestoneLine, readRunLog, verifyRun, type RunVerdict } from '../lib/play/verify';
@@ -71,11 +72,4 @@ function gameLabel(game: RunGame): string {
 
 function field(label: string, value: string): string {
   return `  ${label.padEnd(12)}${value}`;
-}
-
-/** A commit as a reader wants it: the first seven characters, and whatever `vite.config.ts` put
- *  after them — which is `-dirty` for a build made from a tree with changes in it. */
-function shortCommit(commit: string): string {
-  const [sha, ...rest] = commit.split('-');
-  return [sha.slice(0, 7), ...rest].join('-');
 }

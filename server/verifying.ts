@@ -1,9 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite';
+import { shortCommit } from '../src/lib/commit';
 import type { RunLog, RunSession, RunTotals } from '../src/lib/play/run';
 import type { CheckedSession, RunVerdict } from '../src/lib/play/verify';
 import { announceRun, type Announcement } from './announcing';
 import { deepestReach, highestLevel } from './boards';
-import { shortCommit, type EngineStore, type KeptEngine, type SessionVerifier } from './engines';
+import type { EngineStore, KeptEngine, SessionVerifier } from './engines';
 import { batchesOf, runFor, sessionsOf, type KeptBatch, type KeptSession } from './runs';
 
 /**

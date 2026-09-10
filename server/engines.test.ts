@@ -2,8 +2,9 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { shortCommit } from '../src/lib/commit';
 import type { RunLog } from '../src/lib/play/run';
-import { openEngineStore, shortCommit } from './engines';
+import { openEngineStore } from './engines';
 
 const KEPT = 'a'.repeat(40);
 const NEVER_DEPLOYED = 'b'.repeat(40);

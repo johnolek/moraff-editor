@@ -1,10 +1,11 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { DatabaseSync } from 'node:sqlite';
+import { shortCommit } from '../src/lib/commit';
 import type { ServerConfig } from './config';
 import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
 import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './boards';
 import { writeCorsHeaders } from './cors';
-import { openEngineStore, shortCommit } from './engines';
+import { openEngineStore } from './engines';
 import { openFeed, type Feed } from './feed';
 import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor } from './players';
 import { endRun, readRunBatch, runFor, sessionsOf, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
