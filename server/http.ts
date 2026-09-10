@@ -3,7 +3,9 @@ import type { DatabaseSync } from 'node:sqlite';
 import type { ServerConfig } from './config';
 import { writeCorsHeaders } from './cors';
 import { openEngineStore, shortCommit } from './engines';
-import { claimPlayerName, isPlayerSecret, playerNameFor } from './players';
+import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor } from './players';
+import { endRun, readRunBatch, runFor, takeBatch, type BatchClaims } from './runs';
+import { createRunVerifier, verdictFor, type RunVerifier } from './verifying';
 
 /**
  * The commit the server was built from, put here at build time the way the site's build and the
@@ -17,12 +19,31 @@ const NOT_A_SECRET = 'That is not a player secret.';
 const NOT_A_NAME = "A name is 2 to 24 letters, digits, spaces or . _ - '";
 const NAME_TAKEN = 'That name is taken.';
 const NO_NAME_YET = 'This device has no name yet.';
+const NOT_A_BATCH = 'That is not a batch of a run.';
+const ANOTHER_PLAYER = 'That character belongs to another player.';
+const NO_SUCH_SITTING = 'That run has no such sitting.';
+const NO_SUCH_RUN = 'No such run.';
+const NOT_YOUR_RUN = 'That run is not yours to read.';
 
-/** A request here carries a field or two, so anything longer than this is not one. */
+/** A players request carries a field or two, so anything longer than this is not one. */
 const MOST_BODY_BYTES = 1024;
+
+/**
+ * How much a batch of a run may be.
+ *
+ * A few seconds of keys is nothing, but the first batch of a sitting carries the character's
+ * record as well, and a batch that has been waiting through a stretch with no server to send to
+ * carries everything played since. This is far more than any of that and far less than a body
+ * worth reading off a stranger.
+ */
+const MOST_BATCH_BYTES = 1024 * 1024;
+
+/** What a character is called in a path: the id of a roster entry in somebody's browser. */
+const CHARACTER_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 export function createRunServer(config: ServerConfig, database: DatabaseSync): Server {
   const engines = openEngineStore(config.enginesPath);
+  const verifier = createRunVerifier(database, engines);
 
   return createServer((request, response) => {
     writeCorsHeaders(response, request.headers.origin, config.allowedOrigin);
@@ -54,6 +75,18 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync): S
 
     if (request.method === 'POST' && path === '/players') {
       void claimName(request, response, database);
+      return;
+    }
+
+    const batches = path.match(/^\/runs\/([^/]+)\/batches$/);
+    if (request.method === 'POST' && batches !== null) {
+      void takeRunBatch(request, response, database, verifier, decodeURIComponent(batches[1]));
+      return;
+    }
+
+    const run = path.match(/^\/runs\/([^/]+)$/);
+    if (request.method === 'GET' && run !== null) {
+      sendRun(request, response, database, decodeURIComponent(run[1]));
       return;
     }
 
@@ -91,6 +124,100 @@ async function claimName(request: IncomingMessage, response: ServerResponse, dat
   sendJson(response, 200, { name: claim.name });
 }
 
+/**
+ * A stretch of a run as it is played.
+ *
+ * The character is made known by its first batch and belongs to the player whose secret sent it,
+ * so there is no registering a character anywhere: a player with a name on the boards starts
+ * playing and the run arrives. The answer names the sequence the server now has, which is what
+ * lets the site move on to the next one; a batch it has already been sent is answered the same
+ * way rather than being played twice.
+ */
+async function takeRunBatch(
+  request: IncomingMessage,
+  response: ServerResponse,
+  database: DatabaseSync,
+  verifier: RunVerifier,
+  characterId: string,
+): Promise<void> {
+  const secret = bearerSecret(request);
+  if (secret === null || !CHARACTER_ID.test(characterId)) {
+    sendJson(response, 400, { error: NOT_A_SECRET });
+    return;
+  }
+  const player = playerFor(database, secret);
+  if (player === null) {
+    sendJson(response, 403, { error: NO_NAME_YET });
+    return;
+  }
+  const batch = readRunBatch(await readJsonBody(request, MOST_BATCH_BYTES));
+  if (batch === null) {
+    sendJson(response, 400, { error: NOT_A_BATCH });
+    return;
+  }
+  // The arrival is stamped here, by this server's clock, because it is the one thing about a run
+  // that the page it was played in cannot be asked for.
+  const taken = takeBatch(database, characterId, player, batch, Date.now());
+  if (!taken.taken) {
+    sendJson(response, taken.because === 'another-player' ? 409 : 400, {
+      error: taken.because === 'another-player' ? ANOTHER_PLAYER : NO_SUCH_SITTING,
+    });
+    return;
+  }
+  if (taken.ending) {
+    endRun(database, characterId, wonOrDied(batch.claims));
+    // Replaying a long run takes seconds and the browser is waiting on this answer, so the run
+    // goes in line and the site asks for the verdict afterwards.
+    verifier.verifySoon(characterId);
+  }
+  sendJson(response, 200, { received: taken.received });
+}
+
+/** How a run ended, which the last batch's milestones say. */
+function wonOrDied(claims: BatchClaims): 'death' | 'win' {
+  return claims.milestones.some((milestone) => milestone.kind === 'win') ? 'win' : 'death';
+}
+
+/**
+ * A run and the verdict on it.
+ *
+ * A verified run is anybody's to read: it is what a board is made of and what an announcement
+ * points at. A run still being played, or one that failed or could not be checked, is the
+ * player's own business, so it takes their secret.
+ */
+function sendRun(
+  request: IncomingMessage,
+  response: ServerResponse,
+  database: DatabaseSync,
+  characterId: string,
+): void {
+  const run = CHARACTER_ID.test(characterId) ? runFor(database, characterId) : null;
+  if (run === null) {
+    sendJson(response, 404, { error: NO_SUCH_RUN });
+    return;
+  }
+  const verdict = verdictFor(database, characterId);
+  if (verdict === null || verdict.status !== 'verified') {
+    const secret = bearerSecret(request);
+    const player = secret === null ? null : playerFor(database, secret);
+    if (player === null || player !== run.playerId) {
+      sendJson(response, 403, { error: NOT_YOUR_RUN });
+      return;
+    }
+  }
+  sendJson(response, 200, {
+    id: run.id,
+    game: run.game,
+    mode: run.mode,
+    name: run.name,
+    createdAt: run.createdAt,
+    finishedAt: run.finishedAt,
+    outcome: run.outcome,
+    sessions: run.sessions,
+    verdict,
+  });
+}
+
 /** The secret from `Authorization: Bearer <secret>`, or null when the header carries anything
  *  else. Nothing is looked up until it is shaped like a secret. */
 function bearerSecret(request: IncomingMessage): string | null {
@@ -103,13 +230,13 @@ function bearerSecret(request: IncomingMessage): string | null {
 
 /** The body parsed as JSON, or null when it is not JSON, is not an object, or is longer than a
  *  request here has any business being. */
-async function readJsonBody(request: IncomingMessage): Promise<object | null> {
+async function readJsonBody(request: IncomingMessage, mostBytes = MOST_BODY_BYTES): Promise<object | null> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of request) {
     const bytes = chunk as Buffer;
     size += bytes.length;
-    if (size > MOST_BODY_BYTES) {
+    if (size > mostBytes) {
       request.destroy();
       return null;
     }
