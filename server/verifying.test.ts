@@ -3,12 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { RunLog, RunSession } from '../src/lib/play/run';
+import type { Milestone, RunLog, RunSession } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
+import { announcementsBefore, type Announcement } from './announcing';
 import { openEngineStore, type EngineStore } from './engines';
 import { applyMigrations, BUNDLED_MIGRATIONS } from './migrations';
-import { takeBatch, type BatchSession, type KeptBatch, type RunBatch } from './runs';
-import { createRunVerifier, replayChain, runLogFrom, runTiming, verdictFor, type RunTiming } from './verifying';
+import { endRun, takeBatch, type BatchSession, type KeptBatch, type RunBatch } from './runs';
+import { createRunVerifier, replayChain, runLogFrom, runTiming, verdictFor, verifyKeptRun, type RunTiming } from './verifying';
 
 const CHARACTER = 'k3p9x1-ab12cd';
 const ENGINE = 'a'.repeat(40);
@@ -277,6 +278,48 @@ describe('replaying a run once its last batch has arrived', () => {
       reason: 'The engine the run was played on is not kept here.',
       eligible: false,
     });
+  });
+});
+
+describe('announcing a run that has been checked', () => {
+  const DIED: Milestone[] = [
+    { kind: 'dungeon', which: 2, actions: 4, time: 10, floor: 3 },
+    { kind: 'level', which: 5, actions: 9, time: 20, floor: 3 },
+    { kind: 'death', which: 0, actions: 12, time: 30, floor: 7 },
+  ];
+  let database: DatabaseSync;
+
+  beforeEach(() => {
+    database = new DatabaseSync(':memory:');
+    applyMigrations(database, BUNDLED_MIGRATIONS);
+    database.prepare('INSERT INTO players (id, secret_hash, name) VALUES (?, ?, ?)').run(ME, 'mine', 'Moraff');
+  });
+
+  async function playToADeath(engines: EngineStore): Promise<Announcement[]> {
+    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
+    takeBatch(database, CHARACTER, ME, batch({ sequence: 1, ending: true }), 6000);
+    endRun(database, CHARACTER, 'death');
+    return verifyKeptRun(database, engines, CHARACTER);
+  }
+
+  it('announces the milestones the replay reached and how the run ended', async () => {
+    const announcements = await playToADeath(fakeEngines(() => ({ replayed: { actions: 12, time: 30, milestones: DIED } })));
+
+    expect(announcements.map((announcement) => [announcement.kind, announcement.which])).toEqual([
+      ['dungeon', 2],
+      ['level', 5],
+      ['death', 0],
+    ]);
+    expect(announcements[2]).toMatchObject({ player: 'Moraff', name: 'Grond', game: 'unforgiven', floor: 7, level: 5 });
+  });
+
+  it('announces nothing about a run that could not be checked', async () => {
+    const announcements = await playToADeath(
+      fakeEngines(() => ({ status: 'unverifiable', reason: 'not kept', replayed: { actions: 12, time: 30, milestones: DIED } })),
+    );
+
+    expect(announcements).toEqual([]);
+    expect(announcementsBefore(database, null, 50).announcements).toEqual([]);
   });
 });
 

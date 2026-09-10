@@ -1,9 +1,10 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { RunLog, RunSession, RunTotals } from '../src/lib/play/run';
 import type { CheckedSession, RunVerdict } from '../src/lib/play/verify';
+import { announceRun, type Announcement } from './announcing';
 import { deepestReach, highestLevel } from './boards';
 import { shortCommit, type EngineStore, type KeptEngine, type SessionVerifier } from './engines';
-import { batchesOf, sessionsOf, type KeptBatch, type KeptSession } from './runs';
+import { batchesOf, runFor, sessionsOf, type KeptBatch, type KeptSession } from './runs';
 
 /**
  * Putting a run back together and passing a verdict on it.
@@ -157,19 +158,55 @@ const EACH_BY_ITS_OWN_BUILD = 'Each sitting was replayed by the engine build it 
 const THE_WHOLE_CHAIN_AT_ONCE =
   'The whole chain was replayed by the engine build of its newest sitting, since one of the builds it names cannot replay a sitting on its own.';
 
-/** Replay a character's whole run and write down what came of it. */
+/**
+ * Replay a character's whole run, write down what came of it, and announce it.
+ *
+ * Only a run that may go on a board is announced: a run nobody can check, or one with a record
+ * written into it from outside the game, is the player's own business and is not news. What comes
+ * back is what was announced this time, which is what there is to push to anybody listening.
+ */
 export async function verifyKeptRun(
   database: DatabaseSync,
   engines: EngineStore,
   characterId: string,
-): Promise<void> {
+): Promise<Announcement[]> {
   const sessions = sessionsOf(database, characterId);
-  if (sessions.length === 0) return;
+  if (sessions.length === 0) return [];
   const batches = batchesOf(database, characterId);
   const timing = runTiming(batches);
   const log = runLogFrom(sessions, batches);
   const edits = sessions.reduce((count, session) => count + session.edits, 0);
-  keepVerdict(database, characterId, await replayChain(engines, log), timing, edits);
+  const verdict = await replayChain(engines, log);
+  // A record written from outside the game is not in the log, so a replay has no way of putting
+  // the character back into it. The verifier says as much on its own; this says it again here so
+  // that a board never has to trust an engine build about it.
+  const eligible = verdict.status === 'verified' && edits === 0;
+  keepVerdict(database, characterId, verdict, timing, eligible);
+  return eligible ? announceVerifiedRun(database, characterId, verdict, timing) : [];
+}
+
+/** What a checked run has to announce: how it ended, and the milestones the replay reached. */
+function announceVerifiedRun(
+  database: DatabaseSync,
+  characterId: string,
+  verdict: RunVerdict,
+  timing: RunTiming,
+): Announcement[] {
+  const run = runFor(database, characterId);
+  if (run === null || run.outcome === null) return [];
+  const totals = verdict.replayed ?? verdict.claimed;
+  return announceRun(database, {
+    characterId,
+    player: run.player,
+    name: run.name,
+    game: verdict.game,
+    leaderboard: verdict.leaderboard,
+    outcome: run.outcome === 'win' ? 'win' : 'death',
+    milestones: totals.milestones,
+    actions: totals.actions,
+    time: totals.time,
+    playMs: timing.playMs,
+  });
 }
 
 /**
@@ -285,13 +322,9 @@ function keepVerdict(
   characterId: string,
   verdict: RunVerdict,
   timing: RunTiming,
-  edits: number,
+  eligible: boolean,
 ): void {
   const totals = verdict.replayed ?? verdict.claimed;
-  // A record written from outside the game is not in the log, so a replay has no way of putting
-  // the character back into it. The verifier says as much on its own; this says it again here so
-  // that a board never has to trust an engine build about it.
-  const eligible = verdict.status === 'verified' && edits === 0;
   // The game, the board and the two numbers a board sorts on go here as well as being reachable
   // through the character's rows and the milestones, so that reading a board is one table and no
   // JSON. `server/boards.ts` is what they are for.
