@@ -118,7 +118,7 @@ export async function digAHole(turn: MwTurn): Promise<boolean> {
     game.draw(stripLine('A MONSTER WANTS TO HELP', MONSTER_HELPS_COLOUR)); // DS:3074
     game.delay(MONSTER_HELPS_MS);
     // No hole, but the six moments above are spent and the monsters have walked them.
-    game.events.push({ kind: 'dug' });
+    game.events.push({ kind: 'dug', outcome: 'interrupted' });
     return false;
   }
   digging(game, DIG_LINE_MS);
@@ -161,7 +161,9 @@ export async function digAHole(turn: MwTurn): Promise<boolean> {
           pc.x = x;
           pc.y = y;
           session.enterFloor(pc.floor);
-          game.events.push({ kind: 'dug' });
+          // The rescue puts the character on any open square it can find, one floor deeper than
+          // they were unless they are already past the floor holes are dug upwards from.
+          game.events.push({ kind: 'dug', outcome: 'hole', to: pc.floor });
           return true;
         }
       }
@@ -170,6 +172,6 @@ export async function digAHole(turn: MwTurn): Promise<boolean> {
   }
   innClearPreparation(game);
   session.enterFloor(landing);
-  game.events.push({ kind: 'dug' });
+  game.events.push({ kind: 'dug', outcome: 'hole', to: landing });
   return true;
 }

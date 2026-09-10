@@ -69,11 +69,12 @@ export function goThroughTrapDoor(turn: MwTurn): void {
     return;
   }
   game.engaged = -1;
+  const from = { x: game.pc.x, y: game.pc.y };
   const [x, y] = bundledMwDungeon.trapdoorDest(turn.trapdoor, game.pc.dungeon);
   game.pc.x = x;
   game.pc.y = y;
   session.enterFloor(turn.trapdoor);
   arrivalHint(game, game.pc.floor);
   game.recenterMap = true;
-  game.events.push({ kind: 'trapdoorTaken' });
+  game.events.push({ kind: 'trapdoorTaken', from, to: turn.trapdoor });
 }

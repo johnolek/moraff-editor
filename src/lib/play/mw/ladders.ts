@@ -3,7 +3,7 @@ import { arrivalHint } from '../../game/mw-port/town';
 import type { MwGame } from '../../game/mw-port/state';
 import { digAHole } from './dig';
 import type { MwTurn } from './engine';
-import { enterBuilding } from './town';
+import { enterBuilding, mwBuildingName } from './town';
 
 /** The ladders: U to climb one, D to go down one, and the line the game puts under the map. */
 
@@ -37,17 +37,18 @@ export function ladderPrompt(ladder: number, building: number, trapdoor: boolean
 export async function goUp(turn: MwTurn): Promise<void> {
   const { game, session } = turn;
   if (turn.ladder < 0) {
+    const to = game.pc.floor + turn.ladder;
     game.engaged = -1;
-    session.enterFloor(game.pc.floor + turn.ladder);
+    session.enterFloor(to);
     arrivalHint(game, game.pc.floor);
     game.recenterMap = true;
-    game.events.push({ kind: 'ladderTaken' });
+    game.events.push({ kind: 'ladderTaken', to });
     return;
   }
   if (turn.building !== 0) {
     // The building is counted on the way in rather than on the way out, so that what a player is
     // shown while they are inside one already has it.
-    game.events.push({ kind: 'buildingEntered' });
+    game.events.push({ kind: 'buildingEntered', building: mwBuildingName(turn.building) });
     await enterBuilding(turn);
   }
   session.flushKeys();
@@ -64,9 +65,10 @@ export async function goDown(turn: MwTurn): Promise<void> {
     if (await digAHole(turn)) turn.building = 0;
     return;
   }
+  const to = game.pc.floor + turn.ladder;
   game.engaged = -1;
-  session.enterFloor(game.pc.floor + turn.ladder);
+  session.enterFloor(to);
   arrivalHint(game, game.pc.floor);
   game.recenterMap = true;
-  game.events.push({ kind: 'ladderTaken' });
+  game.events.push({ kind: 'ladderTaken', to });
 }

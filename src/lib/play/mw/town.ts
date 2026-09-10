@@ -52,6 +52,20 @@ export function buildingUnder(game: MwGame): number {
 }
 
 /**
+ * What the game calls the thing on a square of the town, out of the message each greets the
+ * player with: DS:1de5 "YOU HAVE ENTERED A STORE", DS:1fc5 "YOU ARE IN A TEMPLE", DS:23eb
+ * "WELCOME TO MORAFF'S FIRST NATIONAL BANK", DS:2176 "WELCOME TO THE FLEA BAG INN", and H.BIN
+ * record 34 for the gate, "YOU ARE STANDING ON TOP OF THE TOWN."
+ */
+export function mwBuildingName(building: number): string {
+  if (building === 1) return 'STORE';
+  if (building === 2) return 'TEMPLE';
+  if (building === 3) return "MORAFF'S FIRST NATIONAL BANK";
+  if (building === 4) return 'FLEA BAG INN';
+  return 'GATE';
+}
+
+/**
  * movecontrol's 0x75 branch on a square of the town that holds something: the building is
  * entered, played and left, and no moment passes for any of it.
  */
@@ -176,6 +190,7 @@ function walkIntoTheDungeon(session: MwGameSession, chosen: number): void {
   pc.dungeon = arrival.dungeon;
   pc.x = arrival.x;
   pc.y = arrival.y;
+  session.game.events.push({ kind: 'dungeonReached', dungeon: pc.dungeon });
   session.enterFloor(0);
   // DS:123d: the map has been left behind by the character, so it is drawn again around them.
   session.game.recenterMap = true;

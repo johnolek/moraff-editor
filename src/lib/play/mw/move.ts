@@ -128,7 +128,7 @@ export function resolveStep(turn: MwTurn): void {
     arriveSquare(game);
     if (pc.mapCursorX < 1) game.recenterMap = true;
   }
-  if (pc.x !== from.x || pc.y !== from.y) game.events.push({ kind: 'stepped' });
+  if (pc.x !== from.x || pc.y !== from.y) game.events.push({ kind: 'stepped', dir: pc.dir });
   if (pc.maxHp < pc.hp) pc.hp = pc.maxHp;
 }
 

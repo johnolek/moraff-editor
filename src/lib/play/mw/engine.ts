@@ -414,6 +414,7 @@ export class MwGameSession extends KeyedSession<MwCharacter> {
   enterFloor(level: number): void {
     const game = this.game;
     game.pc.floor = level;
+    game.events.push({ kind: 'floorReached', floor: level });
     this.rows = MORAFFS_WORLD_MAP.floor(level, game.pc.dungeon);
     mwEnterLevel(game, this.floors, this.rows, level, game.rng);
     this.memory.enterFloor(game.pc.dungeon, level);
