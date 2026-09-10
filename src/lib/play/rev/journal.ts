@@ -17,6 +17,8 @@ import type { RevEvent } from './state';
 /** What was found, as the line names it. */
 function findWords(find: Find): string {
   switch (find.what) {
+    // The names carry their own article where the game's own line does, which is every one of
+    // them but the suits of armour.
     case 'weapon':
     case 'armour':
     case 'item':

@@ -261,13 +261,13 @@ function armourOrAWeapon(game: RevGame): void {
   if (roll === 4 && revValue(pc, REV_VALUE.sword) === 0) {
     game.say(REV_YOU_FIND_A_SWORD);
     setRevValue(pc, REV_VALUE.sword, 1);
-    game.events.push({ kind: 'found', find: { what: 'weapon', item: 'sword' } });
+    game.events.push({ kind: 'found', find: { what: 'weapon', item: 'a sword' } });
     return;
   }
   if (revValue(pc, REV_VALUE.mace) === 0) {
     game.say(REV_YOU_FIND_A_MACE);
     setRevValue(pc, REV_VALUE.mace, 1);
-    game.events.push({ kind: 'found', find: { what: 'weapon', item: 'mace' } });
+    game.events.push({ kind: 'found', find: { what: 'weapon', item: 'a mace' } });
   }
 }
 
