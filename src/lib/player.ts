@@ -1,4 +1,4 @@
-import { readStored, writeStored } from './character/storage';
+import { readStored, removeStored, writeStored } from './character/storage';
 import { runServerUrl } from './run-server';
 
 /**
@@ -8,10 +8,15 @@ import { runServerUrl } from './run-server';
  * needs one and keeps it beside the roster; the server knows the player by that secret and shows
  * the name they claimed with it. Clearing the browser's storage loses the secret, and there is
  * nothing that gets it back.
+ *
+ * Beside the secret is the one thing a player says about whether to be on the boards at all.
  */
 
 /** Where the secret is kept, beside `moraff-tools.roster` and the rest. */
 const SECRET_KEY = 'moraff-tools.player-secret';
+
+/** Where the opt-out is kept, beside the secret. */
+const OFF_THE_BOARDS_KEY = 'moraff-tools.off-the-boards';
 
 /** A secret is 43 base64url characters, which is what 32 bytes come to without padding. */
 const SECRET = /^[A-Za-z0-9_-]{43}$/;
@@ -36,6 +41,24 @@ export function playerSecret(): string {
   const made = newSecret();
   writeStored(SECRET_KEY, made);
   return made;
+}
+
+/**
+ * Whether this browser has opted out of the boards. A browser that has said nothing is on them,
+ * so the runs of a player who never opens the setting are sent.
+ *
+ * While this is true nothing about any character leaves the device: `src/lib/play/streaming.ts`
+ * asks before every batch, so turning it off part-way through a run stops the sending there and
+ * then, and turning it back on sends from then on.
+ */
+export function offTheBoards(): boolean {
+  return readStored(OFF_THE_BOARDS_KEY) === 'yes';
+}
+
+/** Opt this browser out of the boards, or back on to them. */
+export function setOffTheBoards(off: boolean): void {
+  if (off) writeStored(OFF_THE_BOARDS_KEY, 'yes');
+  else removeStored(OFF_THE_BOARDS_KEY);
 }
 
 function newSecret(): string {

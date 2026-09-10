@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { claimName, myName, playerSecret } from './player';
+import { claimName, myName, offTheBoards, playerSecret, setOffTheBoards } from './player';
 
 /** Enough of the browser's Storage to stand in for it. */
 function fakeStorage(): Storage {
@@ -63,6 +63,41 @@ describe('playerSecret', () => {
     storage.setItem('moraff-tools.player-secret', 'nonsense');
 
     expect(playerSecret()).toMatch(/^[A-Za-z0-9_-]{43}$/);
+  });
+});
+
+describe('the opt-out from the boards', () => {
+  it('is off until the player says otherwise', () => {
+    useStorage(fakeStorage());
+
+    expect(offTheBoards()).toBe(false);
+  });
+
+  it('is kept beside the secret, and comes back the next visit', () => {
+    const storage = useStorage(fakeStorage())!;
+
+    setOffTheBoards(true);
+
+    expect(storage.getItem('moraff-tools.off-the-boards')).toBe('yes');
+    expect(offTheBoards()).toBe(true);
+  });
+
+  it('is taken out of the store again when the player comes back on to the boards', () => {
+    const storage = useStorage(fakeStorage())!;
+    setOffTheBoards(true);
+
+    setOffTheBoards(false);
+
+    expect(storage.getItem('moraff-tools.off-the-boards')).toBeNull();
+    expect(offTheBoards()).toBe(false);
+  });
+
+  it('is off in a browser that keeps nothing', () => {
+    useStorage(undefined);
+
+    setOffTheBoards(true);
+
+    expect(offTheBoards()).toBe(false);
   });
 });
 
