@@ -97,7 +97,7 @@ describe('the character the Play tab exports', () => {
 
   for (const name of ['exportMaps', 'exportRun']) {
     it(`is the one being played in ${name}, not the one being worked on`, () => {
-      expect(tabFunction(name)).toContain('playedEntry()');
+      expect(tabFunction(name)).toContain('const entry = played;');
       expect(tabFunction(name)).not.toContain('currentEntry()');
     });
   }

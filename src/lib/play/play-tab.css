@@ -275,3 +275,11 @@
   font-size: 11px;
   line-height: 1.4;
 }
+
+/* What the foot of the side column says in place of the run's journal, for a character rolled
+   for a board whose run has not ended. */
+.play .journal-locked {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}

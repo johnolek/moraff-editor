@@ -2,6 +2,8 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RevMapMemory, revCharacterMap } from '../play/rev/memory';
+import type { RosterEntry } from '../app-state.svelte';
+import type { JournalEntry } from '../play/journal';
 import { RunRecorder, type RunSession } from '../play/run';
 import { REV_VALUE_COUNT } from '../game/rev-port/record';
 import { revPlayerFromValues, saveRevPlayer } from '../play/rev/record';
@@ -363,7 +365,32 @@ describe('a session played into a character', () => {
     await restoreRoster();
     expect(currentEntry()!.run).toEqual(entry.run);
   });
+
+  it('leaves the journal of the sittings before it where it is', async () => {
+    keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'));
+    const entry = currentEntry()!;
+    sitting(entry, 0, 'Stepped north');
+    sitting(entry, 1, 'Stepped east');
+    await rememberNow();
+
+    await restoreRoster();
+    // The Play tab's timeline is the sittings run together, so a character played twice reads as
+    // one run rather than as the sitting it is being played in now.
+    expect(currentEntry()!.journal.flat().map((line) => line.text)).toEqual([
+      'Stepped north',
+      'Stepped east',
+    ]);
+  });
 });
+
+/** One sitting at the game, with a key in it and a line of journal to go with it, kept as the
+ *  session at that place in the character's run. */
+function sitting(entry: RosterEntry, at: number, said: string): void {
+  const run = new RunRecorder({ game: 'unforgiven', name: entry.name, record: entry.bytes });
+  run.input(0x1b);
+  const written: JournalEntry = { at: 1, floor: 0, module: 0, text: said, event: null };
+  runSessionPlayed(entry, at, run.log(), [written]);
+}
 
 describe('a browser that keeps no database', () => {
   /** The store opens the database once and keeps it, so a visit with none is its own module. */

@@ -14,6 +14,9 @@
   import { catchUpWithTheServer } from '../character/current';
   import { leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
   import { beingPlayedElsewhere } from '../character/server-roster';
+  import RunJournal from '../journal/RunJournal.svelte';
+  import { journalIsOpen } from '../journal/lock';
+  import { JOURNAL } from '../journal/words';
   import type FloorCanvas from '../map/FloorCanvas.svelte';
   import { armSpeaker } from '../speaker';
   import { isTyping } from '../ui/keys';
@@ -127,6 +130,30 @@
     return currentEntry();
   });
   const playable = $derived(character !== null && character.game === game.id);
+
+  /**
+   * The character being played, which is not always the one being worked on: the save editor can
+   * be pointed at another character while a game is in progress.
+   *
+   * It is followed rather than taken once, because its journal grows after every key.
+   */
+  const played = $derived(entryById(playingId));
+
+  /** Everything the character has done, in words: the sittings of its run one after another, so
+   *  that a character played twice reads as one timeline. */
+  const journal = $derived(played?.journal.flat() ?? []);
+
+  /** Whether the journal is there to be read yet, which for a character rolled for a board is
+   *  once the run has ended. */
+  const journalOpen = $derived(
+    played !== null &&
+      journalIsOpen({
+        leaderboard: played.leaderboard,
+        mode: played.run[played.run.length - 1]?.mode ?? null,
+        dead: played.dead || (view?.dead ?? false),
+        won: (view?.run?.milestones ?? []).some((milestone) => milestone.kind === 'win'),
+      }),
+  );
 
   /**
    * Start a game, unless the character is being played somewhere else.
@@ -322,23 +349,17 @@
     input.blur();
   }
 
-  /** The character being played, which is not always the one being worked on: the save editor
-   *  can be pointed at another character while a game is in progress. */
-  function playedEntry() {
-    return entryById(playingId);
-  }
-
   /** The map files this character would have beside them in the game's own folder. */
   function exportMaps() {
     const playing = session;
-    const entry = playedEntry();
+    const entry = played;
     if (playing && entry) downloadMapFiles(game.mapFiles(playing, entry), entry.name);
   }
 
   /** The character's whole run — every session it has been played in — as a file. */
   function exportRun() {
     const playing = session;
-    const entry = playedEntry();
+    const entry = played;
     if (!playing?.run || !entry) return;
     // The run goes into the roster entry after every key, and the game may not have read one
     // since this session began, so it is written down again before it is handed over.
@@ -467,6 +488,13 @@
         {/if}
         <BoardName />
         {@render sideFoot?.(stage)}
+        {#if view.run}
+          {#if journalOpen}
+            <RunJournal entries={journal} reached={view.run} names={words} />
+          {:else}
+            <p class="journal-locked">{JOURNAL.locked}</p>
+          {/if}
+        {/if}
       </aside>
     </div>
   {/if}

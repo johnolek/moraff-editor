@@ -197,7 +197,10 @@ played, so that a claimed ending can be checked by playing it again rather than 
   a replay pushes the same events and writes the same journal, which is how the run server has a
   run's journal without being handed one — and the roster keeps it beside each session all the
   same, in the `journal` store of the browser's database, so a character's timeline is there to
-  read without a replay.
+  read without a replay. The foot of the tab's side column is where it is read: the summary and
+  the timeline of the whole run, the sittings run together, drawn by `src/lib/journal/`. A
+  character rolled for one of the boards shows a line saying the journal opens when the run ends,
+  until the character is dead or has beaten the game; `lock.ts` there is that rule.
 * **The summary** — the journal folded into what the run came to (`summary.ts`): the steps, the
   experience gained and drained, the levels either way, the deepest floor and the furthest
   module, the money found and the money spent building by building, the wands and scrolls made
