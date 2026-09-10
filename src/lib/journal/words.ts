@@ -12,6 +12,11 @@ export const JOURNAL = {
   nothing: 'Nothing has happened in this run yet.',
 };
 
+/** How far the character walked before something else happened, as that walk's one line. */
+export function walkWords(steps: number): string {
+  return steps === 1 ? 'Walked a step' : `Walked ${steps} steps`;
+}
+
 /** The heading over one stretch of the timeline: where the character was while it happened. The
  *  town is floor 0 of every module. */
 export function placeHeading(floor: number, module: number, dungeonName: (dungeon: number) => string): string {
