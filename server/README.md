@@ -1,11 +1,10 @@
 # Run server
 
 One Node process that answers HTTP on a port, keeps everything in Postgres, and
-allows the site's origin. So far it answers `GET /health`, the players
-endpoints, the two runs endpoints, the player's characters, the boards and the
-announcements below; what is left of
-[MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367)
-is the boards of the living.
+allows the site's origin. It answers `GET /health`, the players endpoints, the
+two runs endpoints, the player's characters, the boards, the boards of the
+living and the announcements below, which is
+[MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
 
 It lives in this repository so one commit is one engine build: the code that
 will replay a run to check it is the same code the site played it with.
@@ -149,7 +148,7 @@ how long the run took, and the stamps are an answer the server owns.
 | Endpoint                      | What it does                                                     |
 | ----------------------------- | ---------------------------------------------------------------- |
 | `POST /runs/:id/batches`      | Takes one stretch of a run. 200 with `{ "received": <sequence> }`, 403 when the device has claimed no name, 409 when the character belongs to another player, is being played on another device, has been played on somewhere else since, or a sequence comes back holding another stretch, 400 when the body is not a batch or names a sitting the server was never told about. A refusal carries `because` beside the words, which is what the site acts on. |
-| `GET /runs/:id`               | The character, who played it, the sittings it was played in with the engine build each names, how it ended, the verdict on it with the milestones the replay reached, and whether another device of the player's is playing it now. A verified run is anybody's to read; one still being played, one that failed and one that could not be checked take the secret of the player whose run it is. 404 when nothing has been played under that id. |
+| `GET /runs/:id`               | The character, who played it, the sittings it was played in with the engine build each names, how it ended, the verdict on it with the milestones the replay reached, and whether another device of the player's is playing it now. A run a replay has passed is anybody's to read: that is a verified verdict for a run that has ended, and a verified snapshot for one still being played, which is what a row on a board of the living opens. A run nothing has been checked about, one that failed and one that could not be checked take the secret of the player whose run it is. 404 when nothing has been played under that id. |
 
 `:id` is the id of a roster entry in somebody's browser. The character is made
 known by its first batch and belongs to the player whose secret sent it, so
@@ -323,6 +322,57 @@ dungeon reached, and a run that never left the one it started in stands at 0,
 which is Module I and the town. The highest level is the highest a run levelled
 to, and a character that never gained a level stands at 0: what it was rolled
 at is no part of the run.
+
+## The boards of the living
+
+Who is alive right now: the characters of one game and board that are still
+being played, ranked by the level they have reached and by how far they have
+got.
+
+| Endpoint                                      | What it does                                    |
+| --------------------------------------------- | ----------------------------------------------- |
+| `GET /boards/:game/:leaderboard/living`       | One page of the living, fifty characters to a page. `?sort=level` or `?sort=deepest`, and a request naming neither is asking for the level. `?page=` for the ones after the first, counting from one. 404 when the game and the board are not ones there are, 400 when `sort` is not one of the two or `page` is not a page number. |
+
+A character reaches this board by being played and leaves it by dying, by
+winning or by the player forgetting it, since a run that has ended has a
+verdict of its own and stands on the boards above.
+
+Where it stands is not what the site says. The chain it has played so far is
+replayed by the engine build that played it, the same way an ended run is, and
+the level and the depth the board shows are what that replay reached. A
+character whose replay failed or could not be checked is off the board
+altogether.
+
+Every row carries the player's name and the character's, the level and the
+reach the replay found, the actions and the game's own clock, whether a device
+is playing that character at this moment — its lease not having lapsed — and
+when the server last heard from it, which is when the newest batch carrying the
+character landed.
+
+### How often a chain is replayed
+
+Replaying is the engine playing a whole run through from its first key, and it
+manages about eight hundred keys a second: an hour at Dungeons of the
+Unforgiven is a few thousand keys and replays in seconds, while a chain played
+all day takes a minute. Doing that after every five-second batch would leave
+the server time for nothing else. So a chain is replayed again only when a
+batch has arrived past the one the last replay took in, and then only when one
+of two things holds:
+
+- the site claims a level or a depth past the one the last replay found, which
+  is the only kind of change the board shows; or
+- the snapshot is more than **two minutes** old.
+
+The claims are a reason to look and never what goes on the board. They are not
+read at all for a character whose last replay did not pass: such a character is
+off the board whatever the site says about it, so the two minutes are soon
+enough.
+
+These replays share the line the verdicts are done in, one at a time, so a
+chain long enough to take longer than two minutes only keeps that line busy
+rather than piling replays on top of each other. The board says when each
+character was last heard from, so a snapshot that has fallen behind is plain to
+see.
 
 ## The announcements
 
