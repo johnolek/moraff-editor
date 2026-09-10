@@ -14,6 +14,7 @@
     "src/**/*.svelte",
     "server/**/*.ts",
     "vite.config.ts",
+    "vite.config.test.ts",
     "vite.verify.config.ts",
     "vite.server.config.ts",
     "vite.publish-engine.config.ts",

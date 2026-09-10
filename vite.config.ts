@@ -5,7 +5,12 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 
 /**
  * The commit this build was made from, which every run log names: a replay has to run the engine
- * that produced the run. A working tree with no git around it says so rather than failing.
+ * that produced the run.
+ *
+ * Where git cannot be asked, the commit comes from the `SOURCE_COMMIT` environment variable
+ * instead: an image is built from a copy of the files with no repository beside them, and Coolify
+ * passes the commit it checked out as that build argument. A build with neither says `unknown`
+ * rather than failing.
  *
  * A tree with changes in it says `-dirty`, because the commit alone does not describe what was
  * built: somebody handed a run log cannot check it out and get this engine back, and the verdict
@@ -17,7 +22,7 @@ export function engineCommit(): string {
     const changes = execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).trim();
     return changes === '' ? commit : `${commit}-dirty`;
   } catch {
-    return 'unknown';
+    return process.env.SOURCE_COMMIT?.trim() || 'unknown';
   }
 }
 
@@ -27,6 +32,6 @@ export default defineConfig({
   define: { __ENGINE_COMMIT__: JSON.stringify(engineCommit()) },
   plugins: [svelte(), viteSingleFile()],
   test: {
-    include: ['src/**/*.test.ts', 'server/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'server/**/*.test.ts', '*.test.ts'],
   },
 });
