@@ -306,6 +306,7 @@ function spellOnTheMenu(key: number): boolean {
  */
 export function revGainALevel(game: RevGame): void {
   const pc = game.pc;
+  const was = pc.level;
   pc.level += 1;
   // 1000:2054 to 206D: the hit points are the roll, the character's own health bonus and a flat
   // one, and the flat one is the constant the level was raised by two instructions earlier —
@@ -315,7 +316,7 @@ export function revGainALevel(game: RevGame): void {
   game.scratch = gained;
   pc.maxHp += gained;
   pc.hp += gained;
-  game.events.push({ kind: 'levelGained', level: pc.level });
+  game.events.push({ kind: 'levelGained', level: pc.level, from: was });
 }
 
 /**

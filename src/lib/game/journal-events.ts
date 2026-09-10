@@ -10,9 +10,10 @@ import type { CastEvent } from './action';
  * timeline all read the same run.
  *
  * The kinds are shared wherever the thing is the same, so one journal and one summary serve the
- * lot. A few of them belong to only two of the games — the vitamin pills the two Moraff games
- * hand out — and they are here rather than on those games' own unions because the summary adds
- * them up the same way for whichever game has them. A game's own event union carries these
+ * lot. A few of them belong to only one or two of the games — the vitamin pills the two Moraff
+ * games hand out, Moraff's Revenge's breath of fire and its fountain of youth — and they are
+ * here rather than on those games' own unions because the summary adds them up the same way for
+ * whichever game has them. A game's own event union carries these
  * beside the kinds only it has — Dungeons of the Unforgiven's chutes and stone tablets are in
  * `GameEvent` (`src/lib/game/port/state.ts`).
  */
@@ -30,6 +31,7 @@ export const JOURNAL_KINDS = [
   'ladderTaken',
   'buildingEntered',
   'swung',
+  'breathed',
   'cast',
   'itemUsed',
   'dropped',
@@ -46,6 +48,7 @@ export const JOURNAL_KINDS = [
   'experienceDrained',
   'floorReached',
   'dungeonReached',
+  'fountainDrunk',
   'coinsSpent',
   'deposited',
   'withdrew',
@@ -110,6 +113,8 @@ export type JournalEvent =
   | { kind: 'buildingEntered'; building: string }
   /** A swing taken at the monster being fought. A damage of 0 is a miss. */
   | { kind: 'swung'; weapon: string; monster: MonsterSeen; damage: number }
+  /** A breath of fire, which is Moraff's Revenge's own swing and cannot miss. */
+  | { kind: 'breathed'; monster: MonsterSeen; damage: number }
   | CastEvent
   /** A charge, a pill, a potion or one of the magic items spent. */
   | { kind: 'itemUsed'; item: string }
@@ -142,6 +147,8 @@ export type JournalEvent =
   | { kind: 'floorReached'; floor: number }
   /** The module or dungeon the character moved to. */
   | { kind: 'dungeonReached'; dungeon: number }
+  /** Moraff's Revenge's fountain of youth, drunk from, and the generation it started. */
+  | { kind: 'fountainDrunk'; generation: number }
   /** Money spent in one of the town's buildings, on what and where. */
   | { kind: 'coinsSpent'; amount: number; on: string; where: string }
   | { kind: 'deposited'; amount: number }

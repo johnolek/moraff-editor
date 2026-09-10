@@ -1,4 +1,5 @@
 import type { ActionEvent } from '../../game/action';
+import type { JournalEvent } from '../../game/journal-events';
 import type { Rng } from '../../game/port/rng';
 import { RevMapMemory } from './memory';
 import { RevMonsters, type RevWalker } from './monsters';
@@ -36,11 +37,42 @@ export interface RevDrawnFrom {
 /** Something worth writing down about a run, which `../run.ts` counts as an action or keeps as a
  *  milestone. */
 export type RevEvent =
-  | { kind: 'levelGained'; level: number }
   | { kind: 'bossKilled'; boss: number }
   | { kind: 'gameWon' }
+  /** A turn where the character stands, which costs them nothing. `facing` is the journal's own
+   *  numbering, 0 north, 1 south, 2 west, 3 east. */
+  | { kind: 'turned'; facing: number }
+  /**
+   * A ladder taken, up or down (1000:0DAF and 1000:0DE0). `falseFloor` is a square a chute last
+   * landed the character on, which gives way under them: it is the same key, the same one level
+   * down, and one action either way.
+   */
+  | { kind: 'ladderTaken'; to: number; falseFloor: boolean }
+  /** A chute fallen down (1000:3428): the square it opened under and the floor it landed on. */
+  | { kind: 'chuteTaken'; from: { column: number; row: number }; to: number }
+  /** A step a monster stood in the way of (1000:33EA), which only ever happens inside a fight.
+   *  `direction` is the journal's own numbering. */
+  | { kind: 'wayBlocked'; direction: number }
+  /** A spellbook a kill left (1000:AA18), which is the only way a character is taught a spell. */
+  | { kind: 'spellLearned'; set: 'prep' | 'battle'; level: number; name: string }
+  /** A wand a kill left (1000:B156), by the colour and the charges it came with. */
+  | { kind: 'wandFound'; colour: string; charges: number }
+  /** Death undone (1000:A0C2): the character was carried out and raised, or came back as
+   *  somebody else. */
+  | { kind: 'raised'; how: 'raised' | 'reincarnated' }
+  /** One of the three potions a fight counts down running out (1000:85BA). */
+  | { kind: 'potionWoreOff'; potion: string }
+  /** The treasure a character walked into the bank with, turned into jewel pieces at face
+   *  value (1000:22F7). */
+  | { kind: 'treasureSold'; amount: number }
   /** One of the things a run counts, pushed where the game does it (`src/lib/game/action.ts`). */
-  | ActionEvent;
+  | ActionEvent
+  /**
+   * One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
+   * where the kinds a run counts as actions carry their numbers.
+   */
+  | JournalEvent;
+
 
 /** What a fight holds while it is running (1000:8223). */
 export interface RevFight {

@@ -276,7 +276,7 @@ describe('the temple', () => {
     await revVisitTemple(game, desk('5', 'L'));
     expect(game.pc.level).toBe(4);
     expect(game.pc.money).toBe(0);
-    expect(game.events).toContainEqual({ kind: 'levelGained', level: 4 });
+    expect(game.events).toContainEqual({ kind: 'levelGained', level: 4, from: 3 });
   });
 
   it('heals every wound for a thousand', async () => {
