@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Announcement } from '../../../server/announcing';
-import { announcementIn, followFeed, prepended, type FeedConnection, type FeedWait, type FeedWiring } from './feed';
+import { announcementIn, followFeed, merged, prepended, type FeedConnection, type FeedWait, type FeedWiring } from './feed';
 
 function said(id: number): Announcement {
   return {
@@ -41,6 +41,16 @@ describe('putting an announcement that has arrived at the front', () => {
 
   it('leaves one already showing where it is, since the history and the feed overlap', () => {
     expect(prepended([said(2), said(1)], said(2)).map((each) => each.id)).toEqual([2, 1]);
+  });
+});
+
+describe('the history under what arrived while it was being read', () => {
+  it('keeps the ones that arrived in front, newest first', () => {
+    expect(merged([said(5), said(4)], [said(3), said(2)]).map((each) => each.id)).toEqual([5, 4, 3, 2]);
+  });
+
+  it('shows one that arrived and came back in the history once', () => {
+    expect(merged([said(4), said(3)], [said(3), said(2)]).map((each) => each.id)).toEqual([4, 3, 2]);
   });
 });
 

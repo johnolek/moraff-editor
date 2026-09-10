@@ -37,6 +37,18 @@ export function prepended(showing: readonly Announcement[], arrived: Announcemen
   return [arrived, ...showing];
 }
 
+/**
+ * The history just read, with whatever arrived down the feed while it was being read still in
+ * front of it.
+ *
+ * The feed goes up before the history is asked for, so that nothing announced in between is
+ * missed. That is also why the two overlap: an announcement made in that moment comes down the
+ * feed and comes back in the history, and it is shown once.
+ */
+export function merged(arrived: readonly Announcement[], history: readonly Announcement[]): Announcement[] {
+  return arrived.reduceRight<Announcement[]>((all, announcement) => prepended(all, announcement), [...history]);
+}
+
 /** One connection to the feed, however it was opened. */
 export interface FeedConnection {
   close(): void;
