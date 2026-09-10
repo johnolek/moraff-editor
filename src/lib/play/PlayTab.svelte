@@ -207,6 +207,12 @@
     if (key !== null) press(session, key);
   }
 
+  /** Another character to play is another question, so what was said about the last one goes. */
+  $effect(() => {
+    void character?.id;
+    untrack(() => (elsewhere = null));
+  });
+
   /** The roller's Play now: the character it kept is current, and the game starts as the tab
    *  opens. */
   $effect(() => {
