@@ -38,6 +38,7 @@ export const JOURNAL_KINDS = [
   'found',
   'wandMade',
   'scrollWritten',
+  'levelGained',
   'levelLost',
   'experienceDrained',
   'floorReached',
@@ -124,6 +125,11 @@ export type JournalEvent =
   /** A wand written by a spell, with the charges it was written with. */
   | { kind: 'wandMade'; spell: SpellAt; charges: number }
   | { kind: 'scrollWritten'; spell: SpellAt }
+  /**
+   * Levels the character's experience has earned them, handed over all at once: `level` is the
+   * one they are left on and `from` the one they had before.
+   */
+  | { kind: 'levelGained'; level: number; from: number }
   /** Levels a life drainer took, and the level the character is left on. */
   | { kind: 'levelLost'; levels: number; level: number; monster: MonsterSeen }
   /** Experience a drainer took. */

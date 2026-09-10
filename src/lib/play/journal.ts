@@ -75,7 +75,7 @@ const CAST_SOURCES: Record<CastSource, string> = {
 };
 
 /** The name the spell menu prints for the spell at one place in one of the four lists. */
-function spellName(spell: SpellAt): string {
+export function spellMenuName(spell: SpellAt): string {
   return SPELL_MENU_NAMES[spell.type][spell.level * 3 + spell.slot];
 }
 
@@ -100,13 +100,13 @@ function snakeWords(hint: number): string {
 function findWords(find: Find): string {
   switch (find.what) {
     case 'spellbook':
-      return `Found a spellbook: ${spellName(find.spell)}`;
+      return `Found a spellbook: ${spellMenuName(find.spell)}`;
     case 'scroll':
-      return `Found a scroll of ${spellName(find.spell)}`;
+      return `Found a scroll of ${spellMenuName(find.spell)}`;
     case 'paper':
-      return `Found a sheet of paper for ${spellName(find.spell)}`;
+      return `Found a sheet of paper for ${spellMenuName(find.spell)}`;
     case 'wand':
-      return `Found a wand of ${spellName(find.spell)} with ${find.charges} charges`;
+      return `Found a wand of ${spellMenuName(find.spell)} with ${find.charges} charges`;
     case 'weapon':
       return `Found a ${find.item}`;
     case 'armour':
@@ -182,9 +182,9 @@ export function unforgivenJournal(pushed: { kind: string }): string | null {
       if (event.spell.game !== 'unforgiven') return null;
       return `Cast ${event.spell.name} ${CAST_SOURCES[event.spell.source]}`;
     case 'wandMade':
-      return `Wrote a wand of ${spellName(event.spell)} with ${event.charges} charges`;
+      return `Wrote a wand of ${spellMenuName(event.spell)} with ${event.charges} charges`;
     case 'scrollWritten':
-      return `Wrote a scroll of ${spellName(event.spell)}`;
+      return `Wrote a scroll of ${spellMenuName(event.spell)}`;
     case 'itemUsed':
       return `Used the ${event.item}`;
     case 'dropped':
