@@ -13,6 +13,8 @@ const ENGINE = 'a'.repeat(40);
 const MINE = 'A'.repeat(43);
 const THEIRS = 'B'.repeat(43);
 const UNNAMED = 'C'.repeat(43);
+/** A second browser of John's own, signed in with his passphrase. */
+const MY_OTHER = 'D'.repeat(43);
 
 const CHARACTER = 'k3p9x1-ab12cd';
 
@@ -61,11 +63,20 @@ describe('streaming a run over HTTP', () => {
   let server: Server;
   let origin: string;
 
-  async function claim(secret: string, name: string): Promise<void> {
-    await fetch(`${origin}/players`, {
+  async function claim(secret: string, name: string): Promise<{ passphrase?: string }> {
+    const response = await fetch(`${origin}/players`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
       body: JSON.stringify({ name }),
+    });
+    return response.json() as Promise<{ passphrase?: string }>;
+  }
+
+  async function signIn(secret: string, name: string, passphrase: string): Promise<void> {
+    await fetch(`${origin}/players/sign-in`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
+      body: JSON.stringify({ name, passphrase }),
     });
   }
 
@@ -83,8 +94,9 @@ describe('streaming a run over HTTP', () => {
     server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql);
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
-    await claim(MINE, 'John');
+    const mine = await claim(MINE, 'John');
     await claim(THEIRS, 'Somebody');
+    await signIn(MY_OTHER, 'John', mine.passphrase ?? '');
   });
 
   afterAll(async () => {
@@ -134,6 +146,28 @@ describe('streaming a run over HTTP', () => {
 
     expect(response.status).toBe(400);
     expect((await response.json()).error).toBe('That is not a batch of a run.');
+  });
+
+  it('refuses a batch for a character the player is playing on another device', async () => {
+    const response = await send(MY_OTHER, batch({ sequence: 1, inputs: [107], pressed: 1 }));
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({
+      error: 'That character is being played on another device.',
+      because: 'leased',
+    });
+  });
+
+  it('tells a device that the character it is about to play is being played elsewhere', async () => {
+    const response = await fetch(`${origin}/runs/${CHARACTER}`, { headers: { Authorization: `Bearer ${MY_OTHER}` } });
+
+    expect((await response.json()).leasedElsewhere).toBe(true);
+  });
+
+  it('tells the device playing it that nothing else is', async () => {
+    const response = await fetch(`${origin}/runs/${CHARACTER}`, { headers: { Authorization: `Bearer ${MINE}` } });
+
+    expect((await response.json()).leasedElsewhere).toBe(false);
   });
 
   it('shows the player their own run before it has been checked', async () => {

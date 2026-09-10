@@ -21,7 +21,17 @@ import type { Queries, Sql } from './sql';
 export type { BatchClaims, BatchSession, CharacterSave, RunBatch };
 
 /** Why a batch was not taken, which is what decides the words and the status the site is sent. */
-export type BatchRefusal = 'another-player' | 'no-such-sitting' | 'changed-resend' | 'moved-on';
+export type BatchRefusal = 'another-player' | 'no-such-sitting' | 'changed-resend' | 'moved-on' | 'leased';
+
+/**
+ * How long a batch leases the character to the device that sent it.
+ *
+ * A character is played from one device at a time, or two runs would be written over each other
+ * and neither would be the character's. Six times the sending interval: long enough that a device
+ * playing on holds the lease through a batch or two that never arrived, and short enough that a
+ * player who shuts one device and opens another is not kept waiting.
+ */
+export const LEASE_MS = 30_000;
 
 /** What became of a batch: the sequence the server now has, or why it was refused. */
 export type BatchTaken = { taken: true; received: number; ending: boolean } | { taken: false; because: BatchRefusal };
@@ -57,6 +67,9 @@ interface CharacterRow {
   created_at: Date;
   finished_at: Date | null;
   outcome: string | null;
+  /** The device playing it, as the SHA-256 of that device's secret, and until when. */
+  leased_to: string | null;
+  leased_until: Date | null;
 }
 
 /**
@@ -91,6 +104,9 @@ export async function takeBatch(
       return { taken: false, because: 'another-player' };
     }
     if (character === null && batch.session === undefined) return { taken: false, because: 'no-such-sitting' };
+    if (character !== null && leasedElsewhere(character, sender.device, arrivedAt)) {
+      return { taken: false, because: 'leased' };
+    }
 
     const chain = await sittingsHere(queries, characterId);
     const newest = chain[chain.length - 1]?.index ?? null;
@@ -119,8 +135,34 @@ export async function takeBatch(
 
     if (adding.append) await appendBatch(queries, characterId, { ...batch, ...adding }, arrivedAt);
     if (batch.save !== undefined) await keepCharacterSave(queries, characterId, batch.save, arrivedAt);
+    await leaseCharacter(queries, characterId, sender.device, arrivedAt);
     return { taken: true, received: batch.sequence, ending: batch.ending };
   });
+}
+
+/**
+ * Whether another device is playing this character now.
+ *
+ * The lease is read against the moment the batch arrived rather than the database's own clock, so
+ * that a batch is judged by when it landed and not by how long the statements before it took.
+ */
+export function leasedElsewhere(character: LeasedCharacter, device: string, now: number): boolean {
+  if (character.leased_to === null || character.leased_to === device) return false;
+  return character.leased_until !== null && character.leased_until.getTime() > now;
+}
+
+/** A character's lease, as any row carrying the two columns hands it over. */
+export interface LeasedCharacter {
+  leased_to: string | null;
+  leased_until: Date | null;
+}
+
+/** The character is this device's for the next half minute, which every batch renews. */
+async function leaseCharacter(sql: Queries, characterId: string, device: string, from: number): Promise<void> {
+  await sql.query(
+    'UPDATE characters SET leased_to = $1, leased_until = to_timestamp($2::double precision / 1000.0) WHERE id = $3',
+    [device, from + LEASE_MS, characterId],
+  );
 }
 
 /** Which keys of a batch are new, where they go, and whether there is a stretch to write at all. */
@@ -268,6 +310,15 @@ export async function runFor(sql: Queries, characterId: string): Promise<KeptRun
     playerId: row.player_id,
     player: row.player,
   };
+}
+
+/** The lease on a character, for a reader that wants to know whether it is being played
+ *  elsewhere. A character nobody has ever played here has none. */
+export async function leaseOn(sql: Queries, characterId: string): Promise<LeasedCharacter> {
+  const rows = await sql.query<LeasedCharacter>('SELECT leased_to, leased_until FROM characters WHERE id = $1', [
+    characterId,
+  ]);
+  return rows[0] ?? { leased_to: null, leased_until: null };
 }
 
 /** The character has ended its run, which is a death or a win and nothing else: leaving the game

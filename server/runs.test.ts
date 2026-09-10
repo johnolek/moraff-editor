@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   batchesOf,
+  leasedElsewhere,
+  leaseOn,
+  LEASE_MS,
   readRunBatch,
   runFor,
   sessionsOf,
@@ -251,6 +254,63 @@ describe('a sitting the server has been told about before', () => {
       [0, [104, 106]],
       [1, [107]],
     ]);
+  });
+});
+
+describe('one character played from one device at a time', () => {
+  let sql: Sql;
+
+  /** The same player, playing from a second device: a browser signed in with the passphrase. */
+  const OTHER_DEVICE: BatchSender = { player: ME.player, device: 'c'.repeat(64) };
+
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
+  });
+
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  it('refuses a batch from another device while the one playing holds the lease', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    const second = await takeBatch(sql, CHARACTER, OTHER_DEVICE, batch({ sequence: 1, inputs: [107] }), 6000);
+
+    expect(second).toEqual({ taken: false, because: 'leased' });
+    expect(await batchesOf(sql, CHARACTER)).toHaveLength(1);
+  });
+
+  it('lets the other device take it over once the lease has lapsed', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    const later = await takeBatch(
+      sql,
+      CHARACTER,
+      OTHER_DEVICE,
+      batch({ sessionIndex: 1, session: { ...header, startedAt: '2026-09-09T14:00:00.000Z' } }),
+      1000 + LEASE_MS + 1,
+    );
+
+    expect(later).toEqual({ taken: true, received: 0, ending: false });
+  });
+
+  it('holds the lease for the device that keeps playing', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [107] }), 1000 + LEASE_MS - 1);
+
+    const second = await takeBatch(sql, CHARACTER, OTHER_DEVICE, batch({ sequence: 2 }), 1000 + LEASE_MS + 1);
+
+    expect(second).toEqual({ taken: false, because: 'leased' });
+  });
+
+  it('says which device is playing it', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    const lease = await leaseOn(sql, CHARACTER);
+    expect(leasedElsewhere(lease, ME.device, 2000)).toBe(false);
+    expect(leasedElsewhere(lease, OTHER_DEVICE.device, 2000)).toBe(true);
+    expect(leasedElsewhere(lease, OTHER_DEVICE.device, 1000 + LEASE_MS + 1)).toBe(false);
   });
 });
 

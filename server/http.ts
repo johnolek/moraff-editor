@@ -16,7 +16,17 @@ import {
   secretHash,
   signInWithPassphrase,
 } from './players';
-import { endRun, readRunBatch, runFor, sessionsOf, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
+import {
+  endRun,
+  leaseOn,
+  leasedElsewhere,
+  readRunBatch,
+  runFor,
+  sessionsOf,
+  takeBatch,
+  type BatchClaims,
+  type BatchRefusal,
+} from './runs';
 import type { Queries, Sql } from './sql';
 import { createRunVerifier, verdictFor, type KeptVerdict, type RunVerifier } from './verifying';
 
@@ -33,6 +43,7 @@ const ANOTHER_PLAYER = 'That character belongs to another player.';
 const NO_SUCH_SITTING = 'That run has no such sitting.';
 const CHANGED_RESEND = 'That stretch of the run arrived before, holding something else.';
 const MOVED_ON = 'That character has been played on another device since.';
+const BEING_PLAYED = 'That character is being played on another device.';
 const NO_SUCH_RUN = 'No such run.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
 const NOT_A_PAGE = 'That is not a page of a board.';
@@ -379,7 +390,10 @@ async function takeRunBatch(
   const taken = await takeBatch(sql, characterId, { player, device: secretHash(secret) }, batch, Date.now());
   if (!taken.taken) {
     const refused = whyTheBatchWasRefused(taken.because);
-    sendJson(response, refused.status, { error: refused.error });
+    // The words are for the player to read and `because` is for the site to act on: a run refused
+    // because the character has been played elsewhere is the one the site takes the server's copy
+    // of the character over.
+    sendJson(response, refused.status, { error: refused.error, because: taken.because });
     return;
   }
   if (taken.ending) {
@@ -402,6 +416,7 @@ function whyTheBatchWasRefused(because: BatchRefusal): { status: number; error: 
   if (because === 'another-player') return { status: 409, error: ANOTHER_PLAYER };
   if (because === 'changed-resend') return { status: 409, error: CHANGED_RESEND };
   if (because === 'moved-on') return { status: 409, error: MOVED_ON };
+  if (because === 'leased') return { status: 409, error: BEING_PLAYED };
   return { status: 400, error: NO_SUCH_SITTING };
 }
 
@@ -434,6 +449,12 @@ export interface RunAnswer {
   sessions: RunSittingAnswer[];
   /** Null while the run has not been replayed. */
   verdict: KeptVerdict | null;
+  /**
+   * Whether another device of the player's own is playing this character now, which is what the
+   * Play tab asks before it starts a game: one character is played from one device at a time.
+   * A reader who is not the player is told nothing, so it is false for them.
+   */
+  leasedElsewhere: boolean;
 }
 
 /**
@@ -457,14 +478,14 @@ async function sendRun(
     return;
   }
   const verdict = await verdictFor(sql, characterId);
-  if (verdict === null || verdict.status !== 'verified') {
-    const secret = bearerSecret(request);
-    const player = secret === null ? null : await playerFor(sql, secret);
-    if (player === null || player !== run.playerId) {
-      sendJson(response, 403, { error: NOT_YOUR_RUN });
-      return;
-    }
+  const secret = bearerSecret(request);
+  const player = secret === null ? null : await playerFor(sql, secret);
+  const theirs = player !== null && player === run.playerId;
+  if ((verdict === null || verdict.status !== 'verified') && !theirs) {
+    sendJson(response, 403, { error: NOT_YOUR_RUN });
+    return;
   }
+  const lease = theirs && secret !== null ? await leaseOn(sql, characterId) : null;
   const answer: RunAnswer = {
     id: run.id,
     game: run.game,
@@ -482,6 +503,7 @@ async function sendRun(
       time: session.time,
     })),
     verdict,
+    leasedElsewhere: lease !== null && secret !== null && leasedElsewhere(lease, secretHash(secret), Date.now()),
   };
   sendJson(response, 200, answer);
 }
