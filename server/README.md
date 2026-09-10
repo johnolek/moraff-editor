@@ -1,9 +1,9 @@
 # Run server
 
 One Node process that answers HTTP on a port, keeps everything in Postgres, and
-allows the site's origin. So far it answers `GET /health`, the two
-players endpoints, the two runs endpoints, the boards and the announcements
-below; what is left of
+allows the site's origin. So far it answers `GET /health`, the two players
+endpoints, the two runs endpoints, the boards and the announcements below; what
+is left of
 [MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367)
 is the boards of the living.
 
@@ -287,31 +287,29 @@ on your own machine, and never reaches the database.
 
 ## Deploying by hand
 
-Build on your machine and copy what it makes over. These are yours to run:
+Build on your machine and copy what it makes over. The box keeps the two
+directories this repository has them in, because the server looks for an engine
+build at `../server/engines/<commit>/engine.mjs` beside itself. These are yours
+to run:
 
 ```bash
 pnpm build:server
 pnpm build:engine
-scp dist-server/main.mjs box:/srv/moraff-run-server/main.mjs
-scp -r "server/engines/$(git rev-parse HEAD)" box:/srv/moraff-run-server/engines/
+scp dist-server/main.mjs box:/srv/moraff-run-server/dist-server/main.mjs
+scp -r "server/engines/$(git rev-parse HEAD)" box:/srv/moraff-run-server/server/engines/
 ssh box 'sudo systemctl restart moraff-run-server'
 ```
 
-The second copy puts this commit's engine where the restarted server will look
-for it, one directory up and across from `main.mjs`, and the server publishes it
-to the database as it starts. That is why the checkout has to be clean: a dirty
-tree has no directory under a commit's name to copy, and a dirty build is
-refused anyway.
+The second copy puts this commit's engine where the restarted server will find
+it, and the server publishes it to the database as it starts. That is why the
+checkout has to be clean: a dirty tree has no directory under a commit's name to
+copy, and a dirty build would be refused anyway.
 
 The first time, make somewhere for it to live:
 
 ```bash
-ssh box 'sudo mkdir -p /srv/moraff-run-server/server/engines'
+ssh box 'sudo mkdir -p /srv/moraff-run-server/dist-server /srv/moraff-run-server/server/engines'
 ```
-
-Note that `main.mjs` goes in `/srv/moraff-run-server/dist-server/` under that
-layout, since the server looks for a build at `../server/engines/<commit>/`
-beside itself.
 
 `/etc/systemd/system/moraff-run-server.service`:
 
