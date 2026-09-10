@@ -21,6 +21,37 @@ import type { MwGame } from './state';
 const INN_PRICE = 10;
 
 /**
+ * What the game calls each of its four buildings, out of the line each greets the player with:
+ * DS:1de5 "YOU HAVE ENTERED A STORE", DS:1fc5 "YOU ARE IN A TEMPLE", DS:23eb "WELCOME TO
+ * MORAFF'S FIRST NATIONAL BANK" and DS:2176 "WELCOME TO THE FLEA BAG INN".
+ */
+export const MW_STORE = 'STORE';
+export const MW_TEMPLE = 'TEMPLE';
+export const MW_BANK = "MORAFF'S FIRST NATIONAL BANK";
+export const MW_INN = 'FLEA BAG INN';
+
+/** What a night at the inn buys, which is the one thing it sells. */
+const A_NIGHT = 'A NIGHT';
+
+/**
+ * The six weapons and the six suits of armor the store's two menus offer, by the names those
+ * menus print (DS:1e75 onwards and DS:1f24 onwards) with the dots and the price taken off. The
+ * first suit is bare skin under the name ROBES, which is what the menu calls it.
+ */
+const STORE_WEAPONS = ['STICK', 'CLUB', 'MACE', 'KNIFE', 'SHORTSWORD', 'LONG SWORD'];
+const STORE_ARMOUR = ['ROBES', 'LEATHER', 'CHAIN', 'SCALE', 'PLATE', 'FIELD PLATE'];
+
+/** The six the temple sells, by the names its menu prints (DS:1fef onwards). */
+const TEMPLE_SPELLS = [
+  'CURE WOUNDS',
+  'CURE SERIOUS WOUNDS',
+  'HEAL ALL WOUNDS',
+  'CURE POISON',
+  'CURE DISEASE',
+  'RAISE CONTRACT',
+];
+
+/**
  * The store's price table (DGROUP 0x1265) and the temple's (0x1281). Both hold seven entries
  * and both menus reach only the first six, so the great sword's 9,900 and titanium's 60,000 are
  * never charged.
@@ -97,6 +128,12 @@ export function store(game: MwGame, what: number, item: number): void {
     if (WEAPON_PRICES[item - 1] < pc.money) {
       pc.weaponsOwned[item] += 1;
       pc.money -= WEAPON_PRICES[item - 1];
+      game.events.push({
+        kind: 'coinsSpent',
+        amount: WEAPON_PRICES[item - 1],
+        on: STORE_WEAPONS[item - 1],
+        where: MW_STORE,
+      });
     }
     return;
   }
@@ -117,6 +154,12 @@ export function store(game: MwGame, what: number, item: number): void {
     if (ARMOUR_PRICES[item - 1] < pc.money) {
       pc.armorOwned[item - 1] += 1;
       pc.money -= ARMOUR_PRICES[item - 1];
+      game.events.push({
+        kind: 'coinsSpent',
+        amount: ARMOUR_PRICES[item - 1],
+        on: STORE_ARMOUR[item - 1],
+        where: MW_STORE,
+      });
     }
   }
 }
@@ -164,6 +207,15 @@ export function temple(game: MwGame, choice: number): void {
     return;
   }
   pc.money -= price;
+  // The contract is the one line of the menu that is free, so there is nothing to report spending.
+  if (price > 0) {
+    game.events.push({
+      kind: 'coinsSpent',
+      amount: price,
+      on: TEMPLE_SPELLS[choice - 1],
+      where: MW_TEMPLE,
+    });
+  }
   switch (choice) {
     case 1:
       pc.hp += game.rng.random(10) + 1;
@@ -190,6 +242,7 @@ export function temple(game: MwGame, choice: number): void {
       pc.returnX = pc.x;
       pc.returnY = pc.y;
       pc.returnDungeon = pc.dungeon;
+      game.events.push({ kind: 'contractSigned', dungeon: pc.dungeon, x: pc.x, y: pc.y });
       break;
   }
 }
@@ -317,6 +370,7 @@ export function inn(game: MwGame, stay: boolean): void {
     return;
   }
   pc.money -= INN_PRICE;
+  game.events.push({ kind: 'coinsSpent', amount: INN_PRICE, on: A_NIGHT, where: MW_INN });
   pc.unread7c0 += 3600 * 8;
   pc.sp = pc.maxSp;
   innClearPreparation(game);
@@ -373,15 +427,17 @@ export function bank(game: MwGame, choice: number, amount = 0): void {
     '5) LEAVE BANK',
   );
   if (choice === 1) {
-    pc.money +=
+    const jewels =
       pc.stones[4] * PLATINUM_JEWELS +
       pc.stones[5] +
       Math.trunc(pc.stones[3] / STONE_RATES[3]) +
       Math.trunc(pc.stones[2] / STONE_RATES[2]) +
       Math.trunc(pc.stones[1] / STONE_RATES[1]) +
       Math.trunc(pc.stones[0] / STONE_RATES[0]);
+    pc.money += jewels;
     for (let kind = 0; kind < pc.stones.length; kind++) pc.stones[kind] = 0;
     financialStatement(game);
+    game.events.push({ kind: 'stonesConverted', jewels });
     game.events.push({ kind: 'weightRecomputed' });
     return;
   }
@@ -391,6 +447,7 @@ export function bank(game: MwGame, choice: number, amount = 0): void {
     const moved = moveMoney(amount, pc.money);
     pc.money -= moved;
     pc.bank += moved;
+    if (moved > 0) game.events.push({ kind: 'deposited', amount: moved });
     financialStatement(game);
     return;
   }
@@ -400,6 +457,7 @@ export function bank(game: MwGame, choice: number, amount = 0): void {
     const moved = moveMoney(amount, pc.bank);
     pc.money += moved;
     pc.bank -= moved;
+    if (moved > 0) game.events.push({ kind: 'withdrew', amount: moved });
     financialStatement(game);
     return;
   }

@@ -2,7 +2,7 @@ import { bundledMwDungeon } from '../../game/mw-dungeon';
 import { loadHBin } from '../../game/mw-port/hints';
 import { MW_ESCAPE } from '../../game/mw-port/screens';
 import type { MwGame } from '../../game/mw-port/state';
-import { bank, inn, store, temple } from '../../game/mw-port/town';
+import { bank, inn, MW_BANK, MW_INN, MW_STORE, MW_TEMPLE, store, temple } from '../../game/mw-port/town';
 import type { MwGameSession, MwTurn } from './engine';
 import { mwLeaveTheDungeon } from './memory';
 
@@ -58,10 +58,10 @@ export function buildingUnder(game: MwGame): number {
  * record 34 for the gate, "YOU ARE STANDING ON TOP OF THE TOWN."
  */
 export function mwBuildingName(building: number): string {
-  if (building === 1) return 'STORE';
-  if (building === 2) return 'TEMPLE';
-  if (building === 3) return "MORAFF'S FIRST NATIONAL BANK";
-  if (building === 4) return 'FLEA BAG INN';
+  if (building === 1) return MW_STORE;
+  if (building === 2) return MW_TEMPLE;
+  if (building === 3) return MW_BANK;
+  if (building === 4) return MW_INN;
   return 'GATE';
 }
 
