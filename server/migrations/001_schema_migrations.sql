@@ -1,4 +1,4 @@
 CREATE TABLE schema_migrations (
-  name TEXT PRIMARY KEY,
-  applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+  name text PRIMARY KEY,
+  applied_at timestamptz NOT NULL DEFAULT now()
 );

@@ -1,70 +1,87 @@
-import { mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { openRunDatabase } from './db';
+import { describe, expect, it } from 'vitest';
+import { migrateRunDatabase } from './db';
 import { applyMigrations, BUNDLED_MIGRATIONS, type Migration } from './migrations';
+import { SCHEMA, type Sql } from './sql';
+import { openTestDatabase } from './test-sql';
+
+const bookkeeping: Migration = {
+  name: '001_schema_migrations.sql',
+  sql: 'CREATE TABLE schema_migrations (name text PRIMARY KEY, applied_at timestamptz)',
+};
+
+/** A database with this server's schema made but nothing migrated into it, which is where a
+ *  migration runner starts. */
+async function emptySchema(): Promise<Sql> {
+  const sql = await openTestDatabase();
+  await sql.exec(`DROP SCHEMA ${SCHEMA} CASCADE; CREATE SCHEMA ${SCHEMA};`);
+  return sql;
+}
+
+function tableNames(sql: Sql): Promise<{ tablename: string }[]> {
+  return sql.query<{ tablename: string }>('SELECT tablename FROM pg_tables WHERE schemaname = $1 ORDER BY tablename', [
+    SCHEMA,
+  ]);
+}
 
 describe('applyMigrations', () => {
-  let directory: string;
+  it('runs each migration once', async () => {
+    const sql = await emptySchema();
+    const migrations = [bookkeeping, { name: '002_runs.sql', sql: 'CREATE TABLE runs (id text PRIMARY KEY)' }];
 
-  beforeEach(() => {
-    directory = mkdtempSync(join(tmpdir(), 'morf-run-server-'));
-  });
+    expect(await applyMigrations(sql, migrations)).toEqual(['001_schema_migrations.sql', '002_runs.sql']);
+    expect(await applyMigrations(sql, migrations)).toEqual([]);
 
-  afterEach(() => {
-    rmSync(directory, { recursive: true, force: true });
-  });
-
-  const bookkeeping: Migration = {
-    name: '001_schema_migrations.sql',
-    sql: 'CREATE TABLE schema_migrations (name TEXT PRIMARY KEY, applied_at TEXT)',
-  };
-
-  it('runs each migration once', () => {
-    const database = new DatabaseSync(':memory:');
-    const migrations = [bookkeeping, { name: '002_runs.sql', sql: 'CREATE TABLE runs (id TEXT PRIMARY KEY)' }];
-
-    expect(applyMigrations(database, migrations)).toEqual(['001_schema_migrations.sql', '002_runs.sql']);
-    expect(applyMigrations(database, migrations)).toEqual([]);
-
-    const names = database.prepare('SELECT name FROM schema_migrations ORDER BY name').all();
+    const names = await sql.query('SELECT name FROM schema_migrations ORDER BY name');
     expect(names).toEqual([{ name: '001_schema_migrations.sql' }, { name: '002_runs.sql' }]);
-    database.close();
+    await sql.close();
   });
 
-  it('applies a migration added after the others have run', () => {
-    const database = new DatabaseSync(':memory:');
-    applyMigrations(database, [bookkeeping]);
+  it('applies a migration added after the others have run', async () => {
+    const sql = await emptySchema();
+    await applyMigrations(sql, [bookkeeping]);
 
-    const added = { name: '002_runs.sql', sql: 'CREATE TABLE runs (id TEXT PRIMARY KEY)' };
-    expect(applyMigrations(database, [bookkeeping, added])).toEqual(['002_runs.sql']);
-    database.close();
+    const added = { name: '002_runs.sql', sql: 'CREATE TABLE runs (id text PRIMARY KEY)' };
+    expect(await applyMigrations(sql, [bookkeeping, added])).toEqual(['002_runs.sql']);
+    await sql.close();
   });
 
-  it('leaves the database as it was when a migration fails', () => {
-    const database = new DatabaseSync(':memory:');
-    applyMigrations(database, [bookkeeping]);
+  it('leaves the database as it was when a migration fails', async () => {
+    const sql = await emptySchema();
+    await applyMigrations(sql, [bookkeeping]);
 
-    const broken = { name: '002_broken.sql', sql: 'CREATE TABLE runs (id TEXT PRIMARY KEY); NOT SQL' };
-    expect(() => applyMigrations(database, [bookkeeping, broken])).toThrow(/002_broken\.sql/);
+    const broken = { name: '002_broken.sql', sql: 'CREATE TABLE runs (id text PRIMARY KEY); NOT SQL' };
+    await expect(applyMigrations(sql, [bookkeeping, broken])).rejects.toThrow(/002_broken\.sql/);
 
-    const tables = database.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all();
-    expect(tables).toEqual([{ name: 'schema_migrations' }]);
-    database.close();
+    expect(await tableNames(sql)).toEqual([{ tablename: 'schema_migrations' }]);
+    await sql.close();
   });
 
-  it('brings a fresh database file up to date, and leaves an up to date one alone', () => {
-    const path = join(directory, 'nested', 'runs.sqlite');
+  it("puts everything in this server's own schema and nothing in public", async () => {
+    const sql = await openTestDatabase();
 
-    const first = openRunDatabase(path);
-    const applied = first.prepare('SELECT name FROM schema_migrations ORDER BY name').all();
+    const mine = await tableNames(sql);
+    expect(mine.map((row) => row.tablename)).toEqual([
+      'announcements',
+      'batches',
+      'characters',
+      'engines',
+      'players',
+      'schema_migrations',
+      'sessions',
+      'verdicts',
+    ]);
+    const elsewhere = await sql.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
+    expect(elsewhere).toEqual([]);
+    await sql.close();
+  });
+
+  it('brings a fresh database up to date, and leaves an up to date one alone', async () => {
+    const sql = await openTestDatabase();
+
+    const applied = await sql.query('SELECT name FROM schema_migrations ORDER BY name');
     expect(applied).toEqual(BUNDLED_MIGRATIONS.map((migration) => ({ name: migration.name })));
-    first.close();
 
-    const second = openRunDatabase(path);
-    expect(applyMigrations(second, BUNDLED_MIGRATIONS)).toEqual([]);
-    second.close();
+    expect(await migrateRunDatabase(sql)).toEqual([]);
+    await sql.close();
   });
 });

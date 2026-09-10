@@ -8,13 +8,13 @@
 --
 -- `leaderboard` is null for a character rolled for no board, and a run of one is on no board at
 -- all.
-ALTER TABLE verdicts ADD COLUMN game TEXT NOT NULL DEFAULT '';
-ALTER TABLE verdicts ADD COLUMN leaderboard TEXT;
+ALTER TABLE verdicts ADD COLUMN game text NOT NULL DEFAULT '';
+ALTER TABLE verdicts ADD COLUMN leaderboard text;
 
 -- How far the run got and the highest level it reached. Both are read off the milestones when the
--- verdict is stored, so that ordering a board never means parsing JSON: how they are read is
+-- verdict is stored, so that ordering a board never means reading JSON: how they are read is
 -- `server/boards.ts`, since a board is what they are for.
-ALTER TABLE verdicts ADD COLUMN deepest INTEGER NOT NULL DEFAULT 0;
-ALTER TABLE verdicts ADD COLUMN level INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE verdicts ADD COLUMN deepest integer NOT NULL DEFAULT 0;
+ALTER TABLE verdicts ADD COLUMN level integer NOT NULL DEFAULT 0;
 
 CREATE INDEX verdicts_board ON verdicts (game, leaderboard);

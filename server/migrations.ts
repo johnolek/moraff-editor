@@ -1,4 +1,4 @@
-import type { DatabaseSync } from 'node:sqlite';
+import { SCHEMA, type Sql } from './sql';
 
 /** One numbered file from `server/migrations/`, named by the file it was read from. */
 export interface Migration {
@@ -30,12 +30,12 @@ export const BUNDLED_MIGRATIONS: Migration[] = Object.entries(migrationSources)
   .sort((left, right) => (left.name < right.name ? -1 : left.name > right.name ? 1 : 0));
 
 /** Applies every migration the database has not recorded, and returns the names of those it ran. */
-export function applyMigrations(database: DatabaseSync, migrations: Migration[]): string[] {
-  const applied = appliedMigrationNames(database);
+export async function applyMigrations(sql: Sql, migrations: Migration[]): Promise<string[]> {
+  const applied = await appliedMigrationNames(sql);
   const ran: string[] = [];
   for (const migration of migrations) {
     if (applied.has(migration.name)) continue;
-    runMigration(database, migration);
+    await runMigration(sql, migration);
     ran.push(migration.name);
   }
   return ran;
@@ -43,27 +43,29 @@ export function applyMigrations(database: DatabaseSync, migrations: Migration[])
 
 /**
  * A migration and the record that it ran go in together, so a failure half way through leaves
- * the database exactly as it was rather than half migrated. SQLite rolls back `CREATE TABLE` as
- * readily as an `INSERT`, which is what lets the first migration create the very table its own
+ * the database exactly as it was rather than half migrated. Postgres rolls a `CREATE TABLE` back
+ * as readily as an `INSERT`, which is what lets the first migration create the very table its own
  * record is written to.
  */
-function runMigration(database: DatabaseSync, migration: Migration): void {
-  database.exec('BEGIN');
+async function runMigration(sql: Sql, migration: Migration): Promise<void> {
   try {
-    database.exec(migration.sql);
-    database.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(migration.name);
-    database.exec('COMMIT');
+    await sql.transaction(async (queries) => {
+      await queries.exec(migration.sql);
+      await queries.query('INSERT INTO schema_migrations (name) VALUES ($1)', [migration.name]);
+    });
   } catch (thrown) {
-    database.exec('ROLLBACK');
-    throw new Error(`Migration ${migration.name} failed: ${thrown instanceof Error ? thrown.message : String(thrown)}`);
+    throw new Error(
+      `Migration ${migration.name} failed: ${thrown instanceof Error ? thrown.message : String(thrown)}`,
+    );
   }
 }
 
-function appliedMigrationNames(database: DatabaseSync): Set<string> {
-  const table = database
-    .prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'schema_migrations'")
-    .get();
-  if (table === undefined) return new Set();
-  const rows = database.prepare('SELECT name FROM schema_migrations').all() as { name: string }[];
+async function appliedMigrationNames(sql: Sql): Promise<Set<string>> {
+  const table = await sql.query(
+    'SELECT 1 FROM pg_tables WHERE schemaname = $1 AND tablename = $2',
+    [SCHEMA, 'schema_migrations'],
+  );
+  if (table.length === 0) return new Set();
+  const rows = await sql.query<{ name: string }>('SELECT name FROM schema_migrations');
   return new Set(rows.map((row) => row.name));
 }
