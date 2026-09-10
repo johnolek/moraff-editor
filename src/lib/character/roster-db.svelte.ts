@@ -114,7 +114,8 @@ export async function readRoster(): Promise<RosterEntry[] | null> {
       settled<JournalRow[]>(transaction.objectStore(JOURNAL).getAll()),
     ]);
     return rosterOf(characters, sessions, journals);
-  } catch {
+  } catch (thrown) {
+    console.warn('The characters could not be read', thrown);
     return null;
   }
 }
@@ -334,7 +335,8 @@ async function write(stores: string[], work: (transaction: IDBTransaction) => vo
       const committed = finished(transaction);
       work(transaction);
       return await committed;
-    } catch {
+    } catch (thrown) {
+      console.warn('The characters could not be kept', thrown);
       return false;
     }
   });
