@@ -118,6 +118,7 @@ export function weaponFind(game: MwGame, take: () => boolean): void {
   );
   if (take()) {
     pc.weaponsOwned[row] += 1;
+    game.events.push({ kind: 'found', find: { what: 'weapon', item: WEAPONS[row].name } });
     game.events.push({ kind: 'weightRecomputed' });
   }
 }
@@ -152,6 +153,7 @@ export function armorFind(game: MwGame, take: () => boolean): void {
   );
   if (take()) {
     pc.armorOwned[row] += 1;
+    game.events.push({ kind: 'found', find: { what: 'armour', item: ARMOUR[row].name } });
     game.events.push({ kind: 'weightRecomputed' });
   }
 }
@@ -171,6 +173,18 @@ interface MwStonePile {
   gold: number;
   platinum: number;
   jewel: number;
+}
+
+/** What a pile of stones comes to in jewels, at the rates the find's own box prints. */
+function jewelsWorth(pile: MwStonePile): number {
+  return (
+    Math.trunc(pile.copper / STONES_PER_JEWEL[0]) +
+    Math.trunc(pile.silver / STONES_PER_JEWEL[1]) +
+    Math.trunc(pile.ivory / STONES_PER_JEWEL[2]) +
+    Math.trunc(pile.gold / STONES_PER_JEWEL[3]) +
+    pile.jewel +
+    pile.platinum * PLATINUM_JEWELS
+  );
 }
 
 /** min (WORLD.EXE 3000:bd9e, mw.c "FUN_3000_bd9e"), which only the copper and silver use. */
@@ -238,13 +252,7 @@ export function moneyFind(game: MwGame, take: () => string): void {
   const stones = found.copper + found.silver + found.ivory + found.gold + found.platinum;
   if (stones === 0) return;
   game.eraseScreen();
-  const worth =
-    Math.trunc(found.copper / STONES_PER_JEWEL[0]) +
-    Math.trunc(found.silver / STONES_PER_JEWEL[1]) +
-    Math.trunc(found.ivory / STONES_PER_JEWEL[2]) +
-    Math.trunc(found.gold / STONES_PER_JEWEL[3]) +
-    found.jewel +
-    found.platinum * PLATINUM_JEWELS;
+  const worth = jewelsWorth(found);
   // DS:5ef7 with the worth between it and DS:5f01, then 5f0e with the weight on the end, 5f23
   const lines = [
     `YOU FIND ${worth} STONES. THE`,
@@ -297,6 +305,17 @@ export function moneyFind(game: MwGame, take: () => string): void {
   if ('IGA'.includes(taken)) pc.stones[3] += found.gold;
   if ('IGPA'.includes(taken)) pc.stones[4] += found.platinum;
   if ('IGPAJ'.includes(taken)) pc.stones[5] += found.jewel;
+  // What the character walked away with, which is the piles the sorting letter took rather than
+  // the whole find the box offered.
+  const kept = jewelsWorth({
+    copper: taken === 'A' ? found.copper : 0,
+    silver: taken === 'A' ? found.silver : 0,
+    ivory: taken === 'A' || taken === 'I' ? found.ivory : 0,
+    gold: 'IGA'.includes(taken) ? found.gold : 0,
+    platinum: 'IGPA'.includes(taken) ? found.platinum : 0,
+    jewel: found.jewel,
+  });
+  game.events.push({ kind: 'found', find: { what: 'money', amount: kept } });
   game.events.push({ kind: 'weightRecomputed' });
   financialStatement(game);
 }
@@ -308,6 +327,7 @@ export function moneyFind(game: MwGame, take: () => string): void {
 export function cupOfHealth(game: MwGame): void {
   const pc = game.pc;
   if (game.rng.random(5) !== 0 || pc.hp === pc.maxHp) return;
+  const before = pc.hp;
   pc.hp += game.rng.random(11) + 3;
   if (pc.floor > 6) pc.hp += game.rng.random(4);
   // DS:66c3, DS:66de 66f5 670c 530b, DS:4a75
@@ -322,6 +342,7 @@ export function cupOfHealth(game: MwGame): void {
     'HIT ANY KEY...',
   );
   if (pc.maxHp < pc.hp) pc.hp = pc.maxHp;
+  game.events.push({ kind: 'cupOfHealth', healed: pc.hp - before });
 }
 
 /**
@@ -344,6 +365,7 @@ export function ballOfThought(game: MwGame): void {
     '',
     'HIT ANY KEY...',
   );
+  game.events.push({ kind: 'ballOfThought' });
 }
 
 /**
@@ -398,6 +420,7 @@ export function spellbookFind(game: MwGame): void {
     '  OF THE SPELL.',
   );
   pc.spellbook[at] = 1;
+  game.events.push({ kind: 'found', find: { what: 'spellbook', spell: { type, level, slot } } });
 }
 
 /** The share of kills a scroll, a wand or a spell paper turns up on. */
@@ -429,6 +452,7 @@ export function scrollFind(game: MwGame): void {
     '  OF THE SCROLL.',
   );
   pc.scrolls[spellIndex(type, level, slot)] += 1;
+  game.events.push({ kind: 'found', find: { what: 'scroll', spell: { type, level, slot } } });
 }
 
 /**
@@ -456,6 +480,7 @@ export function wandFind(game: MwGame): void {
     '  OF THE WAND.',
   );
   pc.wands[spellIndex(type, level, slot)] += charges;
+  game.events.push({ kind: 'found', find: { what: 'wand', spell: { type, level, slot }, charges } });
 }
 
 /**
@@ -481,6 +506,7 @@ export function paperFind(game: MwGame): void {
     '  OF THE SPELL ON THE PAPER.',
   );
   pc.paper[spellIndex(type, level, slot)] += 1;
+  game.events.push({ kind: 'found', find: { what: 'paper', spell: { type, level, slot } } });
 }
 
 /**
@@ -492,10 +518,36 @@ export function paperFind(game: MwGame): void {
  * monster_killed only reaches this on a coin flip after two rolls the floor has to beat, so a
  * shallow floor almost never gets here and the message it prints instead is "NOTHING!".
  */
+/**
+ * The twelve the special find draws between, in the order it rolls them, by the name the box
+ * that hands each of them over calls it.
+ */
+const SPECIAL_FINDS = [
+  'HOLY HAND GRENADE',
+  'STONE OF TELEPORTATION',
+  'STONE OF SEEING',
+  'FLOOR SLOSHER',
+  'POTION OF HEALING',
+  'RING OF REGENERATION',
+  'BOOK OF STRENGTH',
+  'BOOK OF INTELLIGENCE',
+  'BOOK OF WISDOM',
+  'BOOK OF CONSTITUTION',
+  'BOOK OF DEXTERITY',
+  'BOOK OF LUCK',
+];
+
+/** Which of the twelve is drunk rather than kept. */
+const HEALING_POTION = 4;
+
 export function specialFind(game: MwGame): void {
   const pc = game.pc;
   if (pc.cls === MONK) return;
-  switch (game.rng.random(12)) {
+  const which = game.rng.random(12);
+  // A second floor slosher is turned down, which is the one roll of the twelve that hands over
+  // nothing at all.
+  let handedOver = true;
+  switch (which) {
     case 0:
       pc.grenades += 1;
       // DS:615a, 616f 618a 61a5, 61c1 61dc 61f6, 6214
@@ -553,6 +605,7 @@ export function specialFind(game: MwGame): void {
           'HIT ANY KEY...',
         );
       } else {
+        handedOver = false;
         // DS:6338 6352 636d, DS:6387, DS:4a75
         game.say(
           'OH WELL! YOU ALREADY HAVE',
@@ -620,6 +673,9 @@ export function specialFind(game: MwGame): void {
       game.say('A BOOK OF LUCK!', '', 'PRESS ANY KEY TO READ', '  THE BOOK AND INCREASE', '  YOUR LUCK BY ONE POINT.', '', 'HIT ANY KEY...');
       break;
   }
+  if (!handedOver) return;
+  const what = which === HEALING_POTION ? 'potion' : 'item';
+  game.events.push({ kind: 'found', find: { what, item: SPECIAL_FINDS[which] } });
 }
 
 /** The five stat books that share their wording (WORLD.EXE 3000:d0b9, cases 6 to 10). */

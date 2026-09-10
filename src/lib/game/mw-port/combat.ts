@@ -925,6 +925,12 @@ function enhanceWeapon(game: MwGame, choice: () => number, plus: number): void {
   if (weapon < 1 || weapon > 8) return;
   if (pc.weaponsOwned[weapon - 1] < 1) return;
   pc.weaponPlus[weapon - 1] = plus;
+  game.events.push({
+    kind: 'gearEnhanced',
+    what: 'weapon',
+    item: WEAPONS[weapon - 1].name,
+    plus,
+  });
 }
 
 /**
@@ -944,6 +950,7 @@ function bossReward(game: MwGame, type: number, choice: () => number): void {
   const found = '  YOU HAVE FOUND THE PLUS';
   if (type === 0x68) {
     pc.bodyArmorLevel = 9;
+    game.events.push({ kind: 'gearEnhanced', what: 'bodyArmor', item: null, plus: 9 });
     // DS:6913 692b 6943 4fd1+0x18, DS:6959 6973 698b
     game.say(
       found,
@@ -958,6 +965,7 @@ function bossReward(game: MwGame, type: number, choice: () => number): void {
   }
   if (type === 0x69) {
     pc.gauntlet = 12;
+    game.events.push({ kind: 'gearEnhanced', what: 'gauntlet', item: null, plus: 12 });
     // DS:699f 69b9 69d0 69e7, DS:6959 69f1 6a0b
     game.say(
       found,
@@ -972,6 +980,7 @@ function bossReward(game: MwGame, type: number, choice: () => number): void {
   }
   if (type === 0x6a) {
     pc.ringOfProtection = 15;
+    game.events.push({ kind: 'gearEnhanced', what: 'ring', item: null, plus: 15 });
     // DS:6a1f 6a39 6a51 6a68, DS:6a70 6a86 6aa2
     game.say(
       found,
@@ -1000,6 +1009,7 @@ function bossReward(game: MwGame, type: number, choice: () => number): void {
   }
   if (type === 0x6c) {
     pc.bodyArmorLevel = 25;
+    game.events.push({ kind: 'gearEnhanced', what: 'bodyArmor', item: null, plus: 25 });
     // DS:6ba7 6bc0 6bd9 6bef, DS:6bf8 6c0f 6c29
     game.say(
       found,
@@ -1014,6 +1024,7 @@ function bossReward(game: MwGame, type: number, choice: () => number): void {
   }
   if (type === 0x6d) {
     pc.gauntlet = 50;
+    game.events.push({ kind: 'gearEnhanced', what: 'gauntlet', item: null, plus: 50 });
     // DS:6c41 69b9 6c5b 6c73, DS:6bf8 6c82 6a0b
     game.say(
       found,
@@ -1028,6 +1039,7 @@ function bossReward(game: MwGame, type: number, choice: () => number): void {
   }
   if (type === 0x6e) {
     pc.ringOfProtection = 50;
+    game.events.push({ kind: 'gearEnhanced', what: 'ring', item: null, plus: 50 });
     // DS:6c9d 6a39 6cb7 6a68, DS:6cd3 6cee 6d0b
     game.say(
       found,
@@ -1094,6 +1106,7 @@ function levelDrainerExtras(game: MwGame): void {
   if (game.rng.random(375) < pc.floor + 175) {
     const pill = game.rng.random(6);
     pc.pills[pill] += 1;
+    game.events.push({ kind: 'pillFound', pill });
     // The pill's own line, then DS:67b6 67d1, then DS:4a75
     game.say(
       PILL_NAMES[pill],
@@ -1121,6 +1134,7 @@ function levelDrainerExtras(game: MwGame): void {
     '      HIT ANY KEY...',
   );
   pc.trapdoorKeys[key - 1] = 1;
+  game.events.push({ kind: 'found', find: { what: 'key', key: key * 10 } });
 }
 
 /**
