@@ -116,6 +116,7 @@ export async function forgetKeptCharacter(sql: Sql, characterId: string, playerI
     if (mine.length === 0) return false;
     // Every table that points at the character, before the character itself.
     await queries.query('DELETE FROM announcements WHERE character_id = $1', [characterId]);
+    await queries.query('DELETE FROM living WHERE character_id = $1', [characterId]);
     await queries.query('DELETE FROM verdicts WHERE character_id = $1', [characterId]);
     await queries.query('DELETE FROM batches WHERE character_id = $1', [characterId]);
     await queries.query('DELETE FROM sessions WHERE character_id = $1', [characterId]);

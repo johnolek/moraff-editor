@@ -146,6 +146,12 @@ describe('forgetting a character', () => {
       time: 30,
       playMs: 0,
     });
+    await sql.query(
+      `INSERT INTO living (character_id, status, level, deepest, actions, time, game, leaderboard,
+                           replayed_through)
+       VALUES ($1, 'verified', 5, 2, 12, 30, 'unforgiven', 'speedrun', 1)`,
+      [CHARACTER],
+    );
 
     expect(await forgetKeptCharacter(sql, CHARACTER, ME.player)).toBe(true);
 
@@ -153,6 +159,7 @@ describe('forgetting a character', () => {
     expect(await sql.query('SELECT 1 FROM sessions WHERE character_id = $1', [CHARACTER])).toEqual([]);
     expect(await sql.query('SELECT 1 FROM batches WHERE character_id = $1', [CHARACTER])).toEqual([]);
     expect(await sql.query('SELECT 1 FROM announcements WHERE character_id = $1', [CHARACTER])).toEqual([]);
+    expect(await sql.query('SELECT 1 FROM living WHERE character_id = $1', [CHARACTER])).toEqual([]);
   });
 
   it('leaves another player’s character where it is', async () => {
