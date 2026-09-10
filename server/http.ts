@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { shortCommit } from '../src/lib/commit';
+import type { JournalEntry } from '../src/lib/play/journal';
 import type { ServerConfig } from './config';
 import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
 import { openSignInAttempts, type SignInAttempts } from './attempts';
@@ -29,7 +30,14 @@ import {
   type BatchRefusal,
 } from './runs';
 import type { Queries, Sql } from './sql';
-import { createRunVerifier, livingSnapshotFor, verdictFor, type KeptVerdict, type RunVerifier } from './verifying';
+import {
+  createRunVerifier,
+  livingSnapshotFor,
+  verdictFor,
+  type KeptVerdict,
+  type LivingSnapshot,
+  type RunVerifier,
+} from './verifying';
 
 /** What a refused request says. The site shows these words as they are. */
 const NOT_A_SECRET = 'That is not a player secret.';
@@ -545,6 +553,26 @@ export interface RunSittingAnswer {
   time: number;
 }
 
+/**
+ * The verdict as a run's page is handed it: everything written down about the replay but the
+ * journal, which goes out once, on its own, since a long run's is thousands of lines.
+ */
+export type JudgedRun = Omit<KeptVerdict, 'journal'>;
+
+/**
+ * A run written up in words by the replay that judged it, and how far the run had got by the end
+ * of it, which is what the summary is folded against.
+ *
+ * It is the verdict's for a run that has ended and the last snapshot's for a character still
+ * being played. The site folds the summary itself, so that the words a run is described in are
+ * the site's own wherever it is read.
+ */
+export interface RunJournalAnswer {
+  entries: JournalEntry[];
+  actions: number;
+  time: number;
+}
+
 /** What `GET /runs/:id` answers with, which is what the site draws a run's page from. */
 export interface RunAnswer {
   id: string;
@@ -557,7 +585,9 @@ export interface RunAnswer {
   outcome: string | null;
   sessions: RunSittingAnswer[];
   /** Null while the run has not been replayed. */
-  verdict: KeptVerdict | null;
+  verdict: JudgedRun | null;
+  /** The timeline of the run, and null while nothing has been replayed for it. */
+  journal: RunJournalAnswer | null;
   /**
    * Whether another device of the player's own is playing this character now, which is what the
    * Play tab asks before it starts a game: one character is played from one device at a time.
@@ -592,8 +622,8 @@ async function sendRun(
   const secret = bearerSecret(request);
   const player = secret === null ? null : await playerFor(sql, secret);
   const theirs = player !== null && player === run.playerId;
-  const checked =
-    verdict?.status === 'verified' || (await livingSnapshotFor(sql, characterId))?.status === 'verified';
+  const living = await livingSnapshotFor(sql, characterId);
+  const checked = verdict?.status === 'verified' || living?.status === 'verified';
   if (!checked && !theirs) {
     sendJson(response, 403, { error: NOT_YOUR_RUN });
     return;
@@ -615,10 +645,29 @@ async function sendRun(
       actions: session.actions,
       time: session.time,
     })),
-    verdict,
+    verdict: verdict === null ? null : judgedRun(verdict),
+    journal: runJournal(verdict, living),
     leasedElsewhere: lease !== null && secret !== null && leasedElsewhere(lease, secretHash(secret), Date.now()),
   };
   sendJson(response, 200, answer);
+}
+
+function judgedRun(verdict: KeptVerdict): JudgedRun {
+  const { journal, ...judged } = verdict;
+  return judged;
+}
+
+/**
+ * The journal a run's page shows, or null when there is none to show.
+ *
+ * A run that has ended has its verdict's and a character still being played has the one the last
+ * replay of the chain so far wrote, so the verdict is what stands wherever there is one: a
+ * snapshot beside it is from before the run ended and says less than the verdict does.
+ */
+function runJournal(verdict: KeptVerdict | null, living: LivingSnapshot | null): RunJournalAnswer | null {
+  const replayed = verdict ?? living;
+  if (replayed === null) return null;
+  return { entries: replayed.journal, actions: replayed.actions, time: replayed.time };
 }
 
 /** The secret from `Authorization: Bearer <secret>`, or null when the header carries anything

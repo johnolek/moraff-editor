@@ -2,7 +2,7 @@ import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { publishEngine } from './engines';
-import { createRunServer } from './http';
+import { createRunServer, type RunAnswer } from './http';
 import type { RunBatch } from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
@@ -20,7 +20,11 @@ const CHARACTER = 'k3p9x1-ab12cd';
 /** A character rolled for no board, so nothing about it is ever replayed or checked. */
 const PRIVATE = 'p7r2w9-cd56ef';
 
-/** A build small enough to read, which passes whatever run it is handed. */
+/** The one line the build below writes about every run it replays. */
+const STEPPED = { at: 2, floor: 3, module: 0, text: 'Stepped north', event: { kind: 'stepped', dir: 0 } };
+
+/** A build small enough to read, which passes whatever run it is handed and writes one line of
+ *  journal about it. */
 function fakeEngine(): Uint8Array {
   return Buffer.from(
     `export const ENGINE_COMMIT = '${ENGINE}';\n` +
@@ -32,6 +36,7 @@ function fakeEngine(): Uint8Array {
       `    engine: { played: [newest.engine], build: ENGINE_COMMIT },\n` +
       `    claimed: { actions: newest.actions, time: newest.time, milestones: [] },\n` +
       `    replayed: { actions: newest.actions, time: newest.time, milestones: [] }, ending: null,\n` +
+      `    journal: ${JSON.stringify([STEPPED])},\n` +
       `  });\n` +
       `}\n`,
   );
@@ -196,6 +201,9 @@ describe('streaming a run over HTTP', () => {
     const run = await untilAnybodyMayRead();
 
     expect(run).toMatchObject({ id: CHARACTER, player: 'John', outcome: null, verdict: null });
+    // The timeline of a character still being played is the one the last replay of the chain so
+    // far wrote, since there is no verdict yet to take one from.
+    expect(run.journal).toEqual({ entries: [STEPPED], actions: 2, time: 4 });
   });
 
   it('keeps a run nothing has been checked about to the player whose run it is', async () => {
@@ -215,7 +223,10 @@ describe('streaming a run over HTTP', () => {
     expect(run.outcome).toBe('death');
     expect(run.finishedAt).not.toBeNull();
     expect(run.verdict).toMatchObject({ status: 'verified', actions: 12, time: 30, eligible: true });
-    expect(run.verdict.milestones).toEqual([]);
+    expect(run.verdict?.milestones).toEqual([]);
+    expect(run.journal).toEqual({ entries: [STEPPED], actions: 12, time: 30 });
+    // The journal goes out once, on its own, rather than inside the verdict as well.
+    expect(Object.keys(run.verdict ?? {})).not.toContain('journal');
   });
 
   it("hands a signed-in device the player's whole roster", async () => {
@@ -272,10 +283,10 @@ describe('streaming a run over HTTP', () => {
    * for it, so the run is asked for without a secret until it comes back, which is what a reader
    * following a board of the living does.
    */
-  async function untilAnybodyMayRead(): Promise<object> {
+  async function untilAnybodyMayRead(): Promise<RunAnswer> {
     for (let tries = 0; tries < 50; tries++) {
       const response = await fetch(`${origin}/runs/${CHARACTER}`);
-      if (response.status === 200) return response.json() as Promise<object>;
+      if (response.status === 200) return response.json() as Promise<RunAnswer>;
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
     throw new Error('The chain was never replayed.');
@@ -283,15 +294,11 @@ describe('streaming a run over HTTP', () => {
 
   /** The replay happens behind the answer to the last batch, so the run is asked for until the
    *  verdict is there, which is what the site does too. */
-  async function untilVerdict(): Promise<{
-    outcome: string;
-    finishedAt: string;
-    verdict: { status: string; milestones: unknown[] };
-  }> {
+  async function untilVerdict(): Promise<RunAnswer> {
     for (let tries = 0; tries < 50; tries++) {
       const response = await fetch(`${origin}/runs/${CHARACTER}`);
       if (response.status === 200) {
-        const run = await response.json();
+        const run = (await response.json()) as RunAnswer;
         if (run.verdict !== null) return run;
       }
       await new Promise((resolve) => setTimeout(resolve, 20));
