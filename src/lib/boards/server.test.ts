@@ -1,16 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { BoardRow } from '../../../server/boards';
+import type { BoardRow, LivingRow } from '../../../server/boards';
 import {
   loadAnnouncements,
   loadBoard,
+  loadLiving,
   loadMore,
+  loadMoreLiving,
   loadOlderAnnouncements,
   loadRun,
   NO_ANNOUNCEMENTS,
   type BoardAsked,
+  type LivingAsked,
 } from './server';
 
 const ASKED: BoardAsked = { game: 'unforgiven', leaderboard: 'speedrun', board: 'actions' };
+const ALIVE: LivingAsked = { game: 'unforgiven', leaderboard: 'speedrun', sort: 'level' };
 
 function row(name: string): BoardRow {
   return {
@@ -25,6 +29,20 @@ function row(name: string): BoardRow {
     level: 7,
     outcome: 'win',
     at: '2026-09-09 21:00:00',
+  };
+}
+
+function livingRow(name: string): LivingRow {
+  return {
+    characterId: name,
+    player: 'Moraff',
+    name,
+    level: 7,
+    deepest: 2,
+    actions: 100,
+    clock: 30,
+    playing: true,
+    heardAt: '2026-09-09 21:00:00',
   };
 }
 
@@ -96,6 +114,35 @@ describe('reading a board', () => {
 
     expect((await loadBoard(ASKED)).failed).toBe(true);
     expect(server.asked).toEqual([]);
+  });
+});
+
+describe('reading a board of the living', () => {
+  it('asks for the first page in the order named', async () => {
+    const server = answering({ rows: [livingRow('Grond')], page: 1, more: true });
+
+    const board = await loadLiving(ALIVE);
+
+    expect(server.asked).toEqual(['https://runs.example.com/boards/unforgiven/speedrun/living?sort=level&page=1']);
+    expect(board).toMatchObject({ page: 1, more: true, failed: false });
+    expect(board.rows.map((each) => each.name)).toEqual(['Grond']);
+  });
+
+  it('adds the next page to the end of what is showing', async () => {
+    answering({ rows: [livingRow('Grond')], page: 1, more: true });
+    const first = await loadLiving(ALIVE);
+    const server = answering({ rows: [livingRow('Thok')], page: 2, more: false });
+
+    const both = await loadMoreLiving(first, ALIVE);
+
+    expect(server.asked).toEqual(['https://runs.example.com/boards/unforgiven/speedrun/living?sort=level&page=2']);
+    expect(both.rows.map((each) => each.name)).toEqual(['Grond', 'Thok']);
+  });
+
+  it('has nothing to show and says so when the server cannot be reached', async () => {
+    answering('unreachable');
+
+    expect(await loadLiving(ALIVE)).toEqual({ rows: [], page: 0, more: false, failed: true });
   });
 });
 

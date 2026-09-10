@@ -3,16 +3,17 @@ import { runServerUrl } from '../run-server';
 // The three shapes the server answers with, and nothing but the shapes: these are types, so none
 // of the server's code comes along with them.
 import type { Announcement } from '../../../server/announcing';
-import type { BoardName, BoardPage, BoardRow } from '../../../server/boards';
+import type { BoardName, BoardPage, BoardRow, LivingPage, LivingRow, LivingSort } from '../../../server/boards';
 import type { RunAnswer } from '../../../server/http';
 
 /**
  * Reading the boards, the runs and the announcements off the run server.
  *
- * Everything here is one round trip and a shape the page can draw: a page of a board, the page
- * after it added to what is already shown, one run, and a page of the history. A call that could
- * not be made comes back as what the page already had with `failed` on it, so a board that is
- * showing stays on screen while the server is unreachable and the page says so.
+ * Everything here is one round trip and a shape the page can draw: a page of a board, a page of
+ * the living, the page after either added to what is already shown, one run, and a page of the
+ * history. A call that could not be made comes back as what the page already had with `failed` on
+ * it, so a board that is showing stays on screen while the server is unreachable and the page
+ * says so.
  *
  * A build with no server address has no boards at all, and the tab is not offered
  * (`src/lib/tabs.ts`); nothing here is called in such a build.
@@ -25,30 +26,60 @@ export interface BoardAsked {
   board: BoardName;
 }
 
+/** Which board of the living is being read: the game, one of the two leaderboards, and whether
+ *  the characters still being played are ranked by level or by depth. */
+export interface LivingAsked {
+  game: PortedGameId;
+  leaderboard: Leaderboard;
+  sort: LivingSort;
+}
+
 /** A board as the page holds it: every row read so far, the last page read, and whether the
  *  server had more behind it. */
-export interface LoadedBoard {
-  rows: BoardRow[];
+export interface Loaded<Row> {
+  rows: Row[];
   page: number;
   more: boolean;
   failed: boolean;
 }
 
+export type LoadedBoard = Loaded<BoardRow>;
+export type LoadedLiving = Loaded<LivingRow>;
+
 /** A board nothing has been read for yet, which is what a page starts from and goes back to when
  *  the board being shown changes. */
-export const NO_BOARD: LoadedBoard = { rows: [], page: 0, more: false, failed: false };
+export const NO_BOARD: Loaded<never> = { rows: [], page: 0, more: false, failed: false };
 
 /** The first page of a board, which throws away whatever was showing. */
 export async function loadBoard(asked: BoardAsked): Promise<LoadedBoard> {
-  const page = await readBoardPage(asked, 1);
-  if (page === null) return { ...NO_BOARD, failed: true };
-  return { rows: page.rows, page: page.page, more: page.more, failed: false };
+  return firstPageRead(await readBoardPage(asked, 1));
 }
 
 /** The page after the one showing, added to the end of it. A page that could not be read leaves
  *  the rows exactly as they were. */
 export async function loadMore(showing: LoadedBoard, asked: BoardAsked): Promise<LoadedBoard> {
-  const page = await readBoardPage(asked, showing.page + 1);
+  return nextPageRead(showing, await readBoardPage(asked, showing.page + 1));
+}
+
+/** The first page of a board of the living, which throws away whatever was showing. */
+export async function loadLiving(asked: LivingAsked): Promise<LoadedLiving> {
+  return firstPageRead(await readLivingPage(asked, 1));
+}
+
+/** The page after the one showing of a board of the living, added to the end of it. */
+export async function loadMoreLiving(showing: LoadedLiving, asked: LivingAsked): Promise<LoadedLiving> {
+  return nextPageRead(showing, await readLivingPage(asked, showing.page + 1));
+}
+
+/** One page of any board, which is all the two above have in common. */
+type OnePage<Row> = { rows: Row[]; page: number; more: boolean };
+
+function firstPageRead<Row>(page: OnePage<Row> | null): Loaded<Row> {
+  if (page === null) return { rows: [], page: 0, more: false, failed: true };
+  return { rows: page.rows, page: page.page, more: page.more, failed: false };
+}
+
+function nextPageRead<Row>(showing: Loaded<Row>, page: OnePage<Row> | null): Loaded<Row> {
   if (page === null) return { ...showing, failed: true };
   return { rows: [...showing.rows, ...page.rows], page: page.page, more: page.more, failed: false };
 }
@@ -57,8 +88,15 @@ async function readBoardPage(asked: BoardAsked, page: number): Promise<BoardPage
   return await readJson<BoardPage>(`/boards/${asked.game}/${asked.leaderboard}/${asked.board}?page=${page}`);
 }
 
+async function readLivingPage(asked: LivingAsked, page: number): Promise<LivingPage | null> {
+  return await readJson<LivingPage>(
+    `/boards/${asked.game}/${asked.leaderboard}/living?sort=${asked.sort}&page=${page}`,
+  );
+}
+
 /** One run and the verdict on it, or nothing when it could not be read. A run is only opened from
- *  a board, and everything on a board has been verified, so no player secret goes with this. */
+ *  a board, and everything on a board has been through a replay that passed it, so no player
+ *  secret goes with this. */
 export async function loadRun(characterId: string): Promise<RunAnswer | null> {
   return await readJson<RunAnswer>(`/runs/${encodeURIComponent(characterId)}`);
 }

@@ -1,10 +1,14 @@
 <!--
-  The Boards tab: one game's runs, on whichever of the six boards is picked, with the
-  announcements beside them. Clicking a run opens its own page here in place of the board.
+  The Boards tab: one game's runs, on whichever board is picked, with the announcements beside
+  them. Clicking a run opens its own page here in place of the board.
 
   Which boards there are and what each one holds is the server's, in `server/boards.ts`, so that
   the two halves never disagree about a board. Nothing of the server's code comes with it: the
-  list is a table of names and words.
+  lists are tables of names and words.
+
+  The six boards of finished runs and the two of the living share the picker and nothing else:
+  a row of one is a run that has ended and a row of the other is a character still being played,
+  so each has its own table.
 -->
 <script lang="ts">
   import { app, type Leaderboard } from '../app-state.svelte';
@@ -12,17 +16,33 @@
   import SectionHeading from '../ui/SectionHeading.svelte';
   import Announcements from './Announcements.svelte';
   import RunPage from './RunPage.svelte';
-  import { loadBoard, loadMore, NO_BOARD, type BoardAsked, type LoadedBoard } from './server';
+  import {
+    loadBoard,
+    loadLiving,
+    loadMore,
+    loadMoreLiving,
+    NO_BOARD,
+    type LoadedBoard,
+    type LoadedLiving,
+  } from './server';
   import { BOARDS_PAGE, clockHeading, NOTHING_TO_SHOW, playTimeWords, reachWords, whenWords } from './words';
-  import { BOARDS, BOARD_LEADERBOARDS, type BoardName } from '../../../server/boards';
+  import { BOARDS, BOARD_LEADERBOARDS, isBoardName, LIVING_BOARDS, type BoardName } from '../../../server/boards';
+
+  /** Which of the eight is being shown: one of the six board names, or one of the two living
+   *  boards. */
+  type Picked = BoardName | (typeof LIVING_BOARDS)[number]['name'];
 
   let leaderboard = $state<Leaderboard>('faithful');
-  let board = $state<BoardName>('actions');
+  let picked = $state<Picked>('actions');
   let showing = $state<LoadedBoard>(NO_BOARD);
+  let alive = $state<LoadedLiving>(NO_BOARD);
   let reading = $state(false);
   let openRun = $state<string | null>(null);
 
-  const asked = $derived<BoardAsked>({ game: app.game, leaderboard, board });
+  const asked = $derived({ game: app.game, leaderboard, board: picked });
+
+  /** Which order the living are ranked in, and null when a board of finished runs is showing. */
+  const livingSort = $derived(LIVING_BOARDS.find((board) => board.name === picked)?.sortedOn ?? null);
 
   /**
    * Which read the rows on screen came from. A reader who picks two boards quickly has two reads
@@ -32,27 +52,42 @@
 
   $effect(() => {
     const now = asked;
+    const sort = livingSort;
     const mine = ++latest;
     showing = NO_BOARD;
+    alive = NO_BOARD;
     openRun = null;
-    void loadBoard(now).then((read) => {
-      if (mine === latest) showing = read;
-    });
+    if (sort !== null) {
+      void loadLiving({ game: now.game, leaderboard: now.leaderboard, sort }).then((read) => {
+        if (mine === latest) alive = read;
+      });
+    } else if (isBoardName(now.board)) {
+      void loadBoard({ game: now.game, leaderboard: now.leaderboard, board: now.board }).then((read) => {
+        if (mine === latest) showing = read;
+      });
+    }
   });
 
   /**
    * The number the board is in order of, where the table has no column of its own for it. The
    * boards of wins are ordered by numbers every row already shows.
    */
-  const sortedOn = $derived(BOARDS.find((each) => each.name === board)?.sortedOn ?? null);
+  const sortedOn = $derived(BOARDS.find((each) => each.name === picked)?.sortedOn ?? null);
   const extra = $derived(sortedOn === 'deepest' || sortedOn === 'level' ? sortedOn : null);
 
   async function more(): Promise<void> {
+    const now = asked;
+    const sort = livingSort;
     reading = true;
     const mine = latest;
-    const read = await loadMore(showing, asked);
+    if (sort !== null) {
+      const read = await loadMoreLiving(alive, { game: now.game, leaderboard: now.leaderboard, sort });
+      if (mine === latest) alive = read;
+    } else if (isBoardName(now.board)) {
+      const read = await loadMore(showing, { game: now.game, leaderboard: now.leaderboard, board: now.board });
+      if (mine === latest) showing = read;
+    }
     reading = false;
-    if (mine === latest) showing = read;
   }
 </script>
 
@@ -74,15 +109,58 @@
         </div>
         <div class="pick" role="group" aria-label={BOARDS_PAGE.board}>
           <span class="label">{BOARDS_PAGE.board}</span>
-          {#each BOARDS as choice}
+          {#each [...BOARDS, ...LIVING_BOARDS] as choice}
             <label>
-              <input type="radio" value={choice.name} bind:group={board} />
+              <input type="radio" value={choice.name} bind:group={picked} />
               <span>{choice.sorts}</span>
             </label>
           {/each}
         </div>
       </div>
-      {#if showing.rows.length === 0}
+      {#if livingSort !== null}
+        {#if alive.rows.length === 0}
+          <p class="empty">{alive.failed ? BOARDS_PAGE.unreachable : BOARDS_PAGE.noneAlive}</p>
+        {:else}
+          <table>
+            <thead>
+              <tr>
+                <th>{BOARDS_PAGE.rank}</th>
+                <th>{BOARDS_PAGE.player}</th>
+                <th>{BOARDS_PAGE.character}</th>
+                <th>{BOARDS_PAGE.level}</th>
+                <th>{BOARDS_PAGE.reach}</th>
+                <th>{BOARDS_PAGE.actions}</th>
+                <th>{clockHeading(asked.game)}</th>
+                <th>{BOARDS_PAGE.playingNow}</th>
+                <th>{BOARDS_PAGE.lastHeard}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each alive.rows as row, at (row.characterId)}
+                <tr>
+                  <td>{at + 1}</td>
+                  <td>{row.player}</td>
+                  <td>
+                    <button type="button" class="link" onclick={() => (openRun = row.characterId)}>{row.name}</button>
+                  </td>
+                  <td>{row.level}</td>
+                  <td>{reachWords(asked.game, row.deepest)}</td>
+                  <td>{row.actions}</td>
+                  <td>{row.clock}</td>
+                  <td>{row.playing ? BOARDS_PAGE.beingPlayed : NOTHING_TO_SHOW}</td>
+                  <td>{whenWords(row.heardAt)}</td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+          {#if alive.more}
+            <button type="button" class="more" onclick={more} disabled={reading}>{BOARDS_PAGE.more}</button>
+          {/if}
+          {#if alive.failed}
+            <p class="empty">{BOARDS_PAGE.unreachable}</p>
+          {/if}
+        {/if}
+      {:else if showing.rows.length === 0}
         <p class="empty">{showing.failed ? BOARDS_PAGE.unreachable : BOARDS_PAGE.empty}</p>
       {:else}
         <table>
