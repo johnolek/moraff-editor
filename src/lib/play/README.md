@@ -71,8 +71,13 @@ something the original does, a comment says so.
 * **`BoardName.svelte`** — under the mode radios: the name this browser goes by on the run
   server's boards, and the opt-out. Nobody signs up, so a name is claimed with the device secret
   `src/lib/player.ts` makes and keeps; the field shows the name that secret already holds and the
-  server's own words when the name belongs to somebody else. A build given no server address has
-  no boards to be on and shows nothing.
+  server's own words when the name belongs to somebody else. A claim that made a player is
+  answered with a passphrase of six words, which the box under the field shows the once with a
+  Copy button — the words are selected instead where a browser will not copy for a page — and
+  never again, since the server keeps only their hash. A browser with no name of its own has a
+  name-and-passphrase form beside the claim field, which is how a name claimed on another device
+  is played from this one; a browser that has a name has the control that draws a new passphrase
+  and retires the old. A build given no server address has no boards to be on and shows nothing.
 * **`Play.svelte`** — this game's snippets: the game's screen or the top-down map, the message
   box, the two pictures and the panel. **`display.ts`, `Screen.svelte`** — the screen itself: the boxes `movecontrol` fills, the
   key menu, the zoom map, the status block and everything the game has printed, over the four

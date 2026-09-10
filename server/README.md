@@ -84,17 +84,59 @@ base64url, and sends it as `Authorization: Bearer <secret>`; the server keeps
 only its SHA-256, so it can recognise a secret it is handed and cannot hand one
 out. Names go first come and are compared without regard to case.
 
-| Endpoint          | What it does                                                     |
-| ----------------- | ---------------------------------------------------------------- |
-| `POST /players`   | `{ "name": "..." }` claims the name for that secret, or renames it. 200 with the name that stands, 409 when another player holds it, 400 when the name or the secret is not one. |
-| `GET /players/me` | 200 with `{ "name": "..." }`, or 404 when that secret has claimed no name. |
+One name can be played from several browsers. Every secret that has been let in
+is a row of `player_secrets` pointing at the player, and a second device gets a
+row of its own by saying the name and the passphrase below.
+
+| Endpoint                   | What it does                                                     |
+| -------------------------- | ---------------------------------------------------------------- |
+| `POST /players`            | `{ "name": "..." }` claims the name for that secret, or renames it. 200 with the name that stands, and with `passphrase` beside it when the claim made a player; 409 when another player holds the name, 400 when the name or the secret is not one. |
+| `GET /players/me`          | 200 with `{ "name": "..." }`, or 404 when that secret has claimed no name. |
+| `POST /players/sign-in`    | `{ "name": "...", "passphrase": "..." }` joins that secret to the player who holds the name. 200 with the name, 401 when the name or the passphrase is wrong, 409 when the device has a name of its own already, 429 when too much has been guessed at lately. |
+| `POST /players/passphrase` | Draws that secret's player a new passphrase, which retires the one they had. 200 with `{ "passphrase": "..." }`, 403 when the device has claimed no name. |
 
 A name is 2 to 24 characters of ASCII letters, digits, spaces and `. _ - '`,
 trimmed, which rules out every control character and everything a page would
 have to escape to show. Two names that differ only in case are one name: the
 unique index is on `lower(name)` and every lookup folds the same way.
 
-Losing the browser's storage loses the secret, and nothing here gets it back.
+Losing the browser's storage loses that secret, and nothing here gets it back;
+what gets the name back is the passphrase, said from any browser at all.
+
+### The passphrase
+
+A claim that made a player is answered with six words drawn at random, and that
+answer is the only time anybody can read them: what is kept is a scrypt hash of
+them under a salt of that player's own, so the server can recognise the words it
+is handed and nobody holding a copy of the database can say them. The words are
+compared folded to lower case with the spacing evened out, so however somebody
+types the six words off a piece of paper is the same passphrase.
+
+A player who claimed their name before any of this existed has no passphrase
+at all, and `POST /players/passphrase` from the device they claimed it on is how
+they get one.
+
+The words come from the EFF's short wordlist #1 — 1,296 short words picked to be
+easy to say, spell and tell apart — which is `server/wordlist.txt`, kept exactly
+as it is published at <https://www.eff.org/dice> by the Electronic Frontier
+Foundation under CC BY 3.0 US. Six words out of 1,296 is near enough 62 bits.
+
+A wrong name and a wrong passphrase are one answer on purpose: telling somebody
+guessing which half they had right tells them which half to keep guessing at.
+
+Five wrong tries in a quarter of an hour and the rest are turned away with a 429
+without being looked at. A failure counts against the name it was tried at and
+against the address it came from, so neither one name guessed at from a hundred
+machines nor one machine working through a hundred names gets far. It is all in
+memory (`server/attempts.ts`) rather than a table: a restart forgets every
+failure, which is a few free tries for anybody guessing during a deploy.
+
+That address is the first hop of `X-Forwarded-For` where the request carries
+one, because Coolify's proxy is what the socket belongs to and every request
+arrives from it; where there is no such header it is the socket's own address. A
+server reached with nothing in front of it is handed that header by whoever
+asked and could be told anything, which is why nothing but the slowing down of
+guesses is decided by it.
 
 ## Runs
 
