@@ -116,22 +116,34 @@ function importBundle(bundle: Uint8Array): Promise<unknown> {
 }
 
 /**
- * Why no build here could be the engine a run names, before the database is asked, or null when
- * the name is a commit and the table is what answers.
+ * Whether a build under this name could ever be shown to be the engine a run was played on.
  *
- * A commit with `-dirty` on it was built from a working tree with changes in it, so it names no
- * code and a build kept under that name is not shown to be the same engine (MORF-294); a build
- * made where there was no git to ask says `unknown`, which names no code either (MORF-303). Any
- * other string is not a commit at all.
+ * A name with `-dirty` on it was built from a working tree with changes in it, so it names no
+ * code and nobody can check that tree out again to see what it was (MORF-294); a build made where
+ * there was no git to ask says `unknown`, which names no code either (MORF-303). A build under
+ * either is neither kept nor looked up.
  */
+function namesCommittedCode(commit: string): boolean {
+  return COMMIT.test(commit);
+}
+
+/** Why no build here could be the engine a run names, before the database is asked, or null when
+ *  the name is a commit and the table is what answers. */
 function whyNoEngineIsKept(commit: string): string | null {
+  if (namesCommittedCode(commit)) return null;
   if (commit.endsWith('-dirty')) {
     return 'The run was played on an engine built from a working tree with changes in it, which the commit does not name, so no engine kept here can be shown to be that same one.';
   }
-  if (!COMMIT.test(commit)) {
-    return 'The run does not name an engine commit, so there is no engine kept here to replay it with.';
+  return 'The run does not name an engine commit, so there is no engine kept here to replay it with.';
+}
+
+/** Why a build is not taken in, which is always that the name it was built under is not a
+ *  commit. */
+function whyTheBuildIsNotTakenIn(commit: string): string {
+  if (commit.endsWith('-dirty')) {
+    return 'That build was made from a working tree with changes in it, which the commit does not name: nobody handed a run played on it could check the tree out again to see what it was.';
   }
-  return null;
+  return `A build is kept under the commit it was made from, and ${commit} is not one.`;
 }
 
 /**
@@ -165,8 +177,7 @@ export type EnginePublished =
  * publishing the same one twice costs nothing and there is no second version of it to keep.
  */
 export async function publishEngine(sql: Queries, commit: string, bundle: Uint8Array): Promise<EnginePublished> {
-  const refusal = whyNoEngineIsKept(commit);
-  if (refusal !== null) return { kept: false, reason: refusal };
+  if (!namesCommittedCode(commit)) return { kept: false, reason: whyTheBuildIsNotTakenIn(commit) };
   const written = await sql.query(
     `INSERT INTO engines (commit, bundle) VALUES ($1, $2)
      ON CONFLICT (commit) DO NOTHING
