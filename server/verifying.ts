@@ -1,4 +1,5 @@
 import { shortCommit } from '../src/lib/commit';
+import type { JournalEntry } from '../src/lib/play/journal';
 import type { Milestone, RunLog, RunSession, RunTotals } from '../src/lib/play/run';
 import type { CheckedSession, RunVerdict } from '../src/lib/play/verify';
 import { announceRun, type Announcement } from './announcing';
@@ -153,6 +154,14 @@ export interface KeptVerdict {
   deepest: number;
   level: number;
   engines: string[];
+  /**
+   * The run written up in words by the replay, oldest sitting first, which is what a run's page
+   * shows as its timeline and folds its summary out of.
+   *
+   * Empty for a game whose journal has not been written yet, and for a verdict reached without a
+   * replay having been run at all.
+   */
+  journal: JournalEntry[];
   verifiedAt: string;
 }
 
@@ -353,14 +362,16 @@ async function keepVerdict(
   // JSON. `server/boards.ts` is what they are for.
   await sql.query(
     `INSERT INTO verdicts (character_id, status, reason, actions, time, milestones, play_ms, timed,
-                           eligible, game, leaderboard, deepest, level, engine_commits, verified_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, now())
+                           eligible, game, leaderboard, deepest, level, engine_commits, journal,
+                           verified_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, now())
      ON CONFLICT (character_id) DO UPDATE SET
        status = excluded.status, reason = excluded.reason, actions = excluded.actions,
        time = excluded.time, milestones = excluded.milestones, play_ms = excluded.play_ms,
        timed = excluded.timed, eligible = excluded.eligible, game = excluded.game,
        leaderboard = excluded.leaderboard, deepest = excluded.deepest, level = excluded.level,
-       engine_commits = excluded.engine_commits, verified_at = excluded.verified_at`,
+       engine_commits = excluded.engine_commits, journal = excluded.journal,
+       verified_at = excluded.verified_at`,
     [
       characterId,
       verdict.status,
@@ -376,8 +387,15 @@ async function keepVerdict(
       deepestReach(verdict.game, totals.milestones),
       highestLevel(totals.milestones),
       JSON.stringify(verdict.engine.played),
+      JSON.stringify(journalOf(verdict)),
     ],
   );
+}
+
+/** The journal a verdict carries. A build kept from a commit older than the run journal hands
+ *  back a verdict with none, which is a run with nothing to read rather than an error. */
+function journalOf(verdict: RunVerdict): JournalEntry[] {
+  return verdict.journal ?? [];
 }
 
 /** The verdict a run was given, or null when it has not been replayed. */
@@ -396,6 +414,7 @@ export async function verdictFor(sql: Queries, characterId: string): Promise<Kep
     deepest: number;
     level: number;
     engine_commits: string[];
+    journal: JournalEntry[] | null;
     verified_at: Date;
   }>('SELECT * FROM verdicts WHERE character_id = $1', [characterId]);
   const row = rows[0];
@@ -414,6 +433,8 @@ export async function verdictFor(sql: Queries, characterId: string): Promise<Kep
     deepest: row.deepest,
     level: row.level,
     engines: row.engine_commits,
+    // A verdict written before this server kept journals has none.
+    journal: row.journal ?? [],
     verifiedAt: row.verified_at.toISOString(),
   };
 }
@@ -445,6 +466,9 @@ export interface LivingSnapshot {
   deepest: number;
   actions: number;
   time: number;
+  /** The run so far written up in words by the replay, which is what a still-going run's page
+   *  shows as its timeline. */
+  journal: JournalEntry[];
   /** The id of the last batch the replay took in. */
   replayedThrough: number;
   replayedAt: string;
@@ -459,6 +483,7 @@ export async function livingSnapshotFor(sql: Queries, characterId: string): Prom
     deepest: number;
     actions: number;
     time: number;
+    journal: JournalEntry[] | null;
     replayed_through: number;
     replayed_at: Date;
   }>('SELECT * FROM living WHERE character_id = $1', [characterId]);
@@ -471,6 +496,8 @@ export async function livingSnapshotFor(sql: Queries, characterId: string): Prom
     deepest: row.deepest,
     actions: row.actions,
     time: row.time,
+    // A snapshot written before this server kept journals has none.
+    journal: row.journal ?? [],
     replayedThrough: row.replayed_through,
     replayedAt: row.replayed_at.toISOString(),
   };
@@ -562,12 +589,12 @@ async function keepLivingSnapshot(
   const totals = verdict.replayed ?? verdict.claimed;
   await sql.query(
     `INSERT INTO living (character_id, status, reason, level, deepest, actions, time, game,
-                         leaderboard, replayed_through, replayed_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, to_timestamp($11::double precision / 1000.0))
+                         leaderboard, journal, replayed_through, replayed_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, to_timestamp($12::double precision / 1000.0))
      ON CONFLICT (character_id) DO UPDATE SET
        status = excluded.status, reason = excluded.reason, level = excluded.level,
        deepest = excluded.deepest, actions = excluded.actions, time = excluded.time,
-       game = excluded.game, leaderboard = excluded.leaderboard,
+       game = excluded.game, leaderboard = excluded.leaderboard, journal = excluded.journal,
        replayed_through = excluded.replayed_through, replayed_at = excluded.replayed_at`,
     [
       characterId,
@@ -579,6 +606,7 @@ async function keepLivingSnapshot(
       totals.time,
       verdict.game,
       verdict.leaderboard,
+      JSON.stringify(journalOf(verdict)),
       replayedThrough,
       now,
     ],

@@ -1,5 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { Milestone, RunLog, RunSession } from '../src/lib/play/run';
+import type { JournalEntry } from '../src/lib/play/journal';
 import type { RunVerdict } from '../src/lib/play/verify';
 import { announcementsBefore, type Announcement } from './announcing';
 import { openEngineStore, publishEngine, type EngineStore } from './engines';
@@ -129,6 +130,15 @@ describe('putting a run back together', () => {
   });
 });
 
+/** One line of a run journal, as a replay writes one. */
+const STEPPED: JournalEntry = {
+  at: 2,
+  floor: 3,
+  module: 0,
+  text: 'Stepped north',
+  event: { kind: 'stepped', dir: 0 },
+};
+
 /** An engine build that says what a test wants it to say about the run it is handed. */
 function fakeEngines(verdictFor: (log: RunLog) => Partial<RunVerdict>): EngineStore {
   return {
@@ -223,6 +233,16 @@ describe('replaying a run once its last batch has arrived', () => {
       eligible: true,
       engines: [ENGINE],
     });
+  });
+
+  it('writes down the journal the replay wrote', async () => {
+    await play(
+      fakeEngines(() => ({ journal: [STEPPED] })),
+      { batch: batch({ session: header }), at: 1000 },
+      { batch: batch({ sequence: 1, ending: true }), at: 6000 },
+    );
+
+    expect((await verdictFor(sql, CHARACTER))?.journal).toEqual([STEPPED]);
   });
 
   it('writes down what the boards read the run by', async () => {
@@ -534,6 +554,19 @@ describe('replaying the chain of a character still being played', () => {
 
     expect(snapshot).toMatchObject({ status: 'verified', level: 5, deepest: 2, actions: 12, time: 30 });
     expect(await livingSnapshotFor(sql, CHARACTER)).toMatchObject({ level: 5, deepest: 2 });
+  });
+
+  it('writes down the journal of the run so far', async () => {
+    await played(0, [], 1000);
+
+    const snapshot = await snapshotLivingRun(
+      sql,
+      fakeEngines(() => ({ journal: [STEPPED] })),
+      CHARACTER,
+      AT_NOON,
+    );
+
+    expect(snapshot?.journal).toEqual([STEPPED]);
   });
 
   it('leaves the chain alone while nothing has been played since', async () => {

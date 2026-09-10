@@ -252,6 +252,21 @@ here is unverifiable rather than failed. `eligible` is whether the run may go on
 a board at all: verified, and with no record ever written into the character
 from outside the game.
 
+### The journal
+
+The verdict keeps the run written up in words as well, in `journal`: everything
+the run did, one line at a time, with how far the run had got when each was
+written. That is what a run's page shows as its timeline. A run log carries no
+journal — a replay of the log writes the same lines again, which is the whole
+reason the site leaves it out of the export — so what a reader sees is the
+engine's own account of the run rather than anything the site said about it.
+
+The summary under the timeline is not kept here. It is a fold of the journal
+and the two numbers the verdict already carries, and folding it means the
+game's own names for its monsters, its spells and its money, which is the
+engine; this server keeps no engine of its own and loads one per commit. So the
+site folds it out of the journal, the same way `pnpm verify-run` does.
+
 ## The characters
 
 A character belongs to the player rather than to the browser it was rolled in.
@@ -373,6 +388,10 @@ chain long enough to take longer than two minutes only keeps that line busy
 rather than piling replays on top of each other. The board says when each
 character was last heard from, so a snapshot that has fallen behind is plain to
 see.
+
+A snapshot keeps the journal of the run so far the way a verdict keeps the
+journal of a run that has ended, rewritten by each replay, so a row on a board
+of the living opens a page with a timeline on it too.
 
 ## The announcements
 
