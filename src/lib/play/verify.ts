@@ -81,13 +81,113 @@ export interface RunVerdict {
 }
 
 /**
+ * One session of a chain and what it takes to judge it: where it comes in the chain, what the run
+ * had come to before it, and the record the session before it ended with.
+ */
+export interface SessionInChain {
+  session: RunSession;
+  /** Where the session comes in the chain, counting from zero. */
+  at: number;
+  /** How many sessions the chain has, which is what decides whether a reason names a session at
+   *  all: a run played in one sitting has none to name. */
+  of: number;
+  /** What the run had come to in the sessions before this one, which this session's own numbers
+   *  count on from. */
+  before: RunTotals;
+  /** The record the replay of the session before this one ended with, and null for the first
+   *  session of a chain, which starts from whatever the character was rolled as. */
+  after: Uint8Array | null;
+}
+
+/** What replaying one session of a chain came to. */
+export type CheckedSession =
+  | {
+      status: 'verified';
+      reason: null;
+      /** What the run has come to including this session. */
+      totals: RunTotals;
+      ending: RunEnding;
+      /** The record the replay ended with, which the next session of the chain has to start
+       *  from. */
+      record: Uint8Array;
+    }
+  | {
+      status: 'failed' | 'unverifiable';
+      reason: string;
+      /** What the replay reached before the session was refused, or null when it never ran. */
+      totals: RunTotals | null;
+      ending: RunEnding | null;
+      record: null;
+    };
+
+/**
+ * Replay one session of a chain and judge it: does it reach what it claims, and does it start
+ * from the record the replay of the session before it ended with.
+ *
+ * Both of those are here rather than in the loop below so that everything that walks a chain
+ * judges a session the same way. The run server is the other caller: it keeps an engine build per
+ * commit and replays each session of a chain with the build that session was played on, so it
+ * walks the chain itself and only the judging is shared.
+ */
+export async function verifySession(chain: SessionInChain): Promise<CheckedSession> {
+  const { session, at, of, before, after } = chain;
+  if (session.edits > 0) {
+    return refusedSession('unverifiable', `${whichSession(of, at)}${recordWrittenFromOutside(session.edits)}`);
+  }
+  if (after !== null && !sameBytes(bytesFromBase64(session.record), after)) {
+    return refusedSession('failed', `Session ${at + 1} does not start from the record session ${at} ended with.`);
+  }
+  let replay: RunReplay;
+  try {
+    replay = await replayRun(session, { ...before });
+  } catch (thrown) {
+    // A replay that stopped part-way says nothing about the run either way: the log may be an
+    // honest one and the engine may be what broke. So the verdict is that it cannot be checked,
+    // with the message it stopped on, rather than a failure the run is blamed for.
+    const stopped = thrown instanceof Error ? thrown.message : String(thrown);
+    return refusedSession('unverifiable', `${whichSession(of, at)}The replay stopped: ${stopped}`);
+  }
+  const totals: RunTotals = {
+    actions: replay.actions,
+    time: replay.time,
+    milestones: [...before.milestones, ...replay.milestones],
+  };
+  const ending: RunEnding = {
+    place: replay.place,
+    over: replay.over,
+    alive: !replay.dead,
+    // The end of the game is reached once, in whichever session reached it, and the run has been
+    // won from then on.
+    won: totals.milestones.some((milestone) => milestone.kind === 'win'),
+    record: await recordHash(replay.record),
+  };
+  const mismatch = firstMismatch(session, replay);
+  if (mismatch !== null) {
+    return { status: 'failed', reason: `${whichSession(of, at)}${mismatch}`, totals, ending, record: null };
+  }
+  return { status: 'verified', reason: null, totals, ending, record: replay.record };
+}
+
+/** A session nothing was learned from, since the replay either never ran or stopped. */
+function refusedSession(status: 'failed' | 'unverifiable', reason: string): CheckedSession {
+  return { status, reason, totals: null, ending: null, record: null };
+}
+
+/** A record written into the character from outside the game leaves a replay nothing to put the
+ *  character back into, since those records are not in the log. */
+function recordWrittenFromOutside(edits: number): string {
+  return `The character's record was written from outside the game ${timesWords(edits)} while the run was played, and those records are not in the log.`;
+}
+
+/**
  * Play a run log again and say whether it is what it claims to be.
  *
  * The log is a chain of sessions, and each of them is replayed from the record it says it began
  * with, counting on from what the sessions before it came to. Two things have to hold for the
  * chain: every session has to reach what it claims, and every session has to start from the
  * record the replay of the one before it ended with. The second is what stops a run being padded
- * with a session of a character somebody else played, or with the same session twice.
+ * with a session of a character somebody else played, or with the same session twice. Both are
+ * {@link verifySession}; this walks the chain and puts a verdict on the whole run.
  *
  * An engine that is not this build's is a note rather than a failure: the two may well agree, and
  * a replay that then reproduces the run says they did. It is only worth reading as an excuse when
@@ -116,49 +216,19 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
     const note = whatToSayAboutTheEngine(engine, ENGINE_COMMIT);
     if (note !== null && !verdict.notes.includes(note)) verdict.notes.push(note);
   }
-  const edits = sessions.reduce((count, session) => count + session.edits, 0);
-  if (edits > 0) {
-    verdict.reason = `The character's record was written from outside the game ${timesWords(edits)} while the run was played, and those records are not in the log.`;
-    return verdict;
-  }
-  const replayed: RunTotals = { actions: 0, time: 0, milestones: [] };
-  let endedWith: Uint8Array | null = null;
+  let before: RunTotals = { actions: 0, time: 0, milestones: [] };
+  let after: Uint8Array | null = null;
   for (const [at, session] of sessions.entries()) {
-    if (endedWith !== null && !sameBytes(bytesFromBase64(session.record), endedWith)) {
-      verdict.status = 'failed';
-      verdict.reason = `Session ${at + 1} does not start from the record session ${at} ended with.`;
+    const checked = await verifySession({ session, at, of: sessions.length, before, after });
+    if (checked.totals !== null) verdict.replayed = checked.totals;
+    if (checked.ending !== null) verdict.ending = checked.ending;
+    if (checked.status !== 'verified') {
+      verdict.status = checked.status;
+      verdict.reason = checked.reason;
       return verdict;
     }
-    let replay: RunReplay;
-    try {
-      replay = await replayRun(session, { ...replayed });
-    } catch (thrown) {
-      // A replay that stopped part-way says nothing about the run either way: the log may be an
-      // honest one and the engine may be what broke. So the verdict is that it cannot be checked,
-      // with the message it stopped on, rather than a failure the run is blamed for.
-      verdict.reason = `${whichSession(sessions.length, at)}The replay stopped: ${thrown instanceof Error ? thrown.message : String(thrown)}`;
-      return verdict;
-    }
-    replayed.actions = replay.actions;
-    replayed.time = replay.time;
-    replayed.milestones = [...replayed.milestones, ...replay.milestones];
-    verdict.replayed = { ...replayed, milestones: [...replayed.milestones] };
-    verdict.ending = {
-      place: replay.place,
-      over: replay.over,
-      alive: !replay.dead,
-      // The end of the game is reached once, in whichever session reached it, and the run has
-      // been won from then on.
-      won: replayed.milestones.some((milestone) => milestone.kind === 'win'),
-      record: await recordHash(replay.record),
-    };
-    const mismatch = firstMismatch(session, replay);
-    if (mismatch !== null) {
-      verdict.status = 'failed';
-      verdict.reason = `${whichSession(sessions.length, at)}${mismatch}`;
-      return verdict;
-    }
-    endedWith = replay.record;
+    before = checked.totals;
+    after = checked.record;
   }
   verdict.status = 'verified';
   return verdict;

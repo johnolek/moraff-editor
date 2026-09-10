@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { bytesFromBase64 } from '../bytes';
 import { savePlayer, loadPlayer } from '../game/port/record';
 import { characterFile, press, settle, teleporterSquare, townSquare } from './battle.test-support';
 import { runMoveControl, startGame } from './engine';
@@ -12,7 +13,7 @@ import { revCharacterFile, revRecord } from './rev/engine.test';
 import { REV_KEY } from './rev/keys';
 import { ENGINE_COMMIT, replayRun, runLogOf, RunRecorder, runTotals, type RunLog, type RunSession } from './run';
 import { RUN_LOG_VERSION } from './run';
-import { readRunLog, verifyRun, whatToSayAboutTheEngine } from './verify';
+import { readRunLog, verifyRun, verifySession, whatToSayAboutTheEngine } from './verify';
 
 /**
  * A short run of Dungeons of the Unforgiven, played headless with a seed of the test's own: three
@@ -316,6 +317,45 @@ describe('verifying a run played in more than one sitting', () => {
     const verdict = await verifyRun(runLogOf([{ ...log.sessions[0], engine: 'aaaaaaa' }, log.sessions[1]]));
 
     expect(verdict.engine.played).toEqual(['aaaaaaa', ENGINE_COMMIT]);
+  });
+});
+
+describe('judging one session of a chain on its own', () => {
+  const nothingYet = { actions: 0, time: 0, milestones: [] };
+
+  it('counts a session on from what the sessions before it came to', async () => {
+    const log = await unforgivenChain();
+
+    const first = await verifySession({ session: log.sessions[0], at: 0, of: 2, before: nothingYet, after: null });
+    expect(first.status).toBe('verified');
+    if (first.status !== 'verified') return;
+    expect(first.totals).toEqual(runTotals([log.sessions[0]]));
+
+    const second = await verifySession({
+      session: log.sessions[1],
+      at: 1,
+      of: 2,
+      before: first.totals,
+      after: first.record,
+    });
+    expect(second.status).toBe('verified');
+    if (second.status !== 'verified') return;
+    expect(second.totals).toEqual(runTotals(log.sessions));
+  });
+
+  it('fails a session that does not start from the record it is handed', async () => {
+    const log = await unforgivenChain();
+
+    const checked = await verifySession({
+      session: log.sessions[1],
+      at: 1,
+      of: 2,
+      before: runTotals([log.sessions[0]]),
+      after: bytesFromBase64(log.sessions[0].record),
+    });
+
+    expect(checked.status).toBe('failed');
+    expect(checked.reason).toBe('Session 2 does not start from the record session 1 ended with.');
   });
 });
 
