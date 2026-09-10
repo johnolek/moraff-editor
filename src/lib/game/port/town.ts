@@ -1,4 +1,4 @@
-import { showHint } from './drops';
+import { ARMOR_NAMES, showHint, WEAPON_NAMES } from './drops';
 import { bossTablet, hintOnArrival, innSignHint, sectionNumber, tabletMessage } from './hints';
 import { checkGainLevel, gainLevel, levelUpScreen } from './levels';
 import { computeWeight } from './magic';
@@ -26,6 +26,31 @@ export const TEMPLE_PRICES = [10, 100, 500, 300, 500, 100, 0];
 
 /** What the town's one inn is called in each of the five modules (exe DS:039b). */
 export const INN_NAMES = ['HOLE', 'PLACE', 'INN', 'HOTEL', 'PALACE'];
+
+/**
+ * What the game calls the building on a square of the town: 1 the store, 2 the temple, 3 the
+ * bank, 4 the inn.
+ *
+ * The first three name themselves in the message each greets the player with -- UH.BIN 93 "YOU
+ * HAVE ENTERED A STORE", 95 "EXIT THE TEMPLE" and 100 "LEAVE BANK" -- and the inn has a name of
+ * its own in each module.
+ */
+export function buildingName(module: number, building: number): string {
+  if (building === 1) return 'STORE';
+  if (building === 2) return 'TEMPLE';
+  if (building === 3) return 'BANK';
+  return INN_NAMES[module];
+}
+
+/** What the temple's first six menu entries are called (UH.BIN 95); the seventh leaves. */
+export const TEMPLE_NAMES = [
+  'CURE WOUNDS',
+  'CURE SERIOUS WOUNDS',
+  'HEAL ALL WOUNDS',
+  'CURE POISON',
+  'CURE DISEASE',
+  'HELP A CHILD',
+];
 
 /** How long a night at the inn takes: eight hours, in seconds. */
 export const INN_SECONDS = 8 * 3600;
@@ -79,6 +104,15 @@ export function storeRefund(game: Game, amount: number): number {
   return Math.trunc(amount - refund);
 }
 
+/**
+ * Money handed over in one of the town's buildings, for the run journal. A price of nothing --
+ * the temple's seventh entry, which is the way out -- buys nothing and is not reported.
+ */
+function spent(game: Game, amount: number, on: string, building: number): void {
+  if (amount === 0) return;
+  game.events.push({ kind: 'coinsSpent', amount, on, where: buildingName(game.pc.module, building) });
+}
+
 /** g_store (exe 2000:45ab, unf.c "g_store"): the menu the store greets the player with. */
 export function enterStore(game: Game): void {
   showHint(game, 93);
@@ -96,6 +130,7 @@ export function buyWeapon(game: Game, choice: number): void {
   }
   game.pc.weaponsOwned[choice] += 1;
   game.pc.money -= price;
+  spent(game, price, WEAPON_NAMES[choice], 1);
   // DS:0bd9, 06f0, 0beb, 0c05, 0c1f, 0c3e, 06f0, 0c5a
   game.say(
     'EXCELLENT CHOICE!',
@@ -124,6 +159,7 @@ export function buyArmor(game: Game, choice: number): void {
   }
   game.pc.armorOwned[choice - 1] += 1;
   game.pc.money -= price;
+  spent(game, price, ARMOR_NAMES[choice - 1], 1);
 }
 
 /**
@@ -167,8 +203,10 @@ export function buyCultureStock(game: Game, rubles: number): void {
     return;
   }
   const units = Math.trunc(rubles / price);
-  game.pc.money -= storeRefund(game, price * units);
+  const bill = storeRefund(game, price * units);
+  game.pc.money -= bill;
   game.pc.cultureStock += units;
+  spent(game, bill, 'CULTURE STOCK', 1);
   showMoney(game);
 }
 
@@ -187,8 +225,10 @@ export function buyMagicCrystals(game: Game, rubles: number): void {
     return;
   }
   const units = Math.trunc(rubles / price);
-  game.pc.money -= storeRefund(game, price * units);
+  const bill = storeRefund(game, price * units);
+  game.pc.money -= bill;
   game.pc.crystals += units;
+  spent(game, bill, 'MAGIC CRYSTALS', 1);
   showMoney(game);
 }
 
@@ -212,6 +252,7 @@ export function temple(game: Game, choice: number): void {
     return;
   }
   pc.money -= price;
+  spent(game, price, TEMPLE_NAMES[choice - 1] ?? '', 2);
   switch (choice - 1) {
     case 0:
       pc.hp += game.rng.random(10) + 1;
@@ -258,8 +299,11 @@ export function enterBank(game: Game): void {
  */
 export function convertDollars(game: Game): void {
   const pc = game.pc;
-  pc.money += Math.trunc(pc.dollars / 100);
+  const rubles = Math.trunc(pc.dollars / 100);
+  const dollars = pc.dollars - (pc.dollars % 100);
+  pc.money += rubles;
   pc.dollars %= 100;
+  if (rubles > 0) game.events.push({ kind: 'dollarsChanged', dollars, rubles });
   showMoney(game);
 }
 
@@ -282,6 +326,7 @@ export function bankDeposit(game: Game, rubles: number): void {
   const amount = moveMoney(rubles, pc.money);
   pc.money -= amount;
   pc.bank += amount;
+  if (amount > 0) game.events.push({ kind: 'deposited', amount });
   showMoney(game);
 }
 
@@ -291,6 +336,7 @@ export function bankWithdraw(game: Game, rubles: number): void {
   const amount = moveMoney(rubles, pc.bank);
   pc.money += amount;
   pc.bank -= amount;
+  if (amount > 0) game.events.push({ kind: 'withdrew', amount });
   showMoney(game);
 }
 
@@ -432,6 +478,7 @@ export function stayTheNight(game: Game): void {
     return;
   }
   pc.money -= price;
+  spent(game, price, 'A ROOM', 4);
   pc.realtime += INN_SECONDS;
   endBattleSpells(game);
   endPrepSpells(game);
@@ -467,8 +514,9 @@ export function stayTheNight(game: Game): void {
   }
 
   if (checkGainLevel(game)) {
+    const from = pc.lev;
     pc.lev = gainLevel(game);
-    game.events.push({ kind: 'levelGained', level: pc.lev });
+    game.events.push({ kind: 'levelGained', level: pc.lev, from });
     if (pc.lev < 5) showHint(game, 22);
     levelUpScreen(game);
   }

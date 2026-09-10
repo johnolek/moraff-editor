@@ -404,9 +404,9 @@ export type GameEvent =
   | { kind: 'gameWon' }
   /**
    * flea_inn (exe 2000:4fe7) has handed the character every level their experience has earned.
-   * `level` is the one they wake on.
+   * `level` is the one they wake on and `from` the one they went to bed on.
    */
-  | { kind: 'levelGained'; level: number }
+  | { kind: 'levelGained'; level: number; from: number }
   /** chute (exe 2000:b532): the square the chute stood on and the floor it dropped to. */
   | { kind: 'chuteTaken'; from: { x: number; y: number }; to: number }
   /** The character has arrived on a floor of a section they were not in, 0 to 19. Each section

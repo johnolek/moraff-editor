@@ -12,7 +12,6 @@ import {
   enterInn,
   enterStore,
   enterTemple,
-  INN_NAMES,
   magicCrystalPrice,
   robBank,
   stayTheNight,
@@ -90,21 +89,6 @@ const STORE_TYPED_Y = 0x42d;
 /** Where the bank draws the same thing, which is three lines and the last line of the box. */
 const BANK_PROMPT_Y = [0x329, 0x35b, 0x38d];
 const BANK_TYPED_Y = 0x487;
-
-/**
- * What the game calls the building on a square of the town: 1 the store, 2 the temple, 3 the
- * bank, 4 the inn.
- *
- * The first three name themselves in the message each greets the player with -- UH.BIN 93 "YOU
- * HAVE ENTERED A STORE", 95 "EXIT THE TEMPLE" and 100 "LEAVE BANK" -- and the inn has a name of
- * its own in each module ({@link INN_NAMES}, exe DS:039b).
- */
-export function buildingName(module: number, building: number): string {
-  if (building === 1) return 'STORE';
-  if (building === 2) return 'TEMPLE';
-  if (building === 3) return 'BANK';
-  return INN_NAMES[module];
-}
 
 /**
  * movecontrol's 0x75 branch when the square holds a building: the town is entered, played and

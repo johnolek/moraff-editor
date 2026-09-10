@@ -5,7 +5,8 @@ import { BOTTOM_LEVEL } from '../game/unfmap.js';
 import { hintOnFloor } from './arrival';
 import type { Turn } from './engine';
 import { changeModule } from './modules';
-import { buildingName, enterBuilding } from './town';
+import { buildingName } from '../game/port/town';
+import { enterBuilding } from './town';
 
 /**
  * The ladders: U to climb one, D to go down one, and the module teleporter waiting at the bottom
