@@ -147,7 +147,11 @@ played, so that a claimed ending can be checked by playing it again rather than 
   a name, on the run server, which is what puts the roster on their other devices. A signed-in
   page merges the two at startup and the server's copy stands, except where this device holds keys
   the server has never been sent; `src/lib/character/server-roster.ts` is that rule and
-  `restoreRoster` is where it happens. The session being
+  `restoreRoster` is where it happens. The roster the server hands over carries how many keys each
+  sitting holds rather than the keys themselves — a Moraff's Revenge chain is megabytes and every
+  page load would carry every character's — so a chain another device played arrives with none of
+  them, and `bringRunKeysHere` fetches the character's own before the two things that need them:
+  playing it on, and exporting the run. The session being
   played is the last of the chain, written again wherever the record is written, which is after
   every key: the record and that one session go into the store together and nothing else on the
   roster is touched, so a tab closed in the middle of a game loses nothing and the next session

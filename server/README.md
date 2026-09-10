@@ -277,7 +277,8 @@ goes on with the server unreachable and catches up when it is back.
 
 | Endpoint                             | What it does                                      |
 | ------------------------------------ | ------------------------------------------------- |
-| `GET /players/me/characters`         | Every character of that player, oldest first: the newest record and maps any device of theirs sent, what a roster shows about each, the chain of sittings put back together out of the stretches that arrived, and whether another device of theirs is playing it now. 403 when the device has claimed no name. |
+| `GET /players/me/characters`         | Every character of that player, oldest first: the newest record and maps any device of theirs sent, what a roster shows about each, the chain of sittings it has been played in with how many keys each holds, and whether another device of theirs is playing it now. 403 when the device has claimed no name. |
+| `GET /players/me/characters/:id/run` | The whole chain of one of their characters with the keys of every sitting, which is what the roster above leaves out. 200 with `{ "run": [...] }`, 403 when the device has claimed no name, 404 when no character of theirs has that id. |
 | `PUT /players/me/characters/:id`     | Takes one character as the device holds it now — the same character a batch carries, with the game and the name beside it — and makes it known where the server has never been told about it. 200 with `{ "kept": "<id>" }`, 403 when the device has claimed no name, 409 when the character belongs to another player or is being played on another device, 400 when the body is not a character. |
 | `DELETE /players/me/characters/:id`  | Forgets one for good: its run, the verdict on it and whatever was announced about it go with it. 404 when no character of that player's has that id, which is also what a character of somebody else's is answered with. |
 
@@ -294,11 +295,20 @@ batch; the device is told 409 and the edit stands where it was made. A device
 playing a character sends nothing this way at all, since its batches are
 already carrying the character.
 
-The chain comes back as the log the site wrote, which is what makes the merge on
-the site's side a comparison of two chains: the server's copy stands unless the
-device holds keys the server has never been sent, which is what playing with the
-server unreachable leaves behind. `src/lib/character/server-roster.ts` is that
-half.
+The roster carries the chain without the keys of its sittings. Moraff's Revenge
+writes an input for every tick of its monsters' clock, five a second while the
+game is open, so a chain of it is megabytes and a roster of them is worse; and
+nothing on a page load reads a key. What goes instead is how many keys each
+sitting holds, which is all the merge on the site's side compares: the server's
+copy stands unless the device holds keys the server has never been sent, and a
+sitting is told apart by its seed and its moment.
+`src/lib/character/server-roster.ts` is that half.
+
+A device asks for the keys of one character at a time, and only for the two
+things that need them: playing that character on, since a new sitting sends the
+ones before it, and exporting the run. Asked for that way the chain comes back
+as the log the site wrote, put back together out of the sittings and the
+stretches of keys that arrived.
 
 ## The boards
 
