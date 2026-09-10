@@ -411,7 +411,7 @@ async function batchAlreadyHere(
   sequence: number,
 ): Promise<KeptBatch | null> {
   const rows = await sql.query<BatchRow>(
-    `SELECT session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
+    `SELECT id, session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
      WHERE character_id = $1 AND session_index = $2 AND sequence = $3`,
     [characterId, sessionIndex, sequence],
   );
@@ -459,6 +459,9 @@ async function appendBatch(sql: Queries, characterId: string, batch: RunBatch, a
 
 /** One batch as it was kept, which is what a run is assembled and timed from. */
 export interface KeptBatch {
+  /** The row's own id, which counts up across every character as batches arrive. It is how a
+   *  reader says which batches it has already taken in. */
+  id: number;
   sessionIndex: number;
   sequence: number;
   inputs: number[];
@@ -470,6 +473,7 @@ export interface KeptBatch {
 /** A row of the batches table. It is a type rather than an interface so that a bag of columns can
  *  be read as one. */
 type BatchRow = {
+  id: number;
   session_index: number;
   sequence: number;
   inputs: number[];
@@ -480,6 +484,7 @@ type BatchRow = {
 
 function keptBatchOf(row: BatchRow): KeptBatch {
   return {
+    id: row.id,
     sessionIndex: row.session_index,
     sequence: row.sequence,
     inputs: row.inputs,
@@ -492,7 +497,7 @@ function keptBatchOf(row: BatchRow): KeptBatch {
 /** Every batch of a character's run, oldest sitting first and in the order the site sent them. */
 export async function batchesOf(sql: Queries, characterId: string): Promise<KeptBatch[]> {
   const rows = await sql.query<BatchRow>(
-    `SELECT session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
+    `SELECT id, session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
      WHERE character_id = $1 ORDER BY session_index, sequence`,
     [characterId],
   );

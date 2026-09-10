@@ -13,7 +13,7 @@ const ENGINE = 'a'.repeat(40);
 const ME: BatchSender = { player: 1, device: 'a'.repeat(64) };
 
 function arrived(over: Partial<KeptBatch>): KeptBatch {
-  return { sessionIndex: 0, sequence: 0, inputs: [], pressed: 0, arrivedAt: 0, ending: false, ...over };
+  return { id: 1, sessionIndex: 0, sequence: 0, inputs: [], pressed: 0, arrivedAt: 0, ending: false, ...over };
 }
 
 describe('the play time the batch stamps say', () => {
