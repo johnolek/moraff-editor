@@ -24,7 +24,7 @@ export function writeCorsHeaders(
   response.setHeader('Vary', 'Origin');
   if (origin === undefined || !isAllowedOrigin(origin, allowedOrigin)) return;
   response.setHeader('Access-Control-Allow-Origin', origin);
-  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  response.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   // The site puts its player secret in `Authorization`, and a browser will not send a header the
   // answer to the preflight has not named.
   response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');

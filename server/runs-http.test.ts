@@ -43,6 +43,15 @@ function batch(over: Partial<RunBatch> = {}): RunBatch {
     pressed: 2,
     ending: false,
     claims: { mode: 'speedrun', actions: 2, time: 4, edits: 0, milestones: [] },
+    save: {
+      record: 'AAED',
+      maps: null,
+      slot: 21,
+      dead: false,
+      leaderboard: 'speedrun',
+      createdAt: '2026-09-08T09:00:00.000Z',
+      editedAt: '2026-09-09T12:00:00.000Z',
+    },
     ...over,
   };
 }
@@ -197,6 +206,49 @@ describe('streaming a run over HTTP', () => {
     expect(run.finishedAt).not.toBeNull();
     expect(run.verdict).toMatchObject({ status: 'verified', actions: 12, time: 30, eligible: true });
     expect(run.verdict.milestones).toEqual([]);
+  });
+
+  it("hands a signed-in device the player's whole roster", async () => {
+    const response = await fetch(`${origin}/players/me/characters`, {
+      headers: { Authorization: `Bearer ${MY_OTHER}` },
+    });
+
+    expect(response.status).toBe(200);
+    const { characters } = await response.json();
+    expect(characters).toHaveLength(1);
+    expect(characters[0]).toMatchObject({ id: CHARACTER, name: 'Grond', record: 'AAED', slot: 21 });
+    // What a chain is rebuilt out of is `roster.test.ts`; what this asks is that the sitting came
+    // back through the endpoint at all.
+    expect(characters[0].run[0]).toMatchObject({ seed: 12345, record: 'AAEC', engine: ENGINE });
+  });
+
+  it('hands no roster to a device that has claimed no name', async () => {
+    const response = await fetch(`${origin}/players/me/characters`, {
+      headers: { Authorization: `Bearer ${UNNAMED}` },
+    });
+
+    expect(response.status).toBe(403);
+  });
+
+  it('leaves a character of another player where it is', async () => {
+    const response = await fetch(`${origin}/players/me/characters/${CHARACTER}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${THEIRS}` },
+    });
+
+    expect(response.status).toBe(404);
+    expect((await response.json()).error).toBe('No character of yours has that name here.');
+  });
+
+  it('forgets a character of the player’s own', async () => {
+    const response = await fetch(`${origin}/players/me/characters/${CHARACTER}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${MINE}` },
+    });
+
+    expect(response.status).toBe(200);
+    const roster = await fetch(`${origin}/players/me/characters`, { headers: { Authorization: `Bearer ${MINE}` } });
+    expect((await roster.json()).characters).toEqual([]);
   });
 
   it('says there is no such run for a character nobody has played here', async () => {

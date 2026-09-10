@@ -16,6 +16,7 @@ import {
   secretHash,
   signInWithPassphrase,
 } from './players';
+import { forgetKeptCharacter, rosterOf } from './roster';
 import {
   endRun,
   leaseOn,
@@ -45,6 +46,7 @@ const CHANGED_RESEND = 'That stretch of the run arrived before, holding somethin
 const MOVED_ON = 'That character has been played on another device since.';
 const BEING_PLAYED = 'That character is being played on another device.';
 const NO_SUCH_RUN = 'No such run.';
+const NO_SUCH_CHARACTER = 'No character of yours has that name here.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
 const NOT_A_PAGE = 'That is not a page of a board.';
 const NOT_A_HISTORY_PAGE = 'That is not a page of the announcements.';
@@ -100,6 +102,17 @@ export function createRunServer(config: ServerOrigin, sql: Sql, feed: Feed = ope
       // The engines kept are what a run older than this build is replayed with, so a deploy is
       // read here: its own commit, and every commit it kept a build for.
       void sendHealth(response, engines);
+      return;
+    }
+
+    if (request.method === 'GET' && path === '/players/me/characters') {
+      void sendMyCharacters(response, sql, bearerSecret(request));
+      return;
+    }
+
+    const character = path.match(/^\/players\/me\/characters\/([^/]+)$/);
+    if (request.method === 'DELETE' && character !== null) {
+      void forgetMyCharacter(response, sql, bearerSecret(request), decodeURIComponent(character[1]));
       return;
     }
 
@@ -253,6 +266,50 @@ async function sendMyName(response: ServerResponse, sql: Queries, secret: string
     return;
   }
   sendJson(response, 200, { name });
+}
+
+/**
+ * The player's whole roster, as a device that has just signed in takes it up.
+ *
+ * A character belongs to the player and not to the browser it was rolled in, so this is what puts
+ * a roster on a second device: every character with its record, its explored maps and the chain
+ * of sittings it has been played in.
+ */
+async function sendMyCharacters(response: ServerResponse, sql: Queries, secret: string | null): Promise<void> {
+  if (secret === null) {
+    sendJson(response, 400, { error: NOT_A_SECRET });
+    return;
+  }
+  const player = await playerFor(sql, secret);
+  if (player === null) {
+    sendJson(response, 403, { error: NO_NAME_YET });
+    return;
+  }
+  sendJson(response, 200, { characters: await rosterOf(sql, player, secretHash(secret), Date.now()) });
+}
+
+/** One character forgotten here: its run, the verdict on it and whatever was announced about it
+ *  go with it, and nothing is left to hand another device. */
+async function forgetMyCharacter(
+  response: ServerResponse,
+  sql: Sql,
+  secret: string | null,
+  characterId: string,
+): Promise<void> {
+  if (secret === null || !CHARACTER_ID.test(characterId)) {
+    sendJson(response, 400, { error: NOT_A_SECRET });
+    return;
+  }
+  const player = await playerFor(sql, secret);
+  if (player === null) {
+    sendJson(response, 403, { error: NO_NAME_YET });
+    return;
+  }
+  if (!(await forgetKeptCharacter(sql, characterId, player))) {
+    sendJson(response, 404, { error: NO_SUCH_CHARACTER });
+    return;
+  }
+  sendJson(response, 200, { forgotten: characterId });
 }
 
 async function claimName(request: IncomingMessage, response: ServerResponse, sql: Queries): Promise<void> {
