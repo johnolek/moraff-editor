@@ -2,6 +2,7 @@ import type { Leaderboard } from '../lib/app-state.svelte';
 import { shortCommit } from '../lib/commit';
 import { GAME_CHOICES } from '../lib/game-choice';
 import { actionWords, RUN_GAMES, type RunGame } from '../lib/play/run';
+import { summarizeJournal, summaryLines } from '../lib/play/summary';
 import { milestoneLine, readRunLog, verifyRun, type RunVerdict } from '../lib/play/verify';
 
 /**
@@ -46,7 +47,24 @@ function reportLines(verdict: RunVerdict): string[] {
   const played = verdict.engine.played.map(shortCommit).join(', ');
   lines.push('', `Engine: played on ${played}, checked by ${shortCommit(verdict.engine.build)}.`);
   for (const note of verdict.notes) lines.push(`Note: ${note}`);
+  lines.push(...summaryOfTheRun(verdict, clockWords, dungeonName));
   return lines;
+}
+
+/**
+ * What the run came to, folded from the journal the replay wrote. A game whose journal has not
+ * been written yet has none, and there is nothing to say.
+ */
+function summaryOfTheRun(
+  verdict: RunVerdict,
+  clockWords: (time: number) => string,
+  dungeonName: (dungeon: number) => string,
+): string[] {
+  const journal = verdict.journal ?? [];
+  if (journal.length === 0) return [];
+  const totals = verdict.replayed ?? verdict.claimed;
+  const summary = summarizeJournal(journal, totals);
+  return ['', 'The run:', ...summaryLines(summary, { clockWords, dungeonName }).map((line) => `  ${line}`)];
 }
 
 function heading(verdict: RunVerdict): string {

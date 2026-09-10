@@ -21,6 +21,18 @@ describe('the verdict the verify-run command prints', () => {
     expect(report.lines).toContain('  Character   alive');
   });
 
+  it('ends with what the run came to, folded from the journal the replay wrote', async () => {
+    const report = await reportOnRun(fixture('unforgiven-run.json'));
+
+    const summary = report.lines.slice(report.lines.indexOf('The run:') + 1);
+    expect(summary).toEqual([
+      '  Spent 3 actions and 1 second',
+      '  Took 3 steps',
+      '  Reached floor 0 of Module II',
+    ]);
+    expect(report.lines[report.lines.length - 1]).toBe('  Reached floor 0 of Module II');
+  });
+
   it("says the same of a run of Moraff's World", async () => {
     const report = await reportOnRun(fixture('moraffs-world-run.json'));
 

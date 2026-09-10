@@ -1,4 +1,5 @@
 import type { Leaderboard } from '../app-state.svelte';
+import type { JournalEntry } from './journal';
 import { bytesFromBase64, sameBytes } from '../bytes';
 import { isLeaderboard } from '../character/leaderboard';
 import {
@@ -76,6 +77,15 @@ export interface RunVerdict {
   claimed: RunTotals;
   /** What the replays reached, as far as they got, or null when there was none to run. */
   replayed: RunTotals | null;
+  /**
+   * The run written up in words, as the replays wrote it, oldest session first.
+   *
+   * It is what the run was rather than whether it is honest, and it is the replay's rather than
+   * the log's: the log carries no journal, and a replay writing the same one is the point of
+   * keeping it out of the log. A game whose journal has not been written yet has none, and so
+   * does a verdict reached without a replay having been run at all.
+   */
+  journal?: JournalEntry[];
   /** Where the last replayed session ended. */
   ending: RunEnding | null;
 }
@@ -106,6 +116,8 @@ export type CheckedSession =
       reason: null;
       /** What the run has come to including this session. */
       totals: RunTotals;
+      /** This session written up in words, as the replay wrote it. */
+      journal: JournalEntry[];
       ending: RunEnding;
       /** The record the replay ended with, which the next session of the chain has to start
        *  from. */
@@ -116,6 +128,8 @@ export type CheckedSession =
       reason: string;
       /** What the replay reached before the session was refused, or null when it never ran. */
       totals: RunTotals | null;
+      /** What the replay wrote before it was refused, and nothing when it never ran. */
+      journal: JournalEntry[];
       ending: RunEnding | null;
       record: null;
     };
@@ -163,14 +177,22 @@ export async function verifySession(chain: SessionInChain): Promise<CheckedSessi
   };
   const mismatch = firstMismatch(session, replay);
   if (mismatch !== null) {
-    return { status: 'failed', reason: `${whichSession(of, at)}${mismatch}`, totals, ending, record: null };
+    const reason = `${whichSession(of, at)}${mismatch}`;
+    return { status: 'failed', reason, totals, journal: replay.journal, ending, record: null };
   }
-  return { status: 'verified', reason: null, totals, ending, record: replay.record };
+  return {
+    status: 'verified',
+    reason: null,
+    totals,
+    journal: replay.journal,
+    ending,
+    record: replay.record,
+  };
 }
 
 /** A session nothing was learned from, since the replay either never ran or stopped. */
 function refusedSession(status: 'failed' | 'unverifiable', reason: string): CheckedSession {
-  return { status, reason, totals: null, ending: null, record: null };
+  return { status, reason, totals: null, journal: [], ending: null, record: null };
 }
 
 /** A record written into the character from outside the game leaves a replay nothing to put the
@@ -210,16 +232,19 @@ export async function verifyRun(log: RunLog): Promise<RunVerdict> {
     engine: { played: enginesPlayedOn(sessions), build: ENGINE_COMMIT },
     claimed: runTotals(sessions),
     replayed: null,
+    journal: [],
     ending: null,
   };
   for (const engine of verdict.engine.played) {
     const note = whatToSayAboutTheEngine(engine, ENGINE_COMMIT);
     if (note !== null && !verdict.notes.includes(note)) verdict.notes.push(note);
   }
+  const journal = verdict.journal ?? [];
   let before: RunTotals = { actions: 0, time: 0, milestones: [] };
   let after: Uint8Array | null = null;
   for (const [at, session] of sessions.entries()) {
     const checked = await verifySession({ session, at, of: sessions.length, before, after });
+    journal.push(...checked.journal);
     if (checked.totals !== null) verdict.replayed = checked.totals;
     if (checked.ending !== null) verdict.ending = checked.ending;
     if (checked.status !== 'verified') {
