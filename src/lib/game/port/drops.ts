@@ -47,6 +47,25 @@ export const POTION_NAMES = [
   'YELLOW POTION',
 ];
 
+/**
+ * The twelve things find_item turns up, in the order it rolls them, named as the UH.BIN message
+ * each is handed over with names it: 31 to 41, then 43 and 44.
+ */
+const FOUND_ITEM_NAMES = [
+  'NUCLEAR HAND GRENADE',
+  'STONE OF TELEPORTATION',
+  'STONE OF SEEING',
+  'FLOOR SLOSHER',
+  'POTION OF HEALING',
+  'RING OF REGENERATION',
+  'BOOK OF STRENGTH',
+  'BOOK OF INTELLIGENCE',
+  'BOOK OF WISDOM',
+  'BOOK OF CONSTITUTION',
+  'BOOK OF DEXTERITY',
+  'BOOK OF LUCK',
+];
+
 /** The six lines of the menu use_magic_item puts up (UH.BIN 23), in the order it numbers them. */
 const MAGIC_ITEM_NAMES = [
   'FLOOR SLOSHER',
@@ -170,6 +189,7 @@ export async function dropWeapon(game: Game): Promise<void> {
   );
   if ((await game.choice([TAKE, LEAVE])) === TAKE) {
     pc.weaponsOwned[which] += 1;
+    game.events.push({ kind: 'found', find: { what: 'weapon', item: WEAPON_NAMES[which] } });
     computeWeight(game);
   }
 }
@@ -208,6 +228,7 @@ export async function dropArmor(game: Game): Promise<void> {
   );
   if ((await game.choice([TAKE, LEAVE])) === TAKE) {
     pc.armorOwned[which] += 1;
+    game.events.push({ kind: 'found', find: { what: 'armour', item: ARMOR_NAMES[which] } });
     computeWeight(game);
   }
 }
@@ -271,6 +292,7 @@ export function dropSpellbook(game: Game): boolean {
     '  OF THE SPELL.',
   );
   pc.spellbook[index] = 1;
+  game.events.push({ kind: 'found', find: { what: 'spellbook', spell: { type, level, slot } } });
   return true;
 }
 
@@ -300,6 +322,7 @@ export function dropScroll(game: Game): void {
     '  OF THE SCROLL.',
   );
   pc.scrolls[type * 45 + level * 3 + slot] += 1;
+  game.events.push({ kind: 'found', find: { what: 'scroll', spell: { type, level, slot } } });
 }
 
 /**
@@ -331,6 +354,7 @@ export function dropWand(game: Game): void {
     '  OF THE WAND.',
   );
   pc.wands[type * 45 + level * 3 + slot] += charges;
+  game.events.push({ kind: 'found', find: { what: 'wand', spell: { type, level, slot }, charges } });
 }
 
 /**
@@ -358,6 +382,7 @@ export function dropPaper(game: Game): void {
     '  OF THE SPELL ON THE PAPER.',
   );
   pc.papers[type * 45 + level * 3 + slot] += 1;
+  game.events.push({ kind: 'found', find: { what: 'paper', spell: { type, level, slot } } });
 }
 
 /**
@@ -370,59 +395,61 @@ export function dropPaper(game: Game): void {
 export function findItem(game: Game): void {
   const pc = game.pc;
   if (pc.cls === 2) return;
-  switch (game.rng.random(12)) {
+  const which = game.rng.random(12);
+  switch (which) {
     case 0:
       pc.grenades += 1;
       showHint(game, 31);
-      return;
+      break;
     case 1:
       pc.teleportStones += 1;
       showHint(game, 32);
-      return;
+      break;
     case 2:
       pc.seeingStones += 1;
       showHint(game, 33);
-      return;
+      break;
     case 3:
-      if (pc.slosher < 1) {
-        pc.slosher += 1;
-        showHint(game, 35);
-      } else {
+      if (pc.slosher > 0) {
         showHint(game, 34);
+        return;
       }
-      return;
+      pc.slosher += 1;
+      showHint(game, 35);
+      break;
     case 4:
       pc.healingPotions += 1;
       showHint(game, 36);
-      return;
+      break;
     case 5:
       pc.regenRings += 1;
       showHint(game, 37);
-      return;
+      break;
     case 6:
       pc.str += 2;
       showHint(game, 38);
-      return;
+      break;
     case 7:
       pc.iq += 2;
       showHint(game, 39);
-      return;
+      break;
     case 8:
       pc.wis += 2;
       showHint(game, 40);
-      return;
+      break;
     case 9:
       pc.con += 2;
       showHint(game, 41);
-      return;
+      break;
     case 10:
       pc.dex += 2;
       showHint(game, 43);
-      return;
+      break;
     case 11:
       pc.luck += 2;
       showHint(game, 44);
   }
+  game.events.push({ kind: 'found', find: { what: 'item', item: FOUND_ITEM_NAMES[which] } });
 }
 
 /**
@@ -558,6 +585,7 @@ export function dropMoney(game: Game): void {
   if (amount === 0) return;
   if (amount > DOLLARS_CAP - pc.dollars) amount = DOLLARS_CAP - pc.dollars;
   pc.dollars += amount;
+  game.events.push({ kind: 'found', find: { what: 'money', amount } });
   if (game.highSpeed) return;
   const tier = MONEY_COMMENT_TIERS.findIndex((limit) => amount < limit);
   const comments = tier === -1 ? MONEY_COMMENTS[MONEY_COMMENTS.length - 1] : MONEY_COMMENTS[tier];

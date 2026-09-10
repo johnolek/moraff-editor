@@ -12,6 +12,7 @@ import {
   findItem,
   itemMenu,
   MENU_ROWS,
+  POTION_NAMES,
   postKillHeal,
   postKillSp,
   showHint,
@@ -267,6 +268,7 @@ export function drainerBonus(game: Game): void {
   if (game.rng.random(375) < pc.level + 175) {
     const potion = game.rng.random(6);
     pc.potions[potion] += 1;
+    game.events.push({ kind: 'found', find: { what: 'potion', item: POTION_NAMES[potion] } });
     showHint(game, 47 + potion);
     return;
   }
@@ -284,6 +286,7 @@ export function drainerBonus(game: Game): void {
     '      HIT ANY KEY...',
   );
   pc.keys[key] = 1;
+  game.events.push({ kind: 'found', find: { what: 'key', key: key * 5 } });
 }
 
 /**
