@@ -101,6 +101,7 @@ pnpm build        # dist/index.html, one self-contained file
 pnpm verify-run <run.json>   # check a run downloaded from a Play tab
 pnpm build:server            # dist-server/main.mjs, the run server
 pnpm start:server            # run it
+pnpm dev:all                 # the site and the server together on the local Postgres
 ```
 
 `verify-run` plays a run's log through the engine again and says whether it

@@ -30,6 +30,7 @@ pnpm dev
 
 pnpm build:server  # dist-server/main.mjs, the run server
 pnpm start:server  # run it
+pnpm dev:all       # the site and the server together on the local Postgres
 ```
 
 ## Layout and rules
