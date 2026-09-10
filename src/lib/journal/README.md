@@ -6,7 +6,7 @@ draws the journal the roster kept beside a character's sittings, and a run's pag
 tab draws the one the run server's replay wrote — so the drawing of it lives here rather than in
 either of them.
 
-Nothing here writes a journal or folds one. The lines are the games' own words
+Nothing here writes a journal or works out what it came to. The lines are the games' own words
 (`src/lib/play/journal.ts`) and the totals are `summarizeJournal` and `summaryLines`
 (`src/lib/play/summary.ts`); this is the page around them.
 
@@ -19,6 +19,11 @@ Nothing here writes a journal or folds one. The lines are the games' own words
   changes, so a floor come back to later is a stretch of its own rather than more of the one
   before. The newest stretch is open and the earlier ones are folded away, since a long run is
   thousands of lines; a stretch the reader folds open or shut stays that way as the run grows.
+  Within a stretch a run of consecutive steps is drawn as one line, "Walked 12 steps", because
+  walking is most of what a run does; anything else at all ends the walk. That folding is here, in
+  the drawing, rather than in the recorder, so that the journals already written in the browser and
+  on the server read the same way as the ones written from now on, and a replay still writes
+  exactly the lines the run it replays wrote.
 - **`lock.ts`** — whether a character's journal may be shown at all. A character rolled for one of
   the boards is held back until it is dead or has beaten the game, which is John's rule; a
   character rolled for no board and a run played in debug are open from the first key, because
