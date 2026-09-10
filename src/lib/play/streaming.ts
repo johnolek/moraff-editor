@@ -1,8 +1,11 @@
+import type { RosterEntry } from '../app-state.svelte';
+import { base64FromBytes } from '../bytes';
+import { readCharacterMaps } from '../character/maps';
 import { offTheBoards, playerSecret } from '../player';
 import { runServerUrl } from '../run-server';
 import type { PlayMode } from './mode';
 import type { RunRecorder, RunSession } from './run';
-import { RunStream, type BatchAnswer, type RunBatch, type StreamedSession } from './stream';
+import { RunStream, type BatchAnswer, type CharacterSave, type RunBatch, type StreamedSession } from './stream';
 
 /**
  * Sending a run to the run server while it is being played.
@@ -79,8 +82,28 @@ export interface RunStreamer {
 }
 
 /** The recorder of the game being played, as the sender reads it. */
-export function streamedSession(run: RunRecorder, index: number): StreamedSession {
-  return { index, log: () => run.log(), presses: () => run.presses };
+export function streamedSession(run: RunRecorder, index: number, entry: RosterEntry): StreamedSession {
+  return { index, log: () => run.log(), presses: () => run.presses, save: () => characterSave(entry) };
+}
+
+/**
+ * The character as the device holds it now, which every batch carries.
+ *
+ * It is read again for every batch rather than taken once when the game starts: the record is
+ * rewritten wherever the game saves, the maps grow with every floor walked, and a death marks the
+ * roster entry. The server keeps the newest of them, so a device that signs in elsewhere picks
+ * the character up where it stands instead of replaying its whole run to find out.
+ */
+export function characterSave(entry: RosterEntry): CharacterSave {
+  return {
+    record: base64FromBytes(entry.bytes),
+    maps: readCharacterMaps(entry),
+    slot: entry.slot,
+    dead: entry.dead,
+    leaderboard: entry.leaderboard,
+    createdAt: entry.createdAt,
+    editedAt: entry.editedAt,
+  };
 }
 
 export interface StreamRun {

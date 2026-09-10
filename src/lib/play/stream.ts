@@ -27,6 +27,40 @@ export interface BatchSession {
   record: string;
 }
 
+/**
+ * The character as the device holds it now, which the batches of the sitting being played carry.
+ *
+ * The chain says how the character got where it is, and reading it back is a replay of every
+ * sitting it has ever been played in. So the character itself rides along with the keys: the
+ * server keeps the newest one it was sent, and a device that has just signed in picks the
+ * character up from that rather than playing the run again to find it.
+ */
+export interface CharacterSave {
+  /**
+   * The character's record as it stands now, base64.
+   *
+   * This is not the record on any sitting of the chain: those are what a replay of that sitting
+   * starts from and never move again. This one is rewritten by every batch.
+   */
+  record: string;
+  /**
+   * The squares the character has discovered, as the device keeps them beside the record, and
+   * null for a character that has discovered none.
+   *
+   * It is left out of a batch whose maps are the ones the batch before it carried: it is by far
+   * the biggest thing here and most keys change nothing about it.
+   */
+  maps?: string | null;
+  slot: number | null;
+  dead: boolean;
+  /** The board the character is locked to, or null for one played for its own sake. */
+  leaderboard: string | null;
+  /** When the character was rolled or imported, as the device stamped it. */
+  createdAt: string;
+  /** When the character was last changed, as the device stamped it. */
+  editedAt: string;
+}
+
 /** What the sitting claims to have come to, which every batch carries and a replay checks. */
 export interface BatchClaims {
   mode: string | null;
@@ -58,6 +92,9 @@ export interface RunBatch {
   claims: BatchClaims;
   /** The first batch of a sitting carries the sitting; the ones after it do not. */
   session?: BatchSession;
+  /** The character as it stands. A sitting sent to catch the server up carries none: it is one
+   *  of the sittings behind the character rather than the character. */
+  save?: CharacterSave;
 }
 
 /** The sitting being played, as the sender reads it. */
@@ -68,6 +105,8 @@ export interface StreamedSession {
   log(): RunSession;
   /** How many of its inputs the player pressed. */
   presses(): number;
+  /** The character as the device holds it now, with its maps whether they have changed or not. */
+  save(): CharacterSave;
 }
 
 /**
@@ -114,6 +153,9 @@ export class RunStream {
   private ended = false;
   /** The server's words for a run it will not take, once it has said them. */
   private refused: string | null = null;
+  /** The maps the last batch built carried, so that the next one carries them only if they have
+   *  changed. Undefined until a batch has been built, which no character's maps ever are. */
+  private sentMaps: string | null | undefined = undefined;
 
   constructor(
     private readonly session: StreamedSession,
@@ -155,6 +197,7 @@ export class RunStream {
         milestones: log.milestones,
       },
       session: this.started ? undefined : sessionHeader(log),
+      save: this.saveNow(),
     };
     this.pending.push(batch);
     this.built += batch.inputs.length;
@@ -163,6 +206,21 @@ export class RunStream {
     this.started = true;
     if (ending) this.ended = true;
     return batch;
+  }
+
+  /**
+   * The character as this batch carries it: the maps only where they are not the ones the batch
+   * before it carried.
+   *
+   * What was built is remembered rather than what the server has said it holds, because a batch
+   * that failed to go is sent again exactly as it was built, so its maps go with it.
+   */
+  private saveNow(): CharacterSave {
+    const save = this.session.save();
+    const maps = save.maps ?? null;
+    if (maps === this.sentMaps) return { ...save, maps: undefined };
+    this.sentMaps = maps;
+    return { ...save, maps };
   }
 
   /** The server has the batch, so it is done with and the one after it can go. */

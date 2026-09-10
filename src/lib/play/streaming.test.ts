@@ -42,7 +42,20 @@ function sitting(): StreamedSession {
     milestones: [],
     edits: 0,
   };
-  return { index: 0, log: () => log, presses: () => 2 };
+  return {
+    index: 0,
+    log: () => log,
+    presses: () => 2,
+    save: () => ({
+      record: 'AAED',
+      maps: null,
+      slot: 21,
+      dead: false,
+      leaderboard: 'speedrun',
+      createdAt: '2026-09-09T11:00:00.000Z',
+      editedAt: '2026-09-09T12:00:00.000Z',
+    }),
+  };
 }
 
 /** A sender pointed at a server that takes everything, and what the Play tab was told. */

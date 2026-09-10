@@ -36,9 +36,14 @@ export interface RevMapStore {
 
 const MAPS_PREFIX = 'moraff-tools.revenge-map.';
 
+/** Where one character's explored map is kept. */
+export function revCharacterMapKey(id: string): string {
+  return MAPS_PREFIX + id;
+}
+
 /** The explored map kept beside one roster entry, as the game keeps `<n>.BIN` beside `<n>.EXE`. */
 export function revCharacterMap(id: string): RevMapStore {
-  return blobStore(MAPS_PREFIX + id);
+  return blobStore(revCharacterMapKey(id));
 }
 
 /** One character's explored map while they are being played. */

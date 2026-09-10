@@ -95,9 +95,14 @@ export interface MapStore {
 
 const MAPS_PREFIX = 'moraff-tools.maps.';
 
+/** Where one character's explored maps are kept. */
+export function characterMapsKey(id: string): string {
+  return MAPS_PREFIX + id;
+}
+
 /** The explored maps kept beside one roster entry. */
 export function characterMaps(id: string): MapStore {
-  return jsonStore<StoredMaps>(MAPS_PREFIX + id);
+  return jsonStore<StoredMaps>(characterMapsKey(id));
 }
 
 /** The squares of a floor, as the map draws and the explored-map reader indexes them. */

@@ -1,6 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { RunStream, type BatchAnswer, type RunBatch, type StreamedSession } from './stream';
+import { RunStream, type BatchAnswer, type CharacterSave, type RunBatch, type StreamedSession } from './stream';
 import type { RunSession } from './run';
+
+function save(over: Partial<CharacterSave> = {}): CharacterSave {
+  return {
+    record: 'AAED',
+    maps: null,
+    slot: 21,
+    dead: false,
+    leaderboard: 'speedrun',
+    createdAt: '2026-09-09T11:00:00.000Z',
+    editedAt: '2026-09-09T12:00:00.000Z',
+    ...over,
+  };
+}
 
 function session(over: Partial<RunSession> = {}): RunSession {
   return {
@@ -23,14 +36,21 @@ function session(over: Partial<RunSession> = {}): RunSession {
 }
 
 /** A sitting whose keys a test pushes, standing in for the game being played. */
-function played(index = 0): { sitting: StreamedSession; press(...keys: number[]): void; unpressed(key: number): void } {
+function played(index = 0): {
+  sitting: StreamedSession;
+  press(...keys: number[]): void;
+  unpressed(key: number): void;
+  discover(maps: string | null): void;
+} {
   const inputs: number[] = [];
   let presses = 0;
+  let maps: string | null = null;
   return {
     sitting: {
       index,
       log: () => session({ inputs: [...inputs], actions: inputs.length }),
       presses: () => presses,
+      save: () => save({ maps }),
     },
     press(...keys) {
       inputs.push(...keys);
@@ -38,6 +58,9 @@ function played(index = 0): { sitting: StreamedSession; press(...keys: number[])
     },
     unpressed(key) {
       inputs.push(key);
+    },
+    discover(discovered) {
+      maps = discovered;
     },
   };
 }
@@ -255,6 +278,61 @@ describe('sending a run as it is played', () => {
     await stream.send(false);
 
     expect(server.sent.map((batch) => batch.sessionIndex)).toEqual([0, 1]);
+  });
+
+  it('carries the character as it stands with every batch', async () => {
+    const game = played();
+    const server = takesEverything();
+    const stream = new RunStream(game.sitting, server.post);
+
+    game.press(104);
+    await stream.send(false);
+    game.press(106);
+    await stream.send(false);
+
+    expect(server.sent.map((batch) => batch.save?.record)).toEqual(['AAED', 'AAED']);
+  });
+
+  it('carries the maps only when they have changed since the batch before', async () => {
+    const game = played();
+    const server = takesEverything();
+    const stream = new RunStream(game.sitting, server.post);
+
+    game.discover('one floor');
+    game.press(104);
+    await stream.send(false);
+    game.press(106);
+    await stream.send(false);
+    game.discover('two floors');
+    game.press(107);
+    await stream.send(false);
+
+    expect(server.sent.map((batch) => batch.save?.maps)).toEqual(['one floor', undefined, 'two floors']);
+  });
+
+  it('sends the maps of a character that has discovered none once and no more', async () => {
+    const game = played();
+    const server = takesEverything();
+    const stream = new RunStream(game.sitting, server.post);
+
+    game.press(104);
+    await stream.send(false);
+    game.press(106);
+    await stream.send(false);
+
+    expect(server.sent.map((batch) => batch.save?.maps)).toEqual([null, undefined]);
+  });
+
+  it('sends no character with a sitting the server is being caught up on', async () => {
+    const game = played(1);
+    const server = takesEverything();
+    const stream = new RunStream(game.sitting, server.post, [session({ inputs: [1, 2] })]);
+
+    game.press(104);
+    await stream.send(false);
+
+    expect(server.sent[0].save).toBeUndefined();
+    expect(server.sent[1].save?.record).toBe('AAED');
   });
 
   it('hands over a batch to send without posting it, for a page on its way out', async () => {

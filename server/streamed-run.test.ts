@@ -46,6 +46,15 @@ function playing(recorded: RunSession): { sitting: StreamedSession; play(keys: n
       index: 0,
       log: () => ({ ...recorded, inputs: recorded.inputs.slice(0, played) }),
       presses: () => played,
+      save: () => ({
+        record: recorded.record,
+        maps: null,
+        slot: null,
+        dead: false,
+        leaderboard: recorded.leaderboard,
+        createdAt: recorded.startedAt,
+        editedAt: recorded.startedAt,
+      }),
     },
     play(keys) {
       played += keys;

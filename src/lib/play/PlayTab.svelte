@@ -135,7 +135,7 @@
     if (started.run) {
       streamer = streamRun({
         characterId: entry.id,
-        session: streamedSession(started.run, at),
+        session: streamedSession(started.run, at, entry),
         earlier,
         mode: () => mode,
         onMark: (mark) => (runMark = mark),
