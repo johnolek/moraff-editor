@@ -1,5 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import type { Milestone } from '../src/lib/play/run';
+import type { BatchClaims, BatchSession, RunBatch } from '../src/lib/play/stream';
 
 /**
  * A run as it arrives: the character, its sittings, and the stretches of keys the site sends
@@ -12,55 +13,12 @@ import type { Milestone } from '../src/lib/play/run';
  *
  * Nothing here replays anything. `verifying.ts` is what puts the pieces back together into a run
  * log and passes a verdict on it.
+ *
+ * What a batch holds is `src/lib/play/stream.ts`, the site's half of this, so that the shape the
+ * two agree on is written down once.
  */
 
-/** The fixed facts about one sitting, which the first batch of that sitting carries. */
-export interface BatchSession {
-  seed: number;
-  engine: string;
-  game: string;
-  leaderboard: string | null;
-  sound: boolean | null;
-  name: string;
-  startedAt: string;
-  /** The character's record as the sitting began, base64. */
-  record: string;
-}
-
-/** What the site says the sitting has come to, which every batch carries and a replay checks. */
-export interface BatchClaims {
-  mode: string | null;
-  actions: number;
-  time: number;
-  edits: number;
-  milestones: Milestone[];
-}
-
-/** One stretch of a sitting on its way in. */
-export interface RunBatch {
-  /** Where the sitting comes in the character's run, counting from zero. */
-  sessionIndex: number;
-  /**
-   * The site's count of the batches of that sitting, from zero.
-   *
-   * It is what makes a resend harmless. The site moves on to the next number only once the server
-   * has said it has this one, so a batch that never got an answer is sent again under the same
-   * number and is recognised here rather than being played twice.
-   */
-  sequence: number;
-  inputs: number[];
-  /**
-   * How many of those inputs the player pressed. Not all of them are: a held Ctrl-F swings on its
-   * own and Moraff's Revenge's clock ticks are inputs of the log too, and nobody pressed either.
-   * This is what the run is held to a human speed by.
-   */
-  pressed: number;
-  /** The character died or won, so this is the last batch of the run. */
-  ending: boolean;
-  claims: BatchClaims;
-  /** The first batch of a sitting carries the sitting; the ones after it do not. */
-  session?: BatchSession;
-}
+export type { BatchClaims, BatchSession, RunBatch };
 
 /** What became of a batch: the sequence the server now has, or why it was refused. */
 export type BatchTaken =
