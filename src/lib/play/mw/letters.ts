@@ -8,6 +8,7 @@ import {
   viewStats,
 } from '../../game/mw-port/screens';
 import { financialStatement } from '../../game/mw-port/town';
+import { ARMOUR, WEAPONS } from '../../mw-bestiary/monsters';
 import type { MwTurn } from './engine';
 import { drawArmorMenu, drawWeaponMenu } from './menus';
 
@@ -123,7 +124,9 @@ export async function chooseWeapon(turn: MwTurn): Promise<void> {
   if (allowed) {
     const wasHolding = pc.weapon;
     pc.weapon = slot;
-    if (slot !== wasHolding) game.events.push({ kind: 'gearSwitched' });
+    if (slot !== wasHolding) {
+      game.events.push({ kind: 'gearSwitched', what: 'weapon', item: WEAPONS[slot].name });
+    }
   } else {
     // DS:339b 33b4 33cf 33e7 3401, DS:1476, DS:20bd, DS:1476
     game.say(
@@ -158,7 +161,9 @@ export async function chooseArmor(turn: MwTurn): Promise<void> {
   if (allowed) {
     const wasWearing = pc.armor;
     pc.armor = slot;
-    if (slot !== wasWearing) game.events.push({ kind: 'gearSwitched' });
+    if (slot !== wasWearing) {
+      game.events.push({ kind: 'gearSwitched', what: 'armour', item: ARMOUR[slot]?.name ?? '' });
+    }
     return;
   }
   // DS:3317 3335 3357 3377, DS:1476, DS:20bd, DS:1476, DS:1476

@@ -1,4 +1,11 @@
 import data from '../mw-data.json';
+import {
+  MW_FLOOR_SLOSHER,
+  MW_HEALING_POTION,
+  MW_HOLY_HAND_GRENADE,
+  MW_SEEING_STONE,
+  MW_TELEPORT_STONE,
+} from './items';
 import type { MwGame } from './state';
 import { mwClearMessageLine, mwMessageLine } from './state';
 import { financialStatement } from './town';
@@ -523,11 +530,11 @@ export function paperFind(game: MwGame): void {
  * that hands each of them over calls it.
  */
 const SPECIAL_FINDS = [
-  'HOLY HAND GRENADE',
-  'STONE OF TELEPORTATION',
-  'STONE OF SEEING',
-  'FLOOR SLOSHER',
-  'POTION OF HEALING',
+  MW_HOLY_HAND_GRENADE,
+  MW_TELEPORT_STONE,
+  MW_SEEING_STONE,
+  MW_FLOOR_SLOSHER,
+  MW_HEALING_POTION,
   'RING OF REGENERATION',
   'BOOK OF STRENGTH',
   'BOOK OF INTELLIGENCE',

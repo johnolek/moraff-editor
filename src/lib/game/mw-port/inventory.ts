@@ -159,6 +159,7 @@ export function drawMiscItems(game: MwGame): void {
 export function inventoryScreen(game: MwGame, key: number): void {
   const choice = mwMenuKey(1, 5, key) - 0x30;
   if (choice < 1 || choice > 5) return;
+  game.events.push({ kind: 'pocketsRead', page: choice });
   if (choice === 5) {
     drawMiscItems(game);
     game.pressAnyKey();

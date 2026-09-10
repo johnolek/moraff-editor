@@ -17,6 +17,33 @@ import { DUNGEON_XMAX as MW_LAST_COLUMN } from '../mwmap.js';
  * prints, in order; `dotu-tools/reference/scripts/exe_strings.py --ds 2bb9` reads them back.
  */
 
+const WEAPONS = data.weapons;
+const ARMOUR = data.armour;
+
+/**
+ * The five magic items a kill turns up that are spent by using them, by the name the box that
+ * hands each of them over calls it. The sixth line of the use menu is a joke and hands over
+ * nothing.
+ */
+export const MW_FLOOR_SLOSHER = 'FLOOR SLOSHER';
+export const MW_HEALING_POTION = 'POTION OF HEALING';
+export const MW_SEEING_STONE = 'STONE OF SEEING';
+export const MW_TELEPORT_STONE = 'STONE OF TELEPORTATION';
+export const MW_HOLY_HAND_GRENADE = 'HOLY HAND GRENADE';
+
+/**
+ * The six vitamin pills by the byte of the record each is counted in, which runs orange, green,
+ * blue, red, white, yellow. The menu below lists them in another order again.
+ */
+export const MW_PILL_NAMES = [
+  'ORANGE PILL',
+  'GREEN PILL',
+  'BLUE PILL',
+  'RED PILL',
+  'WHITE PILL',
+  'YELLOW PILL',
+];
+
 /**
  * drop_item's opening box: armor, a weapon or money.
  *
@@ -66,7 +93,7 @@ export function dropArmor(game: MwGame, slot: number): void {
   const at = slot - 1;
   if (pc.armorOwned[at] > 0) {
     pc.armorOwned[at] -= 1;
-    game.events.push({ kind: 'dropped' });
+    game.events.push({ kind: 'dropped', what: 'armour', item: ARMOUR[at]?.name ?? '' });
   }
   if (pc.armor === at && pc.armorOwned[at] === 0) pc.armor = 0;
 }
@@ -81,7 +108,7 @@ export function dropWeapon(game: MwGame, slot: number): void {
   const at = slot - 1;
   if (pc.weaponsOwned[at] > 0) {
     pc.weaponsOwned[at] -= 1;
-    game.events.push({ kind: 'dropped' });
+    game.events.push({ kind: 'dropped', what: 'weapon', item: WEAPONS[at].name });
   }
   if (pc.weapon === at && pc.weaponsOwned[at] === 0) pc.weapon = 0;
 }
@@ -101,7 +128,8 @@ export function drawDropCoinsMenu(game: MwGame): void {
  */
 export function dropCoins(game: MwGame, choice: number): void {
   if (choice < 1 || choice > 5) return;
-  if (game.pc.stones[choice - 1] !== 0) game.events.push({ kind: 'dropped' });
+  const pile = game.pc.stones[choice - 1];
+  if (pile !== 0) game.events.push({ kind: 'dropped', what: 'money', amount: pile });
   game.pc.stones[choice - 1] = 0;
 }
 
@@ -259,7 +287,7 @@ export function takeAPill(game: MwGame, choice: number): void {
     return;
   }
   pc.pills[pill.held] -= 1;
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: MW_PILL_NAMES[pill.held] });
   pc[pill.raised] += PILL_RAISES;
   pc[pill.dropped] -= PILL_DROPS;
   game.say(...pill.said);
@@ -328,7 +356,7 @@ export function useFloorSlosher(game: MwGame): boolean {
     pc.y = game.rng.random(game.rows - SLOSH_MARGIN.inset) + SLOSH_MARGIN.from;
   }
   game.recenterMap = true;
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: MW_FLOOR_SLOSHER });
   return true;
 }
 
@@ -350,7 +378,7 @@ export function drinkHealingPotion(game: MwGame): void {
   game.pressAnyKey();
   pc.hp = pc.maxHp;
   pc.healingPotions -= 1;
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: MW_HEALING_POTION });
 }
 
 /** H.BIN 0x14, the four wishes the third line offers and the fifth line that leaves them. */
@@ -387,7 +415,7 @@ export function useSeeingStone(game: MwGame): void {
     return;
   }
   pc.seeingStones -= 1;
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: MW_SEEING_STONE });
   for (let x = 0; x < MW_LAST_COLUMN; x++) {
     for (let y = 0; y < MW_FLOOR_ROWS; y++) {
       if (!game.isSolid(x, y, pc.floor, pc.dungeon)) game.markExplored(x, y);
@@ -421,7 +449,7 @@ export function useTeleportStone(game: MwGame): boolean {
     return false;
   }
   pc.teleportStones -= 1;
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: MW_TELEPORT_STONE });
   pc.floor = 0;
   for (let x = TELEPORT_MARGIN; x < game.columns - TELEPORT_MARGIN; x++) {
     for (let y = TELEPORT_MARGIN; y < game.rows - TELEPORT_MARGIN; y++) {
@@ -472,7 +500,7 @@ export function throwGrenade(game: MwGame): void {
       return;
     }
     pc.grenades -= 1;
-    game.events.push({ kind: 'itemUsed' });
+    game.events.push({ kind: 'itemUsed', item: MW_HOLY_HAND_GRENADE });
     game.monsters[game.engaged].hp = GRENADE_HP;
     // DS:7253 726d, DS:45cd, DS:4a75
     game.say('A MASSIVE EXPLOSION KILLS', '  THE MONSTER INSTANTLY.', '', 'HIT ANY KEY...');
