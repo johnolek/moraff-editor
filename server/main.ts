@@ -23,10 +23,13 @@ server.listen(config.port, () => {
 
 /**
  * A stop has to leave the SQLite file consistent, so the process stops taking requests, waits for
- * the ones in hand and closes the database before it exits. Browsers keep a connection open after
- * their request is answered; those are dropped rather than waited on, or a stop would sit there
- * until they timed out. A page listening to the feed holds its answer open for as long as somebody
- * leaves the page up, so those are let go too.
+ * the ones in hand and closes the database before it exits.
+ *
+ * Two kinds of connection would otherwise never end on their own. A page listening to the feed
+ * holds its answer open for as long as somebody leaves the page up, so those answers are ended
+ * first; and a browser keeps its connection after any answer, so every connection with no request
+ * in hand is then dropped. That order matters: a feed whose answer has ended but whose connection
+ * is still there is one the page asks for the feed down again, and the server would take it.
  */
 function stop(signal: NodeJS.Signals): void {
   console.log(`${signal}: stopping`);
@@ -34,8 +37,8 @@ function stop(signal: NodeJS.Signals): void {
     database.close();
     process.exit(0);
   });
-  server.closeIdleConnections();
   feed.close();
+  server.closeIdleConnections();
 }
 
 process.on('SIGTERM', stop);

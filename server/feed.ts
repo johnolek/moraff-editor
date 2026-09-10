@@ -31,6 +31,9 @@ export interface Feed {
 
 export function openFeed(): Feed {
   const listening = new Set<ServerResponse>();
+  /** Whether the feed is still one anybody may listen to. A closed one is a stopping process, and
+   *  a page that asks for it again is answered and let go rather than held. */
+  let open = true;
   const heartbeat = setInterval(() => {
     for (const response of listening) response.write(': still here\n\n');
   }, HEARTBEAT_MS);
@@ -48,6 +51,12 @@ export function openFeed(): Feed {
         // every announcement until the next one. This is its word for passing it straight on.
         'X-Accel-Buffering': 'no',
       });
+      // A stopping process has let everybody go, and a page that asks for the feed down the
+      // connection it still has is answered and left to try again later rather than held.
+      if (!open) {
+        response.end();
+        return;
+      }
       // Something has to be written for the browser to call the connection open, and the first
       // thing a page hears about is whatever happens next rather than anything already said.
       response.write(': listening\n\n');
@@ -65,6 +74,7 @@ export function openFeed(): Feed {
     },
 
     close(): void {
+      open = false;
       clearInterval(heartbeat);
       for (const response of listening) response.end();
       listening.clear();
