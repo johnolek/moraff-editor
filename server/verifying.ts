@@ -1,7 +1,7 @@
 import type { DatabaseSync } from 'node:sqlite';
-import type { RunLog, RunSession } from '../src/lib/play/run';
-import type { RunVerdict } from '../src/lib/play/verify';
-import type { EngineStore } from './engines';
+import type { RunLog, RunSession, RunTotals } from '../src/lib/play/run';
+import type { CheckedSession, RunVerdict } from '../src/lib/play/verify';
+import { shortCommit, type EngineStore, type KeptEngine, type SessionVerifier } from './engines';
 import { batchesOf, sessionsOf, type KeptBatch, type KeptSession } from './runs';
 
 /**
@@ -143,13 +143,14 @@ export interface KeptVerdict {
 }
 
 /**
- * Replay a character's whole run and write down what came of it.
- *
- * The engine is the one the newest sitting was played on. A chain can cross commits as the site
- * is rebuilt, and an engine build replays a whole chain rather than a sitting at a time, so the
- * newest is the one used and the verdict's own notes are where a chain played on more than one
- * says so.
+ * What a verdict says about the way its run was replayed, since a chain whose sittings were each
+ * replayed by their own build and a chain handed whole to one build are not the same claim.
  */
+const EACH_BY_ITS_OWN_BUILD = 'Each sitting was replayed by the engine build it was played on.';
+const THE_WHOLE_CHAIN_AT_ONCE =
+  'The whole chain was replayed by the engine build of its newest sitting, since one of the builds it names cannot replay a sitting on its own.';
+
+/** Replay a character's whole run and write down what came of it. */
 export async function verifyKeptRun(
   database: DatabaseSync,
   engines: EngineStore,
@@ -161,38 +162,115 @@ export async function verifyKeptRun(
   const timing = runTiming(batches);
   const log = runLogFrom(sessions, batches);
   const edits = sessions.reduce((count, session) => count + session.edits, 0);
-
-  const lookup = await engines.engineFor(sessions[sessions.length - 1].engine);
-  if (!lookup.kept) {
-    keepVerdict(database, characterId, unverifiable(log, lookup.reason), timing, edits);
-    return;
-  }
-  let verdict: RunVerdict;
-  try {
-    verdict = await lookup.engine.verifyRun(log);
-  } catch (thrown) {
-    verdict = unverifiable(log, `The replay stopped: ${thrown instanceof Error ? thrown.message : String(thrown)}`);
-  }
-  keepVerdict(database, characterId, verdict, timing, edits);
+  keepVerdict(database, characterId, await replayChain(engines, log), timing, edits);
 }
 
-/** A verdict for a run that was never replayed at all, so that a run always has one to show. */
-function unverifiable(log: RunLog, reason: string): RunVerdict {
+/**
+ * Replay a chain and pass a verdict on it, each sitting by the engine build it was played on.
+ *
+ * A character is played over days and the site is rebuilt between sittings, so the sittings of one
+ * run can name several commits. A sitting replayed by anything but its own engine shows nothing,
+ * which is the whole reason every build ever deployed is kept, so each sitting is handed to the
+ * build it names and this walks the chain between them: it carries what the run had come to and
+ * the record the sitting before ended with from one build to the next.
+ *
+ * A build deployed before it could replay a single sitting can only be handed a whole chain. Where
+ * the chain names one of those, all of it goes through the newest build in one piece, and the
+ * verdict's notes say which of the two happened.
+ */
+export async function replayChain(engines: EngineStore, log: RunLog): Promise<RunVerdict> {
+  const builds: KeptEngine[] = [];
+  const bySitting: SessionVerifier[] = [];
+  for (const session of log.sessions) {
+    const lookup = await engines.engineFor(session.engine);
+    if (!lookup.kept) return unverifiable(log, lookup.reason);
+    builds.push(lookup.engine);
+    if (lookup.engine.verifySession !== null) bySitting.push(lookup.engine.verifySession);
+  }
+  const newest = builds[builds.length - 1];
+  if (bySitting.length < log.sessions.length) return replayWholeChain(newest, log);
+  return replaySittingBySitting(bySitting, log, newest.commit);
+}
+
+/** The chain handed whole to the build of its newest sitting, which is all a build that cannot
+ *  replay one sitting on its own can be asked for. */
+async function replayWholeChain(newest: KeptEngine, log: RunLog): Promise<RunVerdict> {
+  let verdict: RunVerdict;
+  try {
+    verdict = await newest.verifyRun(log);
+  } catch (thrown) {
+    return unverifiable(log, `The replay stopped: ${whatStoppedIt(thrown)}`);
+  }
+  return { ...verdict, notes: [...verdict.notes, THE_WHOLE_CHAIN_AT_ONCE] };
+}
+
+/**
+ * Each sitting replayed by its own build, and the verdict on the run they add up to.
+ *
+ * The builds judge the sittings and this joins them: a sitting is handed what the run had come to
+ * before it, so its own numbers count on from there, and the record the last replay ended with,
+ * which it has to start from for the chain to be one character's run rather than several.
+ */
+async function replaySittingBySitting(
+  bySitting: readonly SessionVerifier[],
+  log: RunLog,
+  build: string,
+): Promise<RunVerdict> {
+  const sessions = log.sessions;
+  const verdict = verdictOf(log, build);
+  verdict.notes.push(EACH_BY_ITS_OWN_BUILD);
+  let before: RunTotals = { actions: 0, time: 0, milestones: [] };
+  let after: Uint8Array | null = null;
+  for (const [at, session] of sessions.entries()) {
+    let checked: CheckedSession;
+    try {
+      checked = await bySitting[at]({ session, at, of: sessions.length, before, after });
+    } catch (thrown) {
+      // A build that throws here is a broken build rather than a bad run: a replay that stops
+      // part-way is caught inside the build and comes back as a verdict of its own.
+      return unverifiable(log, `The engine build ${shortCommit(session.engine)} stopped: ${whatStoppedIt(thrown)}`);
+    }
+    if (checked.totals !== null) verdict.replayed = checked.totals;
+    if (checked.ending !== null) verdict.ending = checked.ending;
+    if (checked.status !== 'verified') {
+      verdict.status = checked.status;
+      verdict.reason = checked.reason;
+      return verdict;
+    }
+    before = checked.totals;
+    after = checked.record;
+  }
+  verdict.status = 'verified';
+  return verdict;
+}
+
+function whatStoppedIt(thrown: unknown): string {
+  return thrown instanceof Error ? thrown.message : String(thrown);
+}
+
+/** The verdict as it stands before anything has been replayed: everything about a run that is
+ *  read off its sittings rather than found by playing them again. */
+function verdictOf(log: RunLog, build: string): RunVerdict {
   const newest = log.sessions[log.sessions.length - 1];
   return {
     status: 'unverifiable',
-    reason,
+    reason: null,
     notes: [],
     game: newest.game,
     name: newest.name,
     mode: newest.mode,
     leaderboard: newest.leaderboard,
     sessions: log.sessions.length,
-    engine: { played: [...new Set(log.sessions.map((session) => session.engine))], build: '' },
+    engine: { played: [...new Set(log.sessions.map((session) => session.engine))], build },
     claimed: { actions: newest.actions, time: newest.time, milestones: [] },
     replayed: null,
     ending: null,
   };
+}
+
+/** A verdict for a run that was never replayed at all, so that a run always has one to show. */
+function unverifiable(log: RunLog, reason: string): RunVerdict {
+  return { ...verdictOf(log, ''), reason };
 }
 
 function keepVerdict(

@@ -128,12 +128,17 @@ The batch that ends a run — a death or a win — is answered at once and the r
 goes in a line to be replayed behind it, because replaying a long run takes
 seconds. The site asks `GET /runs/:id` until the verdict is there.
 
-The run is replayed by the engine build the newest sitting names. A build
-replays a whole chain rather than a sitting at a time, so a chain played across
-several commits is replayed by the newest of them and the verdict's own notes
-say so; a run whose engine is not kept here is unverifiable rather than failed.
-`eligible` is whether the run may go on a board at all: verified, and with no
-record ever written into the character from outside the game.
+Each sitting is replayed by the engine build it names, and the server walks the
+chain between them, carrying what the run had come to and the record the
+sitting before it ended with from one build to the next. So a run played across
+several commits is checked by the engines that really played it. A build
+deployed before it could replay a single sitting can only be handed a whole
+chain: where the chain names one of those, all of it goes through the build of
+its newest sitting in one piece, and the verdict's notes say which of the two
+happened. A run any sitting of which names an engine not kept
+here is unverifiable rather than failed. `eligible` is whether the run may go on
+a board at all: verified, and with no record ever written into the character
+from outside the game.
 
 ## Engine builds
 

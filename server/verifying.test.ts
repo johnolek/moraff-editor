@@ -1,11 +1,14 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { beforeEach, describe, expect, it } from 'vitest';
-import type { RunLog } from '../src/lib/play/run';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import type { RunLog, RunSession } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
-import type { EngineStore } from './engines';
+import { openEngineStore, type EngineStore } from './engines';
 import { applyMigrations, BUNDLED_MIGRATIONS } from './migrations';
 import { takeBatch, type BatchSession, type KeptBatch, type RunBatch } from './runs';
-import { createRunVerifier, runLogFrom, runTiming, verdictFor, type RunTiming } from './verifying';
+import { createRunVerifier, replayChain, runLogFrom, runTiming, verdictFor, type RunTiming } from './verifying';
 
 const CHARACTER = 'k3p9x1-ab12cd';
 const ENGINE = 'a'.repeat(40);
@@ -249,5 +252,121 @@ describe('replaying a run once its last batch has arrived', () => {
       reason: 'The engine the run was played on is not kept here.',
       eligible: false,
     });
+  });
+});
+
+describe('replaying a chain whose sittings name more than one commit', () => {
+  const OLDER = 'e'.repeat(40);
+  const NEWER = 'f'.repeat(40);
+  const ON_ITS_OWN = 'd'.repeat(40);
+  let directory: string;
+
+  /**
+   * A build small enough to read.
+   *
+   * Its session replay takes only the sittings played on its own commit and only a chain it was
+   * handed the record of the sitting before, so a chain that comes out verified is one whose
+   * sittings each went to the build they name, joined up in order.
+   */
+  function writeFakeEngine(commit: string, aSittingAtATime: boolean): void {
+    mkdirSync(join(directory, commit), { recursive: true });
+    writeFileSync(
+      join(directory, commit, 'engine.mjs'),
+      `export const ENGINE_COMMIT = '${commit}';\n` +
+        `export function verifyRun(log) {\n` +
+        `  const newest = log.sessions[log.sessions.length - 1];\n` +
+        `  return Promise.resolve({\n` +
+        `    status: 'verified', reason: null, notes: [], game: newest.game, name: newest.name,\n` +
+        `    mode: newest.mode, leaderboard: newest.leaderboard, sessions: log.sessions.length,\n` +
+        `    engine: { played: [newest.engine], build: ENGINE_COMMIT },\n` +
+        `    claimed: { actions: newest.actions, time: newest.time, milestones: [] },\n` +
+        `    replayed: { actions: newest.actions, time: newest.time, milestones: [] }, ending: null,\n` +
+        `  });\n` +
+        `}\n` +
+        (aSittingAtATime
+          ? `function refused(reason) {\n` +
+            `  return { status: 'failed', reason, totals: null, ending: null, record: null };\n` +
+            `}\n` +
+            `export function verifySession(chain) {\n` +
+            `  if (chain.session.engine !== ENGINE_COMMIT) return Promise.resolve(refused('Another build was handed this sitting.'));\n` +
+            `  if (chain.at > 0 && chain.after === null) return Promise.resolve(refused('The chain was not joined up.'));\n` +
+            `  return Promise.resolve({\n` +
+            `    status: 'verified', reason: null, ending: null, record: new Uint8Array([chain.at]),\n` +
+            `    totals: { actions: chain.before.actions + chain.session.inputs.length, time: 0, milestones: [] },\n` +
+            `  });\n` +
+            `}\n`
+          : ''),
+    );
+  }
+
+  function sitting(over: Partial<RunSession>): RunSession {
+    return {
+      engine: ENGINE,
+      game: 'unforgiven',
+      mode: 'speedrun',
+      leaderboard: 'speedrun',
+      sound: null,
+      name: 'Grond',
+      startedAt: '2026-09-09T12:00:00.000Z',
+      seed: 12345,
+      record: 'AAEC',
+      inputs: [104, 106],
+      actions: 2,
+      time: 4,
+      milestones: [],
+      edits: 0,
+      ...over,
+    };
+  }
+
+  beforeAll(() => {
+    directory = mkdtempSync(join(tmpdir(), 'moraff-chain-engines-'));
+    writeFakeEngine(OLDER, true);
+    writeFakeEngine(NEWER, true);
+    writeFakeEngine(ON_ITS_OWN, false);
+  });
+
+  afterAll(() => {
+    rmSync(directory, { recursive: true, force: true });
+  });
+
+  it('hands each sitting to the build it was played on', async () => {
+    const log: RunLog = {
+      version: 3,
+      sessions: [sitting({ engine: OLDER, inputs: [104, 106] }), sitting({ engine: NEWER, inputs: [107, 108, 109] })],
+    };
+
+    const verdict = await replayChain(openEngineStore(directory), log);
+
+    expect(verdict.reason).toBeNull();
+    expect(verdict.status).toBe('verified');
+    expect(verdict.notes).toContain('Each sitting was replayed by the engine build it was played on.');
+    expect(verdict.engine).toEqual({ played: [OLDER, NEWER], build: NEWER });
+    // Every sitting counts on from what the ones before it came to, which is what the builds were
+    // handed and what the last of them gave back.
+    expect(verdict.replayed).toEqual({ actions: 5, time: 0, milestones: [] });
+  });
+
+  it('hands the whole chain to the newest build when one of them cannot take a sitting', async () => {
+    const log: RunLog = { version: 3, sessions: [sitting({ engine: ON_ITS_OWN })] };
+
+    const verdict = await replayChain(openEngineStore(directory), log);
+
+    expect(verdict.status).toBe('verified');
+    expect(verdict.notes).toContain(
+      'The whole chain was replayed by the engine build of its newest sitting, since one of the builds it names cannot replay a sitting on its own.',
+    );
+  });
+
+  it('cannot check a chain one of whose sittings names a build nobody kept', async () => {
+    const log: RunLog = {
+      version: 3,
+      sessions: [sitting({ engine: OLDER }), sitting({ engine: 'b'.repeat(40) })],
+    };
+
+    const verdict = await replayChain(openEngineStore(directory), log);
+
+    expect(verdict.status).toBe('unverifiable');
+    expect(verdict.reason).toContain('is not kept here');
   });
 });
