@@ -182,6 +182,27 @@ played, so that a claimed ending can be checked by playing it again rather than 
   replays it, the game's own words for its clock and its own name for a dungeon. A game with a
   line here can be recorded, replayed and checked, and nothing that does any of the three knows
   which games there are.
+* **The journal** — everything the run did, in words, one line per thing that happened
+  (`journal.ts`). The games push their events with the numbers on them
+  (`src/lib/game/journal-events.ts`, and each game's own union for the kinds only it has), and
+  `unforgivenJournal` turns one of those into the line a player would say about it, with the
+  game's own names for its monsters, its spells, its items and its places. Every line is one case
+  of that one switch, so what a run says is changed in one place. `RunRecorder` keeps the entries
+  as it drains the events, stamped with the action count, the floor and the module they happened
+  at; a game with no line writer in `RUN_GAMES` keeps none. The journal is no part of the log —
+  a replay pushes the same events and writes the same journal, which is how the run server has a
+  run's journal without being handed one — and the roster keeps it beside each session all the
+  same, in the `journal` store of the browser's database, so a character's timeline is there to
+  read without a replay.
+* **The summary** — the journal folded into what the run came to (`summary.ts`): the steps, the
+  experience gained and drained, the levels either way, the deepest floor and the furthest
+  module, the money found and the money spent building by building, the wands and scrolls made
+  and the charges and items spent, and for each kind of monster the fights, the swings, the
+  damage both ways and the kills. `summarizeJournal` is the fold and `summaryLines` is every word
+  of it, so the Play tab, the verifier and the run server say the same thing about the same run.
+  A fight is counted where the character came to face a monster, so walking away from one and
+  back to it is the fight they were already in and turning to another and back is a fight of its
+  own.
 * **`export-run.ts`** is the download — the whole chain, which is what Export run hands over —
   and it is the one part of this that touches the page; the clicking of a link is
   `src/lib/download.ts`, where every download on the site goes.
@@ -221,6 +242,9 @@ per commit and a chain's sessions have to be replayed by the builds they were pl
   says they did. `-dirty` is noted even where the two strings are identical, since a tree with
   changes in it is not described by the commit it sits on and two such trees can hold different
   code.
+
+The verdict carries the journal the replays wrote, and the report ends with the run's summary
+folded from it — what the run was, rather than only whether it is honest.
 
 `pnpm verify-run <run.json>` is the same check from a command line, with no browser: it builds
 `src/cli/verify-run.ts` for Node through `vite.verify.config.ts`, which defines

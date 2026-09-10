@@ -64,6 +64,13 @@ times over; the port appends a `playerSaved` event instead. Nothing in this port
 character dying either, because nothing in `defend` does: it takes the hit points down and
 `movecontrol` is what notices the character is dead on the next pass round its loop.
 
+`game.events` carries more than those two departures. A run is written up in words from what the
+game reports it did (`src/lib/game/journal-events.ts` and `src/lib/play/journal.ts`), so a ported
+function pushes an event where the thing happens and at the point the number is known: the damage
+after the roll, the experience after the kill, the coins after the purchase, the spell and the
+charges after a wand is written. That reports what the function did and changes nothing about what
+it does; the arithmetic on either side of a push is the original's.
+
 The character record's fields are named the way `src/lib/game/dotu-files.js` already names those
 save offsets, so `pc.lev` is the character's level and `pc.level` is the floor, exactly as the
 save parser has it. Fields that parser does not read are named after their label in
