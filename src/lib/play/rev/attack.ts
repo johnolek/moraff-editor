@@ -1,5 +1,5 @@
 import { dungeonForLevel } from '../../rev-bestiary/monsters';
-import { REV_FIGHT_LINES } from './fight';
+import { REV_FIGHT_LINES, revMonsterSeen } from './fight';
 import { REV_TWO_SECONDS } from './held';
 import { revFraction } from './magic';
 import { REV_ARMOUR_VALUE, REV_STAT_COUNT, REV_VALUE, revValue, setRevValue } from './record';
@@ -179,6 +179,12 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
   game.kept.locate(ANSWER_ROW, 1);
   if (damage === 0) {
     says(game, IT_MISSED);
+    game.events.push({
+      kind: 'hit',
+      monster: revMonsterSeen(fight, pc.dungeonLevel),
+      damage: 0,
+      breath: null,
+    });
     return { ...cells };
   }
   const dungeon = dungeonForLevel(pc.dungeonLevel).number;
@@ -191,6 +197,12 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
     game.numbersChanged = true;
   }
   pc.hp -= damage;
+  game.events.push({
+    kind: 'hit',
+    monster: revMonsterSeen(fight, pc.dungeonLevel),
+    damage,
+    breath: null,
+  });
   says(game, `IT DID ${damage} POINTS  `);
   // 1000:9DE8: whatever the blow took with it is written down the map from row 20.
   game.kept.locate(DRAIN_ROW, 1);
@@ -198,9 +210,13 @@ function revSwingAndDrains(game: RevGame, save: () => void): RevMonsterSwing {
   // 1000:9DF4: kind 5 drains a level off any blow it lands, at any depth. The character is
   // written back to disk on the spot, so the loss survives whatever happens next.
   if (fight.kind === 5) {
+    const drained = pc.experience - Math.trunc(pc.experience * 0.7);
     pc.experience = Math.trunc(pc.experience * 0.7);
     pc.level -= 1;
     pc.maxHp = pc.maxHp - rng.random(10) - pc.fromHealth + 1;
+    const monster = revMonsterSeen(fight, pc.dungeonLevel);
+    game.events.push({ kind: 'levelLost', levels: 1, level: pc.level, monster });
+    game.events.push({ kind: 'experienceDrained', experience: drained, monster });
     says(game, REV_FIGHT_LINES[rng.random(5) + 10]);
     says(game, LEVEL_DRAINED);
     if (pc.level >= 0) save();

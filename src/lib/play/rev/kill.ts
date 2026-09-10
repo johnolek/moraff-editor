@@ -1,3 +1,4 @@
+import { revMonsterSeen } from './fight';
 import { GRID_STRIDE } from './monsters';
 import { REV_UNBANKED_EXPERIENCE_VALUE, revValue, setRevValue } from './record';
 import type { RevGame } from './state';
@@ -23,6 +24,8 @@ export function revKillMonster(game: RevGame): void {
   if (!fight) return;
   const pc = game.pc;
   const slot = fight.slot;
+  // The monster is read before the fight is put down below, which is where its name is lost.
+  const killed = revMonsterSeen(fight, pc.dungeonLevel);
   // 1000:A335: what this kill can leave behind past the coins is read off the monster's kind
   // here, while the fight is still up, and spent by the treasure once it is down.
   game.dropsAWand = fight.kind === 5 || fight.kind === 7;
@@ -54,6 +57,7 @@ export function revKillMonster(game: RevGame): void {
   // else, so the kill it runs says nothing.
   if (game.monsterLeft) game.monsterLeft = false;
   else {
+    game.events.push({ kind: 'killed', monster: killed, experience: fight.experience });
     game.kept.printAt(KILLED_ROW, KILLED_COLUMN, YOU_KILLED_IT);
     game.say(YOU_KILLED_IT);
   }

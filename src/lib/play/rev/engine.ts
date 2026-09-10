@@ -30,6 +30,7 @@ import {
   revLeaveTheFight,
   revMeetMonster,
   revMonsterAnswers,
+  revMonsterSeen,
   revOwnsWeapon,
   revSwing,
   revPrintTheSwing,
@@ -544,6 +545,10 @@ function quitAndSave(turn: RevTurn): void {
 /** The keys the fight prompt takes and the dungeon does not (1000:87CA onwards). */
 async function fightKey(session: RevGameSession, key: number): Promise<void> {
   const game = session.game;
+  // The loop only sends a key here with a fight on, which is the monster every one of these
+  // reports names.
+  const fight = game.fight;
+  if (fight === null) return;
   const desk = session.magic();
   const weapon = revWeaponFor(key);
   if (weapon === null) {
@@ -552,7 +557,11 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
     if (key === REV_KEY.breathe) {
       const breath = revBreatheFire(game);
       if (breath === null) return;
-      game.events.push({ kind: 'breathed' });
+      game.events.push({
+        kind: 'breathed',
+        monster: revMonsterSeen(fight, game.pc.dungeonLevel),
+        damage: breath.damage,
+      });
       game.banner = revSwingWords(game, breath);
       revPrintTheSwing(game, breath, game.banner, key);
       monsterAnswers(session);
@@ -576,7 +585,12 @@ async function fightKey(session: RevGameSession, key: number): Promise<void> {
     return;
   }
   const swing = revSwing(game, weapon);
-  game.events.push({ kind: 'swung' });
+  game.events.push({
+    kind: 'swung',
+    weapon,
+    monster: revMonsterSeen(fight, game.pc.dungeonLevel),
+    damage: swing.damage,
+  });
   game.banner = revSwingWords(game, swing);
   revPrintTheSwing(game, swing, game.banner, key);
   monsterAnswers(session);

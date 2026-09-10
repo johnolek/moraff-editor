@@ -7,6 +7,7 @@ import {
   nameIndexOf,
   dungeonForLevel,
 } from '../../rev-bestiary/monsters';
+import type { MonsterSeen } from '../../game/journal-events';
 import { REV_KEY } from './keys';
 import { REV_VALUE, revValue, type RevPc } from './record';
 import type { RevFight, RevGame } from './state';
@@ -21,6 +22,19 @@ import type { RevFight, RevGame } from './state';
  * and what this adds is what the fight itself keeps: the hit points, the kind's two adjustments
  * and the experience.
  */
+
+/**
+ * A monster as a run journal names it: which of the dungeon's twenty-two names it is, its level,
+ * and the name itself. The name a slot goes by depends on the depth it is met at, so this is
+ * asked with the floor the fight is on.
+ */
+export function revMonsterSeen(fight: RevFight, dungeonLevel: number): MonsterSeen {
+  return {
+    type: fight.name,
+    level: fight.monsterLevel,
+    name: dungeonForLevel(dungeonLevel).monsters[fight.name - 1]?.name ?? '',
+  };
+}
 
 /** What the kind adds to the number a swing has to beat (1000:8408 and 1000:8356). */
 function kindAdjust(kind: number): number {
@@ -62,6 +76,7 @@ export function revMeetMonster(game: RevGame, slot: number): RevFight {
     experience: killExperience(monsterLevel, kind),
   };
   game.fight = fight;
+  game.events.push({ kind: 'met', monster: revMonsterSeen(fight, level), slot });
   game.lastMonsterLevel = monsterLevel;
   // 1000:8068 and 1000:803D: the slot the fight is against, and the awake flag the monsters'
   // turn shares between them put back to nothing.

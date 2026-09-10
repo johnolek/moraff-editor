@@ -1,3 +1,4 @@
+import { revMonsterSeen } from './fight';
 import { REV_MAGIC } from './magic';
 import { revPlayDeathDirge } from './music';
 import { revValue, setRevValue } from './record';
@@ -98,6 +99,15 @@ export async function revDie(game: RevGame, desk: RevTownDesk): Promise<boolean>
   revClearScreen(game);
   game.kept.locate(DEAD_ROW, 1);
   game.say(YOURE_DEAD);
+  // The monster being fought is what killed the character, and there is none where a spell, an
+  // item or the second dungeon's stomper finished them outside a fight.
+  const killer = game.fight === null ? null : revMonsterSeen(game.fight, pc.dungeonLevel);
+  game.events.push({
+    kind: 'died',
+    monster: killer,
+    floor: pc.dungeonLevel,
+    dungeon: pc.generation,
+  });
   // 1000:A034 and 1000:A047: a level or an experience total a drain pushed below zero is put
   // back to zero on the way out.
   if (pc.level < 0) pc.level = 0;
@@ -108,6 +118,7 @@ export async function revDie(game: RevGame, desk: RevTownDesk): Promise<boolean>
   // 1000:A0C2.
   if (game.rng.random(2) + 1 === 1) {
     await reincarnate(game, desk);
+    game.events.push({ kind: 'raised', how: 'reincarnated' });
     return true;
   }
   game.say(...CARRIED_OUT);
@@ -120,6 +131,7 @@ export async function revDie(game: RevGame, desk: RevTownDesk): Promise<boolean>
   pc.column = RAISED_AT.column;
   pc.row = RAISED_AT.row;
   pc.stats[3] -= 1;
+  game.events.push({ kind: 'raised', how: 'raised' });
   // 1000:A156: the raise waits for a key before the town is drawn over the death.
   await revHitAnyKey(game, desk);
   revArriveInTheTown(game);
