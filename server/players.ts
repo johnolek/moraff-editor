@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { newPassphrase, newPassphraseSalt, passphraseHash } from './passphrases';
 import type { Queries } from './sql';
 
 /**
@@ -63,8 +64,15 @@ export async function playerNameFor(sql: Queries, secret: string): Promise<strin
   return rows[0]?.name ?? null;
 }
 
-/** What became of a claim: the name is this player's now, or why it is not. */
-export type NameClaim = { claimed: true; name: string } | { claimed: false; because: 'invalid' | 'taken' };
+/**
+ * What became of a claim: the name is this player's now, or why it is not.
+ *
+ * `passphrase` is the words a new player is handed, which are shown once and never again; a
+ * player who was only renaming has one already and is given none.
+ */
+export type NameClaim =
+  | { claimed: true; name: string; passphrase: string | null }
+  | { claimed: false; because: 'invalid' | 'taken' };
 
 /**
  * Claims a name for the secret's player, making that player if this is the first name it has
@@ -88,8 +96,23 @@ export async function claimPlayerName(sql: Queries, secret: string, name: unknow
       secretHash(secret),
       made[0].id,
     ]);
-  } else {
-    await sql.query('UPDATE players SET name = $1 WHERE id = $2', [wanted, player]);
+    return { claimed: true, name: wanted, passphrase: await issuePassphrase(sql, made[0].id) };
   }
-  return { claimed: true, name: wanted };
+  await sql.query('UPDATE players SET name = $1 WHERE id = $2', [wanted, player]);
+  return { claimed: true, name: wanted, passphrase: null };
+}
+
+/**
+ * Draws this player a passphrase and keeps its hash, which retires whatever passphrase they had.
+ * The words are returned here and nowhere else: this is the one moment anybody can read them.
+ */
+export async function issuePassphrase(sql: Queries, player: number): Promise<string> {
+  const passphrase = newPassphrase();
+  const salt = newPassphraseSalt();
+  const hash = await passphraseHash(passphrase, salt);
+  await sql.query(
+    'UPDATE players SET passphrase_hash = $1, passphrase_salt = $2, passphrase_set_at = now() WHERE id = $3',
+    [hash, salt, player],
+  );
+  return passphrase;
 }

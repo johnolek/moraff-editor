@@ -234,6 +234,12 @@ async function claimName(request: IncomingMessage, response: ServerResponse, sql
     });
     return;
   }
+  if (claim.passphrase !== null) {
+    // A claim that made a player hands back the words with the name. This is the one moment
+    // anybody can read them: what the server keeps is their hash.
+    sendJson(response, 200, { name: claim.name, passphrase: claim.passphrase });
+    return;
+  }
   sendJson(response, 200, { name: claim.name });
 }
 

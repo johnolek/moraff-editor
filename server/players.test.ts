@@ -8,6 +8,7 @@ import { openTestDatabase } from './test-sql';
 /** Two secrets shaped the way the site makes them: 32 bytes base64url, which is 43 characters. */
 const MINE = 'A'.repeat(43);
 const THEIRS = 'B'.repeat(43);
+const NEWCOMER = 'C'.repeat(43);
 
 describe('players over HTTP', () => {
   let sql: Sql;
@@ -50,7 +51,17 @@ describe('players over HTTP', () => {
     const response = await claim(MINE, '  Moraff  ');
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ name: 'Moraff' });
+    expect((await response.json()).name).toBe('Moraff');
+  });
+
+  it('hands a new player a passphrase of six words, and hands one out no other time', async () => {
+    const claimed = await claim(NEWCOMER, 'Newcomer');
+
+    expect(claimed.status).toBe(200);
+    expect((await claimed.json()).passphrase.split(' ').length).toBe(6);
+
+    const renamed = await claim(NEWCOMER, 'Newcomer II');
+    expect(await renamed.json()).toEqual({ name: 'Newcomer II' });
   });
 
   it('answers with the name once the secret has claimed one', async () => {
