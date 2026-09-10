@@ -1,4 +1,4 @@
-import { showHint } from '../game/port/drops';
+import { POTION_NAMES, showHint } from '../game/port/drops';
 import type { Turn } from './engine';
 import { KEY } from './keys';
 
@@ -65,7 +65,7 @@ export async function drinkAPotion(turn: Turn): Promise<void> {
     return;
   }
   pc.potions[potion.slot] -= 1;
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: POTION_NAMES[potion.slot] });
   pc[potion.raise] += RAISED_BY;
   pc[potion.drop] -= DROPPED_BY;
   showHint(game, potion.hint);

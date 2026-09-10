@@ -31,6 +31,33 @@ export const ARMOR_NAMES = [
 ];
 
 /**
+ * What each of the six potion counts at record offset 0x15d is a potion of, in the order the
+ * counts are kept in.
+ *
+ * The names are UH.BIN's own: {@link drainerBonus} shows message `47 + the count's own place` as
+ * it hands one over, and those six messages are "YOU FOUND AN ORANGE POTION!" and its five
+ * fellows.
+ */
+export const POTION_NAMES = [
+  'ORANGE POTION',
+  'GREEN POTION',
+  'BLUE POTION',
+  'RED POTION',
+  'WHITE POTION',
+  'YELLOW POTION',
+];
+
+/** The six lines of the menu use_magic_item puts up (UH.BIN 23), in the order it numbers them. */
+const MAGIC_ITEM_NAMES = [
+  'FLOOR SLOSHER',
+  'POTION OF HEALING',
+  'BECOME GOD',
+  'STONE OF SEEING',
+  'STONE OF TELEPORTATION',
+  'NUCLEAR HAND GRENADE',
+];
+
+/**
  * give_hint (exe 2000:313a, unf.c "give_hint") followed by the wait at 2000:4054: show one of
  * UH.BIN's eight-line messages and keep it up until a key is pressed. `giveHint` in `hints.ts`
  * reads the lines; `say` drops the blanks the message ends with.
@@ -588,7 +615,7 @@ export async function loseItem(game: Game): Promise<void> {
     } else {
       if (pc.armorOwned[choice - 1] > 0) {
         pc.armorOwned[choice - 1] -= 1;
-        game.events.push({ kind: 'dropped' });
+        game.events.push({ kind: 'dropped', what: 'armour', item: ARMOR_NAMES[choice - 1] });
       }
       if (pc.armor === choice - 1 && pc.armorOwned[choice - 1] === 0) pc.armor = 0;
     }
@@ -601,7 +628,7 @@ export async function loseItem(game: Game): Promise<void> {
     } else {
       if (pc.weaponsOwned[choice - 1] > 0) {
         pc.weaponsOwned[choice - 1] -= 1;
-        game.events.push({ kind: 'dropped' });
+        game.events.push({ kind: 'dropped', what: 'weapon', item: WEAPON_NAMES[choice - 1] });
       }
       if (pc.weapon === choice - 1 && pc.weaponsOwned[choice - 1] === 0) pc.weapon = 0;
     }
@@ -610,7 +637,7 @@ export async function loseItem(game: Game): Promise<void> {
     showHint(game, 87);
     const choice = await game.choice(THREE_WAYS);
     if (choice === 0x31) {
-      if (pc.money !== 0) game.events.push({ kind: 'dropped' });
+      if (pc.money !== 0) game.events.push({ kind: 'dropped', what: 'money', amount: pc.money });
       pc.money = 0;
     } else if (choice === 0x33) showHint(game, 88);
   }
@@ -733,5 +760,5 @@ export async function useMagicItem(game: Game): Promise<void> {
     }
   }
   if (notCarried) showHint(game, 85);
-  if (used) game.events.push({ kind: 'itemUsed' });
+  if (used) game.events.push({ kind: 'itemUsed', item: MAGIC_ITEM_NAMES[choice - 1] });
 }
