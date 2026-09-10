@@ -25,6 +25,10 @@
   /** The name the server has for this browser, or null while it has none. */
   let mine = $state<string | null>(null);
 
+  /** Whether the server has been asked yet. Nothing about names is drawn before it has answered,
+   *  or a browser that has a name shows the sign-in form for as long as the asking takes. */
+  let asked = $state(false);
+
   /** The words to show, which is the one moment anybody can read them. */
   let passphrase = $state<string | null>(null);
   let copied = $state(false);
@@ -41,6 +45,7 @@
         mine = claimed;
         name = claimed;
       }
+      asked = true;
     });
   }
 
@@ -126,7 +131,7 @@
       </div>
     {/if}
 
-    {#if mine === null}
+    {#if asked && mine === null}
       <div class="sign-in">
         <div class="note">Or use a name from another device:</div>
         <input type="text" maxlength="24" placeholder="Name" aria-label="Name" bind:value={otherName} />
@@ -150,7 +155,7 @@
           <div class="said" role="status">{signInSaid}</div>
         {/if}
       </div>
-    {:else}
+    {:else if asked}
       <button class="another" type="button" onclick={drawANewOne} disabled={saving}>New passphrase</button>
     {/if}
 
