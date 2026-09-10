@@ -8,7 +8,7 @@ import { openEngineStore, shortCommit } from './engines';
 import { openFeed, type Feed } from './feed';
 import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor } from './players';
 import { endRun, readRunBatch, runFor, sessionsOf, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
-import { createRunVerifier, verdictFor, type RunVerifier } from './verifying';
+import { createRunVerifier, verdictFor, type KeptVerdict, type RunVerifier } from './verifying';
 
 /**
  * The commit the server was built from, put here at build time the way the site's build and the
@@ -304,6 +304,32 @@ function wonOrDied(claims: BatchClaims): 'death' | 'win' {
   return claims.milestones.some((milestone) => milestone.kind === 'win') ? 'win' : 'death';
 }
 
+/** One sitting as a run's page shows it. The keys and the record a sitting was replayed from are
+ *  no part of a page about the run, so what goes out is when it was played, what it came to and
+ *  the build that played it. */
+export interface RunSittingAnswer {
+  index: number;
+  engine: string;
+  startedAt: string;
+  actions: number;
+  time: number;
+}
+
+/** What `GET /runs/:id` answers with, which is what the site draws a run's page from. */
+export interface RunAnswer {
+  id: string;
+  game: string;
+  mode: string | null;
+  name: string;
+  player: string;
+  createdAt: string;
+  finishedAt: string | null;
+  outcome: string | null;
+  sessions: RunSittingAnswer[];
+  /** Null while the run has not been replayed. */
+  verdict: KeptVerdict | null;
+}
+
 /**
  * A run and the verdict on it, which is what a run's page is drawn from: who played it, the
  * sittings it was played in and the engine build each of them names, and the verdict with the
@@ -333,7 +359,7 @@ function sendRun(
       return;
     }
   }
-  sendJson(response, 200, {
+  const answer: RunAnswer = {
     id: run.id,
     game: run.game,
     mode: run.mode,
@@ -342,8 +368,6 @@ function sendRun(
     createdAt: run.createdAt,
     finishedAt: run.finishedAt,
     outcome: run.outcome,
-    // The keys and the record a sitting was replayed from are no part of a page about the run,
-    // so what goes out is when it was played, what it came to and the build that played it.
     sessions: sessionsOf(database, characterId).map((session) => ({
       index: session.sessionIndex,
       engine: session.engine,
@@ -352,7 +376,8 @@ function sendRun(
       time: session.time,
     })),
     verdict,
-  });
+  };
+  sendJson(response, 200, answer);
 }
 
 /** The secret from `Authorization: Bearer <secret>`, or null when the header carries anything
