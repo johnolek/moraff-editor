@@ -174,10 +174,9 @@ export async function castFromSpellbook(turn: Turn): Promise<void> {
  * seconds cast_a_spell hands back (exe 2000:d536 and 2000:d655): give every monster standing
  * beside the character the attacks that time buys.
  *
- * Under a minute is spent in one go. Anything longer is spent a minute at a time, since 60 is
- * what the loop can hand call_check_eng without overflowing the int it takes; and ten hours —
- * which is what a permanent spell costs — is longer than either branch will spend, so a
- * permanent spell buys the monsters nothing at all.
+ * Under a minute is spent in one go and anything longer a minute at a time. Ten hours, which is
+ * what a permanent spell costs, is longer than either branch will spend, so a permanent spell
+ * buys the monsters nothing at all.
  *
  * The decompilation loses the number each call_check_eng is given. The disassembly has it: the
  * seconds themselves at 2000:d536, and 60 at 2000:d655.
