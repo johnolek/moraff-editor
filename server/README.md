@@ -81,7 +81,7 @@ how long the run took, and the stamps are an answer the server owns.
 
 | Endpoint                      | What it does                                                     |
 | ----------------------------- | ---------------------------------------------------------------- |
-| `POST /runs/:id/batches`      | Takes one stretch of a run. 200 with `{ "received": <sequence> }`, 403 when the device has claimed no name, 409 when the character belongs to another player, 400 when the body is not a batch or names a sitting the server was never told about. |
+| `POST /runs/:id/batches`      | Takes one stretch of a run. 200 with `{ "received": <sequence> }`, 403 when the device has claimed no name, 409 when the character belongs to another player or a sequence comes back holding another stretch, 400 when the body is not a batch or names a sitting the server was never told about. |
 | `GET /runs/:id`               | The character, how it ended, and the verdict on it. A verified run is anybody's to read; one still being played, one that failed and one that could not be checked take the secret of the player whose run it is. 404 when nothing has been played under that id. |
 
 `:id` is the id of a roster entry in somebody's browser. The character is made
@@ -91,10 +91,14 @@ nothing is registered anywhere and no second player can send for it.
 A batch is the keys played since the last one, how many of them the player
 pressed, and what the sitting claims to have come to; the first batch of a
 sitting carries the seed, the engine commit and the record a replay starts
-from. The sequence is the site's count of the batches of that sitting, and it
-is what makes a resend harmless: the site moves on to the next number only once
-the server has said it has this one, so a batch whose answer was lost is sent
-again under the same number and is recognised rather than played twice.
+from. The sequence is the site's count of the batches of that sitting, and the
+server keeps one stretch under each sequence. A batch whose answer was lost is
+sent again under the same number holding the same keys, and is recognised
+rather than played twice; everything played while it was in the air goes in the
+batch after it rather than being folded into it, since the server would take
+the sequence it already holds and the difference would be gone. A sequence that
+comes back holding another stretch is refused, and nothing about the run
+changes.
 
 ### Play time
 

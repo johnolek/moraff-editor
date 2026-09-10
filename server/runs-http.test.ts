@@ -128,6 +128,20 @@ describe('streaming a run over HTTP', () => {
     expect((await response.json()).error).toBe('That character belongs to another player.');
   });
 
+  it('refuses a stretch sent again under a sequence it holds, with something else in it', async () => {
+    const response = await send(MINE, batch({ inputs: [104, 106, 107], pressed: 3 }));
+
+    expect(response.status).toBe(409);
+    expect((await response.json()).error).toBe('That stretch of the run arrived before, holding something else.');
+  });
+
+  it('takes a stretch sent again holding what it held the first time', async () => {
+    const response = await send(MINE, batch({ session: header }));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ received: 0 });
+  });
+
   it('refuses a body that is not a batch', async () => {
     const response = await send(MINE, { sequence: 'first' } as unknown as RunBatch);
 

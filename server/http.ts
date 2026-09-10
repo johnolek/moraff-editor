@@ -4,7 +4,7 @@ import type { ServerConfig } from './config';
 import { writeCorsHeaders } from './cors';
 import { openEngineStore, shortCommit } from './engines';
 import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor } from './players';
-import { endRun, readRunBatch, runFor, takeBatch, type BatchClaims } from './runs';
+import { endRun, readRunBatch, runFor, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
 import { createRunVerifier, verdictFor, type RunVerifier } from './verifying';
 
 /**
@@ -22,6 +22,7 @@ const NO_NAME_YET = 'This device has no name yet.';
 const NOT_A_BATCH = 'That is not a batch of a run.';
 const ANOTHER_PLAYER = 'That character belongs to another player.';
 const NO_SUCH_SITTING = 'That run has no such sitting.';
+const CHANGED_RESEND = 'That stretch of the run arrived before, holding something else.';
 const NO_SUCH_RUN = 'No such run.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
 
@@ -160,9 +161,8 @@ async function takeRunBatch(
   // that the page it was played in cannot be asked for.
   const taken = takeBatch(database, characterId, player, batch, Date.now());
   if (!taken.taken) {
-    sendJson(response, taken.because === 'another-player' ? 409 : 400, {
-      error: taken.because === 'another-player' ? ANOTHER_PLAYER : NO_SUCH_SITTING,
-    });
+    const refused = whyTheBatchWasRefused(taken.because);
+    sendJson(response, refused.status, { error: refused.error });
     return;
   }
   if (taken.ending) {
@@ -172,6 +172,19 @@ async function takeRunBatch(
     verifier.verifySoon(characterId);
   }
   sendJson(response, 200, { received: taken.received });
+}
+
+/**
+ * What a refused batch is answered with.
+ *
+ * A batch of a sitting nobody ever sent is the site asking for something that is not there, which
+ * is a 400. The other two are about a run the server already holds and will not have written
+ * over, which is what 409 says.
+ */
+function whyTheBatchWasRefused(because: BatchRefusal): { status: number; error: string } {
+  if (because === 'another-player') return { status: 409, error: ANOTHER_PLAYER };
+  if (because === 'changed-resend') return { status: 409, error: CHANGED_RESEND };
+  return { status: 400, error: NO_SUCH_SITTING };
 }
 
 /** How a run ended, which the last batch's milestones say. */
