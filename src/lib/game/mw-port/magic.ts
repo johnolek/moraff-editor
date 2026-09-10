@@ -8,7 +8,13 @@ import {
   mwSpellRecord,
 } from './spells';
 import type { MwGame } from './state';
-import { MW_SQUARE_EMPTY, MW_SQUARE_PLAYER, mwOccupantAt, mwSetOccupant } from './state';
+import {
+  MW_SQUARE_EMPTY,
+  MW_SQUARE_PLAYER,
+  mwMonsterSeen,
+  mwOccupantAt,
+  mwSetOccupant,
+} from './state';
 
 // The message text is the exact bytes of the game's own strings, read out of the data segment of
 // the unpacked WORLD.EXE. The comment on each say call gives the address of every line it prints,
@@ -440,6 +446,15 @@ export function resistDrain(game: MwGame): boolean {
  * separate ifs after the roll has already overwritten it. Every roll lands well above 2, so no
  * spell is rolled twice, and this port keeps the cascade as it stands.
  */
+/**
+ * The hit points a battle spell takes off the monster being fought, taken off where the spell's
+ * own message names them so that a run journal has the number the player was shown.
+ */
+function damageTheMonster(game: MwGame, damage: number): void {
+  game.monsters[game.engaged].hp -= damage;
+  game.events.push({ kind: 'spellDamaged', monster: mwMonsterSeen(game, game.engaged), damage });
+}
+
 export function explosion(game: MwGame, size: number): boolean {
   if (game.engaged === -1) {
     sayNoMonster(game);
@@ -459,7 +474,7 @@ export function explosion(game: MwGame, size: number): boolean {
   if (damage === 0) damage = game.rng.random(101) + 75;
   if (damage === 1) damage = game.rng.random(101) + 125;
   if (damage === 2) damage = game.rng.random(301) + 200;
-  game.monsters[game.engaged].hp -= damage;
+  damageTheMonster(game, damage);
   // DS:37ef 3809 37d8 381f 1476 28ff
   game.say(
     headline,
@@ -696,18 +711,24 @@ export function teleportDirection(game: MwGame, choice: number): boolean {
  * picks them still works, so any class can write any scroll. `maxLevel` is the deepest level the
  * level menu accepts, and nothing else looks at it.
  */
+/** How many charges the Enchant Wand spells put on a wand, whatever their level. */
+const WAND_CHARGES = 5;
+
 export function writeScrollOrWand(game: MwGame, maxLevel: number, kind: number): boolean {
   const choice = game.chooseSpellToWrite(maxLevel);
   if (choice === null) return false;
   const index = choice.category * MW_BOOK_SLOTS_PER_CATEGORY + choice.level * 3 + choice.slot;
+  const spell = { type: choice.category, level: choice.level, slot: choice.slot };
   if (kind === 1) {
     game.pc.scrolls[index] += 1;
+    game.events.push({ kind: 'scrollWritten', spell });
     // DS:3700 3714 1476 28ff
     game.say('THE SCROLL HAS BEEN', '   SUCCESSFULLY WRITTEN!', '', 'HIT ANY KEY');
     return true;
   }
   if (kind === 2) {
-    game.pc.wands[index] += 5;
+    game.pc.wands[index] += WAND_CHARGES;
+    game.events.push({ kind: 'wandMade', spell, charges: WAND_CHARGES });
     // DS:372d 3745 1476 28ff
     game.say('YOU NOW HOLD A GLOWING,', '   CHARGED WAND IN HAND!', '', 'HIT ANY KEY');
     return true;
@@ -1097,7 +1118,7 @@ function shockDamage(game: MwGame, damage: number, howMany: string): boolean {
     sayNoMonster(game);
     return false;
   }
-  game.monsters[game.engaged].hp -= damage;
+  damageTheMonster(game, damage);
   // DS:3e25 3e3b 3e54 3e6b 3e85/3fb5/4039 1476 28ff
   game.say(
     'YOU TOUCH THE MONSTER',
@@ -1122,7 +1143,7 @@ function missileVolley(game: MwGame, base: number, lead: string, headline: strin
   }
   let damage = 0;
   for (let roll = 0; roll < game.pc.lev + 1; roll++) damage += game.rng.random(5) + base;
-  game.monsters[game.engaged].hp -= damage;
+  damageTheMonster(game, damage);
   // DS:381f 1476 28ff after the four the caller names
   game.say(...headline, `${lead}${damage}`, '   POINTS OF DAMAGE.', '', 'HIT ANY KEY');
   return true;
@@ -1177,7 +1198,7 @@ export function wizardBattle(game: MwGame, levelIndex: number, slot: number): bo
         return false;
       }
       const damage = pc.lev * 2 + 2;
-      game.monsters[game.engaged].hp -= damage;
+      damageTheMonster(game, damage);
       // DS:3d9f 3db7 3d8b 3dd2
       game.say(
         'WISPS OF COLORFUL LIGHT',
@@ -1202,7 +1223,7 @@ export function wizardBattle(game: MwGame, levelIndex: number, slot: number): bo
         return false;
       }
       const damage = pc.lev * 4 + 4;
-      game.monsters[game.engaged].hp -= damage;
+      damageTheMonster(game, damage);
       // DS:3ea1 3ebb 3ed4 3d8b 381f 1476 28ff
       game.say(
         'YOU FORM A BALL WITH YOUR',
@@ -1220,7 +1241,7 @@ export function wizardBattle(game: MwGame, levelIndex: number, slot: number): bo
         sayNoMonster(game);
         return false;
       }
-      game.monsters[game.engaged].hp -= 50;
+      damageTheMonster(game, 50);
       // DS:3eee 3f05 3f1f 381f 1476 28ff
       game.say(
         'A MISSLE BOLTS FORWARD',
