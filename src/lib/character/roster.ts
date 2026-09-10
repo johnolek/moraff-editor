@@ -47,6 +47,16 @@ export function withEntry(entries: RosterEntry[], entry: RosterEntry): RosterEnt
   return [...entries, entry];
 }
 
+/**
+ * The order the roster is always in: oldest first.
+ *
+ * Two characters made in the same millisecond are settled by their ids, which at least puts them
+ * in the same order every time.
+ */
+export function oldestFirst(left: RosterEntry, right: RosterEntry): number {
+  return left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id);
+}
+
 export function withoutEntry(entries: RosterEntry[], id: string): RosterEntry[] {
   return entries.filter((entry) => entry.id !== id);
 }

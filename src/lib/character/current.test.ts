@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RevMapMemory, revCharacterMap } from '../play/rev/memory';
-import { RunRecorder } from '../play/run';
+import { RunRecorder, type RunSession } from '../play/run';
 import { REV_VALUE_COUNT } from '../game/rev-port/record';
 import { revPlayerFromValues, saveRevPlayer } from '../play/rev/record';
 import { characterStatus } from './record';
@@ -75,6 +75,7 @@ let restoreGame: Current['restoreGame'];
 let restoreRoster: Current['restoreRoster'];
 let runSessionPlayed: Current['runSessionPlayed'];
 let switchGame: Current['switchGame'];
+let catchUpWithTheServer: Current['catchUpWithTheServer'];
 let unloadCharacter: Current['unloadCharacter'];
 let voidCurrentLeaderboard: Current['voidCurrentLeaderboard'];
 
@@ -100,6 +101,7 @@ beforeEach(async () => {
     switchGame,
     unloadCharacter,
     voidCurrentLeaderboard,
+    catchUpWithTheServer,
   } = await import('./current'));
   // Nothing is written before the roster has been read, which is what a visit starts with.
   await restoreRoster();
@@ -461,5 +463,130 @@ describe('switching games', () => {
     restoreGame();
     expect(app.game).toBe('moraffsWorld');
     expect(currentEntry()?.name).toBe('WANDA');
+  });
+});
+
+describe('the characters the server is keeping for this player', () => {
+  /** What a character looks like coming back from `GET /players/me/characters`. */
+  function served(over: Record<string, unknown> = {}): Record<string, unknown> {
+    return {
+      id: 'server-1',
+      game: 'unforgiven',
+      name: 'GRIM',
+      slot: 7,
+      dead: false,
+      leaderboard: 'faithful',
+      createdAt: '2026-09-08T09:00:00.000Z',
+      editedAt: '2026-09-08T10:00:00.000Z',
+      record: 'AAECAw==',
+      maps: null,
+      savedAt: '2026-09-08T10:00:01.000Z',
+      run: [],
+      leasedElsewhere: false,
+      ...over,
+    };
+  }
+
+  /** One sitting of a run, as the server hands it over and as this device writes it down. */
+  function sitting(at: number, keys: number): RunSession {
+    return {
+      engine: 'a'.repeat(40),
+      game: 'unforgiven',
+      mode: 'faithful',
+      leaderboard: 'faithful',
+      sound: null,
+      name: 'GRIM',
+      startedAt: `2026-09-09T1${at}:00:00.000Z`,
+      seed: 1000 + at,
+      record: 'AAEC',
+      inputs: Array.from({ length: keys }, (_, key) => key),
+      actions: keys,
+      time: keys,
+      milestones: [],
+      edits: 0,
+    };
+  }
+
+  /** A run server that answers with these characters, and every call it was made. */
+  function serverHolding(characters: Record<string, unknown>[], status = 200): { calls: string[] } {
+    const calls: string[] = [];
+    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    vi.stubGlobal('fetch', (url: string, options?: { method?: string }) => {
+      calls.push(`${options?.method ?? 'GET'} ${url}`);
+      return Promise.resolve(new Response(JSON.stringify({ characters }), { status }));
+    });
+    return { calls };
+  }
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('puts a character this device has never seen on the roster', async () => {
+    serverHolding([served({ run: [sitting(0, 4)] })]);
+
+    await catchUpWithTheServer();
+
+    expect(app.roster.map((entry) => entry.name)).toEqual(['GRIM']);
+    expect(app.roster[0].run).toHaveLength(1);
+    // And it is in the browser's own store from then on, so the next visit has it with no server.
+    await restoreRoster();
+    expect(app.roster.map((entry) => entry.name)).toEqual(['GRIM']);
+  });
+
+  it('takes the server’s copy of a character this device is behind on', async () => {
+    keepRolledCharacter('unforgiven', 'SAGEY', 21, saveFile('SAGEY'));
+    const id = app.roster[0].id;
+    await rememberNow();
+    serverHolding([served({ id, name: 'SAGEY', record: 'CQkJ', run: [sitting(0, 4)] })]);
+
+    await catchUpWithTheServer();
+
+    expect(app.roster).toHaveLength(1);
+    expect(Array.from(app.roster[0].bytes)).toEqual([9, 9, 9]);
+    expect(app.roster[0].run).toHaveLength(1);
+  });
+
+  it('keeps this device’s copy while it holds keys the server has not been sent', async () => {
+    keepRolledCharacter('unforgiven', 'SAGEY', 21, saveFile('SAGEY'));
+    const entry = app.roster[0];
+    runSessionPlayed(entry, 0, sitting(0, 9));
+    await rememberNow();
+    serverHolding([served({ id: entry.id, name: 'SAGEY', record: 'CQkJ', run: [sitting(0, 4)] })]);
+
+    await catchUpWithTheServer();
+
+    expect(app.roster[0].bytes).toHaveLength(2697);
+    expect(app.roster[0].run[0].inputs).toHaveLength(9);
+  });
+
+  it('leaves the roster alone when the server has nothing to say', async () => {
+    keepRolledCharacter('unforgiven', 'SAGEY', 21, saveFile('SAGEY'));
+    serverHolding([], 403);
+
+    await catchUpWithTheServer();
+
+    expect(app.roster.map((entry) => entry.name)).toEqual(['SAGEY']);
+  });
+
+  it('asks nobody at all in a build with no run server', async () => {
+    const server = serverHolding([served()]);
+    vi.stubEnv('VITE_RUN_SERVER', '');
+
+    await catchUpWithTheServer();
+
+    expect(server.calls).toEqual([]);
+    expect(app.roster).toEqual([]);
+  });
+
+  it('forgets a character on the server as well as here', async () => {
+    keepRolledCharacter('unforgiven', 'SAGEY', 21, saveFile('SAGEY'));
+    const id = app.roster[0].id;
+    const server = serverHolding([]);
+
+    forgetCharacter(id);
+    await rememberNow();
+
+    expect(server.calls).toEqual([`DELETE https://runs.example.com/players/me/characters/${id}`]);
   });
 });

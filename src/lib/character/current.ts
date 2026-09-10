@@ -14,9 +14,20 @@ import { revCharacterMap } from '../play/rev/memory';
 import type { RunSession } from '../play/run';
 import { tabFor } from '../tabs';
 import { carryOverStoredRoster } from './carry-over';
+import { writeCharacterMaps } from './maps';
 import { recordName, slotFromFileName } from './record';
-import { markDead, markEdited, newEntry, restoreImport, voidLeaderboard, withEntry, withoutEntry } from './roster';
+import {
+  markDead,
+  markEdited,
+  newEntry,
+  oldestFirst,
+  restoreImport,
+  voidLeaderboard,
+  withEntry,
+  withoutEntry,
+} from './roster';
 import { dropCharacter, keepPlayed, readRoster, type PlayedSession } from './roster-db';
+import { deviceIsAhead, entryFromServer, forgetOnServer, readServerRoster } from './server-roster';
 
 /** Put a save file that has just been read on the roster and start working on it. */
 export function importCharacter(game: string, fileName: string, bytes: Uint8Array<ArrayBuffer>): void {
@@ -93,6 +104,9 @@ export function forgetCharacter(id: string): void {
   for (const session of changedSessions) if (session.startsWith(`${id}/`)) changedSessions.delete(session);
   saveCurrentCharacter(app.characterId);
   void keeping(dropCharacter(id));
+  // A player with a name has their characters on the server, so forgetting one here forgets it
+  // everywhere; otherwise the next roster read would bring it straight back.
+  void forgetOnServer(id);
 }
 
 /** Put the file a character was imported from back as the character. */
@@ -182,6 +196,9 @@ export function restoreGame(): void {
  * Bring back the characters the last visit left behind, which is the one thing the site waits on
  * before it can show a character: the database answers a question at a time rather than at once
  * the way localStorage did.
+ *
+ * The run server is asked as well, but nothing waits on it: the characters in the browser go up
+ * at once and the server's are merged in whenever its answer arrives.
  */
 export async function restoreRoster(): Promise<void> {
   await carryOverStoredRoster();
@@ -194,6 +211,41 @@ export async function restoreRoster(): Promise<void> {
   // now rather than waiting for the first character to be changed.
   app.rosterKept = entries !== null;
   loaded = true;
+  void catchUpWithTheServer();
+}
+
+/**
+ * Bring the characters the run server is keeping for this player together with the ones in the
+ * browser.
+ *
+ * A character belongs to the player and not to the device it was rolled in, so the server's copy
+ * is the one that stands: it is the newest one any device of theirs sent. The exception is a
+ * character this device is ahead on, which is what playing with the server unreachable leaves
+ * behind — those keys are here and nowhere else, and they go up with the next batch that gets
+ * through (`deviceIsAhead` in `server-roster.ts` is the whole rule).
+ *
+ * A device with no name, a build with no server and a server that did not answer all come to the
+ * same thing: nothing here changes and the browser's own roster stands.
+ */
+export async function catchUpWithTheServer(): Promise<void> {
+  const server = await readServerRoster();
+  if (server === null) return;
+  const taken: RosterEntry[] = [];
+  const played: PlayedSession[] = [];
+  for (const character of server) {
+    const kept = entryById(character.id);
+    if (kept !== null && deviceIsAhead(kept.run, character.run)) continue;
+    const entry = entryFromServer(character, kept);
+    if (entry === null) continue;
+    writeCharacterMaps(entry, character.maps);
+    taken.push(entry);
+    for (let at = 0; at < entry.run.length; at++) played.push({ entry, at });
+  }
+  if (taken.length === 0) return;
+  const replaced = new Set(taken.map((entry) => entry.id));
+  app.roster = [...app.roster.filter((entry) => !replaced.has(entry.id)), ...taken].sort(oldestFirst);
+  app.characterVersion++;
+  await keeping(keepPlayed(taken, played));
 }
 
 function chooseEntry(id: string | null): void {

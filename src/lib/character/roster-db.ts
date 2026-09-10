@@ -1,6 +1,7 @@
 import type { Leaderboard, RosterEntry } from '../app-state.svelte';
 import { base64FromBytes } from '../bytes';
 import type { Milestone, RunGame, RunSession } from '../play/run';
+import { oldestFirst } from './roster';
 import { fromBase64 } from './storage';
 
 /**
@@ -176,8 +177,7 @@ function sessionRow({ entry, at }: PlayedSession): SessionRow | null {
  *
  * A row holds when its character was made, and the roster has always been in that order, so that
  * is what it is sorted by; the rows themselves come back in whatever order their keys happen to
- * be in. Two characters made in the same millisecond are settled by their ids, which at least
- * puts them in the same order every time.
+ * be in.
  */
 function rosterOf(characters: CharacterRow[], sessions: SessionRow[]): RosterEntry[] {
   const runs = new Map<string, Map<number, RunSession>>();
@@ -186,9 +186,7 @@ function rosterOf(characters: CharacterRow[], sessions: SessionRow[]): RosterEnt
     theirs.set(row.index, sessionOf(row));
     runs.set(row.character, theirs);
   }
-  return characters
-    .map((row) => entryOf(row, runOf(runs.get(row.id))))
-    .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id));
+  return characters.map((row) => entryOf(row, runOf(runs.get(row.id)))).sort(oldestFirst);
 }
 
 /**
