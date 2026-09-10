@@ -70,6 +70,7 @@ describe('applyMigrations', () => {
       'batches',
       'characters',
       'engines',
+      'living',
       'player_secrets',
       'players',
       'schema_migrations',
