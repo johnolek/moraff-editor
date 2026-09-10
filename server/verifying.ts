@@ -18,6 +18,11 @@ import type { Queries } from './sql';
  * The play time is the one number the run itself does not carry. It is read off the moments the
  * batches landed, by this server's own clock, so a page that lies about how long it took is not
  * believed and time the player spent away from the game counts for nothing.
+ *
+ * A run that has ended is replayed once and given a verdict. A character still being played is
+ * replayed over and over, as far as it has got each time, and what the replay reached is the
+ * snapshot a board of the living shows: same walk of the chain, and a note of where it stands
+ * rather than a verdict on how it came out.
  */
 
 /**
