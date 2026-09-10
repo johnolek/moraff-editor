@@ -3,19 +3,25 @@ import { saveCurrentCharacter } from '../game-choice';
 import type { RunSession } from '../play/run';
 import { isRunSession } from '../play/verify';
 import { isLeaderboard } from './leaderboard';
-import { keepPlayed } from './roster-db';
-import { fromBase64, readStored, removeStored } from './storage';
+import { keepMaps, keepPlayed } from './roster-db';
+import { fromBase64, readStored, removeStored, storedKeys } from './storage';
 
 /**
- * The roster as it was kept before there was a database: one localStorage key holding the whole
- * lot as JSON, with every record base64 inside it.
+ * The roster and the explored maps as they were kept before there was a database: one
+ * localStorage key holding the whole roster as JSON with every record base64 inside it, and a key
+ * per character holding the squares that character had discovered.
  *
- * A visitor who was here then still has that key, so it is read once and written into the
- * database, and this is the only thing left that knows the shape it was in.
+ * A visitor who was here then still has those keys, so they are read once and written into the
+ * database, and this is the only thing left that knows the shapes they were in.
  */
 
 /** Where the characters kept in the browser used to live. */
 const ROSTER_KEY = 'moraff-tools.roster';
+
+/** Where a character's explored maps used to live, one key each with the character's id after
+ *  the prefix: the two games that keep a bitmap per floor under the first, Moraff's Revenge
+ *  under the second. */
+const MAPS_PREFIXES = ['moraff-tools.maps.', 'moraff-tools.revenge-map.'];
 
 /** A roster as it went into storage: the byte arrays as base64, everything else as it is. */
 interface StoredRoster {
@@ -52,6 +58,27 @@ export async function carryOverStoredRoster(): Promise<void> {
   if (!(await keepPlayed(entries, sessions))) return;
   if (currentId !== null) saveCurrentCharacter(currentId);
   removeStored(ROSTER_KEY);
+}
+
+/**
+ * Move the explored maps an earlier visit left in localStorage into the database.
+ *
+ * The value goes over exactly as it was written, since nothing outside the game that keeps them
+ * reads what a character's maps hold. A key goes only once its maps are in the database, so a
+ * write that did not go in leaves them to be tried again next time; a key holding nothing is one
+ * a death emptied, and there is nothing there to carry.
+ */
+export async function carryOverStoredMaps(): Promise<void> {
+  for (const key of storedKeys()) {
+    const prefix = MAPS_PREFIXES.find((candidate) => key.startsWith(candidate));
+    if (prefix === undefined) continue;
+    const maps = readStored(key);
+    if (maps === null || maps === '') {
+      removeStored(key);
+    } else if (await keepMaps(key.slice(prefix.length), maps)) {
+      removeStored(key);
+    }
+  }
 }
 
 /** What the stored text held, with anything this build cannot read left out. */

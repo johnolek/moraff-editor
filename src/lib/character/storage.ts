@@ -33,6 +33,18 @@ export function writeStored(key: string, value: string): boolean {
   }
 }
 
+/** Every key the store holds, as a list of its own, so that a caller may take keys out of the
+ *  store while it walks them. */
+export function storedKeys(): string[] {
+  const store = storage();
+  if (store === null) return [];
+  try {
+    return Array.from({ length: store.length }, (_, at) => store.key(at)).filter((key) => key !== null);
+  } catch {
+    return [];
+  }
+}
+
 /** Take a key out of the store. A browser with no store has nothing to take out of it. */
 export function removeStored(key: string): void {
   try {

@@ -10,6 +10,9 @@ import { newEntry } from './roster';
 const ROSTER_KEY = 'moraff-tools.roster';
 /** Where the character in hand lives now. */
 const CURRENT_KEY = 'moraff-tools.current-character';
+/** Where the squares a character had discovered lived before there was a database, one key each. */
+const MAPS_KEY = 'moraff-tools.maps.';
+const REVENGE_MAP_KEY = 'moraff-tools.revenge-map.';
 
 /** Enough of the browser's Storage to stand in for it. */
 function fakeStorage(): Storage {
@@ -186,5 +189,58 @@ describe('what an older stored roster left out', () => {
 
     expect(await store.readRoster()).toEqual([]);
     expect(localStorage.getItem(ROSTER_KEY)).toBeNull();
+  });
+});
+
+describe('the explored maps an earlier visit left in localStorage', () => {
+  it('go into the database beside the character, whichever game keeps them', async () => {
+    localStorage.setItem(`${MAPS_KEY}a`, '{"0:1":"AA"}');
+    localStorage.setItem(`${REVENGE_MAP_KEY}b`, 'AQID');
+
+    await carryOver.carryOverStoredMaps();
+
+    expect(await store.readKeptMaps()).toEqual(
+      new Map([
+        ['a', '{"0:1":"AA"}'],
+        ['b', 'AQID'],
+      ]),
+    );
+  });
+
+  it('take their keys with them, so the next visit carries nothing over', async () => {
+    localStorage.setItem(`${MAPS_KEY}a`, '{"0:1":"AA"}');
+
+    await carryOver.carryOverStoredMaps();
+
+    expect(localStorage.getItem(`${MAPS_KEY}a`)).toBeNull();
+  });
+
+  it('leave every other key where it is', async () => {
+    localStorage.setItem(CURRENT_KEY, 'a');
+    localStorage.setItem(`${MAPS_KEY}a`, '{"0:1":"AA"}');
+
+    await carryOver.carryOverStoredMaps();
+
+    expect(localStorage.getItem(CURRENT_KEY)).toBe('a');
+  });
+
+  it('take away a key a death emptied without keeping maps for it', async () => {
+    localStorage.setItem(`${REVENGE_MAP_KEY}b`, '');
+
+    await carryOver.carryOverStoredMaps();
+
+    expect(await store.readKeptMaps()).toEqual(new Map());
+    expect(localStorage.getItem(`${REVENGE_MAP_KEY}b`)).toBeNull();
+  });
+
+  it('stay where they are when the database will not take them', async () => {
+    vi.resetModules();
+    Reflect.deleteProperty(globalThis, 'indexedDB');
+    const withoutDatabase = await import('./carry-over');
+    localStorage.setItem(`${MAPS_KEY}a`, '{"0:1":"AA"}');
+
+    await withoutDatabase.carryOverStoredMaps();
+
+    expect(localStorage.getItem(`${MAPS_KEY}a`)).toBe('{"0:1":"AA"}');
   });
 });

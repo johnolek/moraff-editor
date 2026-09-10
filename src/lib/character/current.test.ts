@@ -3,6 +3,7 @@ import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RevMapMemory } from '../play/rev/memory';
 import type { RosterEntry } from '../app-state.svelte';
+import { base64FromBytes } from '../bytes';
 import type { JournalEntry } from '../play/journal';
 import { RunRecorder, type RunSession } from '../play/run';
 import { REV_VALUE_COUNT } from '../game/rev-port/record';
@@ -180,6 +181,20 @@ describe('an explored map dropped beside the character', () => {
     await restoreRoster();
 
     expect(new RevMapMemory(revCharacterMap(kept.id)).isKnown(5, 7, 3)).toBe(true);
+  });
+
+  it('is carried over from where an earlier visit kept it in localStorage', async () => {
+    importCharacter('revenge', '1.EXE', revenge());
+    const entry = currentEntry()!;
+    const walked = new RevMapMemory();
+    walked.markStep(5, 7, 3);
+    localStorage.setItem(`moraff-tools.revenge-map.${entry.id}`, base64FromBytes(walked.bytes()));
+    await rememberNow();
+
+    await restoreRoster();
+
+    expect(new RevMapMemory(revCharacterMap(entry.id)).isKnown(5, 7, 3)).toBe(true);
+    expect(localStorage.getItem(`moraff-tools.revenge-map.${entry.id}`)).toBeNull();
   });
 
   it('goes with the character when it is taken off the roster', async () => {

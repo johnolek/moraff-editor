@@ -14,7 +14,7 @@ import { revCharacterMap } from '../play/rev/memory';
 import type { JournalEntry } from '../play/journal';
 import type { RunSession } from '../play/run';
 import { tabFor } from '../tabs';
-import { carryOverStoredRoster } from './carry-over';
+import { carryOverStoredMaps, carryOverStoredRoster } from './carry-over';
 import { forgetCharacterMaps, loadKeptMaps, writeCharacterMaps } from './maps';
 import { recordName, slotFromFileName } from './record';
 import {
@@ -210,6 +210,7 @@ export function restoreGame(): void {
  */
 export async function restoreRoster(): Promise<void> {
   await carryOverStoredRoster();
+  await carryOverStoredMaps();
   await loadKeptMaps();
   const entries = await readRoster();
   app.roster = entries ?? [];
