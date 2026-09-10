@@ -69,6 +69,11 @@ const BATTLE_ITEM_LINES = [
   '6) HOLY HAND GRENADE    ',
 ];
 
+/** What each line of the two menus is called, which is its own line with the number and the
+ *  spacing taken off. */
+export const REV_PREP_ITEM_NAMES = PREP_ITEM_LINES.map((line) => line.slice(3).trim());
+export const REV_BATTLE_ITEM_NAMES = BATTLE_ITEM_LINES.map((line) => line.slice(3).trim());
+
 /** How many the character has of the thing on a line of the first menu: a count for the four
  *  scrolls, and a bit of value 16 for the two they either own or do not (1000:1514). */
 function prepItemsHeld(game: RevGame, item: number): number {
@@ -319,7 +324,7 @@ export const REV_BATTLE_ITEMS: RevItem[] = [
 export async function revUseAnItem(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const choice = await revItemMenu(game, desk, 'prep', false);
   if (choice === 0) return;
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: REV_PREP_ITEM_NAMES[choice - 1] });
   await REV_PREP_ITEMS[choice - 1].use(game, desk);
 }
 
@@ -327,7 +332,7 @@ export async function revUseAnItem(game: RevGame, desk: RevMagicDesk): Promise<v
 export async function revUseAnItemInAFight(game: RevGame, desk: RevMagicDesk): Promise<void> {
   const choice = await revItemMenu(game, desk, 'battle', true);
   if (choice === 0) return;
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: REV_BATTLE_ITEM_NAMES[choice - 1] });
   await REV_BATTLE_ITEMS[choice - 1].use(game, desk);
 }
 
@@ -366,7 +371,7 @@ export async function revTakeAPill(game: RevGame, desk: RevMagicDesk): Promise<v
   if (colour < 1 || colour > REV_PILL_COLOURS) return;
   if (revPillsHeld(pc, colour) < 1) return;
   revSpendPill(pc, colour);
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: `${revPillColour(colour)} PILL` });
   let lowered = colour + 3;
   if (lowered > REV_STATS) lowered -= REV_STATS;
   pc.stats[lowered - 1] -= 2;
@@ -404,7 +409,7 @@ export async function revUseAWand(game: RevGame, desk: RevMagicDesk): Promise<nu
   if (colour < 1 || colour > REV_WAND_COLOURS) return 0;
   if (revWandCharges(pc, colour) < 1) return 0;
   revSpendWandCharge(pc, colour);
-  game.events.push({ kind: 'itemUsed' });
+  game.events.push({ kind: 'itemUsed', item: `${revWandColour(colour)} WAND` });
   // 1000:7BC9: the ninth wand heals in full, and does it before the five that have a routine.
   if (colour === REV_WAND_COLOURS) pc.hp = pc.maxHp;
   if (colour <= 5) await REV_WANDS[colour - 1].use(game, desk);
@@ -569,9 +574,12 @@ const REV_POTION_BANNERS: {
   row: number;
   line: string;
   blank: number;
+  /** Which of the battle items put it up, for the report of it running out. */
+  potion: string;
   wearOff?: (game: RevGame) => void;
 }[] = [
   {
+    potion: REV_BATTLE_ITEM_NAMES[0],
     until: REV_MAGIC.speedUntil,
     row: 5,
     line: 'YOU FEEL VERY AGILE. ',
@@ -581,6 +589,7 @@ const REV_POTION_BANNERS: {
     },
   },
   {
+    potion: REV_BATTLE_ITEM_NAMES[2],
     until: REV_MAGIC.shieldingUntil,
     row: 6,
     line: 'YOUR BODY GLOWS.     ',
@@ -589,7 +598,7 @@ const REV_POTION_BANNERS: {
       game.shield = 0;
     },
   },
-  { until: REV_MAGIC.fireUntil, row: 7, line: 'B-BREATH FIRE ', blank: 14 },
+  { potion: REV_BATTLE_ITEM_NAMES[1], until: REV_MAGIC.fireUntil, row: 7, line: 'B-BREATH FIRE ', blank: 14 },
 ];
 
 /** The column all three are printed at. */
@@ -632,6 +641,7 @@ export function revWearOffPotions(game: RevGame): boolean {
     if (until > 0 && until < game.seconds) {
       setRevValue(game.pc, banner.until, 0);
       banner.wearOff?.(game);
+      game.events.push({ kind: 'potionWoreOff', potion: banner.potion });
       game.kept.blank(banner.row, POTION_BANNER_COLUMN, banner.blank);
       wornOff = true;
     }

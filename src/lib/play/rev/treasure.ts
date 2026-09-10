@@ -16,7 +16,7 @@ import {
   revWears,
 } from './magic';
 import { REV_ARMOUR_VALUE, REV_VALUE, revValue, setRevValue } from './record';
-import { REV_ITEM_TABLE, REV_SPELL_LEVEL_COUNT } from './tables';
+import { REV_ITEM_TABLE, REV_SPELL_LEVEL_COUNT, revSpellsAt } from './tables';
 import type { RevGame } from './state';
 
 /**
@@ -255,16 +255,19 @@ function armourOrAWeapon(game: RevGame): void {
     if (next > 3) return;
     game.say(`You find ${REV_ARMOUR_WORN[next]}`);
     setRevValue(pc, REV_ARMOUR_VALUE, next);
+    game.events.push({ kind: 'found', find: { what: 'armour', item: REV_ARMOUR_WORN[next] } });
     return;
   }
   if (roll === 4 && revValue(pc, REV_VALUE.sword) === 0) {
     game.say(REV_YOU_FIND_A_SWORD);
     setRevValue(pc, REV_VALUE.sword, 1);
+    game.events.push({ kind: 'found', find: { what: 'weapon', item: 'sword' } });
     return;
   }
   if (revValue(pc, REV_VALUE.mace) === 0) {
     game.say(REV_YOU_FIND_A_MACE);
     setRevValue(pc, REV_VALUE.mace, 1);
+    game.events.push({ kind: 'found', find: { what: 'weapon', item: 'mace' } });
   }
 }
 
@@ -281,7 +284,9 @@ function aWand(game: RevGame): void {
   const colour = game.rng.random(9) + 1;
   game.scratch = colour;
   game.say(`${YOU_HAVE_FOUND_A}${revWandColour(colour)} wand!`);
-  revGainWandCharges(game.pc, colour, game.rng.random(2) + 1);
+  const charges = game.rng.random(2) + 1;
+  revGainWandCharges(game.pc, colour, charges);
+  game.events.push({ kind: 'wandFound', colour: revWandColour(colour), charges });
 }
 
 /** 1000:B0E3: a pill, which only a kill of kind 5 can leave. One pill of one of six colours. */
@@ -290,6 +295,7 @@ function aPill(game: RevGame): void {
   game.scratch = colour;
   game.say(`${YOU_HAVE_FOUND_A}${revPillColour(colour)} pill!`);
   revGainPill(game.pc, colour);
+  game.events.push({ kind: 'pillFound', colour: revPillColour(colour) });
 }
 
 async function offerTheCoins(game: RevGame, desk: RevMagicDesk): Promise<void> {
@@ -316,6 +322,7 @@ async function offerTheCoins(game: RevGame, desk: RevMagicDesk): Promise<void> {
     if (!TAKE_KEYS.includes(key)) continue;
     pc.weight += coins.weight;
     pc.treasure += coins.value;
+    game.events.push({ kind: 'found', find: { what: 'money', amount: coins.value } });
     return;
   }
 }
@@ -346,10 +353,14 @@ async function offerASpellbook(game: RevGame, desk: RevMagicDesk): Promise<void>
   } while (level > REV_SPELL_LEVEL_COUNT);
   const bit = game.rng.random(2) + 1;
   // 1000:AA89: the second set is the fight's, and the first the dungeon's.
-  const value = (game.rng.random(2) === 1 ? 115 : 116) + 2 * level;
+  const dungeonsOwn = game.rng.random(2) === 1;
+  const value = (dungeonsOwn ? 115 : 116) + 2 * level;
   const known = Math.round(revValue(pc, value));
   if ((known & bit) !== 0) return;
   setRevValue(pc, value, known | bit);
+  const set = dungeonsOwn ? 'prep' : 'battle';
+  const name = revSpellsAt(level, set)[bit - 1]?.name ?? '';
+  game.events.push({ kind: 'spellLearned', set, level, name });
   game.say(`YOU FIND A LEVEL ${revBasicNumber(level)} SPELLBOOK     `, ...REV_SPELLBOOK_ADVICE);
   await desk.poll();
 }
@@ -412,11 +423,17 @@ function nothing(game: RevGame): void {
   game.say(REV_NOTHING);
 }
 
+/** One of the table's lines handed over, by the name its own line calls it. */
+function foundInTheTable(game: RevGame, item: string): void {
+  game.events.push({ kind: 'found', find: { what: 'item', item: item.trim() } });
+}
+
 /** 1000:AD35 to 1000:AFE0: the eight lines that hand over magic the character wears. */
 function theMagicWorn(game: RevGame, line: number, plus: number): void {
   const pc = game.pc;
   if (line === 1) {
     game.say(A_RING_OF_HEALTH);
+    foundInTheTable(game, A_RING_OF_HEALTH);
     // The bit says the character wears rings of health at all and value 38 says how many, so a
     // second ring raises only the count.
     if (!revWears(pc, REV_WORN.ringsOfHealth)) pc.rings += REV_WORN.ringsOfHealth;
@@ -425,6 +442,7 @@ function theMagicWorn(game: RevGame, line: number, plus: number): void {
   }
   if (line === 2 && !revWears(pc, REV_WORN.bagOfHolding)) {
     game.say(A_BAG_OF_HOLDING);
+    foundInTheTable(game, A_BAG_OF_HOLDING);
     pc.rings += REV_WORN.bagOfHolding;
     return;
   }
@@ -434,6 +452,7 @@ function theMagicWorn(game: RevGame, line: number, plus: number): void {
     game.scratch = plus;
     if (pc.cls === 2 || revValue(pc, REV_VALUE.swordPlus) >= plus) return nothing(game);
     game.say(` A +${revBasicNumber(plus)}SWORD`);
+    foundInTheTable(game, `+${plus} SWORD`);
     setRevValue(pc, REV_VALUE.sword, 1);
     if (!revWears(pc, REV_WORN.magicSword)) pc.rings += REV_WORN.magicSword;
     setRevValue(pc, REV_VALUE.swordPlus, plus);
@@ -443,6 +462,7 @@ function theMagicWorn(game: RevGame, line: number, plus: number): void {
     game.scratch = plus;
     if (pc.cls === 2 || revValue(pc, REV_VALUE.macePlus) >= plus) return nothing(game);
     game.say(` A +${revBasicNumber(plus)}MACE`);
+    foundInTheTable(game, `+${plus} MACE`);
     setRevValue(pc, REV_VALUE.mace, 1);
     if (!revWears(pc, REV_WORN.magicMace)) pc.rings += REV_WORN.magicMace;
     setRevValue(pc, REV_VALUE.macePlus, plus);
@@ -452,6 +472,7 @@ function theMagicWorn(game: RevGame, line: number, plus: number): void {
   if (line === 5) {
     if (revValue(pc, REV_VALUE.armourBonus) >= plus) return nothing(game);
     game.say(` +${revBasicNumber(plus)}RING`);
+    foundInTheTable(game, `+${plus} RING`);
     if (!revWears(pc, REV_WORN.magicRing)) pc.rings += REV_WORN.magicRing;
     setRevValue(pc, REV_VALUE.armourBonus, plus);
     return;
@@ -459,6 +480,7 @@ function theMagicWorn(game: RevGame, line: number, plus: number): void {
   if (line === 6) {
     if (pc.cls === 2 || revValue(pc, REV_MAGIC.magicArmour) >= plus) return nothing(game);
     game.say(` +${revBasicNumber(plus)}FIELD PLATE ARMOR`);
+    foundInTheTable(game, `+${plus} FIELD PLATE ARMOR`);
     if (!revWears(pc, REV_WORN.magicArmour)) pc.rings += REV_WORN.magicArmour;
     setRevValue(pc, REV_MAGIC.magicArmour, plus);
     // 1000:AF8B: and the suit worn becomes field plate, which nothing else in the dungeon hands
@@ -468,11 +490,13 @@ function theMagicWorn(game: RevGame, line: number, plus: number): void {
   }
   if (line === 7) {
     game.say(A_HOLY_HAND_GRENADE);
+    foundInTheTable(game, A_HOLY_HAND_GRENADE);
     setRevValue(pc, REV_MAGIC.holyHandGrenades, revValue(pc, REV_MAGIC.holyHandGrenades) + 1);
     return;
   }
   if (revWears(pc, REV_WORN.floorSlosher)) return nothing(game);
   game.say(A_FLOOR_SLOSHER);
+  foundInTheTable(game, A_FLOOR_SLOSHER);
   pc.rings += REV_WORN.floorSlosher;
 }
 
@@ -482,6 +506,10 @@ function oneOfTheNineItems(game: RevGame, line: number): void {
   game.scratch = which;
   game.say(`${REV_ITEM_TABLE.names[which - 1]}  `);
   revGainItem(game.pc, which);
+  game.events.push({
+    kind: 'found',
+    find: { what: 'item', item: REV_ITEM_TABLE.names[which - 1].trim() },
+  });
 }
 
 /**
@@ -496,5 +524,9 @@ async function aBookOfACharacteristic(game: RevGame, desk: RevMagicDesk): Promis
   game.say(`${A_BOOK_OF}${BOOK_SUBJECTS[stat - 1]}`, PRESS_ANY_KEY_TO_READ);
   await desk.wait();
   game.pc.stats[stat - 1] += 1;
+  game.events.push({
+    kind: 'found',
+    find: { what: 'item', item: `book of ${BOOK_SUBJECTS[stat - 1].replace('.', '')}` },
+  });
   game.say(REV_FEEL_VERY_GOOD);
 }
