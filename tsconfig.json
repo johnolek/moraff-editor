@@ -16,6 +16,7 @@
     "vite.config.ts",
     "vite.verify.config.ts",
     "vite.server.config.ts",
+    "vite.publish-engine.config.ts",
     "vite.engine.config.ts"
   ]
 }
