@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { DatabaseSync } from 'node:sqlite';
 import type { ServerConfig } from './config';
+import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
 import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './boards';
 import { writeCorsHeaders } from './cors';
 import { openEngineStore, shortCommit } from './engines';
@@ -27,6 +28,7 @@ const CHANGED_RESEND = 'That stretch of the run arrived before, holding somethin
 const NO_SUCH_RUN = 'No such run.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
 const NOT_A_PAGE = 'That is not a page of a board.';
+const NOT_A_HISTORY_PAGE = 'That is not a page of the announcements.';
 
 /** A players request carries a field or two, so anything longer than this is not one. */
 const MOST_BODY_BYTES = 1024;
@@ -89,6 +91,11 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync): S
       return;
     }
 
+    if (request.method === 'GET' && path === '/announcements') {
+      sendAnnouncements(response, database, asked.searchParams.get('before'), asked.searchParams.get('limit'));
+      return;
+    }
+
     const board = path.match(/^\/boards\/([^/]+)\/([^/]+)\/([^/]+)$/);
     if (request.method === 'GET' && board !== null) {
       sendBoard(
@@ -147,6 +154,44 @@ function pageAsked(asked: string | null): number | null {
   if (!/^[0-9]{1,6}$/.test(asked)) return null;
   const page = Number(asked);
   return page >= 1 ? page : null;
+}
+
+/**
+ * The announcements already made, newest first.
+ *
+ * The history is paged by id rather than by a page number: announcements are made while somebody
+ * is reading, and a page number would show one twice or skip one as they arrive. `before` is the
+ * oldest id the reader already has, and a request that names none is asking for the newest.
+ */
+function sendAnnouncements(
+  response: ServerResponse,
+  database: DatabaseSync,
+  before: string | null,
+  limit: string | null,
+): void {
+  const from = idAsked(before);
+  const most = limitAsked(limit);
+  if (from === undefined || most === null) {
+    sendJson(response, 400, { error: NOT_A_HISTORY_PAGE });
+    return;
+  }
+  sendJson(response, 200, announcementsBefore(database, from, most));
+}
+
+/** The id to read back from, null for a request that names none, and undefined for a query that
+ *  names something that is not an id. */
+function idAsked(asked: string | null): number | null | undefined {
+  if (asked === null) return null;
+  return /^[0-9]{1,15}$/.test(asked) ? Number(asked) : undefined;
+}
+
+/** How many announcements were asked for, or null when the query names something that is not a
+ *  number of them. A page holds fifty and nobody may ask for more in one request. */
+function limitAsked(asked: string | null): number | null {
+  if (asked === null) return ANNOUNCEMENTS_PER_PAGE;
+  if (!/^[0-9]{1,3}$/.test(asked)) return null;
+  const limit = Number(asked);
+  return limit >= 1 && limit <= ANNOUNCEMENTS_PER_PAGE ? limit : null;
 }
 
 function sendMyName(response: ServerResponse, database: DatabaseSync, secret: string | null): void {
