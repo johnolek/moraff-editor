@@ -201,8 +201,11 @@ played, so that a claimed ending can be checked by playing it again rather than 
 * **The summary** — the journal folded into what the run came to (`summary.ts`): the steps, the
   experience gained and drained, the levels either way, the deepest floor and the furthest
   module, the money found and the money spent building by building, the wands and scrolls made
-  and the charges and items spent, the vitamin pills the two Moraff games turn up, and for each
-  kind of monster the fights, the swings, the damage both ways and the kills. `summarizeJournal` is the fold and `summaryLines` is every word
+  and the charges and items spent, the vitamin pills the two Moraff games turn up, Moraff's
+  Revenge's breaths of fire and its drinks from the fountain of youth, and for each kind of
+  monster the fights, the swings, the damage both ways and the kills. `RUN_GAMES` lends it each
+  game's own words for its clock, its dungeons and its money, so a run of Moraff's World is
+  counted in jewels where one of Dungeons of the Unforgiven is counted in rubles. `summarizeJournal` is the fold and `summaryLines` is every word
   of it, so the Play tab, the verifier and the run server say the same thing about the same run.
   A fight is counted where the character came to face a monster, so walking away from one and
   back to it is the fight they were already in and turning to another and back is a fight of its

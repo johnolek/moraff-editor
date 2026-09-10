@@ -176,7 +176,7 @@ Three things follow.
 ## The run
 
 Every game is a run, written down as it is played, the same way the other two are (`../run.ts`).
-Three things are this game's own:
+Four things are this game's own:
 
 * **The ticks are inputs**, as above.
 * **Its actions** are counted by what happened rather than by how long it took, since this game
@@ -187,6 +187,16 @@ Three things are this game's own:
 * **Its milestones** add the deepest level reached. The other two games are measured by the module
   or dungeon a character moved to; this one has a single dungeon seventy levels deep, so the depth
   is the number.
+* **Its journal** is `journal.ts` — every line a run of this game can say, one case of one switch,
+  in the game's own names for its monsters, its spells, its items and its buildings. The events
+  behind those lines are the shared ones of `../../game/journal-events.ts` wherever the thing is
+  the same as the other two games', and `RevEvent` (`state.ts`) carries the kinds only this game
+  has beside them: the turn where the character stands, the chute and the false floor it leaves
+  behind, the step a monster blocked, the spellbook a kill left, the wand by its colour, the raise
+  and the reincarnation that undo a death, the potion running out, and the treasure the bank turns
+  into jewel pieces on the way in. The breath of fire and the fountain of youth are on the shared
+  union instead, because the summary adds them up the same way for whichever game has them.
+  `../README.md` has the journal and the summary in full.
 
 ## Where this leaves the original
 
