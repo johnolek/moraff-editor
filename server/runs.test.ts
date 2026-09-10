@@ -1,13 +1,24 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { batchesOf, readRunBatch, runFor, sessionsOf, takeBatch, type BatchSession, type RunBatch } from './runs';
+import {
+  batchesOf,
+  readRunBatch,
+  runFor,
+  sessionsOf,
+  takeBatch,
+  type BatchSender,
+  type BatchSession,
+  type CharacterSave,
+  type RunBatch,
+} from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
 
 const CHARACTER = 'k3p9x1-ab12cd';
 
-/** Two players, as the players table holds them once a name has been claimed. */
-const ME = 1;
-const THEM = 2;
+/** Two players, as the players table holds them once a name has been claimed, each playing from
+ *  a device of its own. */
+const ME: BatchSender = { player: 1, device: 'a'.repeat(64) };
+const THEM: BatchSender = { player: 2, device: 'b'.repeat(64) };
 
 const header: BatchSession = {
   seed: 12345,
@@ -20,6 +31,17 @@ const header: BatchSession = {
   record: 'AAEC',
 };
 
+/** The character as a batch carries it: the record as it stands and what the roster shows. */
+const save: CharacterSave = {
+  record: 'AAED',
+  maps: null,
+  slot: 21,
+  dead: false,
+  leaderboard: 'speedrun',
+  createdAt: '2026-09-08T09:00:00.000Z',
+  editedAt: '2026-09-09T12:00:00.000Z',
+};
+
 function batch(over: Partial<RunBatch> = {}): RunBatch {
   return {
     sessionIndex: 0,
@@ -28,6 +50,7 @@ function batch(over: Partial<RunBatch> = {}): RunBatch {
     pressed: 2,
     ending: false,
     claims: { mode: 'speedrun', actions: 2, time: 4, edits: 0, milestones: [] },
+    save,
     ...over,
   };
 }
@@ -37,8 +60,8 @@ describe('taking the batches of a run', () => {
 
   beforeEach(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'John']);
-    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [THEM, 'Somebody']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [THEM.player, 'Somebody']);
   });
 
   afterEach(async () => {
@@ -141,6 +164,69 @@ describe('taking the batches of a run', () => {
   });
 });
 
+describe('the character a batch carries', () => {
+  let sql: Sql;
+
+  /** The columns the character itself is kept in, as the batches have left them. */
+  function saved(): Promise<
+    { record: Uint8Array | null; maps: string | null; slot: number | null; dead: boolean; edited_at: string | null }[]
+  > {
+    return sql.query('SELECT record, maps, slot, dead, edited_at FROM characters WHERE id = $1', [CHARACTER]);
+  }
+
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
+  });
+
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  it('is kept beside the run, as the record it names', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    const [character] = await saved();
+    expect(Buffer.from(character.record!).toString('base64')).toBe('AAED');
+    expect(character).toMatchObject({ slot: 21, dead: false, edited_at: '2026-09-09T12:00:00.000Z' });
+  });
+
+  it('is the newest one sent', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, save: { ...save, record: 'AQID', dead: true } }), 6000);
+
+    const [character] = await saved();
+    expect(Buffer.from(character.record!).toString('base64')).toBe('AQID');
+    expect(character.dead).toBe(true);
+  });
+
+  it('was rolled when the device says it was', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    expect(await runFor(sql, CHARACTER)).toMatchObject({ createdAt: '2026-09-08T09:00:00.000Z' });
+  });
+
+  it('keeps the maps a batch leaves out, since they are the ones already here', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, save: { ...save, maps: '{"0:1":"AA"}' } }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, save: { ...save, maps: undefined } }), 6000);
+
+    expect((await saved())[0].maps).toBe('{"0:1":"AA"}');
+  });
+
+  it('takes away the maps of a character that has discovered none', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, save: { ...save, maps: '{"0:1":"AA"}' } }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, save: { ...save, maps: null } }), 6000);
+
+    expect((await saved())[0].maps).toBeNull();
+  });
+
+  it('is not there for a batch that carries none', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, save: undefined }), 1000);
+
+    expect((await saved())[0].record).toBeNull();
+  });
+});
+
 describe('reading a batch off a request', () => {
   it('reads one the site sent', () => {
     expect(readRunBatch({ ...batch({ session: header }) })).toMatchObject({ sequence: 0, pressed: 2 });
@@ -154,5 +240,8 @@ describe('reading a batch off a request', () => {
     expect(readRunBatch({ ...batch(), ending: 'yes' })).toBeNull();
     expect(readRunBatch({ ...batch(), claims: { mode: null, actions: 1, time: 1, edits: 0 } })).toBeNull();
     expect(readRunBatch({ ...batch(), session: { ...header, record: 5 } })).toBeNull();
+    expect(readRunBatch({ ...batch(), save: { ...save, record: 5 } })).toBeNull();
+    expect(readRunBatch({ ...batch(), save: { ...save, dead: 'yes' } })).toBeNull();
+    expect(readRunBatch({ ...batch(), save: { ...save, createdAt: 'whenever' } })).toBeNull();
   });
 });

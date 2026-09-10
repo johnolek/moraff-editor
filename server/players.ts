@@ -41,7 +41,12 @@ export function validPlayerName(name: unknown): string | null {
   return NAME.test(trimmed) ? trimmed : null;
 }
 
-function secretHash(secret: string): string {
+/**
+ * How a device is named where one has to be: the SHA-256 of its secret, which is what
+ * `player_secrets` recognises it by and what a character is leased to while it is being played.
+ * Nothing anywhere holds a secret anybody could play with.
+ */
+export function secretHash(secret: string): string {
   return createHash('sha256').update(secret).digest('hex');
 }
 

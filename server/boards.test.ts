@@ -3,10 +3,13 @@ import type { Milestone, MilestoneKind } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
 import { boardPage, deepestReach, highestLevel, RUNS_PER_PAGE, type BoardName } from './boards';
 import type { EngineStore } from './engines';
-import { endRun, takeBatch } from './runs';
+import { endRun, takeBatch, type BatchSender } from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
 import { createRunVerifier } from './verifying';
+
+/** The player whose run a test streams in, playing from one device. */
+const ME: BatchSender = { player: 1, device: 'a'.repeat(64) };
 
 function reached(kind: MilestoneKind, which: number, floor = 0): Milestone {
   return { kind, which, actions: 0, time: 0, floor };
@@ -320,7 +323,7 @@ describe('a run that went the whole way through the verifier', () => {
     await takeBatch(
       sql,
       CHARACTER,
-      1,
+      ME,
       {
         sessionIndex: 0,
         sequence: 0,
@@ -344,7 +347,7 @@ describe('a run that went the whole way through the verifier', () => {
     await takeBatch(
       sql,
       CHARACTER,
-      1,
+      ME,
       { sessionIndex: 0, sequence: 1, inputs: [106], pressed: 1, ending: true, claims: { ...claims, milestones: won } },
       6000,
     );

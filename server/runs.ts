@@ -1,6 +1,6 @@
 import type { Milestone } from '../src/lib/play/run';
-import type { BatchClaims, BatchSession, RunBatch } from '../src/lib/play/stream';
-import type { Queries } from './sql';
+import type { BatchClaims, BatchSession, CharacterSave, RunBatch } from '../src/lib/play/stream';
+import type { Queries, Sql } from './sql';
 
 /**
  * A run as it arrives: the character, its sittings, and the stretches of keys the site sends
@@ -18,13 +18,21 @@ import type { Queries } from './sql';
  * two agree on is written down once.
  */
 
-export type { BatchClaims, BatchSession, RunBatch };
+export type { BatchClaims, BatchSession, CharacterSave, RunBatch };
 
 /** Why a batch was not taken, which is what decides the words and the status the site is sent. */
 export type BatchRefusal = 'another-player' | 'no-such-sitting' | 'changed-resend';
 
 /** What became of a batch: the sequence the server now has, or why it was refused. */
 export type BatchTaken = { taken: true; received: number; ending: boolean } | { taken: false; because: BatchRefusal };
+
+/** Who sent a batch. */
+export interface BatchSender {
+  /** The player the sending device's secret belongs to. */
+  player: number;
+  /** The device itself, which is the SHA-256 of that secret. */
+  device: string;
+}
 
 /** A character's run as the server holds it, which is what `GET /runs/:id` answers with. */
 export interface KeptRun {
@@ -60,32 +68,96 @@ interface CharacterRow {
  * A batch under a sequence the run already holds is one that arrived before. It is taken again
  * when it holds the same stretch, and refused when it holds another, so that nothing a run was
  * really played with is quietly dropped.
+ *
+ * The stretch of keys and the character the batch carries go in together, in one transaction on
+ * one connection. They are two halves of one fact — this is the character, and these are the keys
+ * that brought it here — and a device that took one without the other would hand the next device
+ * a character its run cannot be followed to.
  */
 export async function takeBatch(
-  sql: Queries,
+  sql: Sql,
   characterId: string,
-  playerId: number,
+  sender: BatchSender,
   batch: RunBatch,
   arrivedAt: number,
 ): Promise<BatchTaken> {
-  const character = await characterRow(sql, characterId);
-  if (character !== null && character.player_id !== playerId) return { taken: false, because: 'another-player' };
-  if (character === null && batch.session === undefined) return { taken: false, because: 'no-such-sitting' };
-  const already = await batchAlreadyHere(sql, characterId, batch.sessionIndex, batch.sequence);
-  if (already !== null && !sameStretch(already, batch)) return { taken: false, because: 'changed-resend' };
-  if (character === null) await startCharacter(sql, characterId, playerId, batch);
-  else await describeCharacter(sql, characterId, batch);
+  return sql.transaction(async (queries) => {
+    const character = await lockCharacter(queries, characterId);
+    if (character !== null && character.player_id !== sender.player) {
+      return { taken: false, because: 'another-player' };
+    }
+    if (character === null && batch.session === undefined) return { taken: false, because: 'no-such-sitting' };
+    if (batch.session === undefined && !(await sittingHere(queries, characterId, batch.sessionIndex))) {
+      return { taken: false, because: 'no-such-sitting' };
+    }
+    const already = await batchAlreadyHere(queries, characterId, batch.sessionIndex, batch.sequence);
+    if (already !== null && !sameStretch(already, batch)) return { taken: false, because: 'changed-resend' };
 
-  if (batch.session !== undefined) await keepSession(sql, characterId, batch);
-  else if (!(await updateSessionClaims(sql, characterId, batch))) return { taken: false, because: 'no-such-sitting' };
+    if (character === null) await startCharacter(queries, characterId, sender.player, batch);
+    else await describeCharacter(queries, characterId, batch);
 
-  await appendBatch(sql, characterId, batch, arrivedAt);
-  return { taken: true, received: batch.sequence, ending: batch.ending };
+    if (batch.session !== undefined) await keepSession(queries, characterId, batch);
+    else await updateSessionClaims(queries, characterId, batch);
+
+    await appendBatch(queries, characterId, batch, arrivedAt);
+    if (batch.save !== undefined) await keepCharacterSave(queries, characterId, batch.save, arrivedAt);
+    return { taken: true, received: batch.sequence, ending: batch.ending };
+  });
 }
 
-async function characterRow(sql: Queries, characterId: string): Promise<CharacterRow | null> {
-  const rows = await sql.query<CharacterRow>('SELECT * FROM characters WHERE id = $1', [characterId]);
+/**
+ * The character's row, held against the rest of this transaction.
+ *
+ * One character can be played from two devices at once, and both send batches. The lock is what
+ * makes the reading and the writing below one step rather than two racing sets of statements: the
+ * second batch waits here until the first has been taken or refused, and then sees what it did.
+ */
+async function lockCharacter(sql: Queries, characterId: string): Promise<CharacterRow | null> {
+  const rows = await sql.query<CharacterRow>('SELECT * FROM characters WHERE id = $1 FOR UPDATE', [characterId]);
   return rows[0] ?? null;
+}
+
+/** Whether the run holds the sitting a batch belongs to, which a batch that does not carry one of
+ *  its own has to. */
+async function sittingHere(sql: Queries, characterId: string, sessionIndex: number): Promise<boolean> {
+  const rows = await sql.query(
+    'SELECT 1 AS there FROM sessions WHERE character_id = $1 AND session_index = $2',
+    [characterId, sessionIndex],
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Keep the character the batch carries: the record as it stands, the maps where they have
+ * changed, and the rest of what a roster shows.
+ *
+ * The maps are much the biggest thing a batch carries and most keys change nothing about them, so
+ * a batch whose maps are the ones the batch before it carried leaves them out and the ones here
+ * stand.
+ */
+async function keepCharacterSave(
+  sql: Queries,
+  characterId: string,
+  save: CharacterSave,
+  savedAt: number,
+): Promise<void> {
+  await sql.query(
+    `UPDATE characters
+     SET record = $1, maps = CASE WHEN $2::boolean THEN $3::text ELSE maps END, slot = $4, dead = $5,
+         leaderboard = $6, edited_at = $7, saved_at = to_timestamp($8::double precision / 1000.0)
+     WHERE id = $9`,
+    [
+      Buffer.from(save.record, 'base64'),
+      save.maps !== undefined,
+      save.maps ?? null,
+      save.slot,
+      save.dead,
+      save.leaderboard,
+      save.editedAt,
+      savedAt,
+      characterId,
+    ],
+  );
 }
 
 export async function runFor(sql: Queries, characterId: string): Promise<KeptRun | null> {
@@ -115,16 +187,21 @@ export async function endRun(sql: Queries, characterId: string, outcome: 'death'
   await sql.query('UPDATE characters SET finished_at = now(), outcome = $1 WHERE id = $2', [outcome, characterId]);
 }
 
+/**
+ * A character the server has never been told about, made known by the batch that named it.
+ *
+ * `created_at` is when the device rolled or imported the character, where the batch says so, and
+ * not when this row was written: the roster is in that order, and a player who signs in elsewhere
+ * should find their characters in the order they have always been in.
+ */
 async function startCharacter(sql: Queries, characterId: string, playerId: number, batch: RunBatch): Promise<void> {
   const session = batch.session;
   if (session === undefined) return;
-  await sql.query('INSERT INTO characters (id, player_id, game, mode, name) VALUES ($1, $2, $3, $4, $5)', [
-    characterId,
-    playerId,
-    session.game,
-    batch.claims.mode,
-    session.name,
-  ]);
+  await sql.query(
+    `INSERT INTO characters (id, player_id, game, mode, name, created_at)
+     VALUES ($1, $2, $3, $4, $5, COALESCE($6::timestamptz, now()))`,
+    [characterId, playerId, session.game, batch.claims.mode, session.name, batch.save?.createdAt ?? null],
+  );
 }
 
 /** The name and the mode a character shows by are the newest sitting's, since a character is
@@ -169,16 +246,14 @@ async function keepSession(sql: Queries, characterId: string, batch: RunBatch): 
   );
 }
 
-/** The claims of a sitting already known, and whether there was one to write them to. */
-async function updateSessionClaims(sql: Queries, characterId: string, batch: RunBatch): Promise<boolean> {
+/** What a sitting already known now claims to have come to. */
+async function updateSessionClaims(sql: Queries, characterId: string, batch: RunBatch): Promise<void> {
   const claims = batch.claims;
-  const written = await sql.query(
+  await sql.query(
     `UPDATE sessions SET mode = $1, actions = $2, time = $3, edits = $4, milestones = $5
-     WHERE character_id = $6 AND session_index = $7
-     RETURNING character_id`,
+     WHERE character_id = $6 AND session_index = $7`,
     [claims.mode, claims.actions, claims.time, claims.edits, JSON.stringify(claims.milestones), characterId, batch.sessionIndex],
   );
-  return written.length > 0;
 }
 
 /**
@@ -352,6 +427,8 @@ export function readRunBatch(body: unknown): RunBatch | null {
   if (!Array.isArray(batch.inputs) || !batch.inputs.every((input) => Number.isInteger(input))) return null;
   const session = batch.session === undefined ? undefined : readBatchSession(batch.session);
   if (batch.session !== undefined && session === undefined) return null;
+  const save = batch.save === undefined ? undefined : readCharacterSave(batch.save);
+  if (batch.save !== undefined && save === undefined) return null;
   return {
     sessionIndex: batch.sessionIndex,
     sequence: batch.sequence,
@@ -360,6 +437,35 @@ export function readRunBatch(body: unknown): RunBatch | null {
     ending: batch.ending,
     claims,
     session,
+    save,
+  };
+}
+
+/**
+ * The character a batch carries, or undefined when what it carries is not one.
+ *
+ * `maps` left out and `maps` null are two different things: the first says the maps are the ones
+ * the batch before it carried, and the second says the character has discovered none.
+ */
+function readCharacterSave(value: unknown): CharacterSave | undefined {
+  if (typeof value !== 'object' || value === null) return undefined;
+  const save = value as Record<string, unknown>;
+  if (typeof save.record !== 'string') return undefined;
+  if (save.maps !== undefined && save.maps !== null && typeof save.maps !== 'string') return undefined;
+  if (save.slot !== null && !Number.isInteger(save.slot)) return undefined;
+  if (typeof save.dead !== 'boolean') return undefined;
+  if (save.leaderboard !== null && typeof save.leaderboard !== 'string') return undefined;
+  // The moments are the device's own, and `created_at` is kept as a timestamp rather than as the
+  // text it arrived as, so one that is not a moment at all would stop the whole batch.
+  if (!isInstant(save.createdAt) || !isInstant(save.editedAt)) return undefined;
+  return {
+    record: save.record,
+    maps: save.maps as string | null | undefined,
+    slot: save.slot as number | null,
+    dead: save.dead,
+    leaderboard: save.leaderboard,
+    createdAt: save.createdAt,
+    editedAt: save.editedAt,
   };
 }
 
@@ -414,4 +520,8 @@ function isMilestone(value: unknown): boolean {
 
 function isCount(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) >= 0;
+}
+
+function isInstant(value: unknown): value is string {
+  return typeof value === 'string' && Number.isFinite(Date.parse(value));
 }

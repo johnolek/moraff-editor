@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { RunSession } from '../src/lib/play/run';
 import { RunStream, type StreamedSession } from '../src/lib/play/stream';
 import { readRunLog, verifyRun } from '../src/lib/play/verify';
-import { batchesOf, sessionsOf, takeBatch } from './runs';
+import { batchesOf, sessionsOf, takeBatch, type BatchSender } from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
 import { runLogFrom } from './verifying';
@@ -21,14 +21,14 @@ import { runLogFrom } from './verifying';
 const FIXTURE = new URL('../src/lib/play/fixtures/unforgiven-run.json', import.meta.url);
 
 const CHARACTER = 'k3p9x1-ab12cd';
-const ME = 1;
+const ME: BatchSender = { player: 1, device: 'a'.repeat(64) };
 
 /** How often the site sends, which is the gap the batches of this run land over. */
 const SENDING_INTERVAL_MS = 5000;
 
 async function openDatabase(): Promise<Sql> {
   const sql = await openTestDatabase();
-  await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'John']);
+  await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
   return sql;
 }
 

@@ -13,10 +13,11 @@ import {
   issuePassphrase,
   playerFor,
   playerNameFor,
+  secretHash,
   signInWithPassphrase,
 } from './players';
 import { endRun, readRunBatch, runFor, sessionsOf, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
-import type { Queries } from './sql';
+import type { Queries, Sql } from './sql';
 import { createRunVerifier, verdictFor, type KeptVerdict, type RunVerifier } from './verifying';
 
 /** What a refused request says. The site shows these words as they are. */
@@ -65,7 +66,7 @@ export type ServerOrigin = Pick<ServerConfig, 'allowedOrigin'>;
  * those pages go rather than wait for them; anything that does not care about stopping gets one
  * of its own.
  */
-export function createRunServer(config: ServerOrigin, sql: Queries, feed: Feed = openFeed()): Server {
+export function createRunServer(config: ServerOrigin, sql: Sql, feed: Feed = openFeed()): Server {
   const engines = openEngineStore(sql);
   const verifier = createRunVerifier(sql, engines, (announcements) => feed.announce(announcements));
   const attempts = openSignInAttempts();
@@ -353,7 +354,7 @@ function whereFrom(request: IncomingMessage): string {
 async function takeRunBatch(
   request: IncomingMessage,
   response: ServerResponse,
-  sql: Queries,
+  sql: Sql,
   verifier: RunVerifier,
   characterId: string,
 ): Promise<void> {
@@ -374,7 +375,7 @@ async function takeRunBatch(
   }
   // The arrival is stamped here, by this server's clock, because it is the one thing about a run
   // that the page it was played in cannot be asked for.
-  const taken = await takeBatch(sql, characterId, player, batch, Date.now());
+  const taken = await takeBatch(sql, characterId, { player, device: secretHash(secret) }, batch, Date.now());
   if (!taken.taken) {
     const refused = whyTheBatchWasRefused(taken.because);
     sendJson(response, refused.status, { error: refused.error });

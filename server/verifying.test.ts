@@ -3,14 +3,14 @@ import type { Milestone, RunLog, RunSession } from '../src/lib/play/run';
 import type { RunVerdict } from '../src/lib/play/verify';
 import { announcementsBefore, type Announcement } from './announcing';
 import { openEngineStore, publishEngine, type EngineStore } from './engines';
-import { endRun, takeBatch, type BatchSession, type KeptBatch, type RunBatch } from './runs';
+import { endRun, takeBatch, type BatchSender, type BatchSession, type KeptBatch, type RunBatch } from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
 import { createRunVerifier, replayChain, runLogFrom, runTiming, verdictFor, verifyKeptRun, type RunTiming } from './verifying';
 
 const CHARACTER = 'k3p9x1-ab12cd';
 const ENGINE = 'a'.repeat(40);
-const ME = 1;
+const ME: BatchSender = { player: 1, device: 'a'.repeat(64) };
 
 function arrived(over: Partial<KeptBatch>): KeptBatch {
   return { sessionIndex: 0, sequence: 0, inputs: [], pressed: 0, arrivedAt: 0, ending: false, ...over };
@@ -181,7 +181,7 @@ describe('replaying a run once its last batch has arrived', () => {
 
   beforeEach(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'John']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
   });
 
   afterEach(async () => {
@@ -291,7 +291,7 @@ describe('announcing a run that has been checked', () => {
 
   beforeEach(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'Moraff']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'Moraff']);
   });
 
   afterEach(async () => {
