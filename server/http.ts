@@ -32,6 +32,7 @@ const NOT_A_BATCH = 'That is not a batch of a run.';
 const ANOTHER_PLAYER = 'That character belongs to another player.';
 const NO_SUCH_SITTING = 'That run has no such sitting.';
 const CHANGED_RESEND = 'That stretch of the run arrived before, holding something else.';
+const MOVED_ON = 'That character has been played on another device since.';
 const NO_SUCH_RUN = 'No such run.';
 const NOT_YOUR_RUN = 'That run is not yours to read.';
 const NOT_A_PAGE = 'That is not a page of a board.';
@@ -394,12 +395,13 @@ async function takeRunBatch(
  * What a refused batch is answered with.
  *
  * A batch of a sitting nobody ever sent is the site asking for something that is not there, which
- * is a 400. The other two are about a run the server already holds and will not have written
- * over, which is what 409 says.
+ * is a 400. The rest are about a run the server already holds and will not have written over,
+ * which is what 409 says.
  */
 function whyTheBatchWasRefused(because: BatchRefusal): { status: number; error: string } {
   if (because === 'another-player') return { status: 409, error: ANOTHER_PLAYER };
   if (because === 'changed-resend') return { status: 409, error: CHANGED_RESEND };
+  if (because === 'moved-on') return { status: 409, error: MOVED_ON };
   return { status: 400, error: NO_SUCH_SITTING };
 }
 

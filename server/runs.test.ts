@@ -164,6 +164,96 @@ describe('taking the batches of a run', () => {
   });
 });
 
+describe('a sitting the server has been told about before', () => {
+  let sql: Sql;
+
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
+  });
+
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  /** What the sender does at the start of every sitting: the sittings before it, whole, one batch
+   *  each, since the device cannot know which of them the server was ever told about. */
+  function catchUp(inputs: number[], over: Partial<BatchSession> = {}): RunBatch {
+    return batch({ inputs, pressed: 0, session: { ...header, ...over } });
+  }
+
+  it('takes the sitting again and adds the keys it never saw', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, inputs: [104] }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [106] }), 6000);
+
+    const caught = await takeBatch(sql, CHARACTER, ME, catchUp([104, 106, 107]), 60000);
+
+    expect(caught).toEqual({ taken: true, received: 0, ending: false });
+    expect((await batchesOf(sql, CHARACTER)).flatMap((kept) => kept.inputs)).toEqual([104, 106, 107]);
+  });
+
+  it('writes nothing where it holds the whole sitting already', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, inputs: [104] }), 1000);
+    await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [106] }), 6000);
+
+    expect(await takeBatch(sql, CHARACTER, ME, catchUp([104, 106]), 60000)).toEqual({
+      taken: true,
+      received: 0,
+      ending: false,
+    });
+    expect(await batchesOf(sql, CHARACTER)).toHaveLength(2);
+  });
+
+  it('refuses keys that do not go on from the ones it holds', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, inputs: [104, 106] }), 1000);
+
+    const other = await takeBatch(sql, CHARACTER, ME, catchUp([104, 111]), 60000);
+
+    expect(other).toEqual({ taken: false, because: 'moved-on' });
+    expect((await batchesOf(sql, CHARACTER)).flatMap((kept) => kept.inputs)).toEqual([104, 106]);
+  });
+
+  it('refuses another sitting under the same number', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, inputs: [104] }), 1000);
+
+    const elsewhere = await takeBatch(sql, CHARACTER, ME, catchUp([104], { startedAt: '2026-09-10T08:00:00.000Z' }), 60000);
+
+    expect(elsewhere).toEqual({ taken: false, because: 'moved-on' });
+  });
+
+  it('refuses keys for a sitting the run has been played past', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header, inputs: [104] }), 1000);
+    await takeBatch(
+      sql,
+      CHARACTER,
+      ME,
+      batch({ sessionIndex: 1, inputs: [107], session: { ...header, startedAt: '2026-09-09T13:00:00.000Z' } }),
+      60000,
+    );
+
+    const behind = await takeBatch(sql, CHARACTER, ME, catchUp([104, 106]), 120000);
+
+    expect(behind).toEqual({ taken: false, because: 'moved-on' });
+  });
+
+  it('takes the sittings before the one being played, whole, when it was never told about them', async () => {
+    await takeBatch(sql, CHARACTER, ME, catchUp([104, 106]), 60000);
+    const now = await takeBatch(
+      sql,
+      CHARACTER,
+      ME,
+      batch({ sessionIndex: 1, inputs: [107], session: { ...header, startedAt: '2026-09-09T13:00:00.000Z' } }),
+      60100,
+    );
+
+    expect(now).toEqual({ taken: true, received: 0, ending: false });
+    expect((await batchesOf(sql, CHARACTER)).map((kept) => [kept.sessionIndex, kept.inputs])).toEqual([
+      [0, [104, 106]],
+      [1, [107]],
+    ]);
+  });
+});
+
 describe('the character a batch carries', () => {
   let sql: Sql;
 

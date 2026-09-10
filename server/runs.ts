@@ -21,7 +21,7 @@ import type { Queries, Sql } from './sql';
 export type { BatchClaims, BatchSession, CharacterSave, RunBatch };
 
 /** Why a batch was not taken, which is what decides the words and the status the site is sent. */
-export type BatchRefusal = 'another-player' | 'no-such-sitting' | 'changed-resend';
+export type BatchRefusal = 'another-player' | 'no-such-sitting' | 'changed-resend' | 'moved-on';
 
 /** What became of a batch: the sequence the server now has, or why it was refused. */
 export type BatchTaken = { taken: true; received: number; ending: boolean } | { taken: false; because: BatchRefusal };
@@ -69,6 +69,10 @@ interface CharacterRow {
  * when it holds the same stretch, and refused when it holds another, so that nothing a run was
  * really played with is quietly dropped.
  *
+ * A batch that carries its own sitting is a different matter, and {@link keysToAdd} is where that
+ * is worked out: such a batch always holds the sitting from its first key, so what is new about it
+ * is whatever comes after the keys the server already holds.
+ *
  * The stretch of keys and the character the batch carries go in together, in one transaction on
  * one connection. They are two halves of one fact — this is the character, and these are the keys
  * that brought it here — and a device that took one without the other would hand the next device
@@ -87,11 +91,25 @@ export async function takeBatch(
       return { taken: false, because: 'another-player' };
     }
     if (character === null && batch.session === undefined) return { taken: false, because: 'no-such-sitting' };
-    if (batch.session === undefined && !(await sittingHere(queries, characterId, batch.sessionIndex))) {
-      return { taken: false, because: 'no-such-sitting' };
-    }
-    const already = await batchAlreadyHere(queries, characterId, batch.sessionIndex, batch.sequence);
+
+    const chain = await sittingsHere(queries, characterId);
+    const newest = chain[chain.length - 1]?.index ?? null;
+    const held = chain.find((sitting) => sitting.index === batch.sessionIndex) ?? null;
+    if (batch.session === undefined && held === null) return { taken: false, because: 'no-such-sitting' };
+
+    const already =
+      batch.session === undefined
+        ? await batchAlreadyHere(queries, characterId, batch.sessionIndex, batch.sequence)
+        : null;
     if (already !== null && !sameStretch(already, batch)) return { taken: false, because: 'changed-resend' };
+
+    const adding = await keysToAdd(queries, characterId, batch, held, already !== null);
+    if (adding === null) return { taken: false, because: 'moved-on' };
+    // Keys for a sitting the run has been played past belong to a run this one is not: another
+    // device carried the character on while this one was away.
+    if (adding.inputs.length > 0 && newest !== null && batch.sessionIndex < newest) {
+      return { taken: false, because: 'moved-on' };
+    }
 
     if (character === null) await startCharacter(queries, characterId, sender.player, batch);
     else await describeCharacter(queries, characterId, batch);
@@ -99,10 +117,55 @@ export async function takeBatch(
     if (batch.session !== undefined) await keepSession(queries, characterId, batch);
     else await updateSessionClaims(queries, characterId, batch);
 
-    await appendBatch(queries, characterId, batch, arrivedAt);
+    if (adding.append) await appendBatch(queries, characterId, { ...batch, ...adding }, arrivedAt);
     if (batch.save !== undefined) await keepCharacterSave(queries, characterId, batch.save, arrivedAt);
     return { taken: true, received: batch.sequence, ending: batch.ending };
   });
+}
+
+/** Which keys of a batch are new, where they go, and whether there is a stretch to write at all. */
+interface KeysToAdd {
+  sequence: number;
+  inputs: number[];
+  append: boolean;
+}
+
+/**
+ * What a batch has to add to the run, or null where it belongs to a run this one is not.
+ *
+ * A batch that carries its own sitting carries that sitting from its first key: the first batch
+ * of a game holds everything played so far, and a sitting the server was never told about goes as
+ * one batch of the whole thing. Every new sitting sends the ones before it again that way
+ * (`catchUpBatch` in `src/lib/play/stream.ts`), because the device cannot know which of them the
+ * server was ever told about. So where the server already holds that sitting, what is new about
+ * the batch is only the keys beyond the ones already kept, and they go in as a stretch of their
+ * own after them.
+ *
+ * Anything else about a sitting already here — another seed, another moment, keys that do not go
+ * on from the ones here — is a second run of the same character played somewhere else. That is
+ * not something to fold in.
+ */
+async function keysToAdd(
+  sql: Queries,
+  characterId: string,
+  batch: RunBatch,
+  held: SittingHere | null,
+  arrivedBefore: boolean,
+): Promise<KeysToAdd | null> {
+  if (batch.session === undefined || held === null) {
+    return { sequence: batch.sequence, inputs: batch.inputs, append: !arrivedBefore };
+  }
+  if (held.seed !== batch.session.seed || held.startedAt !== batch.session.startedAt) return null;
+  const kept = await keysHere(sql, characterId, batch.sessionIndex);
+  if (!startsWith(batch.inputs, kept)) return null;
+  const inputs = batch.inputs.slice(kept.length);
+  return { sequence: await nextSequence(sql, characterId, batch.sessionIndex), inputs, append: inputs.length > 0 };
+}
+
+/** Whether the keys begin with the ones already kept, which is what says the two halves are
+ *  talking about the same sitting of the same run. */
+function startsWith(all: readonly number[], start: readonly number[]): boolean {
+  return all.length >= start.length && start.every((key, at) => all[at] === key);
 }
 
 /**
@@ -117,14 +180,40 @@ async function lockCharacter(sql: Queries, characterId: string): Promise<Charact
   return rows[0] ?? null;
 }
 
-/** Whether the run holds the sitting a batch belongs to, which a batch that does not carry one of
- *  its own has to. */
-async function sittingHere(sql: Queries, characterId: string, sessionIndex: number): Promise<boolean> {
-  const rows = await sql.query(
-    'SELECT 1 AS there FROM sessions WHERE character_id = $1 AND session_index = $2',
+/** One sitting of a run as the server holds it, which is what says whether a batch of it belongs
+ *  to the run here or to another one of the same character. */
+interface SittingHere {
+  index: number;
+  seed: number;
+  startedAt: string;
+}
+
+/** The sittings the run holds, oldest first. */
+async function sittingsHere(sql: Queries, characterId: string): Promise<SittingHere[]> {
+  const rows = await sql.query<{ session_index: number; seed: number; started_at: string }>(
+    'SELECT session_index, seed, started_at FROM sessions WHERE character_id = $1 ORDER BY session_index',
+    [characterId],
+  );
+  return rows.map((row) => ({ index: row.session_index, seed: row.seed, startedAt: row.started_at }));
+}
+
+/** Every key the run holds for one sitting, in the order they were played. */
+async function keysHere(sql: Queries, characterId: string, sessionIndex: number): Promise<number[]> {
+  const rows = await sql.query<{ inputs: number[] }>(
+    'SELECT inputs FROM batches WHERE character_id = $1 AND session_index = $2 ORDER BY sequence',
     [characterId, sessionIndex],
   );
-  return rows.length > 0;
+  return rows.flatMap((row) => row.inputs);
+}
+
+/** The sequence a stretch added to a sitting already here goes under, which is after every
+ *  stretch of it the server holds. */
+async function nextSequence(sql: Queries, characterId: string, sessionIndex: number): Promise<number> {
+  const rows = await sql.query<{ highest: number | null }>(
+    'SELECT max(sequence) AS highest FROM batches WHERE character_id = $1 AND session_index = $2',
+    [characterId, sessionIndex],
+  );
+  return (rows[0]?.highest ?? -1) + 1;
 }
 
 /**
