@@ -1,5 +1,6 @@
 import data from '../dotu-data.json';
 import type { ActionEvent } from '../action';
+import type { JournalEvent } from '../journal-events';
 import { BRIGHT_COLOURS } from '../dotu-pic.js';
 import { DUNGEON_XMAX, DUNGEON_YMAX, HEIGHT, WIDTH } from '../unfmap.js';
 import type { Rng } from './rng';
@@ -406,8 +407,26 @@ export type GameEvent =
    * `level` is the one they wake on.
    */
   | { kind: 'levelGained'; level: number }
+  /** chute (exe 2000:b532): the square the chute stood on and the floor it dropped to. */
+  | { kind: 'chuteTaken'; from: { x: number; y: number }; to: number }
+  /** The character has arrived on a floor of a section they were not in, 0 to 19. Each section
+   *  is five floors with its own monsters and its own Shadow boss. */
+  | { kind: 'sectionReached'; section: number }
+  /**
+   * One of UH2.BIN's stone tablets read: the town's greeting, or a section boss's taunt, whose
+   * section this names. `entry` is the message's number in the file.
+   */
+  | { kind: 'tabletRead'; entry: number; section: number | null }
+  /** FUN_2000_31bc (exe 2000:31bc): the snake's word on arriving on a floor, by its number in
+   *  UH.BIN. */
+  | { kind: 'hintRead'; hint: number }
+  /** bank (exe 2000:568b), menu entry 1: Greater-American Dollars changed into rubles. */
+  | { kind: 'dollarsChanged'; dollars: number; rubles: number }
   /** One of the things a run counts, pushed where the game does it (`src/lib/game/action.ts`). */
-  | ActionEvent;
+  | ActionEvent
+  /** One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
+   *  where the kinds a run counts as actions carry their numbers. */
+  | JournalEvent;
 
 /** The columns of the type table `mstats` (exe DS:5402) that the ported functions read. */
 export interface MonsterStats {
