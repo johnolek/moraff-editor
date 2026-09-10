@@ -129,13 +129,10 @@ export function playTimeWords(playMs: number, timed: boolean): string {
   return `${seconds}s`;
 }
 
-/** How SQLite writes `datetime('now')`. It is always UTC and says so nowhere, and a browser
- *  handed it as it stands reads it as local time and is hours out. */
-const SQLITE_UTC = /^\d{4}-\d\d-\d\d \d\d:\d\d:\d\d$/;
-
-/** When something happened, in the reader's own time. */
+/** When something happened, in the reader's own time. The server sends a moment as an ISO 8601
+ *  string in UTC, which a browser reads as the moment it is and shows where the reader is. */
 export function whenWords(at: string | null): string {
   if (at === null) return NOTHING_TO_SHOW;
-  const when = new Date(SQLITE_UTC.test(at) ? `${at.replace(' ', 'T')}Z` : at);
+  const when = new Date(at);
   return Number.isNaN(when.getTime()) ? at : when.toLocaleString();
 }
