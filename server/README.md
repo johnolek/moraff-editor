@@ -48,7 +48,7 @@ pnpm start:server     # runs dist-server/main.mjs
 
 The build is one self-contained file: the migrations and the Postgres client are
 read into it, and only Node's own modules are imported at run time. Nothing else
-needs to be copied to the box.
+goes in the image it is deployed in.
 
 ## Configuration
 
@@ -285,80 +285,124 @@ by `publish:engine` and the server replays nothing with one: nobody can check
 that tree out again to see what it was. So a dirty build is fine to make and try
 on your own machine, and never reaches the database.
 
-## Deploying by hand
+## Deploying with Coolify
 
-Build on your machine and copy what it makes over. The box keeps the two
-directories this repository has them in, because the server looks for an engine
-build at `../server/engines/<commit>/engine.mjs` beside itself. These are yours
-to run:
+Coolify builds the image from this repository and runs it. There is no volume
+and nothing kept on the box: everything, the engine builds included, is in the
+Postgres `DATABASE_URL` names, and the backup is the Postgres backup below.
+
+The `Dockerfile` at the root is the whole build. It installs with the lockfile,
+runs `pnpm build:server` and `pnpm build:engine`, and keeps `dist-server/` and
+the one `server/engines/<commit>/` that build made — both in the place this
+repository has them in, which is how the started server finds its own engine
+build beside itself.
+
+The application, made once:
+
+- **Source**: this repository, branch `main`.
+- **Build pack**: Dockerfile.
+- **Port**: 3580, which is the port the image exposes and the server's default.
+- **Domain**: whatever John points at it, say `https://runs.example.com`.
+  Coolify's proxy terminates HTTPS and the server never sees a certificate.
+- **Health check**: `GET /health` on that port. The image carries one already,
+  so Coolify's own only has to agree with it if it is turned on at all.
+- **No volume**, no persistent storage, no command to run after a deploy.
+
+The variables:
+
+| Variable            | What to set it to                                  |
+| ------------------- | -------------------------------------------------- |
+| `DATABASE_URL`      | The Postgres, as the container reaches it (below)  |
+| `RUN_SERVER_PORT`   | `3580`, or leave it out for the same thing         |
+| `RUN_SERVER_ORIGIN` | `https://johnolek.github.io`                       |
+
+### Reaching the Postgres
+
+`DATABASE_URL` is the one that takes a decision, because `127.0.0.1` inside a
+container is the container. Two addresses reach a Postgres on the same host, and
+John picks whichever is true of his:
+
+- **A Postgres Coolify runs itself** is a container on a docker network, and its
+  service name is its host name:
+  `postgres://moraff:something@<service>:5432/moraff_runs`. The server has to be
+  on that network, which Coolify arranges when the database and the application
+  are resources of the same project.
+- **A Postgres running on the host** is reached at `host.docker.internal` where
+  the docker on that box provides it, and otherwise at the address of the docker
+  bridge, usually `172.17.0.1`, or the host's own address on its network. That
+  Postgres has to be listening on the address in question — `listen_addresses`
+  in `postgresql.conf`, which is `localhost` by default and hears nothing from a
+  container — and `pg_hba.conf` has to allow the container's subnet.
+
+Either way the role and the database are made by hand first, as under "The
+database" above; the server makes its own schema and runs its own migrations the
+first time it starts.
+
+### The commit the image says it is
+
+A container's `/health` names the commit its image was built from:
 
 ```bash
-pnpm build:server
-pnpm build:engine
-scp dist-server/main.mjs box:/srv/moraff-run-server/dist-server/main.mjs
-scp -r "server/engines/$(git rev-parse HEAD)" box:/srv/moraff-run-server/server/engines/
-ssh box 'sudo systemctl restart moraff-run-server'
+curl https://runs.example.com/health
+# {"ok":true,"engineCommit":"<the commit>","engines":["<and the ones it keeps>"]}
 ```
 
-The second copy puts this commit's engine where the restarted server will find
-it, and the server publishes it to the database as it starts. That is why the
-checkout has to be clean: a dirty tree has no directory under a commit's name to
-copy, and a dirty build would be refused anyway.
+A build context has no git in it, so `vite.config.ts` reads that commit from the
+`SOURCE_COMMIT` build argument, which Coolify sets to the commit it checked out.
+`unknown` there means the argument never arrived: look for it in the deploy's
+build log, and make sure no build argument of that name has been set by hand in
+the application's configuration to something else.
 
-The first time, make somewhere for it to live:
+### What a redeploy does
 
-```bash
-ssh box 'sudo mkdir -p /srv/moraff-run-server/dist-server /srv/moraff-run-server/server/engines'
-```
+A deploy builds a new image and starts it in place of the old one. The new
+container runs whatever migration files the database has not seen, and publishes
+its own commit's engine build into the `engines` table beside every build
+already there, so a run played on last month's site is still replayed by the
+engine that played it. Nothing is ever taken out and nothing is copied by hand.
 
-`/etc/systemd/system/moraff-run-server.service`:
-
-```ini
-[Unit]
-Description=Moraff run server
-After=network.target
-
-[Service]
-ExecStart=/usr/bin/node /srv/moraff-run-server/dist-server/main.mjs
-Environment=RUN_SERVER_PORT=3580
-Environment=DATABASE_URL=postgres://moraff:something@127.0.0.1:5432/moraff_runs
-Environment=RUN_SERVER_ORIGIN=https://johnolek.github.io
-User=moraff
-Restart=always
-RestartSec=2
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Then `sudo systemctl daemon-reload && sudo systemctl enable --now
-moraff-run-server`, and `journalctl -u moraff-run-server -n 50` for what it
-said. `systemctl stop` sends SIGTERM, which is what the server waits for to
+The old container is stopped with SIGTERM, which is what the server waits for to
 finish the requests in hand and let go of the database.
 
-The proxy terminates HTTPS and the server never sees a certificate. An nginx
-server block:
+### The feed through the proxy
 
-```nginx
-server {
-    listen 443 ssl;
-    server_name runs.example.com;
+`GET /feed` is one answer held open for as long as somebody leaves the page up,
+with an announcement written into it as each is made. A proxy that buffered it
+would hold each announcement back until enough of them filled a buffer, and the
+boards would look dead. Traefik, which is what Coolify puts in front, passes a
+stream straight through and needs nothing set for this.
 
-    ssl_certificate     /etc/letsencrypt/live/runs.example.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/runs.example.com/privkey.pem;
+If announcements never arrive, or the connection is dropped every minute or so:
 
-    location / {
-        proxy_pass http://127.0.0.1:3580;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
+```bash
+curl -N https://runs.example.com/feed
 ```
 
-Whatever address that ends up being is what the site's build is given:
-`VITE_RUN_SERVER=https://runs.example.com pnpm build`. A build without it has
-no server and the site behaves as it does today.
+That should print a comment line at once and another every 25 seconds. If the
+comments arrive and announcements do not, something in front is buffering:
+check that `X-Accel-Buffering: no` and `Content-Type: text/event-stream` are
+still on the answer as it comes out of the proxy, and if Coolify has been put
+behind nginx or Caddy instead, that the buffering is turned off there.
+
+## The site's half
+
+The site is built by GitHub Actions and served from GitHub Pages, and it shows
+the Boards tab and the announcements only when its build was given the server's
+address. That address is the repository variable `RUN_SERVER_URL` — Settings,
+Secrets and variables, Actions, Variables — which
+`.github/workflows/deploy.yml` hands to the build as `VITE_RUN_SERVER`:
+
+1. Set `RUN_SERVER_URL` to the domain, `https://runs.example.com`.
+2. Push `main`, and the site that deploys has the address in it.
+
+A repository without that variable builds with an empty address, which is the
+same as having none: no Boards tab and nothing sent anywhere. So the site can be
+deployed long before the server is, and the tab appears with the first push
+after the variable is set.
+
+`RUN_SERVER_ORIGIN` on the server is the other half of that: it is the origin
+the browser is told may read the answers, and it has to be where the site really
+is, `https://johnolek.github.io`.
 
 ## Backups
 
