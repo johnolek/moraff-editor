@@ -11,7 +11,9 @@
   import type { Snippet } from 'svelte';
   import { onDestroy, untrack } from 'svelte';
   import { app, currentEntry, entryById, type Leaderboard } from '../app-state.svelte';
+  import { catchUpWithTheServer } from '../character/current';
   import { leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
+  import { beingPlayedElsewhere } from '../character/server-roster';
   import type FloorCanvas from '../map/FloorCanvas.svelte';
   import { armSpeaker } from '../speaker';
   import { isTyping } from '../ui/keys';
@@ -40,6 +42,9 @@
   import './play-tab.css';
 
   type Stage = PlayStage<Session, View>;
+
+  /** What the tab says instead of starting a game the player is already playing somewhere else. */
+  const BEING_PLAYED_ELSEWHERE = 'Being played on another device.';
 
   interface Props {
     game: PlayGame<Session, View>;
@@ -107,6 +112,12 @@
    *  given no server address has neither. */
   let streamer = $state.raw<RunStreamer | null>(null);
   let runMark = $state.raw<RunMark | null>(null);
+  /** Why the game did not start, which is only ever that the character is being played on
+   *  another device of this player's. */
+  let elsewhere = $state.raw<string | null>(null);
+  /** The server is being asked whether the character is free to play, so a second click on the
+   *  button does not start a second game behind the first. */
+  let starting = $state.raw(false);
   let display = $state<PlayDisplay>(untrack(() => readPlayDisplay(game.id)));
   let colourblind = $state(untrack(() => readPlayColourblind(game.id)));
   let redraw = $state(untrack(() => readPlayRedraw(game.id)));
@@ -117,7 +128,25 @@
   });
   const playable = $derived(character !== null && character.game === game.id);
 
-  function start() {
+  /**
+   * Start a game, unless the character is being played somewhere else.
+   *
+   * One character is played from one device at a time: two would write two runs over each other
+   * and neither would be the character's. The server is asked first, and a server that says
+   * nothing — no build address, no name on this device, nothing answering — is no reason not to
+   * play, so the game starts.
+   */
+  async function start() {
+    if (starting) return;
+    const wanted = currentEntry();
+    if (!wanted) return;
+    starting = true;
+    elsewhere = (await beingPlayedElsewhere(wanted.id)) ? BEING_PLAYED_ELSEWHERE : null;
+    starting = false;
+    if (elsewhere === null) startTheGame();
+  }
+
+  function startTheGame() {
     const entry = currentEntry();
     if (!entry) return;
     // Where this game comes in the character's run, taken before it starts: the roster entry gains
@@ -139,6 +168,7 @@
         earlier,
         mode: () => mode,
         onMark: (mark) => (runMark = mark),
+        movedOn: () => void catchUpWithTheServer(),
       });
     }
     void runPlayLoop(started, game.loop(started));
@@ -183,7 +213,7 @@
     const wanted = app.startPlaying;
     if (wanted === null || session || !character || character.id !== wanted) return;
     app.startPlaying = null;
-    start();
+    void start();
   });
 
   function leave() {
@@ -328,8 +358,13 @@
           <p class="hint">{character.name} is dead. Playing on carries on from wherever the game last saved them.</p>
         {/if}
         <div class="row">
-          <button type="button" class="go" onclick={start}>Play as {character?.name}</button>
+          <button type="button" class="go" disabled={starting} onclick={() => void start()}>
+            Play as {character?.name}
+          </button>
         </div>
+        {#if elsewhere}
+          <p class="hint" role="status">{elsewhere}</p>
+        {/if}
       {/if}
       <PlayRoster game={game.id} />
     </div>

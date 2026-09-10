@@ -110,6 +110,15 @@ export interface StreamedSession {
 }
 
 /**
+ * The server's word for a character it has been sent a newer run of than this device is playing:
+ * another device carried the character on while this one was away.
+ *
+ * It is the one refusal the site does something about rather than only showing, which is why the
+ * server's word for it is written down here beside the shapes the two halves agree on.
+ */
+export const MOVED_ON = 'moved-on';
+
+/**
  * What came of posting a batch: the server has it, it refused it in words, or it was not reached
  * at all.
  *
@@ -117,8 +126,11 @@ export interface StreamedSession {
  * take — the character is somebody else's, the device has claimed no name — and sending it again
  * would only be refused again. Being unreachable is nothing at all having happened, and the
  * stretch waits for the next batch.
+ *
+ * `refusal` is the words to show and `because` is the server's own word for what happened, which
+ * is what the site acts on.
  */
-export type BatchAnswer = { took: true } | { took: false; refusal: string | null };
+export type BatchAnswer = { took: true } | { took: false; refusal: string | null; because?: string | null };
 
 export type PostBatch = (batch: RunBatch) => Promise<BatchAnswer>;
 
@@ -127,7 +139,7 @@ export type SendResult =
   | { sent: 'nothing' }
   | { sent: 'taken' }
   | { sent: 'unreachable' }
-  | { sent: 'refused'; because: string };
+  | { sent: 'refused'; words: string; because: string | null };
 
 /**
  * The sender for one sitting at a game.
@@ -151,8 +163,8 @@ export class RunStream {
   private started = false;
   /** The batch that says the run is over has been built, so there is not another one. */
   private ended = false;
-  /** The server's words for a run it will not take, once it has said them. */
-  private refused: string | null = null;
+  /** The server's answer to a run it will not take, once it has given one. */
+  private refused: { words: string; because: string | null } | null = null;
   /** The maps the last batch built carried, so that the next one carries them only if they have
    *  changed. Undefined until a batch has been built, which no character's maps ever are. */
   private sentMaps: string | null | undefined = undefined;
@@ -235,7 +247,7 @@ export class RunStream {
   /** Send everything the server has not said it has: the sittings before this one, and then the
    *  batches of this one in the order they were built. */
   async send(ending: boolean): Promise<SendResult> {
-    if (this.refused !== null) return { sent: 'refused', because: this.refused };
+    if (this.refused !== null) return { sent: 'refused', ...this.refused };
     let anything = false;
     for (;;) {
       const batch = this.next(ending);
@@ -243,8 +255,8 @@ export class RunStream {
       const answer = await this.post(batch);
       if (!answer.took) {
         if (answer.refusal === null) return { sent: 'unreachable' };
-        this.refused = answer.refusal;
-        return { sent: 'refused', because: answer.refusal };
+        this.refused = { words: answer.refusal, because: answer.because ?? null };
+        return { sent: 'refused', ...this.refused };
       }
       this.took(batch);
       anything = true;

@@ -5,7 +5,14 @@ import { offTheBoards, playerSecret } from '../player';
 import { runServerUrl } from '../run-server';
 import type { PlayMode } from './mode';
 import type { RunRecorder, RunSession } from './run';
-import { RunStream, type BatchAnswer, type CharacterSave, type RunBatch, type StreamedSession } from './stream';
+import {
+  MOVED_ON,
+  RunStream,
+  type BatchAnswer,
+  type CharacterSave,
+  type RunBatch,
+  type StreamedSession,
+} from './stream';
 
 /**
  * Sending a run to the run server while it is being played.
@@ -42,6 +49,8 @@ export interface RunMark {
 }
 
 const SENDING: RunMark = { words: 'Sending to the boards.', note: null, tone: 'plain' };
+const SAVING: RunMark = { words: 'Saving your character.', note: null, tone: 'plain' };
+const SAVED: RunMark = { words: 'Character saved.', note: null, tone: 'plain' };
 const UNREACHABLE: RunMark = { words: 'The boards are not answering.', note: null, tone: 'bad' };
 const CHECKING: RunMark = { words: 'Checking the run.', note: null, tone: 'plain' };
 const OFF_THE_BOARDS: RunMark = {
@@ -50,6 +59,11 @@ const OFF_THE_BOARDS: RunMark = {
   tone: 'plain',
 };
 const NOT_CHECKED_YET: RunMark = { words: 'Still being checked.', note: null, tone: 'plain' };
+const PLAYED_ELSEWHERE: RunMark = {
+  words: 'This character was played elsewhere.',
+  note: 'The copy here has been replaced with the one from the boards.',
+  tone: 'bad',
+};
 const OFF_THE_CLOCK = 'Off the wall clock: more keys than a person could press.';
 
 function refusedMark(why: string): RunMark {
@@ -112,10 +126,15 @@ export interface StreamRun {
   session: StreamedSession;
   /** The sittings the character was played in before this one. */
   earlier: readonly RunSession[];
-  /** How the game is being shown now. Nothing is sent while it is debug: that is the mode with
-   *  the game's hidden numbers on the screen, and no run played that way is one for the boards. */
+  /** How the game is being shown now. Debug is the mode with the game's hidden numbers on the
+   *  screen: such a run is kept like any other and never checked or ranked. */
   mode: () => PlayMode;
   onMark: (mark: RunMark) => void;
+  /**
+   * The server holds a newer run of this character than the one being played: another device
+   * carried it on while this one was away. The tab takes the server's copy over.
+   */
+  movedOn: () => void;
 }
 
 /**
@@ -161,7 +180,11 @@ class Streamer implements RunStreamer {
   ended(): void {
     if (this.over || this.stopped) return;
     this.over = true;
-    void this.send(true).then(() => this.askForTheVerdict());
+    void this.send(true).then(() => {
+      // A character on no board, and one played with the game's hidden numbers on the screen, is
+      // kept and never checked, so there is no verdict coming to ask about.
+      if (this.forTheBoards()) return this.askForTheVerdict();
+    });
   }
 
   stop(): void {
@@ -172,16 +195,24 @@ class Streamer implements RunStreamer {
     if (!this.over) void this.send(false);
   }
 
+  /**
+   * Whether this run is one for the boards, which is what says there is a verdict to wait for.
+   *
+   * Every character of a player with a name is kept on the server, so that it is there on
+   * whatever device they sign in on next. Only a character rolled for a board, played in a mode
+   * that counts, is checked and ranked; the rest are saved and no more.
+   */
+  private forTheBoards(): boolean {
+    return this.run.session.log().leaderboard !== null && this.run.mode() !== 'debug';
+  }
+
   private async send(ending: boolean): Promise<void> {
-    // Debug shows the numbers the game never prints, so a run is not sent while it is on. The
-    // keys go on being written down and the stretch goes with the next batch after the mode has
-    // been put back.
-    if (this.sending || this.run.mode() === 'debug') {
+    if (this.sending) {
       this.leaving = false;
       return;
     }
-    // The player has opted out, so nothing about the run leaves the device. The keys are still
-    // written down, and coming back on to the boards sends the lot from then on.
+    // The player has opted out, so nothing about the character leaves the device. The keys are
+    // still written down, and coming back on to the boards sends the lot from then on.
     if (offTheBoards()) {
       this.leaving = false;
       this.run.onMark(OFF_THE_BOARDS);
@@ -191,13 +222,27 @@ class Streamer implements RunStreamer {
     try {
       const result = await this.stream.send(ending);
       if (result.sent === 'unreachable') this.run.onMark(UNREACHABLE);
-      else if (result.sent === 'refused') this.run.onMark(refusedMark(result.because));
-      else if (!this.over) this.run.onMark(SENDING);
-      else this.run.onMark(CHECKING);
+      else if (result.sent === 'refused') this.refused(result.words, result.because);
+      else if (!this.over) this.run.onMark(this.forTheBoards() ? SENDING : SAVING);
+      else this.run.onMark(this.forTheBoards() ? CHECKING : SAVED);
     } finally {
       this.sending = false;
       this.leaving = false;
     }
+  }
+
+  /**
+   * A run the server will not take. A character it holds a newer run of than this device is
+   * playing is the one refusal there is something to do about: the copy here is behind, so the
+   * tab takes the server's over and says so.
+   */
+  private refused(words: string, because: string | null): void {
+    if (because !== MOVED_ON) {
+      this.run.onMark(refusedMark(words));
+      return;
+    }
+    this.run.onMark(PLAYED_ELSEWHERE);
+    this.run.movedOn();
   }
 
   /** Replaying a run happens behind the answer to the batch that ended it, so the verdict is
@@ -246,10 +291,15 @@ class Streamer implements RunStreamer {
       // A server that broke or is not up is not a run being refused: the stretch waits and goes
       // with the next batch, the way it does when nothing answered at all.
       if (response.status >= 500) return { took: false, refusal: null };
-      // A refusal carries the words to show: the server is where the rules about a run live.
+      // A refusal carries the words to show, and the server's own word for what happened beside
+      // them: the server is where the rules about a run live.
       const body: unknown = await response.json().catch(() => null);
-      const refusal = (body as { error?: unknown } | null)?.error;
-      return { took: false, refusal: typeof refusal === 'string' ? refusal : 'The boards refused the run.' };
+      const said = body as { error?: unknown; because?: unknown } | null;
+      return {
+        took: false,
+        refusal: typeof said?.error === 'string' ? said.error : 'The boards refused the run.',
+        because: typeof said?.because === 'string' ? said.because : null,
+      };
     } catch {
       return { took: false, refusal: null };
     }

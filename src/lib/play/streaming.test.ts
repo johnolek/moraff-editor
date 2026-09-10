@@ -58,23 +58,41 @@ function sitting(): StreamedSession {
   };
 }
 
-/** A sender pointed at a server that takes everything, and what the Play tab was told. */
-function sender(): { stop(): void; posts: string[]; marks: RunMark[] } {
+/** What a test's server answers a batch with. */
+type Answer = () => Response;
+
+const TAKEN: Answer = () => new Response(JSON.stringify({ received: 0 }), { status: 200 });
+
+/** A sender pointed at a server, and what the Play tab was told. */
+function sender(
+  answer: Answer = TAKEN,
+  over: Partial<Parameters<typeof streamRun>[0]> = {},
+): { stop(): void; posts: string[]; marks: RunMark[]; movedOn: number } {
   const posts: string[] = [];
   vi.stubGlobal('fetch', (url: string) => {
     posts.push(url);
-    return Promise.resolve(new Response(JSON.stringify({ received: 0 }), { status: 200 }));
+    return Promise.resolve(answer());
   });
   const marks: RunMark[] = [];
+  const told = { movedOn: 0 };
   const streamer = streamRun({
     characterId: 'k3p9x1-ab12cd',
     session: sitting(),
     earlier: [],
     mode: () => 'faithful',
     onMark: (mark) => marks.push(mark),
+    movedOn: () => (told.movedOn += 1),
+    ...over,
   });
   if (streamer === null) throw new Error('The build under test has no run server.');
-  return { stop: () => streamer.stop(), posts, marks };
+  return {
+    stop: () => streamer.stop(),
+    posts,
+    marks,
+    get movedOn() {
+      return told.movedOn;
+    },
+  };
 }
 
 /** The sender posts from an async method, so a turn of the microtask queue is what it takes for
@@ -88,11 +106,72 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** A browser with a store, a window to hang a listener on and a server to send to, which is what
+ *  the sender needs before it will do anything at all. */
+function browser(): void {
+  Object.defineProperty(globalThis, 'localStorage', { value: fakeStorage(), configurable: true, writable: true });
+  fakeWindow();
+  vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+}
+
+describe('sending a character that is on no board', () => {
+  it('sends it all the same, and says it is being saved rather than sent to the boards', async () => {
+    browser();
+    setOffTheBoards(false);
+
+    const run = sender(TAKEN, { mode: () => 'debug' });
+    run.stop();
+    await settled();
+
+    expect(run.posts).toEqual(['https://runs.example.com/runs/k3p9x1-ab12cd/batches']);
+  });
+});
+
+describe('a character played on another device since', () => {
+  it('says so and asks for the server’s copy', async () => {
+    browser();
+    setOffTheBoards(false);
+    const movedOn: Answer = () =>
+      new Response(JSON.stringify({ error: 'That character has been played on another device since.', because: 'moved-on' }), {
+        status: 409,
+      });
+
+    const run = sender(movedOn);
+    run.stop();
+    await settled();
+
+    expect(run.movedOn).toBe(1);
+    expect(run.marks[run.marks.length - 1]).toEqual({
+      words: 'This character was played elsewhere.',
+      note: 'The copy here has been replaced with the one from the boards.',
+      tone: 'bad',
+    });
+  });
+
+  it('shows the words of any other refusal and leaves the copy here alone', async () => {
+    browser();
+    setOffTheBoards(false);
+    const theirs: Answer = () =>
+      new Response(JSON.stringify({ error: 'That character belongs to another player.', because: 'another-player' }), {
+        status: 409,
+      });
+
+    const run = sender(theirs);
+    run.stop();
+    await settled();
+
+    expect(run.movedOn).toBe(0);
+    expect(run.marks[run.marks.length - 1]).toEqual({
+      words: 'The boards refused the run.',
+      note: 'That character belongs to another player.',
+      tone: 'bad',
+    });
+  });
+});
+
 describe('sending a run while the player is off the boards', () => {
   it('sends nothing at all, and says so', async () => {
-    Object.defineProperty(globalThis, 'localStorage', { value: fakeStorage(), configurable: true, writable: true });
-    fakeWindow();
-    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    browser();
     setOffTheBoards(true);
 
     const run = sender();
@@ -108,9 +187,7 @@ describe('sending a run while the player is off the boards', () => {
   });
 
   it('sends once the player is back on them', async () => {
-    Object.defineProperty(globalThis, 'localStorage', { value: fakeStorage(), configurable: true, writable: true });
-    fakeWindow();
-    vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+    browser();
     setOffTheBoards(false);
 
     const run = sender();

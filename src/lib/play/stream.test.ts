@@ -197,24 +197,23 @@ describe('sending a run as it is played', () => {
     expect(sent.map((batch) => batch.sequence)).toEqual([0, 0]);
   });
 
-  it('stops for good once the server has refused the run', async () => {
+  it('stops for good once the server has refused the run, and says why it did', async () => {
     const game = played();
+    const refused = {
+      sent: 'refused',
+      words: 'That character belongs to another player.',
+      because: 'another-player',
+    };
     let asked = 0;
     const stream = new RunStream(game.sitting, () => {
       asked += 1;
-      return Promise.resolve({ took: false, refusal: 'That character belongs to another player.' });
+      return Promise.resolve({ took: false, refusal: refused.words, because: refused.because });
     });
 
     game.press(104);
-    expect(await stream.send(false)).toEqual({
-      sent: 'refused',
-      because: 'That character belongs to another player.',
-    });
+    expect(await stream.send(false)).toEqual(refused);
     game.press(106);
-    expect(await stream.send(false)).toEqual({
-      sent: 'refused',
-      because: 'That character belongs to another player.',
-    });
+    expect(await stream.send(false)).toEqual(refused);
     expect(asked).toBe(1);
   });
 
