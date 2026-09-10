@@ -2,7 +2,7 @@ import type { Leaderboard, RosterEntry } from '../app-state.svelte';
 
 /**
  * A character on the roster: what one is made of and what happens to it. Where the roster is
- * kept is `roster-db.ts`; nothing here touches a store.
+ * kept is `roster-db.svelte.ts`; nothing here touches a store.
  */
 
 /** What is needed to put a character on the roster. */

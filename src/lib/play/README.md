@@ -143,7 +143,7 @@ played, so that a claimed ending can be checked by playing it again rather than 
   `runTotals` adds a chain up.
 * **Where it is kept** — on the roster entry (`RosterEntry.run`) in the page, in the browser's
   database beside the record and the squares the character has discovered
-  (`src/lib/character/roster-db.ts`), and, for a player who has claimed
+  (`src/lib/character/roster-db.svelte.ts`), and, for a player who has claimed
   a name, on the run server, which is what puts the roster on their other devices. A signed-in
   page merges the two at startup and the server's copy stands, except where this device holds keys
   the server has never been sent; `src/lib/character/server-roster.ts` is that rule and

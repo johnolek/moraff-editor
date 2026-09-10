@@ -28,7 +28,7 @@ import {
   withEntry,
   withoutEntry,
 } from './roster';
-import { dropCharacter, keepPlayed, readRoster, type PlayedSession } from './roster-db';
+import { dropCharacter, keepPlayed, readRoster, type PlayedSession } from './roster-db.svelte';
 import {
   deviceIsAhead,
   entryFromServer,

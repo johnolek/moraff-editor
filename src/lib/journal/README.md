@@ -37,9 +37,9 @@ Nothing here writes a journal or works out what it came to. The lines are the ga
 
 - **The Play tab** — `RosterEntry.journal`, one list per sitting of the run, which the recorder
   writes as the game is played and the browser's database keeps
-  (`src/lib/character/roster-db.ts`). The tab runs the sittings together, so a character played
-  twice shows both of them in one timeline. It asks `lock.ts` first and shows the note instead
-  where the answer is no.
+  (`src/lib/character/roster-db.svelte.ts`). The tab runs the sittings together, so a character
+  played twice shows both of them in one timeline. It asks `lock.ts` first and shows the note
+  instead where the answer is no.
 - **A run's page** — `GET /runs/:id`, which carries the journal the server's replay wrote and how
   far the run had got by the end of it. Everything on that page has been through a replay that
   passed it, so nothing there is locked.

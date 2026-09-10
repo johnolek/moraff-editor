@@ -9,12 +9,12 @@ import { newEntry } from './roster';
  * The store keeps the database it opened, so every test takes a fresh module over a fresh
  * database rather than one test's characters turning up in the next.
  */
-let store: typeof import('./roster-db');
+let store: typeof import('./roster-db.svelte');
 
 beforeEach(async () => {
   vi.resetModules();
   globalThis.indexedDB = new IDBFactory();
-  store = await import('./roster-db');
+  store = await import('./roster-db.svelte');
 });
 
 const ROLLED_AT = new Date('2026-09-06T12:00:00Z');
@@ -217,7 +217,7 @@ describe('a browser that keeps no database', () => {
   beforeEach(async () => {
     vi.resetModules();
     Reflect.deleteProperty(globalThis, 'indexedDB');
-    store = await import('./roster-db');
+    store = await import('./roster-db.svelte');
   });
 
   it('says the roster could not be read rather than that there is none', async () => {

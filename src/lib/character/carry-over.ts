@@ -3,7 +3,7 @@ import { saveCurrentCharacter } from '../game-choice';
 import type { RunSession } from '../play/run';
 import { isRunSession } from '../play/verify';
 import { isLeaderboard } from './leaderboard';
-import { keepMaps, keepPlayed } from './roster-db';
+import { keepMaps, keepPlayed } from './roster-db.svelte';
 import { fromBase64, readStored, removeStored, storedKeys } from './storage';
 
 /**

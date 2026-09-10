@@ -1,4 +1,4 @@
-import { keepMaps, readKeptMaps } from './roster-db';
+import { keepMaps, readKeptMaps } from './roster-db.svelte';
 
 /**
  * The squares a character has discovered, as one string that can be handed about whole.
@@ -36,7 +36,7 @@ export function writeCharacterMaps(id: string, maps: string | null): void {
 }
 
 /** The page's copy of a character's maps, dropped with the character. The row in the database
- *  goes with `dropCharacter` in `roster-db.ts`. */
+ *  goes with `dropCharacter` in `roster-db.svelte.ts`. */
 export function forgetCharacterMaps(id: string): void {
   kept.delete(id);
 }

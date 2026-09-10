@@ -36,14 +36,14 @@ function useStorage(storage: Storage | undefined): void {
 /** The carry-over and the database it writes into are both read fresh, so one test's characters
  *  do not turn up in the next. */
 let carryOver: typeof import('./carry-over');
-let store: typeof import('./roster-db');
+let store: typeof import('./roster-db.svelte');
 
 beforeEach(async () => {
   vi.resetModules();
   globalThis.indexedDB = new IDBFactory();
   useStorage(fakeStorage());
   carryOver = await import('./carry-over');
-  store = await import('./roster-db');
+  store = await import('./roster-db.svelte');
 });
 
 afterEach(() => useStorage(undefined));
