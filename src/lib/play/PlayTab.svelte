@@ -156,7 +156,7 @@
   );
 
   /**
-   * Start a game, unless the character is being played somewhere else.
+   * Start a game, unless the character is dead or is being played somewhere else.
    *
    * One character is played from one device at a time: two would write two runs over each other
    * and neither would be the character's. The server is asked first, and a server that says
@@ -167,6 +167,9 @@
     if (starting) return;
     const wanted = currentEntry();
     if (!wanted) return;
+    // The dead stay dead. This is the one door into a game — the button and the roller's Play now
+    // both come through here — so nowhere else has to ask.
+    if (wanted.dead) return;
     starting = true;
     elsewhere = (await beingPlayedElsewhere(wanted.id)) ? BEING_PLAYED_ELSEWHERE : null;
     // The roster the server hands over carries no keys, so a character another device played
@@ -390,15 +393,18 @@
         <p class="hint">{game.hint}</p>
       {:else}
         {#if character?.dead}
-          <p class="hint">{character.name} is dead. Playing on carries on from wherever the game last saved them.</p>
-        {/if}
-        <div class="row">
-          <button type="button" class="go" disabled={starting} onclick={() => void start()}>
-            Play as {character?.name}
-          </button>
-        </div>
-        {#if elsewhere}
-          <p class="hint" role="status">{elsewhere}</p>
+          <p class="hint">
+            {character.name} is dead and cannot be played again. The record is still there in the Save Editor.
+          </p>
+        {:else}
+          <div class="row">
+            <button type="button" class="go" disabled={starting} onclick={() => void start()}>
+              Play as {character?.name}
+            </button>
+          </div>
+          {#if elsewhere}
+            <p class="hint" role="status">{elsewhere}</p>
+          {/if}
         {/if}
       {/if}
       <PlayRoster game={game.id} />
