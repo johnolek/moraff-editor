@@ -322,8 +322,9 @@ export function inn(game: MwGame, stay: boolean): void {
   innClearPreparation(game);
   innClearPreparationSpells(game);
   if (!canLevelUp(game)) return;
+  const was = pc.lev;
   pc.lev = levelFromExperience(game);
-  game.events.push({ kind: 'levelGained', level: pc.lev });
+  game.events.push({ kind: 'levelGained', level: pc.lev, from: was });
   // DS:2320 2341 235e 237d 239b 23bb 23d9
   game.say(
     'CONGRATULATIONS! YOU HAVE BECOME',

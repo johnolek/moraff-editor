@@ -1,9 +1,14 @@
+import data from '../mw-data.json';
 import type { ActionEvent } from '../action';
+import type { JournalEvent, MonsterSeen } from '../journal-events';
 import type { Rng } from '../port/rng';
 import { BorlandRng } from '../port/rng';
 import type { ScreenLine } from '../port/state';
 import type { MwStockedMonster } from './stocking';
 import { MONSTER_SLOTS } from './stocking';
+
+/** The 112 rows of the monster table (exe DS:0237), which is where a monster's name comes from. */
+const MW_MONSTERS = data.monsters;
 
 /**
  * The character record Moraff's World writes.
@@ -313,9 +318,51 @@ export type MwEvent =
    * The inn (WORLD.EXE 2000:35b1) has handed the character every level their experience has
    * earned. `level` is the one they wake on.
    */
-  | { kind: 'levelGained'; level: number }
+  | { kind: 'levelGained'; level: number; from: number }
+  /**
+   * One of the six vitamin pills a level drainer left behind (WORLD.EXE 3000:d51c). `pill` is
+   * the byte of the record it is counted in, which runs orange, green, blue, red, white, yellow.
+   */
+  | { kind: 'pillFound'; pill: number }
+  /** FUN_3000_d37f (WORLD.EXE 3000:d37f): a cup of health drunk, and the points it gave back. */
+  | { kind: 'cupOfHealth'; healed: number }
+  /** FUN_3000_d43b (WORLD.EXE 3000:d43b): a shimmering ball of thought, which is one spell
+   *  point back. */
+  | { kind: 'ballOfThought' }
+  /**
+   * One of the four things a quest boss's item is a plus on (WORLD.EXE 3000:d51c): the weapon
+   * the two orbs enhance, which `item` names, and the body armor, the gauntlet and the ring of
+   * protection, which the character has one of and `item` is null for.
+   */
+  | { kind: 'gearEnhanced'; what: 'weapon' | 'bodyArmor' | 'gauntlet' | 'ring'; item: string | null; plus: number }
+  /** The temple's raise-dead contract (WORLD.EXE 2000:3085, menu entry 6), which writes down the
+   *  square death sends the character back to. */
+  | { kind: 'contractSigned'; dungeon: number; x: number; y: number }
+  /** That contract spent (WORLD.EXE 2000:726f): the character is alive again in the town of the
+   *  dungeon it named. */
+  | { kind: 'raised'; dungeon: number }
+  /** bank (WORLD.EXE 2000:3716), menu entry 1: every stone the character carries turned into
+   *  jewels, at the only exchange in the game. */
+  | { kind: 'stonesConverted'; jewels: number }
+  /** FUN_3000_a047 (WORLD.EXE 3000:a047): the pockets opened, and which of its five pages was
+   *  read. */
+  | { kind: 'pocketsRead'; page: number }
+  /**
+   * A characteristic moved by a monster (WORLD.EXE 2000:615c): a puffball's parting gift or a
+   * drainer's, by the name the game's own message calls it. `by` is negative for a drain.
+   */
+  | { kind: 'statChanged'; stat: string; by: number; monster: MonsterSeen }
+  /** A poisoning or a disease a blow brought with it (WORLD.EXE 2000:615c). */
+  | { kind: 'afflicted'; what: 'poison' | 'disease'; monster: MonsterSeen }
+  /** Hit points a battle spell took off the monster being fought. */
+  | { kind: 'spellDamaged'; monster: MonsterSeen; damage: number }
   /** One of the things a run counts, pushed where the game does it (`src/lib/game/action.ts`). */
-  | ActionEvent;
+  | ActionEvent
+  /**
+   * One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
+   * where the kinds a run counts as actions carry their numbers.
+   */
+  | JournalEvent;
 
 /**
  * One answer to the three menus that the Write Scroll and Enchant Wand spells walk through: the
@@ -654,6 +701,15 @@ export function blankMwCharacter(): MwCharacter {
 export function mwOccupantAt(game: MwGame, x: number, y: number): number {
   const value = game.monsterMap[y * MW_FLOOR_COLUMNS + x];
   return value === MW_SQUARE_EMPTY ? -1 : value;
+}
+
+/**
+ * The monster in a slot as a run journal names it: its kind, the depth it was stocked at, which
+ * is the level every one of this game's formulas uses, and the name the fight's banner prints.
+ */
+export function mwMonsterSeen(game: MwGame, slot: number): MonsterSeen {
+  const monster = game.monsters[slot];
+  return { type: monster.type, level: monster.depth, name: MW_MONSTERS[monster.type].name };
 }
 
 /** set_occupant (WORLD.EXE 2000:45a1, mw.c "set_occupant"): write one square of the grid. */
