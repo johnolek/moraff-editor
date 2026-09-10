@@ -1,6 +1,6 @@
 import type { DatabaseSync } from 'node:sqlite';
 import { shortCommit } from '../src/lib/commit';
-import type { RunLog, RunSession, RunTotals } from '../src/lib/play/run';
+import type { Milestone, RunLog, RunSession, RunTotals } from '../src/lib/play/run';
 import type { CheckedSession, RunVerdict } from '../src/lib/play/verify';
 import { announceRun, type Announcement } from './announcing';
 import { deepestReach, highestLevel } from './boards';
@@ -136,7 +136,7 @@ export interface KeptVerdict {
   reason: string | null;
   actions: number;
   time: number;
-  milestones: unknown[];
+  milestones: Milestone[];
   playMs: number;
   timed: boolean;
   /** Whether the run may go on a board at all. */
@@ -385,7 +385,7 @@ export function verdictFor(database: DatabaseSync, characterId: string): KeptVer
     reason: row.reason,
     actions: row.actions,
     time: row.time,
-    milestones: JSON.parse(row.milestones) as unknown[],
+    milestones: JSON.parse(row.milestones) as Milestone[],
     playMs: row.play_ms,
     timed: row.timed === 1,
     eligible: row.eligible === 1,
