@@ -2,7 +2,6 @@ node_modules
 dist/
 dist-cli/
 dist-server/
-server/data/
 server/engines/*
 !server/engines/.gitkeep
 .DS_Store
