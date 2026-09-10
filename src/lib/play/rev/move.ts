@@ -1,5 +1,5 @@
 import { COLUMNS, ROWS, blocked } from '../../game/revmap.js';
-import { REV_EAST, REV_NORTH, REV_SOUTH, REV_WEST } from './keys';
+import { revJournalFacing, REV_EAST, REV_NORTH, REV_SOUTH, REV_WEST } from './keys';
 import type { RevGame } from './state';
 
 /**
@@ -62,6 +62,7 @@ export function revStep(game: RevGame, direction: number): RevStep {
   if (game.fight !== null && game.monsters.slotOn(column, row) > 0) {
     game.kept.printAt(BLOCKS_ROW, BLOCKS_COLUMN, MONSTER_BLOCKS_WAY);
     game.say(MONSTER_BLOCKS_WAY);
+    game.events.push({ kind: 'wayBlocked', direction: revJournalFacing(direction) });
     return 'monster';
   }
   // 1000:3121: a step nothing is standing in the way of rubs the line out before it goes on to
@@ -75,7 +76,7 @@ export function revStep(game: RevGame, direction: number): RevStep {
   if (column < 1 || column > COLUMNS || row < 1 || row > ROWS) return 'edge';
   pc.column = column;
   pc.row = row;
-  game.events.push({ kind: 'stepped' });
+  game.events.push({ kind: 'stepped', dir: revJournalFacing(direction) });
   // 1000:3187: the same four branches count the step, which is what the fight's Speed and
   // Strength spells run out on.
   game.steps += 1;

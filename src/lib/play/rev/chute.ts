@@ -30,7 +30,9 @@ export function revFallDownAChute(game: RevGame, save: () => void): boolean {
   }
   game.say(FELL_DOWN_A_CHUTE);
   save();
+  const from = { column: pc.column, row: pc.row };
   pc.dungeonLevel = chuteLanding(pc.column, pc.row, pc.dungeonLevel);
+  game.events.push({ kind: 'chuteTaken', from, to: pc.dungeonLevel });
   // 1000:3560: the square is left with a code that is no feature of its own, so that the false
   // floor is the only thing the next pass can find on it.
   game.feature = REV_AFTER_A_CHUTE;

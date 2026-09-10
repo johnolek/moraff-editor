@@ -42,8 +42,15 @@ import { revShowHelp } from './help';
 import { revPause } from './pause';
 import { revSetEnterDelay, revStepBackground, revStepPalette, revToggleSound } from './settings';
 import { revKillMonster } from './kill';
-import { REV_KEY, revArrowMode, revCompassArrow, revTurningArrow, revWrapFacing } from './keys';
-import { revFeatureUnder, revLookDown } from './ladders';
+import {
+  REV_KEY,
+  revArrowMode,
+  revCompassArrow,
+  revJournalFacing,
+  revTurningArrow,
+  revWrapFacing,
+} from './keys';
+import { revFeatureUnder, revLookDown, revOnAFalseFloor } from './ladders';
 import { RevMapMemory, type RevMapStore } from './memory';
 import type { PlayMode } from '../mode';
 import { KeyedSession, RECORD_EDITED, type CharacterFile, type HeldFrames, type KeyHandler } from '../session';
@@ -53,6 +60,7 @@ import { loadRevPlayer, saveRevPlayer, type RevPc } from './record';
 import type { RunRecorder, RunTotals } from '../run';
 import { revAdvice } from './advice';
 import {
+  REV_BUILDING_NAMES,
   revBuildingUnder,
   revStayAtInn,
   revVisitBank,
@@ -284,6 +292,7 @@ export class RevGameSession extends KeyedSession<RevPc> {
     const pc = this.game.pc;
     const from = pc.dungeonLevel;
     pc.dungeonLevel = Math.min(Math.max(level, 0), LEVELS);
+    this.game.events.push({ kind: 'floorReached', floor: pc.dungeonLevel });
     this.game.monsters.stock(pc.dungeonLevel, this.game.rng);
     // 1000:3F42: the spells that last until the town are taken off when the character reaches
     // it, and 1000:3F4E is one of the five moments the character is saved.
@@ -472,12 +481,15 @@ function goDown(turn: RevTurn): void {
   // character is standing on it.
   if (revAtTheFountain(game)) {
     revDrinkFromTheFountain(game, turn.session.magic());
-    game.events.push({ kind: 'fountainDrunk' });
+    game.events.push({ kind: 'fountainDrunk', generation: game.pc.generation });
     return;
   }
   if (game.feature < 1 || game.feature > 3) return;
-  turn.session.enterLevel(game.pc.dungeonLevel + game.feature);
-  game.events.push({ kind: 'ladderTaken' });
+  // Which of the two the D key was has to be asked before the character leaves the square.
+  const falseFloor = revOnAFalseFloor(game);
+  const to = game.pc.dungeonLevel + game.feature;
+  turn.session.enterLevel(to);
+  game.events.push({ kind: 'ladderTaken', to, falseFloor });
 }
 
 /** 1000:0DAF: U takes a ladder up, or climbs the rope into a town building. */
@@ -488,8 +500,9 @@ async function goUp(turn: RevTurn): Promise<void> {
     return;
   }
   if (game.feature >= 0) return;
-  turn.session.enterLevel(game.pc.dungeonLevel + game.feature);
-  game.events.push({ kind: 'ladderTaken' });
+  const to = game.pc.dungeonLevel + game.feature;
+  turn.session.enterLevel(to);
+  game.events.push({ kind: 'ladderTaken', to, falseFloor: false });
 }
 
 /** 1000:132A: `ON building GOTO`, the seven routines the ten squares lead to. */
@@ -499,7 +512,7 @@ async function enterBuilding(turn: RevTurn, building: number): Promise<void> {
   // building is counted on the way in rather than on the way out, so that what a player is shown
   // while they are inside one already has it.
   if (building < 1 || building > 7) return;
-  turn.game.events.push({ kind: 'buildingEntered' });
+  turn.game.events.push({ kind: 'buildingEntered', building: REV_BUILDING_NAMES[building - 1] });
   if (building <= 3) await revStayAtInn(turn.game, building - 1, desk);
   else if (building === 4) await revVisitBank(turn.game, desk);
   else if (building === 5) await revVisitTemple(turn.game, desk);
@@ -696,5 +709,6 @@ async function stepOrTurn(session: RevGameSession, key: number): Promise<RevStep
   if (arrow === null) return null;
   if (arrow.step) return revStep(game, pc.facing);
   pc.facing += arrow.turn;
+  game.events.push({ kind: 'turned', facing: revJournalFacing(revWrapFacing(pc.facing)) });
   return null;
 }

@@ -46,6 +46,27 @@ export function revFeatureUnder(column: number, row: number, level: number): num
 }
 
 /**
+ * Whether the D key on the square the character is standing on opens a false floor rather than a
+ * ladder.
+ *
+ * The square the last chute landed on lets the fall go on another level, and so does the square
+ * one level under it — 1000:069D compares the landing level against the level and 1000:06AD
+ * against the level less one, and 1000:06BB takes either. Nothing writes the landing down again
+ * afterwards, so a chute is followed by two of these drops at the most. 1000:0680 wants a level
+ * above the deepest, since the drop has to go somewhere. A square with a ladder down of its own
+ * never reaches the test at all.
+ */
+export function revOnAFalseFloor(game: RevGame): boolean {
+  const pc = game.pc;
+  if (revFeatureUnder(pc.column, pc.row, pc.dungeonLevel) <= DEEPEST_LADDER) return false;
+  const landing = game.chuteLanding;
+  const atTheLanding = landing?.level === pc.dungeonLevel;
+  const oneUnderTheLanding = landing?.level === pc.dungeonLevel - 1;
+  const here = landing?.column === pc.column && landing?.row === pc.row;
+  return Boolean(here && (atTheLanding || oneUnderTheLanding) && pc.dungeonLevel < LEVELS);
+}
+
+/**
  * 1000:0642: the top of every pass, where the game works out what is underfoot and says so.
  *
  * The town takes a detour first — 1000:12C6, which puts the rope up over one of the ten building
@@ -61,16 +82,8 @@ export function revLookDown(game: RevGame): void {
   if (pc.dungeonLevel === 0 && townBuilding(pc.column, pc.row) > 0) lines.push(ROPE_ABOVE);
   const code = game.feature;
   if (code > DEEPEST_LADDER) {
-    // 1000:064D: the square the last chute landed on lets the fall go on another level, and so
-    // does the square one level under it — 1000:069D compares the landing level against the
-    // level and 1000:06AD against the level less one, and 1000:06BB takes either. Nothing
-    // writes the landing down again afterwards, so a chute is followed by two of these drops at
-    // the most. 1000:0680 wants a level above the deepest, since the drop has to go somewhere.
-    const landing = game.chuteLanding;
-    const atTheLanding = landing?.level === pc.dungeonLevel;
-    const oneUnderTheLanding = landing?.level === pc.dungeonLevel - 1;
-    const here = landing?.column === pc.column && landing?.row === pc.row;
-    if (here && (atTheLanding || oneUnderTheLanding) && pc.dungeonLevel < LEVELS) {
+    // 1000:064D: the false floor is a D key like the ladder's, one level down.
+    if (revOnAFalseFloor(game)) {
       game.feature = 1;
       lines.push(`${FALSE_FLOOR} ${GO_DOWN}`);
     }

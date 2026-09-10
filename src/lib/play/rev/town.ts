@@ -41,6 +41,22 @@ export function revBuildingUnder(column: number, row: number, level: number): nu
   return level === 0 ? townBuilding(column, row) : 0;
 }
 
+/**
+ * What the game calls each of the seven buildings the ten town squares lead to, in the order
+ * `ON building GOTO` lists them (1000:132A): the three inns name themselves in the line each
+ * opens with (1000:1E0A, 1F3D and 1FCD), and the other four in theirs (1000:22F7 "You are in the
+ * store." and its neighbours).
+ */
+export const REV_BUILDING_NAMES = [
+  'Flea Bag Inn',
+  'Yuppydom Inn',
+  'Kings Inn',
+  'Bank',
+  'Temple',
+  'Store',
+  "Wizard's Guild",
+];
+
 /** 1000:1DE5 and 1000:1DF2: what an inn asks, and what it says to a character who cannot pay. */
 const STAY = 'Do you want to stay (Y or N)?           ';
 const THROWN_OUT = ['A gaurd throws you out because you', "   don't have enough money."];

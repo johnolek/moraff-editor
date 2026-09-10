@@ -140,6 +140,18 @@ export function revCompassArrow(key: number): number {
   return COMPASS_FACING[key] ?? 0;
 }
 
+/**
+ * The same facing as a run journal numbers it, since the two count the compass differently: the
+ * game reads 1 north, 2 east, 3 south, 4 west, and the journal 0 north, 1 south, 2 west, 3 east
+ * (`src/lib/game/journal-events.ts`).
+ */
+export function revJournalFacing(facing: number): number {
+  if (facing === REV_NORTH) return 0;
+  if (facing === REV_SOUTH) return 1;
+  if (facing === REV_WEST) return 2;
+  return 3;
+}
+
 /** 1000:05F2: the facing is brought back into 1 to 4 at the top of every pass. */
 export function revWrapFacing(facing: number): number {
   if (facing < 1) return facing + 4;
