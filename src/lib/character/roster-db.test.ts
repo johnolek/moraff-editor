@@ -36,6 +36,18 @@ function played(entry: RosterEntry, keys: number[]): void {
   ];
 }
 
+/**
+ * The value behind a Proxy that hands out Proxies for whatever it holds, which is what reading a
+ * character out of the site's reactive roster gives: Svelte wraps every array and plain object
+ * it reaches through `$state`, and structured clone refuses a Proxy outright.
+ */
+function reactiveLike<T>(value: T): T {
+  if (typeof value !== 'object' || value === null) return value;
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== Array.prototype) return value;
+  return new Proxy(value, { get: (target, key) => reactiveLike(Reflect.get(target, key)) });
+}
+
 /** Every session of every character, which is what the carry-over and the first write name. */
 function allSessions(entries: RosterEntry[]) {
   return entries.flatMap((entry) => entry.run.map((_, at) => ({ entry, at })));
@@ -60,6 +72,17 @@ describe('the roster in the database', () => {
 
     const read = await store.readRoster();
     expect(read?.[0].journal).toEqual(entry.journal);
+  });
+
+  it('keeps a journal read out of the reactive roster', async () => {
+    const entry = character('a', 'SAGEY');
+    played(entry, [-0x48]);
+    const journal = entry.journal;
+    entry.journal = reactiveLike(journal);
+    expect(await store.keepPlayed([entry], allSessions([entry]))).toBe(true);
+
+    const read = await store.readRoster();
+    expect(read?.[0].journal).toEqual(journal);
   });
 
   it('is nothing at all before anything has been kept', async () => {

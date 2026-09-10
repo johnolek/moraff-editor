@@ -230,7 +230,9 @@ function sessionRow({ entry, at }: PlayedSession): SessionRow | null {
 /** A session's journal as its row, or null where the run has no session at that place. */
 function journalRow({ entry, at }: PlayedSession): JournalRow | null {
   if (!entry.run[at]) return null;
-  return { character: entry.id, index: at, entries: entry.journal[at] ?? [] };
+  // A character read out of the site's roster is reactive, so its journal is a Proxy, and the
+  // database refuses to clone a Proxy. The snapshot is the same lines as plain arrays and objects.
+  return { character: entry.id, index: at, entries: $state.snapshot(entry.journal[at] ?? []) };
 }
 
 /**
