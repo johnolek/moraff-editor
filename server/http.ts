@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import { shortCommit } from '../src/lib/commit';
 import type { ServerConfig } from './config';
 import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
+import { openSignInAttempts, type SignInAttempts } from './attempts';
 import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './boards';
 import { writeCorsHeaders } from './cors';
 import { ENGINE_COMMIT, openEngineStore, type EngineStore } from './engines';
@@ -18,6 +19,7 @@ const NAME_TAKEN = 'That name is taken.';
 const NO_NAME_YET = 'This device has no name yet.';
 const SIGN_IN_REFUSED = 'That name and passphrase do not go together.';
 const ANOTHER_NAME_HERE = 'This device already has a name of its own.';
+const TOO_MANY_TRIES = 'Too many tries. Wait a quarter of an hour and try again.';
 const NOT_A_BATCH = 'That is not a batch of a run.';
 const ANOTHER_PLAYER = 'That character belongs to another player.';
 const NO_SUCH_SITTING = 'That run has no such sitting.';
@@ -59,6 +61,7 @@ export type ServerOrigin = Pick<ServerConfig, 'allowedOrigin'>;
 export function createRunServer(config: ServerOrigin, sql: Queries, feed: Feed = openFeed()): Server {
   const engines = openEngineStore(sql);
   const verifier = createRunVerifier(sql, engines, (announcements) => feed.announce(announcements));
+  const attempts = openSignInAttempts();
 
   return createServer((request, response) => {
     writeCorsHeaders(response, request.headers.origin, config.allowedOrigin);
@@ -91,7 +94,7 @@ export function createRunServer(config: ServerOrigin, sql: Queries, feed: Feed =
     }
 
     if (request.method === 'POST' && path === '/players/sign-in') {
-      void signInHere(request, response, sql);
+      void signInHere(request, response, sql, attempts);
       return;
     }
 
@@ -258,23 +261,51 @@ async function claimName(request: IncomingMessage, response: ServerResponse, sql
  * then on. A wrong name and a wrong passphrase are one answer, because saying which of the two was
  * wrong tells whoever is guessing which half to keep guessing at.
  */
-async function signInHere(request: IncomingMessage, response: ServerResponse, sql: Queries): Promise<void> {
+async function signInHere(
+  request: IncomingMessage,
+  response: ServerResponse,
+  sql: Queries,
+  attempts: SignInAttempts,
+): Promise<void> {
   const secret = bearerSecret(request);
   if (secret === null) {
     sendJson(response, 400, { error: NOT_A_SECRET });
     return;
   }
   const body = (await readJsonBody(request)) as { name?: unknown; passphrase?: unknown } | null;
+  const name = typeof body?.name === 'string' ? body.name : '';
+  const from = whereFrom(request);
+  if (attempts.tooMany(name, from)) {
+    sendJson(response, 429, { error: TOO_MANY_TRIES });
+    return;
+  }
   const signedIn = await signInWithPassphrase(sql, secret, body?.name, body?.passphrase);
   if (!signedIn.signedIn) {
     if (signedIn.because === 'another-player') {
       sendJson(response, 409, { error: ANOTHER_NAME_HERE });
       return;
     }
+    attempts.failed(name, from);
     sendJson(response, 401, { error: SIGN_IN_REFUSED });
     return;
   }
   sendJson(response, 200, { name: signedIn.name });
+}
+
+/**
+ * Where a request came from, as far as this server can tell.
+ *
+ * The socket is the proxy's: Coolify puts Traefik in front and every request arrives from it, so
+ * the address that means anything is the first hop of `X-Forwarded-For`, which is what the proxy
+ * writes the caller's address into. A server reached with nothing in front of it is handed that
+ * header by whoever asked and could be told anything, which is why nothing but the slowing down
+ * of guesses is decided by it.
+ */
+function whereFrom(request: IncomingMessage): string {
+  const forwarded = request.headers['x-forwarded-for'];
+  const said = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim();
+  if (said !== undefined && said !== '') return said;
+  return request.socket.remoteAddress ?? 'nowhere';
 }
 
 /**

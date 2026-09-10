@@ -12,6 +12,8 @@ const NEWCOMER = 'C'.repeat(43);
 const FIRST_DEVICE = 'D'.repeat(43);
 const SECOND_DEVICE = 'E'.repeat(43);
 const OTHER_DEVICE = 'F'.repeat(43);
+const GUESSED_AT = 'G'.repeat(43);
+const GUESSING = 'H'.repeat(43);
 
 let sql: Sql;
 const started: Server[] = [];
@@ -192,5 +194,26 @@ describe('signing a second device in with a passphrase', () => {
 
     expect(response.status).toBe(409);
     expect(await (await nameOn(OTHER_DEVICE)).json()).toEqual({ name: 'Somebody Else' });
+  });
+});
+
+describe('guessing at a passphrase', () => {
+  let origin: string;
+
+  beforeAll(async () => {
+    origin = await serve();
+    await claimAt(origin, GUESSED_AT, 'Guessed At');
+  });
+
+  it('turns the sixth wrong try away rather than looking at it', async () => {
+    const wrong = { name: 'Guessed At', passphrase: 'acid acorn acre afar affix aged' };
+    for (let tried = 0; tried < 5; tried += 1) {
+      expect((await signInAt(origin, GUESSING, wrong)).status).toBe(401);
+    }
+
+    const sixth = await signInAt(origin, GUESSING, wrong);
+
+    expect(sixth.status).toBe(429);
+    expect((await sixth.json()).error).toMatch(/too many/i);
   });
 });
