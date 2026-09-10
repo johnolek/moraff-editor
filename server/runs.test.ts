@@ -77,6 +77,30 @@ describe('taking the batches of a run', () => {
     expect(batchesOf(database, CHARACTER)[1].arrivedAt).toBe(6000);
   });
 
+  it('refuses a batch sent again under a sequence it holds, with another stretch in it', () => {
+    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
+    takeBatch(database, CHARACTER, ME, batch({ sequence: 1, inputs: [107], pressed: 1 }), 6000);
+
+    const changed = takeBatch(database, CHARACTER, ME, batch({ sequence: 1, inputs: [107, 108], pressed: 2 }), 9000);
+
+    expect(changed).toEqual({ taken: false, because: 'changed-resend' });
+    expect(batchesOf(database, CHARACTER).map((kept) => kept.inputs)).toEqual([[104, 106], [107]]);
+  });
+
+  it('leaves the sitting alone when it refuses a batch sent again with another stretch in it', () => {
+    takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
+
+    takeBatch(
+      database,
+      CHARACTER,
+      ME,
+      batch({ inputs: [104], pressed: 1, claims: { mode: 'faithful', actions: 1, time: 2, edits: 3, milestones: [] } }),
+      6000,
+    );
+
+    expect(sessionsOf(database, CHARACTER)[0]).toMatchObject({ mode: 'speedrun', actions: 2, time: 4, edits: 0 });
+  });
+
   it('keeps the newest claims the sitting has made', () => {
     takeBatch(database, CHARACTER, ME, batch({ session: header }), 1000);
     takeBatch(

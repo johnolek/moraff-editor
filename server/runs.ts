@@ -20,10 +20,11 @@ import type { BatchClaims, BatchSession, RunBatch } from '../src/lib/play/stream
 
 export type { BatchClaims, BatchSession, RunBatch };
 
+/** Why a batch was not taken, which is what decides the words and the status the site is sent. */
+export type BatchRefusal = 'another-player' | 'no-such-sitting' | 'changed-resend';
+
 /** What became of a batch: the sequence the server now has, or why it was refused. */
-export type BatchTaken =
-  | { taken: true; received: number; ending: boolean }
-  | { taken: false; because: 'another-player' | 'no-such-sitting' };
+export type BatchTaken = { taken: true; received: number; ending: boolean } | { taken: false; because: BatchRefusal };
 
 /** A character's run as the server holds it, which is what `GET /runs/:id` answers with. */
 export interface KeptRun {
@@ -54,6 +55,10 @@ interface CharacterRow {
  *
  * A character is made known by its first batch and belongs to the player whose secret sent it,
  * which is why there is no registration step anywhere: the run is the registration.
+ *
+ * A batch under a sequence the run already holds is one that arrived before. It is taken again
+ * when it holds the same stretch, and refused when it holds another, so that nothing a run was
+ * really played with is quietly dropped.
  */
 export function takeBatch(
   database: DatabaseSync,
@@ -65,6 +70,8 @@ export function takeBatch(
   const character = characterRow(database, characterId);
   if (character !== null && character.player_id !== playerId) return { taken: false, because: 'another-player' };
   if (character === null && batch.session === undefined) return { taken: false, because: 'no-such-sitting' };
+  const already = batchAlreadyHere(database, characterId, batch.sessionIndex, batch.sequence);
+  if (already !== null && !sameStretch(already, batch)) return { taken: false, because: 'changed-resend' };
   if (character === null) startCharacter(database, characterId, playerId, batch);
   else describeCharacter(database, characterId, batch);
 
@@ -167,6 +174,47 @@ function updateSessionClaims(database: DatabaseSync, characterId: string, batch:
   return written.changes > 0;
 }
 
+/**
+ * The batch already kept under a sitting's sequence, or null when that stretch has not arrived.
+ *
+ * The batch has to be looked at before anything is written, because a batch that is refused
+ * leaves the run exactly as it was.
+ */
+function batchAlreadyHere(
+  database: DatabaseSync,
+  characterId: string,
+  sessionIndex: number,
+  sequence: number,
+): KeptBatch | null {
+  const row = database
+    .prepare(
+      `SELECT session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
+       WHERE character_id = ? AND session_index = ? AND sequence = ?`,
+    )
+    .get(characterId, sessionIndex, sequence) as BatchRow | undefined;
+  return row === undefined ? null : keptBatchOf(row);
+}
+
+/**
+ * Whether a batch that has arrived again holds the stretch already kept under its sequence.
+ *
+ * A sequence is how the two halves name one stretch of a sitting, and the server keeps the first
+ * one it is sent under that name. So a batch sent again after its answer was lost has to hold
+ * what the first one held; one holding anything else means the two have lost track of the run
+ * between them, and taking it would quietly drop whatever the difference is.
+ *
+ * What the sitting claims to have come to is not part of this: those claims belong to the
+ * sitting rather than to one stretch of it, and the newest of them always stands.
+ */
+function sameStretch(kept: KeptBatch, sent: RunBatch): boolean {
+  return (
+    kept.pressed === sent.pressed &&
+    kept.ending === sent.ending &&
+    kept.inputs.length === sent.inputs.length &&
+    kept.inputs.every((input, at) => input === sent.inputs[at])
+  );
+}
+
 /** A batch under a sequence already here arrived before, so nothing is written and the sitting
  *  keeps the stamp of when that stretch really landed. */
 function appendBatch(database: DatabaseSync, characterId: string, batch: RunBatch, arrivedAt: number): void {
@@ -197,6 +245,30 @@ export interface KeptBatch {
   ending: boolean;
 }
 
+/**
+ * A row of the batches table. It is a type rather than an interface so that a row out of
+ * `node:sqlite`, which is a bag of columns, can be read as one.
+ */
+type BatchRow = {
+  session_index: number;
+  sequence: number;
+  inputs: string;
+  pressed: number;
+  arrived_at: number;
+  ending: number;
+};
+
+function keptBatchOf(row: BatchRow): KeptBatch {
+  return {
+    sessionIndex: row.session_index,
+    sequence: row.sequence,
+    inputs: JSON.parse(row.inputs) as number[],
+    pressed: row.pressed,
+    arrivedAt: row.arrived_at,
+    ending: row.ending === 1,
+  };
+}
+
 /** Every batch of a character's run, oldest sitting first and in the order the site sent them. */
 export function batchesOf(database: DatabaseSync, characterId: string): KeptBatch[] {
   const rows = database
@@ -204,22 +276,8 @@ export function batchesOf(database: DatabaseSync, characterId: string): KeptBatc
       `SELECT session_index, sequence, inputs, pressed, arrived_at, ending FROM batches
        WHERE character_id = ? ORDER BY session_index, sequence`,
     )
-    .all(characterId) as {
-    session_index: number;
-    sequence: number;
-    inputs: string;
-    pressed: number;
-    arrived_at: number;
-    ending: number;
-  }[];
-  return rows.map((row) => ({
-    sessionIndex: row.session_index,
-    sequence: row.sequence,
-    inputs: JSON.parse(row.inputs) as number[],
-    pressed: row.pressed,
-    arrivedAt: row.arrived_at,
-    ending: row.ending === 1,
-  }));
+    .all(characterId) as BatchRow[];
+  return rows.map(keptBatchOf);
 }
 
 /** One sitting as it was kept, without the keys, which the batches carry. */
