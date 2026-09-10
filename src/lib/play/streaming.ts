@@ -1,4 +1,4 @@
-import { playerSecret } from '../player';
+import { offTheBoards, playerSecret } from '../player';
 import { runServerUrl } from '../run-server';
 import type { PlayMode } from './mode';
 import type { RunRecorder, RunSession } from './run';
@@ -10,7 +10,8 @@ import { RunStream, type BatchAnswer, type RunBatch, type StreamedSession } from
  * `stream.ts` works out what each batch holds; this is the part that touches the browser — the
  * tick it goes on, the last one a page on its way out sends, and asking for the verdict once the
  * run has ended. A build with no server address behaves as the site always has and none of this
- * runs.
+ * runs, and neither does any of it while the player has opted out of the boards
+ * (`offTheBoards` in `src/lib/player.ts`).
  *
  * The words the Play tab shows are here as well, since they are all about what became of the
  * sending.
@@ -40,6 +41,11 @@ export interface RunMark {
 const SENDING: RunMark = { words: 'Sending to the boards.', note: null, tone: 'plain' };
 const UNREACHABLE: RunMark = { words: 'The boards are not answering.', note: null, tone: 'bad' };
 const CHECKING: RunMark = { words: 'Checking the run.', note: null, tone: 'plain' };
+const OFF_THE_BOARDS: RunMark = {
+  words: 'Off the boards.',
+  note: 'Nothing about this run is being sent.',
+  tone: 'plain',
+};
 const NOT_CHECKED_YET: RunMark = { words: 'Still being checked.', note: null, tone: 'plain' };
 const OFF_THE_CLOCK = 'Off the wall clock: more keys than a person could press.';
 
@@ -124,6 +130,9 @@ class Streamer implements RunStreamer {
     this.stream = new RunStream(run.session, (batch) => this.postBatch(batch), run.earlier);
     this.tick = setInterval(() => void this.send(false), SEND_EVERY_MS);
     window.addEventListener('pagehide', this.onHide);
+    // The first batch would not go for another five seconds, and a player who has opted out
+    // should not have to wait that long to be told nothing is leaving the device.
+    if (offTheBoards()) run.onMark(OFF_THE_BOARDS);
   }
 
   ended(): void {
@@ -148,6 +157,13 @@ class Streamer implements RunStreamer {
       this.leaving = false;
       return;
     }
+    // The player has opted out, so nothing about the run leaves the device. The keys are still
+    // written down, and coming back on to the boards sends the lot from then on.
+    if (offTheBoards()) {
+      this.leaving = false;
+      this.run.onMark(OFF_THE_BOARDS);
+      return;
+    }
     this.sending = true;
     try {
       const result = await this.stream.send(ending);
@@ -164,6 +180,8 @@ class Streamer implements RunStreamer {
   /** Replaying a run happens behind the answer to the batch that ended it, so the verdict is
    *  asked for until it is there. */
   private async askForTheVerdict(): Promise<void> {
+    // The run that would have been checked was never sent, so there is nothing to ask about.
+    if (offTheBoards()) return;
     const until = Date.now() + ASK_FOR_AT_MOST_MS;
     for (;;) {
       const verdict = await this.readVerdict();
