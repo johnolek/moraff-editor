@@ -35,6 +35,7 @@ import {
   forgetOnServer,
   keepCharacterOnServer,
   readServerRoster,
+  readServerRun,
 } from './server-roster';
 
 /** Put a save file that has just been read on the roster and start working on it. */
@@ -263,6 +264,47 @@ export async function catchUpWithTheServer(): Promise<void> {
   app.roster = [...app.roster.filter((entry) => !replaced.has(entry.id)), ...taken].sort(oldestFirst);
   app.characterVersion++;
   await keeping(keepPlayed(taken, played));
+}
+
+/**
+ * Bring the keys of a character's run here, where the chain came off the server without them.
+ *
+ * The roster the server hands over carries how many keys each sitting holds and not the keys
+ * themselves, since a chain of Moraff's Revenge is megabytes and every page load would carry
+ * every character's. So a character another device played arrives with its sittings and none of
+ * their keys, and the two things that need them — playing the character on, which sends the
+ * sittings behind it, and exporting the run — ask for them first.
+ *
+ * The keys already here are never written over: the sitting being played is one this device holds
+ * and the server's copy of it is behind. Says whether the chain in hand holds every sitting's
+ * keys now; a server that did not answer leaves it exactly as it was.
+ */
+export async function bringRunKeysHere(id: string): Promise<boolean> {
+  const entry = entryById(id);
+  if (entry === null) return false;
+  if (everyKeyIsHere(entry)) return true;
+  const chain = await readServerRun(id);
+  if (chain === null) return false;
+  const filled: PlayedSession[] = [];
+  for (let at = 0; at < entry.run.length; at++) {
+    const here = entry.run[at];
+    const there = chain[at];
+    if (here.inputs.length > 0 || there === undefined) continue;
+    if (here.seed !== there.seed || here.startedAt !== there.startedAt) continue;
+    entry.run[at] = { ...here, inputs: there.inputs };
+    filled.push({ entry, at });
+  }
+  if (filled.length === 0) return everyKeyIsHere(entry);
+  app.characterVersion++;
+  await keeping(keepPlayed([], filled));
+  return everyKeyIsHere(entry);
+}
+
+/** Whether every sitting of the character's run holds keys. A sitting nobody ever pressed a key
+ *  in reads as one whose keys are elsewhere, which costs an ask that brings back the same
+ *  nothing. */
+function everyKeyIsHere(entry: RosterEntry): boolean {
+  return entry.run.every((session) => session.inputs.length > 0);
 }
 
 function chooseEntry(id: string | null): void {

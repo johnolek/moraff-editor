@@ -81,6 +81,7 @@ let restoreRoster: Current['restoreRoster'];
 let runSessionPlayed: Current['runSessionPlayed'];
 let switchGame: Current['switchGame'];
 let catchUpWithTheServer: Current['catchUpWithTheServer'];
+let bringRunKeysHere: Current['bringRunKeysHere'];
 /** The explored maps are held in the page and written behind it, so the store a test reads them
  *  back through has to be the one the modules under test are writing into. */
 let revCharacterMap: RevMemory['revCharacterMap'];
@@ -115,6 +116,7 @@ beforeEach(async () => {
     unloadCharacter,
     voidCurrentLeaderboard,
     catchUpWithTheServer,
+    bringRunKeysHere,
   } = await import('./current'));
   // Nothing is written before the roster has been read, which is what a visit starts with.
   await restoreRoster();
@@ -585,13 +587,29 @@ describe('the characters the server is keeping for this player', () => {
     };
   }
 
-  /** A run server that answers with these characters, and every call it was made. */
-  function serverHolding(characters: Record<string, unknown>[], status = 200): { calls: string[] } {
+  /** The same sitting as the roster answer carries it: the keys left out and their count in
+   *  their place, which is what a chain played on another device comes back as. */
+  function counted(at: number, keys: number): Record<string, unknown> {
+    return { ...sitting(at, keys), inputs: [], inputCount: keys };
+  }
+
+  /**
+   * A run server that answers with these characters, and every call it was made.
+   *
+   * `run` is what it hands back when a character's keys are asked for, which is the one thing
+   * the roster answer leaves out.
+   */
+  function serverHolding(
+    characters: Record<string, unknown>[],
+    status = 200,
+    run: RunSession[] = [],
+  ): { calls: string[] } {
     const calls: string[] = [];
     vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
     vi.stubGlobal('fetch', (url: string, options?: { method?: string }) => {
       calls.push(`${options?.method ?? 'GET'} ${url}`);
-      return Promise.resolve(new Response(JSON.stringify({ characters }), { status }));
+      const body = url.endsWith('/run') ? { run } : { characters };
+      return Promise.resolve(new Response(JSON.stringify(body), { status }));
     });
     return { calls };
   }
@@ -703,6 +721,52 @@ describe('the characters the server is keeping for this player', () => {
     streamer.stop();
 
     expect(server.calls.filter((call) => call.startsWith('PUT'))).toEqual([]);
+  });
+
+  it('takes a chain the server sent without its keys and asks for them to play the character on', async () => {
+    const server = serverHolding([served({ run: [counted(0, 4)] })], 200, [sitting(0, 4)]);
+    await catchUpWithTheServer();
+    const id = app.roster[0].id;
+    expect(app.roster[0].run[0].inputs).toEqual([]);
+
+    expect(await bringRunKeysHere(id)).toBe(true);
+
+    expect(app.roster[0].run[0].inputs).toHaveLength(4);
+    expect(server.calls).toContain(`GET https://runs.example.com/players/me/characters/${id}/run`);
+  });
+
+  it('asks for a character’s keys once', async () => {
+    const server = serverHolding([served({ run: [counted(0, 4)] })], 200, [sitting(0, 4)]);
+    await catchUpWithTheServer();
+    const id = app.roster[0].id;
+
+    await bringRunKeysHere(id);
+    await bringRunKeysHere(id);
+
+    expect(server.calls.filter((call) => call.endsWith('/run'))).toHaveLength(1);
+  });
+
+  it('asks for nothing for a chain whose keys are here already', async () => {
+    keepRolledCharacter('unforgiven', 'SAGEY', 21, saveFile('SAGEY'));
+    const entry = app.roster[0];
+    runSessionPlayed(entry, 0, sitting(0, 9));
+    await rememberNow();
+    const server = serverHolding([]);
+
+    expect(await bringRunKeysHere(entry.id)).toBe(true);
+
+    expect(server.calls).toEqual([]);
+  });
+
+  it('leaves the chain where it is when the server does not answer', async () => {
+    serverHolding([served({ run: [counted(0, 4)] })], 200, [sitting(0, 4)]);
+    await catchUpWithTheServer();
+    const id = app.roster[0].id;
+    serverHolding([], 500);
+
+    expect(await bringRunKeysHere(id)).toBe(false);
+
+    expect(app.roster[0].run[0].inputs).toEqual([]);
   });
 
   it('forgets a character on the server as well as here', async () => {

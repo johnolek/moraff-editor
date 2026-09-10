@@ -11,7 +11,7 @@
   import type { Snippet } from 'svelte';
   import { onDestroy, untrack } from 'svelte';
   import { app, currentEntry, entryById, type Leaderboard } from '../app-state.svelte';
-  import { catchUpWithTheServer } from '../character/current';
+  import { bringRunKeysHere, catchUpWithTheServer } from '../character/current';
   import { leaderboardLabel, lockedPlayNote } from '../character/leaderboard';
   import { beingPlayedElsewhere } from '../character/server-roster';
   import RunJournal from '../journal/RunJournal.svelte';
@@ -169,6 +169,11 @@
     if (!wanted) return;
     starting = true;
     elsewhere = (await beingPlayedElsewhere(wanted.id)) ? BEING_PLAYED_ELSEWHERE : null;
+    // The roster the server hands over carries no keys, so a character another device played
+    // needs them here before this game can send the sittings behind it. A server that did not
+    // answer is no reason not to play: the game starts, and what the sender makes of a chain it
+    // could not catch the server up on is the same as playing with no server at all.
+    if (elsewhere === null) await bringRunKeysHere(wanted.id);
     starting = false;
     if (elsewhere === null) startTheGame();
   }
@@ -357,10 +362,13 @@
   }
 
   /** The character's whole run — every session it has been played in — as a file. */
-  function exportRun() {
+  async function exportRun() {
     const playing = session;
     const entry = played;
     if (!playing?.run || !entry) return;
+    // The sittings that came off the server came without their keys, and a log is nothing without
+    // them.
+    await bringRunKeysHere(entry.id);
     // The run goes into the roster entry after every key, and the game may not have read one
     // since this session began, so it is written down again before it is handed over.
     playing.keepRun();
