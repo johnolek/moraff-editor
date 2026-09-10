@@ -8,18 +8,29 @@ import { openEngineStore, shortCommit } from './engines';
 const KEPT = 'a'.repeat(40);
 const NEVER_DEPLOYED = 'b'.repeat(40);
 const MISLABELLED = 'c'.repeat(40);
+const REPLAYS_A_SESSION = 'd'.repeat(40);
 
 const log: RunLog = { version: 3, sessions: [] };
 
-/** A build small enough to read, exporting what a kept engine has to export. */
-function writeFakeEngine(directory: string, named: string, saysItIs: string): void {
+/**
+ * A build small enough to read, exporting what a kept engine has to export.
+ *
+ * `aSessionAtATime` is whether it can replay one session of a chain, which a build deployed
+ * before that was exported cannot.
+ */
+function writeFakeEngine(directory: string, named: string, saysItIs: string, aSessionAtATime = false): void {
   mkdirSync(join(directory, named), { recursive: true });
   writeFileSync(
     join(directory, named, 'engine.mjs'),
     `export const ENGINE_COMMIT = '${saysItIs}';\n` +
       `export function verifyRun(log) {\n` +
       `  return Promise.resolve({ status: 'verified', sessions: log.sessions.length });\n` +
-      `}\n`,
+      `}\n` +
+      (aSessionAtATime
+        ? `export function verifySession(chain) {\n` +
+          `  return Promise.resolve({ status: 'verified', reason: null, totals: chain.before });\n` +
+          `}\n`
+        : ''),
   );
 }
 
@@ -30,6 +41,7 @@ describe('the engine builds the server keeps', () => {
     directory = mkdtempSync(join(tmpdir(), 'moraff-engines-'));
     writeFakeEngine(directory, KEPT, KEPT);
     writeFakeEngine(directory, MISLABELLED, KEPT);
+    writeFakeEngine(directory, REPLAYS_A_SESSION, REPLAYS_A_SESSION, true);
   });
 
   afterAll(() => {
@@ -95,8 +107,24 @@ describe('the engine builds the server keeps', () => {
     expect(lookup.reason).toContain('is not one a run can be replayed with');
   });
 
+  it('takes a build that can replay one session of a chain for one that can', async () => {
+    const lookup = await openEngineStore(directory).engineFor(REPLAYS_A_SESSION);
+
+    expect(lookup.kept).toBe(true);
+    if (!lookup.kept) return;
+    expect(typeof lookup.engine.verifySession).toBe('function');
+  });
+
+  it('leaves a build deployed before a chain could be replayed a session at a time with none', async () => {
+    const lookup = await openEngineStore(directory).engineFor(KEPT);
+
+    expect(lookup.kept).toBe(true);
+    if (!lookup.kept) return;
+    expect(lookup.engine.verifySession).toBeNull();
+  });
+
   it('lists the commits it keeps a build for', () => {
-    expect(openEngineStore(directory).keptCommits()).toEqual([KEPT, MISLABELLED]);
+    expect(openEngineStore(directory).keptCommits()).toEqual([KEPT, MISLABELLED, REPLAYS_A_SESSION]);
   });
 
   it('lists nothing where nothing has been deployed', () => {

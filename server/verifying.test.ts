@@ -128,6 +128,7 @@ function fakeEngines(verdictFor: (log: RunLog) => Partial<RunVerdict>): EngineSt
               kept: true,
               engine: {
                 commit,
+                verifySession: null,
                 verifyRun: (log) =>
                   Promise.resolve({
                     status: 'verified',

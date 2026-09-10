@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import type { RunLog } from '../src/lib/play/run';
-import type { RunVerdict } from '../src/lib/play/verify';
+import type { CheckedSession, RunVerdict, SessionInChain } from '../src/lib/play/verify';
 
 /**
  * The engine builds the server keeps, one directory per commit it has deployed.
@@ -24,12 +24,23 @@ const ENGINE_FILE = 'engine.mjs';
  *  by: anything else is refused before the filesystem is touched. */
 const COMMIT = /^[0-9a-f]{40}$/;
 
+/** Replaying one session of a chain and judging it, as a build exports it. */
+export type SessionVerifier = (chain: SessionInChain) => Promise<CheckedSession>;
+
 /** One kept engine build, loaded and ready to replay runs. */
 export interface KeptEngine {
   /** The commit the build was made from, as the build itself says it. */
   commit: string;
   /** Replay every session of a run and say whether the run is what it claims to be. */
   verifyRun(log: RunLog): Promise<RunVerdict>;
+  /**
+   * Replay one session of a chain and judge it, which is how a chain crossing commits is
+   * replayed: each session by the build it was played on.
+   *
+   * Null for a build deployed before this was exported. Such a build can only be handed a whole
+   * chain, so a chain any part of which names it goes through `verifyRun` instead.
+   */
+  verifySession: SessionVerifier | null;
 }
 
 /** Whether the engine a run was played on is one the server can replay it with, and why not when
@@ -107,7 +118,11 @@ function engineOf(module: unknown, commit: string): KeptEngine | null {
   const exported = module as Record<string, unknown>;
   if (exported.ENGINE_COMMIT !== commit) return null;
   if (typeof exported.verifyRun !== 'function') return null;
-  return { commit, verifyRun: exported.verifyRun as KeptEngine['verifyRun'] };
+  return {
+    commit,
+    verifyRun: exported.verifyRun as KeptEngine['verifyRun'],
+    verifySession: typeof exported.verifySession === 'function' ? (exported.verifySession as SessionVerifier) : null,
+  };
 }
 
 /** The commits a build is kept for. A directory that is not there yet is a box nothing has been
