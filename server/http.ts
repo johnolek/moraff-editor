@@ -31,12 +31,13 @@ const MOST_BODY_BYTES = 1024;
 /**
  * How much a batch of a run may be.
  *
- * A few seconds of keys is nothing, but the first batch of a sitting carries the character's
- * record as well, and a batch that has been waiting through a stretch with no server to send to
- * carries everything played since. This is far more than any of that and far less than a body
- * worth reading off a stranger.
+ * A few seconds of keys is nothing. The big one is the batch that carries a whole sitting the
+ * server was never told about: Moraff's Revenge writes an input for every tick of its monsters'
+ * clock, five a second while the game is open, so a day at that game is hundreds of thousands of
+ * them. This leaves room for such a sitting and still refuses a body worth reading off a
+ * stranger.
  */
-const MOST_BATCH_BYTES = 1024 * 1024;
+const MOST_BATCH_BYTES = 8 * 1024 * 1024;
 
 /** What a character is called in a path: the id of a roster entry in somebody's browser. */
 const CHARACTER_ID = /^[A-Za-z0-9_-]{1,64}$/;
