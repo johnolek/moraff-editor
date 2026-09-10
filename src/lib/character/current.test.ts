@@ -337,7 +337,7 @@ describe('editing the character', () => {
 });
 
 describe('a session played into a character', () => {
-  it('writes that session and that character, and nothing else on the roster', async () => {
+  it('writes that session, its journal and that character, and nothing else', async () => {
     importCharacter('unforgiven', '21', saveFile('SAGEY'));
     keepRolledCharacter('unforgiven', 'NEWBIE', 22, saveFile('NEWBIE'));
     await rememberNow();
@@ -349,7 +349,7 @@ describe('a session played into a character', () => {
     runSessionPlayed(entry, 0, run.log());
     await rememberNow();
 
-    expect(written).toHaveBeenCalledTimes(2);
+    expect(written).toHaveBeenCalledTimes(3);
   });
 
   it('is what the character comes back with after a reload', async () => {

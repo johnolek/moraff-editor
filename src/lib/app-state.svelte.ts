@@ -1,4 +1,5 @@
 import { HistoryCursor } from './history';
+import type { JournalEntry } from './play/journal';
 import type { RunSession } from './play/run';
 
 export type Tab = 'map' | 'play' | 'boards' | 'fight' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
@@ -68,6 +69,15 @@ export interface RosterEntry extends CurrentCharacter {
    * before the site kept runs has none until it is played, and its first session starts one.
    */
   run: RunSession[];
+  /**
+   * The character's run written up in words, one list of entries per session of {@link run}
+   * (`src/lib/play/journal.ts`).
+   *
+   * It is not part of the log and is not exported with it: a replay of a session writes the same
+   * lines again, which is how the run server has a run's journal without being handed one. What
+   * is kept here is so that the timeline is there to read without a replay.
+   */
+  journal: JournalEntry[][];
 }
 
 /** A square of the dungeon to send the map to, taken from where a character stands. */

@@ -94,5 +94,7 @@ function entryFrom(value: unknown): RosterEntry | null {
     // A roster stored before the site kept runs names no sessions, and reads as a character that
     // has never been played.
     run: Array.isArray(run) ? run.filter(isRunSession) : [],
+    // localStorage never held a journal: the roster it stored is older than the run journal.
+    journal: [],
   };
 }

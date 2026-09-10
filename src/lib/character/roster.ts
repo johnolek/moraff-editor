@@ -40,6 +40,7 @@ export function newEntry(character: NewCharacter, now = new Date(), id = newId()
     dead: false,
     leaderboard: character.imported ? null : (character.leaderboard ?? null),
     run: [],
+    journal: [],
   };
 }
 

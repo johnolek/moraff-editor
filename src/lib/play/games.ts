@@ -110,7 +110,7 @@ function playedFile(entry: RosterEntry): CharacterFile {
       replaceCharacterBytes(bytes);
     },
     died: characterDied,
-    keepRun: (session) => runSessionPlayed(entry, at, session),
+    keepRun: (session, journal) => runSessionPlayed(entry, at, session, journal),
   };
 }
 

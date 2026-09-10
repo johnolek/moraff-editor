@@ -11,6 +11,7 @@ import {
 } from '../game-choice';
 import { recordTab } from '../history';
 import { revCharacterMap } from '../play/rev/memory';
+import type { JournalEntry } from '../play/journal';
 import type { RunSession } from '../play/run';
 import { tabFor } from '../tabs';
 import { carryOverStoredRoster } from './carry-over';
@@ -153,12 +154,18 @@ export function characterDied(): void {
  * Keep the session being played as the newest of the character's run.
  *
  * `at` is where the session belongs in the run: everything before it is left as it is, and the
- * session written there last time is written over. That one session and the character's record
- * are what goes to the store, soon after, the same way an edit in the save editor does, so a
- * burst of keys is one write.
+ * session written there last time is written over. That one session, the journal it has been
+ * written up in and the character's record are what goes to the store, soon after, the same way
+ * an edit in the save editor does, so a burst of keys is one write.
  */
-export function runSessionPlayed(entry: RosterEntry, at: number, session: RunSession): void {
+export function runSessionPlayed(
+  entry: RosterEntry,
+  at: number,
+  session: RunSession,
+  journal: JournalEntry[] = [],
+): void {
   entry.run = [...entry.run.slice(0, at), session];
+  entry.journal = [...entry.journal.slice(0, at), journal];
   changedSessions.add(sessionKey(entry.id, at));
   keepSoon(entry);
 }

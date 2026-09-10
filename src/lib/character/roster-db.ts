@@ -1,5 +1,6 @@
 import type { Leaderboard, RosterEntry } from '../app-state.svelte';
 import { base64FromBytes } from '../bytes';
+import type { JournalEntry } from '../play/journal';
 import type { Milestone, RunGame, RunSession } from '../play/run';
 import { oldestFirst } from './roster';
 import { fromBase64 } from './storage';
@@ -17,10 +18,7 @@ import { fromBase64 } from './storage';
 
 const DATABASE = 'moraff-tools';
 
-/**
- * The schema. `journal` has nothing writing it yet: it is made here with the rest so that the
- * run journal does not have to bump the version and take every open tab through an upgrade.
- */
+/** The schema. */
 const VERSION = 1;
 const CHARACTERS = 'characters';
 const SESSIONS = 'sessions';
@@ -66,6 +64,20 @@ interface SessionRow {
   edits: number;
 }
 
+/**
+ * What one session of a run is written up as, under the character and the place in the run its
+ * session is under.
+ *
+ * The journal is not part of the log and is not exported with it: a replay of the session writes
+ * the same lines again. It is kept here so that a character's timeline is there to read without
+ * one.
+ */
+interface JournalRow {
+  character: string;
+  index: number;
+  entries: JournalEntry[];
+}
+
 /** One session of a character's run, named by where it comes in the run, counting from zero. */
 export interface PlayedSession {
   entry: RosterEntry;
@@ -80,12 +92,13 @@ export interface PlayedSession {
 export async function readRoster(): Promise<RosterEntry[] | null> {
   try {
     const db = await database();
-    const transaction = db.transaction([CHARACTERS, SESSIONS], 'readonly');
-    const [characters, sessions] = await Promise.all([
+    const transaction = db.transaction([CHARACTERS, SESSIONS, JOURNAL], 'readonly');
+    const [characters, sessions, journals] = await Promise.all([
       settled<CharacterRow[]>(transaction.objectStore(CHARACTERS).getAll()),
       settled<SessionRow[]>(transaction.objectStore(SESSIONS).getAll()),
+      settled<JournalRow[]>(transaction.objectStore(JOURNAL).getAll()),
     ]);
-    return rosterOf(characters, sessions);
+    return rosterOf(characters, sessions, journals);
   } catch {
     return null;
   }
@@ -109,11 +122,14 @@ export async function keepPlayed(
   // as it stood when the write was asked for.
   const characterRows = entries.map(characterRow);
   const sessionRows = sessions.map(sessionRow).filter((row): row is SessionRow => row !== null);
-  return write([CHARACTERS, SESSIONS], (transaction) => {
+  const journalRows = sessions.map(journalRow).filter((row): row is JournalRow => row !== null);
+  return write([CHARACTERS, SESSIONS, JOURNAL], (transaction) => {
     const characters = transaction.objectStore(CHARACTERS);
     for (const row of characterRows) characters.put(row);
     const played = transaction.objectStore(SESSIONS);
     for (const row of sessionRows) played.put(row);
+    const journal = transaction.objectStore(JOURNAL);
+    for (const row of journalRows) journal.put(row);
   });
 }
 
@@ -172,6 +188,12 @@ function sessionRow({ entry, at }: PlayedSession): SessionRow | null {
   };
 }
 
+/** A session's journal as its row, or null where the run has no session at that place. */
+function journalRow({ entry, at }: PlayedSession): JournalRow | null {
+  if (!entry.run[at]) return null;
+  return { character: entry.id, index: at, entries: entry.journal[at] ?? [] };
+}
+
 /**
  * The rows as the roster, oldest first.
  *
@@ -179,14 +201,30 @@ function sessionRow({ entry, at }: PlayedSession): SessionRow | null {
  * is what it is sorted by; the rows themselves come back in whatever order their keys happen to
  * be in.
  */
-function rosterOf(characters: CharacterRow[], sessions: SessionRow[]): RosterEntry[] {
+function rosterOf(
+  characters: CharacterRow[],
+  sessions: SessionRow[],
+  journals: JournalRow[],
+): RosterEntry[] {
   const runs = new Map<string, Map<number, RunSession>>();
   for (const row of sessions) {
     const theirs = runs.get(row.character) ?? new Map<number, RunSession>();
     theirs.set(row.index, sessionOf(row));
     runs.set(row.character, theirs);
   }
-  return characters.map((row) => entryOf(row, runOf(runs.get(row.id)))).sort(oldestFirst);
+  const written = new Map<string, Map<number, JournalEntry[]>>();
+  for (const row of journals) {
+    const theirs = written.get(row.character) ?? new Map<number, JournalEntry[]>();
+    theirs.set(row.index, row.entries);
+    written.set(row.character, theirs);
+  }
+  return characters
+    .map((row) => {
+      const run = runOf(runs.get(row.id));
+      const theirs = written.get(row.id);
+      return entryOf(row, run, run.map((session, at) => theirs?.get(at) ?? []));
+    })
+    .sort(oldestFirst);
 }
 
 /**
@@ -201,7 +239,7 @@ function runOf(theirs: Map<number, RunSession> | undefined): RunSession[] {
   return run;
 }
 
-function entryOf(row: CharacterRow, run: RunSession[]): RosterEntry {
+function entryOf(row: CharacterRow, run: RunSession[], journal: JournalEntry[][]): RosterEntry {
   return {
     id: row.id,
     game: row.game,
@@ -214,6 +252,7 @@ function entryOf(row: CharacterRow, run: RunSession[]): RosterEntry {
     dead: row.dead,
     leaderboard: row.leaderboard,
     run,
+    journal,
   };
 }
 

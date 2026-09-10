@@ -2,6 +2,7 @@ import { sameBytes } from '../bytes';
 import type { PlayLoopSession } from './loop';
 import type { PlayMode } from './mode';
 import { DEFAULT_PLAY_MODE } from './mode';
+import type { JournalEntry } from './journal';
 import type { RunRecorder, RunSession } from './run';
 
 /**
@@ -38,10 +39,11 @@ export interface CharacterFile {
   /** The character has died, which the roster marks and never undoes. */
   died(): void;
   /**
-   * Keep this session as the newest of the character's run. The roster is what has a run to keep
-   * it in; a replay, which plays a session rather than living one, has none.
+   * Keep this session as the newest of the character's run, and the journal it has been written
+   * up in beside it. The roster is what has a run to keep them in; a replay, which plays a
+   * session rather than living one, has none.
    */
-  keepRun?(session: RunSession): void;
+  keepRun?(session: RunSession, journal: JournalEntry[]): void;
 }
 
 /**
@@ -244,7 +246,7 @@ export abstract class KeyedSession<Record> implements PlayLoopSession {
    * replay of the session written here has to arrive at exactly those bytes.
    */
   keepRun(): void {
-    if (this.run) this.file.keepRun?.(this.run.log());
+    if (this.run) this.file.keepRun?.(this.run.log(), this.run.journal());
   }
 
   /** The character is dead: the roster is told, and nothing more is written. */

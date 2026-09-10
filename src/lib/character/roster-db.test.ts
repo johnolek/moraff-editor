@@ -24,11 +24,16 @@ function character(id: string, name: string, at = ROLLED_AT): RosterEntry {
   return newEntry({ game: 'unforgiven', name, slot: 21, bytes, imported: false }, at, id);
 }
 
-/** One sitting at the game, with a key or two in it so the inputs are not empty. */
+/** One sitting at the game, with a key or two in it so the inputs are not empty, and a line of
+ *  journal to go with it. */
 function played(entry: RosterEntry, keys: number[]): void {
   const run = new RunRecorder({ game: 'unforgiven', name: entry.name, record: entry.bytes });
   for (const key of keys) run.input(key);
   entry.run = [...entry.run, run.log()];
+  entry.journal = [
+    ...entry.journal,
+    [{ at: 1, floor: 0, module: 0, text: 'Stepped north', event: { kind: 'stepped', dir: 0 } }],
+  ];
 }
 
 /** Every session of every character, which is what the carry-over and the first write name. */
@@ -46,6 +51,15 @@ describe('the roster in the database', () => {
     const read = await store.readRoster();
     expect(read?.map((entry) => entry.name)).toEqual(['SAGEY', 'NEWBIE']);
     expect(read?.[0]).toEqual(older);
+  });
+
+  it('keeps the journal of a session beside the session itself', async () => {
+    const entry = character('a', 'SAGEY');
+    played(entry, [-0x48]);
+    await store.keepPlayed([entry], allSessions([entry]));
+
+    const read = await store.readRoster();
+    expect(read?.[0].journal).toEqual(entry.journal);
   });
 
   it('is nothing at all before anything has been kept', async () => {
