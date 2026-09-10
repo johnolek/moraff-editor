@@ -2,11 +2,12 @@
   The name this browser goes by on the run server's boards, claimed from the Play tab.
 
   Nobody signs up: the browser's secret is the player, and this is the one thing they say about
-  themselves. A build given no server address has no boards to be on, so there is nothing here to
-  show.
+  themselves. Beside it is the opt-out, for a player who would rather nothing about their
+  characters left the device at all. A build given no server address has no boards to be on, so
+  there is nothing here to show.
 -->
 <script lang="ts">
-  import { claimName, myName } from '../player';
+  import { claimName, myName, offTheBoards, setOffTheBoards } from '../player';
   import { runServerUrl } from '../run-server';
 
   const id = $props.id();
@@ -15,6 +16,7 @@
   let name = $state('');
   let said = $state('');
   let saving = $state(false);
+  let off = $state(offTheBoards());
 
   if (server !== null) {
     void myName().then((claimed) => {
@@ -41,6 +43,10 @@
     {#if said}
       <div class="said" role="status">{said}</div>
     {/if}
+    <label class="opt-out">
+      <input type="checkbox" bind:checked={off} onchange={() => setOffTheBoards(off)} />
+      <span>Keep my runs off the boards</span>
+    </label>
   </div>
 {/if}
 
@@ -85,5 +91,19 @@
     color: var(--muted);
     font-size: 11px;
     line-height: 1.4;
+  }
+  .opt-out {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .opt-out input {
+    flex: none;
+    min-width: 0;
+    padding: 0;
   }
 </style>
