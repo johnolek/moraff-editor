@@ -231,15 +231,17 @@ because the server measures how long the run took and can only measure what it s
 half of this is `server/README.md`.
 
 * **`stream.ts`** is what a batch holds, and nothing in it touches the browser: the keys played
-  since the last batch the server said it had, how many of them the player pressed, what the
-  sitting claims to have come to, and, the first time, the seed, the engine commit and the record
-  a replay starts from. A stretch that failed to go is kept by simply not being marked as sent, so
-  the next batch carries it and everything since. The sittings the character was played in before
-  the server was told about it go first, one batch each, or the server would hold a chain starting
-  part-way through.
-* **The sequence** is the site's count of the batches of a sitting. It moves on only once the
-  server has answered, so a batch whose answer was lost is sent again under the same number and
-  the server recognises it rather than playing it twice.
+  since the last batch it built, how many of them the player pressed, what the sitting claims to
+  have come to, and, the first time, the seed, the engine commit and the record a replay starts
+  from. A batch that failed to go is kept as it was built and goes again as it was, so a flush
+  after a stretch with no server sends several batches, oldest first. The sittings the character
+  was played in before the server was told about it go first, one batch each, or the server would
+  hold a chain starting part-way through.
+* **The sequence** is the site's count of the batches of a sitting, and the server holds a stretch
+  under its sequence. A batch whose answer was lost is sent again under the same number holding
+  the same keys, so the server recognises it rather than playing it twice, and everything played
+  since goes in the batch after it. A sequence that comes back holding something else is refused:
+  one of the two halves has lost track of the run.
 * **`streaming.ts`** is the part that touches the browser: a batch every five seconds, one more
   when the game is left, one that outlives a page on its way out, and the last one at a death or a
   win, after which it asks for the verdict until the replay has given one. Nothing goes while the

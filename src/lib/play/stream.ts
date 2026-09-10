@@ -36,17 +36,18 @@ export interface BatchClaims {
   milestones: Milestone[];
 }
 
-/** One stretch of a sitting, as the server is sent it. */
+/**
+ * One stretch of a sitting, as the server is sent it.
+ *
+ * A batch is fixed the moment it is built. The server holds a stretch under its sequence and
+ * takes the same sequence twice as the same stretch, so a batch that is sent again after its
+ * answer was lost has to hold exactly what the first attempt held: anything folded into it would
+ * be dropped on the floor and the run would be missing keys it was really played with.
+ */
 export interface RunBatch {
   /** Where the sitting comes in the character's run, counting from zero. */
   sessionIndex: number;
-  /**
-   * Which batch of that sitting this is, counting from zero.
-   *
-   * It moves on only once the server has said it has this one, so a batch whose answer was lost
-   * is sent again under the same number and the server recognises it rather than playing it
-   * twice.
-   */
+  /** Which batch of that sitting this is, counting from zero. */
   sequence: number;
   inputs: number[];
   /** How many of those inputs the player pressed, which is what the server holds a run to a
@@ -92,18 +93,25 @@ export type SendResult =
 /**
  * The sender for one sitting at a game.
  *
- * A stretch that failed to go is kept simply by not being marked as sent: the next batch is built
- * from everything since the last one the server said it had, so it carries the failed stretch and
- * whatever has been played since.
+ * A batch that failed to go is kept as it was built and sent again under its own sequence, and
+ * everything played since goes in the batch after it. So a flush after a stretch with no server
+ * sends several batches, oldest first, rather than one big one.
  */
 export class RunStream {
   /** The sittings of this character played before this one, each waiting to go as one batch. */
   private readonly earlier: RunBatch[];
+  /** The batches of this sitting that have been built and that the server has not said it has,
+   *  oldest first. */
+  private readonly pending: RunBatch[] = [];
   private sequence = 0;
-  /** How much of this sitting the server has, so that a batch is what comes after it. */
-  private sent = 0;
-  private sentPresses = 0;
+  /** How much of this sitting has gone into a batch, so that the next batch is what comes after
+   *  it. What was built is counted rather than where the log now stands: the game goes on being
+   *  played while a batch is in the air, and those keys belong to the batch after it. */
+  private built = 0;
+  private builtPresses = 0;
   private started = false;
+  /** The batch that says the run is over has been built, so there is not another one. */
+  private ended = false;
   /** The server's words for a run it will not take, once it has said them. */
   private refused: string | null = null;
 
@@ -118,22 +126,26 @@ export class RunStream {
   }
 
   /**
-   * The batch to send now, or null when nothing has been played since the last one.
+   * The batch to send now, or null when there is nothing to send.
    *
    * It is built rather than sent so that a page on its way out can hand it to `sendBeacon`, which
-   * takes a body and answers nothing to wait on.
+   * takes a body and answers nothing to wait on. Building one settles what it holds for good: it
+   * is kept here until {@link took} says the server has it, and asking again hands back that same
+   * batch rather than a bigger one.
    */
   next(ending: boolean): RunBatch | null {
-    const waiting = this.earlier[0];
+    const waiting = this.earlier[0] ?? this.pending[0];
     if (waiting !== undefined) return waiting;
     const log = this.session.log();
-    const inputs = log.inputs.slice(this.sent);
-    if (inputs.length === 0 && this.started && !ending) return null;
-    return {
+    const inputs = log.inputs.slice(this.built);
+    // The first batch of a sitting goes even with nothing played, since it is what tells the
+    // server about the sitting, and so does the one that says the run is over.
+    if (inputs.length === 0 && this.started && !(ending && !this.ended)) return null;
+    const batch: RunBatch = {
       sessionIndex: this.session.index,
       sequence: this.sequence,
       inputs,
-      pressed: this.session.presses() - this.sentPresses,
+      pressed: this.session.presses() - this.builtPresses,
       ending,
       claims: {
         mode: log.mode,
@@ -144,27 +156,26 @@ export class RunStream {
       },
       session: this.started ? undefined : sessionHeader(log),
     };
+    this.pending.push(batch);
+    this.built += batch.inputs.length;
+    this.builtPresses += batch.pressed;
+    this.sequence += 1;
+    this.started = true;
+    if (ending) this.ended = true;
+    return batch;
   }
 
-  /**
-   * The server has the batch, so the next one starts after it.
-   *
-   * What was sent is counted rather than where the log now stands: the game goes on being played
-   * while a batch is in the air, and those keys belong to the batch after this one.
-   */
+  /** The server has the batch, so it is done with and the one after it can go. */
   took(batch: RunBatch): void {
     if (batch.sessionIndex !== this.session.index) {
       this.earlier.shift();
       return;
     }
-    this.sent += batch.inputs.length;
-    this.sentPresses += batch.pressed;
-    this.sequence += 1;
-    this.started = true;
+    if (this.pending[0]?.sequence === batch.sequence) this.pending.shift();
   }
 
-  /** Send everything played since the last batch, and the sittings before this one that have
-   *  never gone. */
+  /** Send everything the server has not said it has: the sittings before this one, and then the
+   *  batches of this one in the order they were built. */
   async send(ending: boolean): Promise<SendResult> {
     if (this.refused !== null) return { sent: 'refused', because: this.refused };
     let anything = false;
@@ -179,8 +190,6 @@ export class RunStream {
       }
       this.took(batch);
       anything = true;
-      // The sittings before this one go first, all of them, and then the one being played.
-      if (batch.sessionIndex === this.session.index) return { sent: 'taken' };
     }
   }
 }

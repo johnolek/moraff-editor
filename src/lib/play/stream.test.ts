@@ -113,7 +113,7 @@ describe('sending a run as it is played', () => {
     expect(server.sent[0].pressed).toBe(1);
   });
 
-  it('keeps a stretch the server never took and sends it with the next one', async () => {
+  it('sends a stretch the server never took again as it was, and what came after it in the next batch', async () => {
     const game = played();
     const server = takesEverything();
     let reachable = false;
@@ -127,9 +127,34 @@ describe('sending a run as it is played', () => {
     reachable = true;
     await stream.send(false);
 
-    expect(server.sent).toHaveLength(1);
-    expect(server.sent[0].inputs).toEqual([104, 106, 107]);
-    expect(server.sent[0].sequence).toBe(0);
+    expect(server.sent.map((batch) => [batch.sequence, batch.inputs])).toEqual([
+      [0, [104, 106]],
+      [1, [107]],
+    ]);
+  });
+
+  it('sends the batch whose answer was lost again holding exactly what it held', async () => {
+    const game = played();
+    const server = takesEverything();
+    let answering = false;
+    // The server takes and keeps every batch; what goes missing is its answer to the first one.
+    const stream = new RunStream(game.sitting, async (batch) => {
+      const answer = await server.post(batch);
+      return answering ? answer : { took: false, refusal: null };
+    });
+
+    game.press(104, 106);
+    await stream.send(false);
+    game.press(107);
+    answering = true;
+    await stream.send(false);
+
+    expect(server.sent.map((batch) => [batch.sequence, batch.inputs, batch.pressed])).toEqual([
+      [0, [104, 106], 2],
+      [0, [104, 106], 2],
+      [1, [107], 1],
+    ]);
+    expect(server.sent[1].session).toEqual(server.sent[0].session);
   });
 
   it('sends the same sequence again when an answer never came back', async () => {
