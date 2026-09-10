@@ -15,6 +15,46 @@ import type { CastEvent } from './action';
  * (`src/lib/game/port/state.ts`).
  */
 
+/**
+ * The kinds of {@link JournalEvent}, as strings, since a run holds a game's events as a list of
+ * kinds: an event with one of these is one every game pushes the same shape of, and one without
+ * belongs to its own game and only that game's journal reads it.
+ */
+export const JOURNAL_KINDS = [
+  'stepped',
+  'waited',
+  'dug',
+  'trapdoorTaken',
+  'ladderTaken',
+  'buildingEntered',
+  'swung',
+  'cast',
+  'itemUsed',
+  'dropped',
+  'gearSwitched',
+  'met',
+  'hit',
+  'killed',
+  'found',
+  'wandMade',
+  'scrollWritten',
+  'levelLost',
+  'experienceDrained',
+  'floorReached',
+  'dungeonReached',
+  'coinsSpent',
+  'deposited',
+  'withdrew',
+  'died',
+] as const;
+
+const KINDS: ReadonlySet<string> = new Set<string>(JOURNAL_KINDS);
+
+/** Whether an event a game pushed is one of the kinds all three games share. */
+export function isJournalKind(kind: string): boolean {
+  return KINDS.has(kind);
+}
+
 /** A monster as the game names it where it is met: its kind, its level and the name the battle
  *  banner prints. */
 export interface MonsterSeen {

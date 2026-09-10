@@ -1,6 +1,6 @@
 import { bundledDungeon } from '../game/dungeon';
 import { savePlayer } from '../game/port/record';
-import type { Rng } from '../game/port/rng';
+import { BorlandRng, type Rng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
@@ -62,6 +62,40 @@ export function townSquare(side: 'n' | 'w' = 'n'): { x: number; y: number } {
     }
   }
   throw new Error('no walkable town square');
+}
+
+/**
+ * The first square of a floor of module 0 that is whatever a test needs it to be, walked over
+ * row by row.
+ */
+export function findSquare(
+  level: number,
+  wanted: (square: MapSquare, x: number, y: number) => boolean,
+): { x: number; y: number } {
+  const rows: MapSquare[][] = UNFORGIVEN_MAP.floor(level, 0);
+  for (let y = 1; y < 100; y++) {
+    for (let x = 1; x < 76; x++) {
+      if (!rows[y][x].solid && wanted(rows[y][x], x, y)) return { x, y };
+    }
+  }
+  throw new Error(`no such square on floor ${level}`);
+}
+
+/** The town's Flea Bag Inn, which is the fourth of its buildings. */
+export function innSquare(): { x: number; y: number } {
+  return findSquare(
+    0,
+    (square, x, y) => bundledDungeon.townFeature(x, y, 0) === 4 && bundledDungeon.ladder(x, y, 0, 0) === 0,
+  );
+}
+
+/** A character standing on one square of one floor, with the loop running. */
+export function standingOn(
+  level: number,
+  where: { x: number; y: number },
+  overrides: Partial<PlayerCharacter> = {},
+): GameSession {
+  return startPlaying(characterFile({ level, dir: 0, ...where, ...overrides }), new BorlandRng(3));
 }
 
 /** The first walkable square of a floor of module 0 with a way out to the north. */

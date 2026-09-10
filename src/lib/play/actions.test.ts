@@ -4,8 +4,16 @@ import { bundledDungeon } from '../game/dungeon';
 import { spellIndex } from '../game/port/inventory';
 import { BorlandRng, type Rng } from '../game/port/rng';
 import type { Game } from '../game/port/state';
-import { UNFORGIVEN_MAP, type MapSquare } from '../map/game';
-import { characterFile, facingAMonster, inTheTown, press, startPlaying } from './battle.test-support';
+import {
+  characterFile,
+  facingAMonster,
+  findSquare,
+  innSquare,
+  inTheTown,
+  press,
+  standingOn,
+  startPlaying,
+} from './battle.test-support';
 import type { GameSession } from './engine';
 import { KEY } from './keys';
 
@@ -30,30 +38,6 @@ function actionsPushed(game: Game): string[] {
 /** The spell each cast on the list was of. */
 function spellsCast(game: Game): CastEvent['spell'][] {
   return game.events.filter((event): event is CastEvent => event.kind === 'cast').map((event) => event.spell);
-}
-
-/** The first square of a floor a test can be run on, by whatever it needs to be. */
-function findSquare(
-  level: number,
-  wanted: (square: MapSquare, x: number, y: number) => boolean,
-): { x: number; y: number } {
-  const rows: MapSquare[][] = UNFORGIVEN_MAP.floor(level, 0);
-  for (let y = 1; y < 100; y++) {
-    for (let x = 1; x < 76; x++) {
-      if (!rows[y][x].solid && wanted(rows[y][x], x, y)) return { x, y };
-    }
-  }
-  throw new Error(`no such square on floor ${level}`);
-}
-
-/** A character standing on one square of one floor, with the loop running. */
-function standingOn(level: number, where: { x: number; y: number }, overrides = {}): GameSession {
-  return startPlaying(characterFile({ level, dir: 0, ...where, ...overrides }), new BorlandRng(3));
-}
-
-/** The town's Flea Bag Inn, which is the fourth of its buildings. */
-function innSquare(): { x: number; y: number } {
-  return findSquare(0, (square, x, y) => bundledDungeon.townFeature(x, y, 0) === 4 && bundledDungeon.ladder(x, y, 0, 0) === 0);
 }
 
 /** MINOR PROTECTION, the third slot of the first line of the wizard battle spells, and the key

@@ -4,6 +4,7 @@ import { isActionKind } from '../game/action';
 import { SeededRng, type Rng } from '../game/port/rng';
 import { MORAFFS_REVENGE_MAP, MORAFFS_WORLD_MAP, UNFORGIVEN_MAP } from '../map/game';
 import { runMoveControl, startGame, type CharacterFile } from './engine';
+import { journalEntry, unforgivenJournal, type JournalEntry, type JournalWords } from './journal';
 import { runPlayLoop, type PlayLoopSession } from './loop';
 import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine';
 import { mwTurn } from './mw/keys';
@@ -349,6 +350,14 @@ export class RunRecorder {
   edits = 0;
   /** What this session has reached, oldest first. */
   readonly milestones: Milestone[] = [];
+  /**
+   * Everything that has happened in this session, in words, oldest first
+   * (`journal.ts`).
+   *
+   * It is not part of the log: a replay of the log writes the same journal, so what is exported
+   * stays the keys alone. What keeps it is the roster, beside the session it belongs to.
+   */
+  readonly entries: JournalEntry[] = [];
 
   /** Where the game has got to, which stamps a milestone. Null until the session hands it over. */
   private clock: (() => RunClock) | null = null;
@@ -440,7 +449,14 @@ export class RunRecorder {
     // The actions are counted before anything is stamped with the count, so that a milestone
     // reached by an action -- the module a step led to, the level a night at the inn handed over
     // -- is stamped with the run including it rather than as it stood a moment before.
-    for (const event of arrived) if (isActionKind(event.kind)) this.actions += 1;
+    const words = RUN_GAMES[this.game].journal;
+    const where = clock();
+    for (const event of arrived) {
+      if (isActionKind(event.kind)) this.actions += 1;
+      if (words === undefined) continue;
+      const entry = journalEntry(event, { at: this.actions, floor: where.floor, module: where.dungeon }, words);
+      if (entry !== null) this.entries.push(entry);
+    }
     const now = clock();
     const reach = (kind: MilestoneKind, which: number) =>
       this.milestones.push({ kind, which, actions: this.actions, time: this.time(), floor: now.floor });
@@ -483,6 +499,13 @@ export class RunRecorder {
     };
   }
 
+  /** Everything this session has done, in words, which is what the timeline reads and what a
+   *  replay writes again. */
+  journal(): JournalEntry[] {
+    this.note();
+    return [...this.entries];
+  }
+
   /** This session alone, which is what a replay of it reproduces. Its actions and its clock are
    *  the whole run's, and its milestones are the ones reached in this sitting. */
   log(): RunSession {
@@ -522,6 +545,9 @@ export interface RunReplay {
   actions: number;
   /** What this session reached. */
   milestones: Milestone[];
+  /** Everything the session did, in words, which is what a run is read as and what the summary
+   *  is folded from. */
+  journal: JournalEntry[];
   /** The loop came back: the character quit or died. */
   over: boolean;
   dead: boolean;
@@ -536,6 +562,12 @@ export interface RunReplay {
  */
 export interface RunGameEngine {
   replay(recorded: RunSession, run: RunRecorder): Promise<RunReplay>;
+  /**
+   * The game's own words for one of its events, for the run journal, and undefined for a game
+   * whose journal has not been written yet: that game's runs keep their milestones and their
+   * count and no journal at all.
+   */
+  journal?: JournalWords;
   /** "12 seconds" in Dungeons of the Unforgiven, "12 moves" in Moraff's World. */
   clockWords(time: number): string;
   /** The game's own name for one of its modules or dungeons. */
@@ -615,6 +647,7 @@ async function replayUnforgiven(recorded: RunSession, run: RunRecorder): Promise
     time: ended.time,
     actions: ended.actions,
     milestones: ended.milestones,
+    journal: run.journal(),
     over: session.over,
     dead: session.dead,
   };
@@ -648,6 +681,7 @@ async function replayMoraffsWorld(recorded: RunSession, run: RunRecorder): Promi
     time: ended.time,
     actions: ended.actions,
     milestones: ended.milestones,
+    journal: run.journal(),
     over: session.over,
     dead: session.dead,
   };
@@ -689,6 +723,7 @@ async function replayMoraffsRevenge(recorded: RunSession, run: RunRecorder): Pro
     time: ended.time,
     actions: ended.actions,
     milestones: ended.milestones,
+    journal: run.journal(),
     over: session.over,
     dead: session.dead,
   };
@@ -697,6 +732,7 @@ async function replayMoraffsRevenge(recorded: RunSession, run: RunRecorder): Pro
 export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
   unforgiven: {
     replay: replayUnforgiven,
+    journal: unforgivenJournal,
     clockWords: (seconds) => `${seconds} second${seconds === 1 ? '' : 's'}`,
     dungeonName: UNFORGIVEN_MAP.dungeonName,
   },

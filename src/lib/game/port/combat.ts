@@ -266,6 +266,13 @@ function puffball(game: Game, slot: number): number {
 }
 
 /**
+ * What a monster's breath weapon is called, by the byte its kind carries: 1 fire, 2 ice, 3 acid,
+ * 4 green phlegm, 5 black slime (exe DS:13c8 13cd 13d1 13d6 13e3). A monster with no breath
+ * weapon carries 0 and never breathes.
+ */
+export const BREATH_NAMES = ['', 'FIRE', 'ICE', 'ACID', 'GREEN PHLEGM', 'BLACK SLIME'];
+
+/**
  * The breath half of defend (exe 2000:82b7, unf.c "defend"): half the time, a monster whose
  * description names a breath weapon breathes it instead of swinging, and the damage worked out
  * above is thrown away for `level + Random(level)`, halved by the matching resistance.
@@ -278,13 +285,8 @@ function breathe(game: Game, slot: number): number {
   const monster = game.monsters[slot];
   const breath = game.monsterKinds[monster.type].breath;
   const lines = ['', '', '', '', '', '', '', ''];
-  // DS:13b2, then DS:13c8 13cd 13d1 13d6 13e3 for the five kinds
-  lines[0] = 'THE MONSTER BREATHES ';
-  if (breath === 1) lines[0] += 'FIRE';
-  if (breath === 2) lines[0] += 'ICE';
-  if (breath === 3) lines[0] += 'ACID';
-  if (breath === 4) lines[0] += 'GREEN PHLEGM';
-  if (breath === 5) lines[0] += 'BLACK SLIME';
+  // DS:13b2, then the five of BREATH_NAMES
+  lines[0] = 'THE MONSTER BREATHES ' + (BREATH_NAMES[breath] ?? '');
   let damage = monster.level + game.rng.random(monster.level);
   if (breath === 1 && pc.antiFireTimer > 0) damage = Math.trunc(damage / 2);
   if (breath === 2 && pc.antiColdTimer > 0) damage = Math.trunc(damage / 2);
