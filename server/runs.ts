@@ -133,7 +133,9 @@ export async function takeBatch(
     if (batch.session !== undefined) await keepSession(queries, characterId, batch);
     else await updateSessionClaims(queries, characterId, batch);
 
-    if (adding.append) await appendBatch(queries, characterId, { ...batch, ...adding }, arrivedAt);
+    if (adding.append) {
+      await appendBatch(queries, characterId, { ...batch, sequence: adding.sequence, inputs: adding.inputs }, arrivedAt);
+    }
     if (batch.save !== undefined) await keepCharacterSave(queries, characterId, batch.save, arrivedAt);
     await leaseCharacter(queries, characterId, sender.device, arrivedAt);
     return { taken: true, received: batch.sequence, ending: batch.ending };
