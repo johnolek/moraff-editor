@@ -17,6 +17,8 @@ const UNNAMED = 'C'.repeat(43);
 const MY_OTHER = 'D'.repeat(43);
 
 const CHARACTER = 'k3p9x1-ab12cd';
+/** A character rolled for no board, so nothing about it is ever replayed or checked. */
+const PRIVATE = 'p7r2w9-cd56ef';
 
 /** A build small enough to read, which passes whatever run it is handed. */
 function fakeEngine(): Uint8Array {
@@ -190,8 +192,16 @@ describe('streaming a run over HTTP', () => {
     ]);
   });
 
-  it('keeps an unchecked run to the player whose run it is', async () => {
-    const response = await fetch(`${origin}/runs/${CHARACTER}`, { headers: { Authorization: `Bearer ${THEIRS}` } });
+  it('shows a character still being played to anybody once its chain has been replayed', async () => {
+    const run = await untilAnybodyMayRead();
+
+    expect(run).toMatchObject({ id: CHARACTER, player: 'John', outcome: null, verdict: null });
+  });
+
+  it('keeps a run nothing has been checked about to the player whose run it is', async () => {
+    await send(THEIRS, batch({ session: { ...header, leaderboard: null } }), PRIVATE);
+
+    const response = await fetch(`${origin}/runs/${PRIVATE}`, { headers: { Authorization: `Bearer ${MINE}` } });
 
     expect(response.status).toBe(403);
   });
@@ -256,6 +266,20 @@ describe('streaming a run over HTTP', () => {
 
     expect(response.status).toBe(404);
   });
+
+  /**
+   * The replay of a chain still being played happens behind the answer to the batch that asked
+   * for it, so the run is asked for without a secret until it comes back, which is what a reader
+   * following a board of the living does.
+   */
+  async function untilAnybodyMayRead(): Promise<object> {
+    for (let tries = 0; tries < 50; tries++) {
+      const response = await fetch(`${origin}/runs/${CHARACTER}`);
+      if (response.status === 200) return response.json() as Promise<object>;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    throw new Error('The chain was never replayed.');
+  }
 
   /** The replay happens behind the answer to the last batch, so the run is asked for until the
    *  verdict is there, which is what the site does too. */

@@ -29,7 +29,7 @@ import {
   type BatchRefusal,
 } from './runs';
 import type { Queries, Sql } from './sql';
-import { createRunVerifier, verdictFor, type KeptVerdict, type RunVerifier } from './verifying';
+import { createRunVerifier, livingSnapshotFor, verdictFor, type KeptVerdict, type RunVerifier } from './verifying';
 
 /** What a refused request says. The site shows these words as they are. */
 const NOT_A_SECRET = 'That is not a player secret.';
@@ -571,9 +571,11 @@ export interface RunAnswer {
  * sittings it was played in and the engine build each of them names, and the verdict with the
  * milestones the replay reached.
  *
- * A verified run is anybody's to read: it is what a board is made of and what an announcement
- * points at. A run still being played, or one that failed or could not be checked, is the
- * player's own business, so it takes their secret.
+ * A run a replay has passed is anybody's to read: it is what a board is made of and what an
+ * announcement points at. That is a verified verdict for a run that has ended, and a verified
+ * snapshot for a character still being played, which is what a board of the living is made of and
+ * what a row there opens. A run nothing has been checked about, and one that failed or could not
+ * be checked, is the player's own business and takes their secret.
  */
 async function sendRun(
   request: IncomingMessage,
@@ -590,7 +592,9 @@ async function sendRun(
   const secret = bearerSecret(request);
   const player = secret === null ? null : await playerFor(sql, secret);
   const theirs = player !== null && player === run.playerId;
-  if ((verdict === null || verdict.status !== 'verified') && !theirs) {
+  const checked =
+    verdict?.status === 'verified' || (await livingSnapshotFor(sql, characterId))?.status === 'verified';
+  if (!checked && !theirs) {
     sendJson(response, 403, { error: NOT_YOUR_RUN });
     return;
   }
