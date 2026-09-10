@@ -15,12 +15,12 @@ function run(command, args) {
 
 function createDatabaseIfMissing() {
   const name = new URL(database).pathname.slice(1);
-  try {
-    run('createdb', [name]);
-    console.log(`Created the database ${name}.`);
-  } catch {
-    // createdb fails when the database already exists, which is the usual case.
-  }
+  const found = execFileSync('psql', ['-d', 'postgres', '-tAc', `SELECT 1 FROM pg_database WHERE datname = '${name}'`], {
+    encoding: 'utf8',
+  }).trim();
+  if (found === '1') return;
+  run('createdb', [name]);
+  console.log(`Created the database ${name}.`);
 }
 
 createDatabaseIfMissing();
