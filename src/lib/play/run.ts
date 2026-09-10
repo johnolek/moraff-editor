@@ -574,6 +574,11 @@ export interface RunGameEngine {
   clockWords(time: number): string;
   /** The game's own name for one of its modules or dungeons. */
   dungeonName(dungeon: number): string;
+  /** What the town is paid in: "300 rubles", "300 jewels", "300 jewel pieces". */
+  moneyWords(amount: number): string;
+  /** What the dungeon turns up, which in Dungeons of the Unforgiven is not the money the town is
+   *  paid in. */
+  foundMoneyWords(amount: number): string;
 }
 
 /**
@@ -737,6 +742,8 @@ export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
     journal: unforgivenJournal,
     clockWords: (seconds) => `${seconds} second${seconds === 1 ? '' : 's'}`,
     dungeonName: UNFORGIVEN_MAP.dungeonName,
+    moneyWords: (amount) => `${amount} rubles`,
+    foundMoneyWords: (amount) => `${amount} Greater-American Dollars`,
   },
   moraffsWorld: {
     replay: replayMoraffsWorld,
@@ -744,6 +751,8 @@ export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
     // The clock counts in fractions of a move, which is rounded wherever it is shown.
     clockWords: (moves) => `${Math.round(moves)} move${Math.round(moves) === 1 ? '' : 's'}`,
     dungeonName: MORAFFS_WORLD_MAP.dungeonName,
+    moneyWords: (amount) => `${amount} jewels`,
+    foundMoneyWords: (amount) => `${amount} jewels' worth of stones`,
   },
   revenge: {
     replay: replayMoraffsRevenge,
@@ -751,6 +760,8 @@ export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
     // This game's clock is the ticks of the poll its monsters move on, which `rev/clock.ts` has.
     clockWords: (ticks) => `${ticks} tick${ticks === 1 ? '' : 's'}`,
     dungeonName: MORAFFS_REVENGE_MAP.dungeonName,
+    moneyWords: (amount) => `${amount} jewel pieces`,
+    foundMoneyWords: (amount) => `${amount} in treasure`,
   },
 };
 

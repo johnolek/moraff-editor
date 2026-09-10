@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import type { JournalEvent } from '../game/journal-events';
-import { UNFORGIVEN_MAP } from '../map/game';
 import type { JournalEntry } from './journal';
 import { RUN_GAMES } from './run';
 import { summarizeJournal, summaryLines } from './summary';
@@ -10,11 +9,11 @@ import { summarizeJournal, summaryLines } from './summary';
  * played, so that what each total is made of is in the test that reads it.
  */
 
-/** Dungeons of the Unforgiven's own words for its clock and its modules. */
-const NAMES = {
-  clockWords: RUN_GAMES.unforgiven.clockWords,
-  dungeonName: UNFORGIVEN_MAP.dungeonName,
-};
+/** Each game's own words for its clock, its dungeons and its money, which is what `RUN_GAMES`
+ *  lends the summary. */
+const NAMES = RUN_GAMES.unforgiven;
+const MORAFFS_WORLD = RUN_GAMES.moraffsWorld;
+const MORAFFS_REVENGE = RUN_GAMES.revenge;
 
 /** An entry for one event, on the floor and in the module a test says. */
 function wrote(event: JournalEvent, floor = 1, module = 0): JournalEntry {
@@ -190,6 +189,47 @@ describe('what a run came to', () => {
     );
     expect(summary.deaths).toBe(1);
     expect(summaryLines(summary, NAMES)).toContain('Died 1 time');
+  });
+
+  it("folds a Moraff's World run the same way, in that game's own words", () => {
+    const werewolf = { type: 1, level: 12, name: 'WEREWOLF' };
+    const summary = summarizeJournal(
+      [
+        wrote({ kind: 'stepped', dir: 3 }, 12, 7),
+        wrote({ kind: 'swung', weapon: 'LONG SWORD', monster: werewolf, damage: 31 }, 12, 7),
+        wrote({ kind: 'killed', monster: werewolf, experience: 900 }, 12, 7),
+        wrote({ kind: 'pillFound', colour: 'GREEN' }, 12, 7),
+        wrote({ kind: 'pillFound', colour: 'GREEN' }, 12, 7),
+        wrote({ kind: 'found', find: { what: 'money', amount: 240 } }, 12, 7),
+        wrote({ kind: 'coinsSpent', amount: 300, on: 'MACE', where: 'STORE' }, 0, 7),
+      ],
+      { actions: 40, time: 60 },
+    );
+    expect(summary).toMatchObject({ steps: 1, experience: 900, moneyFound: 240 });
+    expect(summary.pills).toEqual([{ colour: 'GREEN', count: 2 }]);
+    const lines = summaryLines(summary, MORAFFS_WORLD);
+    expect(lines).toContain('Spent 40 actions and 60 moves');
+    expect(lines).toContain('Reached floor 12 of Dungeon 7');
+    expect(lines).toContain('Found 2 green pills');
+    expect(lines).toContain('Spent 300 jewels at the STORE');
+  });
+
+  it("folds a Moraff's Revenge run the same way, with its breath and its fountain", () => {
+    const skeleton = { type: 1, level: 9, name: 'SKELETON' };
+    const summary = summarizeJournal(
+      [
+        wrote({ kind: 'breathed', monster: skeleton, damage: 22 }, 30, 1),
+        wrote({ kind: 'breathed', monster: skeleton, damage: 18 }, 30, 1),
+        wrote({ kind: 'fountainDrunk', generation: 3 }, 70, 1),
+      ],
+      { actions: 9, time: 400 },
+    );
+    expect(summary).toMatchObject({ breaths: 2, breathDamage: 40, fountains: 1 });
+    const lines = summaryLines(summary, MORAFFS_REVENGE);
+    expect(lines).toContain('Spent 9 actions and 400 ticks');
+    expect(lines).toContain('Breathed fire 2 times for 40');
+    expect(lines).toContain('Drank from the fountain of youth 1 time');
+    expect(lines).toContain('Reached floor 70 of Generation 1');
   });
 
   it('passes over an entry written from one of the kinds a game has of its own', () => {

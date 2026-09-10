@@ -258,12 +258,18 @@ function used(summary: RunSummary, what: UsedCount['what'], name: string): UsedC
   return fresh;
 }
 
-/** What a game has to lend the summary's words: its own clock, and its own name for a place. */
+/** What a game has to lend the summary's words: its own clock, its own name for a place, and
+ *  its own name for money. */
 export interface SummaryNames {
   /** "12 seconds" in Dungeons of the Unforgiven, "12 moves" in Moraff's World. */
   clockWords(time: number): string;
   /** The game's own name for one of its modules or dungeons. */
   dungeonName(dungeon: number): string;
+  /** What the town is paid in: "300 rubles", "300 jewels", "300 jewel pieces". */
+  moneyWords(amount: number): string;
+  /** What the dungeon turns up, which in Dungeons of the Unforgiven is not the money the town is
+   *  paid in. */
+  foundMoneyWords(amount: number): string;
 }
 
 /** "1 step", "12 steps". */
@@ -288,8 +294,10 @@ export function summaryLines(summary: RunSummary, names: SummaryNames): string[]
     lines.push(`Gained ${count(summary.levelsGained, 'level')}, lost ${summary.levelsLost}`);
   }
   lines.push(`Reached floor ${summary.deepestFloor} of ${names.dungeonName(summary.furthestDungeon)}`);
-  if (summary.moneyFound > 0) lines.push(`Found ${summary.moneyFound} Greater-American Dollars`);
-  for (const spent of summary.spent) lines.push(`Spent ${spent.amount} rubles at the ${spent.where}`);
+  if (summary.moneyFound > 0) lines.push(`Found ${names.foundMoneyWords(summary.moneyFound)}`);
+  for (const spent of summary.spent) {
+    lines.push(`Spent ${names.moneyWords(spent.amount)} at the ${spent.where}`);
+  }
   for (const made of summary.made) {
     lines.push(
       made.what === 'wand'
