@@ -116,8 +116,16 @@ function sessionFrom(session: KeptSession, batches: readonly KeptBatch[]): RunSe
   const inputs = batches
     .filter((batch) => batch.sessionIndex === session.sessionIndex)
     .flatMap((batch) => batch.inputs);
-  // The game and the board are strings out of the database, and an engine handed one it does not
-  // know throws rather than passing a run: the verdict is then that the run cannot be checked.
+  return { ...sessionWithoutKeys(session), inputs };
+}
+
+/**
+ * One sitting as a run log names it, without the keys, which the stretches carry.
+ *
+ * The game and the board are strings out of the database, and an engine handed one it does not
+ * know throws rather than passing a run: the verdict is then that the run cannot be checked.
+ */
+export function sessionWithoutKeys(session: KeptSession): Omit<RunSession, 'inputs'> {
   return {
     engine: session.engine,
     game: session.game as RunSession['game'],
@@ -128,7 +136,6 @@ function sessionFrom(session: KeptSession, batches: readonly KeptBatch[]): RunSe
     startedAt: session.startedAt,
     seed: session.seed,
     record: session.record,
-    inputs,
     actions: session.actions,
     time: session.time,
     milestones: session.milestones,

@@ -1,7 +1,13 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { deviceIsAhead, entryFromServer, readServerRoster } from '../src/lib/character/server-roster';
+import type { RosterEntry } from '../src/lib/app-state.svelte';
+import {
+  deviceIsAhead,
+  entryFromServer,
+  readServerRoster,
+  readServerRun,
+} from '../src/lib/character/server-roster';
 import type { RunSession } from '../src/lib/play/run';
 import { RunStream, type BatchAnswer, type RunBatch, type StreamedSession } from '../src/lib/play/stream';
 import { createRunServer } from './http';
@@ -136,12 +142,25 @@ describe('a character streamed to the server and read back off it', () => {
       maps: MAPS,
       leasedElsewhere: false,
     });
-    expect(character.run.map((session) => session.inputs)).toEqual([[104, 106], [107]]);
+    // The roster leaves the keys out and counts them instead, since a chain of Moraff's Revenge
+    // is megabytes and every page load would carry every character's.
+    expect(character.run.map((session) => session.inputCount)).toEqual([2, 1]);
+    expect(character.run.map((session) => session.inputs)).toEqual([[], []]);
 
-    const entry = entryFromServer(character, null);
+    // The device that played it keeps the keys it holds, since the counts say they are the same
+    // keys, and is not behind its own run: what came back is what it sent.
+    const played = { run: [sitting(0, [104, 106]), sitting(1, [107])], journal: [] } as unknown as RosterEntry;
+    const entry = entryFromServer(character, played);
     expect(Array.from(entry!.bytes)).toEqual([9, 8, 7, 6]);
-    // The device that played it is not behind its own run: what came back is what it sent.
+    expect(entry!.run.map((session) => session.inputs)).toEqual([[104, 106], [107]]);
     expect(deviceIsAhead(entry!.run, character.run)).toBe(false);
+  });
+
+  it('hands the keys of the chain over when they are asked for', async () => {
+    const run = await readServerRun(CHARACTER);
+
+    expect(run?.map((session) => session.inputs)).toEqual([[104, 106], [107]]);
+    expect(run?.[0]).toMatchObject({ seed: 12345, record: 'AAEC', engine: ENGINE });
   });
 
   it('refuses a sitting played from a copy of the character the run has gone past', async () => {

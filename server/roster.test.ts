@@ -1,6 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { announceRun } from './announcing';
-import { forgetKeptCharacter, keepEditedCharacter, readCharacterEdit, rosterOf, type CharacterEdit } from './roster';
+import {
+  forgetKeptCharacter,
+  keepEditedCharacter,
+  keptRunOf,
+  readCharacterEdit,
+  rosterOf,
+  type CharacterEdit,
+} from './roster';
 import { LEASE_MS, takeBatch, type BatchSender, type BatchSession, type CharacterSave, type RunBatch } from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
@@ -79,7 +86,34 @@ describe("a player's characters", () => {
     expect(character.savedAt).not.toBeNull();
   });
 
-  it('rebuilds the chain out of the sittings and the stretches that arrived', async () => {
+  it('carries the chain without its keys, counting them instead', async () => {
+    await playedTwice();
+
+    const [character] = await rosterOf(sql, ME.player, ME.device, 100000);
+
+    expect(character.run.map((session) => session.inputCount)).toEqual([3, 1]);
+    expect(character.run[0]).toMatchObject({ seed: 12345, record: 'AAEC', game: 'unforgiven', actions: 2 });
+    expect(character.run[0]).not.toHaveProperty('inputs');
+  });
+
+  it('rebuilds the chain out of the sittings and the stretches that arrived when it is asked for', async () => {
+    await playedTwice();
+
+    const run = await keptRunOf(sql, CHARACTER, ME.player);
+
+    expect(run?.map((session) => session.inputs)).toEqual([[104, 106, 107], [108]]);
+    expect(run?.[0]).toMatchObject({ seed: 12345, record: 'AAEC', game: 'unforgiven', actions: 2 });
+  });
+
+  it('hands over no chain for a character of another player’s', async () => {
+    await playedTwice();
+
+    expect(await keptRunOf(sql, CHARACTER, THEM.player)).toBeNull();
+    expect(await keptRunOf(sql, 'never-played', ME.player)).toBeNull();
+  });
+
+  /** One character played in two sittings, the first of them in two stretches. */
+  async function playedTwice(): Promise<void> {
     await takeBatch(sql, CHARACTER, ME, batch({ session: header, inputs: [104] }), 1000);
     await takeBatch(sql, CHARACTER, ME, batch({ sequence: 1, inputs: [106, 107] }), 6000);
     await takeBatch(
@@ -89,12 +123,7 @@ describe("a player's characters", () => {
       batch({ sessionIndex: 1, inputs: [108], session: { ...header, startedAt: '2026-09-09T13:00:00.000Z' } }),
       11000,
     );
-
-    const [character] = await rosterOf(sql, ME.player, ME.device, 100000);
-
-    expect(character.run.map((session) => session.inputs)).toEqual([[104, 106, 107], [108]]);
-    expect(character.run[0]).toMatchObject({ seed: 12345, record: 'AAEC', game: 'unforgiven', actions: 2 });
-  });
+  }
 
   it('is every character of that player and nobody else’s, oldest first', async () => {
     await takeBatch(sql, OTHER, ME, batch({ session: { ...header, name: 'Rolf' }, save: { ...save, createdAt: '2026-09-09T09:00:00.000Z' } }), 1000);

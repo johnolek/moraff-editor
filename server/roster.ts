@@ -12,7 +12,7 @@ import {
   type LeasedCharacter,
 } from './runs';
 import type { Queries, Sql } from './sql';
-import { runLogFrom } from './verifying';
+import { runLogFrom, sessionWithoutKeys } from './verifying';
 
 /**
  * A player's characters, as another device of theirs picks them up.
@@ -20,12 +20,23 @@ import { runLogFrom } from './verifying';
  * A character belongs to the player rather than to the browser it was rolled in: sign in with the
  * name and the passphrase on a second device and this is what puts the roster there, each
  * character where its last sitting left it. The record and the maps are the newest a device sent,
- * on a batch or on an edit of its own, and the chain is put back together out of the sittings and
- * the stretches of keys the server was sent, which is the same log the device wrote.
+ * on a batch or on an edit of its own, and the chain is the sittings the server was told about;
+ * asked for whole, it is put back together out of them and the stretches of keys that arrived,
+ * which is the same log the device wrote.
  *
- * A character reaches this list by being played: the first batch of a sitting is what makes one
- * known, so a character rolled and never played is still only on the device it was rolled in.
+ * A character reaches this list by being played, or by being sent on its own with an edit made
+ * while no game was running.
+ *
+ * The chain goes out without the keys of its sittings. Moraff's Revenge writes an input for every
+ * tick of its monsters' clock, so a chain of it is megabytes, and a device asks for the keys of
+ * one character at a time and only when it needs them: to play the character on, or to export the
+ * run. What stands in their place is how many of them the server holds, which is all the device's
+ * merge compares.
  */
+
+/** One sitting as the roster carries it: everything a run log says about it but the keys, and how
+ *  many of those the server holds in their place. */
+export type RosterSession = Omit<RunSession, 'inputs'> & { inputCount: number };
 
 /** One character as a device takes it up. */
 export interface RosterCharacter {
@@ -46,8 +57,9 @@ export interface RosterCharacter {
   maps: string | null;
   /** When that record and those maps arrived, by this server's clock. */
   savedAt: string | null;
-  /** Every sitting it has been played in, oldest first, with the keys of each. */
-  run: RunSession[];
+  /** Every sitting it has been played in, oldest first, each with how many keys it holds rather
+   *  than the keys themselves. */
+  run: RosterSession[];
   /** Whether another device of this player's is playing it now, so that two devices never play
    *  one character at once. */
   leasedElsewhere: boolean;
@@ -93,7 +105,7 @@ export async function rosterOf(
 
 async function characterOf(sql: Queries, row: RosterRow, device: string, now: number): Promise<RosterCharacter> {
   const sessions = await sessionsOf(sql, row.id);
-  const batches = await batchesOf(sql, row.id);
+  const counted = await keysPerSitting(sql, row.id);
   return {
     id: row.id,
     game: row.game,
@@ -106,9 +118,38 @@ async function characterOf(sql: Queries, row: RosterRow, device: string, now: nu
     record: row.record === null ? null : Buffer.from(row.record).toString('base64'),
     maps: row.maps,
     savedAt: row.saved_at === null ? null : row.saved_at.toISOString(),
-    run: runLogFrom(sessions, batches).sessions,
+    run: sessions.map((session) => ({
+      ...sessionWithoutKeys(session),
+      inputCount: counted.get(session.sessionIndex) ?? 0,
+    })),
     leasedElsewhere: leasedElsewhere(row, device, now),
   };
+}
+
+/** How many keys the server holds for each sitting of one character, by the place that sitting
+ *  comes in the run. The keys themselves are never read: counting them is the whole point. */
+async function keysPerSitting(sql: Queries, characterId: string): Promise<Map<number, number>> {
+  const rows = await sql.query<{ session_index: number; keys: string }>(
+    `SELECT session_index, coalesce(sum(jsonb_array_length(inputs)), 0) AS keys
+     FROM batches WHERE character_id = $1 GROUP BY session_index`,
+    [characterId],
+  );
+  return new Map(rows.map((row) => [row.session_index, Number(row.keys)]));
+}
+
+/**
+ * The whole chain of one character of this player, with the keys of every sitting: what the
+ * roster answer leaves out.
+ *
+ * Null when no character of theirs has that id, which is also what a character of somebody
+ * else's comes to, so a player is told the same thing either way.
+ */
+export async function keptRunOf(sql: Queries, characterId: string, playerId: number): Promise<RunSession[] | null> {
+  const mine = await sql.query('SELECT id FROM characters WHERE id = $1 AND player_id = $2', [characterId, playerId]);
+  if (mine.length === 0) return null;
+  const sessions = await sessionsOf(sql, characterId);
+  const batches = await batchesOf(sql, characterId);
+  return runLogFrom(sessions, batches).sessions;
 }
 
 /**

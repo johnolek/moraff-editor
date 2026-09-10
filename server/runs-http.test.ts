@@ -245,6 +245,34 @@ describe('streaming a run over HTTP', () => {
     expect(characters[0].run[0]).toMatchObject({ seed: 12345, record: 'AAEC', engine: ENGINE });
   });
 
+  it('leaves the keys of every sitting out of the roster and counts them instead', async () => {
+    const response = await fetch(`${origin}/players/me/characters`, {
+      headers: { Authorization: `Bearer ${MY_OTHER}` },
+    });
+
+    const { characters } = await response.json();
+    expect(characters[0].run[0]).toMatchObject({ inputCount: 4 });
+    expect(characters[0].run[0]).not.toHaveProperty('inputs');
+  });
+
+  it('hands the keys of one character’s chain over when they are asked for', async () => {
+    const response = await fetch(`${origin}/players/me/characters/${CHARACTER}/run`, {
+      headers: { Authorization: `Bearer ${MY_OTHER}` },
+    });
+
+    expect(response.status).toBe(200);
+    const { run } = await response.json();
+    expect(run[0]).toMatchObject({ seed: 12345, inputs: [104, 106, 104, 106] });
+  });
+
+  it('hands over no chain for a character of another player’s', async () => {
+    const response = await fetch(`${origin}/players/me/characters/${CHARACTER}/run`, {
+      headers: { Authorization: `Bearer ${THEIRS}` },
+    });
+
+    expect(response.status).toBe(404);
+  });
+
   it('hands no roster to a device that has claimed no name', async () => {
     const response = await fetch(`${origin}/players/me/characters`, {
       headers: { Authorization: `Bearer ${UNNAMED}` },

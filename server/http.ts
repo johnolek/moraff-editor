@@ -17,7 +17,7 @@ import {
   secretHash,
   signInWithPassphrase,
 } from './players';
-import { forgetKeptCharacter, keepEditedCharacter, readCharacterEdit, rosterOf } from './roster';
+import { forgetKeptCharacter, keepEditedCharacter, keptRunOf, readCharacterEdit, rosterOf } from './roster';
 import {
   endRun,
   leaseOn,
@@ -128,6 +128,12 @@ export function createRunServer(config: ServerOrigin, sql: Sql, feed: Feed = ope
 
     if (request.method === 'PUT' && character !== null) {
       void keepMyCharacter(request, response, sql, bearerSecret(request), decodeURIComponent(character[1]));
+      return;
+    }
+
+    const myRun = path.match(/^\/players\/me\/characters\/([^/]+)\/run$/);
+    if (request.method === 'GET' && myRun !== null) {
+      void sendMyCharactersRun(response, sql, bearerSecret(request), decodeURIComponent(myRun[1]));
       return;
     }
 
@@ -334,7 +340,8 @@ async function sendMyName(response: ServerResponse, sql: Queries, secret: string
  *
  * A character belongs to the player and not to the browser it was rolled in, so this is what puts
  * a roster on a second device: every character with its record, its explored maps and the chain
- * of sittings it has been played in.
+ * of sittings it has been played in. The keys of those sittings are left out and their count goes
+ * instead; `/players/me/characters/:id/run` is where a device asks for one character's keys.
  */
 async function sendMyCharacters(response: ServerResponse, sql: Queries, secret: string | null): Promise<void> {
   if (secret === null) {
@@ -347,6 +354,36 @@ async function sendMyCharacters(response: ServerResponse, sql: Queries, secret: 
     return;
   }
   sendJson(response, 200, { characters: await rosterOf(sql, player, secretHash(secret), Date.now()) });
+}
+
+/**
+ * The whole chain of one of this player's characters, with the keys of every sitting.
+ *
+ * The roster above leaves the keys out, because a chain of Moraff's Revenge is megabytes and
+ * every page load would carry every character's. A device asks for one character's here, and only
+ * when it needs them: to play that character on, or to export its run.
+ */
+async function sendMyCharactersRun(
+  response: ServerResponse,
+  sql: Queries,
+  secret: string | null,
+  characterId: string,
+): Promise<void> {
+  if (secret === null || !CHARACTER_ID.test(characterId)) {
+    sendJson(response, 400, { error: NOT_A_SECRET });
+    return;
+  }
+  const player = await playerFor(sql, secret);
+  if (player === null) {
+    sendJson(response, 403, { error: NO_NAME_YET });
+    return;
+  }
+  const run = await keptRunOf(sql, characterId, player);
+  if (run === null) {
+    sendJson(response, 404, { error: NO_SUCH_CHARACTER });
+    return;
+  }
+  sendJson(response, 200, { run });
 }
 
 /**

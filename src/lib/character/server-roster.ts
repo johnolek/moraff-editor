@@ -20,6 +20,18 @@ import { fromBase64 } from './storage';
  * both work exactly as the site always has, on the store in the browser.
  */
 
+/**
+ * One sitting as the roster answer carries it: everything a run log says about it but the keys,
+ * and how many of them the server holds in their place.
+ *
+ * A chain of Moraff's Revenge, whose monsters' clock ticks are inputs of the log, is megabytes,
+ * and the roster carries every character's on every page load. So the keys are asked for one
+ * character at a time, through `readServerRun`, and only where they are needed.
+ */
+export interface ServerSession extends RunSession {
+  inputCount: number;
+}
+
 /** One character as the server hands it over. */
 export interface ServerCharacter {
   id: string;
@@ -35,7 +47,7 @@ export interface ServerCharacter {
   /** The explored maps as the device that played it keeps them. */
   maps: string | null;
   savedAt: string | null;
-  run: RunSession[];
+  run: ServerSession[];
   /** Whether another device of this player's is playing it now. */
   leasedElsewhere: boolean;
 }
@@ -83,6 +95,17 @@ export async function keepCharacterOnServer(entry: RosterEntry): Promise<void> {
     // A server that was not reached holds whatever it held before, and the character here is
     // unchanged by the attempt.
   }
+}
+
+/**
+ * The whole chain of one character, with the keys of every sitting, which the roster answer leaves
+ * out. Null when there was nothing to be had, which leaves the chain in hand as it was.
+ */
+export async function readServerRun(id: string): Promise<RunSession[] | null> {
+  const answer = await askTheServer(`/players/me/characters/${encodeURIComponent(id)}/run`);
+  if (answer === null) return null;
+  const run = (answer as { run?: unknown }).run;
+  return Array.isArray(run) ? run.filter(isRunSession) : null;
 }
 
 /** Take a character off the server for good, which is what forgetting one here means for a player
@@ -140,9 +163,26 @@ function serverCharacter(value: unknown): ServerCharacter | null {
     record: typeof character.record === 'string' ? character.record : null,
     maps: typeof character.maps === 'string' ? character.maps : null,
     savedAt: typeof character.savedAt === 'string' ? character.savedAt : null,
-    run: Array.isArray(character.run) ? character.run.filter(isRunSession) : [],
+    run: Array.isArray(character.run)
+      ? character.run.map(serverSession).filter((session): session is ServerSession => session !== null)
+      : [],
     leasedElsewhere: character.leasedElsewhere === true,
   };
+}
+
+/**
+ * One sitting the server sent, or null when it is not one this build can read.
+ *
+ * The roster answer leaves the keys out and the run endpoint carries them, so a sitting with none
+ * is read as a sitting with no keys here yet; `inputCount` is how many the server holds.
+ */
+function serverSession(value: unknown): ServerSession | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const session = value as Record<string, unknown>;
+  const inputs: unknown[] = Array.isArray(session.inputs) ? session.inputs : [];
+  const log = { ...session, inputs };
+  if (!isRunSession(log)) return null;
+  return { ...log, inputCount: typeof session.inputCount === 'number' ? session.inputCount : inputs.length };
 }
 
 /**
@@ -167,9 +207,23 @@ export function entryFromServer(character: ServerCharacter, kept: RosterEntry | 
     editedAt: character.editedAt ?? character.createdAt,
     dead: character.dead,
     leaderboard: isLeaderboard(character.leaderboard) ? character.leaderboard : null,
-    run: character.run,
+    run: character.run.map((session, at) => sittingWithKeys(session, kept?.run[at])),
     journal: kept?.journal ?? [],
   };
+}
+
+/**
+ * One sitting of the chain, with the keys this device already holds for it.
+ *
+ * The roster answer carries how many keys the server has rather than the keys themselves, so a
+ * sitting this device played is recognised by its seed, its moment and that count, and the keys
+ * here are those keys. A sitting this device has not played comes with none until
+ * {@link readServerRun} is asked for them.
+ */
+function sittingWithKeys(session: ServerSession, here: RunSession | undefined): RunSession {
+  const { inputCount, ...log } = session;
+  const same = here !== undefined && here.seed === session.seed && here.startedAt === session.startedAt;
+  return { ...log, inputs: same && here.inputs.length === inputCount ? here.inputs : log.inputs };
 }
 
 /**
@@ -184,22 +238,26 @@ export function entryFromServer(character: ServerCharacter, kept: RosterEntry | 
  * same way, with the server's keys the first of this device's. Anything else is two runs of the
  * same character that have parted company — another device played it on while this one was
  * away — and then the server's copy is the character and this one is not.
+ *
+ * The roster answer carries how many keys the server holds rather than the keys themselves, so
+ * this is a comparison of counts. That is all it ever was: a sitting is recognised by its seed
+ * and its moment, and how far it has been played is how many keys it holds.
  */
-export function deviceIsAhead(device: readonly RunSession[], server: readonly RunSession[]): boolean {
+export function deviceIsAhead(device: readonly RunSession[], server: readonly ServerSession[]): boolean {
   if (device.length < server.length) return false;
   for (const [at, sitting] of server.entries()) {
     const here = device[at];
     if (here.seed !== sitting.seed || here.startedAt !== sitting.startedAt) return false;
-    if (here.inputs.length < sitting.inputs.length) return false;
+    if (here.inputs.length < sitting.inputCount) return false;
     // A sitting the server has been played past cannot have grown here: the keys of it that
     // reached the server are all there ever were.
-    if (at < server.length - 1 && here.inputs.length > sitting.inputs.length) return false;
+    if (at < server.length - 1 && here.inputs.length > sitting.inputCount) return false;
   }
   return device.length > server.length || moreKeysThan(device, server);
 }
 
 /** Whether the newest sitting here holds keys the server's copy of it does not. */
-function moreKeysThan(device: readonly RunSession[], server: readonly RunSession[]): boolean {
+function moreKeysThan(device: readonly RunSession[], server: readonly ServerSession[]): boolean {
   const newest = server.length - 1;
-  return newest >= 0 && device[newest].inputs.length > server[newest].inputs.length;
+  return newest >= 0 && device[newest].inputs.length > server[newest].inputCount;
 }
