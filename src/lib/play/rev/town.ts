@@ -3,7 +3,7 @@ import { revExperienceForNextLevel } from './advice';
 import type { RevMagicDesk } from './desk';
 import { revWorkOutSpellPoints } from './fountain';
 import { REV_FOUR_SECONDS } from './held';
-import { revItemMenu } from './items';
+import { revItemMenu, REV_BATTLE_ITEM_NAMES, REV_PREP_ITEM_NAMES } from './items';
 import { revBasicNumber } from './magic';
 import { revPlayInnHymn, revPlayTempleMarch } from './music';
 import { REV_BANK_DIGITS, revTypeANumber, revTypedDigit } from './number';
@@ -68,6 +68,9 @@ const YES = 'Y'.charCodeAt(0);
 const NO = 'N'.charCodeAt(0);
 const LEAVE = 'L'.charCodeAt(0);
 
+/** What a night at an inn buys, which is the one thing any of the three sells. */
+const A_NIGHT = 'a night';
+
 /** The three inns, in the order `ON building GOTO` lists them. */
 const INNS = [
   { line: 'Flea Bag Inn.  A room       will cost 10 jewel pieces.', price: 10, heals: 1, routine: '1000:1E0A' },
@@ -119,6 +122,12 @@ export async function revStayAtInn(game: RevGame, which: number, desk: RevTownDe
     return;
   }
   pc.money -= inn.price;
+  game.events.push({
+    kind: 'coinsSpent',
+    amount: inn.price,
+    on: A_NIGHT,
+    where: REV_BUILDING_NAMES[which],
+  });
   if (inn.heals === 0) {
     // 1000:2014: the Kings Inn's own cleric, which is the whole of what the price buys.
     pc.hp = pc.maxHp;
@@ -239,6 +248,7 @@ const POUNDS_OF_CHARACTER = 150;
 export async function revVisitBank(game: RevGame, desk: RevTownDesk): Promise<void> {
   const pc = game.pc;
   game.flushKeys();
+  if (pc.treasure > 0) game.events.push({ kind: 'treasureSold', amount: pc.treasure });
   pc.money += pc.treasure;
   pc.treasure = 0;
   pc.weight = POUNDS_PER_SUIT * revValue(pc, REV_ARMOUR_VALUE) + POUNDS_OF_CHARACTER;
@@ -253,25 +263,19 @@ export async function revVisitBank(game: RevGame, desk: RevTownDesk): Promise<vo
       revSayKeepingTheCursor(game, WITHDRAW_PROMPT);
       const amount = await revTypeANumber(game, desk, REV_BANK_DIGITS);
       // 1000:2479: asking for more than is banked takes all of it rather than being refused.
-      if (amount > pc.bank) {
-        pc.money += pc.bank;
-        pc.bank = 0;
-      } else {
-        pc.bank -= amount;
-        pc.money += amount;
-      }
+      const taken = amount > pc.bank ? pc.bank : amount;
+      pc.bank -= taken;
+      pc.money += taken;
+      if (taken > 0) game.events.push({ kind: 'withdrew', amount: taken });
     } else {
       game.say(DEPOSIT_PROMPT[0]);
       revSayKeepingTheCursor(game, DEPOSIT_PROMPT[1]);
       const amount = await revTypeANumber(game, desk, REV_BANK_DIGITS);
       // 1000:24D5: and offering more than is carried banks all of it.
-      if (amount > pc.money) {
-        pc.bank += pc.money;
-        pc.money = 0;
-      } else {
-        pc.money -= amount;
-        pc.bank += amount;
-      }
+      const put = amount > pc.money ? pc.money : amount;
+      pc.money -= put;
+      pc.bank += put;
+      if (put > 0) game.events.push({ kind: 'deposited', amount: put });
     }
     // 1000:2493, 24C0, 24EF and 251C: all four ways through clear the screen on the way back.
     revClearScreen(game);
@@ -304,6 +308,9 @@ const TEMPLE_MENU = [
   '5) Gain level: 500000 JP',
 ];
 const TEMPLE_PRICES = [75, 1000, 400, 20000, 500000];
+
+/** What each of the five is called, which is its own menu line without the number or the price. */
+const TEMPLE_SPELL_NAMES = TEMPLE_MENU.slice(1).map((line) => line.slice(3, line.indexOf(':')));
 const NO_DIFFERENCE = "You don't feel any different.";
 const THROWN_OUT_OF_THE_TEMPLE = [`${NOT_ENOUGH_MONEY}. The good`, '   cleric throws you out.'];
 
@@ -410,6 +417,12 @@ export async function revVisitTemple(game: RevGame, desk: RevTownDesk): Promise<
       return;
     }
     pc.money -= TEMPLE_PRICES[spell - 1];
+    game.events.push({
+      kind: 'coinsSpent',
+      amount: TEMPLE_PRICES[spell - 1],
+      on: TEMPLE_SPELL_NAMES[spell - 1],
+      where: REV_BUILDING_NAMES[4],
+    });
     const said = castTempleSpell(game, spell);
     revClearScreen(game);
     game.say(said);
@@ -436,9 +449,15 @@ const STORE_GOODS: RevGoods[] = [
   { line: '7) Field plate armor: 10000 JP', price: 10000, owned: null, armour: 4 },
 ];
 
+/** What each line of the store sells, which is its own line without the number or the price. */
+const STORE_GOODS_NAMES = STORE_GOODS.map((goods) => goods.line.slice(3, goods.line.indexOf(':')));
+
 const STORE_OPENS = 'You are in the store.';
 const WHICH_WOULD_YOU_LIKE = '   Which would you like to buy?';
 const THE_TOWN_LINE = '8) The Town: 1000000 JP';
+
+/** What the eighth line sells, taken from that line the same way as the other seven. */
+const THE_TOWN_NAME = THE_TOWN_LINE.slice(3, THE_TOWN_LINE.indexOf(':'));
 const STORE_JOKE = "I'm also selling the Brooklyn bridge,      want to it, too?";
 const CANNOT_AFFORD_IT = `${NOT_ENOUGH_MONEY}.`;
 const ALREADY_HAVE = 'You already have that weapon.';
@@ -501,6 +520,12 @@ export async function revVisitStore(game: RevGame, desk: RevTownDesk): Promise<v
         continue;
       }
       pc.money -= TOWN_PRICE;
+      game.events.push({
+        kind: 'coinsSpent',
+        amount: TOWN_PRICE,
+        on: THE_TOWN_NAME,
+        where: REV_BUILDING_NAMES[5],
+      });
       game.say(STORE_JOKE);
       setRevValue(pc, REV_VALUE.town, 1);
       // 1000:2B79: the one purchase the store waits at before it puts the player back outside.
@@ -534,6 +559,12 @@ export async function revVisitStore(game: RevGame, desk: RevTownDesk): Promise<v
       continue;
     }
     pc.money -= goods.price;
+    game.events.push({
+      kind: 'coinsSpent',
+      amount: goods.price,
+      on: STORE_GOODS_NAMES[line - 1],
+      where: REV_BUILDING_NAMES[5],
+    });
     if (goods.owned !== null) setRevValue(pc, goods.owned, 1);
     else setRevValue(pc, REV_ARMOUR_VALUE, goods.armour);
   }
@@ -647,6 +678,13 @@ async function readOutAnItem(game: RevGame, desk: RevTownDesk, magic: RevMagicDe
   const item = await revItemMenu(game, magic, which, true);
   if (item === 0) return false;
   game.pc.money -= REV_MAGIC_ITEM_LIST_PRICE;
+  const named = which === 'prep' ? REV_PREP_ITEM_NAMES : REV_BATTLE_ITEM_NAMES;
+  game.events.push({
+    kind: 'coinsSpent',
+    amount: REV_MAGIC_ITEM_LIST_PRICE,
+    on: `what the ${named[item - 1]} does`,
+    where: REV_BUILDING_NAMES[6],
+  });
   // 1000:2CBF and 2D23: and the sentence goes on a screen of its own as well.
   revClearScreen(game);
   const text = which === 'prep' ? REV_ITEM_TABLE.prepText : REV_ITEM_TABLE.battleText;
@@ -689,6 +727,12 @@ async function readOutASpell(game: RevGame, desk: RevTownDesk): Promise<boolean>
     spells[1]?.text ?? '',
   );
   pc.money -= price;
+  game.events.push({
+    kind: 'coinsSpent',
+    amount: price,
+    on: `what the level ${level} ${which} spells do`,
+    where: REV_BUILDING_NAMES[6],
+  });
   // 1000:2E7D and 2EEA.
   await revHitAnyKey(game, desk);
   return false;
