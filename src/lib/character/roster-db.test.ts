@@ -99,8 +99,57 @@ describe('the schema', () => {
     const db = await new Promise<IDBDatabase>((resolve) => {
       opened.onsuccess = () => resolve(opened.result);
     });
-    expect([...db.objectStoreNames]).toEqual(['characters', 'journal', 'sessions']);
+    expect([...db.objectStoreNames]).toEqual(['characters', 'journal', 'maps', 'sessions']);
     db.close();
+  });
+
+  it('adds the stores a later version wants to a database opened at an earlier one', async () => {
+    const first = indexedDB.open('moraff-tools', 1);
+    first.onupgradeneeded = () => first.result.createObjectStore('characters', { keyPath: 'id' });
+    const old = await new Promise<IDBDatabase>((resolve) => {
+      first.onsuccess = () => resolve(first.result);
+    });
+    old.close();
+
+    expect(await store.keepMaps('a', '{"0:1":"AA"}')).toBe(true);
+    expect(await store.readKeptMaps()).toEqual(new Map([['a', '{"0:1":"AA"}']]));
+  });
+});
+
+describe('the explored maps', () => {
+  it('come back for the character they were kept under', async () => {
+    await store.keepMaps('a', '{"0:1":"AA"}');
+    await store.keepMaps('b', '{"0:2":"BB"}');
+
+    expect(await store.readKeptMaps()).toEqual(
+      new Map([
+        ['a', '{"0:1":"AA"}'],
+        ['b', '{"0:2":"BB"}'],
+      ]),
+    );
+  });
+
+  it('are written for one character without touching another', async () => {
+    await store.keepMaps('a', '{"0:1":"AA"}');
+    await store.keepMaps('b', '{"0:2":"BB"}');
+
+    await store.keepMaps('a', '{"0:1":"CC"}');
+
+    const kept = await store.readKeptMaps();
+    expect(kept.get('a')).toBe('{"0:1":"CC"}');
+    expect(kept.get('b')).toBe('{"0:2":"BB"}');
+  });
+
+  it('are forgotten outright, which is what a death in Moraff’s World does', async () => {
+    await store.keepMaps('a', '{"0:1":"AA"}');
+
+    await store.keepMaps('a', null);
+
+    expect(await store.readKeptMaps()).toEqual(new Map());
+  });
+
+  it('are nothing at all before a character has explored anything', async () => {
+    expect(await store.readKeptMaps()).toEqual(new Map());
   });
 });
 
@@ -152,6 +201,16 @@ describe('a character taken off the roster', () => {
     expect(read?.map((entry) => entry.id)).toEqual(['b']);
     expect(read![0].run).toHaveLength(1);
   });
+
+  it('takes its explored maps with it', async () => {
+    await store.keepPlayed([character('a', 'SAGEY'), character('b', 'NEWBIE')], []);
+    await store.keepMaps('a', '{"0:1":"AA"}');
+    await store.keepMaps('b', '{"0:2":"BB"}');
+
+    await store.dropCharacter('a');
+
+    expect(await store.readKeptMaps()).toEqual(new Map([['b', '{"0:2":"BB"}']]));
+  });
 });
 
 describe('a browser that keeps no database', () => {
@@ -167,6 +226,10 @@ describe('a browser that keeps no database', () => {
 
   it('says a write did not go in', async () => {
     expect(await store.keepPlayed([character('a', 'SAGEY')], [])).toBe(false);
+  });
+
+  it('has no explored maps to hand over', async () => {
+    expect(await store.readKeptMaps()).toEqual(new Map());
   });
 });
 

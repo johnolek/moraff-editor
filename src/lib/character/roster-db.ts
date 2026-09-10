@@ -6,8 +6,9 @@ import { oldestFirst } from './roster';
 import { fromBase64 } from './storage';
 
 /**
- * Where the browser keeps a player's characters: the record of each, the chain of sessions its
- * run has been played in, and the journal those sessions are written up in.
+ * Where the browser keeps a player's characters: the record of each, the squares each has
+ * discovered, the chain of sessions its run has been played in, and the journal those sessions
+ * are written up in.
  *
  * IndexedDB rather than localStorage, which is where all of this used to live as one string.
  * localStorage holds about five megabytes for the whole site and only text, so every record had
@@ -19,10 +20,11 @@ import { fromBase64 } from './storage';
 const DATABASE = 'moraff-tools';
 
 /** The schema. */
-const VERSION = 1;
+const VERSION = 2;
 const CHARACTERS = 'characters';
 const SESSIONS = 'sessions';
 const JOURNAL = 'journal';
+const MAPS = 'maps';
 
 /** A character as a row, which is the roster entry with the records as bytes. */
 interface CharacterRow {
@@ -78,6 +80,19 @@ interface JournalRow {
   entries: JournalEntry[];
 }
 
+/**
+ * The squares one character has discovered, as the one string the game's own store holds.
+ *
+ * Two games keep a bitmap per floor and Moraff's Revenge keeps one array for the whole character,
+ * so the two strings are not the same shape; nothing here reads either of them. They are a store
+ * of their own rather than a field on the character because the record is written after every key
+ * and the maps only when the character explores.
+ */
+interface MapsRow {
+  character: string;
+  maps: string;
+}
+
 /** One session of a character's run, named by where it comes in the run, counting from zero. */
 export interface PlayedSession {
   entry: RosterEntry;
@@ -102,6 +117,28 @@ export async function readRoster(): Promise<RosterEntry[] | null> {
   } catch {
     return null;
   }
+}
+
+/** The explored maps of every character the browser is keeping, by character id. A browser with
+ *  no database to be had has none of them. */
+export async function readKeptMaps(): Promise<Map<string, string>> {
+  try {
+    const db = await database();
+    const rows = await settled<MapsRow[]>(db.transaction([MAPS], 'readonly').objectStore(MAPS).getAll());
+    return new Map(rows.map((row) => [row.character, row.maps]));
+  } catch {
+    return new Map();
+  }
+}
+
+/** Put one character's explored maps in the database, or take away the ones it had. Says whether
+ *  the database now holds them. */
+export function keepMaps(id: string, maps: string | null): Promise<boolean> {
+  return write([MAPS], (transaction) => {
+    const store = transaction.objectStore(MAPS);
+    if (maps === null) store.delete(id);
+    else store.put({ character: id, maps } satisfies MapsRow);
+  });
 }
 
 /**
@@ -133,12 +170,14 @@ export async function keepPlayed(
   });
 }
 
-/** Take a character off the roster for good: its record, its run and its journal. */
+/** Take a character off the roster for good: its record, its explored maps, its run and its
+ *  journal. */
 export function dropCharacter(id: string): Promise<boolean> {
-  return write([CHARACTERS, SESSIONS, JOURNAL], (transaction) => {
+  return write([CHARACTERS, SESSIONS, JOURNAL, MAPS], (transaction) => {
     transaction.objectStore(CHARACTERS).delete(id);
     transaction.objectStore(SESSIONS).delete(everythingOf(id));
     transaction.objectStore(JOURNAL).delete(everythingOf(id));
+    transaction.objectStore(MAPS).delete(id);
   });
 }
 
@@ -325,10 +364,13 @@ function open(): Promise<IDBDatabase> {
   });
 }
 
+/** The stores this version wants, made where they are not there already: a database opened at an
+ *  earlier version keeps the stores it had then, and making one that exists throws. */
 function makeStores(db: IDBDatabase): void {
-  db.createObjectStore(CHARACTERS, { keyPath: 'id' });
-  db.createObjectStore(SESSIONS, { keyPath: ['character', 'index'] });
-  db.createObjectStore(JOURNAL, { keyPath: ['character', 'index'] });
+  if (!db.objectStoreNames.contains(CHARACTERS)) db.createObjectStore(CHARACTERS, { keyPath: 'id' });
+  if (!db.objectStoreNames.contains(SESSIONS)) db.createObjectStore(SESSIONS, { keyPath: ['character', 'index'] });
+  if (!db.objectStoreNames.contains(JOURNAL)) db.createObjectStore(JOURNAL, { keyPath: ['character', 'index'] });
+  if (!db.objectStoreNames.contains(MAPS)) db.createObjectStore(MAPS, { keyPath: 'character' });
 }
 
 /**
