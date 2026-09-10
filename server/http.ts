@@ -7,6 +7,7 @@ import { openSignInAttempts, type SignInAttempts } from './attempts';
 import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName, isLivingSort, livingPage } from './boards';
 import { writeCorsHeaders } from './cors';
 import { ENGINE_COMMIT, openEngineStore, type EngineStore } from './engines';
+import { everyoneOf } from './everyone';
 import { openFeed, type Feed } from './feed';
 import {
   claimPlayerName,
@@ -173,6 +174,12 @@ export function createRunServer(config: ServerOrigin, sql: Sql, feed: Feed = ope
       return;
     }
 
+    const everyone = path.match(/^\/boards\/([^/]+)\/everyone$/);
+    if (request.method === 'GET' && everyone !== null) {
+      void sendEveryone(response, sql, decodeURIComponent(everyone[1]));
+      return;
+    }
+
     const living = path.match(/^\/boards\/([^/]+)\/([^/]+)\/living$/);
     if (request.method === 'GET' && living !== null) {
       void sendLivingBoard(
@@ -273,6 +280,21 @@ async function sendLivingBoard(
     return;
   }
   sendJson(response, 200, await livingPage(sql, { game, leaderboard, sort: order, page }, Date.now()));
+}
+
+/**
+ * Everyone of one game: every character the server has checked, on either board and living or
+ * ended, in one answer with no paging.
+ *
+ * A game the site does not play is a board there is not rather than a board with nobody on it, so
+ * it is the same 404 the boards above give. Who is in the table is `server/everyone.ts`.
+ */
+async function sendEveryone(response: ServerResponse, sql: Queries, game: string): Promise<void> {
+  if (!isBoardGame(game)) {
+    sendJson(response, 404, { error: `No such board: ${game}/everyone` });
+    return;
+  }
+  sendJson(response, 200, await everyoneOf(sql, game, Date.now()));
 }
 
 /** Which page of a board was asked for, counting from one, or null when the query names

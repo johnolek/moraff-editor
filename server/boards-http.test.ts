@@ -106,6 +106,49 @@ describe('asking the server for a board', () => {
   });
 });
 
+describe('asking the server for everyone', () => {
+  let sql: Sql;
+  let server: Server;
+  let origin: string;
+
+  beforeAll(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES (1, $1)', ['John']);
+    await keep(sql, { id: 'champion' });
+    await keep(sql, { id: 'faithful-champion', leaderboard: 'faithful' });
+    server = createRunServer({ allowedOrigin: 'https://johnolek.github.io' }, sql);
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve, reject) => {
+      server.close((thrown) => (thrown ? reject(thrown) : resolve()));
+    });
+    await sql.close();
+  });
+
+  it('answers with every character of that game, whichever board it was rolled for', async () => {
+    const response = await fetch(`${origin}/boards/unforgiven/everyone`);
+
+    expect(response.status).toBe(200);
+    const table = await response.json();
+    expect(table.game).toBe('unforgiven');
+    expect(table.rows.map((row: { characterId: string }) => row.characterId).sort()).toEqual([
+      'champion',
+      'faithful-champion',
+    ]);
+    expect(table.rows[0]).toMatchObject({ player: 'John', name: 'Grond', status: 'won', playing: false });
+  });
+
+  it('says there is no such board for a game it does not play', async () => {
+    const response = await fetch(`${origin}/boards/chess/everyone`);
+
+    expect(response.status).toBe(404);
+    expect((await response.json()).error).toBe('No such board: chess/everyone');
+  });
+});
+
 /** A character whose chain has been replayed while it was being played, which is all a board of
  *  the living reads. */
 async function alive(

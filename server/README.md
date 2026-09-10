@@ -3,7 +3,7 @@
 One Node process that answers HTTP on a port, keeps everything in Postgres, and
 allows the site's origin. It answers `GET /health`, the players endpoints, the
 two runs endpoints, the player's characters, the boards, the boards of the
-living and the announcements below, which is
+living, everyone and the announcements below, which is
 [MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
 
 It lives in this repository so one commit is one engine build: the code that
@@ -412,6 +412,41 @@ see.
 A snapshot keeps the journal of the run so far the way a verdict keeps the
 journal of a run that has ended, rewritten by each replay, so a row on a board
 of the living opens a page with a timeline on it too.
+
+## Everyone
+
+Every character of one game in one answer, whatever has become of it. The eight
+boards above each rank the runs by one number, so seeing who is playing a game
+at all means reading all eight; this is the same people in one table for the
+site to filter and sort.
+
+| Endpoint                    | What it does                                      |
+| --------------------------- | ------------------------------------------------- |
+| `GET /boards/:game/everyone` | Every character of that game the server has checked, in one answer. 404 when the game is not one the site plays. |
+
+Who is in it is who is on the eight boards put together: a run that has ended
+with a verdict of verified that may go on a board, and a character still being
+played whose chain the replay passed. A run nothing has verified is nobody's to
+read but the player's, the same as a run's own page. Faithful and speedrun are
+side by side here, since the point is who is playing rather than who is
+winning, and every row says which board its character was rolled for so the
+site can put them back into two.
+
+Every row carries the player's name and the character's, the board it was
+rolled for, whether it is alive or dead or has won, whether a device is playing
+it at this moment, the level and the reach a replay found, the actions and the
+game's own clock, the play time of a run that has ended, and when — which is
+when the run ended, or when the server last heard from a character still being
+played.
+
+Beside all that is what the character is now: its class, its health points and
+its six characteristics, read out of the newest record any device sent for it.
+That record is the device's own bytes, so it may be missing altogether, too
+short, or of a game this build cannot read; any of those shows as nothing for
+that character rather than failing the table.
+
+There is no paging. The reader sorts the whole table by whichever column they
+like, and half a table cannot be sorted.
 
 ## The announcements
 
