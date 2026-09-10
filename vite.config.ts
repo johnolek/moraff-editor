@@ -32,6 +32,9 @@ export default defineConfig({
   define: { __ENGINE_COMMIT__: JSON.stringify(engineCommit()) },
   plugins: [svelte(), viteSingleFile()],
   test: {
+    // A server test starts a PGlite of its own, which takes about a second alone and several
+    // under a full run of every file at once, so the default five seconds is not enough.
+    testTimeout: 20000,
     include: ['src/**/*.test.ts', 'server/**/*.test.ts', '*.test.ts'],
   },
 });
