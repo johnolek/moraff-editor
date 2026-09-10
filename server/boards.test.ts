@@ -89,13 +89,11 @@ async function keep(sql: Sql, over: Partial<Kept> & { id: string }): Promise<voi
     level: 0,
     ...over,
   };
-  // No test here hands the server a secret, so the player's name stands in for its hash: all the
-  // column has to be is one player's own.
-  await sql.query('INSERT INTO players (secret_hash, name) VALUES ($1, $2) ON CONFLICT (secret_hash) DO NOTHING', [
-    run.player,
-    run.player,
-  ]);
-  const players = await sql.query<{ id: number }>('SELECT id FROM players WHERE name = $1', [run.player]);
+  const held = await sql.query<{ id: number }>('SELECT id FROM players WHERE name = $1', [run.player]);
+  const players =
+    held.length > 0
+      ? held
+      : await sql.query<{ id: number }>('INSERT INTO players (name) VALUES ($1) RETURNING id', [run.player]);
   await sql.query(
     'INSERT INTO characters (id, player_id, game, name, finished_at, outcome) VALUES ($1, $2, $3, $4, $5, $6)',
     [run.id, players[0].id, run.game, run.name, run.finishedAt, run.outcome],
@@ -316,7 +314,7 @@ describe('a run that went the whole way through the verifier', () => {
 
   it('stands on the boards of its game and its own leaderboard', async () => {
     const sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES (1, $1, $2)', ['mine', 'John']);
+    await sql.query('INSERT INTO players (id, name) VALUES (1, $1)', ['John']);
     const won: Milestone[] = [{ kind: 'win', which: 0, actions: 12, time: 30, floor: 2 }];
     const claims = { mode: 'speedrun', actions: 12, time: 30, edits: 0, milestones: [] as Milestone[] };
     await takeBatch(

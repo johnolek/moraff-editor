@@ -12,6 +12,10 @@ import type { Queries } from './sql';
  * Only the SHA-256 of the secret is stored. Hashing is one way, so the server can recognise a
  * secret it is handed by hashing it and looking the hash up, while a copy of the database is a
  * list of hashes nobody can turn back into secrets to play as somebody else.
+ *
+ * A player can be played from several devices: every secret that has been let in is a row of
+ * `player_secrets` pointing at the player, and the passphrase of `passphrases.ts` is how a second
+ * device gets a row of its own.
  */
 
 /** A secret is 32 random bytes written base64url, which is 43 characters and no padding. */
@@ -40,19 +44,22 @@ function secretHash(secret: string): string {
   return createHash('sha256').update(secret).digest('hex');
 }
 
-/** The player this secret belongs to, or null when no player has claimed a name with it. */
+/** The player this secret belongs to, or null when it has been let in to none. */
 export async function playerFor(sql: Queries, secret: string): Promise<number | null> {
   if (!isPlayerSecret(secret)) return null;
-  const rows = await sql.query<{ id: number }>('SELECT id FROM players WHERE secret_hash = $1', [secretHash(secret)]);
-  return rows[0]?.id ?? null;
+  const rows = await sql.query<{ player_id: number }>('SELECT player_id FROM player_secrets WHERE secret_hash = $1', [
+    secretHash(secret),
+  ]);
+  return rows[0]?.player_id ?? null;
 }
 
 /** The name on the boards for this secret, or null when it has none. */
 export async function playerNameFor(sql: Queries, secret: string): Promise<string | null> {
   if (!isPlayerSecret(secret)) return null;
-  const rows = await sql.query<{ name: string }>('SELECT name FROM players WHERE secret_hash = $1', [
-    secretHash(secret),
-  ]);
+  const rows = await sql.query<{ name: string }>(
+    `SELECT p.name FROM player_secrets s JOIN players p ON p.id = s.player_id WHERE s.secret_hash = $1`,
+    [secretHash(secret)],
+  );
   return rows[0]?.name ?? null;
 }
 
@@ -76,7 +83,11 @@ export async function claimPlayerName(sql: Queries, secret: string, name: unknow
   if (holder !== undefined && holder.id !== player) return { claimed: false, because: 'taken' };
 
   if (player === null) {
-    await sql.query('INSERT INTO players (secret_hash, name) VALUES ($1, $2)', [secretHash(secret), wanted]);
+    const made = await sql.query<{ id: number }>('INSERT INTO players (name) VALUES ($1) RETURNING id', [wanted]);
+    await sql.query('INSERT INTO player_secrets (secret_hash, player_id) VALUES ($1, $2)', [
+      secretHash(secret),
+      made[0].id,
+    ]);
   } else {
     await sql.query('UPDATE players SET name = $1 WHERE id = $2', [wanted, player]);
   }

@@ -30,7 +30,7 @@ describe('asking the server for a board', () => {
 
   beforeAll(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES (1, $1, $2)', ['mine', 'John']);
+    await sql.query('INSERT INTO players (id, name) VALUES (1, $1)', ['John']);
     await keep(sql, { id: 'slow', actions: 900 });
     await keep(sql, { id: 'quick', actions: 90 });
     await keep(sql, { id: 'faithful-run', leaderboard: 'faithful' });

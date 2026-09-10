@@ -13,7 +13,7 @@ describe('asking the server what it has announced', () => {
 
   beforeAll(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES (1, $1, $2)', ['mine', 'Moraff']);
+    await sql.query('INSERT INTO players (id, name) VALUES (1, $1)', ['Moraff']);
     await sql.exec("INSERT INTO characters (id, player_id, game, name) VALUES ('grond', 1, 'unforgiven', 'Grond')");
     await announceRun(sql, {
       characterId: 'grond',

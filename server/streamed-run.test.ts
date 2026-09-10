@@ -28,7 +28,7 @@ const SENDING_INTERVAL_MS = 5000;
 
 async function openDatabase(): Promise<Sql> {
   const sql = await openTestDatabase();
-  await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'John']);
+  await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'John']);
   return sql;
 }
 

@@ -32,7 +32,7 @@ describe('announcing a run that has been checked', () => {
 
   beforeEach(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'Moraff']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'Moraff']);
     await sql.query('INSERT INTO characters (id, player_id, game, name) VALUES ($1, $2, $3, $4)', [
       CHARACTER,
       ME,
@@ -125,7 +125,7 @@ describe('reading the announcements back', () => {
 
   beforeEach(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'Moraff']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'Moraff']);
     await sql.query('INSERT INTO characters (id, player_id, game, name) VALUES ($1, $2, $3, $4)', [
       CHARACTER,
       ME,

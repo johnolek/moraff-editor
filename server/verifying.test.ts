@@ -181,7 +181,7 @@ describe('replaying a run once its last batch has arrived', () => {
 
   beforeEach(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'John']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'John']);
   });
 
   afterEach(async () => {
@@ -291,7 +291,7 @@ describe('announcing a run that has been checked', () => {
 
   beforeEach(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'Moraff']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'Moraff']);
   });
 
   afterEach(async () => {

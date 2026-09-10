@@ -37,8 +37,8 @@ describe('taking the batches of a run', () => {
 
   beforeEach(async () => {
     sql = await openTestDatabase();
-    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [ME, 'mine', 'John']);
-    await sql.query('INSERT INTO players (id, secret_hash, name) VALUES ($1, $2, $3)', [THEM, 'theirs', 'Somebody']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME, 'John']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [THEM, 'Somebody']);
   });
 
   afterEach(async () => {

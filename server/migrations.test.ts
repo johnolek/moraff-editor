@@ -1,8 +1,13 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { migrateRunDatabase } from './db';
 import { applyMigrations, BUNDLED_MIGRATIONS, type Migration } from './migrations';
+import { playerNameFor } from './players';
 import { SCHEMA, type Sql } from './sql';
 import { openTestDatabase } from './test-sql';
+
+/** The migration that made the table of devices, so a test can run everything before it. */
+const PASSPHRASES = '007_passphrases.sql';
 
 const bookkeeping: Migration = {
   name: '001_schema_migrations.sql',
@@ -65,6 +70,7 @@ describe('applyMigrations', () => {
       'batches',
       'characters',
       'engines',
+      'player_secrets',
       'players',
       'schema_migrations',
       'sessions',
@@ -72,6 +78,21 @@ describe('applyMigrations', () => {
     ]);
     const elsewhere = await sql.query("SELECT tablename FROM pg_tables WHERE schemaname = 'public'");
     expect(elsewhere).toEqual([]);
+    await sql.close();
+  });
+
+  it('carries a secret claimed before player_secrets into it', async () => {
+    const sql = await emptySchema();
+    const secret = 'A'.repeat(43);
+    await applyMigrations(sql, BUNDLED_MIGRATIONS.filter((migration) => migration.name < PASSPHRASES));
+    await sql.query('INSERT INTO players (secret_hash, name) VALUES ($1, $2)', [
+      createHash('sha256').update(secret).digest('hex'),
+      'Moraff',
+    ]);
+
+    await applyMigrations(sql, BUNDLED_MIGRATIONS);
+
+    expect(await playerNameFor(sql, secret)).toBe('Moraff');
     await sql.close();
   });
 
