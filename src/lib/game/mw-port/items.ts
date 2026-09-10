@@ -32,17 +32,10 @@ export const MW_TELEPORT_STONE = 'STONE OF TELEPORTATION';
 export const MW_HOLY_HAND_GRENADE = 'HOLY HAND GRENADE';
 
 /**
- * The six vitamin pills by the byte of the record each is counted in, which runs orange, green,
- * blue, red, white, yellow. The menu below lists them in another order again.
+ * The colour of each of the six vitamin pills, by the byte of the record it is counted in, which
+ * runs orange, green, blue, red, white, yellow. The menu below lists them in another order again.
  */
-export const MW_PILL_NAMES = [
-  'ORANGE PILL',
-  'GREEN PILL',
-  'BLUE PILL',
-  'RED PILL',
-  'WHITE PILL',
-  'YELLOW PILL',
-];
+export const MW_PILL_COLOURS = ['ORANGE', 'GREEN', 'BLUE', 'RED', 'WHITE', 'YELLOW'];
 
 /**
  * drop_item's opening box: armor, a weapon or money.
@@ -287,7 +280,7 @@ export function takeAPill(game: MwGame, choice: number): void {
     return;
   }
   pc.pills[pill.held] -= 1;
-  game.events.push({ kind: 'itemUsed', item: MW_PILL_NAMES[pill.held] });
+  game.events.push({ kind: 'itemUsed', item: `${MW_PILL_COLOURS[pill.held]} PILL` });
   pc[pill.raised] += PILL_RAISES;
   pc[pill.dropped] -= PILL_DROPS;
   game.say(...pill.said);

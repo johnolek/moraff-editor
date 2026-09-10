@@ -1,5 +1,4 @@
 import data from '../mw-data.json';
-import type { ActionEvent } from '../action';
 import type { JournalEvent, MonsterSeen } from '../journal-events';
 import type { Rng } from '../port/rng';
 import { BorlandRng } from '../port/rng';
@@ -319,11 +318,6 @@ export type MwEvent =
    * earned. `level` is the one they wake on.
    */
   | { kind: 'levelGained'; level: number; from: number }
-  /**
-   * One of the six vitamin pills a level drainer left behind (WORLD.EXE 3000:d51c). `pill` is
-   * the byte of the record it is counted in, which runs orange, green, blue, red, white, yellow.
-   */
-  | { kind: 'pillFound'; pill: number }
   /** FUN_3000_d37f (WORLD.EXE 3000:d37f): a cup of health drunk, and the points it gave back. */
   | { kind: 'cupOfHealth'; healed: number }
   /** FUN_3000_d43b (WORLD.EXE 3000:d43b): a shimmering ball of thought, which is one spell
@@ -356,8 +350,6 @@ export type MwEvent =
   | { kind: 'afflicted'; what: 'poison' | 'disease'; monster: MonsterSeen }
   /** Hit points a battle spell took off the monster being fought. */
   | { kind: 'spellDamaged'; monster: MonsterSeen; damage: number }
-  /** One of the things a run counts, pushed where the game does it (`src/lib/game/action.ts`). */
-  | ActionEvent
   /**
    * One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
    * where the kinds a run counts as actions carry their numbers.

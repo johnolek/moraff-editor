@@ -7,6 +7,7 @@ import { runMoveControl, startGame, type CharacterFile } from './engine';
 import { journalEntry, unforgivenJournal, type JournalEntry, type JournalWords } from './journal';
 import { runPlayLoop, type PlayLoopSession } from './loop';
 import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine';
+import { moraffsWorldJournal } from './mw/journal';
 import { mwTurn } from './mw/keys';
 import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile } from './rev/engine';
 
@@ -738,6 +739,7 @@ export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
   },
   moraffsWorld: {
     replay: replayMoraffsWorld,
+    journal: moraffsWorldJournal,
     // The clock counts in fractions of a move, which is rounded wherever it is shown.
     clockWords: (moves) => `${Math.round(moves)} move${Math.round(moves) === 1 ? '' : 's'}`,
     dungeonName: MORAFFS_WORLD_MAP.dungeonName,

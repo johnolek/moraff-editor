@@ -12,6 +12,7 @@ import {
   weaponFind,
 } from './drops';
 import { HINT, loadHBin } from './hints';
+import { MW_PILL_COLOURS } from './items';
 import { canLevelUp, experienceNeeded, goDownLevel } from './levels';
 import { playMwBlowLanded, playMwBlowTaken, playMwMonsterKilled } from './sound';
 import type { MwGame } from './state';
@@ -1106,7 +1107,7 @@ function levelDrainerExtras(game: MwGame): void {
   if (game.rng.random(375) < pc.floor + 175) {
     const pill = game.rng.random(6);
     pc.pills[pill] += 1;
-    game.events.push({ kind: 'pillFound', pill });
+    game.events.push({ kind: 'pillFound', colour: MW_PILL_COLOURS[pill] });
     // The pill's own line, then DS:67b6 67d1, then DS:4a75
     game.say(
       PILL_NAMES[pill],

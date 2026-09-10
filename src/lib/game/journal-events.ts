@@ -9,10 +9,12 @@ import type { CastEvent } from './action';
  * into the line a player would say; the numbers are here so that the line, the summary and the
  * timeline all read the same run.
  *
- * The kinds are shared wherever the thing is the same in all three games, so one journal and one
- * summary serve the lot. A game's own event union carries these beside the kinds only it has —
- * Dungeons of the Unforgiven's chutes and stone tablets are in `GameEvent`
- * (`src/lib/game/port/state.ts`).
+ * The kinds are shared wherever the thing is the same, so one journal and one summary serve the
+ * lot. A few of them belong to only two of the games — the vitamin pills the two Moraff games
+ * hand out — and they are here rather than on those games' own unions because the summary adds
+ * them up the same way for whichever game has them. A game's own event union carries these
+ * beside the kinds only it has — Dungeons of the Unforgiven's chutes and stone tablets are in
+ * `GameEvent` (`src/lib/game/port/state.ts`).
  */
 
 /**
@@ -36,6 +38,7 @@ export const JOURNAL_KINDS = [
   'hit',
   'killed',
   'found',
+  'pillFound',
   'wandMade',
   'scrollWritten',
   'levelGained',
@@ -122,6 +125,8 @@ export type JournalEvent =
   | { kind: 'hit'; monster: MonsterSeen; damage: number; breath: number | null }
   | { kind: 'killed'; monster: MonsterSeen; experience: number }
   | { kind: 'found'; find: Find }
+  /** A vitamin pill, which the two Moraff games hand over by colour and nothing else. */
+  | { kind: 'pillFound'; colour: string }
   /** A wand written by a spell, with the charges it was written with. */
   | { kind: 'wandMade'; spell: SpellAt; charges: number }
   | { kind: 'scrollWritten'; spell: SpellAt }

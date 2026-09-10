@@ -64,10 +64,10 @@ export function journalEntry(
 }
 
 /** Which way a step went, by the facing the character was left in. */
-const DIRECTIONS = ['north', 'south', 'west', 'east'];
+export const DIRECTIONS = ['north', 'south', 'west', 'east'];
 
 /** What a spell was cast out of, as the line names it. */
-const CAST_SOURCES: Record<CastSource, string> = {
+export const CAST_SOURCES: Record<CastSource, string> = {
   spellPoints: 'from spell points',
   scroll: 'from a scroll',
   wand: 'from a wand',
@@ -80,12 +80,12 @@ export function spellMenuName(spell: SpellAt): string {
 }
 
 /** "a Level 46 GHOUL", as the battle banner names one. */
-function monsterWords(monster: MonsterSeen): string {
+export function monsterWords(monster: MonsterSeen): string {
   return `a Level ${monster.level} ${monster.name}`;
 }
 
 /** "floor 12", or the town, which is floor 0 of every module. */
-function floorWords(floor: number): string {
+export function floorWords(floor: number): string {
   return floor === 0 ? 'the town' : `floor ${floor}`;
 }
 

@@ -45,6 +45,12 @@ export interface UsedCount {
   count: number;
 }
 
+/** Vitamin pills found, by the colour the game handed each one over as. */
+export interface PillCount {
+  colour: string;
+  count: number;
+}
+
 /** Money handed over in one of the town's buildings, by building. */
 export interface SpentCount {
   where: string;
@@ -71,6 +77,8 @@ export interface RunSummary {
   spent: SpentCount[];
   made: MadeCount[];
   used: UsedCount[];
+  /** Empty in Dungeons of the Unforgiven, which has no vitamin pills. */
+  pills: PillCount[];
   monsters: MonsterAccount[];
   deaths: number;
 }
@@ -105,6 +113,7 @@ export function summarizeJournal(
     spent: [],
     made: [],
     used: [],
+    pills: [],
     monsters: [],
     deaths: 0,
   };
@@ -159,6 +168,9 @@ function fold(summary: RunSummary, event: JournalEvent, fight: { facing: number 
       return;
     case 'found':
       if (event.find.what === 'money') summary.moneyFound += event.find.amount;
+      return;
+    case 'pillFound':
+      pills(summary, event.colour).count += 1;
       return;
     case 'coinsSpent': {
       const spent = summary.spent.find((row) => row.where === event.where);
@@ -215,6 +227,14 @@ function made(summary: RunSummary, what: MadeCount['what'], spell: SpellAt): Mad
   return fresh;
 }
 
+function pills(summary: RunSummary, colour: string): PillCount {
+  const kept = summary.pills.find((row) => row.colour === colour);
+  if (kept) return kept;
+  const fresh: PillCount = { colour, count: 0 };
+  summary.pills.push(fresh);
+  return fresh;
+}
+
 function used(summary: RunSummary, what: UsedCount['what'], name: string): UsedCount {
   const kept = summary.used.find((row) => row.what === what && row.name === name);
   if (kept) return kept;
@@ -263,6 +283,9 @@ export function summaryLines(summary: RunSummary, names: SummaryNames): string[]
     );
   }
   for (const used of summary.used) lines.push(usedWords(used));
+  for (const pill of summary.pills) {
+    lines.push(`Found ${count(pill.count, `${pill.colour.toLowerCase()} pill`)}`);
+  }
   for (const monster of summary.monsters) lines.push(monsterWords(monster));
   if (summary.deaths > 0) lines.push(`Died ${count(summary.deaths, 'time')}`);
   return lines;
