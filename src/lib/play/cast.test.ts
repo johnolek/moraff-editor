@@ -7,7 +7,7 @@ import { BorlandRng, type Rng } from '../game/port/rng';
 import { newGame, type PlayerCharacter } from '../game/port/state';
 import { UNFORGIVEN_MAP } from '../map/game';
 import { newCharacterFile } from '../roller/save-file';
-import { startPlaying } from './battle.test-support';
+import { floorSquare, standingOn, startPlaying } from './battle.test-support';
 import { GameSession, type CharacterFile } from './engine';
 import { KEY } from './keys';
 
@@ -280,6 +280,88 @@ describe('casting out of an item', () => {
     const session = playing(wandCarrier([MINOR_PROTECTION], 1));
     await press(session, KEY.useItem, KEY.escape);
     expect(session.game.pc.wands[MINOR_PROTECTION]).toBe(1);
+  });
+});
+
+describe('the time each of the two cast keys spends', () => {
+  /** What a battle spell costs, and a monster's attack timer before the cast is paid for. */
+  const BATTLE_SPELL_SECONDS = 10;
+  const TIMER = 15;
+
+  /** A wizard on a dungeon floor with Minor Protection both in their book and on a wand, so the
+   *  same spell can be cast either way. Only a dungeon floor has monsters for call_check_eng and
+   *  pass_moment to move: the town has none. */
+  function castingOnAFloor(level: number): GameSession {
+    const wands = Array.from({ length: 180 }, () => 0);
+    wands[MINOR_PROTECTION] = 3;
+    const spellbook = Array.from({ length: 180 }, () => 0);
+    spellbook[MINOR_PROTECTION] = 1;
+    return standingOn(level, floorSquare(level), { cls: 3, sp: 20, maxSp: 20, wands, spellbook });
+  }
+
+  /** Move the monster in slot 0 onto `at`, which is where the test wants to watch it from. */
+  function plantMonster(session: GameSession, at: { x: number; y: number }): number {
+    const slot = 0;
+    const planted = session.game.monsters[slot];
+    session.game.monsterMap[planted.y * 80 + planted.x] = 0xff;
+    planted.x = at.x;
+    planted.y = at.y;
+    session.game.monsterMap[at.y * 80 + at.x] = slot;
+    return slot;
+  }
+
+  /** An open square a few paces from `from`: too far for call_check_eng, which only gives the
+   *  four squares beside the character anything, and near enough for pass_moment to walk. */
+  function nearbySquare(level: number, from: { x: number; y: number }): { x: number; y: number } {
+    const rows = UNFORGIVEN_MAP.floor(level, 0);
+    for (let y = 1; y < 100; y++) {
+      for (let x = 1; x < 76; x++) {
+        const away = Math.abs(x - from.x) + Math.abs(y - from.y);
+        if (away >= 3 && away <= 5 && !rows[y][x].solid) return { x, y };
+      }
+    }
+    throw new Error(`nothing open near the character on floor ${level}`);
+  }
+
+  it('gives a wand cast to the monsters and moves none of them', async () => {
+    const session = castingOnAFloor(1);
+    const at = nearbySquare(1, session.game.pc);
+    const slot = plantMonster(session, at);
+    session.game.monsterTimers[slot] = TIMER;
+    const before = session.view().seconds;
+    await press(session, KEY.useItem, 0x32, 0x33, SPELL_C);
+    expect(session.game.pc.protection).toBe(1);
+    expect(session.view().seconds).toBe(before + BATTLE_SPELL_SECONDS);
+    // The I key spends the seconds and passes no moment, so the monster is where it was and has
+    // only been charged for the ten seconds the cast took.
+    expect(session.game.monsters[slot]).toMatchObject(at);
+    expect(session.game.monsterTimers[slot]).toBe(TIMER - BATTLE_SPELL_SECONDS);
+  });
+
+  it('lets a moment go by for the same spell cast out of the book', async () => {
+    const session = castingOnAFloor(1);
+    const slot = plantMonster(session, nearbySquare(1, session.game.pc));
+    session.game.monsterTimers[slot] = TIMER;
+    await press(session, KEY.cast, 0x33, SPELL_C);
+    expect(session.game.pc.protection).toBe(1);
+    // pass_moment starts every monster near the character on nought before it walks them.
+    expect(session.game.monsterTimers[slot]).toBe(0);
+  });
+
+  it('runs the engagement check for a cast given up on out of the item menu', async () => {
+    const session = castingOnAFloor(1);
+    const pc = session.game.pc;
+    const slot = plantMonster(session, { x: pc.x, y: pc.y - 1 });
+    // A pass round the loop with a key nothing is bound to, which is where attack_timing meets
+    // the monster and starts its timer; the timer the test wants goes on afterwards.
+    await press(session, KEY.escape);
+    session.game.monsterTimers[slot] = -1;
+    const before = session.view().seconds;
+    await press(session, KEY.useItem, 0x32, KEY.escape);
+    // The I key asks nothing about the seconds, so escaping the spell list still hands nought of
+    // them to call_check_eng, and a monster already owed an attack takes it.
+    expect(session.game.monsterTimers[slot]).toBeGreaterThan(0);
+    expect(session.view().seconds).toBe(before);
   });
 });
 
