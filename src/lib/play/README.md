@@ -65,7 +65,9 @@ something the original does, a comment says so.
   character is standing. The look is a plain stylesheet rather than a scoped one, because scoped
   styles do not reach snippets written in another component; where one value has to serve all
   three it is this game's. The run block's milestones are the whole chain's, so the line shows the
-  last four of them and a chip counting the ones before it, which names them all on hover.
+  last four of them and a chip counting the ones before it, which names them all on hover. Under
+  the run block is the mark saying whether the run is reaching the run server and what the replay
+  made of it (`streaming.ts`).
 * **`BoardName.svelte`** — under the mode radios: the name this browser goes by on the run
   server's boards. Nobody signs up, so a name is claimed with the device secret `src/lib/player.ts`
   makes and keeps; the field shows the name that secret already holds and the server's own words
@@ -147,7 +149,9 @@ played, so that a claimed ending can be checked by playing it again rather than 
   is thrown away by the flush at the end of the swing and the game never sees it. Ctrl-F's own
   swings, which the loop takes without reading the keyboard, are written down where the loop
   takes them, and Moraff's World's turn where the character stands, which is no key of that
-  game's, is an input of its own.
+  game's, is an input of its own. Those two are `unpressed` rather than `input`, because nobody
+  pressed them: `RunRecorder.presses` is the count of the keys a person really did press, which
+  is what the run server holds a run to a human speed by, and it is no part of the log.
 * **The actions** — the things that happened to the character or to the world, which is the
   number a leaderboard orders runs by. What counts is what the game did rather than what the
   player typed: opening the spell menu and backing out is nothing and the spell cast through it
@@ -219,6 +223,31 @@ is meant, write them again with `WRITE_RUN_FIXTURES=1 pnpm test src/lib/play/ver
 which puts all four in the chain shape and stamps them with this build's commit, so the three
 older ones have to be put back the way they were afterwards with only the numbers that moved
 taken from what was written.
+
+## Sending a run to the server
+
+A run is sent to the run server while it is being played rather than posted whole at the end,
+because the server measures how long the run took and can only measure what it sees. The server's
+half of this is `server/README.md`.
+
+* **`stream.ts`** is what a batch holds, and nothing in it touches the browser: the keys played
+  since the last batch the server said it had, how many of them the player pressed, what the
+  sitting claims to have come to, and, the first time, the seed, the engine commit and the record
+  a replay starts from. A stretch that failed to go is kept by simply not being marked as sent, so
+  the next batch carries it and everything since. The sittings the character was played in before
+  the server was told about it go first, one batch each, or the server would hold a chain starting
+  part-way through.
+* **The sequence** is the site's count of the batches of a sitting. It moves on only once the
+  server has answered, so a batch whose answer was lost is sent again under the same number and
+  the server recognises it rather than playing it twice.
+* **`streaming.ts`** is the part that touches the browser: a batch every five seconds, one more
+  when the game is left, one that outlives a page on its way out, and the last one at a death or a
+  win, after which it asks for the verdict until the replay has given one. Nothing goes while the
+  mode is debug, and a build given no server address does none of it. The mark the Play tab shows
+  in its side column — sending, not answering, refused, and the verdict — is here too, since every
+  one of those words is about what became of the sending.
+* **The shapes on the wire** are `stream.ts`'s, and `server/runs.ts` imports them, so the two
+  halves agree about a batch in one place.
 
 ## Waiting for a key
 
