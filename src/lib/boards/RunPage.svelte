@@ -1,6 +1,6 @@
 <!--
-  One run, as a row on a board opens it: who played it, what it came to, the milestones it reached
-  and the verdict the replay gave.
+  One run, as a row on a board opens it: who played it, what it came to, the milestones it reached,
+  the verdict the replay gave, and the run written up in words under all of it.
 
   Everything here is the server's answer to `GET /runs/:id`. A run is only opened from a board, and
   everything on a board has been verified, so nothing here sends the reader's secret.
@@ -8,7 +8,8 @@
 <script lang="ts">
   import { isLeaderboard, leaderboardLabel } from '../character/leaderboard';
   import { shortCommit } from '../commit';
-  import { isRunGame } from '../play/run';
+  import RunJournal from '../journal/RunJournal.svelte';
+  import { isRunGame, RUN_GAMES } from '../play/run';
   import { milestoneLine } from '../play/verify';
   import PixelText from '../ui/PixelText.svelte';
   import { loadRun } from './server';
@@ -38,6 +39,12 @@
     const rolledFor = verdict?.leaderboard;
     return isLeaderboard(rolledFor) ? leaderboardLabel(rolledFor) : NOTHING_TO_SHOW;
   });
+
+  /**
+   * The game's own words for its clock, its dungeons and its money, which the summary is written
+   * in. A run of a game this build has never heard of came from a newer server and has none.
+   */
+  const names = $derived(run !== null && isRunGame(run.game) ? RUN_GAMES[run.game] : null);
 
   /** The milestones in the run log's own words, which is what the Play tab shows and what
    *  `verify-run` prints. A game this build has never heard of has no words for them. */
@@ -94,7 +101,11 @@
         {/each}
       </ol>
     {/if}
-    <!-- The journal the replay wrote, action by action, goes under here: MORF-361. -->
+    <!-- A run whose replay wrote no lines -- a game whose journal has not been written, or a
+         verdict reached without a replay -- shows the rest of the page and no timeline. -->
+    {#if run.journal !== null && run.journal.entries.length > 0 && names !== null}
+      <RunJournal entries={run.journal.entries} reached={run.journal} {names} />
+    {/if}
   {/if}
 </div>
 

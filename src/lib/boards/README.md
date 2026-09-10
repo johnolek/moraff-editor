@@ -21,8 +21,15 @@ Everything else about the tab follows the game switch the way the others do.
   played: a level and a reach in place of a play time and a finish, with a mark
   for whoever is playing right now and when each was last heard from.
 - **`RunPage.svelte`** — one run: who played it, what it came to, the engine
-  builds it was played on, its milestones and the verdict the replay gave. The
-  journal the replay wrote goes under the milestones when MORF-361 lands.
+  builds it was played on, its milestones and the verdict the replay gave, and
+  under all of it the run written up in words. That last block is
+  `src/lib/journal/`, the same one the Play tab shows: the summary at the top
+  and the timeline under it, grouped by the floor each stretch happened on. The
+  server sends the journal the replay wrote and how far the run had got by the
+  end of it; the summary is folded here, so the words a run is described in are
+  the site's own wherever it is read. A run of a game this build has never heard
+  of came from a newer server and has no words to fold it into, so it shows the
+  rest of the page and no journal.
 - **`Announcements.svelte`** — the panel down the side. It opens the feed first
   and asks for the history second, so that a run announced while the history is
   on its way is not missed; the two overlap for that moment and an announcement

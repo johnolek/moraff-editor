@@ -156,6 +156,15 @@ describe('opening a run', () => {
     expect(run).toMatchObject({ name: 'Grond' });
   });
 
+  it('brings back the journal the replay wrote, for the page to draw the timeline from', async () => {
+    const stepped = { at: 2, floor: 3, module: 0, text: 'Stepped north', event: { kind: 'stepped', dir: 0 } };
+    answering({ id: 'grond', name: 'Grond', player: 'Moraff', journal: { entries: [stepped], actions: 12, time: 30 } });
+
+    const run = await loadRun('grond');
+
+    expect(run?.journal).toEqual({ entries: [stepped], actions: 12, time: 30 });
+  });
+
   it('is nothing when the run is not there', async () => {
     vi.stubGlobal('fetch', () => Promise.resolve(new Response('{"error":"No such run."}', { status: 404 })));
 
