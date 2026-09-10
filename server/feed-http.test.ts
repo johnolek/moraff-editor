@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { request, type IncomingMessage, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
@@ -9,8 +9,47 @@ import type { Announcement } from './announcing';
 import { openRunDatabase } from './db';
 import { openFeed, type Feed } from './feed';
 import { createRunServer } from './http';
+import type { RunBatch } from './runs';
 
 const directory = mkdtempSync(join(tmpdir(), 'moraff-feed-'));
+const ENGINE = 'a'.repeat(40);
+
+/** A secret shaped the way the site makes them: 32 bytes base64url, which is 43 characters. */
+const SECRET = 'A'.repeat(43);
+
+const CHARACTER = 'k3p9x1-ab12cd';
+
+/** The sitting the run's first batch carries. */
+const SITTING = {
+  seed: 12345,
+  engine: ENGINE,
+  game: 'unforgiven',
+  leaderboard: 'speedrun',
+  sound: null,
+  name: 'Grond',
+  startedAt: '2026-09-09T12:00:00.000Z',
+  record: 'AAEC',
+};
+
+/** A build small enough to read, which passes the run it is handed and says it died on floor 7. */
+function writeFakeEngine(): void {
+  mkdirSync(join(directory, 'engines', ENGINE), { recursive: true });
+  writeFileSync(
+    join(directory, 'engines', ENGINE, 'engine.mjs'),
+    `export const ENGINE_COMMIT = '${ENGINE}';\n` +
+      `const died = [{ kind: 'death', which: 0, actions: 2, time: 4, floor: 7 }];\n` +
+      `export function verifyRun(log) {\n` +
+      `  const newest = log.sessions[log.sessions.length - 1];\n` +
+      `  return Promise.resolve({\n` +
+      `    status: 'verified', reason: null, notes: [], game: newest.game, name: newest.name,\n` +
+      `    mode: newest.mode, leaderboard: newest.leaderboard, sessions: log.sessions.length,\n` +
+      `    engine: { played: [newest.engine], build: ENGINE_COMMIT },\n` +
+      `    claimed: { actions: newest.actions, time: newest.time, milestones: died },\n` +
+      `    replayed: { actions: newest.actions, time: newest.time, milestones: died }, ending: null,\n` +
+      `  });\n` +
+      `}\n`,
+  );
+}
 
 const DIED: Announcement = {
   id: 7,
@@ -72,7 +111,26 @@ describe('listening to the feed', () => {
   let server: Server;
   let origin: string;
 
+  /** One stretch of the run, sent the way the Play tab sends one. */
+  function send(over: Partial<RunBatch>): Promise<Response> {
+    const batch: RunBatch = {
+      sessionIndex: 0,
+      sequence: 0,
+      inputs: [104, 106],
+      pressed: 2,
+      ending: false,
+      claims: { mode: 'speedrun', actions: 2, time: 4, edits: 0, milestones: [] },
+      ...over,
+    };
+    return fetch(`${origin}/runs/${CHARACTER}/batches`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SECRET}` },
+      body: JSON.stringify(batch),
+    });
+  }
+
   beforeAll(async () => {
+    writeFakeEngine();
     database = openRunDatabase(join(directory, 'runs.sqlite'));
     feed = openFeed();
     server = createRunServer(
@@ -114,6 +172,32 @@ describe('listening to the feed', () => {
 
     const written = await listener.firstEvent();
     expect(written.split('\n').find((line) => line.startsWith('data: '))).toBe(`data: ${JSON.stringify(DIED)}`);
+    listener.hangUp();
+  });
+
+  it('writes a run down the feed as soon as its verdict is in', async () => {
+    await fetch(`${origin}/players`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SECRET}` },
+      body: JSON.stringify({ name: 'Moraff' }),
+    });
+    const listener = await listen(origin);
+
+    await send({ sequence: 0, session: SITTING });
+    await send({ sequence: 1, ending: true });
+
+    // A run is replayed behind the answer to the batch that ended it, so this settles when the
+    // verdict is in and not before.
+    const written = await listener.firstEvent();
+    const line = written.split('\n').find((each) => each.startsWith('data: '));
+    expect(JSON.parse(line?.slice('data: '.length) ?? 'null')).toMatchObject({
+      characterId: CHARACTER,
+      kind: 'death',
+      player: 'Moraff',
+      name: 'Grond',
+      game: 'unforgiven',
+      floor: 7,
+    });
     listener.hangUp();
   });
 
