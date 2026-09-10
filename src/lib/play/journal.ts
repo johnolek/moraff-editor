@@ -213,10 +213,11 @@ export function unforgivenJournal(pushed: { kind: string }): string | null {
       return `Beat the Shadow boss of section ${event.boss + 1}`;
     case 'gameWon':
       return 'Beat the Shadow Ogeroth and won the game';
-    case 'died':
-      return event.monster === null
-        ? `Died on ${floorWords(event.floor)} of ${UNFORGIVEN_MAP.dungeonName(event.dungeon)}`
-        : `Died to ${monsterWords(event.monster)} on ${floorWords(event.floor)} of ${UNFORGIVEN_MAP.dungeonName(event.dungeon)}`;
+    case 'died': {
+      const module = UNFORGIVEN_MAP.dungeonName(event.dungeon);
+      const where = event.floor === 0 ? `in the town of ${module}` : `on floor ${event.floor} of ${module}`;
+      return event.monster === null ? `Died ${where}` : `Died to ${monsterWords(event.monster)} ${where}`;
+    }
     default:
       return null;
   }
