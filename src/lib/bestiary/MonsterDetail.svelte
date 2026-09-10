@@ -19,7 +19,7 @@
   import { binHp, hpDistribution, levelDistribution } from './distribution';
   import LevelControl from './LevelControl.svelte';
   import MonsterCard from './MonsterCard.svelte';
-  import MonsterPicture from './MonsterPicture.svelte';
+  import MonsterCorridor from './MonsterCorridor.svelte';
   import { describeEffects, homeFloor, isPuffball, stockingOdds, whereItAppears, type Monster } from './monsters';
   import { hitChance, toHitTotal, totalNeededToBeatDefense, type ToHitFighter } from './to-hit';
 
@@ -126,7 +126,7 @@
   {body} />
 
 {#snippet art()}
-  <MonsterPicture {entry} module={module + 1} part={section.part} />
+  <MonsterCorridor {entry} {module} {floor} section={section.section} part={section.part} />
 {/snippet}
 
 {#snippet aboveNumbers()}
