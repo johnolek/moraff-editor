@@ -185,9 +185,13 @@ played, so that a claimed ending can be checked by playing it again rather than 
 * **The journal** — everything the run did, in words, one line per thing that happened
   (`journal.ts`). The games push their events with the numbers on them
   (`src/lib/game/journal-events.ts`, and each game's own union for the kinds only it has), and
-  `unforgivenJournal` turns one of those into the line a player would say about it, with the
-  game's own names for its monsters, its spells, its items and its places. Every line is one case
-  of that one switch, so what a run says is changed in one place. `RunRecorder` keeps the entries
+  each game has one function that turns one of those into the line a player would say about it,
+  with the game's own names for its monsters, its spells, its items and its places:
+  `unforgivenJournal` here, `moraffsWorldJournal` in `mw/journal.ts` and `moraffsRevengeJournal`
+  in `rev/journal.ts`. Every line is one case of one of those switches, so what a run of a game
+  says is changed in one place; what the three share -- which way a step went, what a spell was
+  cast out of, how a monster and a floor are named -- is exported from `journal.ts` for the other
+  two to use. `RunRecorder` keeps the entries
   as it drains the events, stamped with the action count, the floor and the module they happened
   at; a game with no line writer in `RUN_GAMES` keeps none. The journal is no part of the log —
   a replay pushes the same events and writes the same journal, which is how the run server has a
@@ -197,8 +201,8 @@ played, so that a claimed ending can be checked by playing it again rather than 
 * **The summary** — the journal folded into what the run came to (`summary.ts`): the steps, the
   experience gained and drained, the levels either way, the deepest floor and the furthest
   module, the money found and the money spent building by building, the wands and scrolls made
-  and the charges and items spent, and for each kind of monster the fights, the swings, the
-  damage both ways and the kills. `summarizeJournal` is the fold and `summaryLines` is every word
+  and the charges and items spent, the vitamin pills the two Moraff games turn up, and for each
+  kind of monster the fights, the swings, the damage both ways and the kills. `summarizeJournal` is the fold and `summaryLines` is every word
   of it, so the Play tab, the verifier and the run server say the same thing about the same run.
   A fight is counted where the character came to face a monster, so walking away from one and
   back to it is the fight they were already in and turning to another and back is a fight of its

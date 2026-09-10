@@ -125,6 +125,14 @@ this game's own:
   because the game has no key for it, costs nothing and is an input of its own in the log rather
   than a key.
 * Its milestones come from `monster_killed`'s eight quest-boss bits and from the inn's level-up.
+* Its journal is `journal.ts` — every line a run of this game can say, one case of one switch,
+  in the game's own names for its monsters, its spells, its items and its dungeons. The events
+  behind those lines are the shared ones of `src/lib/game/journal-events.ts` wherever the thing
+  is the same as the other two games', and `MwEvent` (`../../game/mw-port/state.ts`) carries the
+  kinds only this game has beside them: the cup of health, the shimmering ball, a quest boss's
+  plus on a piece of gear, the temple's raise-dead contract and the death it undoes, the bank's
+  one exchange, the pockets, a characteristic a monster moved, a poisoning or a disease, and the
+  hit points a battle spell took off. `../README.md` has the journal and the summary in full.
 
 ## Where the words go
 

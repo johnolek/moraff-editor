@@ -40,6 +40,13 @@ character starts on, the port appends to `game.events` and carries on. The recor
 holding exactly what the original leaves in it; what is missing is the world around it, which
 the play loop in `src/lib/play/mw/` sees to when it reads those events.
 
+`game.events` carries more than that. A run is written up in words from what the game reports it
+did (`../journal-events.ts` and `src/lib/play/mw/journal.ts`), so a ported function pushes an
+event where the thing happens and at the point the number is known: the damage after the roll,
+the experience after the kill, the jewels after the purchase, the charges after a wand is
+written. That reports what the function did and changes nothing about what it does; the
+arithmetic on either side of a push is the original's.
+
 **The port never reseeds the random number generator.** `roll_char` calls `srand(time(NULL))`
 once, between the instruction screen and the race menu. The port calls nothing there and says so
 in a comment at that line, so a roll is repeatable from the seed the `Rng` was built with.
