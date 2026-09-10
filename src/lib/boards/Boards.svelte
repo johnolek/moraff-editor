@@ -9,12 +9,18 @@
   The six boards of finished runs and the two of the living share the picker and nothing else:
   a row of one is a run that has ended and a row of the other is a character still being played,
   so each has its own table.
+
+  The picker opens on everyone rather than on a board, because a ranked board is an answer to a
+  question a reader has to have already: seeing who is playing the game at all comes first, and
+  the eight boards are behind it. Everyone spans both leaderboards, so the leaderboard toggle is
+  not shown while it is picked -- there is nothing for it to pick between.
 -->
 <script lang="ts">
   import { app, type Leaderboard } from '../app-state.svelte';
   import { leaderboardLabel } from '../character/leaderboard';
   import SectionHeading from '../ui/SectionHeading.svelte';
   import Announcements from './Announcements.svelte';
+  import Everyone from './Everyone.svelte';
   import RunPage from './RunPage.svelte';
   import {
     loadBoard,
@@ -25,15 +31,31 @@
     type LoadedBoard,
     type LoadedLiving,
   } from './server';
-  import { BOARDS_PAGE, clockHeading, NOTHING_TO_SHOW, playTimeWords, reachWords, whenWords } from './words';
+  import {
+    BOARDS_PAGE,
+    clockHeading,
+    EVERYONE,
+    NOTHING_TO_SHOW,
+    playTimeWords,
+    reachWords,
+    whenWords,
+  } from './words';
   import { BOARDS, BOARD_LEADERBOARDS, isBoardName, LIVING_BOARDS, type BoardName } from '../../../server/boards';
 
-  /** Which of the eight is being shown: one of the six board names, or one of the two living
+  /** What the picker is showing: everyone, one of the six board names, or one of the two living
    *  boards. */
-  type Picked = BoardName | (typeof LIVING_BOARDS)[number]['name'];
+  type Picked = 'everyone' | BoardName | (typeof LIVING_BOARDS)[number]['name'];
+
+  /** The picker's choices, each with the words that name it. Everyone comes first and is what the
+   *  tab opens on; the rest are the boards, whose words are the server's. */
+  const PICKS: { name: Picked; sorts: string }[] = [
+    { name: 'everyone', sorts: EVERYONE.pick },
+    ...BOARDS,
+    ...LIVING_BOARDS,
+  ];
 
   let leaderboard = $state<Leaderboard>('faithful');
-  let picked = $state<Picked>('actions');
+  let picked = $state<Picked>('everyone');
   let showing = $state<LoadedBoard>(NO_BOARD);
   let alive = $state<LoadedLiving>(NO_BOARD);
   let reading = $state(false);
@@ -98,18 +120,20 @@
     {:else}
       <SectionHeading title={BOARDS_PAGE.heading} />
       <div class="picks">
-        <div class="pick" role="group" aria-label={BOARDS_PAGE.leaderboard}>
-          <span class="label">{BOARDS_PAGE.leaderboard}</span>
-          {#each BOARD_LEADERBOARDS as choice}
-            <label>
-              <input type="radio" value={choice} bind:group={leaderboard} />
-              <span>{leaderboardLabel(choice)}</span>
-            </label>
-          {/each}
-        </div>
+        {#if picked !== 'everyone'}
+          <div class="pick" role="group" aria-label={BOARDS_PAGE.leaderboard}>
+            <span class="label">{BOARDS_PAGE.leaderboard}</span>
+            {#each BOARD_LEADERBOARDS as choice}
+              <label>
+                <input type="radio" value={choice} bind:group={leaderboard} />
+                <span>{leaderboardLabel(choice)}</span>
+              </label>
+            {/each}
+          </div>
+        {/if}
         <div class="pick" role="group" aria-label={BOARDS_PAGE.board}>
           <span class="label">{BOARDS_PAGE.board}</span>
-          {#each [...BOARDS, ...LIVING_BOARDS] as choice}
+          {#each PICKS as choice}
             <label>
               <input type="radio" value={choice.name} bind:group={picked} />
               <span>{choice.sorts}</span>
@@ -117,7 +141,9 @@
           {/each}
         </div>
       </div>
-      {#if livingSort !== null}
+      {#if picked === 'everyone'}
+        <Everyone game={app.game} onopen={(id) => (openRun = id)} />
+      {:else if livingSort !== null}
         {#if alive.rows.length === 0}
           <p class="empty">{alive.failed ? BOARDS_PAGE.unreachable : BOARDS_PAGE.noneAlive}</p>
         {:else}

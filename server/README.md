@@ -420,8 +420,8 @@ boards above each rank the runs by one number, so seeing who is playing a game
 at all means reading all eight; this is the same people in one table for the
 site to filter and sort.
 
-| Endpoint                    | What it does                                      |
-| --------------------------- | ------------------------------------------------- |
+| Endpoint                     | What it does                                     |
+| ---------------------------- | ------------------------------------------------ |
 | `GET /boards/:game/everyone` | Every character of that game the server has checked, in one answer. 404 when the game is not one the site plays. |
 
 Who is in it is who is on the eight boards put together: a run that has ended

@@ -1,9 +1,10 @@
 # The Boards tab
 
-The site's pages over the run server: one game's runs on whichever board is
-picked — six of runs that have ended and two of the characters still being
-played — a page for any run on them, and the announcements the server has made,
-with each new one arriving as it happens.
+The site's pages over the run server: one game's characters, either all of them
+at once or on whichever of the eight ranked boards is picked — six of runs that
+have ended and two of the characters still being played — a page for any run on
+them, and the announcements the server has made, with each new one arriving as
+it happens.
 
 None of it exists without a server. The address is fixed when the page is built
 (`VITE_RUN_SERVER`, `src/lib/run-server.ts`), and a build made without one is not
@@ -19,7 +20,19 @@ Everything else about the tab follows the game switch the way the others do.
   the picker with the other six and have a table of their own, because a row of
   one is a run that has ended and a row of the other is a character still being
   played: a level and a reach in place of a play time and a finish, with a mark
-  for whoever is playing right now and when each was last heard from.
+  for whoever is playing right now and when each was last heard from. Everyone
+  is the picker's first choice and what the tab opens on; while it is picked
+  there is no leaderboard toggle, since that table spans both.
+- **`Everyone.svelte`** — one table of every character of the game the server
+  has checked, whatever has become of it. A ranked board answers one question
+  and holds the reader to it; this asks none, so the checkboxes above take out
+  what they are not looking at and every column heading sorts. Beside how far a
+  run got is what the character is now — its class, its health points and its
+  six characteristics — read out of the record the server holds for it.
+- **`everyone.ts`** — which rows the ticked boxes leave showing and what order
+  they stand in. Nothing draws in it, so the whole of that is testable without a
+  browser. A group only hides a row it has a box for, and the sort is stable, so
+  two characters standing equally keep the order the server sent.
 - **`RunPage.svelte`** — one run: who played it, what it came to, the engine
   builds it was played on, its milestones and the verdict the replay gave, and
   under all of it the run written up in words. That last block is
@@ -46,7 +59,7 @@ Everything else about the tab follows the game switch the way the others do.
   sentence, so this is the one place a row becomes words. Every sentence names
   the character and the player, because an announcement is read on its own among
   other people's runs.
-- **`words.ts`** — every fixed word the two pages show, and the few turns of
+- **`words.ts`** — every fixed word these pages show, and the few turns of
   phrase they put the server's numbers into: how long a run was played, what the
   game's clock counts in, when something happened.
 
@@ -65,15 +78,19 @@ tables a board is read from. Every other module there opens the database, the
 filesystem or a port, and importing a value from one would pull Node into the
 site's bundle.
 
+`server/everyone.ts` is one of those others, so what comes from it is its types
+alone — the row and the answer the endpoint sends — and no value at all.
+
 The words a run's own milestones read as are not here either — `milestoneLine`
 in `src/lib/play/verify.ts` is what the Play tab and `verify-run` already use for
 them.
 
 ## Which endpoints
 
-`server/README.md` is the whole list. These pages use five of them:
+`server/README.md` is the whole list. These pages use six of them:
 `GET /boards/:game/:leaderboard/:board`,
-`GET /boards/:game/:leaderboard/living`, `GET /runs/:id`, `GET /announcements`
-and `GET /feed`. None of them carries the reader's secret: everything on a board
-has been through a replay that passed it, and such a run is anybody's to read —
-a character still being played included, once its chain has been replayed.
+`GET /boards/:game/:leaderboard/living`, `GET /boards/:game/everyone`,
+`GET /runs/:id`, `GET /announcements` and `GET /feed`. None of them carries the
+reader's secret: everything on a board has been through a replay that passed it,
+and such a run is anybody's to read — a character still being played included,
+once its chain has been replayed.
