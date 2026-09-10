@@ -10,6 +10,7 @@ import { runMwMoveControl, startMwGame, type MwCharacterFile } from './mw/engine
 import { moraffsWorldJournal } from './mw/journal';
 import { mwTurn } from './mw/keys';
 import { REV_CLOCK_TICK, runRevDungeon, startRevGame, type RevCharacterFile } from './rev/engine';
+import { moraffsRevengeJournal } from './rev/journal';
 
 /**
  * The run log: everything a character has played here, written down as it is played.
@@ -746,6 +747,7 @@ export const RUN_GAMES: Record<RunGame, RunGameEngine> = {
   },
   revenge: {
     replay: replayMoraffsRevenge,
+    journal: moraffsRevengeJournal,
     // This game's clock is the ticks of the poll its monsters move on, which `rev/clock.ts` has.
     clockWords: (ticks) => `${ticks} tick${ticks === 1 ? '' : 's'}`,
     dungeonName: MORAFFS_REVENGE_MAP.dungeonName,

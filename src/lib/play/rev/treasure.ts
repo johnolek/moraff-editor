@@ -255,7 +255,7 @@ function armourOrAWeapon(game: RevGame): void {
     if (next > 3) return;
     game.say(`You find ${REV_ARMOUR_WORN[next]}`);
     setRevValue(pc, REV_ARMOUR_VALUE, next);
-    game.events.push({ kind: 'found', find: { what: 'armour', item: REV_ARMOUR_WORN[next] } });
+    game.events.push({ kind: 'found', find: { what: 'armour', item: armourName(next) } });
     return;
   }
   if (roll === 4 && revValue(pc, REV_VALUE.sword) === 0) {
@@ -421,6 +421,11 @@ async function theTable(game: RevGame, desk: RevMagicDesk): Promise<void> {
 /** 1000:B0CE: the line had nothing this character does not have better of. */
 function nothing(game: RevGame): void {
   game.say(REV_NOTHING);
+}
+
+/** One of the five suits, without the full stop and the spaces its own line ends with. */
+function armourName(suit: number): string {
+  return REV_ARMOUR_WORN[suit].trim().replace('.', '');
 }
 
 /** One of the table's lines handed over, by the name its own line calls it. */

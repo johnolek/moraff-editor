@@ -79,6 +79,11 @@ export interface RunSummary {
   used: UsedCount[];
   /** Empty in Dungeons of the Unforgiven, which has no vitamin pills. */
   pills: PillCount[];
+  /** Breaths of fire and what they came to, which only Moraff's Revenge has. */
+  breaths: number;
+  breathDamage: number;
+  /** Drinks from Moraff's Revenge's fountain of youth, each of which starts a generation. */
+  fountains: number;
   monsters: MonsterAccount[];
   deaths: number;
 }
@@ -114,6 +119,9 @@ export function summarizeJournal(
     made: [],
     used: [],
     pills: [],
+    breaths: 0,
+    breathDamage: 0,
+    fountains: 0,
     monsters: [],
     deaths: 0,
   };
@@ -171,6 +179,13 @@ function fold(summary: RunSummary, event: JournalEvent, fight: { facing: number 
       return;
     case 'pillFound':
       pills(summary, event.colour).count += 1;
+      return;
+    case 'breathed':
+      summary.breaths += 1;
+      summary.breathDamage += event.damage;
+      return;
+    case 'fountainDrunk':
+      summary.fountains += 1;
       return;
     case 'coinsSpent': {
       const spent = summary.spent.find((row) => row.where === event.where);
@@ -285,6 +300,12 @@ export function summaryLines(summary: RunSummary, names: SummaryNames): string[]
   for (const used of summary.used) lines.push(usedWords(used));
   for (const pill of summary.pills) {
     lines.push(`Found ${count(pill.count, `${pill.colour.toLowerCase()} pill`)}`);
+  }
+  if (summary.breaths > 0) {
+    lines.push(`Breathed fire ${count(summary.breaths, 'time')} for ${summary.breathDamage}`);
+  }
+  if (summary.fountains > 0) {
+    lines.push(`Drank from the fountain of youth ${count(summary.fountains, 'time')}`);
   }
   for (const monster of summary.monsters) lines.push(monsterWords(monster));
   if (summary.deaths > 0) lines.push(`Died ${count(summary.deaths, 'time')}`);

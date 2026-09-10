@@ -1,4 +1,3 @@
-import type { ActionEvent } from '../../game/action';
 import type { JournalEvent } from '../../game/journal-events';
 import type { Rng } from '../../game/port/rng';
 import { RevMapMemory } from './memory';
@@ -65,8 +64,6 @@ export type RevEvent =
   /** The treasure a character walked into the bank with, turned into jewel pieces at face
    *  value (1000:22F7). */
   | { kind: 'treasureSold'; amount: number }
-  /** One of the things a run counts, pushed where the game does it (`src/lib/game/action.ts`). */
-  | ActionEvent
   /**
    * One of the things a run journal reports (`src/lib/game/journal-events.ts`), which is also
    * where the kinds a run counts as actions carry their numbers.
