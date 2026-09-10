@@ -277,7 +277,7 @@ goes on with the server unreachable and catches up when it is back.
 
 | Endpoint                             | What it does                                      |
 | ------------------------------------ | ------------------------------------------------- |
-| `GET /players/me/characters`         | Every character of that player, oldest first: the record and the maps the newest batch carried, what a roster shows about each, the chain of sittings put back together out of the stretches that arrived, and whether another device of theirs is playing it now. 403 when the device has claimed no name. |
+| `GET /players/me/characters`         | Every character of that player, oldest first: the newest record and maps any device of theirs sent, what a roster shows about each, the chain of sittings put back together out of the stretches that arrived, and whether another device of theirs is playing it now. 403 when the device has claimed no name. |
 | `PUT /players/me/characters/:id`     | Takes one character as the device holds it now — the same character a batch carries, with the game and the name beside it — and makes it known where the server has never been told about it. 200 with `{ "kept": "<id>" }`, 403 when the device has claimed no name, 409 when the character belongs to another player or is being played on another device, 400 when the body is not a character. |
 | `DELETE /players/me/characters/:id`  | Forgets one for good: its run, the verdict on it and whatever was announced about it go with it. 404 when no character of that player's has that id, which is also what a character of somebody else's is answered with. |
 

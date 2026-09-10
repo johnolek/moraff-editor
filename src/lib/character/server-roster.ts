@@ -30,7 +30,7 @@ export interface ServerCharacter {
   leaderboard: string | null;
   createdAt: string;
   editedAt: string | null;
-  /** The record as the newest batch left it, base64. */
+  /** The newest record any device of this player's sent, base64. */
   record: string | null;
   /** The explored maps as the device that played it keeps them. */
   maps: string | null;
