@@ -2,9 +2,10 @@
 
 One Node process that answers HTTP on a port, keeps everything in one SQLite
 file, and allows the site's origin. So far it answers `GET /health`, the two
-players endpoints, the two runs endpoints and the boards below; the feed is the
-rest of
-[MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
+players endpoints, the two runs endpoints, the boards and the announcements
+below; what is left of
+[MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367)
+is the boards of the living.
 
 It lives in this repository so one commit is one engine build: the code that
 will replay a run to check it is the same code the site played it with.
@@ -187,6 +188,40 @@ dungeon reached, and a run that never left the one it started in stands at 0,
 which is Module I and the town. The highest level is the highest a run levelled
 to, and a character that never gained a level stands at 0: what it was rolled
 at is no part of the run.
+
+## The announcements
+
+When a run comes out verified and may go on a board, the server announces it:
+one row for how it ended, and one for every milestone of the character's whole
+run that has not been announced for it before — a boss beaten, a module or a
+dungeon reached, a level, a floor of Moraff's Revenge. A chain carries every
+milestone the character has ever reached, so a second run of the same character
+repeats most of them and only what is new is said. Nothing is announced about a
+run that could not be checked or that had a record written into it from outside
+the game: that is the player's own business and not news.
+
+| Endpoint                             | What it does                                      |
+| ------------------------------------ | ------------------------------------------------- |
+| `GET /feed`                          | Server-sent events. Nothing on connecting; one `data:` line per announcement from then on. |
+| `GET /announcements?before=&limit=`  | The announcements already made, newest first. `before` is the oldest id the reader already has and `limit` is 1 to 50, fifty by default. 400 when either is not a number. |
+
+The history is paged by id rather than by a page number, because announcements
+are made while somebody is reading and a page number would show one twice or
+skip one as they arrive. `more` says whether there is anything behind the page.
+
+A row carries fields and no sentence: `kind` (`win`, `death`, `boss`,
+`dungeon`, `level` or `floor`), `which` — which boss, level, module or floor —
+the game and the board, the player's name and the character's, the actions, the
+game's clock, where the character stood and what it had reached, and the run's
+play time. How an announcement reads is the site's, in
+`src/lib/boards/announce.ts`, so that changing the words is a change to the site
+and not to what is already stored here.
+
+A page is left open for hours, which is longer than anything in between will
+hold a silent connection for, so a comment goes down every feed every 25
+seconds. The answer also carries `X-Accel-Buffering: no`, which is nginx's word
+for passing it straight on rather than holding each announcement until the next
+one fills a buffer.
 
 ## Engine builds
 
