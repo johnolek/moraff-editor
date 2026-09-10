@@ -1,7 +1,7 @@
 import { HistoryCursor } from './history';
 import type { RunSession } from './play/run';
 
-export type Tab = 'map' | 'play' | 'fight' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
+export type Tab = 'map' | 'play' | 'boards' | 'fight' | 'editor' | 'monsters' | 'spells' | 'calculators' | 'formulas' | 'tidbits' | 'snake' | 'roller' | 'source';
 
 /** Which game the site is about, which is also the id of its schema in
  *  `src/lib/editor/games.ts`. */

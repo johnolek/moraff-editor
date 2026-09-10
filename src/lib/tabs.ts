@@ -1,4 +1,5 @@
 import type { GameId, Tab } from './app-state.svelte';
+import { runServerUrl } from './run-server';
 
 export interface TabEntry {
   id: Tab;
@@ -9,6 +10,7 @@ export interface TabEntry {
 export const TABS: TabEntry[] = [
   { id: 'map', label: 'DotU Map' },
   { id: 'play', label: 'Play' },
+  { id: 'boards', label: 'Boards' },
   { id: 'fight', label: 'Fight' },
   { id: 'editor', label: 'Save Editor' },
   { id: 'monsters', label: 'Monsters' },
@@ -25,8 +27,8 @@ export const TABS: TabEntry[] = [
  *  simulator, the calculators, the formulas and the snake are that game's alone. A game listing
  *  `tidbits` here needs a file of its own in `src/lib/tidbits/files.ts` to show on it. */
 const GAME_TABS: Partial<Record<GameId, Tab[]>> = {
-  moraffsWorld: ['map', 'play', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source'],
-  revenge: ['map', 'play', 'editor', 'monsters', 'tidbits', 'roller', 'source'],
+  moraffsWorld: ['map', 'play', 'boards', 'editor', 'monsters', 'spells', 'tidbits', 'roller', 'source'],
+  revenge: ['map', 'play', 'boards', 'editor', 'monsters', 'tidbits', 'roller', 'source'],
 };
 
 /** The one tab the other games call something else, since only Dungeons of the Unforgiven needs
@@ -37,9 +39,12 @@ const OTHER_GAME_LABELS: Partial<Record<Tab, string>> = { map: 'Map' };
 const FALLBACK_TAB: Tab = 'editor';
 
 export function tabsFor(game: GameId): TabEntry[] {
+  // All three games have the boards, and a build that was given no run server address has none
+  // to show: that is the only tab there is nothing at all behind without one.
+  const shown = TABS.filter((tab) => tab.id !== 'boards' || runServerUrl() !== null);
   const theirs = GAME_TABS[game];
-  if (!theirs) return TABS;
-  return TABS.filter((tab) => theirs.includes(tab.id)).map((tab) => ({ ...tab, label: OTHER_GAME_LABELS[tab.id] ?? tab.label }));
+  if (!theirs) return shown;
+  return shown.filter((tab) => theirs.includes(tab.id)).map((tab) => ({ ...tab, label: OTHER_GAME_LABELS[tab.id] ?? tab.label }));
 }
 
 /** The tab to show under a game, which is the one asked for unless that game has no such tab.

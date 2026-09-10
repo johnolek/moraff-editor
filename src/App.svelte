@@ -6,6 +6,7 @@
   import { goToTab, isAppHistoryState, recordTab, type AppHistoryState } from './lib/history';
   import { tabsFor } from './lib/tabs';
   import Monsters from './lib/bestiary/Monsters.svelte';
+  import Boards from './lib/boards/Boards.svelte';
   import CharacterPanel from './lib/character/CharacterPanel.svelte';
   import Calculators from './lib/calculators/Calculators.svelte';
   import SaveEditor from './lib/editor/SaveEditor.svelte';
@@ -97,6 +98,12 @@
   <main class:hidden={app.tab !== 'play'}>
     <!-- The three games are three executables with three loops, so each brings its own. -->
     {#if app.game === 'moraffsWorld'}<MwPlay />{:else if app.game === 'revenge'}<RevPlay />{:else}<Play />{/if}
+  </main>
+  <!-- The one tab that is not kept mounted: it is a page of what the run server has now, so
+       opening it reads the boards and the announcements again rather than showing what they said
+       the last time it was looked at. -->
+  <main class:hidden={app.tab !== 'boards'}>
+    {#if app.tab === 'boards'}<Boards />{/if}
   </main>
   <!-- Dungeons of the Unforgiven's alone, so nothing here asks which game is showing. -->
   <main class:hidden={app.tab !== 'fight'}>

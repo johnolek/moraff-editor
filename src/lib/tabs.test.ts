@@ -1,8 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { tabFor, tabsFor, TABS } from './tabs';
+
+/** A build given a run server, which is the only kind that has boards to show. */
+function withBoards(): void {
+  vi.stubEnv('VITE_RUN_SERVER', 'https://runs.example.com');
+}
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('the tabs a game has', () => {
   it('is all of them for Dungeons of the Unforgiven', () => {
+    withBoards();
+
     expect(tabsFor('unforgiven')).toEqual(TABS);
   });
 
@@ -12,6 +23,21 @@ describe('the tabs a game has', () => {
 
   it('is the Map, Play, the Save Editor, the Monsters, Tidbits, New Character and Source for Moraff’s Revenge', () => {
     expect(tabsFor('revenge').map((tab) => tab.id)).toEqual(['map', 'play', 'editor', 'monsters', 'tidbits', 'roller', 'source']);
+  });
+
+  it('gives all three games the Boards tab where the build has a run server', () => {
+    withBoards();
+
+    expect(tabsFor('unforgiven').map((tab) => tab.id)).toContain('boards');
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).toContain('boards');
+    expect(tabsFor('revenge').map((tab) => tab.id)).toContain('boards');
+  });
+
+  it('gives no game the Boards tab in a build with no run server', () => {
+    expect(tabsFor('unforgiven').map((tab) => tab.id)).not.toContain('boards');
+    expect(tabsFor('moraffsWorld').map((tab) => tab.id)).not.toContain('boards');
+    expect(tabsFor('revenge').map((tab) => tab.id)).not.toContain('boards');
+    expect(tabFor('unforgiven', 'boards')).toBe('editor');
   });
 
   it('gives all three games the Play tab, since all three of them can be played', () => {
