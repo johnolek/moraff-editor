@@ -7,7 +7,14 @@ import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './board
 import { writeCorsHeaders } from './cors';
 import { ENGINE_COMMIT, openEngineStore, type EngineStore } from './engines';
 import { openFeed, type Feed } from './feed';
-import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor, signInWithPassphrase } from './players';
+import {
+  claimPlayerName,
+  isPlayerSecret,
+  issuePassphrase,
+  playerFor,
+  playerNameFor,
+  signInWithPassphrase,
+} from './players';
 import { endRun, readRunBatch, runFor, sessionsOf, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
 import type { Queries } from './sql';
 import { createRunVerifier, verdictFor, type KeptVerdict, type RunVerifier } from './verifying';
@@ -95,6 +102,11 @@ export function createRunServer(config: ServerOrigin, sql: Queries, feed: Feed =
 
     if (request.method === 'POST' && path === '/players/sign-in') {
       void signInHere(request, response, sql, attempts);
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/players/passphrase') {
+      void drawNewPassphrase(request, response, sql);
       return;
     }
 
@@ -290,6 +302,27 @@ async function signInHere(
     return;
   }
   sendJson(response, 200, { name: signedIn.name });
+}
+
+/**
+ * A new passphrase for the player this device belongs to.
+ *
+ * The words go out here and nowhere else, and asking retires the passphrase this player had: one
+ * that has been written on a whiteboard or sent to the wrong person stops letting anybody in the
+ * moment a new one is drawn.
+ */
+async function drawNewPassphrase(request: IncomingMessage, response: ServerResponse, sql: Queries): Promise<void> {
+  const secret = bearerSecret(request);
+  if (secret === null) {
+    sendJson(response, 400, { error: NOT_A_SECRET });
+    return;
+  }
+  const player = await playerFor(sql, secret);
+  if (player === null) {
+    sendJson(response, 403, { error: NO_NAME_YET });
+    return;
+  }
+  sendJson(response, 200, { passphrase: await issuePassphrase(sql, player) });
 }
 
 /**

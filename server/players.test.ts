@@ -14,6 +14,8 @@ const SECOND_DEVICE = 'E'.repeat(43);
 const OTHER_DEVICE = 'F'.repeat(43);
 const GUESSED_AT = 'G'.repeat(43);
 const GUESSING = 'H'.repeat(43);
+const RENEWING = 'I'.repeat(43);
+const RENEWED_ON = 'J'.repeat(43);
 
 let sql: Sql;
 const started: Server[] = [];
@@ -215,5 +217,38 @@ describe('guessing at a passphrase', () => {
 
     expect(sixth.status).toBe(429);
     expect((await sixth.json()).error).toMatch(/too many/i);
+  });
+});
+
+
+describe('asking for a new passphrase', () => {
+  let origin: string;
+
+  beforeAll(async () => {
+    origin = await serve();
+  });
+
+  function askForOne(secret: string): Promise<Response> {
+    return fetch(`${origin}/players/passphrase`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${secret}` },
+    });
+  }
+
+  it('gives the player a new one and stops the old one letting anybody in', async () => {
+    const claimed = await claimAt(origin, RENEWING, 'Renewer');
+    const old = (await claimed.json()).passphrase;
+
+    const asked = await askForOne(RENEWING);
+    const now = (await asked.json()).passphrase;
+
+    expect(asked.status).toBe(200);
+    expect(now).not.toBe(old);
+    expect((await signInAt(origin, RENEWED_ON, { name: 'Renewer', passphrase: old })).status).toBe(401);
+    expect((await signInAt(origin, RENEWED_ON, { name: 'Renewer', passphrase: now })).status).toBe(200);
+  });
+
+  it('has none for a device that has claimed no name', async () => {
+    expect((await askForOne('Z'.repeat(43))).status).toBe(403);
   });
 });
