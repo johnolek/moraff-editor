@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { newPassphrase, newPassphraseSalt, passphraseHash } from './passphrases';
+import { newPassphrase, newPassphraseSalt, passphraseHash, samePassphraseHash } from './passphrases';
 import type { Queries } from './sql';
 
 /**
@@ -115,4 +115,62 @@ export async function issuePassphrase(sql: Queries, player: number): Promise<str
     [hash, salt, player],
   );
   return passphrase;
+}
+
+/**
+ * What became of a sign-in: this device is the player's as well now, or why it is not.
+ *
+ * `wrong` is both a name nobody holds and a passphrase that is not that player's, and the two are
+ * one answer on purpose: telling somebody guessing which half they had right tells them which
+ * half to keep guessing at.
+ */
+export type SignIn = { signedIn: true; name: string } | { signedIn: false; because: 'wrong' | 'another-player' };
+
+/** A player as a sign-in reads them: who they are and what their passphrase comes to. Both parts
+ *  of the passphrase are null for a player who has never been issued one. */
+interface PlayerPassphrase {
+  id: number;
+  name: string;
+  passphrase_hash: string | null;
+  passphrase_salt: Uint8Array | null;
+}
+
+/**
+ * Lets this device play as the player who holds the name, if it says their passphrase.
+ *
+ * The device's secret joins the player rather than replacing anything: the device the name was
+ * claimed on keeps it too, and both play as the same player from then on. A device that already
+ * has a player of its own is refused, since one browser cannot be two players.
+ */
+export async function signInWithPassphrase(
+  sql: Queries,
+  secret: string,
+  name: unknown,
+  passphrase: unknown,
+): Promise<SignIn> {
+  const wanted = validPlayerName(name);
+  if (!isPlayerSecret(secret) || wanted === null || typeof passphrase !== 'string') {
+    return { signedIn: false, because: 'wrong' };
+  }
+
+  // Folded, the way the unique index on the name is.
+  const holders = await sql.query<PlayerPassphrase>(
+    'SELECT id, name, passphrase_hash, passphrase_salt FROM players WHERE lower(name) = lower($1)',
+    [wanted],
+  );
+  const holder = holders[0];
+  if (holder === undefined || holder.passphrase_hash === null || holder.passphrase_salt === null) {
+    return { signedIn: false, because: 'wrong' };
+  }
+  const said = await passphraseHash(passphrase, holder.passphrase_salt);
+  if (!samePassphraseHash(holder.passphrase_hash, said)) return { signedIn: false, because: 'wrong' };
+
+  const already = await playerFor(sql, secret);
+  if (already === holder.id) return { signedIn: true, name: holder.name };
+  if (already !== null) return { signedIn: false, because: 'another-player' };
+  await sql.query('INSERT INTO player_secrets (secret_hash, player_id) VALUES ($1, $2)', [
+    secretHash(secret),
+    holder.id,
+  ]);
+  return { signedIn: true, name: holder.name };
 }

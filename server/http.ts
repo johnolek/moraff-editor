@@ -6,7 +6,7 @@ import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './board
 import { writeCorsHeaders } from './cors';
 import { ENGINE_COMMIT, openEngineStore, type EngineStore } from './engines';
 import { openFeed, type Feed } from './feed';
-import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor } from './players';
+import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor, signInWithPassphrase } from './players';
 import { endRun, readRunBatch, runFor, sessionsOf, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
 import type { Queries } from './sql';
 import { createRunVerifier, verdictFor, type KeptVerdict, type RunVerifier } from './verifying';
@@ -16,6 +16,8 @@ const NOT_A_SECRET = 'That is not a player secret.';
 const NOT_A_NAME = "A name is 2 to 24 letters, digits, spaces or . _ - '";
 const NAME_TAKEN = 'That name is taken.';
 const NO_NAME_YET = 'This device has no name yet.';
+const SIGN_IN_REFUSED = 'That name and passphrase do not go together.';
+const ANOTHER_NAME_HERE = 'This device already has a name of its own.';
 const NOT_A_BATCH = 'That is not a batch of a run.';
 const ANOTHER_PLAYER = 'That character belongs to another player.';
 const NO_SUCH_SITTING = 'That run has no such sitting.';
@@ -85,6 +87,11 @@ export function createRunServer(config: ServerOrigin, sql: Queries, feed: Feed =
 
     if (request.method === 'POST' && path === '/players') {
       void claimName(request, response, sql);
+      return;
+    }
+
+    if (request.method === 'POST' && path === '/players/sign-in') {
+      void signInHere(request, response, sql);
       return;
     }
 
@@ -241,6 +248,33 @@ async function claimName(request: IncomingMessage, response: ServerResponse, sql
     return;
   }
   sendJson(response, 200, { name: claim.name });
+}
+
+/**
+ * Letting this device play as a name claimed on another one.
+ *
+ * The device says the name and the passphrase that name was given, and its secret joins that
+ * player: the device the name was claimed on keeps it as well, and both are the same player from
+ * then on. A wrong name and a wrong passphrase are one answer, because saying which of the two was
+ * wrong tells whoever is guessing which half to keep guessing at.
+ */
+async function signInHere(request: IncomingMessage, response: ServerResponse, sql: Queries): Promise<void> {
+  const secret = bearerSecret(request);
+  if (secret === null) {
+    sendJson(response, 400, { error: NOT_A_SECRET });
+    return;
+  }
+  const body = (await readJsonBody(request)) as { name?: unknown; passphrase?: unknown } | null;
+  const signedIn = await signInWithPassphrase(sql, secret, body?.name, body?.passphrase);
+  if (!signedIn.signedIn) {
+    if (signedIn.because === 'another-player') {
+      sendJson(response, 409, { error: ANOTHER_NAME_HERE });
+      return;
+    }
+    sendJson(response, 401, { error: SIGN_IN_REFUSED });
+    return;
+  }
+  sendJson(response, 200, { name: signedIn.name });
 }
 
 /**
