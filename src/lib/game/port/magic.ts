@@ -173,6 +173,9 @@ export function setAntiMagicRing(game: Game, level: number): boolean {
   return true;
 }
 
+/** How many charges Enchant Wand writes onto a wand at a time. */
+const WAND_CHARGES = 5;
+
 /**
  * write_scroll_or_wand (exe 3000:d384, unf.c "write_scroll_or_wand"): Write Scroll and Enchant
  * Wand, which add one scroll of a spell the player picks or five charges of a wand of it.
@@ -187,8 +190,10 @@ export function writeScrollOrWand(game: Game, maxLevel: number, kind: number): b
   const choice = game.chooseSpell(maxLevel);
   if (choice === null) return false;
   const index = choice.type * 45 + choice.level * 3 + choice.slot;
+  const spell = { type: choice.type, level: choice.level, slot: choice.slot };
   if (kind === 1) {
     game.pc.scrolls[index] += 1;
+    game.events.push({ kind: 'scrollWritten', spell });
     // DS:37f7 380b 258b 2d43
     game.say('THE SCROLL HAS BEEN', '   SUCCESSFULLY WRITTEN!', '', 'HIT ANY KEY');
     // print_menu_only waits for the key its last line asks for, and takes the box down on it.
@@ -196,7 +201,8 @@ export function writeScrollOrWand(game: Game, maxLevel: number, kind: number): b
     return true;
   }
   if (kind === 2) {
-    game.pc.wands[index] += 5;
+    game.pc.wands[index] += WAND_CHARGES;
+    game.events.push({ kind: 'wandMade', spell, charges: WAND_CHARGES });
     // DS:3824 383c 258b 2d43
     game.say('YOU NOW HOLD A GLOWING,', '   CHARGED WAND IN HAND!', '', 'HIT ANY KEY');
     game.pressAnyKey();
