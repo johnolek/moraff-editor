@@ -154,34 +154,39 @@ async function castPickedSpell(
 }
 
 /**
- * movecontrol (exe 2000:c308, unf.c "movecontrol"), its 0x63 branch: the C key, which casts out
- * of the spellbook and then spends what the cast took.
+ * movecontrol (exe 2000:c308, unf.c "movecontrol"), its 0x63 branch (exe 2000:d525 to 2000:d5a5):
+ * the C key, which casts out of the spellbook, spends what the cast took and lets one moment of
+ * the game go by.
+ *
+ * A cast that took no time is skipped whole: escaping the menus moves nothing on the floor.
  */
 export async function castFromSpellbook(turn: Turn): Promise<void> {
-  spendSpellSeconds(turn.game, await castASpell(turn, CAST_SPELLBOOK));
+  const { game } = turn;
+  const seconds = await castASpell(turn, CAST_SPELLBOOK);
+  if (seconds === 0) return;
+  spendCastSeconds(game, seconds);
+  passMoment(game);
+  game.redrawView = true;
 }
 
 /**
- * movecontrol (exe 2000:c308, unf.c "movecontrol"), what it does with the seconds cast_a_spell
- * hands back: give every monster standing beside the character the attacks that time buys, then
- * let one moment of the game go by.
+ * movecontrol (exe 2000:c308, unf.c "movecontrol"), the arithmetic both cast keys do on the
+ * seconds cast_a_spell hands back (exe 2000:d536 and 2000:d655): give every monster standing
+ * beside the character the attacks that time buys.
  *
- * A spell that cost nothing costs no time either. Under a minute is spent in one go; anything
- * longer is spent a minute at a time, and ten hours — which is what a permanent spell costs — is
- * so long that the loop declines to spend it at all and no time passes.
+ * Under a minute is spent in one go. Anything longer is spent a minute at a time, since 60 is
+ * what the loop can hand call_check_eng without overflowing the int it takes; and ten hours —
+ * which is what a permanent spell costs — is longer than either branch will spend, so a
+ * permanent spell buys the monsters nothing at all.
  *
- * The decompilation keeps both of those branches but loses the number each call_check_eng is
- * given; a minute is what the loop can hand it without overflowing the int it takes, which is
- * also why the ten-hour case is left out.
+ * The decompilation loses the number each call_check_eng is given. The disassembly has it: the
+ * seconds themselves at 2000:d536, and 60 at 2000:d655.
  */
-function spendSpellSeconds(game: Game, seconds: number): void {
-  if (seconds === 0) return;
+function spendCastSeconds(game: Game, seconds: number): void {
   if (seconds < 60) callCheckEng(game, seconds);
   else if (seconds < 30000) {
     for (let minute = 0; minute < Math.trunc(seconds / 60); minute += 1) callCheckEng(game, 60);
   }
-  passMoment(game);
-  game.redrawView = true;
 }
 
 /** The five lines of the menu the I key puts up (exe DS:1ed7 06f0 1eeb 1ef5 1efd 1f06 1f16). */
@@ -222,7 +227,12 @@ export async function useAnItem(turn: Turn): Promise<void> {
   if (line === 'escape') return;
   const source = ITEM_MENU_SOURCES[line - 1];
   if (source !== undefined) {
-    spendSpellSeconds(game, await castASpell(turn, source));
+    // The I key spends the seconds and stops there (exe 2000:d615 to 2000:d684), where the C key
+    // also passes a moment of the game. It does not ask whether the cast took any time either,
+    // so a cast given up on still runs the engagement check with nought seconds, which matters
+    // because that check draws a random number for every monster on the floor while Slow Enemies
+    // is standing.
+    spendCastSeconds(game, await castASpell(turn, source));
     return;
   }
   if (line === 5) {
