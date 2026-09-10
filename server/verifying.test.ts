@@ -190,7 +190,7 @@ describe('replaying a run once its last batch has arrived', () => {
 
   async function play(engines: EngineStore, ...batches: { batch: RunBatch; at: number }[]): Promise<void> {
     for (const sent of batches) takeBatch(database, CHARACTER, ME, sent.batch, sent.at);
-    const verifier = createRunVerifier(database, engines);
+    const verifier = createRunVerifier(database, engines, () => {});
     verifier.verifySoon(CHARACTER);
     await verifier.idle();
   }

@@ -5,6 +5,7 @@ import { announcementsBefore, ANNOUNCEMENTS_PER_PAGE } from './announcing';
 import { boardPage, isBoardGame, isBoardLeaderboard, isBoardName } from './boards';
 import { writeCorsHeaders } from './cors';
 import { openEngineStore, shortCommit } from './engines';
+import { openFeed, type Feed } from './feed';
 import { claimPlayerName, isPlayerSecret, playerFor, playerNameFor } from './players';
 import { endRun, readRunBatch, runFor, sessionsOf, takeBatch, type BatchClaims, type BatchRefusal } from './runs';
 import { createRunVerifier, verdictFor, type RunVerifier } from './verifying';
@@ -47,9 +48,17 @@ const MOST_BATCH_BYTES = 8 * 1024 * 1024;
 /** What a character is called in a path: the id of a roster entry in somebody's browser. */
 const CHARACTER_ID = /^[A-Za-z0-9_-]{1,64}$/;
 
-export function createRunServer(config: ServerConfig, database: DatabaseSync): Server {
+/**
+ * The server.
+ *
+ * `feed` is the one thing here that outlives a request: a page listening to it holds its answer
+ * open until somebody closes the tab. `main.ts` makes its own so that a stopping process can let
+ * those pages go rather than wait for them; anything that does not care about stopping gets one
+ * of its own.
+ */
+export function createRunServer(config: ServerConfig, database: DatabaseSync, feed: Feed = openFeed()): Server {
   const engines = openEngineStore(config.enginesPath);
-  const verifier = createRunVerifier(database, engines);
+  const verifier = createRunVerifier(database, engines, (announcements) => feed.announce(announcements));
 
   return createServer((request, response) => {
     writeCorsHeaders(response, request.headers.origin, config.allowedOrigin);
@@ -88,6 +97,11 @@ export function createRunServer(config: ServerConfig, database: DatabaseSync): S
     const batches = path.match(/^\/runs\/([^/]+)\/batches$/);
     if (request.method === 'POST' && batches !== null) {
       void takeRunBatch(request, response, database, verifier, decodeURIComponent(batches[1]));
+      return;
+    }
+
+    if (request.method === 'GET' && path === '/feed') {
+      feed.listen(response);
       return;
     }
 

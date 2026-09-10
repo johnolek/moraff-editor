@@ -349,7 +349,7 @@ describe('a run that went the whole way through the verifier', () => {
       6000,
     );
     endRun(database, CHARACTER, 'win');
-    const verifier = createRunVerifier(database, engines);
+    const verifier = createRunVerifier(database, engines, () => {});
     verifier.verifySoon(CHARACTER);
     await verifier.idle();
 

@@ -411,8 +411,15 @@ export interface RunVerifier {
  * A long run takes seconds to replay, and the browser sending the last batch of it is waiting on
  * an answer, so the answer goes first and the replay happens behind it. One at a time, because a
  * replay is the whole engine running as fast as it can and two at once would only make both slow.
+ *
+ * `announced` is handed everything a checked run had to say, which is how the feed hears about a
+ * run whose last batch was answered seconds before the replay finished.
  */
-export function createRunVerifier(database: DatabaseSync, engines: EngineStore): RunVerifier {
+export function createRunVerifier(
+  database: DatabaseSync,
+  engines: EngineStore,
+  announced: (announcements: Announcement[]) => void,
+): RunVerifier {
   let line: Promise<void> = Promise.resolve();
   const waiting = new Set<string>();
 
@@ -423,7 +430,7 @@ export function createRunVerifier(database: DatabaseSync, engines: EngineStore):
       line = line.then(async () => {
         waiting.delete(characterId);
         try {
-          await verifyKeptRun(database, engines, characterId);
+          announced(await verifyKeptRun(database, engines, characterId));
         } catch (thrown) {
           console.error(`Replaying the run of ${characterId} failed:`, thrown);
         }

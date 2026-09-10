@@ -1,5 +1,6 @@
 import { configFromEnvironment } from './config';
 import { openRunDatabase } from './db';
+import { openFeed } from './feed';
 import { createRunServer } from './http';
 
 /**
@@ -11,7 +12,8 @@ import { createRunServer } from './http';
 
 const config = configFromEnvironment();
 const database = openRunDatabase(config.databasePath);
-const server = createRunServer(config, database);
+const feed = openFeed();
+const server = createRunServer(config, database, feed);
 
 server.listen(config.port, () => {
   console.log(`Run server listening on port ${config.port}`);
@@ -23,7 +25,8 @@ server.listen(config.port, () => {
  * A stop has to leave the SQLite file consistent, so the process stops taking requests, waits for
  * the ones in hand and closes the database before it exits. Browsers keep a connection open after
  * their request is answered; those are dropped rather than waited on, or a stop would sit there
- * until they timed out.
+ * until they timed out. A page listening to the feed holds its answer open for as long as somebody
+ * leaves the page up, so those are let go too.
  */
 function stop(signal: NodeJS.Signals): void {
   console.log(`${signal}: stopping`);
@@ -32,6 +35,7 @@ function stop(signal: NodeJS.Signals): void {
     process.exit(0);
   });
   server.closeIdleConnections();
+  feed.close();
 }
 
 process.on('SIGTERM', stop);
