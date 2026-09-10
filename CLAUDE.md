@@ -41,11 +41,13 @@ pnpm start:server  # run it
 - The Tidbits tab follows the game switch: a game has one when
   `src/lib/tidbits/files.ts` names a file for it and `src/lib/tabs.ts` lists the
   tab for it.
-- `server/` is the run server, one Node process on `node:http` and `node:sqlite`
-  built by `vite.server.config.ts`; its tests run under the same `pnpm test` and
-  `server/README.md` is how it is deployed. It replays a run with the engine that
-  played it, so `pnpm build:engine` bundles the engine into
-  `server/engines/<commit>/` and every deploy leaves one there.
+- `server/` is the run server, one Node process on `node:http` and a Postgres it
+  reaches through `server/sql.ts`, built by `vite.server.config.ts`; its tests run
+  under the same `pnpm test` against PGlite and need no database on the machine,
+  and `server/README.md` is how it is deployed. It replays a run with the engine
+  that played it, so `pnpm build:engine` bundles the engine into
+  `server/engines/<commit>/` and `pnpm publish:engine` puts that build in the
+  database, which the deployed server also does for its own commit at start.
 - Real game folders live in `~/games/4unf for claude/` (DotU), `~/games/mworld/`
   (Moraff's World) and `~/games/rev2/` (Moraff's Revenge); never modify them and
   never commit copies of saves or executables. Tests use synthetic buffers.

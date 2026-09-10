@@ -1,7 +1,7 @@
 # Run server
 
-One Node process that answers HTTP on a port, keeps everything in one SQLite
-file, and allows the site's origin. So far it answers `GET /health`, the two
+One Node process that answers HTTP on a port, keeps everything in Postgres, and
+allows the site's origin. So far it answers `GET /health`, the two
 players endpoints, the two runs endpoints, the boards and the announcements
 below; what is left of
 [MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367)
@@ -10,32 +10,56 @@ is the boards of the living.
 It lives in this repository so one commit is one engine build: the code that
 will replay a run to check it is the same code the site played it with.
 
-## Build and run
+## The database
 
-Node 24 or later — the server uses `node:sqlite`, which Node ships. Node prints
-an `ExperimentalWarning` about SQLite on every start; that is Node, not a
-problem here.
+Everything is in Postgres: the players, the characters, the sittings and the
+stretches of keys, the verdicts, the announcements and the engine builds
+themselves. The box the server runs on keeps nothing, so the container can be
+rebuilt or moved with no volume under it.
 
-```bash
-pnpm build:server   # bundles server/ into dist-server/main.mjs
-pnpm build:engine   # bundles the engine into server/engines/<commit>/engine.mjs
-pnpm start:server   # runs dist-server/main.mjs
+It wants a role and a database of its own, and makes everything else itself:
+
+```sql
+CREATE ROLE moraff LOGIN PASSWORD 'something';
+CREATE DATABASE moraff_runs OWNER moraff;
 ```
 
-The build is one self-contained file: the migrations are read into it, and only
-Node's own modules are imported at run time. Nothing else needs to be copied to
-the box.
+The server makes a schema called `moraff` inside that database the first time it
+starts and puts all its tables there, so the database may hold whatever else is
+kept in it and nothing of this server's lands in `public`. Every connection is
+opened with `search_path` set to that schema, which is why no query names it.
+
+The schema is a directory of numbered files, `server/migrations/`. Each runs
+once, inside a transaction, and its name goes in `schema_migrations`; a start
+runs only the files the database has not seen, so a deploy needs no migration
+step of its own. A file that has been applied is never edited afterwards —
+a change to the schema is a new file with the next number.
+
+## Build and run
+
+Node 24 or later.
+
+```bash
+pnpm build:server     # bundles server/ into dist-server/main.mjs
+pnpm build:engine     # bundles the engine into server/engines/<commit>/engine.mjs
+pnpm publish:engine   # puts that build in the database
+pnpm start:server     # runs dist-server/main.mjs
+```
+
+The build is one self-contained file: the migrations and the Postgres client are
+read into it, and only Node's own modules are imported at run time. Nothing else
+needs to be copied to the box.
 
 ## Configuration
 
-Environment variables, all optional:
+| Variable            | Default                      | What it is                                      |
+| ------------------- | ---------------------------- | ----------------------------------------------- |
+| `DATABASE_URL`      | none, and it must be set     | The Postgres to keep everything in, e.g. `postgres://moraff:something@127.0.0.1:5432/moraff_runs` |
+| `RUN_SERVER_PORT`   | `3580`                       | The port to answer on, behind the proxy          |
+| `RUN_SERVER_ORIGIN` | `https://johnolek.github.io` | The site's origin, which browsers are told may read the answers |
 
-| Variable              | Default                      | What it is                                      |
-| --------------------- | ---------------------------- | ----------------------------------------------- |
-| `RUN_SERVER_PORT`     | `3580`                       | The port to answer on, behind the proxy          |
-| `RUN_SERVER_DATABASE` | `./server/data/runs.sqlite`  | The SQLite file, created with its directory      |
-| `RUN_SERVER_ORIGIN`   | `https://johnolek.github.io` | The site's origin, which browsers are told may read the answers |
-| `RUN_SERVER_ENGINES`  | `./server/engines`           | The directory of engine builds runs are replayed with |
+There is no default for `DATABASE_URL`: a server with nowhere to keep anything
+says so and stops, rather than starting and connecting to whatever is nearest.
 
 A page served from `http://localhost` on any port is allowed as well, so
 `pnpm dev` can talk to a server running on the same machine.
@@ -66,9 +90,9 @@ out. Names go first come and are compared without regard to case.
 | `GET /players/me` | 200 with `{ "name": "..." }`, or 404 when that secret has claimed no name. |
 
 A name is 2 to 24 characters of ASCII letters, digits, spaces and `. _ - '`,
-trimmed. It is that narrow because SQLite's `NOCASE` folds `A-Z` and nothing
-else: a rule any wider would let two players hold names the boards cannot tell
-apart.
+trimmed, which rules out every control character and everything a page would
+have to escape to show. Two names that differ only in case are one name: the
+unique index is on `lower(name)` and every lookup folds the same way.
 
 Losing the browser's storage loses the secret, and nothing here gets it back.
 
@@ -228,32 +252,38 @@ one fills a buffer.
 A run says which commit of the engine it was played on, and a character's run
 can cross several of them as the site is rebuilt. Replaying a session with
 anything but its own engine shows nothing, so the server keeps a build of the
-engine for every commit it has ever deployed, in `RUN_SERVER_ENGINES`, one
-directory per commit:
+engine for every commit it has ever deployed, one row of the `engines` table per
+commit: the commit, when it was built, and the bundle itself.
 
-```
-engines/
-  0a1b2c…/engine.mjs
-  3d4e5f…/engine.mjs
-```
-
-`pnpm build:engine` writes the directory for the commit the working tree is on,
-so a deploy is both builds made on a clean checkout of the commit being
-deployed:
+`pnpm build:engine` writes `server/engines/<commit>/engine.mjs` for the commit
+the working tree is on, and `pnpm publish:engine` puts that file in the
+database:
 
 ```bash
-pnpm build:server
 pnpm build:engine
+DATABASE_URL=postgres://… pnpm publish:engine
 ```
 
-Nothing is ever taken out of that directory. Deleting a build makes every run
-played on it unreplayable and there is no getting its verdict back; writing the
-same commit's build twice costs nothing, since it is the same build.
+The deployed server does that for its own commit every time it starts, so a
+container carrying `server/engines/<its commit>/engine.mjs` needs no separate
+step: it finds the file beside itself, `dist-server/main.mjs` and
+`server/engines/` both being under the repository's root, and publishes it if
+the table has not got it.
 
-A tree with changes in it builds into `<commit>-dirty`, and the server replays
-nothing with such a build: nobody can check that tree out again to see what it
-was. So a dirty build is fine to make and try on your own machine, and a deploy
-carrying one is plain to see in `/health`.
+A build is loaded by importing it as a `data:` URL, which is how a module comes
+out of the database and into the process without ever being written to the
+container's disk. It is held in memory from then on, since every run of that
+commit is replayed by it.
+
+Nothing is ever taken out of the table. Deleting a build makes every run played
+on it unreplayable and there is no getting its verdict back; publishing the same
+commit's build twice does nothing at all, since it is the same build and the
+row that is there stands.
+
+A tree with changes in it builds into `<commit>-dirty`. Such a build is refused
+by `publish:engine` and the server replays nothing with one: nobody can check
+that tree out again to see what it was. So a dirty build is fine to make and try
+on your own machine, and never reaches the database.
 
 ## Deploying by hand
 
@@ -267,15 +297,21 @@ scp -r "server/engines/$(git rev-parse HEAD)" box:/srv/moraff-run-server/engines
 ssh box 'sudo systemctl restart moraff-run-server'
 ```
 
-The second copy adds this commit's engine beside the ones earlier deploys left
-there, which is why the checkout has to be clean: a dirty tree has no directory
-under that name to copy.
+The second copy puts this commit's engine where the restarted server will look
+for it, one directory up and across from `main.mjs`, and the server publishes it
+to the database as it starts. That is why the checkout has to be clean: a dirty
+tree has no directory under a commit's name to copy, and a dirty build is
+refused anyway.
 
-The first time, make somewhere for it to live and keep its data:
+The first time, make somewhere for it to live:
 
 ```bash
-ssh box 'sudo mkdir -p /srv/moraff-run-server/engines /var/lib/moraff-run-server'
+ssh box 'sudo mkdir -p /srv/moraff-run-server/server/engines'
 ```
+
+Note that `main.mjs` goes in `/srv/moraff-run-server/dist-server/` under that
+layout, since the server looks for a build at `../server/engines/<commit>/`
+beside itself.
 
 `/etc/systemd/system/moraff-run-server.service`:
 
@@ -285,10 +321,9 @@ Description=Moraff run server
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/node /srv/moraff-run-server/main.mjs
+ExecStart=/usr/bin/node /srv/moraff-run-server/dist-server/main.mjs
 Environment=RUN_SERVER_PORT=3580
-Environment=RUN_SERVER_DATABASE=/var/lib/moraff-run-server/runs.sqlite
-Environment=RUN_SERVER_ENGINES=/srv/moraff-run-server/engines
+Environment=DATABASE_URL=postgres://moraff:something@127.0.0.1:5432/moraff_runs
 Environment=RUN_SERVER_ORIGIN=https://johnolek.github.io
 User=moraff
 Restart=always
@@ -301,7 +336,7 @@ WantedBy=multi-user.target
 Then `sudo systemctl daemon-reload && sudo systemctl enable --now
 moraff-run-server`, and `journalctl -u moraff-run-server -n 50` for what it
 said. `systemctl stop` sends SIGTERM, which is what the server waits for to
-finish the requests in hand and close the database.
+finish the requests in hand and let go of the database.
 
 The proxy terminates HTTPS and the server never sees a certificate. An nginx
 server block:
@@ -329,17 +364,15 @@ no server and the site behaves as it does today.
 
 ## Backups
 
-One file, `RUN_SERVER_DATABASE`, holds every run the server has been sent and
-everything computed from them. Nothing else on the box is worth keeping: the
-server itself is a build of this repository, and so is every engine under
-`RUN_SERVER_ENGINES` — a lost one comes back by checking its commit out and
-running `pnpm build:engine`.
-
-Copying the file while the server is running can catch it mid-write, so either
-stop it first, or let SQLite take the copy — `.backup` reads the file under the
-same locks the server writes it with, so it always lands on a whole database:
+The Postgres backup is the backup. Everything the server has ever been sent and
+everything computed from it — including the engine builds runs are replayed
+with — is in the `moraff` schema of `DATABASE_URL`, and nothing at all is
+written to the box it runs on.
 
 ```bash
-sqlite3 /var/lib/moraff-run-server/runs.sqlite \
-  ".backup '/var/backups/moraff-runs-$(date +%F).sqlite'"
+pg_dump --schema=moraff moraff_runs > "moraff-runs-$(date +%F).sql"
 ```
+
+A lost engine build is the one thing that comes back without a backup: check its
+commit out and run `pnpm build:engine` and `pnpm publish:engine`. Everything else
+is gone if the database is.
