@@ -58,7 +58,7 @@ export interface KeptRun {
   player: string;
 }
 
-interface CharacterRow {
+export interface CharacterRow {
   id: string;
   player_id: number;
   game: string;
@@ -127,7 +127,7 @@ export async function takeBatch(
       return { taken: false, because: 'moved-on' };
     }
 
-    if (character === null) await startCharacter(queries, characterId, sender.player, batch);
+    if (character === null) await startBatchCharacter(queries, characterId, sender.player, batch);
     else await describeCharacter(queries, characterId, batch);
 
     if (batch.session !== undefined) await keepSession(queries, characterId, batch);
@@ -219,7 +219,7 @@ function startsWith(all: readonly number[], start: readonly number[]): boolean {
  * makes the reading and the writing below one step rather than two racing sets of statements: the
  * second batch waits here until the first has been taken or refused, and then sees what it did.
  */
-async function lockCharacter(sql: Queries, characterId: string): Promise<CharacterRow | null> {
+export async function lockCharacter(sql: Queries, characterId: string): Promise<CharacterRow | null> {
   const rows = await sql.query<CharacterRow>('SELECT * FROM characters WHERE id = $1 FOR UPDATE', [characterId]);
   return rows[0] ?? null;
 }
@@ -261,14 +261,14 @@ async function nextSequence(sql: Queries, characterId: string, sessionIndex: num
 }
 
 /**
- * Keep the character the batch carries: the record as it stands, the maps where they have
+ * Keep the character as a device holds it: the record as it stands, the maps where they have
  * changed, and the rest of what a roster shows.
  *
  * The maps are much the biggest thing a batch carries and most keys change nothing about them, so
  * a batch whose maps are the ones the batch before it carried leaves them out and the ones here
  * stand.
  */
-async function keepCharacterSave(
+export async function keepCharacterSave(
   sql: Queries,
   characterId: string,
   save: CharacterSave,
@@ -329,21 +329,51 @@ export async function endRun(sql: Queries, characterId: string, outcome: 'death'
   await sql.query('UPDATE characters SET finished_at = now(), outcome = $1 WHERE id = $2', [outcome, characterId]);
 }
 
+/** What a character's row holds the moment the server is first told about it. */
+export interface NewCharacter {
+  id: string;
+  playerId: number;
+  game: string;
+  mode: string | null;
+  name: string;
+  /** When the device rolled or imported it, or null for one whose device did not say. */
+  createdAt: string | null;
+}
+
 /**
- * A character the server has never been told about, made known by the batch that named it.
+ * A character the server has never been told about, made known by whatever named it: the first
+ * batch of a sitting, or an edit sent with no game running.
  *
- * `created_at` is when the device rolled or imported the character, where the batch says so, and
+ * `created_at` is when the device rolled or imported the character, where the device says so, and
  * not when this row was written: the roster is in that order, and a player who signs in elsewhere
  * should find their characters in the order they have always been in.
  */
-async function startCharacter(sql: Queries, characterId: string, playerId: number, batch: RunBatch): Promise<void> {
-  const session = batch.session;
-  if (session === undefined) return;
+export async function startCharacter(sql: Queries, character: NewCharacter): Promise<void> {
   await sql.query(
     `INSERT INTO characters (id, player_id, game, mode, name, created_at)
      VALUES ($1, $2, $3, $4, $5, COALESCE($6::timestamptz, now()))`,
-    [characterId, playerId, session.game, batch.claims.mode, session.name, batch.save?.createdAt ?? null],
+    [character.id, character.playerId, character.game, character.mode, character.name, character.createdAt],
   );
+}
+
+/** The character a first batch names, which carries its game and its name in that batch's
+ *  sitting. */
+async function startBatchCharacter(
+  sql: Queries,
+  characterId: string,
+  playerId: number,
+  batch: RunBatch,
+): Promise<void> {
+  const session = batch.session;
+  if (session === undefined) return;
+  await startCharacter(sql, {
+    id: characterId,
+    playerId,
+    game: session.game,
+    mode: batch.claims.mode,
+    name: session.name,
+    createdAt: batch.save?.createdAt ?? null,
+  });
 }
 
 /** The name and the mode a character shows by are the newest sitting's, since a character is
@@ -594,7 +624,7 @@ export function readRunBatch(body: unknown): RunBatch | null {
  * `maps` left out and `maps` null are two different things: the first says the maps are the ones
  * the batch before it carried, and the second says the character has discovered none.
  */
-function readCharacterSave(value: unknown): CharacterSave | undefined {
+export function readCharacterSave(value: unknown): CharacterSave | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
   const save = value as Record<string, unknown>;
   if (typeof save.record !== 'string') return undefined;

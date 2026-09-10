@@ -19,6 +19,8 @@ const MY_OTHER = 'D'.repeat(43);
 const CHARACTER = 'k3p9x1-ab12cd';
 /** A character rolled for no board, so nothing about it is ever replayed or checked. */
 const PRIVATE = 'p7r2w9-cd56ef';
+/** A character the server hears about through an edit rather than through a run. */
+const EDITED = 'e5t8u2-gh78ij';
 
 /** The one line the build below writes about every run it replays. */
 const STEPPED = { at: 2, floor: 3, module: 0, text: 'Stepped north', event: { kind: 'stepped', dir: 0 } };
@@ -277,6 +279,43 @@ describe('streaming a run over HTTP', () => {
 
     expect(response.status).toBe(404);
   });
+
+  it('takes a character edited with no game running and puts it on the roster', async () => {
+    const response = await putCharacter(MINE, EDITED);
+
+    expect(response.status).toBe(200);
+    const roster = await fetch(`${origin}/players/me/characters`, { headers: { Authorization: `Bearer ${MINE}` } });
+    expect((await roster.json()).characters).toMatchObject([
+      { id: EDITED, game: 'unforgiven', name: 'Editor', record: 'CQkJ', run: [] },
+    ]);
+  });
+
+  it('takes no character from a device that has claimed no name', async () => {
+    const response = await putCharacter(UNNAMED, EDITED);
+
+    expect(response.status).toBe(403);
+  });
+
+  /** A character sent on its own, the way the site sends one edited with no game running. */
+  function putCharacter(secret: string, characterId: string): Promise<Response> {
+    return fetch(`${origin}/players/me/characters/${characterId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
+      body: JSON.stringify({
+        game: 'unforgiven',
+        name: 'Editor',
+        save: {
+          record: 'CQkJ',
+          maps: null,
+          slot: 21,
+          dead: false,
+          leaderboard: null,
+          createdAt: '2026-09-08T09:00:00.000Z',
+          editedAt: '2026-09-09T13:00:00.000Z',
+        },
+      }),
+    });
+  }
 
   /**
    * The replay of a chain still being played happens behind the answer to the batch that asked

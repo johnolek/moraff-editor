@@ -17,7 +17,7 @@ import {
   secretHash,
   signInWithPassphrase,
 } from './players';
-import { forgetKeptCharacter, rosterOf } from './roster';
+import { forgetKeptCharacter, keepEditedCharacter, readCharacterEdit, rosterOf } from './roster';
 import {
   endRun,
   leaseOn,
@@ -48,6 +48,7 @@ const SIGN_IN_REFUSED = 'That name and passphrase do not go together.';
 const ANOTHER_NAME_HERE = 'This device already has a name of its own.';
 const TOO_MANY_TRIES = 'Too many tries. Wait a quarter of an hour and try again.';
 const NOT_A_BATCH = 'That is not a batch of a run.';
+const NOT_A_CHARACTER = 'That is not a character.';
 const ANOTHER_PLAYER = 'That character belongs to another player.';
 const NO_SUCH_SITTING = 'That run has no such sitting.';
 const CHANGED_RESEND = 'That stretch of the run arrived before, holding something else.';
@@ -64,7 +65,7 @@ const NOT_A_HISTORY_PAGE = 'That is not a page of the announcements.';
 const MOST_BODY_BYTES = 1024;
 
 /**
- * How much a batch of a run may be.
+ * How much a batch of a run, or a character sent on its own, may be.
  *
  * A few seconds of keys is nothing. The big one is the batch that carries a whole sitting the
  * server was never told about: Moraff's Revenge writes an input for every tick of its monsters'
@@ -122,6 +123,11 @@ export function createRunServer(config: ServerOrigin, sql: Sql, feed: Feed = ope
     const character = path.match(/^\/players\/me\/characters\/([^/]+)$/);
     if (request.method === 'DELETE' && character !== null) {
       void forgetMyCharacter(response, sql, bearerSecret(request), decodeURIComponent(character[1]));
+      return;
+    }
+
+    if (request.method === 'PUT' && character !== null) {
+      void keepMyCharacter(request, response, sql, bearerSecret(request), decodeURIComponent(character[1]));
       return;
     }
 
@@ -341,6 +347,48 @@ async function sendMyCharacters(response: ServerResponse, sql: Queries, secret: 
     return;
   }
   sendJson(response, 200, { characters: await rosterOf(sql, player, secretHash(secret), Date.now()) });
+}
+
+/**
+ * One character as the device holds it now, sent with no game running.
+ *
+ * A record otherwise reaches this server only on the batches of a run, so an edit made in the
+ * Save Editor would wait for the next sitting and be lost if another device played the character
+ * first. The device sends it here as soon as the edit is kept, and a character the server has
+ * never been told about is made known by it, with no sittings under it.
+ */
+async function keepMyCharacter(
+  request: IncomingMessage,
+  response: ServerResponse,
+  sql: Sql,
+  secret: string | null,
+  characterId: string,
+): Promise<void> {
+  if (secret === null || !CHARACTER_ID.test(characterId)) {
+    sendJson(response, 400, { error: NOT_A_SECRET });
+    return;
+  }
+  const player = await playerFor(sql, secret);
+  if (player === null) {
+    sendJson(response, 403, { error: NO_NAME_YET });
+    return;
+  }
+  const edit = readCharacterEdit(await readJsonBody(request, MOST_BATCH_BYTES));
+  if (edit === null) {
+    sendJson(response, 400, { error: NOT_A_CHARACTER });
+    return;
+  }
+  const sender = { player, device: secretHash(secret) };
+  const taken = await keepEditedCharacter(sql, characterId, sender, edit, Date.now());
+  if (taken === 'leased') {
+    sendJson(response, 409, { error: BEING_PLAYED });
+    return;
+  }
+  if (taken === 'another-player') {
+    sendJson(response, 409, { error: ANOTHER_PLAYER });
+    return;
+  }
+  sendJson(response, 200, { kept: characterId });
 }
 
 /** One character forgotten here: its run, the verdict on it and whatever was announced about it

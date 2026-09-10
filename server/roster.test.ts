@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { announceRun } from './announcing';
-import { forgetKeptCharacter, rosterOf } from './roster';
-import { takeBatch, type BatchSender, type BatchSession, type CharacterSave, type RunBatch } from './runs';
+import { forgetKeptCharacter, keepEditedCharacter, readCharacterEdit, rosterOf, type CharacterEdit } from './roster';
+import { LEASE_MS, takeBatch, type BatchSender, type BatchSession, type CharacterSave, type RunBatch } from './runs';
 import type { Sql } from './sql';
 import { openTestDatabase } from './test-sql';
 
@@ -169,5 +169,92 @@ describe('forgetting a character', () => {
 
   it('says there was nothing to forget for a character nobody has played here', async () => {
     expect(await forgetKeptCharacter(sql, 'never-played', ME.player)).toBe(false);
+  });
+});
+
+describe('a character edited with no game running', () => {
+  let sql: Sql;
+
+  beforeEach(async () => {
+    sql = await openTestDatabase();
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [ME.player, 'John']);
+    await sql.query('INSERT INTO players (id, name) VALUES ($1, $2)', [THEM.player, 'Somebody']);
+  });
+
+  afterEach(async () => {
+    await sql.close();
+  });
+
+  const edit: CharacterEdit = {
+    game: 'unforgiven',
+    name: 'Grond',
+    save: { ...save, record: 'CQkJ', editedAt: '2026-09-09T13:00:00.000Z' },
+  };
+
+  it('writes the record the device sent over the one the run left behind', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    expect(await keepEditedCharacter(sql, CHARACTER, ME, edit, 2000)).toBe('kept');
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+    expect(character.record).toBe('CQkJ');
+    expect(character.editedAt).toBe('2026-09-09T13:00:00.000Z');
+    // The edit says nothing about the run, so the chain is exactly where the batches left it.
+    expect(character.run).toHaveLength(1);
+  });
+
+  it('makes a character the server has never been told about known, with no sittings', async () => {
+    expect(await keepEditedCharacter(sql, OTHER, ME, edit, 1000)).toBe('kept');
+
+    const roster = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+    expect(roster).toHaveLength(1);
+    expect(roster[0]).toMatchObject({
+      id: OTHER,
+      game: 'unforgiven',
+      name: 'Grond',
+      record: 'CQkJ',
+      createdAt: '2026-09-08T09:00:00.000Z',
+      run: [],
+    });
+  });
+
+  it('is refused while another device of the player’s is playing the character', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    const sender: BatchSender = { player: ME.player, device: MY_OTHER_DEVICE };
+    expect(await keepEditedCharacter(sql, CHARACTER, sender, edit, 2000)).toBe('leased');
+
+    const [character] = await rosterOf(sql, ME.player, MY_OTHER_DEVICE, 100000);
+    expect(character.record).toBe('AAED');
+  });
+
+  it('is taken once that lease has lapsed', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    const sender: BatchSender = { player: ME.player, device: MY_OTHER_DEVICE };
+    expect(await keepEditedCharacter(sql, CHARACTER, sender, edit, 1000 + LEASE_MS + 1)).toBe('kept');
+  });
+
+  it('is refused for a character of another player’s', async () => {
+    await takeBatch(sql, CHARACTER, ME, batch({ session: header }), 1000);
+
+    expect(await keepEditedCharacter(sql, CHARACTER, THEM, edit, 2000)).toBe('another-player');
+  });
+});
+
+describe('reading a character off the wire', () => {
+  it('takes the save a batch carries with the game and the name beside it', () => {
+    expect(readCharacterEdit({ game: 'unforgiven', name: 'Grond', save })).toEqual({
+      game: 'unforgiven',
+      name: 'Grond',
+      save,
+    });
+  });
+
+  it('is nothing at all for a body with no character in it', () => {
+    expect(readCharacterEdit({ game: 'unforgiven', name: 'Grond' })).toBeNull();
+    expect(readCharacterEdit({ name: 'Grond', save })).toBeNull();
+    expect(readCharacterEdit({ game: 'unforgiven', save })).toBeNull();
+    expect(readCharacterEdit('a character')).toBeNull();
   });
 });
