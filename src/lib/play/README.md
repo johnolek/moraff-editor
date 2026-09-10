@@ -69,10 +69,10 @@ something the original does, a comment says so.
   the run block is the mark saying whether the run is reaching the run server and what the replay
   made of it (`streaming.ts`).
 * **`BoardName.svelte`** — under the mode radios: the name this browser goes by on the run
-  server's boards. Nobody signs up, so a name is claimed with the device secret `src/lib/player.ts`
-  makes and keeps; the field shows the name that secret already holds and the server's own words
-  when the name belongs to somebody else. A build given no server address has no boards to be on
-  and shows nothing.
+  server's boards, and the opt-out. Nobody signs up, so a name is claimed with the device secret
+  `src/lib/player.ts` makes and keeps; the field shows the name that secret already holds and the
+  server's own words when the name belongs to somebody else. A build given no server address has
+  no boards to be on and shows nothing.
 * **`Play.svelte`** — this game's snippets: the game's screen or the top-down map, the message
   box, the two pictures and the panel. **`display.ts`, `Screen.svelte`** — the screen itself: the boxes `movecontrol` fills, the
   key menu, the zoom map, the status block and everything the game has printed, over the four
@@ -251,8 +251,14 @@ half of this is `server/README.md`.
   when the game is left, one that outlives a page on its way out, and the last one at a death or a
   win, after which it asks for the verdict until the replay has given one. Nothing goes while the
   mode is debug, and a build given no server address does none of it. The mark the Play tab shows
-  in its side column — sending, not answering, refused, and the verdict — is here too, since every
-  one of those words is about what became of the sending.
+  in its side column — sending, not answering, refused, off the boards, and the verdict — is here
+  too, since every one of those words is about what became of the sending.
+* **The opt-out** is `offTheBoards` in `src/lib/player.ts`, kept beside the device secret and off
+  until the player ticks the box in `BoardName.svelte`. The sender asks before every batch rather
+  than once when the game starts, so turning it on stops the sending part-way through a run and
+  turning it off sends from then on. What was played meanwhile goes in the next batch, and the gap
+  in front of that batch is longer than the server counts as play, so that stretch is untimed the
+  way every stretch the server never saw is.
 * **The shapes on the wire** are `stream.ts`'s, and `server/runs.ts` imports them, so the two
   halves agree about a batch in one place.
 
