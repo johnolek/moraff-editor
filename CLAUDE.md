@@ -12,6 +12,12 @@ present the next chunk's plan and wait.
 - Push to `main` → GitHub Actions runs the tests, builds `dist/`, and deploys it to
   GitHub Pages at
   https://johnolek.github.io/moraffs-world-and-dungeons-of-the-unforgiven-save-editor/
+  The build takes the run server's address from the repository variable
+  `RUN_SERVER_URL`; without it the site has no Boards tab and sends nothing.
+- Push to `main` → Coolify rebuilds the run server from the root `Dockerfile` and
+  deploys it, but only if John has turned automatic deploys on for it; otherwise
+  the server changes when he presses deploy in Coolify. `server/README.md` is the
+  setup.
 - No other branch deploys. Never push without being asked.
 
 ## Commands
