@@ -30,6 +30,7 @@ import {
   type BatchClaims,
   type BatchRefusal,
 } from './runs';
+import type { BuiltPage } from './site';
 import type { Queries, Sql } from './sql';
 import {
   createRunVerifier,
@@ -91,7 +92,12 @@ export type ServerOrigin = Pick<ServerConfig, 'allowedOrigin'>;
  * those pages go rather than wait for them; anything that does not care about stopping gets one
  * of its own.
  */
-export function createRunServer(config: ServerOrigin, sql: Sql, feed: Feed = openFeed()): Server {
+export function createRunServer(
+  config: ServerOrigin,
+  sql: Sql,
+  feed: Feed = openFeed(),
+  page: BuiltPage | null = null,
+): Server {
   const engines = openEngineStore(sql);
   const verifier = createRunVerifier(sql, engines, (announcements) => feed.announce(announcements));
   const attempts = openSignInAttempts();
@@ -209,6 +215,11 @@ export function createRunServer(config: ServerOrigin, sql: Sql, feed: Feed = ope
     const run = path.match(/^\/runs\/([^/]+)$/);
     if (request.method === 'GET' && run !== null) {
       void sendRun(request, response, sql, decodeURIComponent(run[1]));
+      return;
+    }
+
+    if (request.method === 'GET' && path === '/' && page !== null) {
+      sendPage(request, response, page);
       return;
     }
 
@@ -807,6 +818,28 @@ async function readJsonBody(request: IncomingMessage, mostBytes = MOST_BODY_BYTE
   } catch {
     return null;
   }
+}
+
+/**
+ * The tools themselves, or the word that the browser asking already has them.
+ *
+ * The page is a megabyte or so however it is sent, so the tag is worth the round trip it costs:
+ * `no-cache` is what makes a browser ask after every deploy rather than showing yesterday's page,
+ * and the tag is what makes almost every one of those asks cost nothing to answer.
+ */
+function sendPage(request: IncomingMessage, response: ServerResponse, page: BuiltPage): void {
+  if (request.headers['if-none-match'] === page.tag) {
+    response.writeHead(304, { ETag: page.tag, 'Cache-Control': 'no-cache' });
+    response.end();
+    return;
+  }
+  response.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': page.html.byteLength,
+    ETag: page.tag,
+    'Cache-Control': 'no-cache',
+  });
+  response.end(page.html);
 }
 
 function sendJson(response: ServerResponse, status: number, body: unknown): void {
