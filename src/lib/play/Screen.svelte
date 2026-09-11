@@ -640,7 +640,9 @@
     const tick = (now: number): void => {
       const step = Math.min(last, Math.floor((now - started) / FADE_STEP_MS));
       painter.paint(context, holding.frame, fadedPalette(holding.palette, running, step));
-      request = requestAnimationFrame(tick);
+      // The last step stands until something else is drawn, so there is nothing left to ask the
+      // browser for.
+      request = step < last ? requestAnimationFrame(tick) : 0;
     };
     request = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(request);
