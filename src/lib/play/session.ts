@@ -1,7 +1,7 @@
 import { sameBytes } from '../bytes';
 import type { PlayLoopSession } from './loop';
 import type { PlayMode } from './mode';
-import { DEFAULT_PLAY_MODE } from './mode';
+import { DEFAULT_PLAY_MODE, waitsAreEnforced } from './mode';
 import type { JournalEntry } from './journal';
 import type { RunRecorder, RunSession } from './run';
 
@@ -73,15 +73,29 @@ export interface KeyHandler<Turn> {
  * record's bytes.
  */
 export abstract class KeyedSession<Record> implements PlayLoopSession {
+  /**
+   * Whether a key gives up the frames the game is holding on the screen.
+   *
+   * The tab tells a session which mode it is being played in, and that settles this (`mode.ts`):
+   * faithful and speedrun sit through the game's own pauses, since none of the three games reads
+   * the keyboard while one is on the screen and a speedrun is run against the original's timing;
+   * debug cuts them short so the port can be stepped through.
+   *
+   * A session nobody is watching is never told a mode and cuts them short: a replay, the fight
+   * simulator and a test have no screen in front of them to hold anything on.
+   */
+  private cutsPausesShort = true;
+
   /** The loop has come back: the character has quit or died. */
   over = false;
   /** Why the play loop stopped, when it stopped because it threw (`loop.ts`), or null. */
   stopped: string | null = null;
   dead = false;
   /**
-   * How much of the game the tab is showing (`mode.ts`). Nothing the game does reads it; it is
-   * here so that the run being written down can say which mode it was played in, which is why
-   * setting it reaches the run as well.
+   * How much of the game the tab is showing (`mode.ts`). It is here so that the run being written
+   * down can say which mode it was played in, which is why setting it reaches the run as well,
+   * and it settles {@link cutsPausesShort}. Nothing the game itself does reads it, and neither of
+   * those changes which keys reach the game or the order they reach it in.
    */
   get mode(): PlayMode {
     return this.playMode;
@@ -89,6 +103,7 @@ export abstract class KeyedSession<Record> implements PlayLoopSession {
 
   set mode(mode: PlayMode) {
     this.playMode = mode;
+    this.cutsPausesShort = !waitsAreEnforced(mode);
     if (this.run) this.run.mode = mode;
   }
 
@@ -137,11 +152,16 @@ export abstract class KeyedSession<Record> implements PlayLoopSession {
    */
   abstract finish(): void;
 
-  /** A key from the Play tab. */
+  /**
+   * A key from the Play tab.
+   *
+   * The key itself is taken at once, which is what DOS does with one typed while the game is
+   * inside a delay of its own: it sits in the keyboard buffer and the next `getch` has it. What
+   * {@link cutsPausesShort} decides is whether the frames still standing on the screen are given
+   * up along with it, or left to play out with whatever the key draws queued up behind them.
+   */
   press(key: number): void {
-    // Whatever is left of a message's delay is given up: the original is not reading the keyboard
-    // while it waits, so by the time a key of the player's is looked at the wait is behind it.
-    this.frames.release();
+    if (this.cutsPausesShort) this.frames.release();
     if (this.wake(key)) return;
     if (this.queued.length < KEY_QUEUE) this.queued.push(key);
   }

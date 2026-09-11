@@ -144,6 +144,19 @@ export function colourblindFilter(on: boolean): string | null {
 }
 
 /**
+ * Whether a key cuts short a message the game is holding on the screen.
+ *
+ * None of the three games reads the keyboard while one of its own delays is running, so a player
+ * at the original could not hurry one along: the teleporter tunnel rushed at them for its full
+ * five seconds and DIGGING... DIGGING... flashed four times whatever they pressed. Faithful and
+ * speedrun both sit through them, a speedrun being run against the original's own timing, and
+ * debug — which is for looking at the port rather than playing the game — still cuts them short.
+ */
+export function waitsAreEnforced(mode: PlayMode): boolean {
+  return mode !== 'debug';
+}
+
+/**
  * Whether the column of numbers the game keeps and never prints is shown — the engaged monster's
  * hit points and the chance a swing lands, the charges on every wand and scroll, the turns left
  * on every spell, the odds the square underfoot holds a trap door, how many monsters are left
