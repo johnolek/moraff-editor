@@ -328,7 +328,6 @@
       buildingScreen,
       bossOffice,
       tunnel,
-      plaque,
       fade,
       cleared,
       height,
@@ -336,18 +335,71 @@
     }),
   );
 
-  /** What the canvas is showing, so the effect below can tell that nothing has changed. */
-  let onCanvas: { drawnFrom: string; rows: MapSquare[][]; discovered: DiscoveredMap } | null = null;
+  /**
+   * What the canvas is showing, so the effect below can tell that nothing has changed, together
+   * with the screen it was drawn from with no plaque on it.
+   *
+   * The plaque is deliberately not part of `drawnFrom`. One message box puts it up and takes it
+   * away again through three states, and drawing the screen again for each of them costs four
+   * 3-D views apiece to change one corner. Keeping the screen underneath means those three are a
+   * copy and a plaque instead.
+   */
+  let onCanvas:
+    | { drawnFrom: string; rows: MapSquare[][]; discovered: DiscoveredMap; plaque: PlaqueState | null; screen: Frame }
+    | null = null;
 
   $effect(() => {
     const target = canvas;
     if (!target) return;
     const context = target.getContext('2d');
     if (!context) return;
-    if (onCanvas?.drawnFrom === drawnFrom && onCanvas.rows === rows && onCanvas.discovered === discovered) return;
-    onCanvas = { drawnFrom, rows, discovered };
+
+    /**
+     * The screen with whatever the plaque is doing over it: FUN_2000_4054 (exe 2000:4054) draws it
+     * where it stands rather than clearing anything first, so it goes over every other screen.
+     *
+     * The plaque is drawn onto a copy, which is what leaves the screen underneath whole for the
+     * next time the plaque moves. The copy carries the journal of the screen it was taken from, so
+     * that a message box arriving behind a plaque is still revealed paint by paint.
+     */
+    const withPlaque = (screen: Frame): Frame => {
+      if (!plaque) return screen;
+      const over = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+      over.pixels.set(screen.pixels);
+      over.journal = screen.journal;
+      if (plaque === 'blanked') blankPlaque(over, SCREEN_PIXELS);
+      else drawPlaque(over, SCREEN_PIXELS, viewPictures(section?.section ?? 1).wall);
+      return over;
+    };
+
+    /** Put a screen on the canvas, revealed over `revealMs`. */
+    const show = (screen: Frame, revealMs: number): void => {
+      const frame = withPlaque(screen);
+      const crawls = holdsGradientBank(frame);
+      const shown =
+        fade !== null
+          ? fadedPalette(palette, fade, 0)
+          : crawls
+            ? cycleGradientBank(palette, crawlStep)
+            : palette;
+      painter.reveal(context, frame, shown, revealMs);
+      painted = { frame, palette, crawls };
+    };
+
+    const same =
+      onCanvas?.drawnFrom === drawnFrom && onCanvas.rows === rows && onCanvas.discovered === discovered;
+    if (same && onCanvas!.plaque === plaque) return;
+    if (same) {
+      // Only the plaque moved. A plaque is a corner of the screen changing rather than a screen
+      // arriving, so it goes up whole however slow a redraw the player has asked for.
+      const screen = onCanvas!.screen;
+      onCanvas = { ...onCanvas!, plaque };
+      show(screen, 0);
+      return;
+    }
 
     const frame = newFrame(SCREEN_PIXELS.width, SCREEN_PIXELS.height);
+    onCanvas = { drawnFrom, rows, discovered, plaque, screen: frame };
     const floor = {
       rows,
       at: { x: place.x, y: place.y, dir: place.dir },
@@ -357,29 +409,11 @@
       highlight: highlightMonsterId,
       route: routeSquares,
     };
-    const paint = (): void => {
-      // The plaque goes over everything else on the screen, whichever of them is up: FUN_2000_4054
-      // (exe 2000:4054) draws it where it stands rather than clearing anything first.
-      if (plaque === 'blanked') blankPlaque(frame, SCREEN_PIXELS);
-      if (plaque === 'showing') drawPlaque(frame, SCREEN_PIXELS, viewPictures(section?.section ?? 1).wall);
-      // Walking into a building raises DS:2505 and calls set_palette again (exe 2000:c9ac), which
-      // copies the two shop tables over the banks the building picture is drawn out of.
-      // A fade's first step is drawn here so that nothing of the screen shows at full strength
-      // before the animation below has its first frame.
-      // Neither a fade nor the plaque going up is revealed a row at a time: the fade repaints the
-      // whole screen many times a second below, and a plaque is a corner of the screen changing
-      // rather than a screen arriving. The crawl repaints too, and waits a wipe out instead.
-      const animated = fade !== null || plaque === 'showing';
-      const crawls = holdsGradientBank(frame);
-      const shown =
-        fade !== null
-          ? fadedPalette(palette, fade, 0)
-          : crawls
-            ? cycleGradientBank(palette, crawlStep)
-            : palette;
-      painter.reveal(context, frame, shown, animated ? 0 : revealed);
-      painted = { frame, palette, crawls };
-    };
+    // A fade's first step is drawn here so that nothing of the screen shows at full strength
+    // before the animation below has its first frame, and it is not revealed a row at a time: the
+    // fade repaints the whole screen many times a second below. The crawl repaints too, and waits
+    // a wipe out instead.
+    const paint = (): void => show(frame, fade !== null || plaque === 'showing' ? 0 : revealed);
     // The module teleporter's tunnel (exe 4000:771b), which is drawn on a black screen and stands
     // there until the key that answers the arrival box: that box is printed on the tunnel, and
     // movecontrol only comes round to draw the screen again after it.
