@@ -7,7 +7,7 @@
   import { MORAFFS_WORLD } from '../editor/games';
   import { percent } from '../ui/format';
   import SectionHeading from '../ui/SectionHeading.svelte';
-  import MwMonsterPicture from './MwMonsterPicture.svelte';
+  import MwMonsterCorridor from './MwMonsterCorridor.svelte';
   import {
     HELD_WEAPONS,
     MONSTERS_PER_FLOOR,
@@ -141,7 +141,7 @@
 
 {#snippet art()}
   {#if entry.pictureDrawn}
-    <MwMonsterPicture {entry} {floor} />
+    <MwMonsterCorridor {entry} {floor} />
   {:else}
     <p class="missing">No picture</p>
   {/if}
