@@ -6,6 +6,12 @@ two runs endpoints, the player's characters, the boards, the boards of the
 living, everyone and the announcements below, which is
 [MORF-367](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-367).
 
+It also serves the tools themselves at `GET /`, so its domain is somewhere to
+play as well as somewhere the site talks to, which is
+[MORF-405](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-405).
+That is the only path the page is at: the site never changes the URL, so every
+other path the server does not know is a 404 as it always was.
+
 It lives in this repository so one commit is one engine build: the code that
 will replay a run to check it is the same code the site played it with.
 
@@ -46,8 +52,14 @@ pnpm start:server     # runs dist-server/main.mjs
 ```
 
 The build is one self-contained file: the migrations and the Postgres client are
-read into it, and only Node's own modules are imported at run time. Nothing else
-goes in the image it is deployed in.
+read into it, and only Node's own modules are imported at run time.
+
+The page it serves at its root is not in that file. `pnpm build` writes it to
+`dist/index.html` — one file with the whole site inlined, the same one GitHub
+Pages is given — and the image carries it beside the bundle. It is read once at
+start, and a server that finds none there starts anyway and leaves its root the
+404 it would otherwise be. That is what a checkout that has never built the site
+is, and what the tests are.
 
 ## Configuration
 
@@ -527,29 +539,39 @@ and nothing kept on the box: everything, the engine builds included, is in the
 Postgres `DATABASE_URL` names, and the backup is the Postgres backup below.
 
 The `Dockerfile` at the root is the whole build. It installs with the lockfile,
-runs `pnpm build:server` and `pnpm build:engine`, and keeps `dist-server/` and
-the one `server/engines/<commit>/` that build made — both in the place this
-repository has them in, which is how the started server finds its own engine
-build beside itself.
+runs `pnpm build:server`, `pnpm build:engine` and `pnpm build`, and keeps
+`dist-server/`, the one `server/engines/<commit>/` that build made, and
+`dist/index.html` — all three in the place this repository has them in, which is
+how the started server finds its own engine build and its own page beside itself.
+One commit is the server, the engine it replays with and the page it serves, so
+a deploy can never leave one of the three behind.
 
 The application, made once:
 
 - **Source**: this repository, branch `main`.
 - **Build pack**: Dockerfile.
 - **Port**: 3580, which is the port the image exposes and the server's default.
-- **Domain**: whatever John points at it, say `https://runs.example.com`.
+- **Domain**: whatever John points at it, say `https://runs.example.com`. That
+  domain is where the tools are played as well as where the site talks to.
   Coolify's proxy terminates HTTPS and the server never sees a certificate.
 - **Health check**: `GET /health` on that port. The image carries one already,
   so Coolify's own only has to agree with it if it is turned on at all.
 - **No volume**, no persistent storage, no command to run after a deploy.
 
-The variables:
+The variables. `VITE_RUN_SERVER` is a **build** variable, because the page is
+built here; the other three are read when the server starts:
 
 | Variable            | What to set it to                                  |
 | ------------------- | -------------------------------------------------- |
 | `DATABASE_URL`      | The Postgres, as the container reaches it (below)  |
 | `RUN_SERVER_PORT`   | `3580`, or leave it out for the same thing         |
 | `RUN_SERVER_ORIGIN` | `https://johnolek.github.io`                       |
+| `VITE_RUN_SERVER`   | The domain, `https://runs.example.com`             |
+
+`RUN_SERVER_ORIGIN` is the GitHub Pages copy of the site and not this domain.
+The page served from the server's own domain asks the same origin it came from,
+which is not a thing a browser applies CORS to at all, so it needs no entry
+there; the Pages copy is a different origin and does.
 
 ### Reaching the Postgres
 
@@ -583,10 +605,21 @@ curl https://runs.example.com/health
 ```
 
 A build context has no git in it, so `vite.config.ts` reads that commit from the
-`SOURCE_COMMIT` build argument, which Coolify sets to the commit it checked out.
-`unknown` there means the argument never arrived: look for it in the deploy's
-build log, and make sure no build argument of that name has been set by hand in
-the application's configuration to something else.
+`SOURCE_COMMIT` build argument.
+
+**Coolify does not pass that argument unless it is asked to.** It is off by
+default — Configuration, Advanced, *Include Source Commit in Build* — because
+a commit that changes every deploy is a build cache that is never reused. This
+image wants it anyway: a build with no commit calls itself `unknown`, and the
+server refuses to publish an engine under a name that is not a commit, so
+nothing that plays on that deploy can ever be replayed or verified.
+
+`unknown` at `/health` means the argument never arrived: turn that on, look for
+`--build-arg SOURCE_COMMIT=` in the deploy's build log, and make sure no build
+argument of that name has been set by hand in the application's configuration to
+something else. What the cache costs is only the source copy and the three
+builds — the install below it is reused, which is
+[MORF-406](https://projects.johnoleksowicz.com/projects/MORF/items/MORF-406).
 
 ### What a redeploy does
 
@@ -598,6 +631,41 @@ engine that played it. Nothing is ever taken out and nothing is copied by hand.
 
 The old container is stopped with SIGTERM, which is what the server waits for to
 finish the requests in hand and let go of the database.
+
+Coolify starts the new container before it stops the old one and waits for the
+image's own `HEALTHCHECK` to pass, so a deploy does not take the domain down.
+Three settings would stop it doing that, and all three are left alone: **Ports
+Mappings** stays empty, since two containers cannot publish one host port;
+**Consistent Container Names** stays off and **Custom Container Name** stays
+empty, since two containers cannot share a name. **Stop Grace Period** under
+Configuration, Advanced, Operations is the half minute the old container has to
+drain, which is longer than it needs.
+
+The one thing to keep in mind writing a migration: for those few seconds the old
+code is running against the new schema. Add tables and nullable columns rather
+than renaming or dropping anything the code already deployed still reads.
+
+Browsers pick the new page up on their next visit. It goes out under
+`Cache-Control: no-cache` and a tag of its own bytes, so a browser asks every
+time and is answered with a 304 and no page whenever nothing has changed.
+
+### Compression through the proxy
+
+The page is one file with the whole site inlined — about 5.9 MB, or 1.9 MB
+gzipped — and the server sends it as it is. Squeezing it is the proxy's job:
+Coolify puts a compression middleware in front, which is a per-application
+setting, and nothing says so when it is off. The page simply becomes a 5.9 MB
+download.
+
+So check it, once, after the first deploy:
+
+```bash
+curl -sI -H 'Accept-Encoding: gzip' https://runs.example.com/ | grep -i content-encoding
+# content-encoding: gzip
+```
+
+Nothing there means the middleware is off. Turn it on in the application's
+configuration rather than changing anything here.
 
 ### The feed through the proxy
 
@@ -619,25 +687,33 @@ check that `X-Accel-Buffering: no` and `Content-Type: text/event-stream` are
 still on the answer as it comes out of the proxy, and if Coolify has been put
 behind nginx or Caddy instead, that the buffering is turned off there.
 
-## The site's half
+## The site's two halves
 
-The site is built by GitHub Actions and served from GitHub Pages, and it shows
-the Boards tab and the announcements only when its build was given the server's
-address. That address is the repository variable `RUN_SERVER_URL` — Settings,
-Secrets and variables, Actions, Variables — which
-`.github/workflows/deploy.yml` hands to the build as `VITE_RUN_SERVER`:
+The site is served from two places against the one server, and each is built
+where it is served from.
+
+**The server's own domain.** The image builds the page and carries it, so this
+half moves with the server and needs nothing of GitHub's. Its address is the
+`VITE_RUN_SERVER` build variable in the application's configuration.
+
+**GitHub Pages.** Built by GitHub Actions from the same repository. Its address
+is the repository variable `RUN_SERVER_URL` — Settings, Secrets and variables,
+Actions, Variables — which `.github/workflows/deploy.yml` hands to the build as
+`VITE_RUN_SERVER`:
 
 1. Set `RUN_SERVER_URL` to the domain, `https://runs.example.com`.
 2. Push `main`, and the site that deploys has the address in it.
 
-A repository without that variable builds with an empty address, which is the
-same as having none: no Boards tab and nothing sent anywhere. So the site can be
-deployed long before the server is, and the tab appears with the first push
-after the variable is set.
+A build given no address at all has no Boards tab and sends nothing anywhere,
+and every other tool works exactly as it always has. So either half can be
+deployed long before the server is, and the tab appears the first time that half
+is built after its address is set.
 
-`RUN_SERVER_ORIGIN` on the server is the other half of that: it is the origin
-the browser is told may read the answers, and it has to be where the site really
-is, `https://johnolek.github.io`.
+`RUN_SERVER_ORIGIN` on the server is the other half of the Pages one: it is the
+origin the browser is told may read the answers, and it has to be where that
+copy really is, `https://johnolek.github.io`. The copy served from the server's
+own domain asks the origin it was served from, which a browser does not apply
+CORS to, so it is allowed without being named anywhere.
 
 ## Backups
 

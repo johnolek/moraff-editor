@@ -16,8 +16,10 @@ present the next chunk's plan and wait.
   `RUN_SERVER_URL`; without it the site has no Boards tab and sends nothing.
 - Push to `main` → Coolify rebuilds the run server from the root `Dockerfile` and
   deploys it, but only if John has turned automatic deploys on for it; otherwise
-  the server changes when he presses deploy in Coolify. `server/README.md` is the
-  setup.
+  the server changes when he presses deploy in Coolify. That image also builds the
+  site and serves it at the server's own root, so the domain is a second place to
+  play; its address comes from the `VITE_RUN_SERVER` build variable.
+  `server/README.md` is the setup.
 - No other branch deploys. Never push without being asked.
 
 ## Commands
@@ -44,7 +46,8 @@ pnpm dev:all       # the site and the server together on the local Postgres
   the calculators, the formulas and the snake are DotU's alone.
 - The Boards tab (`src/lib/boards/`) covers all three games and shows only in a build given
   a run server address (`VITE_RUN_SERVER`); `server/boards.ts` is the only server module the
-  site may import a value from.
+  site may import a value from. The run server serves the built page at `/` when the image
+  carries one (`server/site.ts`); a checkout that has not built the site leaves that a 404.
 - The Tidbits tab follows the game switch: a game has one when
   `src/lib/tidbits/files.ts` names a file for it and `src/lib/tabs.ts` lists the
   tab for it.
