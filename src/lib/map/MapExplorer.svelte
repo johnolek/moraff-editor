@@ -35,7 +35,11 @@
   /** No file loaded, which is every floor until one is dropped on the panel. */
   const NO_EXPLORED_FLOORS: ExploredFloors = new Map();
 
-  let game = $state<MapGame>(MAP_GAMES[app.game]);
+  // The id rather than the game itself: assigning an object to a `$state` variable wraps it in a
+  // new proxy every time, which Svelte counts as a change even when it is the same game, and
+  // that would re-run every effect reading it on each move of the map.
+  let gameId = $state<GameId>(app.game);
+  const game = $derived(MAP_GAMES[gameId]);
   let dungeon = $state(rememberedDungeon(MAP_GAMES[app.game]));
   let floor = $state(0);
   /** Lets the map be pointed at floors the dungeon does not have, the way the game's own
@@ -191,7 +195,7 @@
   }
 
   function applyPlace(place: MapPlace) {
-    game = MAP_GAMES[place.game];
+    gameId = place.game;
     if (game.dungeonStorageKey) writeStored(game.dungeonStorageKey, String(place.dungeon));
     // A place can name a floor the dungeon does not have, and only the override shows one.
     if (place.floor < 0 || place.floor > game.bottomFloor(place.dungeon)) anyFloor = true;
