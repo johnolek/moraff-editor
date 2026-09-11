@@ -218,7 +218,7 @@ export function createRunServer(
       return;
     }
 
-    if (request.method === 'GET' && path === '/' && page !== null) {
+    if ((request.method === 'GET' || request.method === 'HEAD') && path === '/' && page !== null) {
       sendPage(request, response, page);
       return;
     }
@@ -826,6 +826,10 @@ async function readJsonBody(request: IncomingMessage, mostBytes = MOST_BODY_BYTE
  * The page is a megabyte or so however it is sent, so the tag is worth the round trip it costs:
  * `no-cache` is what makes a browser ask after every deploy rather than showing yesterday's page,
  * and the tag is what makes almost every one of those asks cost nothing to answer.
+ *
+ * A HEAD is answered here as readily as a GET, unlike at the endpoints: a page is something
+ * monitors and link checkers ask after without wanting the thing itself. Node leaves the body off
+ * the answer to a HEAD on its own, so there is nothing to do about it here.
  */
 function sendPage(request: IncomingMessage, response: ServerResponse, page: BuiltPage): void {
   if (request.headers['if-none-match'] === page.tag) {

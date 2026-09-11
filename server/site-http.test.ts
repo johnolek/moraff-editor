@@ -64,6 +64,14 @@ describe('the tools served from the run server', () => {
     expect(await response.text()).toBe(PAGE.toString());
   });
 
+  it('tells a monitor asking after the page how big it is, without sending it', async () => {
+    const response = await fetch(`${served}/`, { method: 'HEAD' });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-length')).toBe(String(PAGE.byteLength));
+    expect(await response.text()).toBe('');
+  });
+
   it('still says 404 for an endpoint there is not', async () => {
     const response = await fetch(`${served}/leaderboards`);
 
