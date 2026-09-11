@@ -5,6 +5,18 @@
 
 FROM node:24-slim AS build
 
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+
+# Both of these differ from one deploy to the next, so they go below the install: a changed build
+# argument invalidates the layer it is set in and every layer after it, and an install that only
+# depends on the lockfile is one a deploy can reuse.
+#
 # There is no repository in the build context for git to be asked the commit, so the builds read
 # it here instead; Coolify passes the commit it checked out under this name.
 ARG SOURCE_COMMIT
@@ -16,13 +28,6 @@ ENV SOURCE_COMMIT=${SOURCE_COMMIT}
 ARG VITE_RUN_SERVER
 ENV VITE_RUN_SERVER=${VITE_RUN_SERVER}
 
-ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
-RUN corepack enable
-
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-COPY . .
 RUN pnpm build:server && pnpm build:engine && pnpm build
 
 FROM node:24-slim
