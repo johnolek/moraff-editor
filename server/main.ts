@@ -4,6 +4,7 @@ import { openRunDatabase } from './db';
 import { ENGINE_COMMIT, publishBuiltEngine } from './engines';
 import { openFeed } from './feed';
 import { createRunServer } from './http';
+import { readBuiltPage } from './site';
 
 /**
  * The run server: one process, one port, and a Postgres it keeps everything in.
@@ -16,12 +17,16 @@ const config = configFromEnvironment();
 const sql = await openRunDatabase(config.databaseUrl);
 await publishOwnEngine();
 const feed = openFeed();
-const server = createRunServer(config, sql, feed);
+const page = readBuiltPage();
+const server = createRunServer(config, sql, feed, page);
 
 server.listen(config.port, () => {
   console.log(`Run server listening on port ${config.port}`);
   console.log(`  engine: ${shortCommit(ENGINE_COMMIT)}`);
   console.log(`  allowed origin: ${config.allowedOrigin}`);
+  // Whether the image was built with the site in it is the thing a deploy gets wrong, and a
+  // server missing it looks perfectly well from every endpoint.
+  console.log(`  page: ${page === null ? 'none beside the server' : `${page.html.byteLength} bytes`}`);
 });
 
 /**
