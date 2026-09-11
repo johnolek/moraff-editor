@@ -10,6 +10,7 @@ server/engines
 .DS_Store
 games
 docs
-dotu-tools
-mw-tools
 rev-tools
+
+# `dotu-tools` and `mw-tools` belong in the context, unlike the rest of the tooling: the site's
+# Source tab imports a megabyte of C out of each, and `pnpm build` fails without them.
